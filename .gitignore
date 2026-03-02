@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+.convex/
+*.tsbuildinfo
+
+# Logs & debug
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Subprojects (dashboard, etc.)
+dashboard/node_modules/
+dashboard/dist/
+**/node_modules/
+**/dist/
+**/.vite/
+coverage/

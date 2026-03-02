@@ -1,0 +1,35 @@
+{
+  "name": "anan-lit",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "convex dev",
+    "deploy": "convex deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:once": "vitest run"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.57",
+    "@browserbasehq/convex-stagehand": "^0.0.2",
+    "@convex-dev/action-cache": "^0.3.0",
+    "@convex-dev/agent": "^0.3.2",
+    "@convex-dev/better-auth": "^0.10.13",
+    "@convex-dev/rag": "^0.7.0",
+    "@convex-dev/rate-limiter": "^0.3.2",
+    "@convex-dev/workflow": "^0.3.4",
+    "@openrouter/ai-sdk-provider": "^1.5.4",
+    "@toon-format/toon": "^2.1.0",
+    "ai": "^5.0.82",
+    "better-auth": "1.4.19",
+    "convex": "^1.31.6",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "convex-test": "^0.0.41",
+    "typescript": "^5.2.2",
+    "vitest": "^2.0.0"
+  }
+}
