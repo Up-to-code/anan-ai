@@ -1,39 +1,39 @@
 # anan-lit
 
-Architecture: Convex Auth (Google OAuth) for backend authentication, server-side authorization policy in `convex/_core/security/accessPolicy.ts`, and a configurable multi-agent backend in `convex/ai_zone/agents/core/`.
+Anan is a real estate platform powered by a configurable multi-agent backend and a high-performance Next.js frontend.
+
+## Core Architecture
+
+- **Backend**: Convex Auth (Google OAuth) for authentication.
+- **Security**: Server-side authorization in `convex/_core/security/accessPolicy.ts`.
+- **AI Agents**: Configurable multi-agent system in `convex/ai_zone/agents/core/`.
 
 ## Setup
 
 ```bash
 cd anan-lit
-npm install
-npx convex dev   # Creates deployment, generates _generated/, starts dev server
-```
-
-## Package Manager
-
-This repo standardizes on **Bun**.
-
-```bash
 bun install
-bunx convex dev   # Creates deployment, generates _generated/, starts dev server
+bunx convex dev   # Starts deployment and dev server
 ```
-
-After `npx convex dev`, the `_generated/` folder will be created and Convex components (agent, rate-limiter, workflow, etc.) will be available.
 
 ## Structure
 
-- `convex/_core/security/` – Convex Auth wiring, identity normalization, channel sessions, centralized access policy
-- `convex/http.ts` – Convex Auth HTTP routes, health, and channel entrypoints
-- `convex/ai_zone/agents/core/` – shared configurable agent runtime, prompts, tools, analytics
-- `frontend/src/app/` – App Router entrypoints for `/`, `/signin`, `/workspaces`, `/admin`, `/broker`, `/red`
-- `frontend/src/workspace/` – shared workspace shell, nav config, and role-aware layout primitives
-- `frontend/src/lib/auth.ts` – Convex Auth client adapter for the unified Next.js frontend
+- `web/app/` – Next.js App Router entrypoints for `/`, `/signin`, `/ws`, etc.
+- `web/app/(wso)/ws/` – The focused **Anan Workspace** shell and layout.
+- `web/components/shared/ag-aui/` – Institutional UI components (AgPropertyCard, AgBrokerCard, etc.).
+- `convex/_core/security/` – Centralized access policies and identity normalization.
+- `convex/ai_zone/agents/core/` – Shared agent runtime, prompts, and tools.
 
-## Backend Architecture
+## The Anan Workspace
 
-See `convex/SYSTEM_STRUCTURE_ARCHITECTURE.md` for the backend system structure, request flow, agent factory design, and tool ownership model.
+The workspace is designed for high-stakes real estate operations with a focus on AI-driven efficiency:
 
-## Plan
+- **Focused AI Interface**: A clean, distraction-free dashboard centered on the Anan logo and chat input.
+- **Dark Sidebar Navigation**: A professional, high-contrast dark sidebar (`slate-950`) for seamless navigation across Zones.
+- **Institutional Design**: Minimalist aesthetics using precision borders (2px) and curated brand colors.
 
-See `anan-lit_complete_plan_435416d4.plan.md` and `.cursor/rules/anan-lit-agent.mdc`.
+## Documentation
+
+- **Backend Architecture**: See `convex/SYSTEM_STRUCTURE_ARCHITECTURE.md`.
+- **Design System**: See `web/system_ui_design.json`.
+- **Planning**: See `.cursor/rules/anan-lit-agent.mdc`.
