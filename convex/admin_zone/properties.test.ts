@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildSearchText } from "./services/propertiesService";
+import { buildPropertySearchText } from "../shared_logic/properties/searchText";
 
-describe("buildSearchText", () => {
+describe("buildPropertySearchText", () => {
   it("joins title, address, description", () => {
-    const result = buildSearchText({
+    const result = buildPropertySearchText({
       title: "Villa A",
       address: "123 Main St",
       description: "Spacious villa",
@@ -12,7 +12,7 @@ describe("buildSearchText", () => {
   });
 
   it("includes optional location and area when present", () => {
-    const result = buildSearchText({
+    const result = buildPropertySearchText({
       title: "Apartment",
       address: "456 Oak Ave",
       description: "Modern",
@@ -23,7 +23,7 @@ describe("buildSearchText", () => {
   });
 
   it("omits undefined optional fields", () => {
-    const result = buildSearchText({
+    const result = buildPropertySearchText({
       title: "Studio",
       address: "789 Beach Rd",
       description: "Cozy",

@@ -21,8 +21,14 @@ export const runSerperWebSearch = internalAction({
     query: v.string(),
     num: v.optional(v.number()),
     deep: v.optional(v.boolean()),
-  },
-  handler: async (_ctx, { query, num = 5, deep = false }) => {
+  } as any,
+  handler: async (
+    _ctx: any,
+    { query, num = 5, deep = false }: { query: string; num?: number; deep?: boolean },
+  ): Promise<
+    | { ok: true; results: Array<{ title: string; url: string; snippet: string }>; queriesUsed: string[] }
+    | { ok: false; error: string }
+  > => {
     const apiKey = process.env.SERPER_API_KEY;
     if (!apiKey) {
       return { ok: false as const, error: "Web search is not configured (missing SERPER_API_KEY)." };
@@ -63,4 +69,4 @@ export const runSerperWebSearch = internalAction({
       };
     }
   },
-});
+} as any);

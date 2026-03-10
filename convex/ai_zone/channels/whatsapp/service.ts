@@ -61,7 +61,7 @@ export class WhatsAppService {
     if (!res.ok) {
       return {
         success: false,
-        error: err?.message ?? `HTTP ${res.status}`,
+        error: err?.message ?? `HTTP ${res.status} ${res.statusText}`,
       };
     }
 

@@ -1,10 +1,14 @@
 /**
- * Stagehand – extractCardsFromSource, extractPropertyDetails.
- * Plan: classifyStagehandError, state.disabled, fallback.
+ * Stagehand – extractCardsFromSource.
  *
- * TODO: Wire Stagehand(components.stagehand, getStagehandConfig())
- * when @browserbasehq/convex-stagehand is used.
+ * WHY:   Web fallback needs structured extraction from listing pages.
+ * WHAT:  Uses Stagehand extract with a normalized card schema.
+ * HOW:   Builds a Stagehand client and runs extraction with Zod schema.
  */
+import { z } from "zod";
+import type { ActionCtx } from "../../../../../_generated/server";
+import { components } from "../../../../../_generated/api";
+import { Stagehand } from "@browserbasehq/convex-stagehand";
 import { getStagehandConfig } from "./scrapingConfig";
 
 export type StagehandState = {
@@ -20,18 +24,56 @@ export function classifyStagehandError(error: unknown): string {
   return "unknown";
 }
 
-/** Placeholder – implement extractCardsFromSource when pipeline ready. */
+const cardSchema = z.object({
+  cards: z.array(
+    z.object({
+      title: z.string(),
+      price: z.optional(z.string()),
+      location: z.optional(z.string()),
+      url: z.optional(z.string()),
+      imageUrls: z.optional(z.array(z.string())),
+      beds: z.optional(z.string()),
+      baths: z.optional(z.string()),
+      area: z.optional(z.string()),
+    }),
+  ),
+});
+
+type StagehandComponent = ConstructorParameters<typeof Stagehand>[0];
+
+function buildStagehand() {
+  const config = getStagehandConfig();
+  if ("error" in config) return { error: config.error } as const;
+  return new Stagehand(components.stagehand as unknown as StagehandComponent, config);
+}
+
+/** extractCardsFromSource — Listing page extraction. */
 export async function extractCardsFromSource(
-  _ctx: unknown,
-  _listingUrl: string,
-  _maxCards: number,
+  ctx: ActionCtx,
+  listingUrl: string,
+  maxCards: number,
   state: StagehandState,
 ): Promise<unknown[]> {
-  const config = getStagehandConfig();
-  if ("error" in config) {
+  const stagehand = buildStagehand();
+  if ("error" in stagehand) {
     state.disabled = true;
-    state.reason = config.error;
+    state.reason = stagehand.error;
     return [];
   }
-  return [];
+  try {
+    const result = await stagehand.extract(ctx, {
+      url: listingUrl,
+      instruction:
+        "Extract property cards with title, price, location, URL, images, beds, baths, and area.",
+      schema: cardSchema,
+    });
+    const cards = (result as { cards?: unknown[] })?.cards ?? [];
+    return cards.slice(0, Math.max(1, maxCards));
+  } catch (err) {
+    state.reason = classifyStagehandError(err);
+    if (state.reason === "auth" || state.reason === "rate_limit") {
+      state.disabled = true;
+    }
+    return [];
+  }
 }

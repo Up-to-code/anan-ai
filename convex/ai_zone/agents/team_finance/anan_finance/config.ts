@@ -5,27 +5,42 @@
  * WHAT:  Calculates mortgage options, compares financing plans, estimates affordability.
  */
 
-import { AnanAgent } from "../../AnanAgent";
+import { agentFactory, SHARED_PROMPT_BLOCKS, type AgentDefinition } from "../../core";
+import { getBankBundles } from "../tools/getBankBundles";
+import { estimateMortgage } from "../tools/estimateMortgage";
 
-export const ananFinance = new AnanAgent({
+export const ananFinanceDefinition: AgentDefinition = {
     name: "anan_finance",
     description:
         "Calculates mortgage options, installment plans, affordability, and compares " +
         "financing structures from different providers.",
-    tools: {
-        // Tools migrated from anan_lit/tools/finance.ts
+    team: "team_finance",
+    allowedRoles: ["user", "admin"],
+    prompt: {
+        version: "v2",
+        identity: "أنت anan_finance، وكيل التمويل العقاري في منصة عنان.",
+        scope: [
+            "حساب أقساط التمويل والقدرة الشرائية ومقارنة خطط التمويل.",
+        ],
+        toolUsage: [
+            "استخدم أدوات الحساب والمنتجات البنكية المتاحة فقط.",
+        ],
+        output: [
+            "قدّم النتائج بصيغة واضحة ومنظمة.",
+            "اشرح الافتراضات المالية الرئيسية المستخدمة في الحساب.",
+        ],
+        safety: [
+            SHARED_PROMPT_BLOCKS.arabicStandard,
+            SHARED_PROMPT_BLOCKS.noFabrication,
+            "لا تقدّم نصيحة مالية ملزمة؛ اعرض الخيارات والحسابات فقط.",
+        ],
     },
-    instructions: `أنت anan_finance — وكيل التمويل العقاري في منصة عنان.
+    modelPolicy: { temperature: 0.1 },
+    runtimePolicy: { maxSteps: 4, failureMode: "soft" },
+    tools: {
+        getBankBundles,
+        estimateMortgage,
+    },
+};
 
-مهمتك:
-- حساب أقساط التمويل العقاري بدقة.
-- مقارنة خطط التمويل من بنوك مختلفة.
-- تقدير القدرة الشرائية بناءً على الدخل والالتزامات.
-
-قواعد:
-- استخدم الصيغ المالية الدقيقة.
-- وضح جميع التكاليف (رسوم، تأمين، هامش ربح).
-- قدم النتائج بالريال السعودي بتنسيق واضح.`,
-    temperature: 0.1, // Very low — financial calculations must be precise
-    maxSteps: 4,
-});
+export const ananFinance = agentFactory.create(ananFinanceDefinition);

@@ -29,6 +29,10 @@ const aiTables = {
     aiTokenUsage: defineTable({
         /** Agent that made this call (e.g. "anan_search") */
         agentName: v.string(),
+        /** Team that owns the agent (e.g. "team_search") */
+        teamName: v.optional(v.string()),
+        /** Prompt definition version used for this call */
+        promptVersion: v.optional(v.string()),
         /** LLM model used (e.g. "google/gemini-2.5-flash") */
         modelName: v.string(),
         /** Number of tokens in the prompt/input */
@@ -43,6 +47,10 @@ const aiTables = {
         userId: v.optional(v.string()),
         /** Conversation thread ID (if applicable) */
         threadId: v.optional(v.string()),
+        /** Channel that triggered the call */
+        channel: v.optional(v.string()),
+        /** Role used for orchestration access */
+        role: v.optional(v.string()),
         /** Whether an error occurred during this call */
         errorOccurred: v.optional(v.boolean()),
         /** Timestamp of this usage record */
@@ -50,7 +58,25 @@ const aiTables = {
     })
         .index("agentName", ["agentName"])
         .index("createdAt", ["createdAt"])
-        .index("agentName_createdAt", ["agentName", "createdAt"]),
+        .index("agentName_createdAt", ["agentName", "createdAt"])
+        .index("teamName_createdAt", ["teamName", "createdAt"]),
+
+    aiOrchestrationUsage: defineTable({
+        orchestratorName: v.string(),
+        role: v.string(),
+        channel: v.optional(v.string()),
+        userId: v.optional(v.string()),
+        threadId: v.optional(v.string()),
+        agentsDispatched: v.array(v.string()),
+        successfulAgents: v.array(v.string()),
+        failedAgents: v.array(v.string()),
+        totalInputTokens: v.number(),
+        totalOutputTokens: v.number(),
+        totalTokens: v.number(),
+        createdAt: v.number(),
+    })
+        .index("createdAt", ["createdAt"])
+        .index("orchestratorName_createdAt", ["orchestratorName", "createdAt"]),
 
     /**
      * aiRAGEntries — Tracks RAG content in both production and recommendation.

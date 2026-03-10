@@ -1,6 +1,6 @@
 import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
-import { adminChecker } from "../shared_logic/lib/adminChecker";
+import { requireRole } from "../_core/security/accessPolicy";
 
 const orderStatusValidator = v.union(
   v.literal("new_lead"),
@@ -15,7 +15,7 @@ const orderStatusValidator = v.union(
 export const listOrders = query({
   args: { status: v.optional(orderStatusValidator) },
   handler: async (ctx, { status }) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     if (status) {
       return ctx.db
         .query("orders")
@@ -29,7 +29,7 @@ export const listOrders = query({
 export const getOrder = query({
   args: { id: v.id("orders") },
   handler: async (ctx, { id }) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     return ctx.db.get(id);
   },
 });
@@ -42,7 +42,7 @@ export const updateOrder = mutation({
     assignedTo: v.optional(v.string()),
   },
   handler: async (ctx, { id, ...patch }) => {
-    await adminChecker(ctx, "update");
+    await requireRole(ctx, ["admin"]);
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error("Order not found");
     const filtered = Object.fromEntries(

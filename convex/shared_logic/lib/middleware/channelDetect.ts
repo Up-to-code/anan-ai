@@ -3,7 +3,7 @@
  * Used after ingress to route to correct channel handler.
  */
 
-import type { ChannelType } from "./auth";
+export type ChannelType = "whatsapp" | "app" | "web";
 
 export type ChannelDetection =
   | { channel: ChannelType; confidence: "high" | "medium" }

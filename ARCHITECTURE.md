@@ -22,45 +22,50 @@ export function ComplexModule() { ... }
 
 ---
 
-## 2. Frontend: Deep Dive into the "Fortress Concept"
+## 2. Frontend: Single Next.js Workspace
 
-The frontend (`dashboard/src/`) is broken down into strictly isolated zones:
-- `admin_zone`
-- `broker_zone`
-- `red_zone` (Real Estate Developers)
-- `public_zone`
-- `shared_logic` (Common UI, Layouts, Utilities)
+The frontend now lives in one Next.js app under `frontend/src/` with explicit role roots:
+- `/admin`
+- `/broker`
+- `/red`
+- `/signin`, `/role`, `/workspaces`
+
+The code is organized into:
+- `app/` for App Router entrypoints
+- `workspace/` for the shared shell and role navigation
+- `admin_zone`, `broker_zone`, `red_zone`, `shared_logic` for feature modules and hooks
 
 ### The 4 Rules of a Fortress:
 
-1. **The API Gateway (`index.ts`)**
-   Every zone has a root `index.ts`. If a component, boundary, or page needs to be accessed outside the zone (e.g., in `App.tsx`), it **MUST** be exported from this `index.ts`. No other zone is allowed to deep-import.
-   *Example: `import { BrokerOverview } from "@/broker_zone"` is correct. `import { BrokerOverview } from "@/broker_zone/pages/Overview"` is WRONG.*
+1. **Thin Route Files (`app/`)**
+   Route files stay thin. They compose guards and shells, then hand off to focused page modules in the relevant zone.
 
 2. **API Isolation (`api/`)**
    All data fetching (Convex queries, mutations) happens in the `api/` directory (e.g., `api/useBrokerData.ts`). Do not put hooks inside `/hooks` or scattered inside components. 
 
-3. **Error Vaults (`errors/ErrorBoundary.tsx`)**
-   Each zone has a dedicated React Error Boundary (e.g., `BrokerZoneErrorBoundary`). In `App.tsx`, the router for the specific zone must be completely wrapped in its respective Error Vault. This ensures a broken broker page doesn't crash the admin dashboard.
+3. **Shared Shell (`workspace/`)**
+   Admin, broker, and RED routes all use one shared shell and one shared session gate. Global layout changes should happen there once.
 
 4. **The Orchestrator Pattern (`pages/`)**
-   We do not use monolithic pages (`Overview.tsx`). All pages are folders (`pages/Overview/index.tsx`).
-   - The `index.tsx` is the **Orchestrator**. It fetches data from the `api/` hooks and passes it down.
-   - It contains minimal markup, delegating UI rendering to smaller components inside `pages/Overview/components/` or `shared_logic/`.
+   Page modules stay focused and delegate data access to `api/` hooks and shared components. Avoid rebuilding the same shell or auth flow per role.
 
 #### Folder Structure Example:
 ```text
-broker_zone/
-├── index.ts                     <-- The Gateway
-├── errors/
-│   └── ErrorBoundary.tsx        <-- The Vault
-├── api/
-│   └── useBrokerData.ts         <-- Data Fetching
-└── pages/
-    └── CRM/
-        ├── index.tsx            <-- The Orchestrator
-        └── components/
-            └── DealBoard.tsx    <-- Pure UI
+frontend/src/
+├── app/
+│   └── (workspace)/
+│       ├── admin/
+│       ├── broker/
+│       └── red/
+├── workspace/
+│   ├── config.ts
+│   └── components/WorkspaceShell.tsx
+├── broker_zone/
+│   ├── api/
+│   └── pages/
+└── shared_logic/
+    ├── hooks/
+    └── properties/
 ```
 
 ---

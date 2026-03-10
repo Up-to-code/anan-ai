@@ -34,11 +34,15 @@ import type { MutationCtx } from "../../../_generated/server";
  */
 export interface TrackTokenParams {
     agentName: string;
+    teamName?: string;
+    promptVersion?: string;
     modelName: string;
     inputTokens: number;
     outputTokens: number;
     userId?: string;
     threadId?: string;
+    channel?: string;
+    role?: string;
     errorOccurred?: boolean;
 }
 
@@ -119,6 +123,8 @@ export async function trackTokenUsage(
     try {
         await ctx.db.insert("aiTokenUsage", {
             agentName: params.agentName,
+            teamName: params.teamName,
+            promptVersion: params.promptVersion,
             modelName: params.modelName,
             inputTokens: params.inputTokens,
             outputTokens: params.outputTokens,
@@ -130,6 +136,8 @@ export async function trackTokenUsage(
             ),
             userId: params.userId,
             threadId: params.threadId,
+            channel: params.channel,
+            role: params.role,
             errorOccurred: params.errorOccurred ?? false,
             createdAt: Date.now(),
         });

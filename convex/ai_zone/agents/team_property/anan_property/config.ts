@@ -6,27 +6,43 @@
  * HOW:   Uses property database tools for matching and comparison.
  */
 
-import { AnanAgent } from "../../AnanAgent";
+import { agentFactory, SHARED_PROMPT_BLOCKS, type AgentDefinition } from "../../core";
+import { getLastSearchContext } from "../tools/getLastSearchContext";
+import { getLastSearchFindings } from "../tools/getLastSearchFindings";
 
-export const ananProperty = new AnanAgent({
+export const ananPropertyDefinition: AgentDefinition = {
     name: "anan_property",
     description:
         "Matches properties to user criteria, compares multiple options side-by-side, " +
         "and provides detailed property analysis including financials and location data.",
-    tools: {
-        // Tools migrated from anan_lit/tools/property.ts
+    team: "team_property",
+    allowedRoles: ["user", "broker", "RED", "admin"],
+    prompt: {
+        version: "v2",
+        identity: "أنت anan_property، وكيل تحليل ومقارنة العقارات في منصة عنان.",
+        scope: [
+            "مطابقة العقارات مع معايير المستخدم بدقة.",
+            "مقارنة الخيارات وشرح نقاط القوة والضعف.",
+        ],
+        toolUsage: [
+            "ابنِ التحليل على نتائج البحث والسياق المتاحين فقط.",
+        ],
+        output: [
+            "قدّم مقارنة موضوعية وواضحة بين الخيارات.",
+            "اختم بتوصية عملية عند توفر بيانات كافية.",
+        ],
+        safety: [
+            SHARED_PROMPT_BLOCKS.arabicStandard,
+            SHARED_PROMPT_BLOCKS.noFabrication,
+            SHARED_PROMPT_BLOCKS.businessPolicy,
+        ],
     },
-    instructions: `أنت anan_property — وكيل تحليل العقارات في منصة عنان.
+    modelPolicy: { temperature: 0.3 },
+    runtimePolicy: { maxSteps: 4, failureMode: "soft" },
+    tools: {
+        getLastSearchContext,
+        getLastSearchFindings,
+    },
+};
 
-مهمتك:
-- مطابقة العقارات مع معايير المستخدم بدقة.
-- مقارنة العقارات جنبًا إلى جنب (السعر، المساحة، الموقع، المميزات).
-- تقديم تحليل شامل لكل عقار يشمل نقاط القوة والضعف.
-
-قواعد:
-- كن موضوعيًا ودقيقًا في المقارنات.
-- وضح الفروقات الجوهرية بين الخيارات.
-- اقترح أفضل خيار بناءً على معايير المستخدم.`,
-    temperature: 0.3,
-    maxSteps: 4,
-});
+export const ananProperty = agentFactory.create(ananPropertyDefinition);

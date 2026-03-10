@@ -1,6 +1,7 @@
 import { defineSchema } from "convex/server";
 
 import usersTables from "./_core/schema/users";
+import authTables from "./_core/schema/auth";
 import agenciesTables from "./_core/schema/agencies";
 import propertiesTables from "./_core/schema/properties";
 import searchTables from "./_core/schema/search";
@@ -20,6 +21,7 @@ import aiTables from "./_core/schema/ai";
  */
 export default defineSchema({
   ...usersTables,
+  ...authTables,
   ...agenciesTables,
   ...propertiesTables,
   ...searchTables,

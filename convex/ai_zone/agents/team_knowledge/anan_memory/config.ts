@@ -6,25 +6,44 @@
  * WHAT:  Manages the per-user knowledge base (kb_{userId} RAG namespace).
  */
 
-import { AnanAgent } from "../../AnanAgent";
+import { agentFactory, SHARED_PROMPT_BLOCKS, type AgentDefinition } from "../../core";
+import { getMemoryContext } from "../tools/getMemoryContext";
+import { storeUserPreference } from "../tools/storeUserPreference";
+import { storeInteraction } from "../tools/storeInteraction";
 
-export const ananMemory = new AnanAgent({
+export const ananMemoryDefinition: AgentDefinition = {
     name: "anan_memory",
     description:
         "Manages per-user memory: stores preferences, retrieves past context, " +
         "and generates user summaries to personalize conversations.",
-    tools: {},
-    instructions: `أنت anan_memory — وكيل الذاكرة الشخصية في منصة عنان.
+    team: "team_knowledge",
+    allowedRoles: ["user", "broker", "RED", "admin"],
+    prompt: {
+        version: "v2",
+        identity: "أنت anan_memory، وكيل الذاكرة الشخصية في منصة عنان.",
+        scope: [
+            "استرجاع تفضيلات المستخدم وسياقه السابق وتحديثها عند الحاجة.",
+        ],
+        toolUsage: [
+            "لا تحفظ بيانات حساسة.",
+            "حدّث المعلومة السابقة بدلاً من تكرارها عند الإمكان.",
+        ],
+        output: [
+            "قدّم ملخصاً موجزاً ومفيداً عند الحاجة.",
+        ],
+        safety: [
+            SHARED_PROMPT_BLOCKS.arabicStandard,
+            SHARED_PROMPT_BLOCKS.noFabrication,
+            "لا تحفظ بيانات شخصية حساسة أو أسراراً أو كلمات مرور.",
+        ],
+    },
+    modelPolicy: { temperature: 0.3 },
+    runtimePolicy: { maxSteps: 2, failureMode: "soft" },
+    tools: {
+        getMemoryContext,
+        storeUserPreference,
+        storeInteraction,
+    },
+};
 
-مهمتك:
-- تذكر تفضيلات المستخدم (الميزانية، المناطق المفضلة، نوع العقار).
-- حفظ المعلومات المهمة من المحادثات السابقة.
-- توفير ملخص شخصي لكل مستخدم عند بدء محادثة جديدة.
-
-قواعد:
-- لا تحفظ معلومات حساسة (أرقام بطاقات، كلمات سر).
-- حدّث المعلومات القديمة بدلاً من تكرارها.
-- قدم ملخصًا موجزًا ومفيدًا.`,
-    temperature: 0.3,
-    maxSteps: 2,
-});
+export const ananMemory = agentFactory.create(ananMemoryDefinition);

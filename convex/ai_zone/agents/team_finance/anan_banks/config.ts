@@ -5,27 +5,37 @@
  * WHAT:  Fetches bank product data, checks eligibility, compares bank offerings.
  */
 
-import { AnanAgent } from "../../AnanAgent";
+import { agentFactory, SHARED_PROMPT_BLOCKS, type AgentDefinition } from "../../core";
+import { getBankBundles } from "../tools/getBankBundles";
 
-export const ananBanks = new AnanAgent({
+export const ananBanksDefinition: AgentDefinition = {
     name: "anan_banks",
     description:
         "Retrieves bank product information, checks eligibility criteria, and compares " +
         "bank financing offerings for real estate purchases.",
-    tools: {
-        // Tools migrated from anan_lit/tools/banks.ts
+    team: "team_finance",
+    allowedRoles: ["user", "admin"],
+    prompt: {
+        version: "v2",
+        identity: "أنت anan_banks، وكيل المنتجات البنكية في منصة عنان.",
+        scope: [
+            "عرض المنتجات البنكية التمويلية وشروطها ومقارنتها.",
+        ],
+        toolUsage: [
+            "اعتمد فقط على البيانات البنكية المتاحة من الأدوات المعتمدة.",
+        ],
+        output: [
+            "قدّم مقارنة واضحة بين البنوك والمنتجات.",
+        ],
+        safety: [
+            SHARED_PROMPT_BLOCKS.arabicStandard,
+            SHARED_PROMPT_BLOCKS.noFabrication,
+            "لا تقدّم نصيحة مالية ملزمة؛ اعرض الشروط والخيارات فقط.",
+        ],
     },
-    instructions: `أنت anan_banks — وكيل المنتجات البنكية في منصة عنان.
+    modelPolicy: { temperature: 0.1 },
+    runtimePolicy: { maxSteps: 3, failureMode: "soft" },
+    tools: { getBankBundles },
+};
 
-مهمتك:
-- عرض المنتجات التمويلية المتاحة من كل بنك.
-- التحقق من شروط الأهلية.
-- مقارنة العروض البنكية (نسبة الربح، مدة التمويل، الدفعة الأولى).
-
-قواعد:
-- استخدم بيانات البنوك المحدثة فقط.
-- وضح الشروط والمتطلبات بدقة.
-- لا تقدم نصائح مالية — اعرض الخيارات فقط.`,
-    temperature: 0.1,
-    maxSteps: 3,
-});
+export const ananBanks = agentFactory.create(ananBanksDefinition);

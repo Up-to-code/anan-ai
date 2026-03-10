@@ -10,6 +10,21 @@ import { v } from "convex/values";
  */
 
 const crmTables = {
+    crmClients: defineTable({
+        ownerAuthUserId: v.string(),
+        brokerId: v.optional(v.id("brokers")),
+        REDId: v.optional(v.id("RED")),
+        name: v.string(),
+        phone: v.optional(v.string()),
+        email: v.optional(v.string()),
+        notes: v.optional(v.string()),
+        sourceClientId: v.optional(v.string()),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    })
+        .index("ownerAuthUserId", ["ownerAuthUserId"])
+        .index("brokerId", ["brokerId"])
+        .index("REDId", ["REDId"]),
     deals: defineTable({
         title: v.string(),
         description: v.optional(v.string()),

@@ -1,7 +1,7 @@
 import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
-import { adminChecker } from "../shared_logic/lib/adminChecker";
+import { requireRole } from "../_core/security/accessPolicy";
 import {
   listUsersService,
   getUserDetailService,
@@ -19,7 +19,7 @@ export const listUsers = query({
     ),
   },
   handler: async (ctx, args) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     return await listUsersService(ctx, args);
   },
 });
@@ -27,7 +27,7 @@ export const listUsers = query({
 export const getUserDetail = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     return await getUserDetailService(ctx, args);
   },
 });
@@ -35,7 +35,7 @@ export const getUserDetail = query({
 export const getUserKnowledgeResearch = query({
   args: { userId: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     return await getUserKnowledgeResearchService(ctx, { userId: args.userId, limit: args.limit ?? 20 });
   },
 });
@@ -43,7 +43,7 @@ export const getUserKnowledgeResearch = query({
 export const getUserSearchLogs = query({
   args: { userId: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     return await getUserSearchLogsService(ctx, { userId: args.userId, limit: args.limit ?? 50 });
   },
 });
@@ -51,7 +51,7 @@ export const getUserSearchLogs = query({
 export const getUserAgentMemory = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     return await getUserAgentMemoryService(ctx, args);
   },
 });
@@ -65,7 +65,7 @@ export const updateUser = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    await adminChecker(ctx, "update");
+    await requireRole(ctx, ["admin"]);
     return await updateUserService(ctx, args);
   },
 });

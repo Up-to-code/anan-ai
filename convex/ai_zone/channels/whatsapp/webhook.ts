@@ -1,8 +1,8 @@
 /**
  * WhatsApp webhook handler.
  */
-import { internal } from "../../../_generated/api";
 import { httpAction } from "../../../_generated/server";
+import { apiRefs, internalRefs } from "../../../shared_logic/lib/generatedApiRefs";
 import { extractWebhookEvents } from "./api";
 import { WhatsAppService } from "./service";
 import { processVoicePipeline } from "./preprocess/voicePipeline";
@@ -49,7 +49,7 @@ export const handleWhatsAppWebhookPost = httpAction(async (ctx, request) => {
     const userId = event.from;
     const displayName = event.displayName;
 
-    await ctx.runMutation((internal as any).services.users.ensureWhatsAppUser, {
+    await ctx.runMutation(apiRefs["shared_logic/users/whatsapp"].ensureWhatsAppUser, {
       userId,
       displayName,
     });
@@ -75,11 +75,15 @@ export const handleWhatsAppWebhookPost = httpAction(async (ctx, request) => {
     });
 
     try {
-      const reply = await ctx.runAction((internal as any).agents.actions.generationActions.generateReplyAndReturnText, {
-        userId: processed.userId,
-        message: processed.text,
-        channel: "whatsapp",
-      });
+      const reply = await ctx.runAction(
+        internalRefs["ai_zone/channels/whatsapp/actions"].generateReply,
+        {
+          userId: processed.userId,
+          message: processed.text,
+          displayName: processed.displayName,
+          threadId: processed.threadId,
+        },
+      );
       await waService.sendText(userId, reply.text, event.messageId);
     } catch (err) {
       console.error("Webhook process error:", err);

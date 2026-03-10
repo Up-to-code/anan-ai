@@ -12,7 +12,7 @@ results into a coherent response.
 | `orchestrate.ts` | Main orchestration logic (the 7-step lifecycle) |
 | `intentAnalyzer.ts` | LLM-based intent classification → team selection |
 | `resultMerger.ts` | Merging multi-agent outputs into one response |
-| `teamRegistry.ts` | TEAM_REGISTRY + ROLE_ACCESS configuration |
+| `teamRegistry.ts` | Team definitions and role-aware registry lookup |
 | `types.ts` | TypeScript type definitions |
 
 ## How It Works
@@ -20,11 +20,11 @@ results into a coherent response.
 orchestrate(input)
   → getAvailableTeams(role)     ← from teamRegistry.ts
   → analyzeIntent(prompt)       ← from intentAnalyzer.ts
-  → getTeamAgents(teams)        ← from teamRegistry.ts
+  → getTeamAgents(teams)        ← from teamRegistry.ts via shared agent factory
   → Promise.allSettled(agents)  ← parallel execution
   → collectResults(settled)     ← from resultMerger.ts
   → mergeResults(outputs)       ← from resultMerger.ts
-  → ananTrainer.run(bg)         ← fire-and-forget
+  → trainer definition via factory (bg)
   → return OrchestrateOutput
 ```
 

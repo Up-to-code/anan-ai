@@ -1,9 +1,10 @@
 import { ConvexError } from "convex/values";
 import { MINUTE, RateLimiter } from "@convex-dev/rate-limiter";
+import type { ComponentApi as RateLimiterComponentApi } from "@convex-dev/rate-limiter/_generated/component.js";
 import { components } from "../../../_generated/api";
 import type { MutationCtx } from "../../../_generated/server";
 
-const rateLimiter = new RateLimiter(components.rateLimiter, {
+const rateLimiter = new RateLimiter(components.rateLimiter as unknown as RateLimiterComponentApi, {
   httpIngressPerKey: {
     kind: "token bucket",
     rate: 30,

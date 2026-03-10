@@ -1,39 +1,48 @@
-/**
- * config.ts — anan_search Agent Configuration
- *
- * WHY:   Users need to search for properties by criteria (area, price, type).
- *        This agent specializes in property search and filtering.
- * WHAT:  Creates an AnanAgent instance with search-specific tools and instructions.
- * HOW:   Imports tools from the existing property search codebase, wraps them
- *        in the AnanAgent framework with search-optimized settings.
- *
- * TO EDIT:
- * - Change search behavior: Edit instructions.ts
- * - Add a new search filter: Create a tool in tools/, add it to the tools object
- * - Change model: Set modelOverride below
- */
+import { agentFactory, SHARED_PROMPT_BLOCKS, type AgentDefinition } from "../../core";
+import { smartPropertySearch } from "./tools/smartPropertySearch";
+import { getLastSearchContext } from "./tools/getLastSearchContext";
+import { getLastSearchFindings } from "./tools/getLastSearchFindings";
 
-import { AnanAgent } from "../../AnanAgent";
-
-export const ananSearch = new AnanAgent({
+export const ananSearchDefinition: AgentDefinition = {
     name: "anan_search",
     description:
         "Searches properties by criteria including area, price range, property type, and amenities. " +
         "Returns matching property listings with key details.",
-    tools: {
-        // Tools will be migrated from anan_lit/tools/property.ts search functions
+    team: "team_search",
+    allowedRoles: ["user", "broker", "admin"],
+    prompt: {
+        version: "v2",
+        identity: "أنت anan_search، وكيل البحث العقاري الأساسي في منصة عنان.",
+        scope: [
+            "البحث في العقارات المتاحة حسب المنطقة والسعر والنوع وعدد الغرف.",
+            "ترتيب النتائج حسب الصلة والتطابق مع طلب المستخدم.",
+        ],
+        toolUsage: [
+            "استخدم أدوات البحث والسياق المتاحة فقط.",
+            "إذا لم تجد نتائج دقيقة، اذكر ذلك واقترح توسيع أو تعديل المعايير.",
+        ],
+        output: [
+            "قدّم 3 إلى 5 نتائج كحد أقصى ما لم يُطلب أكثر.",
+            "اذكر أهم التفاصيل العملية لكل نتيجة.",
+        ],
+        safety: [
+            SHARED_PROMPT_BLOCKS.arabicStandard,
+            SHARED_PROMPT_BLOCKS.noFabrication,
+            SHARED_PROMPT_BLOCKS.businessPolicy,
+        ],
     },
-    instructions: `أنت anan_search — وكيل البحث العقاري في منصة عنان.
+    modelPolicy: {
+        temperature: 0.2,
+    },
+    runtimePolicy: {
+        maxSteps: 3,
+        failureMode: "soft",
+    },
+    tools: {
+        smartPropertySearch,
+        getLastSearchContext,
+        getLastSearchFindings,
+    },
+};
 
-مهمتك:
-- البحث في العقارات المتاحة حسب المعايير المطلوبة (المنطقة، السعر، النوع، عدد الغرف).
-- ترتيب النتائج حسب الأهمية والتطابق.
-- تقديم ملخص واضح للنتائج باللغة العربية.
-
-قواعد:
-- لا تخترع بيانات غير موجودة.
-- إذا لم تجد نتائج، أخبر المستخدم بذلك بوضوح واقترح توسيع البحث.
-- قدم 3-5 نتائج كحد أقصى ما لم يُطلب أكثر.`,
-    temperature: 0.2, // Low temp for precise search results
-    maxSteps: 3,
-});
+export const ananSearch = agentFactory.create(ananSearchDefinition);

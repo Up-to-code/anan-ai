@@ -1,11 +1,11 @@
 import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { adminChecker } from "../shared_logic/lib/adminChecker";
+import { requireRole } from "../_core/security/accessPolicy";
 
 export const recentActivities = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit = 50 }) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     const [research, logs] = await Promise.all([
       ctx.db
         .query("knowledgeResearch")

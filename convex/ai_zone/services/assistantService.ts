@@ -7,8 +7,12 @@
 import type { QueryCtx, ActionCtx } from "../../_generated/server";
 import type { Id, Doc } from "../../_generated/dataModel";
 import { ConvexError } from "convex/values";
-import { api, internal } from "../../_generated/api";
 import { orchestrate } from "../agents/anan";
+import { apiRefs, internalRefs } from "../../shared_logic/lib/generatedApiRefs";
+import {
+    findProfileForResolvedIdentity,
+    requireResolvedIdentity,
+} from "../../_core/security/identity";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type AssistantOwner = {
@@ -24,35 +28,26 @@ export type AssistantOwner = {
  * (broker, RED, or standard user) from their profile.
  */
 export async function resolveAssistantOwner(ctx: QueryCtx): Promise<AssistantOwner> {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-        throw new ConvexError({ code: "UNAUTHORIZED", message: "Authentication required" });
-    }
-
-    const profile = await ctx.db
-        .query("userProfiles")
-        .withIndex("authUserId", (q: any) => q.eq("authUserId", identity.subject))
-        .first();
+    const identity = await requireResolvedIdentity(ctx);
+    const profile = await findProfileForResolvedIdentity(ctx, identity);
 
     if (profile?.isActive === false) {
         throw new ConvexError({ code: "ACCOUNT_INACTIVE", message: "Account is deactivated" });
     }
 
     if (profile?.brokerId) {
-        return { userId: identity.subject, ownerType: "broker", ownerBrokerId: profile.brokerId };
+        return { userId: identity.authUserId, ownerType: "broker", ownerBrokerId: profile.brokerId };
     }
     if (profile?.REDId) {
-        return { userId: identity.subject, ownerType: "RED", ownerREDId: profile.REDId };
+        return { userId: identity.authUserId, ownerType: "RED", ownerREDId: profile.REDId };
     }
-    return { userId: identity.subject, ownerType: "user" };
+    return { userId: identity.authUserId, ownerType: "user" };
 }
 
 /**
  * Safe version that returns null instead of throwing when unauthenticated.
  */
 export async function resolveAssistantOwnerSafe(ctx: QueryCtx): Promise<AssistantOwner | null> {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return null;
     try {
         return await resolveAssistantOwner(ctx);
     } catch {
@@ -113,8 +108,8 @@ export async function getMessageContent(
  *
  * WHY:   This is where user messages enter the AI pipeline.
  * WHAT:  Resolves identity → fetches context → calls orchestrate() → saves result.
- * HOW:   Uses the new anan/ orchestrator which handles role-based dispatch
- *        internally via ROLE_ACCESS, so no more separate broker/RED builders.
+ * HOW:   Uses the anan orchestrator and registry-driven team dispatch,
+ *        so there is no per-role custom orchestration builder.
  */
 export async function handleAssistantMessage(
     ctx: ActionCtx,
@@ -128,20 +123,20 @@ export async function handleAssistantMessage(
 }> {
     // 1. Resolve thread & owner via query
     const { thread, owner } = await ctx.runQuery(
-        (api as any).ai_zone.assistant.getThread,
+        apiRefs["ai_zone/assistant"].getThread,
         {},
     );
 
     // 2. Get entitlement (determines qa vs action mode)
     const entitlement = await ctx.runQuery(
-        (api as any).shared_logic.subscriptions.index.getAssistantEntitlement,
+        apiRefs["shared_logic/subscriptions/index"].getAssistantEntitlement,
         {},
     );
     const mode = entitlement.mode;
 
     // 3. Retrieve company knowledge for context
     const knowledge = await ctx.runQuery(
-        (api as any).shared_logic.knowledge.index.retrieveCompanyKnowledge,
+        apiRefs["shared_logic/knowledge/index"].retrieveCompanyKnowledge,
         { query: args.message, limit: 3 },
     );
 
@@ -170,16 +165,18 @@ export async function handleAssistantMessage(
 
     // 6. Run the multi-agent orchestrator
     const result = await orchestrate({
+        ctx,
         prompt: basePrompt,
         role: roleMap[owner.ownerType] ?? "user",
         userId: owner.userId,
+        threadId: (args.threadId ?? thread?._id) as string | undefined,
         ragContext: knowledgeContext || undefined,
         channel: "app",
     });
 
     // 7. Persist the conversation step
     const saved = await ctx.runMutation(
-        (internal as any).ai_zone.assistant._saveConversationStep,
+        internalRefs["ai_zone/assistant"]._saveConversationStep,
         {
             threadId: args.threadId ?? thread?._id,
             userId: owner.userId,

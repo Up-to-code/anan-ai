@@ -1,12 +1,12 @@
 import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { adminChecker } from "../shared_logic/lib/adminChecker";
+import { requireRole } from "../_core/security/accessPolicy";
 
 /** Recent search logs with errors. Developer-only. */
 export const devLogs = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit = 50 }) => {
-    await adminChecker(ctx, "developer");
+    await requireRole(ctx, ["admin"]);
     const logs = await ctx.db.query("searchLogs").collect();
     const withErrors = logs.filter(
       (l) => l.status === "failed" || (l.errorMessage && l.errorMessage.length > 0),
@@ -21,7 +21,7 @@ export const devLogs = query({
 export const devErrorRate = query({
   args: { range: v.optional(v.union(v.literal("day"), v.literal("week"), v.literal("month"))) },
   handler: async (ctx, { range = "week" }) => {
-    await adminChecker(ctx, "developer");
+    await requireRole(ctx, ["admin"]);
     const lookbackMs =
       range === "day"
         ? 24 * 60 * 60 * 1000

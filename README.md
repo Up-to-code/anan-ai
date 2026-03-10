@@ -1,6 +1,6 @@
 # anan-lit
 
-New project cloned from anan. Architecture: Ingress → Middleware → Channels (per-channel auth) → Processing → Agent → Response.
+Architecture: Convex Auth (Google OAuth) for backend authentication, server-side authorization policy in `convex/_core/security/accessPolicy.ts`, and a configurable multi-agent backend in `convex/ai_zone/agents/core/`.
 
 ## Setup
 
@@ -10,20 +10,29 @@ npm install
 npx convex dev   # Creates deployment, generates _generated/, starts dev server
 ```
 
+## Package Manager
+
+This repo standardizes on **Bun**.
+
+```bash
+bun install
+bunx convex dev   # Creates deployment, generates _generated/, starts dev server
+```
+
 After `npx convex dev`, the `_generated/` folder will be created and Convex components (agent, rate-limiter, workflow, etc.) will be available.
 
 ## Structure
 
-- `convex/lib/core/` – Logger + utilities (logger, utilities, errors)
-- `convex/lib/middleware/` – rateLimit, auth, channelDetect
-- `convex/channels/rules/` – whatsapp.rules
-- `convex/channels/whatsapp/preprocess/` – voicePipeline, textPipeline
-- `convex/agents/runtime/` – agentApi, instructionBuilder
-- `convex/agents/anan-lit/` – Main agent, tools
-- `convex/agents/actions/` – generation, thread, message
-- `convex/agents/scraping/` – stagehand, genericScraper, config
-- `convex/services/` – users (ensureWhatsAppUser)
-- `convex/workflows/` – Re-export placeholder
+- `convex/_core/security/` – Convex Auth wiring, identity normalization, channel sessions, centralized access policy
+- `convex/http.ts` – Convex Auth HTTP routes, health, and channel entrypoints
+- `convex/ai_zone/agents/core/` – shared configurable agent runtime, prompts, tools, analytics
+- `frontend/src/app/` – App Router entrypoints for `/`, `/signin`, `/workspaces`, `/admin`, `/broker`, `/red`
+- `frontend/src/workspace/` – shared workspace shell, nav config, and role-aware layout primitives
+- `frontend/src/lib/auth.ts` – Convex Auth client adapter for the unified Next.js frontend
+
+## Backend Architecture
+
+See `convex/SYSTEM_STRUCTURE_ARCHITECTURE.md` for the backend system structure, request flow, agent factory design, and tool ownership model.
 
 ## Plan
 

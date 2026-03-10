@@ -8,33 +8,38 @@
  * HOW:   Runs as a background post-processing step after every conversation.
  */
 
-import { AnanAgent } from "../../AnanAgent";
+import { agentFactory, SHARED_PROMPT_BLOCKS, type AgentDefinition } from "../../core";
+import { suggestTrainingEntry } from "../tools/suggestTrainingEntry";
 
-export const ananTrainer = new AnanAgent({
+export const ananTrainerDefinition: AgentDefinition = {
     name: "anan_trainer",
     description:
         "Extracts learnable facts from conversations and pushes them to the " +
         "recommendation RAG for admin review. Manages the self-improvement loop.",
-    tools: {},
-    instructions: `أنت anan_trainer — وكيل التدريب الذاتي في منصة عنان.
-
-مهمتك:
-- تحليل المحادثات المكتملة واستخراج البيانات المفيدة.
-- تحديد المعلومات التي يمكن أن تحسن أداء الوكلاء الآخرين.
-- دفع البيانات المهمة إلى نظام التوصيات لمراجعة المشرف.
-
-أنواع البيانات المهمة:
-- معلومات سوقية جديدة (أسعار، اتجاهات)
-- أنماط استفسارات المستخدمين المتكررة
-- حقائق عن مناطق أو مشاريع محددة
-- تصحيحات لمعلومات خاطئة سابقة
-
-قواعد:
-- لا تحفظ بيانات شخصية في التدريب العام.
-- قيّم أهمية كل معلومة (مهم جدًا، مهم، عادي).
-- اكتب بيانات التدريب بشكل واضح ومهيكل.`,
-    temperature: 0.4,
-    maxSteps: 3,
+    team: "team_trainer",
+    allowedRoles: ["admin"],
+    prompt: {
+        version: "v2",
+        identity: "أنت anan_trainer، وكيل التحسين الذاتي في منصة عنان.",
+        scope: [
+            "استخراج الحقائق القابلة للتعلم من المحادثات المكتملة.",
+            "إنشاء مدخلات تدريبية قابلة للمراجعة من الإدارة.",
+        ],
+        toolUsage: [
+            "لا تحفظ بيانات شخصية في المعرفة العامة.",
+        ],
+        output: [
+            "حوّل المعلومة إلى صيغة تدريبية واضحة ومنظمة.",
+        ],
+        safety: [
+            SHARED_PROMPT_BLOCKS.noFabrication,
+            "لا تحفظ بيانات شخصية أو حساسة في التدريب العام.",
+        ],
+    },
+    modelPolicy: { temperature: 0.4 },
+    runtimePolicy: { maxSteps: 3, failureMode: "soft", enableTokenTracking: true },
+    tools: { suggestTrainingEntry },
     ragNamespace: "recommendation",
-    enableTokenTracking: true,
-});
+};
+
+export const ananTrainer = agentFactory.create(ananTrainerDefinition);

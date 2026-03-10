@@ -1,11 +1,11 @@
 import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
-import { adminChecker } from "../shared_logic/lib/adminChecker";
+import { requireRole } from "../_core/security/accessPolicy";
 
 export const listKnowledgePages = query({
   args: {},
   handler: async (ctx) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     return ctx.db.query("knowledgePages").collect();
   },
 });
@@ -13,7 +13,7 @@ export const listKnowledgePages = query({
 export const getKnowledgePage = query({
   args: { id: v.id("knowledgePages") },
   handler: async (ctx, { id }) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     return ctx.db.get(id);
   },
 });
@@ -26,7 +26,7 @@ export const createKnowledgePage = mutation({
     category: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await adminChecker(ctx, "create");
+    await requireRole(ctx, ["admin"]);
     return ctx.db.insert("knowledgePages", args);
   },
 });
@@ -40,7 +40,7 @@ export const updateKnowledgePage = mutation({
     category: v.optional(v.string()),
   },
   handler: async (ctx, { id, ...patch }) => {
-    await adminChecker(ctx, "update");
+    await requireRole(ctx, ["admin"]);
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error("Knowledge page not found");
     const filtered = Object.fromEntries(
@@ -55,7 +55,7 @@ export const updateKnowledgePage = mutation({
 export const deleteKnowledgePage = mutation({
   args: { id: v.id("knowledgePages") },
   handler: async (ctx, { id }) => {
-    await adminChecker(ctx, "delete");
+    await requireRole(ctx, ["admin"]);
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error("Knowledge page not found");
     await ctx.db.delete(id);

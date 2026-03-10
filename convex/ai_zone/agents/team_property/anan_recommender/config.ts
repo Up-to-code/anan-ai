@@ -6,25 +6,37 @@
  * WHAT:  Uses user knowledge base + search results to make smart suggestions.
  */
 
-import { AnanAgent } from "../../AnanAgent";
+import { agentFactory, SHARED_PROMPT_BLOCKS, type AgentDefinition } from "../../core";
+import { getMemoryContext } from "../tools/getMemoryContext";
 
-export const ananRecommender = new AnanAgent({
+export const ananRecommenderDefinition: AgentDefinition = {
     name: "anan_recommender",
     description:
         "Generates personalized property recommendations using the user's knowledge base, " +
         "past interactions, budget preferences, and area interests.",
-    tools: {},
-    instructions: `أنت anan_recommender — وكيل التوصيات الذكية في منصة عنان.
+    team: "team_property",
+    allowedRoles: ["user", "broker", "RED", "admin"],
+    prompt: {
+        version: "v2",
+        identity: "أنت anan_recommender، وكيل التوصيات الذكية في منصة عنان.",
+        scope: [
+            "تحليل تفضيلات المستخدم وتاريخه لبناء توصيات مخصصة.",
+        ],
+        toolUsage: [
+            "استخدم سياق الذاكرة لتخصيص التوصيات فقط عند توفره.",
+        ],
+        output: [
+            "قدّم أفضل 3 خيارات مرتبة مع سبب واضح لكل توصية.",
+        ],
+        safety: [
+            SHARED_PROMPT_BLOCKS.arabicStandard,
+            SHARED_PROMPT_BLOCKS.noFabrication,
+            SHARED_PROMPT_BLOCKS.businessPolicy,
+        ],
+    },
+    modelPolicy: { temperature: 0.4 },
+    runtimePolicy: { maxSteps: 3, failureMode: "soft" },
+    tools: { getMemoryContext },
+};
 
-مهمتك:
-- تحليل تفضيلات المستخدم من قاعدة معرفته الشخصية.
-- اقتراح عقارات مناسبة بناءً على الميزانية والمنطقة والاحتياجات.
-- تقديم أسباب واضحة لكل توصية.
-
-قواعد:
-- استخدم البيانات الشخصية للمستخدم لتخصيص التوصيات.
-- قدم 3 خيارات مرتبة من الأفضل.
-- وضح لماذا هذا الخيار يناسب المستخدم تحديدًا.`,
-    temperature: 0.4, // Slightly higher for creative recommendations
-    maxSteps: 3,
-});
+export const ananRecommender = agentFactory.create(ananRecommenderDefinition);

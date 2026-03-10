@@ -1,5 +1,9 @@
 import { ConvexError } from "convex/values";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
+import {
+  findProfileForResolvedIdentity,
+  requireResolvedIdentity,
+} from "../../_core/security/identity";
 
 export type CurrentProfile = {
   authUserId: string;
@@ -7,6 +11,8 @@ export type CurrentProfile = {
   brokerId?: import("../../_generated/dataModel").Id<"brokers">;
   REDId?: import("../../_generated/dataModel").Id<"RED">;
   isActive?: boolean;
+  requestedRole?: string;
+  roleStatus?: "pending" | "approved" | "rejected";
 };
 
 type Ctx = QueryCtx | MutationCtx;
@@ -19,12 +25,8 @@ export async function getProfileByAuthUserId(ctx: Ctx, authUserId: string) {
 }
 
 export async function requireCurrentProfile(ctx: Ctx): Promise<CurrentProfile> {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
-    throw new ConvexError({ code: "UNAUTHORIZED", message: "Authentication required" });
-  }
-
-  const profile = await getProfileByAuthUserId(ctx, identity.subject);
+  const resolved = await requireResolvedIdentity(ctx);
+  const profile = await findProfileForResolvedIdentity(ctx, resolved);
   if (!profile) {
     throw new ConvexError({ code: "FORBIDDEN", message: "Profile not found" });
   }
@@ -33,7 +35,7 @@ export async function requireCurrentProfile(ctx: Ctx): Promise<CurrentProfile> {
     throw new ConvexError({ code: "ACCOUNT_INACTIVE", message: "Account is deactivated" });
   }
 
-  return profile;
+  return profile as CurrentProfile;
 }
 
 export async function requireOwnerProfile(

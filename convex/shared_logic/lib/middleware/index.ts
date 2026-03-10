@@ -1,7 +1,6 @@
 /**
- * lib/middleware – rate limit, auth, channel detect.
+ * lib/middleware – rate limit + channel detection helpers.
  */
 
 export * from "./rateLimit";
-export * from "../../../_core/auth";
 export * from "./channelDetect";

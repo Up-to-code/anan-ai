@@ -1,7 +1,7 @@
 import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
-import { adminChecker } from "../shared_logic/lib/adminChecker";
+import { requireRole } from "../_core/security/accessPolicy";
 import {
   listPropertiesService,
   getPropertyService,
@@ -21,7 +21,7 @@ export const listProperties = query({
     REDId: v.optional(v.id("RED")),
   },
   handler: async (ctx, args) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     return await listPropertiesService(ctx, args);
   },
 });
@@ -29,7 +29,7 @@ export const listProperties = query({
 export const getProperty = query({
   args: { id: v.id("properties") },
   handler: async (ctx, args) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     return await getPropertyService(ctx, args);
   },
 });
@@ -52,7 +52,7 @@ const createPropertyArgs = {
 export const createProperty = mutation({
   args: createPropertyArgs,
   handler: async (ctx, args) => {
-    await adminChecker(ctx, "create");
+    await requireRole(ctx, ["admin"]);
     return await createPropertyService(ctx, args);
   },
 });
@@ -74,7 +74,7 @@ export const updateProperty = mutation({
     REDId: v.optional(v.id("RED")),
   },
   handler: async (ctx, args) => {
-    await adminChecker(ctx, "update");
+    await requireRole(ctx, ["admin"]);
     return await updatePropertyService(ctx, args);
   },
 });
@@ -82,7 +82,7 @@ export const updateProperty = mutation({
 export const deleteProperty = mutation({
   args: { id: v.id("properties") },
   handler: async (ctx, args) => {
-    await adminChecker(ctx, "delete");
+    await requireRole(ctx, ["admin"]);
     return await deletePropertyService(ctx, args);
   },
 });

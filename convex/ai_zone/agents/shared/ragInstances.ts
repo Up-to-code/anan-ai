@@ -18,6 +18,7 @@
  */
 
 import { RAG } from "@convex-dev/rag";
+import type { ComponentApi as RagComponentApi } from "@convex-dev/rag/_generated/component.js";
 import { components } from "../../../_generated/api";
 import { getEmbeddingModel } from "../../../shared_logic/lib/providers";
 import type { ActionCtx } from "../../../_generated/server";
@@ -75,7 +76,7 @@ const RAG_FILTER_NAMES: (keyof FilterTypes)[] = [
  * @returns Configured RAG instance
  */
 function createRAGInstance() {
-    return new RAG<FilterTypes>(components.rag, {
+    return new RAG<FilterTypes>(components.rag as unknown as RagComponentApi, {
         textEmbeddingModel: getEmbeddingModel(),
         embeddingDimension: 1536,
         filterNames: RAG_FILTER_NAMES,

@@ -1,11 +1,17 @@
 import { query } from "../_generated/server";
-import { REDChecker } from "../shared_logic/lib/REDChecker";
-import { overviewStatsService } from "./services/overviewService";
+import { v } from "convex/values";
+import { countRedOverviewStats } from "./repositories/overviewRepository";
 
-export const overviewStats = query({
-  args: {},
-  handler: async (ctx) => {
-    const { REDId } = await REDChecker(ctx);
-    return await overviewStatsService(ctx, { REDId });
+/**
+ * WHY:   Developer server functions need a private Convex query for RED overview counts.
+ * WHAT:  Returns overview counts for the provided RED owner id.
+ * HOW:   Delegates directly to the RED overview repository service.
+ */
+export const countPropertiesByRedId = query({
+  args: {
+    REDId: v.id("RED"),
+  },
+  handler: async (ctx, args) => {
+    return await countRedOverviewStats(ctx, args);
   },
 });

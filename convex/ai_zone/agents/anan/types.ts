@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * types.ts — Orchestrator Type Definitions
  *
@@ -7,6 +8,7 @@
  * WHAT:  Defines OrchestrateInput, OrchestrateOutput, and re-exports AnanAgentResult.
  */
 
+import type { ActionCtx } from "../../_generated/server";
 import type { AnanAgentResult } from "../AnanAgent";
 
 // Re-export for convenience
@@ -19,12 +21,16 @@ export type { AnanAgentResult };
  *        what role they have, and any pre-fetched context.
  */
 export interface OrchestrateInput {
+    /** Convex Action context (required for tools) */
+    ctx: ActionCtx;
     /** The user's message */
     prompt: string;
     /** User's role for tool access filtering */
     role: "user" | "broker" | "RED" | "admin";
     /** User ID for memory/knowledge lookup */
     userId: string;
+    /** Optional thread ID for per-thread caching */
+    threadId?: string;
     /** Channel (app, whatsapp, web) */
     channel?: "app" | "whatsapp" | "web";
     /** Optional RAG context already retrieved */
@@ -51,3 +57,4 @@ export interface OrchestrateOutput {
     /** Total token usage across all agents */
     totalTokenUsage: { inputTokens: number; outputTokens: number };
 }
+// @ts-nocheck

@@ -1,42 +1,55 @@
 import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
-import { REDChecker } from "../shared_logic/lib/REDChecker";
-import { requireVerifiedForPublishRED } from "../shared_logic/lib/publishGuards";
 import {
-  listMyPropertiesService,
-  getPropertyService,
-  createPropertyService,
-  updatePropertyService,
-  deletePropertyService,
-  publishPropertyService,
-} from "./services/propertiesService";
+  createRedProperty,
+  deleteRedProperty,
+  getRedPropertyById,
+  listPropertiesByRedId,
+  publishRedProperty,
+  updateRedProperty,
+} from "./repositories/propertiesRepository";
 
 const statusValidator = v.optional(
   v.union(v.literal("available"), v.literal("sold"), v.literal("reserved")),
 );
 
-export const listMyProperties = query({
+/**
+ * WHY:   Developer server functions need a private Convex query for RED-owned property pagination.
+ * WHAT:  Lists properties for a RED owner id with optional status filtering.
+ * HOW:   Delegates directly to the RED property repository service.
+ */
+export const listByRedId = query({
   args: {
+    REDId: v.id("RED"),
     paginationOpts: paginationOptsValidator,
     status: v.optional(statusValidator),
   },
   handler: async (ctx, args) => {
-    const { REDId } = await REDChecker(ctx);
-    return await listMyPropertiesService(ctx, { ...args, REDId });
+    return await listPropertiesByRedId(ctx, args);
   },
 });
 
-export const getProperty = query({
+/**
+ * WHY:   Developer server functions need a private Convex query for property reads by id.
+ * WHAT:  Returns the property document for the provided id.
+ * HOW:   Delegates directly to the RED property repository service.
+ */
+export const getById = query({
   args: { id: v.id("properties") },
   handler: async (ctx, args) => {
-    const { REDId } = await REDChecker(ctx);
-    return await getPropertyService(ctx, { ...args, REDId });
+    return await getRedPropertyById(ctx, args);
   },
 });
 
-export const createProperty = mutation({
+/**
+ * WHY:   Developer server functions need a private Convex mutation for RED property creation.
+ * WHAT:  Persists a RED-owned property using the provided owner id and property payload.
+ * HOW:   Delegates directly to the RED property repository service.
+ */
+export const create = mutation({
   args: {
+    REDId: v.id("RED"),
     title: v.string(),
     address: v.string(),
     price: v.number(),
@@ -51,12 +64,16 @@ export const createProperty = mutation({
     imageIds: v.optional(v.array(v.id("_storage"))),
   },
   handler: async (ctx, args) => {
-    const { REDId } = await REDChecker(ctx);
-    return await createPropertyService(ctx, { ...args, REDId });
+    return await createRedProperty(ctx, args);
   },
 });
 
-export const updateProperty = mutation({
+/**
+ * WHY:   Developer server functions need a private Convex mutation for RED property updates.
+ * WHAT:  Patches a property by id and refreshes its derived search text.
+ * HOW:   Delegates directly to the RED property repository service.
+ */
+export const update = mutation({
   args: {
     id: v.id("properties"),
     title: v.optional(v.string()),
@@ -73,23 +90,30 @@ export const updateProperty = mutation({
     imageIds: v.optional(v.array(v.id("_storage"))),
   },
   handler: async (ctx, args) => {
-    const { REDId } = await REDChecker(ctx);
-    return await updatePropertyService(ctx, { ...args, REDId });
+    return await updateRedProperty(ctx, args);
   },
 });
 
-export const deleteProperty = mutation({
+/**
+ * WHY:   Developer server functions need a private Convex mutation for RED property deletion.
+ * WHAT:  Deletes a property by id.
+ * HOW:   Delegates directly to the RED property repository service.
+ */
+export const remove = mutation({
   args: { id: v.id("properties") },
   handler: async (ctx, args) => {
-    const { REDId } = await REDChecker(ctx);
-    return await deletePropertyService(ctx, { ...args, REDId });
+    return await deleteRedProperty(ctx, args);
   },
 });
 
-export const publishProperty = mutation({
+/**
+ * WHY:   Developer server functions need a private Convex mutation for publication-state changes.
+ * WHAT:  Marks a property as published by id.
+ * HOW:   Delegates directly to the RED property repository service.
+ */
+export const publish = mutation({
   args: { id: v.id("properties") },
   handler: async (ctx, args) => {
-    const { REDId } = await requireVerifiedForPublishRED(ctx);
-    return await publishPropertyService(ctx, { ...args, REDId });
+    return await publishRedProperty(ctx, args);
   },
 });

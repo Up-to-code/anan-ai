@@ -5,7 +5,7 @@ import { v } from "convex/values";
  * Agencies Schema (Brokers and REDs)
  *
  * Lifecycle:
- * - Created by roleUpgrade mutations
+ * - Created by authorized onboarding/admin/team workflows
  * - verification flow handled by isVerified flag
  */
 

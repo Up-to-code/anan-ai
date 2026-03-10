@@ -1,7 +1,7 @@
 /**
  * Text pipeline – normalize intent, produce ProcessedInput for agent.
  */
-import type { ChannelType } from "../../../../shared_logic/lib/middleware/auth";
+import type { ChannelType } from "../../../../shared_logic/lib/middleware/channelDetect";
 
 export type ProcessedInput = {
   channelType: ChannelType;

@@ -105,3 +105,10 @@ export const _getMessageContent = internalQuery({
     return getMessageContent(ctx, args.messageId);
   },
 });
+
+export const _getLatestThreadByUserId = internalQuery({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    return getLatestThread(ctx, args.userId);
+  },
+});

@@ -1,11 +1,17 @@
 import { query } from "../_generated/server";
-import { brokerChecker } from "../shared_logic/lib/brokerChecker";
-import { overviewStatsService } from "./services/overviewService";
+import { v } from "convex/values";
+import { countBrokerOverviewStats } from "./repositories/overviewRepository";
 
-export const overviewStats = query({
-  args: {},
-  handler: async (ctx) => {
-    const { brokerId } = await brokerChecker(ctx);
-    return await overviewStatsService(ctx, { brokerId });
+/**
+ * WHY:   Broker server functions need a private Convex query for broker overview counts.
+ * WHAT:  Returns overview counts for the provided broker owner id.
+ * HOW:   Delegates directly to the broker overview repository service.
+ */
+export const countPropertiesByBrokerId = query({
+  args: {
+    brokerId: v.id("brokers"),
+  },
+  handler: async (ctx, args) => {
+    return await countBrokerOverviewStats(ctx, args);
   },
 });

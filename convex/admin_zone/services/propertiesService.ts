@@ -1,17 +1,8 @@
 import { QueryCtx, MutationCtx } from "../../_generated/server";
 import { Id } from "../../_generated/dataModel";
+import { buildPropertySearchText } from "../../shared_logic/properties/searchText";
 
-export function buildSearchText(doc: {
-    title: string;
-    address: string;
-    description: string;
-    location?: string;
-    area?: string;
-}): string {
-    return [doc.title, doc.address, doc.description, doc.location, doc.area]
-        .filter(Boolean)
-        .join(" ");
-}
+export const buildSearchText = buildPropertySearchText;
 
 export async function listPropertiesService(ctx: QueryCtx, { paginationOpts, status, REDId }: any) {
     if (REDId) {
@@ -37,7 +28,7 @@ export async function getPropertyService(ctx: QueryCtx, { id }: { id: Id<"proper
 
 export async function createPropertyService(ctx: MutationCtx, args: any) {
     const { REDId, ...rest } = args;
-    const searchText = buildSearchText(rest);
+    const searchText = buildPropertySearchText(rest);
     return ctx.db.insert("properties", {
         ...rest,
         searchText,
@@ -50,7 +41,7 @@ export async function updatePropertyService(ctx: MutationCtx, { id, ...patch }: 
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error("Property not found");
     const merged = { ...existing, ...patch };
-    const searchText = buildSearchText(merged);
+    const searchText = buildPropertySearchText(merged);
     await ctx.db.patch(id, { ...patch, searchText });
 }
 

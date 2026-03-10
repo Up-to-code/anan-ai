@@ -9,11 +9,11 @@ globs: convex/**/*.ts,convex/**/*.tsx
 
 2. **Self-update rule**: When you discover a gap or improvement, update this rule. Add "Do NOT X." or "Always Y."
 
-3. **First things first**: lib/core (logger+utilities) → middleware → channels → actions → agent → RAG → memory → workflows.
+3. **First things first**: lib/core (logger+utilities) → middleware → channels → agents → RAG → memory → workflows.
 
-4. **Search flow (public)**: DB first → global cache → per-user cache → web. Never search web if cache/DB has valid results. Check getCachedSearchResults, getGlobalSearchCache before runSearchAgent.
+4. **Search flow (public)**: DB first → global cache → per-user cache → web. Never search web if cache/DB has valid results. Use shared_logic/services/properties.getGlobalSearchCache + getCachedSearchResults before Serper/Stagehand.
 
-5. **Tools**: smartPropertySearch, getLastSearchContext, getLastSearchFindings, getMoreDetailsForProperty, webSearch, searchRealEstateInfo, browseAndExtract, fetchPageContent, getKnowledgePage, getBundles, createHandoff, formatPropertyOffer, judgeSearchCoverage, getMemoryContext, storeUserPreference, searchSaudiLoans.
+5. **Tools**: smartPropertySearch, getLastSearchContext, getLastSearchFindings, browseAndExtract, getKnowledgePage, getBankBundles, estimateMortgage, getMemoryContext, storeUserPreference, storeInteraction, suggestTrainingEntry.
 
 6. **Logger + utilities**: Keep in lib/core together. Do not over-split into many tiny files.
 
@@ -23,6 +23,6 @@ globs: convex/**/*.ts,convex/**/*.tsx
 
 9. **Deep context**: Before editing, read related files, understand flow, check dependencies.
 
-10. **propertyCache**: Many helpers (shouldExcludePreviousResults, detectSearchScopeFromQuery, resolveSearchRefreshOffset, etc.) live in propertyCache.ts. Clone that module; do not inline.
+10. **propertyCache**: Cache helpers live in shared_logic/services/properties.ts. Add or modify helpers there; do not inline.
 
-11. **appApi construction**: Document where AgentToolsApi is built (modelChain/agentApi equivalent) and which api.services.* / internal.* it uses.
+11. **Tooling pattern**: Agent tools are AI SDK tool factories passed via agent config; resolve via AnanAgent at runtime.

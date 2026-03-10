@@ -1,11 +1,11 @@
 import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
-import { adminChecker } from "../shared_logic/lib/adminChecker";
+import { requireRole } from "../_core/security/accessPolicy";
 
 export const listREDs = query({
   args: {},
   handler: async (ctx) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     return ctx.db.query("RED").collect();
   },
 });
@@ -13,7 +13,7 @@ export const listREDs = query({
 export const getRED = query({
   args: { id: v.id("RED") },
   handler: async (ctx, { id }) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     const RED = await ctx.db.get(id);
     if (!RED) return null;
     const properties = await ctx.db
@@ -36,7 +36,7 @@ export const createRED = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await adminChecker(ctx, "create");
+    await requireRole(ctx, ["admin"]);
     return ctx.db.insert("RED", args);
   },
 });
@@ -54,7 +54,7 @@ export const updateRED = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, { id, ...patch }) => {
-    await adminChecker(ctx, "update");
+    await requireRole(ctx, ["admin"]);
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error("RED not found");
     const filtered = Object.fromEntries(
@@ -69,7 +69,7 @@ export const updateRED = mutation({
 export const deleteRED = mutation({
   args: { id: v.id("RED") },
   handler: async (ctx, { id }) => {
-    await adminChecker(ctx, "delete");
+    await requireRole(ctx, ["admin"]);
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error("RED not found");
     await ctx.db.delete(id);

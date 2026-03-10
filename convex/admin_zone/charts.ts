@@ -1,6 +1,6 @@
 import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { adminChecker } from "../shared_logic/lib/adminChecker";
+import { requireRole } from "../_core/security/accessPolicy";
 
 type Range = "day" | "week" | "month";
 
@@ -35,7 +35,7 @@ export const searchActivityChart = query({
     range: v.optional(v.union(v.literal("day"), v.literal("week"), v.literal("month"))),
   },
   handler: async (ctx, { range = "week" }) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     const logs = await ctx.db.query("searchLogs").collect();
     const bucketMs = getBucketMs(range);
     const lookbackMs = getLookbackMs(range);
@@ -71,7 +71,7 @@ export const errorHealthChart = query({
     range: v.optional(v.union(v.literal("day"), v.literal("week"), v.literal("month"))),
   },
   handler: async (ctx, { range = "week" }) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     const logs = await ctx.db.query("searchLogs").collect();
     const lookbackMs = getLookbackMs(range);
     const now = Date.now();
@@ -102,7 +102,7 @@ export const errorHealthChart = query({
 export const channelDistribution = query({
   args: {},
   handler: async (ctx) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     const logs = await ctx.db.query("searchLogs").collect();
     let whatsapp = 0;
     let app = 0;

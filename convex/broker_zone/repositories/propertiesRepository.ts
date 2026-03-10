@@ -1,0 +1,127 @@
+import { ConvexError } from "convex/values";
+import type { PaginationOptions } from "convex/server";
+import { QueryCtx, MutationCtx } from "../../_generated/server";
+import { Id } from "../../_generated/dataModel";
+import { buildPropertySearchText } from "../../shared_logic/properties/searchText";
+
+type PropertyStatus = "available" | "sold" | "reserved";
+
+type BrokerPropertyWriteFields = {
+  title: string;
+  address: string;
+  price: number;
+  beds: number;
+  baths: number;
+  sqft?: number;
+  description: string;
+  location?: string;
+  area?: string;
+  status?: PropertyStatus;
+  bankId?: Id<"banks">;
+  imageIds?: Id<"_storage">[];
+};
+
+type BrokerPropertyCreateArgs = BrokerPropertyWriteFields & {
+  brokerId: Id<"brokers">;
+};
+
+type BrokerPropertyUpdateArgs = Partial<BrokerPropertyWriteFields> & {
+  id: Id<"properties">;
+};
+
+/**
+ * WHY:   The Next.js broker server layer needs a low-level property listing primitive by owner id.
+ * WHAT:  Lists broker-owned properties with optional status filtering and pagination.
+ * HOW:   Queries the `properties` table by `brokerId` and applies status filtering when requested.
+ */
+export async function listPropertiesByBrokerId(
+  ctx: QueryCtx,
+  {
+    paginationOpts,
+    status,
+    brokerId,
+  }: {
+    paginationOpts: PaginationOptions;
+    status?: PropertyStatus;
+    brokerId: Id<"brokers">;
+  },
+) {
+  if (status) {
+    return ctx.db
+      .query("properties")
+      .withIndex("brokerId", (q) => q.eq("brokerId", brokerId))
+      .filter((q) => q.eq(q.field("status"), status))
+      .order("desc")
+      .paginate(paginationOpts);
+  }
+  return ctx.db
+    .query("properties")
+    .withIndex("brokerId", (q) => q.eq("brokerId", brokerId))
+    .order("desc")
+    .paginate(paginationOpts);
+}
+
+/**
+ * WHY:   Application services must be able to load a property record before doing ownership checks in Next.js.
+ * WHAT:  Returns a property document by id without applying role or owner authorization.
+ * HOW:   Reads the property directly from the database.
+ */
+export async function getBrokerPropertyById(ctx: QueryCtx, { id }: { id: Id<"properties"> }) {
+  return ctx.db.get(id);
+}
+
+/**
+ * WHY:   Broker property creation should persist only the write-side data concerns inside Convex.
+ * WHAT:  Inserts a new broker-owned property and computes its derived search text.
+ * HOW:   Builds `searchText`, stamps `publicationState=draft`, and inserts the document.
+ */
+export async function createBrokerProperty(ctx: MutationCtx, args: BrokerPropertyCreateArgs) {
+  const { brokerId, ...rest } = args;
+  const searchText = buildPropertySearchText(rest);
+  return ctx.db.insert("properties", { ...rest, searchText, brokerId, publicationState: "draft" });
+}
+
+/**
+ * WHY:   Broker property updates should remain a pure persistence concern once ownership is enforced upstream.
+ * WHAT:  Patches a property by id and refreshes the derived search text.
+ * HOW:   Loads the existing document, merges the patch, rebuilds `searchText`, and applies the patch.
+ */
+export async function updateBrokerProperty(ctx: MutationCtx, { id, ...patch }: BrokerPropertyUpdateArgs) {
+  const existing = await ctx.db.get(id);
+  if (!existing) {
+    throw new ConvexError({ code: "NOT_FOUND", message: "Property not found" });
+  }
+  const merged = { ...existing, ...patch };
+  const searchText = buildPropertySearchText(merged);
+  await ctx.db.patch(id, { ...patch, searchText });
+}
+
+/**
+ * WHY:   Broker property deletion should not duplicate upstream authorization logic.
+ * WHAT:  Deletes a property by id.
+ * HOW:   Confirms the property exists, then deletes it.
+ */
+export async function deleteBrokerProperty(ctx: MutationCtx, { id }: { id: Id<"properties"> }) {
+  const existing = await ctx.db.get(id);
+  if (!existing) {
+    throw new ConvexError({ code: "NOT_FOUND", message: "Property not found" });
+  }
+  await ctx.db.delete(id);
+}
+
+/**
+ * WHY:   Publishing a broker property is still a data mutation, but policy enforcement belongs in Next.js.
+ * WHAT:  Marks a property as published by id.
+ * HOW:   Confirms the property exists, then patches `publicationState`.
+ */
+export async function publishBrokerProperty(
+  ctx: MutationCtx,
+  { id }: { id: Id<"properties"> },
+) {
+  const existing = await ctx.db.get(id);
+  if (!existing) {
+    throw new ConvexError({ code: "NOT_FOUND", message: "Property not found" });
+  }
+  await ctx.db.patch(id, { publicationState: "published" });
+  return { ok: true } as const;
+}

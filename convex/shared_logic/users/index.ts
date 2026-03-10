@@ -1,43 +1,37 @@
-import { mutation, query } from "../../_generated/server";
-import { ConvexError } from "convex/values";
+import { query } from "../../_generated/server";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
+import {
+  findProfileForResolvedIdentity,
+  requireResolvedIdentity,
+} from "../../_core/security/identity";
 
 async function getCurrentProfile(ctx: QueryCtx | MutationCtx) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) return null;
-  const profile = await ctx.db
-    .query("userProfiles")
-    .withIndex("authUserId", (q: any) => q.eq("authUserId", identity.subject))
-    .first();
-  return { identity, profile };
+  try {
+    const identity = await requireResolvedIdentity(ctx);
+    const profile = await findProfileForResolvedIdentity(ctx, identity);
+    return { identity, profile };
+  } catch {
+    return null;
+  }
 }
 
-export const getBrokerProfile = query({
+/**
+ * WHY:   Exposes the caller's profile for client-side role gating.
+ * WHAT:  Returns role, roleStatus, requestedRole, and organization links.
+ * HOW:   Reads from userProfiles keyed by current auth identity.
+ */
+export const getMyProfile = query({
   args: {},
   handler: async (ctx) => {
     const current = await getCurrentProfile(ctx);
-    if (!current?.profile || current.profile.isActive === false || !current.profile.brokerId) return null;
-    return ctx.db.get(current.profile.brokerId);
-  },
-});
-
-export const getREDProfile = query({
-  args: {},
-  handler: async (ctx) => {
-    const current = await getCurrentProfile(ctx);
-    if (!current?.profile || current.profile.isActive === false || !current.profile.REDId) return null;
-    return ctx.db.get(current.profile.REDId);
-  },
-});
-
-export const deactivateMyAccount = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const current = await getCurrentProfile(ctx);
-    if (!current?.profile) {
-      throw new ConvexError({ code: "FORBIDDEN", message: "Profile not found" });
-    }
-    await ctx.db.patch(current.profile._id, { isActive: false });
-    return { ok: true } as const;
+    if (!current?.profile) return null;
+    return {
+      role: current.profile.role,
+      roleStatus: current.profile.roleStatus,
+      requestedRole: current.profile.requestedRole,
+      brokerId: current.profile.brokerId,
+      REDId: current.profile.REDId,
+      isActive: current.profile.isActive,
+    } as const;
   },
 });

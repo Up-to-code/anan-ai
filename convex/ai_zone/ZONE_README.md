@@ -1,29 +1,26 @@
 # ai_zone Zone (Backend)
 
 ## Ownership
-This folder owns AI assistant logic, agent definitions, and orchestration.
+This zone owns assistant endpoints, orchestration, agent definitions, shared AI runtime behavior, and multi-channel adapters.
 
 ## Architecture
-
-### Thin Controller
-- `assistant.ts` — Public Convex endpoints: `getThread`, `getThreadSafe`, `listMessages`, `listMessagesSafe`, `sendMessage`, `streamMessage`, `_saveConversationStep`
-
-### Services
-- `services/assistantService.ts` — All business logic: identity resolution, thread operations, message orchestration, conversation persistence
-
-### Agents
-- `agents/orchestration/` — Main agent runner
-- `agents/anan_lit/` — Core Anan agent definitions
-- `agents/zone_assistants/` — Role-specific assistants (broker, RED)
-- `agents/runtime/` — Agent runtime utilities
-- `agents/search/` — Search integrations
-- `agents/scraping/` — Data scraping agents
-- `agents/actions/` — Agent action definitions
-
-### Channels
-- `channels/` — Multi-channel delivery (WhatsApp, app, etc.)
+- `assistant.ts`
+  Thin controller for assistant endpoints.
+- `services/assistantService.ts`
+  Resolves owner identity, mode, context, orchestration, and persistence.
+- `agents/core/`
+  Shared configurable agent runtime, prompt policy, tool bundles, and factory.
+- `agents/anan/`
+  Orchestrator, intent analysis, team registry, and merge logic.
+- `agents/team_*/`
+  Declarative agent definitions plus team-local tools.
+- `agents/shared/`
+  Cross-team analytics, token tracking, retry helpers, workflows, and RAG helpers.
+- `channels/`
+  WhatsApp preprocessing, transport, and webhook integration.
 
 ## Rules
-1. `assistant.ts` is a **Thin Controller** — it must only declare endpoints and delegate.
-2. All complex logic lives in `services/assistantService.ts`.
-3. No cross-zone DB access. Use `shared_logic` for shared data.
+1. `assistant.ts` only wires public endpoints.
+2. The orchestrator is the single entrypoint for runtime agent dispatch.
+3. Team registry is the only source of truth for team membership and role access.
+4. Tool calls happen inside configured agents, never directly from the orchestrator.

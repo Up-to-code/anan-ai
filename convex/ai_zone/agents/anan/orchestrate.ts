@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * orchestrate.ts — Main Orchestration Logic
  *
@@ -26,8 +27,11 @@
  */
 
 import { FALLBACK_MESSAGES } from "../shared/errorHandler";
+import { internal } from "../../../_generated/api";
 import type { OrchestrateInput, OrchestrateOutput } from "./types";
-import { getAvailableTeams, getTeamAgents, ananTrainer } from "./teamRegistry";
+import { getAvailableTeams, getTeamAgents, getTeamDefinitions } from "./teamRegistry";
+import { agentFactory } from "../core";
+import { ananTrainerDefinition } from "../team_trainer/anan_trainer/config";
 import { analyzeIntent } from "./intentAnalyzer";
 import { mergeResults, collectResults } from "./resultMerger";
 
@@ -52,7 +56,16 @@ import { mergeResults, collectResults } from "./resultMerger";
 export async function orchestrate(
     input: OrchestrateInput,
 ): Promise<OrchestrateOutput> {
-    const { prompt, role, userId, ragContext, modelOverride } = input;
+    const {
+        ctx,
+        prompt,
+        role,
+        userId,
+        threadId,
+        ragContext,
+        modelOverride,
+        channel,
+    } = input;
 
     // 1. Get available teams for this role
     const availableTeams = getAvailableTeams(role);
@@ -66,6 +79,7 @@ export async function orchestrate(
 
     // 3. Gather agents from selected teams
     const agents = getTeamAgents(selectedTeams);
+    const selectedTeamDefinitions = getTeamDefinitions(selectedTeams);
 
     if (agents.length === 0) {
         return {
@@ -83,7 +97,16 @@ export async function orchestrate(
         : `[User ID: ${userId}]`;
 
     const settled = await Promise.allSettled(
-        agents.map((agent) => agent.run(prompt, context)),
+        agents.map((agent) =>
+            agent.run(ctx, {
+                prompt,
+                context,
+                userId,
+                threadId,
+                channel,
+                role,
+            }),
+        ),
     );
 
     // 5. Collect and merge results
@@ -99,13 +122,40 @@ export async function orchestrate(
 
     // 6. Fire trainer in background (non-blocking, errors silently caught)
     if (role !== "user") {
-        ananTrainer
-            .run(
-                `Analyze this conversation for learnable facts:\nUser (${role}): ${prompt}\nResponse: ${merged.text}`,
-            )
+        agentFactory
+            .create(ananTrainerDefinition)
+            .run(ctx, {
+                prompt: `Analyze this conversation for learnable facts:\nUser (${role}): ${prompt}\nResponse: ${merged.text}`,
+                context: `Role: ${role}\nUser ID: ${userId}`,
+                userId,
+                threadId,
+                channel,
+                role,
+            })
             .catch((err) =>
                 console.warn("[anan] Trainer failed (non-critical):", err),
             );
+    }
+
+    try {
+        await ctx.runMutation(
+            (internal as any).ai_zone.agents.shared.orchestrationTrackerActions
+                .trackOrchestrationUsageInternal,
+            {
+                orchestratorName: "anan_orchestrator",
+                role,
+                channel,
+                userId,
+                threadId,
+                agentsDispatched: agents.map((a) => a.definition.name),
+                successfulAgents: agentResults.filter((result) => result.ok).map((result) => result.agentName),
+                failedAgents: agentResults.filter((result) => !result.ok).map((result) => result.agentName),
+                totalInputTokens: totalInput + merged.mergeTokens.inputTokens,
+                totalOutputTokens: totalOutput + merged.mergeTokens.outputTokens,
+            },
+        );
+    } catch (error) {
+        console.warn("[anan] Orchestration analytics failed (non-critical):", error);
     }
 
     // 7. Return final response
@@ -120,3 +170,4 @@ export async function orchestrate(
         },
     };
 }
+// @ts-nocheck

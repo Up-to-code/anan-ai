@@ -1,10 +1,10 @@
 import { query } from "../_generated/server";
-import { adminChecker } from "../shared_logic/lib/adminChecker";
+import { requireRole } from "../_core/security/accessPolicy";
 
 export const overviewStats = query({
   args: {},
   handler: async (ctx) => {
-    await adminChecker(ctx, "read");
+    await requireRole(ctx, ["admin"]);
     const [
       usersCount,
       propertiesCount,
