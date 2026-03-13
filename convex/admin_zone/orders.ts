@@ -1,5 +1,5 @@
 import { mutation, query } from "../_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { requireRole } from "../_core/security/accessPolicy";
 
 const orderStatusValidator = v.union(
@@ -44,7 +44,7 @@ export const updateOrder = mutation({
   handler: async (ctx, { id, ...patch }) => {
     await requireRole(ctx, ["admin"]);
     const existing = await ctx.db.get(id);
-    if (!existing) throw new Error("Order not found");
+    if (!existing) throw new ConvexError({ code: "NOT_FOUND", message: "Order not found" });
     const filtered = Object.fromEntries(
       Object.entries(patch).filter(([, v]) => v !== undefined)
     ) as Record<string, unknown>;

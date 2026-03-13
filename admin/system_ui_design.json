@@ -1,0 +1,94 @@
+{
+    "system_name": "Anan Sharp Blue Ultra-Minimalism",
+    "version": "1.0.0",
+    "meta": {
+        "aesthetic": "Institutional, Sharp, Structural, Premium",
+        "philosophies": [
+            "No Shadows",
+            "No Rounded Edges (Strict 0px)",
+            "Maximized Contrast",
+            "Whitespace as a Structural Element",
+            "No AI-specific terminology (Institutional Protocol only)",
+            "Shareable First: All new UI elements must be created in 'components/shared/'"
+        ]
+    },
+    "tokens": {
+        "colors": {
+            "primary": {
+                "hex": "#2563EB",
+                "tailwind": "blue-600",
+                "usage": "Brand markers, focal titles, primary actions, active borders"
+            },
+            "surface": {
+                "background": "#FFFFFF",
+                "tailwind": "white",
+                "usage": "Main body surface"
+            },
+            "text": {
+                "high_contrast": "#0F172A",
+                "tailwind": "slate-900",
+                "usage": "Headers, bold body copy"
+            },
+            "text_muted": {
+                "hex": "#64748B",
+                "tailwind": "slate-500",
+                "usage": "Descriptions, secondary info"
+            },
+            "border": {
+                "hex": "#F1F5F9",
+                "tailwind": "slate-100",
+                "thickness": "2px",
+                "usage": "Section dividers, grid lines"
+            }
+        },
+        "typography": {
+            "primary_font": "Cairo",
+            "weights": {
+                "bold": 700,
+                "black": 900
+            },
+            "casing": "UPPERCASE (Primary Titles and Nav)",
+            "tracking": {
+                "tighter": "-0.05em",
+                "widest": "0.4em (Hero Sublines)"
+            },
+            "heading_scale": {
+                "hero": "clamp(2.5rem, 8vw, 6.5rem)",
+                "section": "2xl - 5xl",
+                "nav": "xs (bold)"
+            }
+        },
+        "geometry": {
+            "radius": "0px (rounded-none)",
+            "shadows": "None (Flat UI only)",
+            "borders": "Solid, 2px stroke on grids and navbars"
+        }
+    },
+    "components": {
+        "navbar": {
+            "height": "16 (h-16)",
+            "border": "bottom-2 border-slate-100",
+            "link_style": "text-xs font-bold text-slate-400, hover:text-blue-600, uppercase tracking-widest"
+        },
+        "button_primary": {
+            "background": "blue-600",
+            "text": "white",
+            "shape": "rounded-none",
+            "padding": "px-8 py-2.5",
+            "typography": "text-xs font-black uppercase tracking-widest"
+        },
+        "button_outline": {
+            "border": "2px border-blue-600",
+            "text": "blue-600",
+            "shape": "rounded-none",
+            "padding": "px-12 py-5",
+            "typography": "text-sm font-black uppercase tracking-widest"
+        },
+        "feature_grid": {
+            "layout": "grid-cols-1 md:grid-cols-3",
+            "cell_border": "border-l-2 last:border-l-0 border-slate-100",
+            "cell_padding": "p-12",
+            "id_style": "text-5xl font-black text-slate-100 (Arabic numerals)"
+        }
+    }
+}

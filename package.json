@@ -8,7 +8,9 @@
     "deploy": "convex deploy",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
-    "test:once": "vitest run"
+    "test:once": "vitest run",
+    "mobile:dev": "pnpm --dir mobile dev",
+    "mobile:typecheck": "pnpm --dir mobile typecheck"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.57",
@@ -22,8 +24,10 @@
     "@convex-dev/workflow": "^0.3.4",
     "@openrouter/ai-sdk-provider": "^1.5.4",
     "@toon-format/toon": "^2.1.0",
+    "@types/web-push": "^3.6.4",
     "ai": "^5.0.82",
     "convex": "^1.31.6",
+    "web-push": "^3.6.7",
     "zod": "^3.23.0"
   },
   "devDependencies": {

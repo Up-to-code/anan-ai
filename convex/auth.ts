@@ -1,6 +1,16 @@
 import { convexAuth } from "@convex-dev/auth/server";
 import { getGoogleProvider } from "./_core/security/providers";
 
+function deriveUsername(args: { email?: string | null; name?: string | null; authUserId: string }) {
+  const emailLocalPart = args.email?.split("@")[0]?.trim();
+  const seed = emailLocalPart || args.name || `user-${args.authUserId.slice(-6)}`;
+  return seed
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 32) || `user-${args.authUserId.slice(-6)}`;
+}
+
 async function syncUserProfile(ctx: any, userId: any, existingUserId: any) {
   const user = await ctx.db.get(userId);
   if (!user) return;
@@ -19,10 +29,17 @@ async function syncUserProfile(ctx: any, userId: any, existingUserId: any) {
       : null;
 
   const now = Date.now();
+  const username = existingByAuth?.username ?? existingByEmail?.username ?? deriveUsername({
+    email: user.email,
+    name: user.name ?? user.displayName ?? null,
+    authUserId,
+  });
   const patch = {
     authUserId,
     email: user.email,
     name: user.name ?? user.displayName ?? existingByAuth?.name ?? existingByEmail?.name ?? "مستخدم أنان",
+    username,
+    usernameLower: username.toLowerCase(),
     isActive: existingByAuth?.isActive ?? existingByEmail?.isActive ?? true,
     createdAt: existingByAuth?.createdAt ?? existingByEmail?.createdAt ?? now,
     updatedAt: now,

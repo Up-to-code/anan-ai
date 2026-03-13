@@ -10,6 +10,8 @@ import salesTables from "./_core/schema/sales";
 import crmTables from "./_core/schema/crm";
 import offersTables from "./_core/schema/offers";
 import aiTables from "./_core/schema/ai";
+import workspaceTables from "./_core/schema/workspace";
+import adminTables from "./_core/schema/admin";
 
 /**
  * anan-lit schema
@@ -30,4 +32,6 @@ export default defineSchema({
   ...crmTables,
   ...offersTables,
   ...aiTables,
+  ...workspaceTables,
+  ...adminTables,
 });

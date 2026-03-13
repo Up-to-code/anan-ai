@@ -75,6 +75,8 @@ const knowledgeTables = {
         ownerBrokerId: v.optional(v.id("brokers")),
         ownerREDId: v.optional(v.id("RED")),
         mode: v.union(v.literal("qa"), v.literal("action")),
+        orchestratorName: v.optional(v.string()),
+        assistantKind: v.optional(v.union(v.literal("default"), v.literal("anan_pro"))),
         title: v.optional(v.string()),
         createdAt: v.number(),
         updatedAt: v.number(),
@@ -88,6 +90,7 @@ const knowledgeTables = {
         role: v.union(v.literal("user"), v.literal("assistant")),
         content: v.string(),
         mode: v.union(v.literal("qa"), v.literal("action")),
+        metadata: v.optional(v.any()),
         createdAt: v.number(),
     }).index("threadId", ["threadId"]),
 };

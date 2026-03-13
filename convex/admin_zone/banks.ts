@@ -1,5 +1,5 @@
 import { mutation, query } from "../_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { requireRole } from "../_core/security/accessPolicy";
 
 export const listBanks = query({
@@ -42,7 +42,7 @@ export const updateBank = mutation({
   handler: async (ctx, { id, ...patch }) => {
     await requireRole(ctx, ["admin"]);
     const existing = await ctx.db.get(id);
-    if (!existing) throw new Error("Bank not found");
+    if (!existing) throw new ConvexError({ code: "NOT_FOUND", message: "Bank not found" });
     const filtered = Object.fromEntries(
       Object.entries(patch).filter(([, v]) => v !== undefined)
     ) as Record<string, unknown>;
@@ -57,7 +57,7 @@ export const deleteBank = mutation({
   handler: async (ctx, { id }) => {
     await requireRole(ctx, ["admin"]);
     const existing = await ctx.db.get(id);
-    if (!existing) throw new Error("Bank not found");
+    if (!existing) throw new ConvexError({ code: "NOT_FOUND", message: "Bank not found" });
     await ctx.db.delete(id);
   },
 });

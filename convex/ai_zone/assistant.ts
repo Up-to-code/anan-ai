@@ -14,6 +14,7 @@ import {
   handleAssistantMessage,
   saveConversationStep,
   getMessageContent,
+  listRecentThreads,
 } from "./services/assistantService";
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
@@ -58,6 +59,16 @@ export const listMessagesSafe = query({
   },
 });
 
+export const listThreads = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const owner = await resolveAssistantOwner(ctx);
+    return listRecentThreads(ctx, owner.userId, "default", args.limit ?? 6);
+  },
+});
+
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 export const sendMessage = action({
@@ -92,6 +103,7 @@ export const _saveConversationStep = internalMutation({
     ownerREDId: v.optional(v.id("RED")),
     userMessage: v.string(),
     assistantMessage: v.string(),
+    assistantMetadata: v.optional(v.any()),
     mode: v.union(v.literal("qa"), v.literal("action")),
   },
   handler: async (ctx, args) => {

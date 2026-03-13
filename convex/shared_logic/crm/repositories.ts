@@ -1,6 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "../../_generated/server";
 import type { Doc } from "../../_generated/dataModel";
+import { uploadedFileReferenceValidator } from "../files";
 
 type DealRecord = Doc<"deals">;
 
@@ -19,7 +20,7 @@ function mapDeal(deal: DealRecord) {
     contactName: deal.contactName,
     contactPhone: deal.contactPhone,
     lastUpdatedBy: deal.lastUpdatedBy,
-    documentIds: deal.documentIds,
+    documents: deal.documents,
   };
 }
 
@@ -168,7 +169,7 @@ export const updateDealNotes = mutation({
 export const addDealDocument = mutation({
   args: {
     dealId: v.id("deals"),
-    storageId: v.id("_storage"),
+    document: uploadedFileReferenceValidator,
     lastUpdatedBy: v.string(),
   },
   handler: async (ctx, args) => {
@@ -176,9 +177,9 @@ export const addDealDocument = mutation({
     if (!deal) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Deal not found" });
     }
-    const existing = deal?.documentIds ?? [];
+    const existing = deal?.documents ?? [];
     await ctx.db.patch(args.dealId, {
-      documentIds: [...existing, args.storageId],
+      documents: [...existing, args.document],
       lastUpdatedBy: args.lastUpdatedBy,
     });
     return { ok: true } as const;

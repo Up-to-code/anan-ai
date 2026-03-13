@@ -74,6 +74,26 @@ const agenciesTables = {
         .index("ownerBrokerId", ["ownerBrokerId"])
         .index("ownerREDId", ["ownerREDId"])
         .index("status", ["status"]),
+
+    organizationMemberships: defineTable({
+        ownerType: v.union(v.literal("broker"), v.literal("RED")),
+        ownerBrokerId: v.optional(v.id("brokers")),
+        ownerREDId: v.optional(v.id("RED")),
+        authUserId: v.string(),
+        profileId: v.id("userProfiles"),
+        role: v.union(v.literal("manager"), v.literal("member"), v.literal("viewer")),
+        status: v.union(v.literal("active"), v.literal("inactive")),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+        invitedBy: v.optional(v.string()),
+        inviteId: v.optional(v.id("teamInvites")),
+    })
+        .index("authUserId", ["authUserId"])
+        .index("profileId", ["profileId"])
+        .index("ownerBrokerId", ["ownerBrokerId"])
+        .index("ownerREDId", ["ownerREDId"])
+        .index("ownerBrokerId_authUserId", ["ownerBrokerId", "authUserId"])
+        .index("ownerREDId_authUserId", ["ownerREDId", "authUserId"]),
 };
 
 export default agenciesTables;

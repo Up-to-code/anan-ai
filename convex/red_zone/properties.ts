@@ -1,6 +1,7 @@
 import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
+import { uploadedFileReferenceListValidator } from "../shared_logic/files";
 import {
   createRedProperty,
   deleteRedProperty,
@@ -61,7 +62,7 @@ export const create = mutation({
     area: v.optional(v.string()),
     status: v.optional(statusValidator),
     bankId: v.optional(v.id("banks")),
-    imageIds: v.optional(v.array(v.id("_storage"))),
+    media: v.optional(uploadedFileReferenceListValidator),
   },
   handler: async (ctx, args) => {
     return await createRedProperty(ctx, args);
@@ -87,7 +88,7 @@ export const update = mutation({
     area: v.optional(v.string()),
     status: v.optional(statusValidator),
     bankId: v.optional(v.id("banks")),
-    imageIds: v.optional(v.array(v.id("_storage"))),
+    media: v.optional(uploadedFileReferenceListValidator),
   },
   handler: async (ctx, args) => {
     return await updateRedProperty(ctx, args);

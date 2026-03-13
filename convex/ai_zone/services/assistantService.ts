@@ -13,6 +13,7 @@ import {
     findProfileForResolvedIdentity,
     requireResolvedIdentity,
 } from "../../_core/security/identity";
+import { resolveWorkspaceAgUiTurn } from "./agUi";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type AssistantOwner = {
@@ -62,13 +63,37 @@ export async function resolveAssistantOwnerSafe(ctx: QueryCtx): Promise<Assistan
 export async function getLatestThread(
     ctx: QueryCtx,
     userId: string,
+    assistantKind?: "default" | "anan_pro",
 ): Promise<Doc<"assistantThreads"> | null> {
     const threads = await ctx.db
         .query("assistantThreads")
         .withIndex("userId", (q: any) => q.eq("userId", userId))
         .collect();
-    if (threads.length === 0) return null;
-    return threads.sort((a, b) => b.updatedAt - a.updatedAt)[0];
+    const filtered = assistantKind
+        ? threads.filter((thread) => (thread.assistantKind ?? "default") === assistantKind)
+        : threads;
+    if (filtered.length === 0) return null;
+    return filtered.sort((a, b) => b.updatedAt - a.updatedAt)[0];
+}
+
+/**
+ * Returns recent assistant threads for the current user and assistant kind.
+ */
+export async function listRecentThreads(
+    ctx: QueryCtx,
+    userId: string,
+    assistantKind?: "default" | "anan_pro",
+    limit = 6,
+) {
+    const threads = await ctx.db
+        .query("assistantThreads")
+        .withIndex("userId", (q: any) => q.eq("userId", userId))
+        .collect();
+
+    return threads
+        .filter((thread) => !assistantKind || (thread.assistantKind ?? "default") === assistantKind)
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+        .slice(0, limit);
 }
 
 // ─── Message Operations ───────────────────────────────────────────────────────
@@ -79,11 +104,13 @@ export async function listThreadMessages(
     ctx: QueryCtx,
     owner: AssistantOwner,
     threadId?: Id<"assistantThreads">,
+    assistantKind?: "default" | "anan_pro",
 ) {
     const thread = threadId
         ? await ctx.db.get(threadId)
-        : await getLatestThread(ctx, owner.userId);
+        : await getLatestThread(ctx, owner.userId, assistantKind);
     if (!thread || thread.userId !== owner.userId) return [];
+    if (assistantKind && (thread.assistantKind ?? "default") !== assistantKind) return [];
     return ctx.db
         .query("assistantMessages")
         .withIndex("threadId", (q) => q.eq("threadId", thread._id))
@@ -113,7 +140,13 @@ export async function getMessageContent(
  */
 export async function handleAssistantMessage(
     ctx: ActionCtx,
-    args: { message: string; threadId?: Id<"assistantThreads"> },
+    args: {
+        message: string;
+        threadId?: Id<"assistantThreads">;
+        assistantKind?: "default" | "anan_pro";
+        orchestratorName?: string;
+        promptPrefix?: string;
+    },
 ): Promise<{
     ok: true;
     threadId: string;
@@ -123,7 +156,9 @@ export async function handleAssistantMessage(
 }> {
     // 1. Resolve thread & owner via query
     const { thread, owner } = await ctx.runQuery(
-        apiRefs["ai_zone/assistant"].getThread,
+        (args.assistantKind === "anan_pro"
+            ? apiRefs["ai_zone/assistantPro"].getThread
+            : apiRefs["ai_zone/assistant"].getThread),
         {},
     );
 
@@ -153,8 +188,8 @@ export async function handleAssistantMessage(
     // 4. Build the prompt based on mode
     const basePrompt =
         mode === "qa"
-            ? `${args.message}\n\n[Policy: QA-only mode. Answer questions only. Do not execute actions.]${knowledgeContext}`
-            : `${args.message}${knowledgeContext}`;
+            ? `${args.promptPrefix ? `${args.promptPrefix}\n\n` : ""}${args.message}\n\n[Policy: QA-only mode. Answer questions only. Do not execute actions.]${knowledgeContext}`
+            : `${args.promptPrefix ? `${args.promptPrefix}\n\n` : ""}${args.message}${knowledgeContext}`;
 
     // 5. Map ownerType to orchestrator role
     const roleMap: Record<string, "user" | "broker" | "RED" | "admin"> = {
@@ -174,6 +209,10 @@ export async function handleAssistantMessage(
         channel: "app",
     });
 
+    const assistantUiTurn = args.assistantKind === "anan_pro"
+        ? resolveWorkspaceAgUiTurn(args.message, result.output)
+        : null;
+
     // 7. Persist the conversation step
     const saved = await ctx.runMutation(
         internalRefs["ai_zone/assistant"]._saveConversationStep,
@@ -185,7 +224,10 @@ export async function handleAssistantMessage(
             ownerREDId: owner.ownerREDId,
             userMessage: args.message,
             assistantMessage: result.output,
+            assistantMetadata: assistantUiTurn ? { uiTurn: assistantUiTurn } : undefined,
             mode,
+            assistantKind: args.assistantKind,
+            orchestratorName: args.orchestratorName,
         },
     );
 
@@ -212,7 +254,10 @@ export async function saveConversationStep(
         ownerREDId?: Id<"RED">;
         userMessage: string;
         assistantMessage: string;
+        assistantMetadata?: Record<string, unknown>;
         mode: "qa" | "action";
+        assistantKind?: "default" | "anan_pro";
+        orchestratorName?: string;
     },
 ) {
     const now = Date.now();
@@ -225,6 +270,8 @@ export async function saveConversationStep(
             ownerBrokerId: args.ownerBrokerId,
             ownerREDId: args.ownerREDId,
             mode: args.mode,
+            assistantKind: args.assistantKind ?? "default",
+            orchestratorName: args.orchestratorName,
             title: args.userMessage.slice(0, 80),
             createdAt: now,
             updatedAt: now,
@@ -243,12 +290,15 @@ export async function saveConversationStep(
         role: "assistant",
         content: args.assistantMessage,
         mode: args.mode,
+        metadata: args.assistantMetadata,
         createdAt: now + 1,
     });
 
     await ctx.db.patch(threadId, {
         updatedAt: now,
         mode: args.mode,
+        assistantKind: args.assistantKind ?? "default",
+        orchestratorName: args.orchestratorName,
     });
 
     return { threadId, userMessageId, assistantMessageId };

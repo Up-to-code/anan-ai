@@ -1,5 +1,5 @@
 import { mutation, query } from "../_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { requireRole } from "../_core/security/accessPolicy";
 
 export const listREDs = query({
@@ -56,7 +56,7 @@ export const updateRED = mutation({
   handler: async (ctx, { id, ...patch }) => {
     await requireRole(ctx, ["admin"]);
     const existing = await ctx.db.get(id);
-    if (!existing) throw new Error("RED not found");
+    if (!existing) throw new ConvexError({ code: "NOT_FOUND", message: "RED not found" });
     const filtered = Object.fromEntries(
       Object.entries(patch).filter(([, v]) => v !== undefined)
     ) as Record<string, unknown>;
@@ -71,7 +71,7 @@ export const deleteRED = mutation({
   handler: async (ctx, { id }) => {
     await requireRole(ctx, ["admin"]);
     const existing = await ctx.db.get(id);
-    if (!existing) throw new Error("RED not found");
+    if (!existing) throw new ConvexError({ code: "NOT_FOUND", message: "RED not found" });
     await ctx.db.delete(id);
   },
 });

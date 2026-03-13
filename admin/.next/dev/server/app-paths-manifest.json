@@ -1,0 +1,8 @@
+{
+  "/(admin)/dashboard/page": "app/(admin)/dashboard/page.js",
+  "/(admin)/docs/ai-chatflow/page": "app/(admin)/docs/ai-chatflow/page.js",
+  "/(admin)/docs/page": "app/(admin)/docs/page.js",
+  "/(docs)/docs/ai-chatflow/page": "app/(docs)/docs/ai-chatflow/page.js",
+  "/(docs)/docs/architecture/page": "app/(docs)/docs/architecture/page.js",
+  "/(docs)/docs/page": "app/(docs)/docs/page.js"
+}

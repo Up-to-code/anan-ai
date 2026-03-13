@@ -1,70 +1,63 @@
-# Anan: Multi-Channel Real Estate Infrastructure
+# Anan
 
-Anan is a centralized real estate platform designed to unify data, distribution, and sales execution between Users, Developers, and Brokers.
+Anan is a multi-surface real estate platform connecting buyers, brokers, and developers through shared inventory, collaboration flows, CRM-style handoffs, and AI-assisted experiences.
 
-## 1. Core Ecosystem
+## Core Surfaces
 
-| Party | Role | Ecosystem Interaction |
-|-------|------|----------------------|
-| **Users** | Buyers & Investors | Interact via AI Agent (WhatsApp/Web) to receive tailored matching & closing support. |
-| **Developers (RED)** | Project Owners | Upload projects, manage broker visibility, and track live market demand analytics. |
-| **Brokers** | Distribution Partners | Access projects, collaborate with peers, and manage lead pipelines in a unified CRM. |
+- `web/`
+  - Main Next.js App Router workspace and public site.
+  - Hosts broker and developer workflows plus public landing/auth pages.
+- `admin/`
+  - Standalone Next.js admin console for operations, verification, diagnostics, and knowledge management.
+- `mobile/`
+  - Expo buyer app with swipe feed and property assistant flows.
+- `convex/`
+  - Shared backend for schema, auth, business logic, AI orchestration, and real-time data.
 
----
+## Architecture At A Glance
 
-## 2. Technical Architecture
+- `web/app/` and `admin/app/` should stay thin.
+- `web/server/` owns web-side auth, DTO contracts, domain orchestration, and Convex adapters.
+- `convex/_core/` owns schema and access policy.
+- `convex/shared_logic/` owns shared product capabilities such as inbox, offers, properties, market, subscriptions, notifications, and knowledge.
+- `convex/ai_zone/` owns assistant entrypoints and the multi-agent runtime.
+- `convex/broker_zone/` and `convex/red_zone/` provide owner-scoped backend surfaces.
 
-### Multi-Channel Distribution
-Anan operates as a layered distribution system:
-1. **AI Agent Layer**: Primary user interface (WhatsApp + Next.js Workspace).
-2. **Broker Collaboration Layer**: Private marketplace for peer-to-peer deal closing.
-3. **Developer Direct Layer**: Instant project activation and automated sales team routing.
+## Developer Docs
 
-### Directory Structure
-- `web/` – High-performance Next.js App Router frontend.
-  - `app/(wso)/ws/` – Focused **Anan Workspace** (AI-First dashboard).
-  - `components/shared/ag-aui/` – Institutional design system (Sharp Blue Minimalism).
-- `convex/` – Multi-agent backend and real-time data layer.
-  - `_core/security/` – Centralized access policies and identity normalization.
-  - `ai_zone/agents/core/` – Configurable agent runtime and modular toolsets.
+Start here if you are building in this repo:
 
----
+- [Developer System Guide](docs/developer-system-guide.md)
+- [LLM And Data Access Guide](docs/llm-data-access-guide.md)
+- [Codebase Knowledge Base](docs/codebase-knowledge-base.md)
+- [Logic Audit - March 13, 2026](docs/logic-audit-2026-03-13.md)
 
-## 3. Operational Philosophy
+## Development
 
-- **No Complexity**: Simple onboarding (Login → Add project → Activate).
-- **No Forced Contracts**: A flexible ecosystem that adapts to partner needs.
-- **Institutional Aesthetics**: 0px radius (mostly), 2px precision borders, and high-contrast dark sidebars.
-- **AI-First UX**: A distraction-free workspace centering on the Anan logo and chat-driven workflows.
-
----
-
-## 4. "Anan Architecture" Coding Rules
-
-All contributors (human and AI) must adhere to these rigorous standards:
-
-1. **The Orchestrator Pattern**: No monolithic files. Use `Folder/index.tsx` as a thin orchestrator delegating to focused sub-components.
-2. **JSDoc WHY/WHAT/HOW**: Every exported item MUST include:
-   - `WHY`: Business purpose.
-   - `WHAT`: Technical transform (Inputs/Outputs).
-   - `HOW`: Implementation mechanisms or state rules.
-3. **Strict Zone Isolation**: Never import directly between zones (e.g., `web/app/(wso)/ws/`). Use public hooks or shared logic.
-4. **README Manifests**: Every major functional directory must contain a `README.md` defining its internal structure.
-
----
-
-## 5. Development
+Install and run the main services:
 
 ```bash
-cd anan-lit
-bun install
-bunx convex dev # Starts backend and generates types
-cd web && bun dev # Starts Next.js development server
+pnpm install
+pnpm dev
 ```
 
-For detailed protocol audits, see `docs/backend-audit-2026-03-08.md`.
-tory design, and tool ownership model.
+Useful commands:
 
-## Plan
+```bash
+pnpm typecheck
+pnpm --dir web dev
+pnpm --dir admin dev
+pnpm --dir mobile dev
+pnpm --dir admin typecheck
+pnpm --dir mobile typecheck
+```
 
-See `anan-lit_complete_plan_435416d4.plan.md` and `.cursor/rules/anan-lit-agent.mdc`.
+## Coding Rules
+
+All contributors should follow these repo rules:
+
+1. Use thin orchestrator files for routes, pages, and entrypoints.
+2. Keep business logic out of route files and UI rendering code.
+3. Respect zone boundaries instead of deep-importing across surfaces.
+4. Add `WHY / WHAT / HOW` JSDoc blocks to exported modules.
+5. Prefer focused capability folders with local `README.md` manifests.

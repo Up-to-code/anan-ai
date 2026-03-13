@@ -1,3 +1,4 @@
+import { ConvexError } from "convex/values";
 import { QueryCtx, MutationCtx } from "../../_generated/server";
 import { Id } from "../../_generated/dataModel";
 
@@ -78,7 +79,7 @@ export async function updateUserService(ctx: MutationCtx, { userId, displayName,
         .query("users")
         .withIndex("userId", (q) => q.eq("userId", userId))
         .first();
-    if (!user) throw new Error("User not found");
+    if (!user) throw new ConvexError({ code: "NOT_FOUND", message: "User not found" });
     const patch: Record<string, unknown> = {};
     if (displayName !== undefined) patch.displayName = displayName;
     if (channel !== undefined) patch.channel = channel;

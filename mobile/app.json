@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Anan Mobile",
+    "slug": "anan-mobile",
+    "scheme": "anan-mobile",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

@@ -19,6 +19,7 @@ export const listProperties = query({
     paginationOpts: paginationOptsValidator,
     status: v.optional(statusValidator),
     REDId: v.optional(v.id("RED")),
+    brokerId: v.optional(v.id("brokers")),
   },
   handler: async (ctx, args) => {
     await requireRole(ctx, ["admin"]);
@@ -47,6 +48,7 @@ const createPropertyArgs = {
   status: v.optional(statusValidator),
   bankId: v.optional(v.id("banks")),
   REDId: v.optional(v.id("RED")),
+  brokerId: v.optional(v.id("brokers")),
 };
 
 export const createProperty = mutation({
@@ -72,6 +74,7 @@ export const updateProperty = mutation({
     status: v.optional(statusValidator),
     bankId: v.optional(v.id("banks")),
     REDId: v.optional(v.id("RED")),
+    brokerId: v.optional(v.id("brokers")),
   },
   handler: async (ctx, args) => {
     await requireRole(ctx, ["admin"]);

@@ -7,6 +7,8 @@ const userTables = {
         authUserId: v.string(), // current auth subject key used by backend authorization
         email: v.optional(v.string()),
         name: v.optional(v.string()),
+        username: v.optional(v.string()),
+        usernameLower: v.optional(v.string()),
         role: v.optional(
             v.union(
                 v.literal("admin"),
@@ -34,12 +36,14 @@ const userTables = {
         ),
         brokerId: v.optional(v.id("brokers")),
         REDId: v.optional(v.id("RED")),
+        showInOffersDirectory: v.optional(v.boolean()),
         isActive: v.optional(v.boolean()),
         createdAt: v.optional(v.number()),
         updatedAt: v.optional(v.number()),
     })
         .index("authUserId", ["authUserId"])
         .index("email", ["email"])
+        .index("usernameLower", ["usernameLower"])
         .index("role", ["role"])
         .index("roleStatus", ["roleStatus"]),
     users: defineTable({

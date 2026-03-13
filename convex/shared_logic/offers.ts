@@ -1,5 +1,6 @@
 import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
+import { uploadedFileReferenceListValidator } from "./files";
 import {
   applyToOfferService,
   createOfferService,
@@ -21,9 +22,10 @@ export const createOffer = mutation({
     visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
     toBrokerId: v.optional(v.id("brokers")),
     toREDId: v.optional(v.id("RED")),
+    recipientAuthUserId: v.optional(v.string()),
     recipientEmail: v.optional(v.string()),
     recipientPhone: v.optional(v.string()),
-    documentIds: v.optional(v.array(v.id("_storage"))),
+    attachments: v.optional(uploadedFileReferenceListValidator),
   },
   handler: async (ctx, args) => {
     return await createOfferService(ctx, args);
@@ -39,9 +41,10 @@ export const createOfferDraft = mutation({
     visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
     toBrokerId: v.optional(v.id("brokers")),
     toREDId: v.optional(v.id("RED")),
+    recipientAuthUserId: v.optional(v.string()),
     recipientEmail: v.optional(v.string()),
     recipientPhone: v.optional(v.string()),
-    documentIds: v.optional(v.array(v.id("_storage"))),
+    attachments: v.optional(uploadedFileReferenceListValidator),
   },
   handler: async (ctx, args) => {
     return await createOfferService(ctx, args);

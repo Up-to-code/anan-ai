@@ -3,6 +3,8 @@ import type { PaginationOptions } from "convex/server";
 import { QueryCtx, MutationCtx } from "../../_generated/server";
 import { Id } from "../../_generated/dataModel";
 import { buildPropertySearchText } from "../../shared_logic/properties/searchText";
+import type { Infer } from "convex/values";
+import { uploadedFileReferenceValidator } from "../../shared_logic/files";
 
 type PropertyStatus = "available" | "sold" | "reserved";
 
@@ -18,7 +20,7 @@ type RedPropertyWriteFields = {
   area?: string;
   status?: PropertyStatus;
   bankId?: Id<"banks">;
-  imageIds?: Id<"_storage">[];
+  media?: Infer<typeof uploadedFileReferenceValidator>[];
 };
 
 type RedPropertyCreateArgs = RedPropertyWriteFields & {
@@ -77,8 +79,9 @@ export async function getRedPropertyById(ctx: QueryCtx, { id }: { id: Id<"proper
  */
 export async function createRedProperty(ctx: MutationCtx, args: RedPropertyCreateArgs) {
   const { REDId, ...rest } = args;
+  const heroImage = rest.media?.[0];
   const searchText = buildPropertySearchText(rest);
-  return ctx.db.insert("properties", { ...rest, searchText, REDId, publicationState: "draft" });
+  return ctx.db.insert("properties", { ...rest, heroImage, searchText, REDId, publicationState: "draft" });
 }
 
 /**
@@ -91,9 +94,9 @@ export async function updateRedProperty(ctx: MutationCtx, { id, ...patch }: RedP
   if (!existing) {
     throw new ConvexError({ code: "NOT_FOUND", message: "Property not found" });
   }
-  const merged = { ...existing, ...patch };
+  const merged = { ...existing, ...patch, heroImage: patch.media?.[0] ?? existing.heroImage };
   const searchText = buildPropertySearchText(merged);
-  await ctx.db.patch(id, { ...patch, searchText });
+  await ctx.db.patch(id, { ...patch, heroImage: patch.media?.[0] ?? existing.heroImage, searchText });
 }
 
 /**

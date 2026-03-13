@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { uploadedFileReferenceListValidator } from "../../shared_logic/files";
 
 /**
  * Offers Schema
@@ -16,6 +17,7 @@ const offersTables = {
         fromREDId: v.optional(v.id("RED")),
         toBrokerId: v.optional(v.id("brokers")),
         toREDId: v.optional(v.id("RED")),
+        recipientAuthUserId: v.optional(v.string()),
         price: v.number(),
         status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("rejected")),
         publicationState: v.optional(
@@ -28,12 +30,14 @@ const offersTables = {
         recipientPhone: v.optional(v.string()),
         description: v.optional(v.string()),
         documentIds: v.optional(v.array(v.id("_storage"))),
+        attachments: v.optional(uploadedFileReferenceListValidator),
     })
         .index("propertyId", ["propertyId"])
         .index("fromBrokerId", ["fromBrokerId"])
         .index("fromREDId", ["fromREDId"])
         .index("toBrokerId", ["toBrokerId"])
         .index("toREDId", ["toREDId"])
+        .index("recipientAuthUserId", ["recipientAuthUserId"])
         .index("visibility", ["visibility"])
         .index("publicationState", ["publicationState"]),
 };

@@ -34,6 +34,7 @@ import { agentFactory } from "../core";
 import { ananTrainerDefinition } from "../team_trainer/anan_trainer/config";
 import { analyzeIntent } from "./intentAnalyzer";
 import { mergeResults, collectResults } from "./resultMerger";
+import { getAgentLLMConfigSafe } from "../config";
 
 /**
  * orchestrate — The main entry point for the Anan multi-agent system.
@@ -66,6 +67,17 @@ export async function orchestrate(
         modelOverride,
         channel,
     } = input;
+
+    if (!getAgentLLMConfigSafe()) {
+        return {
+            ok: false,
+            output:
+                "تعذر تشغيل anan pro حالياً لأن مفتاح النموذج غير مضبوط في Convex. أضف `OPENROUTER_API_KEY` من Convex Dashboard ثم أعد المحاولة.",
+            agentsDispatched: [],
+            agentResults: [],
+            totalTokenUsage: { inputTokens: 0, outputTokens: 0 },
+        };
+    }
 
     // 1. Get available teams for this role
     const availableTeams = getAvailableTeams(role);
@@ -162,7 +174,7 @@ export async function orchestrate(
     return {
         ok: successOutputs.length > 0,
         output: merged.text,
-        agentsDispatched: agents.map((a) => a.config.name),
+        agentsDispatched: agents.map((a) => a.definition?.name ?? "unknown_agent"),
         agentResults,
         totalTokenUsage: {
             inputTokens: totalInput + merged.mergeTokens.inputTokens,

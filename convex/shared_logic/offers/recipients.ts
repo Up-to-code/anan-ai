@@ -6,6 +6,13 @@ type ResolvedOfferRecipient = {
   toREDId?: Id<"RED">;
 };
 
+async function findProfileByAuthUserId(ctx: MutationCtx, authUserId: string) {
+  return ctx.db
+    .query("userProfiles")
+    .withIndex("authUserId", (q: any) => q.eq("authUserId", authUserId))
+    .first();
+}
+
 async function findBrokerByField(
   ctx: MutationCtx,
   field: "contactEmail" | "phone",
@@ -39,6 +46,7 @@ export async function resolveOfferRecipient(
     visibility?: "public" | "private";
     toBrokerId?: Id<"brokers">;
     toREDId?: Id<"RED">;
+    recipientAuthUserId?: string;
     recipientEmail?: string;
     recipientPhone?: string;
   },
@@ -48,6 +56,19 @@ export async function resolveOfferRecipient(
 
   if ((args.visibility ?? "private") !== "private" || toBrokerId || toREDId) {
     return { toBrokerId, toREDId };
+  }
+
+  if (args.recipientAuthUserId) {
+    const profile = await findProfileByAuthUserId(ctx, args.recipientAuthUserId);
+    if (profile?.brokerId) {
+      toBrokerId = profile.brokerId;
+    } else if (profile?.REDId) {
+      toREDId = profile.REDId;
+    }
+
+    if (toBrokerId || toREDId) {
+      return { toBrokerId, toREDId };
+    }
   }
 
   if (args.recipientEmail) {

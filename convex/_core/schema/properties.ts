@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { uploadedFileReferenceListValidator, uploadedFileReferenceValidator } from "../../shared_logic/files";
 
 /**
  * Properties Schema
@@ -32,6 +33,8 @@ const propertiesTables = {
         bankId: v.optional(v.id("banks")),
         imageId: v.optional(v.id("_storage")),
         imageIds: v.optional(v.array(v.id("_storage"))),
+        heroImage: v.optional(uploadedFileReferenceValidator),
+        media: v.optional(uploadedFileReferenceListValidator),
         body: v.optional(v.any()), // dynamic structured content block
     })
         .index("status", ["status"])

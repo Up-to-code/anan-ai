@@ -7,6 +7,9 @@ import {
 
 export type CurrentProfile = {
   authUserId: string;
+  email?: string;
+  name?: string;
+  username?: string;
   role?: string;
   brokerId?: import("../../_generated/dataModel").Id<"brokers">;
   REDId?: import("../../_generated/dataModel").Id<"RED">;

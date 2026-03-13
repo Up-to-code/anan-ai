@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { uploadedFileReferenceListValidator } from "../../shared_logic/files";
 
 /**
  * CRM Schema
@@ -46,6 +47,7 @@ const crmTables = {
         offerId: v.optional(v.id("offers")),
         notes: v.optional(v.string()),
         documentIds: v.optional(v.array(v.id("_storage"))),
+        documents: v.optional(uploadedFileReferenceListValidator),
         lastUpdatedBy: v.optional(v.string()),
     })
         .index("REDId", ["REDId"])

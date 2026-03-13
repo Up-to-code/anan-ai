@@ -1,5 +1,5 @@
 import { mutation, query } from "../_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { requireRole } from "../_core/security/accessPolicy";
 
 export const listKnowledgePages = query({
@@ -42,7 +42,7 @@ export const updateKnowledgePage = mutation({
   handler: async (ctx, { id, ...patch }) => {
     await requireRole(ctx, ["admin"]);
     const existing = await ctx.db.get(id);
-    if (!existing) throw new Error("Knowledge page not found");
+    if (!existing) throw new ConvexError({ code: "NOT_FOUND", message: "Knowledge page not found" });
     const filtered = Object.fromEntries(
       Object.entries(patch).filter(([, v]) => v !== undefined)
     ) as Record<string, unknown>;
@@ -57,7 +57,7 @@ export const deleteKnowledgePage = mutation({
   handler: async (ctx, { id }) => {
     await requireRole(ctx, ["admin"]);
     const existing = await ctx.db.get(id);
-    if (!existing) throw new Error("Knowledge page not found");
+    if (!existing) throw new ConvexError({ code: "NOT_FOUND", message: "Knowledge page not found" });
     await ctx.db.delete(id);
   },
 });

@@ -3,6 +3,8 @@ import type { PaginationOptions } from "convex/server";
 import { QueryCtx, MutationCtx } from "../../_generated/server";
 import { Id } from "../../_generated/dataModel";
 import { buildPropertySearchText } from "../../shared_logic/properties/searchText";
+import type { Infer } from "convex/values";
+import { uploadedFileReferenceValidator } from "../../shared_logic/files";
 
 type PropertyStatus = "available" | "sold" | "reserved";
 
@@ -18,7 +20,7 @@ type BrokerPropertyWriteFields = {
   area?: string;
   status?: PropertyStatus;
   bankId?: Id<"banks">;
-  imageIds?: Id<"_storage">[];
+  media?: Infer<typeof uploadedFileReferenceValidator>[];
 };
 
 type BrokerPropertyCreateArgs = BrokerPropertyWriteFields & {
@@ -77,8 +79,15 @@ export async function getBrokerPropertyById(ctx: QueryCtx, { id }: { id: Id<"pro
  */
 export async function createBrokerProperty(ctx: MutationCtx, args: BrokerPropertyCreateArgs) {
   const { brokerId, ...rest } = args;
+  const heroImage = rest.media?.[0];
   const searchText = buildPropertySearchText(rest);
-  return ctx.db.insert("properties", { ...rest, searchText, brokerId, publicationState: "draft" });
+  return ctx.db.insert("properties", {
+    ...rest,
+    heroImage,
+    searchText,
+    brokerId,
+    publicationState: "draft",
+  });
 }
 
 /**
@@ -91,9 +100,9 @@ export async function updateBrokerProperty(ctx: MutationCtx, { id, ...patch }: B
   if (!existing) {
     throw new ConvexError({ code: "NOT_FOUND", message: "Property not found" });
   }
-  const merged = { ...existing, ...patch };
+  const merged = { ...existing, ...patch, heroImage: patch.media?.[0] ?? existing.heroImage };
   const searchText = buildPropertySearchText(merged);
-  await ctx.db.patch(id, { ...patch, searchText });
+  await ctx.db.patch(id, { ...patch, heroImage: patch.media?.[0] ?? existing.heroImage, searchText });
 }
 
 /**
