@@ -1,6 +1,4 @@
-"use client";
-
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface ActionRowProps {
@@ -8,6 +6,11 @@ interface ActionRowProps {
     className?: string;
 }
 
+/**
+ * WHY:   CTA blocks often need consistent spacing/alignment but should remain server-rendered.
+ * WHAT:  Wraps action elements (buttons/links) in a flex/grid row with customizable classes.
+ * HOW:   Minimal `<div>` wrapper only.
+ */
 export default function ActionRow({ children, className }: ActionRowProps) {
     return <div className={cn(className)}>{children}</div>;
 }

@@ -1,6 +1,4 @@
-"use client";
-
-import { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Card from "@/components/shared/Card";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +15,11 @@ interface FeatureCardGridProps {
     className?: string;
 }
 
+/**
+ * WHY:   Marketing pages need lightweight, repeatable feature grids without forcing client hydration.
+ * WHAT:  Maps an array of feature items into styled `Card` components.
+ * HOW:   Pure render-only component (no state/effects), safe to keep as a Server Component.
+ */
 export default function FeatureCardGrid({
     items,
     className,

@@ -113,7 +113,6 @@ export default function AddBrokerPage() {
             <button
               type="button"
               onClick={() => {
-                console.log("Saving Broker:", formState);
                 router.push("/ws/crm/brokers");
               }}
               className="flex-1 bg-slate-950 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-white hover:bg-blue-600 transition"

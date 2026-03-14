@@ -6,7 +6,7 @@ import {
 } from "@/server/domains/workspaces/service";
 import { listAnanProThreads } from "@/server/domains/ananPro/service";
 import { getWorkspaceNotificationSummary } from "@/server/domains/notifications/service";
-import { listInboxConversations } from "@/server/domains/inbox/service";
+import { getInboxUnreadSummaryForCurrentUser } from "@/server/domains/inbox/service";
 
 /**
  * WHY: Layout needs user + organizations for sidebar (org name, user/org block).
@@ -15,10 +15,10 @@ import { listInboxConversations } from "@/server/domains/inbox/service";
  */
 export async function getLayoutSidebarData(returnTo: string) {
   try {
-    const [sidebar, notifications, conversations, assistantThreads] = await Promise.all([
+    const [sidebar, notifications, inboxSummary, assistantThreads] = await Promise.all([
       getWorkspaceSidebarDataForCurrentUser(),
       getWorkspaceNotificationSummary(),
-      listInboxConversations(),
+      getInboxUnreadSummaryForCurrentUser(),
       listAnanProThreads(12),
     ]);
 
@@ -28,7 +28,7 @@ export async function getLayoutSidebarData(returnTo: string) {
       allAssistantThreads: assistantThreads,
       signalCounts: {
         notificationCount: notifications.unreadCount,
-        inboxCount: conversations.reduce((sum, item) => sum + item.unreadCount, 0),
+        inboxCount: inboxSummary.unreadCount,
       },
     };
   } catch (error) {

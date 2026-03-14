@@ -1,10 +1,13 @@
-"use client";
-
 import { User, Code2, Briefcase, Globe } from "lucide-react";
 import PageHero from "@/components/shared/PageHero";
 import Section from "@/components/shared/Section";
 import SectionLabel from "@/components/shared/SectionLabel";
 
+/**
+ * WHY:   Trust-building pages should communicate who builds and operates the platform.
+ * WHAT:  Renders the Team page with role cards and operating principles.
+ * HOW:   Fully server-rendered for speed and SEO.
+ */
 export default function TeamPage() {
     return (
         <main>
@@ -61,6 +64,18 @@ export default function TeamPage() {
                             <span className="block text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">خبراء السوق السعودي</span>
                             <p className="text-slate-500 font-bold leading-relaxed">تعاون وثيق مع خبراء الهيئة العامة للعقار لضمان الامتثال والريادة التشريعية.</p>
                         </div>
+                    </div>
+                </div>
+            </Section>
+
+            <Section className="py-24 border-t border-slate-100 text-center">
+                <div className="max-w-2xl mx-auto space-y-8">
+                    <h2 className="text-4xl font-black text-slate-900 uppercase">انضم إلى القادة</h2>
+                    <p className="font-bold text-slate-500 text-xl leading-relaxed">نبني الجيل القادم من البنية العقارية، ونبحث دائمًا عن العقول الطموحة لمشاركتنا هذه الرحلة.</p>
+                    <div className="pt-6">
+                        <a href="/contact" className="inline-flex min-w-[180px] items-center justify-center bg-blue-600 px-10 py-5 text-base font-black tracking-wide text-white transition-all hover:bg-blue-700 active:scale-95 border-none shadow-none uppercase">
+                            ابحث عن وظيفة
+                        </a>
                     </div>
                 </div>
             </Section>

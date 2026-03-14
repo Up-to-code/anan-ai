@@ -1,14 +1,17 @@
-"use client";
-
 import { BarChart3, LayoutGrid, Globe, ShieldCheck } from "lucide-react";
 import ActionRow from "@/components/shared/ActionRow";
-import Button from "@/components/shared/Button";
+import ButtonLink from "@/components/shared/ButtonLink";
 import Card from "@/components/shared/Card";
 import FeatureCardGrid from "@/components/shared/FeatureCardGrid";
 import PageHero from "@/components/shared/PageHero";
 import Section from "@/components/shared/Section";
 import SectionLabel from "@/components/shared/SectionLabel";
 
+/**
+ * WHY:   Developers (RED) need a public entry page describing the data/analytics and distribution value.
+ * WHAT:  Renders the developer-focused narrative plus CTAs into the sign-in and contact flows.
+ * HOW:   Uses SSR-only presentational components to reduce client bundle size.
+ */
 export default function DeveloperPage() {
     return (
         <main>
@@ -40,8 +43,8 @@ export default function DeveloperPage() {
                     descriptionClassName="text-xl text-slate-500 font-bold leading-relaxed max-w-xl"
                     actions={
                         <ActionRow className="flex flex-col sm:flex-row gap-8 pt-6">
-                            <Button href="/signin" variant="primary" className="px-12 py-5">تسجيل مشروع جديد</Button>
-                            <Button variant="outline" className="px-12 py-5 border-slate-200">طلب البيانات التاريخية</Button>
+                            <ButtonLink href="/signin" variant="primary" className="px-12 py-5">تسجيل مشروع جديد</ButtonLink>
+                            <ButtonLink href="/contact" variant="outline" className="px-12 py-5 border-slate-200">طلب البيانات التاريخية</ButtonLink>
                         </ActionRow>
                     }
                     visual={
@@ -111,8 +114,8 @@ export default function DeveloperPage() {
                         ارفع مشاريعك العقارية في بنية عنان التحتية اليوم وابدأ في رؤية نتائج الربط الفوري.
                     </p>
                     <ActionRow className="flex flex-col sm:flex-row gap-8 justify-center pt-8">
-                        <Button href="/signin" variant="white" className="border-none">تسجيل كمطور</Button>
-                        <Button href="/about" variant="outline" className="border-white text-white hover:bg-white/10">تواصل مع الخبراء</Button>
+                        <ButtonLink href="/signin" variant="white" className="border-none">تسجيل كمطور</ButtonLink>
+                        <ButtonLink href="/about" variant="outline" className="border-white text-white hover:bg-white/10">تواصل مع الخبراء</ButtonLink>
                     </ActionRow>
                 </div>
             </Section>

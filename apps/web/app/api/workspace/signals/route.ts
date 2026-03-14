@@ -1,5 +1,5 @@
 import { getWorkspaceNotificationSummary } from "@/server/domains/notifications/service";
-import { listInboxConversations } from "@/server/domains/inbox/service";
+import { getInboxUnreadSummaryForCurrentUser } from "@/server/domains/inbox/service";
 import { toErrorResponse } from "@/server/contracts/errors";
 
 /**
@@ -9,14 +9,14 @@ import { toErrorResponse } from "@/server/contracts/errors";
  */
 export async function GET() {
   try {
-    const [notifications, conversations] = await Promise.all([
+    const [notifications, inboxSummary] = await Promise.all([
       getWorkspaceNotificationSummary(),
-      listInboxConversations(),
+      getInboxUnreadSummaryForCurrentUser(),
     ]);
 
     return Response.json({
       notificationCount: notifications.unreadCount,
-      inboxCount: conversations.reduce((sum, item) => sum + item.unreadCount, 0),
+      inboxCount: inboxSummary.unreadCount,
     });
   } catch (error) {
     return toErrorResponse(error);

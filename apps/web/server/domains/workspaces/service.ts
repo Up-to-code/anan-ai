@@ -3,6 +3,7 @@ import type { OrganizationSummary } from "@/server/contracts/organizations";
 import type { ProfileSummary } from "@/server/contracts/profiles";
 import type { SessionContext, SessionUser } from "@/server/contracts/session";
 import { toSessionUser } from "@/server/contracts/session";
+import { cache } from "react";
 import {
   getOrganizationOwnerContext,
   resolveSuggestedOrganizationType,
@@ -45,6 +46,8 @@ async function loadWorkspaceState(
   return { session, organizations };
 }
 
+const loadWorkspaceStateCached = cache(async () => loadWorkspaceState(defaultDependencies));
+
 /**
  * WHY:   The workspace should resolve one audience/capability model on the server before any page or route renders.
  * WHAT:  Returns the normalized workspace behavior for the current authenticated user.
@@ -53,7 +56,10 @@ async function loadWorkspaceState(
 export async function getWorkspaceBehaviorForCurrentUser(
   dependencies: WorkspacesServiceDependencies = defaultDependencies,
 ): Promise<WorkspaceBehavior> {
-  const { session, organizations } = await loadWorkspaceState(dependencies);
+  const { session, organizations } =
+    dependencies === defaultDependencies
+      ? await loadWorkspaceStateCached()
+      : await loadWorkspaceState(dependencies);
   const primaryOrganization = organizations[0] ?? null;
   const audience = resolveWorkspaceAudience({
     role: session.context.role,

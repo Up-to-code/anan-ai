@@ -1,11 +1,14 @@
-"use client";
-
 import { Zap, Shield, Globe, Cpu } from "lucide-react";
 import FeatureCardGrid from "@/components/shared/FeatureCardGrid";
 import PageHero from "@/components/shared/PageHero";
 import Section from "@/components/shared/Section";
 import SectionLabel from "@/components/shared/SectionLabel";
 
+/**
+ * WHY:   The platform needs a public articulation of design/system philosophy for partners and contributors.
+ * WHAT:  Renders the “Theme” narrative page describing institutional visual/UX principles.
+ * HOW:   Uses SSR-only components to minimize client bundle cost.
+ */
 export default function ThemePage() {
     return (
         <main>
@@ -96,6 +99,20 @@ export default function ThemePage() {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+            </Section>
+
+            <Section className="py-24 border-t border-slate-100 text-center">
+                <div className="max-w-2xl mx-auto space-y-8">
+                    <h2 className="text-4xl font-black text-slate-900 uppercase">اكتشف المستقبل العظيم</h2>
+                    <p className="font-bold text-slate-500 text-xl flex flex-col gap-2">
+                        <span>جرب البنية التحتية لعنان اليوم.</span>
+                    </p>
+                    <div className="pt-6">
+                        <a href="/signin" className="inline-flex min-w-[180px] items-center justify-center bg-blue-600 px-10 py-5 text-base font-black tracking-wide text-white transition-all hover:bg-blue-700 active:scale-95 border-none shadow-none uppercase">
+                            ابدأ الوصول المجاني
+                        </a>
                     </div>
                 </div>
             </Section>

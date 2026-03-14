@@ -32,7 +32,6 @@ export default function WorkspaceChatInput({
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             // Handle send logic here
-            console.log("Send:", value);
             setValue("");
             if (textareaRef.current) {
                 textareaRef.current.style.height = "auto";
@@ -98,8 +97,7 @@ export default function WorkspaceChatInput({
                             onClick={() => {
                                 if (!value.trim()) return;
                                 setIsChatting(true);
-                                onChatActive?.(true);
-                                console.log("Send:", value);
+                            onChatActive?.(true);
                                 setValue("");
                                 if (textareaRef.current) {
                                     textareaRef.current.style.height = "auto";

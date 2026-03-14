@@ -13,6 +13,7 @@ import type {
 
 type InboxApiRefs = {
   listConversations: unknown;
+  getInboxUnreadSummary: unknown;
   getConversation: unknown;
   resolveDirectConversation: unknown;
   bootstrapOfferConversation: unknown;
@@ -25,6 +26,7 @@ const inboxApi = apiUnsafe["shared_logic/inbox"] as InboxApiRefs;
 
 export type InboxRepository = {
   list(token: string): Promise<ConversationSummary[]>;
+  getUnreadSummary(token: string): Promise<{ unreadCount: number }>;
   get(token: string, conversationId: string): Promise<ConversationDetail>;
   resolve(token: string, input: ResolveDirectConversationInput): Promise<string>;
   bootstrapOffer(token: string, input: BootstrapOfferConversationInput): Promise<BootstrapOfferConversationResult>;
@@ -36,6 +38,9 @@ export type InboxRepository = {
 export const convexInboxRepository: InboxRepository = {
   async list(token) {
     return fetchQuery(inboxApi.listConversations as never, {} as never, { token }) as Promise<ConversationSummary[]>;
+  },
+  async getUnreadSummary(token) {
+    return fetchQuery(inboxApi.getInboxUnreadSummary as never, {} as never, { token }) as Promise<{ unreadCount: number }>;
   },
   async get(token, conversationId) {
     return fetchQuery(inboxApi.getConversation as never, { conversationId } as never, { token }) as Promise<ConversationDetail>;

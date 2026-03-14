@@ -1,4 +1,5 @@
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
+import { cache } from "react";
 import { DomainError } from "@/server/contracts/errors";
 import type { ProfileSummary } from "@/server/contracts/profiles";
 import type { SessionContext } from "@/server/contracts/session";
@@ -23,13 +24,8 @@ const defaultDependencies: SessionDependencies = {
   profilesRepository: convexProfilesRepository,
 };
 
-/**
- * WHY:   Every web-facing service needs the same authenticated context without duplicating token and profile lookups.
- * WHAT:  Resolves the optional current session, returning null when no active authenticated user exists.
- * HOW:   Reads the Convex auth token, fetches the session projection and current profile, then builds SessionContext.
- */
-export async function getOptionalSessionContext(
-  dependencies: SessionDependencies = defaultDependencies,
+async function resolveOptionalSessionContext(
+  dependencies: SessionDependencies,
 ): Promise<ResolvedSession | null> {
   const token = await dependencies.getToken();
   if (!token) {
@@ -60,6 +56,23 @@ export async function getOptionalSessionContext(
       isActive: user.isActive,
     },
   };
+}
+
+const getOptionalSessionContextCached = cache(async () => resolveOptionalSessionContext(defaultDependencies));
+
+/**
+ * WHY:   Every web-facing service needs the same authenticated context without duplicating token and profile lookups.
+ * WHAT:  Resolves the optional current session, returning null when no active authenticated user exists.
+ * HOW:   Reads the Convex auth token, fetches the session projection and current profile, then builds SessionContext.
+ */
+export async function getOptionalSessionContext(
+  dependencies: SessionDependencies = defaultDependencies,
+): Promise<ResolvedSession | null> {
+  if (dependencies === defaultDependencies) {
+    return getOptionalSessionContextCached();
+  }
+
+  return resolveOptionalSessionContext(dependencies);
 }
 
 /**

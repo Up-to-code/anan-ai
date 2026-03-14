@@ -1,6 +1,4 @@
-"use client";
-
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface MetricItem {
@@ -16,6 +14,11 @@ interface MetricGridProps {
     labelClassName?: string;
 }
 
+/**
+ * WHY:   Public narrative pages need a compact way to show KPI-style metrics without JS.
+ * WHAT:  Renders a grid of value/label pairs with optional per-slot class overrides.
+ * HOW:   Render-only mapping; stays server-renderable.
+ */
 export default function MetricGrid({
     items,
     className,

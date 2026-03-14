@@ -1,8 +1,11 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
 
+/**
+ * WHY:   Public navigation must load instantly on first paint without requiring hydration.
+ * WHAT:  Renders the fixed public top navbar with brand + primary links + sign-in CTA.
+ * HOW:   Uses Next.js `Link`/`Image` with static markup (no hooks/state).
+ */
 export default function Navbar() {
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b-2 border-slate-100">
@@ -10,7 +13,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-12">
                     <Link href="/" className="flex items-center justify-center rounded-none border-2 border-slate-100 bg-white p-2 transition hover:border-blue-600">
                         <Image
-                            src="/brand-mark.svg"
+                            src="/brand-logo.svg"
                             alt="عنان"
                             width={40}
                             height={40}

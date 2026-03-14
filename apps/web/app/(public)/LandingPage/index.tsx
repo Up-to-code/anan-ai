@@ -1,13 +1,11 @@
-"use client";
-
-import { motion } from "framer-motion";
 import { Minus, MessageCircle, BarChart3, Users2, ChevronRight, Sparkles, Target } from "lucide-react";
 import ActionRow from "@/components/shared/ActionRow";
-import Button from "@/components/shared/Button";
+import ButtonLink from "@/components/shared/ButtonLink";
 import FeatureCardGrid from "@/components/shared/FeatureCardGrid";
 import PageHero from "@/components/shared/PageHero";
 import Section from "@/components/shared/Section";
 import SectionLabel from "@/components/shared/SectionLabel";
+import FadeIn from "./FadeIn";
 import {
   AiIntelligenceVisual,
   BrokerNetworkVisual,
@@ -31,12 +29,7 @@ export default function LandingPage() {
           <img src="/vectors/landing/hero_grid.svg" className="h-full w-full object-cover" alt="" />
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="relative z-10 mx-auto max-w-5xl space-y-12"
-        >
+        <FadeIn className="relative z-10 mx-auto max-w-5xl space-y-12">
           <PageHero
             contentClassName="space-y-12"
             badge={
@@ -58,13 +51,13 @@ export default function LandingPage() {
             descriptionClassName="mx-auto max-w-2xl border-r-4 border-blue-600 pr-6 text-right text-xl font-bold leading-relaxed text-slate-600 md:text-2xl"
             actions={
               <ActionRow className="flex flex-col items-center justify-center gap-8 pt-6 sm:flex-row">
-                <Button href="/signin" variant="primary" className="px-12 py-5">ابدأ الوصول المجاني</Button>
-                <Button href="/developer" variant="outline" className="border-slate-200 px-12 py-5">استكشف النظام</Button>
+                <ButtonLink href="/signin" variant="primary" className="px-12 py-5">ابدأ الوصول المجاني</ButtonLink>
+                <ButtonLink href="/developer" variant="outline" className="border-slate-200 px-12 py-5">استكشف النظام</ButtonLink>
               </ActionRow>
             }
             visual={<HeroBrandNetworkVisual />}
           />
-        </motion.div>
+        </FadeIn>
       </Section>
 
       <Section id="buyers" border>
@@ -89,9 +82,9 @@ export default function LandingPage() {
                 { title: "تمويل محلي", description: "ربط مباشر مع برامج التمويل العقاري والمدعوم." },
               ]}
             />
-            <Button href="/signin" variant="dark">
+            <ButtonLink href="/signin" variant="dark">
               ابدأ البحث الآن <ChevronRight className="h-4 w-4" />
-            </Button>
+            </ButtonLink>
           </div>
           <BuyerIntelligenceVisual />
         </div>
@@ -123,9 +116,9 @@ export default function LandingPage() {
                 },
               ]}
             />
-            <Button href="/developer" variant="primary">
+            <ButtonLink href="/developer" variant="primary">
               وزع مشاريعك الآن <ChevronRight className="h-4 w-4" />
-            </Button>
+            </ButtonLink>
           </div>
         </div>
       </Section>
@@ -152,9 +145,9 @@ export default function LandingPage() {
                 { title: "ربط فوري", description: "مطابقة طلبات عملائك مع آلاف العروض الموثقة فوراً." },
               ]}
             />
-            <Button href="/broker" variant="dark">
+            <ButtonLink href="/broker" variant="dark">
               انضم للشبكة <ChevronRight className="h-4 w-4" />
-            </Button>
+            </ButtonLink>
           </div>
           <BrokerNetworkVisual />
         </div>
@@ -228,9 +221,9 @@ export default function LandingPage() {
             <p className="text-xl font-bold leading-relaxed text-slate-500">
               نظامنا يعالج ملايين البيانات العقارية في المملكة لحظياً ليقدم لك أصدق التوقعات وأدق التحليلات لصفقاتك.
             </p>
-            <Button href="/signin" variant="dark">
+            <ButtonLink href="/signin" variant="dark">
               جرب المحرك الآن <ChevronRight className="h-4 w-4" />
-            </Button>
+            </ButtonLink>
           </div>
         </div>
       </Section>
@@ -250,9 +243,9 @@ export default function LandingPage() {
             <p className="text-xl font-bold leading-relaxed text-slate-500">
               نربط المطورين بالوسطاء والممولين في بيئة تقنية مؤسسية تضمن الشفافية والسرعة في التنفيذ.
             </p>
-            <Button href="/signin" variant="dark">
+            <ButtonLink href="/signin" variant="dark">
               انضم للمنظومة <ChevronRight className="h-4 w-4" />
-            </Button>
+            </ButtonLink>
           </div>
           <EcosystemConnectionVisual />
         </div>

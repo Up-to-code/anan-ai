@@ -1,14 +1,17 @@
-"use client";
-
 import { Users2, Percent, Wallet, Zap } from "lucide-react";
 import ActionRow from "@/components/shared/ActionRow";
-import Button from "@/components/shared/Button";
+import ButtonLink from "@/components/shared/ButtonLink";
 import Card from "@/components/shared/Card";
 import FeatureCardGrid from "@/components/shared/FeatureCardGrid";
 import PageHero from "@/components/shared/PageHero";
 import Section from "@/components/shared/Section";
 import SectionLabel from "@/components/shared/SectionLabel";
 
+/**
+ * WHY:   Brokers need a dedicated public entry page describing collaboration and offers.
+ * WHAT:  Renders the broker-focused landing narrative and CTA links.
+ * HOW:   SSR-only markup with `ButtonLink` so the page stays low-JS.
+ */
 export default function BrokerPage() {
     return (
         <main>
@@ -34,8 +37,8 @@ export default function BrokerPage() {
                     descriptionClassName="text-xl text-slate-500 font-bold leading-relaxed max-w-xl"
                     actions={
                         <ActionRow className="flex flex-col sm:flex-row gap-8 pt-6">
-                            <Button href="/signin" variant="dark">دخول لوحة التعاون</Button>
-                            <Button variant="outline">عرض الشروط والأحكام</Button>
+                            <ButtonLink href="/signin" variant="dark">دخول لوحة التعاون</ButtonLink>
+                            <ButtonLink href="/terms" variant="outline">عرض الشروط والأحكام</ButtonLink>
                         </ActionRow>
                     }
                     visual={
@@ -85,7 +88,7 @@ export default function BrokerPage() {
                         <p className="text-xl text-slate-500 font-bold leading-relaxed">
                             خوارزميات متجذرة في الذكاء الاصطناعي تقوم بتحليل طلباتك ومقارنتها فوراً بآلاف العروض المتاحة في السوق السعودي، لتوصلك بالشريك المناسب في ثوانٍ.
                         </p>
-                        <Button variant="ghost">كيف يعمل النظام الموحد؟</Button>
+                        <ButtonLink href="/faq" variant="ghost">كيف يعمل النظام الموحد؟</ButtonLink>
                     </div>
                     <FeatureCardGrid
                         className="grid grid-cols-1 sm:grid-cols-2 gap-8"
@@ -144,8 +147,8 @@ export default function BrokerPage() {
                         كن جزءاً من البنية التحتية لعنان وابدأ في توسيع نطاق صفقاتك العقارية في جميع مدن المملكة.
                     </p>
                     <ActionRow className="flex flex-col sm:flex-row gap-8 justify-center pt-8">
-                        <Button href="/signin" variant="white" className="border-none shadow-none px-12 py-5">انضم للشبكة</Button>
-                        <Button href="/terms" variant="outline" className="border-white text-white hover:bg-white/10 px-12 py-5">شروط الاستخدام</Button>
+                        <ButtonLink href="/signin" variant="white" className="border-none shadow-none px-12 py-5">انضم للشبكة</ButtonLink>
+                        <ButtonLink href="/terms" variant="outline" className="border-white text-white hover:bg-white/10 px-12 py-5">شروط الاستخدام</ButtonLink>
                     </ActionRow>
                 </div>
             </Section>

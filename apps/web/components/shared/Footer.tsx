@@ -1,8 +1,11 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
 
+/**
+ * WHY:   Public pages need a consistent footer that stays SSR-only for performance and stability.
+ * WHAT:  Renders the brand block, link columns, and legal/copyright line.
+ * HOW:   Static markup using Next.js `Link`/`Image` only.
+ */
 export default function Footer() {
     return (
         <footer className="bg-slate-900 border-t-2 border-slate-800 pt-32 pb-16 px-6" dir="rtl">
@@ -15,7 +18,7 @@ export default function Footer() {
                         <div className="flex items-center gap-4">
                             <Link href="/" className="inline-flex items-center justify-center rounded-none border border-slate-700 bg-slate-950 p-3">
                                 <Image
-                                    src="/brand-mark.svg"
+                                    src="/brand-logo.svg"
                                     alt="عنان"
                                     width={56}
                                     height={56}
@@ -41,6 +44,7 @@ export default function Footer() {
                                 <li><Link href="/developer" className="text-sm font-bold text-slate-400 hover:text-white transition-colors uppercase">المطورون</Link></li>
                                 <li><Link href="/broker" className="text-sm font-bold text-slate-400 hover:text-white transition-colors uppercase">الوسطاء</Link></li>
                                 <li><Link href="/about" className="text-sm font-bold text-slate-400 hover:text-white transition-colors uppercase">عن عنان</Link></li>
+                                <li><Link href="/contact" className="text-sm font-bold text-slate-400 hover:text-white transition-colors uppercase">اتصل بنا</Link></li>
                             </ul>
                         </div>
                         <div className="space-y-8">
@@ -56,6 +60,8 @@ export default function Footer() {
                             <ul className="space-y-4">
                                 <li><Link href="/policy" className="text-sm font-bold text-slate-400 hover:text-white transition-colors uppercase">الخصوصية</Link></li>
                                 <li><Link href="/terms" className="text-sm font-bold text-slate-400 hover:text-white transition-colors uppercase">الشروط</Link></li>
+                                <li><Link href="/faq" className="text-sm font-bold text-slate-400 hover:text-white transition-colors uppercase">الأسئلة الشائعة</Link></li>
+                                <li><Link href="/blog" className="text-sm font-bold text-slate-400 hover:text-white transition-colors uppercase">المدونة</Link></li>
                             </ul>
                         </div>
                     </div>

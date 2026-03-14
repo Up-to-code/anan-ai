@@ -122,6 +122,18 @@ export async function listInboxConversations(
 }
 
 /**
+ * WHY:   Workspace chrome needs unread counts without loading full conversation lists on every request.
+ * WHAT:  Returns the authenticated user's total unread inbox count.
+ * HOW:   Resolves the current session token once, then delegates to a lightweight repository summary query.
+ */
+export async function getInboxUnreadSummaryForCurrentUser(
+  dependencies: InboxServiceDependencies = defaultDependencies,
+) {
+  const session = await dependencies.requireSession();
+  return dependencies.repository.getUnreadSummary(session.token);
+}
+
+/**
  * WHY:   Inbox detail routes should load a specific thread through the same server boundary as list/search flows.
  * WHAT:  Returns the full message history and participant summary for one conversation id.
  * HOW:   Authenticates the request with the current session token, then delegates to the repository detail read.

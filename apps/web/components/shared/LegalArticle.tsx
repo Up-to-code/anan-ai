@@ -1,6 +1,4 @@
-"use client";
-
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface LegalArticleProps {
@@ -10,6 +8,11 @@ interface LegalArticleProps {
     titleClassName?: string;
 }
 
+/**
+ * WHY:   Legal pages need structured article blocks with consistent typography and no client JS.
+ * WHAT:  Renders an article title plus children content with optional class overrides.
+ * HOW:   Pure composition using semantic tags.
+ */
 export default function LegalArticle({
     title,
     children,

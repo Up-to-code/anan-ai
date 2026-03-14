@@ -1,7 +1,5 @@
-"use client";
-
-import { ReactNode } from "react";
-import { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 
 interface CardProps {
     title: string;
@@ -12,6 +10,11 @@ interface CardProps {
     children?: ReactNode;
 }
 
+/**
+ * WHY:   Public surfaces need a consistent card primitive that can be rendered server-side for speed.
+ * WHAT:  Displays an optional icon, title/description, and an optional children slot with variant styling.
+ * HOW:   Pure presentational component (no interactivity), so it remains SSR-friendly.
+ */
 export default function Card({
     title,
     description,

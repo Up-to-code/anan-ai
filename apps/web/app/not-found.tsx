@@ -1,11 +1,14 @@
-"use client";
-
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
 import Section from "@/components/shared/Section";
-import Button from "@/components/shared/Button";
+import ButtonLink from "@/components/shared/ButtonLink";
 import { AlertCircle } from "lucide-react";
 
+/**
+ * WHY:   Missing routes must render quickly and consistently without requiring client hydration.
+ * WHAT:  Renders the 404 page with primary navigation and simple recovery CTAs.
+ * HOW:   Uses server-rendered Navbar/Footer and `ButtonLink` for navigation.
+ */
 export default function NotFound() {
     return (
         <main className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-600 selection:text-white flex flex-col" dir="rtl">
@@ -28,8 +31,8 @@ export default function NotFound() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-8 justify-center pt-6">
-                        <Button href="/" variant="primary">العودة للرئيسية</Button>
-                        <Button href="/about" variant="outline">تواصل مع الدعم</Button>
+                        <ButtonLink href="/" variant="primary">العودة للرئيسية</ButtonLink>
+                        <ButtonLink href="/about" variant="outline">تواصل مع الدعم</ButtonLink>
                     </div>
                 </div>
             </Section>

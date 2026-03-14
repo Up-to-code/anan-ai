@@ -1,7 +1,6 @@
 "use client";
 
 import { Dialog } from "@base-ui/react/dialog";
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { getWorkspaceZonesForKeys } from "@/app/(ws)/ws/_lib/zones";
@@ -9,6 +8,7 @@ import type { AnanProThreadSummary } from "@/server/contracts/ananPro";
 import { cn } from "@/lib/utils";
 import type { SidebarProps } from "./types";
 import { MessageSquareText, PenSquare, X } from "lucide-react";
+import { useAssistantThreads } from "./useAssistantThreads";
 
 function getThreadLabel(thread: AnanProThreadSummary) {
   const title = thread.title?.trim();
@@ -22,18 +22,6 @@ function formatThreadDate(timestamp: number) {
     hour: "numeric",
     minute: "2-digit",
   });
-}
-
-async function fetchAssistantThreads() {
-  const response = await fetch("/api/workspace/anan-pro?list=threads", {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error("تعذر تحميل سجل المساعد.");
-  }
-
-  return (await response.json()) as AnanProThreadSummary[];
 }
 
 /**
@@ -54,40 +42,11 @@ export default function SidebarContent({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const navItems = getWorkspaceZonesForKeys(visibleZoneKeys ?? ["overview", "settings"]);
-  const [assistantThreads, setAssistantThreads] = useState(allAssistantThreads);
   const activeAssistantThreadId = pathname === "/ws" ? searchParams.get("threadId") : null;
-
-  useEffect(() => {
-    setAssistantThreads(allAssistantThreads);
-  }, [allAssistantThreads]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const refreshAssistantThreads = async () => {
-      try {
-        const nextThreads = await fetchAssistantThreads();
-        if (!cancelled) {
-          setAssistantThreads(nextThreads);
-        }
-      } catch {
-        // Keep the server-rendered sidebar snapshot when the background refresh fails.
-      }
-    };
-
-    void refreshAssistantThreads();
-
-    const handleThreadsChanged = () => {
-      void refreshAssistantThreads();
-    };
-
-    window.addEventListener("workspace-assistant-threads:changed", handleThreadsChanged);
-
-    return () => {
-      cancelled = true;
-      window.removeEventListener("workspace-assistant-threads:changed", handleThreadsChanged);
-    };
-  }, []);
+  const { threads: assistantThreads } = useAssistantThreads({
+    serverThreads: allAssistantThreads,
+    limit: Math.max(allAssistantThreads.length, 12),
+  });
 
   const recentThreads = assistantThreads.slice(0, Math.max(recentAssistantThreads.length, 3));
 

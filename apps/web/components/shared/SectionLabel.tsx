@@ -1,7 +1,5 @@
-"use client";
-
-import { LucideIcon } from "lucide-react";
-import { ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface SectionLabelProps {
@@ -12,6 +10,11 @@ interface SectionLabelProps {
     textClassName?: string;
 }
 
+/**
+ * WHY:   Public sections need small, reusable badges/labels that stay SSR-only.
+ * WHAT:  Renders an optional icon plus label text with lightweight class overrides.
+ * HOW:   Render-only; uses `cn` for class composition.
+ */
 export default function SectionLabel({
     icon: Icon,
     children,

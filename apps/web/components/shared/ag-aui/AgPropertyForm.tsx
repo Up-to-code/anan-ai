@@ -129,8 +129,6 @@ export default function AgPropertyForm({
       try {
         if (onSave) {
           await onSave(payload);
-        } else {
-          console.log("CONFIRMED:", payload);
         }
         setShowSafetyConfirm(false);
       } finally {

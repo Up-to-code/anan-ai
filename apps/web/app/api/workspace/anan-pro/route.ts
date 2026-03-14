@@ -14,7 +14,17 @@ export async function GET(request: NextRequest) {
     const threadId = request.nextUrl.searchParams.get("threadId") ?? undefined;
     const list = request.nextUrl.searchParams.get("list");
     if (list === "threads") {
-      return Response.json(await listAnanProThreads());
+      const limitParam = request.nextUrl.searchParams.get("limit");
+      const parsedLimit = limitParam ? Number(limitParam) : NaN;
+      const limit = Number.isFinite(parsedLimit) && parsedLimit > 0
+        ? Math.min(Math.floor(parsedLimit), 50)
+        : 12;
+
+      return Response.json(await listAnanProThreads(limit), {
+        headers: {
+          "Cache-Control": "private, max-age=15",
+        },
+      });
     }
     return Response.json(await getAnanProThread(threadId));
   } catch (error) {

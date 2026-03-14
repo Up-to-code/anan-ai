@@ -1,10 +1,13 @@
-"use client";
-
 import LegalArticle from "@/components/shared/LegalArticle";
 import PageHero from "@/components/shared/PageHero";
 import Section from "@/components/shared/Section";
 import SectionLabel from "@/components/shared/SectionLabel";
 
+/**
+ * WHY:   Legal pages must be crawlable, fast, and consistent across devices.
+ * WHAT:  Renders the Terms of Use content in structured article blocks.
+ * HOW:   Pure server-rendered content; no client hooks required.
+ */
 export default function TermsPage() {
     const lastUpdated = "٧ مارس ٢٠٢٥";
 

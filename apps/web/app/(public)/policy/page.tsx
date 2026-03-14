@@ -1,10 +1,13 @@
-"use client";
-
 import LegalArticle from "@/components/shared/LegalArticle";
 import PageHero from "@/components/shared/PageHero";
 import Section from "@/components/shared/Section";
 import SectionLabel from "@/components/shared/SectionLabel";
 
+/**
+ * WHY:   Users and partners need a clear privacy policy aligned to KSA requirements.
+ * WHAT:  Renders the Privacy Policy as structured legal sections.
+ * HOW:   Server-rendered static content for performance and accessibility.
+ */
 export default function PolicyPage() {
     const lastUpdated = "٧ مارس ٢٠٢٥";
 
