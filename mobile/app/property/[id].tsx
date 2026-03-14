@@ -1,7 +1,7 @@
 import { ScrollView, View, Pressable, Linking, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ChevronRight, Heart, Share2, MessageCircle, Phone, MapPin, BedDouble, Bath, Ruler, ShieldCheck, Sparkles } from "lucide-react-native";
+import { ChevronRight, Heart, Share2, MessageCircle, Phone, MapPin, BedDouble, Bath, Ruler, ShieldCheck, Sparkles, Calendar, Banknote } from "lucide-react-native";
 import { AppText } from "@/components/ui/AppText";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
@@ -124,6 +124,26 @@ export default function PropertyDetailScreen() {
           </View>
           <ChevronRight size={16} color="#94a3b8" style={{ transform: [{ scaleX: -1 }] }} />
         </Pressable>
+
+        {/* Transaction Actions */}
+        <View className="px-5 mb-5 flex-row gap-3">
+          <Pressable
+            onPress={() => router.push(`/property/book/${property.id}` as any)}
+            className="flex-1 py-3 items-center rounded-lg bg-emerald-50"
+            style={{ borderWidth: 0.5, borderColor: "#10b981" }}
+          >
+            <Calendar size={18} color="#10b981" className="mb-1" />
+            <AppText className="text-sm font-cairo-bold text-emerald-600">حجز موعد</AppText>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push(`/property/offer/${property.id}` as any)}
+            className="flex-1 py-3 items-center rounded-lg bg-brand/5"
+            style={{ borderWidth: 0.5, borderColor: "#2563EB" }}
+          >
+            <Banknote size={18} color="#2563EB" className="mb-1" />
+            <AppText className="text-sm font-cairo-bold text-brand">تقديم عرض</AppText>
+          </Pressable>
+        </View>
 
         {/* Quick Prompts */}
         <View className="px-5 mb-4">

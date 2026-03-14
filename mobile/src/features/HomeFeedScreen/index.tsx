@@ -1,8 +1,9 @@
-import { KeyboardAvoidingView, Platform, View, FlatList, Pressable } from "react-native";
+import { KeyboardAvoidingView, Platform, View, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
-import { Sparkles, Search } from "lucide-react-native";
+import { Sparkles, Search, User } from "lucide-react-native";
+import Animated, { FadeIn, FadeInDown, Layout } from "react-native-reanimated";
 import { AppText } from "@/components/ui/AppText";
 import { PropertyChatCard } from "@/components/features/PropertyChatCard";
 import { AIPanelResultCard } from "@/components/features/AIPanelResultCard";
@@ -42,28 +43,41 @@ export default function HomeFeedScreen() {
     router.push(`/chat/${property.id}` as any);
   };
 
-  const renderMessage = ({ item }: { item: ChatMessage }) => {
+  const renderMessage = ({ item, index }: { item: ChatMessage; index: number }) => {
     const isUser = item.role === "user";
+    const delay = index * 100;
 
     // User message
     if (isUser) {
       return (
-        <View className="mb-4 pr-4 pl-16 items-end">
+        <Animated.View 
+          entering={FadeInDown.duration(400).delay(delay)}
+          layout={Layout.springify()}
+          className="mb-4 pr-4 pl-16 items-end"
+        >
           <View className="bg-brand/10 px-4 py-3" style={{ borderRightWidth: 2, borderRightColor: "#2563EB" }}>
             <AppText className="text-slate-900">{item.text}</AppText>
           </View>
-        </View>
+        </Animated.View>
       );
     }
 
     // AG-UI: Thinking state
     if (item.isThinking) {
-      return <ThinkingIndicator steps={item.reasoningSteps} />;
+      return (
+        <Animated.View entering={FadeIn.duration(300)} layout={Layout.springify()}>
+          <ThinkingIndicator steps={item.reasoningSteps} />
+        </Animated.View>
+      );
     }
 
     // AI message with AG-UI streaming + rich content
     return (
-      <View className="mb-5 pl-4 pr-8 items-start">
+      <Animated.View 
+        entering={item.isStreaming ? FadeIn.duration(300) : FadeInDown.duration(400).delay(delay)}
+        layout={Layout.springify()}
+        className="mb-5 pl-4 pr-8 items-start"
+      >
         {/* Streaming or static text */}
         {item.text ? (
           <View className="mb-3 w-full">
@@ -76,22 +90,22 @@ export default function HomeFeedScreen() {
         ) : null}
 
         {/* Embedded property cards with media */}
-        {item.properties?.map((property) => (
-          <View key={property.id} className="w-full mb-3">
+        {item.properties?.map((property, pIdx) => (
+          <Animated.View entering={item.isStreaming ? FadeInDown.duration(400).delay(300 + pIdx * 100) : undefined} key={property.id} className="w-full mb-3">
             <PropertyChatCard
               property={property}
               onPress={() => navigateToProperty(property)}
             />
-          </View>
+          </Animated.View>
         ))}
 
         {/* AG-UI Tool result cards */}
         {item.cards?.map((card, idx) => (
-          <View key={`${card.type}-${idx}`} className="w-full mb-3">
+          <Animated.View entering={FadeInDown.duration(400).delay(300 + idx * 100)} key={`${card.type}-${idx}`} className="w-full mb-3">
             <AIPanelResultCard card={card} />
-          </View>
+          </Animated.View>
         ))}
-      </View>
+      </Animated.View>
     );
   };
 
@@ -122,7 +136,7 @@ export default function HomeFeedScreen() {
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-5 py-3" style={{ borderBottomWidth: 0.5, borderBottomColor: "#e2e8f0" }}>
+      <Animated.View entering={FadeInDown.duration(400)} className="flex-row items-center justify-between px-5 py-3" style={{ borderBottomWidth: 0.5, borderBottomColor: "#e2e8f0" }}>
         <View className="flex-row items-center gap-2">
           <View className="h-8 w-8 bg-brand items-center justify-center">
             <Sparkles size={16} color="#FFFFFF" />
@@ -132,30 +146,33 @@ export default function HomeFeedScreen() {
             <AppText className="text-[10px] text-slate-400">مساعد عقاري ذكي</AppText>
           </View>
         </View>
-        <View className="flex-row items-center gap-2">
+        <View className="flex-row items-center gap-4">
           <Pressable onPress={() => router.push("/search" as any)} className="h-8 w-8 items-center justify-center">
             <Search size={18} color="#94a3b8" />
           </Pressable>
-          <View className="h-2 w-2 bg-emerald-500 rounded-full" />
+          <Pressable onPress={() => router.push("/profile" as any)} className="h-8 w-8 bg-slate-100 rounded-full items-center justify-center">
+            <User size={16} color="#64748b" />
+          </Pressable>
         </View>
-      </View>
+      </Animated.View>
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <FlatList
+        <Animated.FlatList
           data={chatMessages}
           keyExtractor={(item) => item.id}
-          renderItem={renderMessage}
+          renderItem={renderMessage as any}
           contentContainerStyle={{ paddingVertical: 20 }}
           className="flex-1"
+          itemLayoutAnimation={Layout.springify()}
         />
 
         {/* Quick suggestion chips */}
         {assistant.messages.length === 0 ? (
-          <View className="px-4 pb-2">
-            <FlatList
+          <Animated.View entering={FadeInDown.duration(400).delay(400)} className="px-4 pb-2">
+            <Animated.FlatList
               horizontal
               showsHorizontalScrollIndicator={false}
               data={suggestions}
@@ -173,7 +190,7 @@ export default function HomeFeedScreen() {
                 </Pressable>
               )}
             />
-          </View>
+          </Animated.View>
         ) : null}
 
         {/* Composer */}

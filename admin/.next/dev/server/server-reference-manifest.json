@@ -2,6 +2,54 @@
   "node": {
     "001b79ec261ff504ac2c60f89d6cfd8b3407623372": {
       "workers": {
+        "app/(admin)/analytics/active-30d/page": {
+          "moduleId": "[project]/admin/.next-internal/server/app/(admin)/analytics/active-30d/page/actions.js { ACTIONS_MODULE0 => \"[project]/node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "invalidateCache",
+          "filename": "node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js"
+        },
+        "app/(admin)/analytics/brokers/page": {
+          "moduleId": "[project]/admin/.next-internal/server/app/(admin)/analytics/brokers/page/actions.js { ACTIONS_MODULE0 => \"[project]/node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "invalidateCache",
+          "filename": "node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js"
+        },
+        "app/(admin)/analytics/developers/page": {
+          "moduleId": "[project]/admin/.next-internal/server/app/(admin)/analytics/developers/page/actions.js { ACTIONS_MODULE0 => \"[project]/node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "invalidateCache",
+          "filename": "node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js"
+        },
+        "app/(admin)/analytics/messages/page": {
+          "moduleId": "[project]/admin/.next-internal/server/app/(admin)/analytics/messages/page/actions.js { ACTIONS_MODULE0 => \"[project]/node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "invalidateCache",
+          "filename": "node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js"
+        },
+        "app/(admin)/analytics/page": {
+          "moduleId": "[project]/admin/.next-internal/server/app/(admin)/analytics/page/actions.js { ACTIONS_MODULE0 => \"[project]/node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "invalidateCache",
+          "filename": "node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js"
+        },
+        "app/(admin)/analytics/properties/page": {
+          "moduleId": "[project]/admin/.next-internal/server/app/(admin)/analytics/properties/page/actions.js { ACTIONS_MODULE0 => \"[project]/node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "invalidateCache",
+          "filename": "node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js"
+        },
+        "app/(admin)/dashboard/activity/page": {
+          "moduleId": "[project]/admin/.next-internal/server/app/(admin)/dashboard/activity/page/actions.js { ACTIONS_MODULE0 => \"[project]/node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "invalidateCache",
+          "filename": "node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js"
+        },
+        "app/(admin)/dashboard/entities/page": {
+          "moduleId": "[project]/admin/.next-internal/server/app/(admin)/dashboard/entities/page/actions.js { ACTIONS_MODULE0 => \"[project]/node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "invalidateCache",
+          "filename": "node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js"
+        },
         "app/(admin)/dashboard/page": {
           "moduleId": "[project]/admin/.next-internal/server/app/(admin)/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false,
@@ -16,6 +64,18 @@
         },
         "app/(admin)/docs/page": {
           "moduleId": "[project]/admin/.next-internal/server/app/(admin)/docs/page/actions.js { ACTIONS_MODULE0 => \"[project]/node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "invalidateCache",
+          "filename": "node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js"
+        },
+        "app/(admin)/users/[userId]/page": {
+          "moduleId": "[project]/admin/.next-internal/server/app/(admin)/users/[userId]/page/actions.js { ACTIONS_MODULE0 => \"[project]/node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "invalidateCache",
+          "filename": "node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js"
+        },
+        "app/(admin)/users/page": {
+          "moduleId": "[project]/admin/.next-internal/server/app/(admin)/users/page/actions.js { ACTIONS_MODULE0 => \"[project]/node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false,
           "exportedName": "invalidateCache",
           "filename": "node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js"
@@ -37,15 +97,32 @@
           "async": false,
           "exportedName": "invalidateCache",
           "filename": "node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js"
+        },
+        "app/page": {
+          "moduleId": "[project]/admin/.next-internal/server/app/page/actions.js { ACTIONS_MODULE0 => \"[project]/node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "invalidateCache",
+          "filename": "node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js"
         }
       },
       "layer": {
+        "app/(admin)/analytics/active-30d/page": "action-browser",
+        "app/(admin)/analytics/brokers/page": "action-browser",
+        "app/(admin)/analytics/developers/page": "action-browser",
+        "app/(admin)/analytics/messages/page": "action-browser",
+        "app/(admin)/analytics/page": "action-browser",
+        "app/(admin)/analytics/properties/page": "action-browser",
+        "app/(admin)/dashboard/activity/page": "action-browser",
+        "app/(admin)/dashboard/entities/page": "action-browser",
         "app/(admin)/dashboard/page": "action-browser",
         "app/(admin)/docs/ai-chatflow/page": "action-browser",
         "app/(admin)/docs/page": "action-browser",
+        "app/(admin)/users/[userId]/page": "action-browser",
+        "app/(admin)/users/page": "action-browser",
         "app/(docs)/docs/ai-chatflow/page": "action-browser",
         "app/(docs)/docs/architecture/page": "action-browser",
-        "app/(docs)/docs/page": "action-browser"
+        "app/(docs)/docs/page": "action-browser",
+        "app/page": "action-browser"
       },
       "filename": "node_modules/.pnpm/@convex-dev+auth@0.0.91_@auth+core@0.37.4_convex@1.32.0_react@19.2.3__react@19.2.3/node_modules/@convex-dev/auth/dist/nextjs/server/invalidateCache.js",
       "exportedName": "invalidateCache"

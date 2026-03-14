@@ -2,6 +2,7 @@ import { ScrollView, View, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronRight, Building2, CreditCard, TrendingUp, ShieldCheck, Landmark } from "lucide-react-native";
+import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { AppText } from "@/components/ui/AppText";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
@@ -42,25 +43,26 @@ export default function FinanceDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      {/* Header */}
-      <View className="flex-row items-center px-4 py-3" style={{ borderBottomWidth: 0.5, borderBottomColor: "#e2e8f0" }}>
-        <IconButton icon={ChevronRight} onPress={() => router.back()} />
-        <AppText className="flex-1 ml-2 font-cairo-bold text-base text-slate-900" numberOfLines={1}>
-          التفاصيل المالية
-        </AppText>
-      </View>
-
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Property Summary */}
-        <View className="px-5 py-4" style={{ borderBottomWidth: 0.5, borderBottomColor: "#f1f5f9" }}>
-          <AppText className="font-cairo-bold text-slate-900" numberOfLines={1}>{property.title}</AppText>
-          <AppText className="text-lg font-cairo-bold text-brand mt-1">
-            {new Intl.NumberFormat("en-SA", { style: "currency", currency: "SAR", maximumFractionDigits: 0 }).format(property.price)}
+      <Animated.View entering={FadeIn.duration(300)} className="flex-1">
+        {/* Header */}
+        <Animated.View entering={FadeInDown.duration(400).delay(50)} className="flex-row items-center px-4 py-3" style={{ borderBottomWidth: 0.5, borderBottomColor: "#e2e8f0" }}>
+          <IconButton icon={ChevronRight} onPress={() => router.back()} />
+          <AppText className="flex-1 ml-2 font-cairo-bold text-base text-slate-900" numberOfLines={1}>
+            التفاصيل المالية
           </AppText>
-        </View>
+        </Animated.View>
 
-        {/* Cost Breakdown */}
-        <View className="px-5 py-4">
+        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+          {/* Property Summary */}
+          <Animated.View entering={FadeInDown.duration(400).delay(100)} className="px-5 py-4" style={{ borderBottomWidth: 0.5, borderBottomColor: "#f1f5f9" }}>
+            <AppText className="font-cairo-bold text-slate-900" numberOfLines={1}>{property.title}</AppText>
+            <AppText className="text-lg font-cairo-bold text-brand mt-1">
+              {new Intl.NumberFormat("en-SA", { style: "currency", currency: "SAR", maximumFractionDigits: 0 }).format(property.price)}
+            </AppText>
+          </Animated.View>
+
+          {/* Cost Breakdown */}
+          <Animated.View entering={FadeInDown.duration(400).delay(150)} className="px-5 py-4">
           <SectionHeader icon={CreditCard} label="تفصيل التكلفة" color="#2563EB" />
           <View className="mt-3 gap-0">
             <FinanceRow label="سعر العقار" value={formatSAR(property.price)} />
@@ -70,10 +72,10 @@ export default function FinanceDetailScreen() {
             <FinanceRow label="إجمالي تكلفة التمويل" value={formatSAR(totalCost)} />
             <FinanceRow label="إجمالي الأرباح المصرفية" value={formatSAR(totalInterest)} />
           </View>
-        </View>
+          </Animated.View>
 
-        {/* ROI Section */}
-        <View className="px-5 py-4" style={{ borderTopWidth: 0.5, borderTopColor: "#f1f5f9" }}>
+          {/* ROI Section */}
+          <Animated.View entering={FadeInDown.duration(400).delay(200)} className="px-5 py-4" style={{ borderTopWidth: 0.5, borderTopColor: "#f1f5f9" }}>
           <SectionHeader icon={TrendingUp} label="العائد الاستثماري" color="#10b981" />
           <View className="mt-3 gap-0">
             <FinanceRow label="الإيجار السنوي التقديري" value={formatSAR(annualRent)} />
@@ -91,10 +93,10 @@ export default function FinanceDetailScreen() {
               <AppText className="text-[10px] text-slate-400">مرتفع</AppText>
             </View>
           </View>
-        </View>
+          </Animated.View>
 
-        {/* Eligibility Check */}
-        <View className="px-5 py-4" style={{ borderTopWidth: 0.5, borderTopColor: "#f1f5f9" }}>
+          {/* Eligibility Check */}
+          <Animated.View entering={FadeInDown.duration(400).delay(250)} className="px-5 py-4" style={{ borderTopWidth: 0.5, borderTopColor: "#f1f5f9" }}>
           <SectionHeader icon={ShieldCheck} label="فحص الأهلية" color="#8b5cf6" />
           <View className="mt-3 p-3" style={{ backgroundColor: property.price < 2500000 ? "#10b98115" : "#f59e0b15" }}>
             <View className="flex-row items-center gap-2">
@@ -107,10 +109,10 @@ export default function FinanceDetailScreen() {
               التقدير مبني على نسبة استقطاع 33% من الراتب الشهري. يرجى مراجعة البنك للحصول على تأكيد نهائي.
             </AppText>
           </View>
-        </View>
+          </Animated.View>
 
-        {/* Bank Partners */}
-        <View className="px-5 py-4" style={{ borderTopWidth: 0.5, borderTopColor: "#f1f5f9" }}>
+          {/* Bank Partners */}
+          <Animated.View entering={FadeInDown.duration(400).delay(300)} className="px-5 py-4" style={{ borderTopWidth: 0.5, borderTopColor: "#f1f5f9" }}>
           <SectionHeader icon={Landmark} label="شركاء التمويل المعتمدين" color="#0f172a" />
           <View className="mt-3 gap-3">
             {banks.map((bank) => (
@@ -126,15 +128,16 @@ export default function FinanceDetailScreen() {
               </Pressable>
             ))}
           </View>
-        </View>
+          </Animated.View>
 
-        <View className="h-24" />
-      </ScrollView>
+          <View className="h-24" />
+        </ScrollView>
 
-      {/* Bottom CTA */}
-      <View className="absolute bottom-0 left-0 right-0 bg-white px-5 pb-8 pt-3" style={{ borderTopWidth: 0.5, borderTopColor: "#e2e8f0" }}>
-        <Button label="تقدم بطلب تمويل" onPress={() => {}} />
-      </View>
+        {/* Bottom CTA */}
+        <Animated.View entering={FadeInDown.duration(400).delay(400)} className="absolute bottom-0 left-0 right-0 bg-white px-5 pb-8 pt-3" style={{ borderTopWidth: 0.5, borderTopColor: "#e2e8f0" }}>
+          <Button label="تقدم بطلب تمويل" onPress={() => {}} />
+        </Animated.View>
+      </Animated.View>
     </SafeAreaView>
   );
 }
