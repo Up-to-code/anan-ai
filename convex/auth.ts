@@ -65,6 +65,7 @@ async function syncUserProfile(ctx: any, userId: any, existingUserId: any) {
  */
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [getGoogleProvider],
+  authorizedRedirectOrigins: ["https://anan-lit-web.vercel.app"],
   callbacks: {
     async afterUserCreatedOrUpdated(ctx, { userId, existingUserId }) {
       await syncUserProfile(ctx, userId, existingUserId);
