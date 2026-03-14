@@ -72,16 +72,16 @@ The `anan` directory is the master orchestrator. When the frontend requests AI a
 sequenceDiagram
     participant User
     participant AssistantService
-    participant "Orchestrator (anan)"
+    participant Orchestrator
     participant IntentAnalyzer
-    participant "Team (e.g., team_search)"
+    participant ExpertTeam
     
     User->>AssistantService: "Find properties"
     AssistantService->>Orchestrator: orchestrate(prompt)
     Orchestrator->>IntentAnalyzer: analyzeIntent(prompt)
     IntentAnalyzer-->>Orchestrator: Requires: anan_search
-    Orchestrator->>Team: dispatch(anan_search, prompt)
-    Team-->>Orchestrator: Real estate data
+    Orchestrator->>ExpertTeam: dispatch(anan_search, prompt)
+    ExpertTeam-->>Orchestrator: Real estate data
     Orchestrator->>User: Merged Markdown Response
 ```
 
