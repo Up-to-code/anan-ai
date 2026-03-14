@@ -1,6 +1,6 @@
-# Anan Platform — Developer Bible (Index)
+# Anan AI — Developer Bible (Index)
 
-Anan is a **multi-surface real estate platform** built around a **Convex-first backend**.
+Anan AI is a **multi-surface real estate platform** built around a **Convex-first backend**.
 
 This repo contains four runtime surfaces that all share one backend:
 
@@ -26,7 +26,40 @@ Supporting references:
 
 ---
 
-## The “circle” (how the platform works)
+## 🏗️ System Architecture
+
+![Multi-Agent Orchestrator Architecture](./docs/assets/system-architecture.png)
+
+Anan AI utilizes a **Multi-Agent Orchestrator** to handle complex user intents across search, finance, and property management.
+
+### Developer Flow (Simplified)
+![Dev Flow Clean](./docs/assets/dev-flow-clean.png)
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant AssistantService
+    participant Orchestrator (anan)
+    participant IntentAnalyzer
+    participant Team (e.g., team_search)
+    
+    User->>AssistantService: Input Prompt
+    AssistantService->>Orchestrator: orchestrate(prompt)
+    Orchestrator->>IntentAnalyzer: analyzeIntent(prompt)
+    IntentAnalyzer-->>Orchestrator: Required Agents
+    Orchestrator->>Team: dispatch(agent, prompt)
+    Team-->>Orchestrator: Data/Response
+    Orchestrator->>User: Merged Markdown Response
+```
+
+---
+
+## 🔄 The “circle” (how the platform works)
+
+![Platform Flow - The Circle](./docs/assets/platform-flow.png)
+
+### Monorepo Structure
+![Monorepo Structure](./docs/assets/monorepo-structure.png)
 
 1. A surface receives input (web/admin/mobile/channel).
 2. The surface delegates to the owning layer (web gateway or direct Convex).
@@ -34,6 +67,15 @@ Supporting references:
 4. Convex executes a capability (shared logic / AI / owner zone).
 5. Convex persists and returns stable projections.
 6. The surface renders and often subscribes to real-time updates.
+
+```mermaid
+graph TD
+    A[Surface: Web, Admin, Mobile, Channel] -->|Delegates| B[Owning Layer: Web Gateway / Direct Convex]
+    B -->|Identity & Policy| C[Convex Backend]
+    C -->|Execute Capability| D[Shared Logic, AI, Owner Zone]
+    D -->|Persist & Project| E[Convex Stable Projections]
+    E -->|Real-time Update| A
+```
 
 Break the circle and you break the platform.
 
