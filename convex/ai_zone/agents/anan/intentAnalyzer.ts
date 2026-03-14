@@ -40,7 +40,7 @@ export async function analyzeIntent(
     try {
         const model = getChatModel(modelOverride);
         const { text } = await generateText({
-            model,
+            model: model as any,
             prompt: `You are an intent classifier for a real estate AI platform.
 Given the user's message, determine which teams should handle it.
 

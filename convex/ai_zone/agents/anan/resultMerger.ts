@@ -79,7 +79,7 @@ export async function mergeResults(input: MergeInput): Promise<MergeResult> {
     try {
         const model = getChatModel(modelOverride);
         const mergeResult = await generateText({
-            model,
+            model: model as any,
             prompt: `You are merging results from multiple AI agents into one coherent Arabic response.
 User's original question: "${prompt}"
 

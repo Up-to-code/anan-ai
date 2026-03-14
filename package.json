@@ -9,11 +9,14 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:once": "vitest run",
-    "mobile:dev": "pnpm --dir mobile dev",
-    "mobile:typecheck": "pnpm --dir mobile typecheck"
+    "build:web": "pnpm --filter web build",
+    "build:admin": "pnpm --filter admin build",
+    "mobile:dev": "pnpm --dir apps/mobile dev",
+    "mobile:typecheck": "pnpm --dir apps/mobile typecheck"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.57",
+    "@ai-sdk/provider": "^3.0.8",
     "@auth/core": "^0.37.0",
     "@browserbasehq/convex-stagehand": "^0.0.2",
     "@convex-dev/action-cache": "^0.3.0",
