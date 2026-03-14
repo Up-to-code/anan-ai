@@ -9,10 +9,14 @@ export const dashboardTabs: RouteTab[] = [
 export const docsTabs: RouteTab[] = [
   { href: "/docs", label: "Overview", exact: true },
   { href: "/docs/architecture", label: "Architecture" },
+  { href: "/docs/convex", label: "Convex" },
+  { href: "/docs/web-gateway", label: "Web Gateway" },
+  { href: "/docs/channels", label: "Channels" },
   { href: "/docs/capabilities", label: "Capabilities" },
   { href: "/docs/ui", label: "UI Components" },
   { href: "/docs/data", label: "Data & Contracts" },
   { href: "/docs/ai-chatflow", label: "AI Chatflow" },
+  { href: "/docs/mobile", label: "Mobile" },
   { href: "/docs/workflow", label: "Workflow" },
 ];
 

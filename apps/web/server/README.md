@@ -8,3 +8,9 @@ This folder is the Next.js backend gateway for the web app.
 - `infrastructure/convex/` adapts domain services to Convex-backed storage and queries.
 
 Route handlers under `web/app/api/*` must stay thin and delegate here.
+
+## Deep references
+
+- Web handbook: `docs/handbook/web/server-gateway.md`
+- SSR/perf rules: `docs/handbook/web/ssr-performance.md`
+- Convex rules: `CONVEX_RULES.md`

@@ -8,3 +8,18 @@ Expo-managed buyer app for the Anan mobile feed MVP.
 - `src/components/features/` contains feed and assistant-specific building blocks.
 
 The mobile UI follows the sharp Arabic-first Anan system: flat surfaces, blue accents, strong contrast, and RTL-native layout.
+
+## Commands
+
+From repo root:
+
+```bash
+pnpm mobile:dev
+pnpm mobile:typecheck
+```
+
+## References
+
+- Deep handbook: `docs/handbook/mobile/README.md`
+- Data/LLM guidance: `docs/llm-data-access-guide.md`
+- Repo architecture rules: `ARCHITECTURE.md`

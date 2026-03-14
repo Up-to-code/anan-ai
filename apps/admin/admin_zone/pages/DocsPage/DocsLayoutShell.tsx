@@ -31,7 +31,7 @@ export default function DocsLayoutShell({ children }: DocsLayoutShellProps) {
               </h1>
               <p className="max-w-3xl text-sm font-semibold leading-7 text-slate-600">
                 The standalone developer entrypoint for platform architecture, capability ownership, UI surfaces, data
-                contracts, AI chatflow, and day-to-day development workflow.
+                contracts, AI chatflow, channel ingress, and day-to-day development workflow.
               </p>
             </div>
             <div className="grid gap-3 md:grid-cols-3">
@@ -48,7 +48,7 @@ export default function DocsLayoutShell({ children }: DocsLayoutShellProps) {
               <div className="border border-slate-200 bg-slate-50 p-4">
                 <div className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Source of truth</div>
                 <div className="mt-3 text-sm font-semibold leading-7 text-slate-700">
-                  The route-backed docs below are the canonical internal developer handbook.
+                  Deep canonical docs live in `docs/handbook/**`; these in-app pages are a curated mirror with pointers.
                 </div>
               </div>
             </div>

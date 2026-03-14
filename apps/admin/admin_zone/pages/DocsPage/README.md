@@ -2,7 +2,8 @@
 
 - Renders the internal developer handbook as real admin routes.
 - `index.tsx` is the thin orchestrator entrypoint.
-- `registry.tsx` holds the typed docs content map and is the source of truth for admin-local docs content.
+- `registry.tsx` holds the typed docs registry and imports page definitions from `pages/*`.
+- `types.ts` defines the docs types and `DocsPageKey` union.
 - `DocsLayoutShell.tsx` owns the shared handbook shell and route navigation.
 - `DocsArticle.tsx` renders one full handbook page.
 - `DocsSidebar.tsx` renders the local table of contents and full handbook sequence.
