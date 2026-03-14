@@ -48,7 +48,7 @@ The code is organized into:
 
 #### Folder Structure Example:
 ```text
-anan-lit/
+anan-ai/
 ├── apps/
 │   ├── admin/
 │   ├── web/

@@ -20,6 +20,21 @@ const knowledgeTables = {
         .index("slug", ["slug"])
         .index("category", ["category"]),
 
+    /** Developer handbook pages (architecture + best practices). Secret-free by design. */
+    developerHandbookPages: defineTable({
+        slug: v.string(),
+        title: v.string(),
+        content: v.string(),
+        category: v.optional(v.string()),
+        tags: v.optional(v.array(v.string())),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    })
+        .index("slug", ["slug"])
+        .index("category", ["category"])
+        .searchIndex("search_content", { searchField: "content" })
+        .searchIndex("search_title", { searchField: "title" }),
+
     /** Agent memory for cross-session persistence. */
     agentMemory: defineTable({
         userId: v.string(),

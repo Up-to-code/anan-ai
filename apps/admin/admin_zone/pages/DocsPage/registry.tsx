@@ -4,6 +4,7 @@ export type { DocsPageDefinition, DocsPageKey, DocsSection } from "./types";
 import { overviewPage } from "./pages/overview";
 import { architecturePage } from "./pages/architecture";
 import { convexPage } from "./pages/convex";
+import { securityPage } from "./pages/security";
 import { webGatewayPage } from "./pages/webGateway";
 import { channelsPage } from "./pages/channels";
 import { capabilitiesPage } from "./pages/capabilities";
@@ -17,6 +18,7 @@ export const docsPageOrder: DocsPageKey[] = [
   "overview",
   "architecture",
   "convex",
+  "security",
   "webGateway",
   "channels",
   "capabilities",
@@ -42,6 +44,11 @@ export const docsPageMeta: Record<DocsPageKey, { href: string; label: string; de
     href: "/docs/convex",
     label: "Convex",
     description: "Schema/security, zones, shared logic, and backend rules.",
+  },
+  security: {
+    href: "/docs/security",
+    label: "Security",
+    description: "AuthZ rules, ownership checks, logical safety, and test invariants.",
   },
   webGateway: {
     href: "/docs/web-gateway",
@@ -89,6 +96,7 @@ export const docsPages: Record<DocsPageKey, DocsPageDefinition> = {
   overview: overviewPage,
   architecture: architecturePage,
   convex: convexPage,
+  security: securityPage,
   webGateway: webGatewayPage,
   channels: channelsPage,
   capabilities: capabilitiesPage,
@@ -136,4 +144,3 @@ export function getDocsSectionId(title: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
-

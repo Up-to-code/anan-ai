@@ -8,6 +8,7 @@ import { ananBanksDefinition } from "../team_finance/anan_banks/config";
 import { ananKnowledgeDefinition } from "../team_knowledge/anan_knowledge/config";
 import { ananMemoryDefinition } from "../team_knowledge/anan_memory/config";
 import { ananTrainerDefinition } from "../team_trainer/anan_trainer/config";
+import { ananPlatformDocsDefinition } from "../team_platform/anan_platform_docs/config";
 
 export const TEAM_REGISTRY: Record<string, TeamDefinition> = {
     team_search: {
@@ -33,6 +34,12 @@ export const TEAM_REGISTRY: Record<string, TeamDefinition> = {
         allowedRoles: ["user", "broker", "RED", "admin"],
         failureMode: "soft",
         agents: [ananKnowledgeDefinition, ananMemoryDefinition],
+    },
+    team_platform: {
+        id: "team_platform",
+        allowedRoles: ["broker", "RED", "admin"],
+        failureMode: "soft",
+        agents: [ananPlatformDocsDefinition],
     },
     team_trainer: {
         id: "team_trainer",

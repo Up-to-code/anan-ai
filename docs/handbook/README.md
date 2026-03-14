@@ -53,10 +53,14 @@ This handbook is **docs-only**: it describes enforcement, but does not add autom
 - `docs/handbook/convex/README.md` — mental model + zone map
 - `docs/handbook/convex/core.md` — `_core` responsibilities and rules
 - `docs/handbook/convex/schema.md` — schema, indexes, naming rules
+- `docs/handbook/convex/best-practices.md` — Convex best practices (repo-aligned)
+- `docs/handbook/convex/search.md` — full-text search patterns
 - `docs/handbook/convex/zones.md` — what belongs where (with examples)
 - `docs/handbook/convex/shared-logic.md` — capability patterns for shared logic
 - `docs/handbook/convex/ai-zone.md` — orchestrator, teams, tools, persistence
 - `docs/handbook/convex/channels.md` — channel adapters (WhatsApp blueprint)
+- `docs/handbook/convex/actions-webhooks.md` — actions + httpAction hardening
+- `docs/handbook/convex/components-rag.md` — RAG/components + agentic architecture notes
 - `docs/handbook/convex/http-and-oauth.md` — HTTP routing + OAuth endpoints
 
 #### Web (Workspace + Public)
@@ -82,6 +86,15 @@ This handbook is **docs-only**: it describes enforcement, but does not add autom
 
 - `docs/handbook/llm/README.md`
 - `docs/handbook/llm/data-access.md`
+
+#### Security & Authorization
+
+- `docs/handbook/security/README.md`
+- `docs/handbook/security/authorization.md`
+- `docs/handbook/security/test-invariants.md`
+- `docs/handbook/security/threat-model-lite.md`
+- `docs/handbook/security/github.md`
+- `docs/handbook/security/team-management.md`
 
 #### Recipes (Decision-complete “how to add”)
 
@@ -143,4 +156,3 @@ graph LR
 4. **Index-first + pagination:** no table scans, no `take(N)` correctness traps.
 5. **Idempotent channels:** webhooks must survive retries.
 6. **WHY/WHAT/HOW everywhere:** exported modules must explain why they exist, what they do, how they work.
-

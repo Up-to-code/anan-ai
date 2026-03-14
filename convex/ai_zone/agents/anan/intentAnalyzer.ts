@@ -16,6 +16,65 @@
 import { generateText } from "ai";
 import { getChatModel } from "../../../shared_logic/lib/providers";
 
+export function shouldIncludePlatformTeam(prompt: string) {
+    const text = prompt.toLowerCase();
+    const keywords = [
+        "convex",
+        "schema",
+        "table",
+        "index",
+        "searchindex",
+        "withsearchindex",
+        "query",
+        "mutation",
+        "action",
+        "httpaction",
+        "auth",
+        "authz",
+        "authorization",
+        "permission",
+        "policy",
+        "zone",
+        "architecture",
+        "security",
+        "webhook",
+        "idempotency",
+        "performance",
+        "agent",
+        "tools",
+        "orchestrator",
+        "rag",
+        "vector",
+        "rate limit",
+        "ratelimit",
+        "oauth",
+    ];
+
+    const arabicKeywords = [
+        "كونفكس",
+        "صلاحيات",
+        "صلاحية",
+        "اذونات",
+        "أذونات",
+        "تفويض",
+        "توثيق",
+        "أمن",
+        "امان",
+        "مخطط",
+        "سكيمة",
+        "استعلام",
+        "ويبهوك",
+        "أداء",
+        "وكيل",
+        "وكلاء",
+        "أداة",
+        "أدوات",
+        "معمارية",
+    ];
+
+    return keywords.some((k) => text.includes(k)) || arabicKeywords.some((k) => prompt.includes(k));
+}
+
 /**
  * analyzeIntent — Determines which teams to dispatch for a message.
  *
@@ -50,6 +109,7 @@ Team descriptions:
 - team_property: Property matching, comparison, analysis, recommendations
 - team_finance: Mortgage calculations, financing, bank products
 - team_knowledge: Knowledge base retrieval, RAG context
+- team_platform: Platform/backend architecture, Convex best practices, authorization, zones, performance, webhooks, agents/tools
 - team_trainer: (background) Learning from conversations
 
 User message: "${prompt}"
@@ -63,12 +123,26 @@ Always include "team_knowledge" for context. Never include "team_trainer" (it ru
         const match = text.match(/\[.*\]/s);
         if (match) {
             const teams = JSON.parse(match[0]) as string[];
-            return teams.filter((t) => availableTeams.includes(t));
+            let filtered = teams.filter((t) => availableTeams.includes(t));
+
+            const wantsPlatform = shouldIncludePlatformTeam(prompt);
+            if (availableTeams.includes("team_platform")) {
+                filtered = wantsPlatform
+                    ? Array.from(new Set([...filtered, "team_platform"]))
+                    : filtered.filter((t) => t !== "team_platform");
+            }
+
+            return filtered;
         }
     } catch (error) {
         console.warn("[anan] Intent analysis failed, dispatching all teams:", error);
     }
 
     // Fallback: dispatch all available teams (except trainer)
-    return availableTeams.filter((t) => t !== "team_trainer");
+    const wantsPlatform = shouldIncludePlatformTeam(prompt);
+    return availableTeams.filter((t) => {
+        if (t === "team_trainer") return false;
+        if (t === "team_platform") return wantsPlatform;
+        return true;
+    });
 }

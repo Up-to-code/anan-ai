@@ -30,6 +30,7 @@ export const overviewPage: DocsPageDefinition = {
       links: [
         { href: "/docs/architecture", label: "Architecture", description: "Surfaces, zones, request flow, and role model." },
         { href: "/docs/convex", label: "Convex", description: "Core backend mental model, schema/security, and zone rules." },
+        { href: "/docs/security", label: "Security", description: "AuthZ checklists, ownership rules, and logical safety." },
         { href: "/docs/web-gateway", label: "Web Gateway", description: "How `apps/web/server/**` owns web-only orchestration and DTOs." },
         { href: "/docs/channels", label: "Channels", description: "WhatsApp pipeline and the channel folder contract." },
         { href: "/docs/data", label: "Data & Contracts", description: "Core entities, ownership fields, state fields, and contract boundaries." },
@@ -67,4 +68,3 @@ export const overviewPage: DocsPageDefinition = {
   ],
   related: ["architecture", "convex", "workflow"],
 };
-

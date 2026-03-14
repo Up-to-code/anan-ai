@@ -1,4 +1,6 @@
-# Anan AI — Developer Bible (Index)
+# Anan AI — Developer Bible 📚
+
+🔒 **Private / closed-source / proprietary.** See `LICENSE` and `NOTICE.md`.
 
 Anan AI is a **multi-surface real estate platform** built around a **Convex-first backend**.
 
@@ -11,11 +13,13 @@ This repo contains four runtime surfaces that all share one backend:
 
 ---
 
-## Start here (required)
+## Start here (required) 🧭
 
 1. `ARCHITECTURE.md` — absolute architectural standards (thin entrypoints, zone ownership, WHY/WHAT/HOW).
 2. `CONVEX_RULES.md` — “God rules” for writing queries/mutations/actions and channel handlers safely.
 3. `docs/handbook/README.md` — deep, split-by-folder handbook for Convex + web gateway + channels + admin + mobile.
+4. `docs/handbook/security/README.md` — security/authZ patterns and logical safety checklists.
+5. `llm/README.md` — fast onboarding for LLMs and new engineers.
 
 Supporting references:
 
@@ -26,50 +30,7 @@ Supporting references:
 
 ---
 
-## 🏗️ System Architecture
-
-![Multi-Agent Orchestrator Architecture](./docs/assets/system-architecture.png)
-
-Anan AI utilizes a **Multi-Agent Orchestrator** to handle complex user intents across search, finance, and property management.
-
-### Developer Flow (Simplified)
-![Dev Flow Clean](./docs/assets/dev-flow-clean.png)
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant AssistantService
-    participant Orchestrator
-    participant IntentAnalyzer
-    participant ExpertTeam
-    
-    User->>AssistantService: Input Prompt
-    AssistantService->>Orchestrator: orchestrate(prompt)
-    Orchestrator->>IntentAnalyzer: analyzeIntent(prompt)
-    IntentAnalyzer-->>Orchestrator: Required Agents
-    Orchestrator->>ExpertTeam: dispatch(agent, prompt)
-    ExpertTeam-->>Orchestrator: Data/Response
-    Orchestrator->>User: Merged Markdown Response
-```
-
-### 🔐 Security & Authentication
-![Authentication Flow](./docs/assets/auth-flow.png)
-
-Anan AI uses a robust authentication flow orchestrated via Convex and integrated with major Identity Providers.
-
-### 🌐 Real-time Data Sync
-![Data Sync Flow](./docs/assets/data-sync-flow.png)
-
-Every surface in the Anan AI ecosystem is a real-time subscriber to the Convex state, ensuring sub-second latency across global interfaces.
-
----
-
-## 🔄 The “circle” (how the platform works)
-
-![Platform Flow - The Circle](./docs/assets/platform-flow.png)
-
-### Monorepo Structure
-![Monorepo Structure](./docs/assets/monorepo-structure.png)
+## The “circle” (how the platform works) 🔄
 
 1. A surface receives input (web/admin/mobile/channel).
 2. The surface delegates to the owning layer (web gateway or direct Convex).
@@ -89,7 +50,19 @@ graph TD
 
 Break the circle and you break the platform.
 
-### 🚀 CI/CD & Deployment
+---
+
+## Docs index (by topic) 🗂️
+
+- Convex backend: `docs/handbook/convex/README.md`
+- Web gateway + SSR: `docs/handbook/web/README.md`
+- Channels + webhooks: `docs/handbook/convex/channels.md`
+- Security & AuthZ: `docs/handbook/security/README.md`
+- LLM contribution rules: `docs/handbook/llm/README.md`
+
+---
+
+## CI/CD (recommended) 🚀
 
 ```mermaid
 graph LR
@@ -100,11 +73,11 @@ graph LR
     E --> F[Production Live]
 ```
 
-Anan AI is continuously deployed via automated pipelines, ensuring that every commit is verified and shipped to the global edge.
+Configure your private pipelines to run `pnpm test:once` and `pnpm build` before deployment.
 
 ---
 
-## Local development
+## Local development 🧪
 
 Install:
 
@@ -131,11 +104,10 @@ pnpm test:once
 
 ---
 
-## Repo rules (short version)
+## Repo rules (short version) 🧱
 
 - Keep route files and HTTP handlers **thin**.
 - Respect **zone boundaries** (`convex/*` zones and `apps/*` ownership).
 - Prefer **index-first + paginated** queries; avoid list-then-reduce reads.
 - Use **contracts** at boundaries (normalize naming only at the boundary).
 - Keep public web routes **SSR/static-friendly**; avoid client-by-default patterns.
-

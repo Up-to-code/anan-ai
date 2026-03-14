@@ -1,5 +1,5 @@
 /**
- * LLM providers for anan-lit agent. OpenRouter via @openrouter/ai-sdk-provider.
+ * LLM providers for anan-ai agent. OpenRouter via @openrouter/ai-sdk-provider.
  */
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { EmbeddingModelV2 } from "@ai-sdk/provider";

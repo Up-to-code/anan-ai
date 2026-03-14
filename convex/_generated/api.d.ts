@@ -81,6 +81,8 @@ import type * as ai_zone_agents_team_knowledge_tools_getKnowledgePage from "../a
 import type * as ai_zone_agents_team_knowledge_tools_getMemoryContext from "../ai_zone/agents/team_knowledge/tools/getMemoryContext.js";
 import type * as ai_zone_agents_team_knowledge_tools_storeInteraction from "../ai_zone/agents/team_knowledge/tools/storeInteraction.js";
 import type * as ai_zone_agents_team_knowledge_tools_storeUserPreference from "../ai_zone/agents/team_knowledge/tools/storeUserPreference.js";
+import type * as ai_zone_agents_team_platform_anan_platform_docs_config from "../ai_zone/agents/team_platform/anan_platform_docs/config.js";
+import type * as ai_zone_agents_team_platform_tools_getDeveloperHandbookSnippets from "../ai_zone/agents/team_platform/tools/getDeveloperHandbookSnippets.js";
 import type * as ai_zone_agents_team_property_anan_property_config from "../ai_zone/agents/team_property/anan_property/config.js";
 import type * as ai_zone_agents_team_property_anan_recommender_config from "../ai_zone/agents/team_property/anan_recommender/config.js";
 import type * as ai_zone_agents_team_property_tools_getLastSearchContext from "../ai_zone/agents/team_property/tools/getLastSearchContext.js";
@@ -134,6 +136,7 @@ import type * as shared_logic_agencies_repositories_organization from "../shared
 import type * as shared_logic_banks_queries from "../shared_logic/banks/queries.js";
 import type * as shared_logic_content_queries from "../shared_logic/content/queries.js";
 import type * as shared_logic_crm_repositories from "../shared_logic/crm/repositories.js";
+import type * as shared_logic_developerHandbook_index from "../shared_logic/developerHandbook/index.js";
 import type * as shared_logic_files from "../shared_logic/files.js";
 import type * as shared_logic_inbox from "../shared_logic/inbox.js";
 import type * as shared_logic_knowledge_index from "../shared_logic/knowledge/index.js";
@@ -276,6 +279,8 @@ declare const fullApi: ApiFromModules<{
   "ai_zone/agents/team_knowledge/tools/getMemoryContext": typeof ai_zone_agents_team_knowledge_tools_getMemoryContext;
   "ai_zone/agents/team_knowledge/tools/storeInteraction": typeof ai_zone_agents_team_knowledge_tools_storeInteraction;
   "ai_zone/agents/team_knowledge/tools/storeUserPreference": typeof ai_zone_agents_team_knowledge_tools_storeUserPreference;
+  "ai_zone/agents/team_platform/anan_platform_docs/config": typeof ai_zone_agents_team_platform_anan_platform_docs_config;
+  "ai_zone/agents/team_platform/tools/getDeveloperHandbookSnippets": typeof ai_zone_agents_team_platform_tools_getDeveloperHandbookSnippets;
   "ai_zone/agents/team_property/anan_property/config": typeof ai_zone_agents_team_property_anan_property_config;
   "ai_zone/agents/team_property/anan_recommender/config": typeof ai_zone_agents_team_property_anan_recommender_config;
   "ai_zone/agents/team_property/tools/getLastSearchContext": typeof ai_zone_agents_team_property_tools_getLastSearchContext;
@@ -329,6 +334,7 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/banks/queries": typeof shared_logic_banks_queries;
   "shared_logic/content/queries": typeof shared_logic_content_queries;
   "shared_logic/crm/repositories": typeof shared_logic_crm_repositories;
+  "shared_logic/developerHandbook/index": typeof shared_logic_developerHandbook_index;
   "shared_logic/files": typeof shared_logic_files;
   "shared_logic/inbox": typeof shared_logic_inbox;
   "shared_logic/knowledge/index": typeof shared_logic_knowledge_index;

@@ -67,7 +67,11 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [getGoogleProvider],
   callbacks: {
     async redirect({ redirectTo }) {
-      const webBaseUrl = (process.env.ANAN_WEB_URL || process.env.SITE_URL || "https://anan-lit-web.vercel.app").trim();
+      const webBaseUrl = (
+        process.env.ANAN_WEB_URL ||
+        process.env.SITE_URL ||
+        "http://localhost:3000"
+      ).trim();
       const convexBaseUrl = process.env.CONVEX_SITE_URL?.trim();
 
       const allowedOrigins = [webBaseUrl].filter(Boolean) as string[];

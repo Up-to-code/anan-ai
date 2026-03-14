@@ -10,6 +10,7 @@ export const docsTabs: RouteTab[] = [
   { href: "/docs", label: "Overview", exact: true },
   { href: "/docs/architecture", label: "Architecture" },
   { href: "/docs/convex", label: "Convex" },
+  { href: "/docs/security", label: "Security" },
   { href: "/docs/web-gateway", label: "Web Gateway" },
   { href: "/docs/channels", label: "Channels" },
   { href: "/docs/capabilities", label: "Capabilities" },

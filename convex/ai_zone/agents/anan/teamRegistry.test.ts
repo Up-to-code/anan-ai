@@ -3,7 +3,7 @@ import { getAvailableTeams, getTeamAgents, TEAM_REGISTRY } from "./teamRegistry"
 
 describe("teamRegistry", () => {
   it("filters teams by role", () => {
-    expect(getAvailableTeams("RED")).toEqual(["team_property", "team_knowledge"]);
+    expect(getAvailableTeams("RED")).toEqual(["team_property", "team_knowledge", "team_platform"]);
   });
 
   it("creates agents from declarative registry definitions", () => {

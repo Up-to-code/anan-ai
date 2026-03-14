@@ -277,6 +277,6 @@ Before shipping an AI change, confirm:
 
 ## Related Docs
 
-- [Developer System Guide](/Users/ahmedmansour/anan-lit/docs/developer-system-guide.md)
-- [Codebase Knowledge Base](/Users/ahmedmansour/anan-lit/docs/codebase-knowledge-base.md)
-- [Logic Audit - March 13, 2026](/Users/ahmedmansour/anan-lit/docs/logic-audit-2026-03-13.md)
+- [Developer System Guide](developer-system-guide.md)
+- [Codebase Knowledge Base](codebase-knowledge-base.md)
+- [Logic Audit - March 13, 2026](logic-audit-2026-03-13.md)

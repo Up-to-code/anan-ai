@@ -1,0 +1,34 @@
+# CODEOWNERS (Placeholders)
+#
+# Replace these placeholders with real GitHub usernames or teams:
+# - @anan-owner
+# - @anan-backend
+# - @anan-web
+# - @anan-admin
+# - @anan-mobile
+#
+# Example:
+#   /convex/shared_logic/ @your-org/backend-team
+#
+# Notes:
+# - CODEOWNERS becomes effective when GitHub branch protection requires CODEOWNER review.
+# - Keep ownership aligned with zone boundaries to prevent authorization drift.
+
+* @anan-owner
+
+/convex/_core/ @anan-backend
+/convex/shared_logic/ @anan-backend
+/convex/ai_zone/ @anan-backend
+/convex/user_zone/ @anan-backend
+/convex/broker_zone/ @anan-backend
+/convex/red_zone/ @anan-backend
+/convex/admin_zone/ @anan-backend
+/convex/public_zone/ @anan-backend
+
+/apps/web/ @anan-web
+/apps/admin/ @anan-admin
+/apps/mobile/ @anan-mobile
+
+/docs/ @anan-owner
+/llm/ @anan-owner
+

@@ -288,8 +288,8 @@ The current highest-risk areas from the March 13, 2026 audit are:
 
 See:
 
-- [Codebase Knowledge Base](/Users/ahmedmansour/anan-lit/docs/codebase-knowledge-base.md)
-- [Logic Audit - March 13, 2026](/Users/ahmedmansour/anan-lit/docs/logic-audit-2026-03-13.md)
+- [Codebase Knowledge Base](codebase-knowledge-base.md)
+- [Logic Audit - March 13, 2026](logic-audit-2026-03-13.md)
 
 ## Recommended Development Workflow
 

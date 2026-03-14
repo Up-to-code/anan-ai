@@ -4,6 +4,7 @@ export type DocsPageKey =
   | "overview"
   | "architecture"
   | "convex"
+  | "security"
   | "webGateway"
   | "channels"
   | "capabilities"
@@ -53,4 +54,3 @@ export type DocsPageDefinition = {
   sections: DocsSection[];
   related: DocsPageKey[];
 };
-

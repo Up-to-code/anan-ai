@@ -1,5 +1,5 @@
 /**
- * Agent LLM config for anan-lit. OpenRouter only (MVP).
+ * Agent LLM config for anan-ai. OpenRouter only (MVP).
  */
 const DEFAULT_OPENROUTER_MODEL = "google/gemini-2.5-flash";
 

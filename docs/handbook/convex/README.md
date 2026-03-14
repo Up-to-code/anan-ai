@@ -80,4 +80,5 @@ flowchart LR
 - Rules: `CONVEX_RULES.md`
 - Zone boundaries: `convex/*/ZONE_README.md`
 - High-level architecture: `ARCHITECTURE.md`
-
+- Best practices: `docs/handbook/convex/best-practices.md`
+- Search: `docs/handbook/convex/search.md`

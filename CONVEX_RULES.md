@@ -42,6 +42,19 @@ This document defines:
 
 ## HOW
 
+## 0) Convex official references (read these first)
+
+These links reflect the official Convex mental model. When this repo’s patterns differ, prefer the repo’s security/zone rules, but do not contradict Convex fundamentals:
+
+- Convex docs (start): https://docs.convex.dev/
+- Queries vs mutations vs actions: https://docs.convex.dev/functions
+- HTTP actions (webhooks): https://docs.convex.dev/functions/http-actions
+- Search indexes + `withSearchIndex`: https://docs.convex.dev/search
+- Data modeling + indexes: https://docs.convex.dev/database
+- Auth and identity: https://docs.convex.dev/auth
+
+---
+
 ### 1) Zone boundaries are strict
 
 Convex code is organized into zones (folders). A zone **owns** its responsibilities and exports a **small public API**.
@@ -86,6 +99,7 @@ Convex has multiple function types. Use the minimal power needed.
   - Must be deterministic for the same inputs.
   - No side effects.
   - Must be index-first (see performance rules below).
+  - Prefer projections over raw rows (don’t leak schema internals to surfaces).
 
 #### `mutation`
 
@@ -94,6 +108,7 @@ Convex has multiple function types. Use the minimal power needed.
   - Validate inputs and enforce ownership.
   - Prefer “one mutation = one business state transition”.
   - Avoid “write many unrelated tables” unless the domain requires it.
+  - Always verify the *prior state* before transitioning (prevents repeated acceptance, duplicated deals, etc.).
 
 #### `action`
 
@@ -104,6 +119,7 @@ Convex has multiple function types. Use the minimal power needed.
 - **Rules:**
   - Actions still must enforce identity and ownership before doing privileged work.
   - Never let an action become a “god service” that bypasses zone boundaries.
+  - Treat actions as “services” and keep the entry controller thin.
 
 #### `httpAction` (Convex HTTP endpoints)
 
@@ -112,6 +128,7 @@ Convex has multiple function types. Use the minimal power needed.
   - The handler must be **thin**: parse, validate, dedupe/idempotency check, then delegate to a zone service/action/mutation.
   - Never put business logic directly in the HTTP handler.
   - Always have safe fallbacks (200 for “received” when appropriate, and safe user-facing failure messages when replying in channels).
+  - Never log raw request bodies (PII risk).
 
 **Concrete example (WhatsApp):**
 
@@ -145,6 +162,30 @@ The codebase currently uses both terms:
 
 ---
 
+### 3.1) AuthZ checklist (must pass for every protected handler)
+
+Use this checklist for every new **query**, **mutation**, **action**, and **httpAction** that touches protected data:
+
+1. **Authentication**
+   - Does this handler require auth? If yes, fail with `UNAUTHORIZED` early.
+   - If unauthenticated access is intended, explicitly justify it and keep output non-sensitive.
+2. **Role gate**
+   - Verify role using central helpers (example: `_core/security/accessPolicy.ts`).
+   - Reject-by-default: if role is unknown or missing, return `FORBIDDEN`.
+3. **Row-level ownership**
+   - For every `Id<"table">` input, verify the row exists and belongs to the caller’s owner context.
+   - Never accept a caller-supplied owner id as “truth” without verifying it matches the resolved session.
+4. **State prerequisites**
+   - Verify status/publication prerequisites before state transitions.
+   - Disallow repeated/duplicate transitions (e.g., accepting a public offer twice).
+5. **Least privilege outputs**
+   - Queries must not return fields that the caller doesn’t need.
+   - Avoid returning raw table rows to surfaces.
+
+If any checklist item is unclear, stop and read the owning zone’s `ZONE_README.md` before coding.
+
+---
+
 ### 4) Performance rules (non-negotiable)
 
 Convex performance is primarily about:
@@ -159,6 +200,24 @@ Convex performance is primarily about:
 1. Prefer `withIndex` + `eq` constraints for reads.
 2. If you must scan, it must be rare, bounded, and justified in code review.
 3. Use pagination for lists; do not `take(200)` as a fake “directory search”.
+4. Prefer search indexes for text retrieval (`searchIndex` + `withSearchIndex`) instead of scanning.
+
+#### Avoid unbounded `collect()`
+
+`collect()` is a scan. Treat it as a correctness and performance risk unless the table is strictly bounded.
+
+Allowed uses:
+
+- small configuration tables,
+- admin-only diagnostics in small environments (explicitly documented),
+- controlled internal migrations with strict limits.
+
+If the table can grow, use:
+
+- an index lookup (`withIndex`), or
+- a search index (`withSearchIndex`), or
+- pagination, or
+- a summary query.
 
 #### Prefer summary queries
 
@@ -204,6 +263,31 @@ Channel adapters are “front doors” to the system. They must be safe under re
 
 ---
 
+### 5.1) Webhook checklist (idempotency and replay safety)
+
+Every webhook handler must:
+
+1. Parse safely (handle invalid JSON and missing fields).
+2. Validate vendor signature/token if supported (or explicitly document why not).
+3. Dedupe using a stable message/event id.
+4. Be safe under retries and reordering.
+5. Return stable “received” responses so vendors don’t retry forever.
+6. Avoid leaking internals in error text returned to the vendor.
+
+---
+
+### 5.2) Agent/tool checklist (prevents “god orchestrator” drift)
+
+Rules for `convex/ai_zone/*`:
+
+1. Orchestrator selects teams/agents; **agents call tools**.
+2. Tools must enforce access checks the same way normal queries/mutations do.
+3. Never put direct data access inside the orchestrator to “save time”.
+4. Keep prompt context minimal and structured; never dump whole tables.
+5. Do not log raw prompts, thread history, or PII to console.
+
+---
+
 ### 6) Testing expectations (what must be locked)
 
 Convex tests live near the capability they protect (examples already exist under `convex/shared_logic/**/*.test.ts` and `convex/ai_zone/channels/**/*.test.ts`).
@@ -219,3 +303,10 @@ Use the repo’s Convex test harness (see `convex/test.setup.ts`) and add tests 
 
 **Minimum bar:** if a bug was possible before your change, the repo should gain a test preventing it from reappearing.
 
+---
+
+## Related handbook chapters
+
+- Deep Convex handbook: `docs/handbook/convex/README.md`
+- Security/AuthZ: `docs/handbook/security/README.md`
+- LLM rules: `docs/handbook/llm/README.md`

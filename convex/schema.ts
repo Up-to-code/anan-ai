@@ -15,7 +15,7 @@ import adminTables from "./_core/schema/admin";
 import contactTables from "./_core/schema/contact";
 
 /**
- * anan-lit schema
+ * anan-ai schema
  *
  * This file constructs the final schema passed to Convex by importing sub-schemas
  * from the `./schema/` directory to maintain logical separation of domains.
