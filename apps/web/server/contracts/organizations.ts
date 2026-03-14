@@ -87,6 +87,18 @@ export type CreateOrganizationInviteInput = z.infer<typeof createOrganizationInv
 
 export const updateOrganizationInputSchema = z.object({
   name: z.string().trim().min(2, "Organization name must be at least 2 characters").max(120),
+  description: z.preprocess(
+    (value) => (typeof value === "string" && value.trim().length === 0 ? undefined : value),
+    z.string().trim().max(500, "Organization description must be at most 500 characters").optional(),
+  ),
+  website: z.preprocess(
+    (value) => (typeof value === "string" && value.trim().length === 0 ? undefined : value),
+    z.string().trim().url("Organization website must be a valid URL").max(300).optional(),
+  ),
+  contactEmail: z.preprocess(
+    (value) => (typeof value === "string" && value.trim().length === 0 ? undefined : value),
+    z.string().trim().email("Organization contact email must be valid").max(200).optional(),
+  ),
 });
 
 export type UpdateOrganizationInput = z.infer<typeof updateOrganizationInputSchema>;

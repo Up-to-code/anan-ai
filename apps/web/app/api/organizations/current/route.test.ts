@@ -24,12 +24,20 @@ describe("PATCH /api/organizations/current", () => {
       slug: "updated-realty",
       status: "active",
       isVerified: true,
+      description: "desc",
+      website: "https://example.com",
+      contactEmail: "contact@example.com",
     });
 
     const response = await PATCH(
       new Request("http://localhost/api/organizations/current", {
         method: "PATCH",
-        body: JSON.stringify({ name: "Updated Realty" }),
+        body: JSON.stringify({
+          name: "Updated Realty",
+          description: "desc",
+          website: "https://example.com",
+          contactEmail: "contact@example.com",
+        }),
         headers: { "Content-Type": "application/json" },
       }),
     );
@@ -42,6 +50,9 @@ describe("PATCH /api/organizations/current", () => {
       slug: "updated-realty",
       status: "active",
       isVerified: true,
+      description: "desc",
+      website: "https://example.com",
+      contactEmail: "contact@example.com",
     });
   });
 

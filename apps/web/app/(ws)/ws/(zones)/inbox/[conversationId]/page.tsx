@@ -7,11 +7,11 @@ import { getWorkspaceCrmZone, getWorkspacePropertyZone } from "@/server/ws/zones
 export default async function InboxConversationPage({
   params,
 }: {
-  params: Promise<{ conversationId: string }>;
+  params: { conversationId: string };
 }) {
-  const { conversationId } = await params;
-  const [workspace, conversations, conversation, incomingInvites] = await Promise.all([
-    requireWorkspaceData(`/ws/inbox/${conversationId}`),
+  const { conversationId } = params;
+  const workspace = await requireWorkspaceData(`/ws/inbox/${conversationId}`);
+  const [conversations, conversation, incomingInvites] = await Promise.all([
     listInboxConversations(),
     getInboxConversation(conversationId),
     listIncomingOrganizationInvitesForCurrentUser(),

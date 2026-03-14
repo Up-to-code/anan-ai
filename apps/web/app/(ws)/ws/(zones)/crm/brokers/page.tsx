@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, Users } from "lucide-react";
+import { Mail, MessageSquareText, Users } from "lucide-react";
 import ZonePageIntro from "../../../_components/ZoneShell/ZonePageIntro";
 import { getWorkspaceOrganizationTeam } from "../../../_lib/organizationTeam";
 
@@ -9,7 +9,7 @@ import { getWorkspaceOrganizationTeam } from "../../../_lib/organizationTeam";
  * HOW:   Loads members and invites through the shared organization gateway and links into real invite flows.
  */
 export default async function BrokerListPage() {
-  const { organization, members, invites } = await getWorkspaceOrganizationTeam();
+  const { organization, members, invites, authUserId } = await getWorkspaceOrganizationTeam();
 
   return (
     <div className="flex min-h-full flex-col">
@@ -42,6 +42,17 @@ export default async function BrokerListPage() {
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {members.map((member) => (
             <div key={member.id} className="group relative border border-slate-200 bg-white p-6 transition hover:border-blue-200">
+              {member.authUserId !== authUserId ? (
+                <Link
+                  href={`/ws/inbox?startUserId=${encodeURIComponent(member.authUserId)}`}
+                  className="absolute left-4 top-4 inline-flex h-10 w-10 items-center justify-center border border-slate-200 bg-white text-slate-700 transition hover:border-blue-600 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+                  aria-label="فتح رسالة"
+                  title="فتح رسالة"
+                >
+                  <MessageSquareText className="h-4 w-4" />
+                </Link>
+              ) : null}
+
               <div className="flex items-start gap-4">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden bg-slate-100 text-xl font-black text-slate-400">
                   {member.name.slice(0, 1)}
@@ -76,12 +87,14 @@ export default async function BrokerListPage() {
                   >
                     عرض الملف الشخصي
                   </Link>
-                  <Link
-                    href="/ws/inbox"
-                    className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 transition hover:text-blue-600"
-                  >
-                    فتح المحادثات
-                  </Link>
+                  {member.authUserId !== authUserId ? (
+                    <Link
+                      href={`/ws/inbox?startUserId=${encodeURIComponent(member.authUserId)}`}
+                      className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 transition hover:text-blue-600"
+                    >
+                      فتح الرسائل
+                    </Link>
+                  ) : null}
                 </div>
               </div>
             </div>

@@ -16,6 +16,9 @@ export default function OrganizationSettingsWorkspace({
   canManage: boolean;
 }) {
   const [name, setName] = useState(organization?.name ?? "");
+  const [description, setDescription] = useState(organization?.description ?? "");
+  const [website, setWebsite] = useState(organization?.website ?? "");
+  const [contactEmail, setContactEmail] = useState(organization?.contactEmail ?? "");
   const [status, setStatus] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -45,7 +48,12 @@ export default function OrganizationSettingsWorkspace({
           const response = await fetch("/api/organizations/current", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name }),
+            body: JSON.stringify({
+              name,
+              description: description.trim().length > 0 ? description : undefined,
+              website: website.trim().length > 0 ? website : undefined,
+              contactEmail: contactEmail.trim().length > 0 ? contactEmail : undefined,
+            }),
           });
           const payload = (await response.json()) as { message?: string };
 
@@ -59,6 +67,21 @@ export default function OrganizationSettingsWorkspace({
           setIsSaving(false);
         }}
       >
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <div className="block text-xs font-black tracking-widest text-slate-500">المعرف</div>
+            <div className="mt-2 border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black text-slate-700">
+              {organization.slug}
+            </div>
+          </div>
+          <div>
+            <div className="block text-xs font-black tracking-widest text-slate-500">الحالة</div>
+            <div className="mt-2 border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black text-slate-700">
+              {organization.status ?? "غير متوفر"}
+            </div>
+          </div>
+        </div>
+
         <div>
           <label className="block text-xs font-black tracking-widest text-slate-500">الاسم</label>
           <input
@@ -69,6 +92,44 @@ export default function OrganizationSettingsWorkspace({
             className="mt-2 w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 transition focus:bg-white focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-70"
           />
         </div>
+
+        <div>
+          <label className="block text-xs font-black tracking-widest text-slate-500">نبذة</label>
+          <textarea
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            disabled={!canManage || isSaving}
+            rows={4}
+            className="mt-2 w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 transition focus:bg-white focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-70"
+          />
+          <div className="mt-2 text-xs font-medium text-slate-500">اختياري — حتى 500 حرف.</div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <label className="block text-xs font-black tracking-widest text-slate-500">الموقع الإلكتروني</label>
+            <input
+              type="text"
+              value={website}
+              onChange={(event) => setWebsite(event.target.value)}
+              disabled={!canManage || isSaving}
+              placeholder="https://example.com"
+              className="mt-2 w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 transition focus:bg-white focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-70"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-black tracking-widest text-slate-500">بريد التواصل</label>
+            <input
+              type="email"
+              value={contactEmail}
+              onChange={(event) => setContactEmail(event.target.value)}
+              disabled={!canManage || isSaving}
+              placeholder="contact@example.com"
+              className="mt-2 w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 transition focus:bg-white focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-70"
+            />
+          </div>
+        </div>
+
         <div aria-live="polite" className="min-h-6 text-sm font-medium text-slate-600">
           {status}
         </div>

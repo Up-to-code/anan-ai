@@ -35,6 +35,7 @@ type InboxWorkspaceClientProps = {
   initialConversations: ConversationSummary[];
   initialConversation: ConversationDetail | null;
   initialSelectedConversationId: string | null;
+  initialStartUserId?: string | null;
   hasConversationRoute: boolean;
   incomingInvites: IncomingOrganizationInvite[];
   projectOptions: InboxProjectOption[];
@@ -52,6 +53,7 @@ export default function InboxWorkspaceClient({
   initialConversations,
   initialConversation,
   initialSelectedConversationId,
+  initialStartUserId = null,
   hasConversationRoute,
   incomingInvites,
   projectOptions,
@@ -62,6 +64,7 @@ export default function InboxWorkspaceClient({
   const [isBusinessActionPending, setIsBusinessActionPending] = useState(false);
   const [pendingInvites, setPendingInvites] = useState(incomingInvites);
   const [isMobileThreadVisible, setIsMobileThreadVisible] = useState(hasConversationRoute);
+  const [startUserIdToResolve, setStartUserIdToResolve] = useState<string | null>(initialStartUserId);
   const {
     activeConversationId,
     conversation,
@@ -83,6 +86,25 @@ export default function InboxWorkspaceClient({
     initialSelectedConversationId,
     hasConversationRoute,
   });
+
+  useEffect(() => {
+    if (!startUserIdToResolve || hasConversationRoute) {
+      return;
+    }
+
+    if (startUserIdToResolve === currentUserId) {
+      setStartUserIdToResolve(null);
+      return;
+    }
+
+    setIsMobileThreadVisible(true);
+    startTransition(() => {
+      router.replace("/ws/inbox");
+      void handleStartConversation(startUserIdToResolve).finally(() => {
+        setStartUserIdToResolve(null);
+      });
+    });
+  }, [currentUserId, handleStartConversation, hasConversationRoute, router, startTransition, startUserIdToResolve]);
 
   useEffect(() => {
     if (hasConversationRoute) {

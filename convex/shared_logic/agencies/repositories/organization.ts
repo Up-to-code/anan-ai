@@ -123,19 +123,53 @@ async function reconcileOrganizationLinks(ctx: MutationCtx, profile: UserProfile
 
 async function updateOrganizationForOwner(
   ctx: MutationCtx,
-  args: { owner: OwnerContext; name: string },
+  args: {
+    owner: OwnerContext;
+    name: string;
+    description?: string;
+    website?: string;
+    contactEmail?: string;
+  },
 ) {
   const name = args.name.trim().replace(/\s+/g, " ");
   if (!name || name.length < 2) {
     throw new ConvexError({ code: "INVALID_ARGUMENT", message: "Organization name must be at least 2 characters" });
   }
 
+  const patch: {
+    name: string;
+    description?: string;
+    website?: string;
+    contactEmail?: string;
+  } = { name };
+
+  if ("description" in args) {
+    const normalized = args.description?.trim();
+    patch.description = normalized && normalized.length > 0 ? normalized : undefined;
+  }
+
+  if ("website" in args) {
+    const normalized = args.website?.trim();
+    if (!normalized) {
+      patch.website = undefined;
+    } else if (/^https?:\/\//i.test(normalized)) {
+      patch.website = normalized;
+    } else {
+      patch.website = `https://${normalized}`;
+    }
+  }
+
+  if ("contactEmail" in args) {
+    const normalized = normalizeEmail(args.contactEmail ?? "");
+    patch.contactEmail = normalized && normalized.length > 0 ? normalized : undefined;
+  }
+
   if (args.owner.ownerType === "broker") {
-    await ctx.db.patch(args.owner.ownerBrokerId, { name });
+    await ctx.db.patch(args.owner.ownerBrokerId, patch);
     return ctx.db.get(args.owner.ownerBrokerId);
   }
 
-  await ctx.db.patch(args.owner.ownerREDId, { name });
+  await ctx.db.patch(args.owner.ownerREDId, patch);
   return ctx.db.get(args.owner.ownerREDId);
 }
 
@@ -360,10 +394,19 @@ export const createOrganizationForCurrentUser = mutation({
 export const updateCurrentOrganization = mutation({
   args: {
     name: v.string(),
+    description: v.optional(v.string()),
+    website: v.optional(v.string()),
+    contactEmail: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { owner } = await requireManagerAccess(ctx);
-    const organization = await updateOrganizationForOwner(ctx, { owner, name: args.name });
+    const organization = await updateOrganizationForOwner(ctx, {
+      owner,
+      name: args.name,
+      description: args.description,
+      website: args.website,
+      contactEmail: args.contactEmail,
+    });
     if (!organization) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Organization not found" });
     }

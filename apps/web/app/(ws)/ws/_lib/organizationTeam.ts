@@ -37,6 +37,7 @@ export async function getWorkspaceOrganizationTeam() {
     currentMembershipRole: currentOrganization?.membership.role ?? null,
     members: members.map((member) => ({
       id: member.id,
+      authUserId: member.authUserId,
       name: member.name,
       email: member.email,
       membershipId: member.membershipId ?? member.id,

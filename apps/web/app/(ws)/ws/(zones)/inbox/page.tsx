@@ -4,14 +4,21 @@ import { listIncomingOrganizationInvitesForCurrentUser } from "@/server/domains/
 import { requireWorkspaceData } from "../../_lib/workspaceData";
 import { getWorkspaceCrmZone, getWorkspacePropertyZone } from "@/server/ws/zones";
 
+type InboxIndexPageProps = {
+  searchParams: Promise<{
+    startUserId?: string;
+  }>;
+};
+
 /**
  * WHY:   The inbox should now load real conversation data on the server before the client UI takes over.
  * WHAT:  Renders the 2-pane inbox experience using server-first loaders and a small client coordinator.
  * HOW:   Loads the current workspace identity plus the available conversation list, then hydrates the first thread if present.
  */
-export default async function InboxIndexPage() {
-  const [workspace, conversations, incomingInvites] = await Promise.all([
-    requireWorkspaceData("/ws/inbox"),
+export default async function InboxIndexPage({ searchParams }: InboxIndexPageProps) {
+  const { startUserId } = await searchParams;
+  const workspace = await requireWorkspaceData("/ws/inbox");
+  const [conversations, incomingInvites] = await Promise.all([
     listInboxConversations(),
     listIncomingOrganizationInvitesForCurrentUser(),
   ]);
@@ -38,6 +45,7 @@ export default async function InboxIndexPage() {
         value: deal.value,
         contactName: deal.contactName ?? null,
       }))}
+      initialStartUserId={startUserId ?? null}
       initialConversations={conversations}
       initialConversation={initialConversation}
       initialSelectedConversationId={null}

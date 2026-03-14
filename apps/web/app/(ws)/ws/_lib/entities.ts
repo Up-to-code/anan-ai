@@ -88,6 +88,7 @@ export type MarketAreaInsight = {
 
 export type OrganizationMemberDisplay = {
   id: string;
+  authUserId: string;
   membershipId: string;
   name: string;
   email: string;
