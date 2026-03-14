@@ -67,18 +67,30 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [getGoogleProvider],
   callbacks: {
     async redirect({ redirectTo }) {
-      const allowedOrigins = [
-        "https://anan-lit-web.vercel.app",
-        process.env.SITE_URL,
-      ].filter(Boolean) as string[];
+      const webBaseUrl = (process.env.ANAN_WEB_URL || process.env.SITE_URL || "https://anan-lit-web.vercel.app").trim();
+      const convexBaseUrl = process.env.CONVEX_SITE_URL?.trim();
+
+      const allowedOrigins = [webBaseUrl].filter(Boolean) as string[];
+
+      if (convexBaseUrl && redirectTo.startsWith(convexBaseUrl) && webBaseUrl) {
+        const target = new URL(redirectTo);
+        const web = new URL(webBaseUrl);
+        target.protocol = web.protocol;
+        target.host = web.host;
+        return target.toString();
+      }
 
       if (
-        allowedOrigins.some((origin) => redirectTo.startsWith(origin)) ||
-        redirectTo.startsWith("/")
+        allowedOrigins.some((origin) => redirectTo.startsWith(origin))
       ) {
         return redirectTo;
       }
-      return process.env.SITE_URL || "/";
+
+      if (redirectTo.startsWith("/")) {
+        return webBaseUrl ? new URL(redirectTo, webBaseUrl).toString() : redirectTo;
+      }
+
+      return webBaseUrl || "/";
     },
     async afterUserCreatedOrUpdated(ctx, { userId, existingUserId }) {
       await syncUserProfile(ctx, userId, existingUserId);

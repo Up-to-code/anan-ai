@@ -52,6 +52,16 @@ sequenceDiagram
     Orchestrator->>User: Merged Markdown Response
 ```
 
+### 🔐 Security & Authentication
+![Authentication Flow](./docs/assets/auth-flow.png)
+
+Anan AI uses a robust authentication flow orchestrated via Convex and integrated with major Identity Providers.
+
+### 🌐 Real-time Data Sync
+![Data Sync Flow](./docs/assets/data-sync-flow.png)
+
+Every surface in the Anan AI ecosystem is a real-time subscriber to the Convex state, ensuring sub-second latency across global interfaces.
+
 ---
 
 ## 🔄 The “circle” (how the platform works)
@@ -78,6 +88,19 @@ graph TD
 ```
 
 Break the circle and you break the platform.
+
+### 🚀 CI/CD & Deployment
+
+```mermaid
+graph LR
+    A[Code Push] --> B[GitHub Actions]
+    B --> C[Run Tests]
+    C --> D[Build Apps]
+    D --> E[Deploy to Vercel/Convex]
+    E --> F[Production Live]
+```
+
+Anan AI is continuously deployed via automated pipelines, ensuring that every commit is verified and shipped to the global edge.
 
 ---
 

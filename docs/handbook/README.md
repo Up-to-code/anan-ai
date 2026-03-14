@@ -109,6 +109,30 @@ At runtime, Anan is a loop:
 
 If a change breaks the loop, it breaks the platform.
 
+### 🖼️ Visual Reference
+
+#### Platform Master Flow
+![The Circle](../assets/platform-flow.png)
+
+#### System Architecture
+![Multi-Agent Orchestrator](../assets/system-architecture.png)
+
+#### Authentication Flow
+![Auth Flow](../assets/auth-flow.png)
+
+#### Real-time Data Sync
+![Data Sync](../assets/data-sync-flow.png)
+
+#### CI/CD Pipeline
+```mermaid
+graph LR
+    A[Code Push] --> B[GitHub Actions]
+    B --> C[Run Tests]
+    C --> D[Build Apps]
+    D --> E[Deploy to Vercel/Convex]
+    E --> F[Production Live]
+```
+
 ---
 
 ## “God rules” (repo-wide)
