@@ -39,9 +39,9 @@ Anan AI utilizes a **Multi-Agent Orchestrator** to handle complex user intents a
 sequenceDiagram
     participant User
     participant AssistantService
-    participant Orchestrator (anan)
+    participant "Orchestrator (anan)"
     participant IntentAnalyzer
-    participant Team (e.g., team_search)
+    participant "Team (e.g., team_search)"
     
     User->>AssistantService: Input Prompt
     AssistantService->>Orchestrator: orchestrate(prompt)
