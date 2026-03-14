@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+**/node_modules/
 
 # Environment
 .env
@@ -11,6 +12,14 @@ dist/
 build/
 .convex/
 *.tsbuildinfo
+.next/
+**/.next/
+.expo/
+**/.expo/
+.expo-export-smoke/
+**/.expo-export-smoke/
+out/
+**/out/
 
 # Logs & debug
 *.log
@@ -25,10 +34,8 @@ Thumbs.db
 *.swp
 *.swo
 
-# Subprojects (dashboard, etc.)
-dashboard/node_modules/
-dashboard/dist/
-**/node_modules/
+# Subprojects
 **/dist/
 **/.vite/
 coverage/
+**/coverage/

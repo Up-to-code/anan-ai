@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///Users/ahmedmansour/anan-lit/admin/app/%28admin%29/users/%5BuserId%5D/layout.tsx"],"sourcesContent":["import SectionScaffold from \"@/components/shared/SectionScaffold\";\nimport { userDetailTabs } from \"@/lib/adminSectionTabs\";\n\ntype UserDetailLayoutProps = {\n  children: React.ReactNode;\n  params: Promise<{ userId: string }>;\n};\n\nexport default async function UserDetailLayout({ children, params }: UserDetailLayoutProps) {\n  const { userId } = await params;\n\n  return (\n    <SectionScaffold\n      eyebrow=\"ملف المستخدم\"\n      title=\"تفاصيل المستخدم\"\n      description=\"كل تبويبة هنا لها هدف واحد: الملف، المنظمة، العروض، الرسائل، النشاط، الوصول، أو التحقق.\"\n      tabs={userDetailTabs(userId)}\n    >\n      {children}\n    </SectionScaffold>\n  );\n}\n"],"names":[],"mappings":";;;;;AAAA;AACA;;;;AAOe,eAAe,iBAAiB,EAAE,QAAQ,EAAE,MAAM,EAAyB;IACxF,MAAM,EAAE,MAAM,EAAE,GAAG,MAAM;IAEzB,qBACE,0bAAC,4JAAe;QACd,SAAQ;QACR,OAAM;QACN,aAAY;QACZ,MAAM,IAAA,kJAAc,EAAC;kBAEpB;;;;;;AAGP"}}]
-}

@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 40, "column": 0}, "map": {"version":3,"sources":["file:///Users/ahmedmansour/anan-lit/admin/proxy.ts"],"sourcesContent":["import { convexAuthNextjsMiddleware } from \"@convex-dev/auth/nextjs/server\";\n\nexport default convexAuthNextjsMiddleware();\n\nexport const config = {\n  matcher: [\"/((?!_next/static|_next/image|favicon.ico).*)\"],\n};\n"],"names":[],"mappings":";;;;;;AAAA;;uCAEe,IAAA,uYAA0B;AAElC,MAAM,SAAS;IACpB,SAAS;QAAC;KAAgD;AAC5D"}}]
-}
