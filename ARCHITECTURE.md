@@ -22,13 +22,10 @@ export function ComplexModule() { ... }
 
 ---
 
-## 2. Frontend: Single Next.js Workspace
-
-The frontend now lives in one Next.js app under `frontend/src/` with explicit role roots:
-- `/admin`
-- `/broker`
-- `/red`
-- `/signin`, `/role`, `/workspaces`
+The frontend now lives in Next.js apps under `apps/` with explicit role roots:
+- `apps/admin`
+- `apps/web`
+- `apps/mobile`
 
 The code is organized into:
 - `app/` for App Router entrypoints
@@ -51,21 +48,15 @@ The code is organized into:
 
 #### Folder Structure Example:
 ```text
-frontend/src/
-├── app/
-│   └── (workspace)/
-│       ├── admin/
-│       ├── broker/
-│       └── red/
-├── workspace/
-│   ├── config.ts
-│   └── components/WorkspaceShell.tsx
-├── broker_zone/
-│   ├── api/
-│   └── pages/
-└── shared_logic/
-    ├── hooks/
-    └── properties/
+anan-lit/
+├── apps/
+│   ├── admin/
+│   ├── web/
+│   └── mobile/
+├── packages/
+│   └── shared_logic/
+├── convex/
+│   └── ai_zone/
 ```
 
 ---

@@ -1,0 +1,26 @@
+# Implementation Plan: Dedicated Chat Route (Mobile)
+
+## Goal
+The user requested that the AI Assistant trigger on the Home Feed behaves like a "floating input" (search bar style) that navigates to a completely separate, dedicated chat page rather than opening a sliding overlay or modal on top of the feed.
+
+## Architectural Approach
+
+### 1. Floating Input Trigger ([HomeFeedScreen](file:///Users/ahmedmansour/anan-lit/mobile/src/features/HomeFeedScreen/index.tsx#13-73))
+- Replace the 48x48 mechanical square trigger with a stark, flat "floating input" component ([CollapsedAIPill](file:///Users/ahmedmansour/anan-lit/mobile/src/components/features/CollapsedAIPill.tsx#9-29) redesign).
+- It will sit fixed near the bottom of the [HomeFeedScreen](file:///Users/ahmedmansour/anan-lit/mobile/src/features/HomeFeedScreen/index.tsx#13-73) (above the tab bar).
+- Clicking this input does **not** open a keyboard or modal. It simply triggers `router.push("/chat/[propertyId]")`.
+
+### 2. Dedicated Chat Screen (`app/chat/[id].tsx`)
+- Create a new route in the Expo Router structure: `app/chat/[id].tsx`.
+- This screen will be a dedicated, distraction-free environment for the Generative Workspace.
+- It will display the `FlatList` of messages (`ChatMessage[]`) and dock the [AssistantExpandedComposer](file:///Users/ahmedmansour/anan-lit/mobile/src/features/HomeFeedScreen/AssistantExpandedComposer.tsx#12-39) securely at the bottom using `KeyboardAvoidingView`.
+- We will reuse the [usePropertyAssistant](file:///Users/ahmedmansour/anan-lit/mobile/src/hooks/usePropertyAssistant.ts#9-187) hook here, initializing it with the `propertyId` passed via route parameters.
+
+### 3. Decommission [AssistantOverlay](file:///Users/ahmedmansour/anan-lit/mobile/src/features/HomeFeedScreen/AssistantOverlay.tsx#21-118)
+- Remove the [AssistantOverlay.tsx](file:///Users/ahmedmansour/anan-lit/mobile/src/features/HomeFeedScreen/AssistantOverlay.tsx) component from the [HomeFeedScreen](file:///Users/ahmedmansour/anan-lit/mobile/src/features/HomeFeedScreen/index.tsx#13-73) completely, as navigation replaces the modal paradigm.
+- The 15% `#0F172A` lockdown state and sliding animations are no longer needed, replaced by standard native stack navigation transitions.
+
+## Verification
+- We will resolve the lingering `ChatMessage` TypeScript error in [types/mobile.ts](file:///Users/ahmedmansour/anan-lit/mobile/src/types/mobile.ts).
+- Build the `chat/[id].tsx` screen.
+- Verify that tapping the floating input smoothly routes to the dedicated conversation context.

@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 14, "column": 0}, "map": {"version":3,"sources":["file:///Users/ahmedmansour/anan-lit/admin/app/page.tsx"],"sourcesContent":["import { redirect } from \"next/navigation\";\n\n/**\n * WHY:   The admin app root should collapse directly into the protected dashboard entrypoint.\n * WHAT:  Redirects `/` requests to `/dashboard`.\n * HOW:   Uses an immediate server redirect so the route stays thin and stateless.\n */\nexport default function HomePage() {\n  redirect(\"/dashboard\");\n}\n"],"names":[],"mappings":";;;;AAAA;AAAA;;AAOe,SAAS;IACtB,IAAA,6YAAQ,EAAC;AACX"}}]
+}
