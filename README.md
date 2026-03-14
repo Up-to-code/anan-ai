@@ -1,63 +1,137 @@
-# Anan
+# Anan Platform: Technical Manifesto
 
-Anan is a multi-surface real estate platform connecting buyers, brokers, and developers through shared inventory, collaboration flows, CRM-style handoffs, and AI-assisted experiences.
+**Anan** is a high-tech, multi-surface real estate ecosystem designed for the Kingdom of Saudi Arabia. It aligns with **Vision 2030** by transforming the real estate sector into a transparent, efficient, and AI-powered intelligence engine.
 
-## Core Surfaces
+---
 
-- `web/`
-  - Main Next.js App Router workspace and public site.
-  - Hosts broker and developer workflows plus public landing/auth pages.
-- `admin/`
-  - Standalone Next.js admin console for operations, verification, diagnostics, and knowledge management.
-- `mobile/`
-  - Expo buyer app with swipe feed and property assistant flows.
-- `convex/`
-  - Shared backend for schema, auth, business logic, AI orchestration, and real-time data.
+## 🚀 Technology Stack
 
-## Architecture At A Glance
+Anan is built on a modern, high-performance stack optimized for real-time interaction and AI orchestration:
 
-- `web/app/` and `admin/app/` should stay thin.
-- `web/server/` owns web-side auth, DTO contracts, domain orchestration, and Convex adapters.
-- `convex/_core/` owns schema and access policy.
-- `convex/shared_logic/` owns shared product capabilities such as inbox, offers, properties, market, subscriptions, notifications, and knowledge.
-- `convex/ai_zone/` owns assistant entrypoints and the multi-agent runtime.
-- `convex/broker_zone/` and `convex/red_zone/` provide owner-scoped backend surfaces.
+-   **Frontend**: Next.js 15 (App Router), React 19, Tailwind CSS v4, Framer Motion, GSAP (for complex timelines), Lucide Icons.
+-   **Backend**: [Convex](https://www.convex.dev/) (Real-time DB, Serverless Functions, Crons, HTTP Actions).
+-   **Mobile**: React Native, Expo, Expo Router.
+-   **AI Infrastructure**: Custom Multi-Agent Orchestrator, OpenAI/Anthropic/Google LLM Providers, Pinecone (optional for specialized RAG).
+-   **Package Management**: PNPM Workspaces, Bun (Runner).
 
-## Developer Docs
+---
 
-Start here if you are building in this repo:
+## 🧩 Architecture Deep Dive
 
-- [Developer System Guide](docs/developer-system-guide.md)
-- [LLM And Data Access Guide](docs/llm-data-access-guide.md)
-- [Codebase Knowledge Base](docs/codebase-knowledge-base.md)
-- [Logic Audit - March 13, 2026](docs/logic-audit-2026-03-13.md)
+The platform follows a **Hierarchical Zone Architecture**. This ensures that business logic is strictly isolated and client surfaces stay thin.
 
-## Development
+### Architecture Flowchart
+```mermaid
+graph TD
+    subgraph "External Channels"
+        M[Mobile App]
+        W[Web Dashboard]
+        WA[WhatsApp Channel]
+    end
 
-Install and run the main services:
+    subgraph "Next.js Gateway (web/server)"
+        DG[Domain Gateways]
+        RA[Repository Adapters]
+    end
 
+    subgraph "Convex Backend"
+        AC[_core: Auth & Policy]
+        AS[shared_logic: Business Modules]
+        AI[ai_zone: Multi-Agent Swarm]
+        
+        subgraph "Audience Zones"
+            BZ[broker_zone]
+            RZ[red_zone]
+            AZ[admin_zone]
+        end
+    end
+
+    W --> DG
+    DG --> RA
+    RA --> BZ
+    RA --> RZ
+    
+    M --> AS
+    WA --> AI
+    
+    BZ --> AS
+    RZ --> AS
+    AZ --> AS
+    AI --> AS
+    AS --> AC
+```
+
+---
+
+## 🛠️ Installation & Setup
+
+### 1. Prerequisites
+- **Node.js 20+** and **PNPM 9+**.
+- **Bun** (optional, recommended for script execution).
+- A **Convex** account (`npx convex dev`).
+
+### 2. Initialization
 ```bash
+git clone <repo-url>
+cd anan-lit
 pnpm install
-pnpm dev
 ```
 
-Useful commands:
+### 3. Environment Configuration
+Create a `.env.local` in the root and configure the following:
+```env
+CONVEX_DEPLOYMENT_URL=...
+NEXT_PUBLIC_CONVEX_URL=...
+OPENAI_API_KEY=...
+ANTHROPIC_API_KEY=...
+```
 
+### 4. Running the Stack
 ```bash
-pnpm typecheck
-pnpm --dir web dev
-pnpm --dir admin dev
-pnpm --dir mobile dev
-pnpm --dir admin typecheck
-pnpm --dir mobile typecheck
+pnpm run dev      # Boots Next.js Web + Convex Backend
 ```
 
-## Coding Rules
+---
 
-All contributors should follow these repo rules:
+## 🤖 AI Extension Guide
 
-1. Use thin orchestrator files for routes, pages, and entrypoints.
-2. Keep business logic out of route files and UI rendering code.
-3. Respect zone boundaries instead of deep-importing across surfaces.
-4. Add `WHY / WHAT / HOW` JSDoc blocks to exported modules.
-5. Prefer focused capability folders with local `README.md` manifests.
+Anan uses a specialized multi-agent system. Here is how you extend it:
+
+### Adding a New Tool
+1.  Navigate to `convex/ai_zone/agents/team_<name>/<agent_name>/tools/`.
+2.  Create a new tool file (e.g., `calculateROI.ts`).
+3.  Define the tool using standard Convex logic or a shared service.
+4.  Export the tool metadata for the LLM to understand.
+
+### Adding a New Agent
+1.  **Create Config**: In `convex/ai_zone/agents/team_<name>/<agent_name>/config.ts`, define the `AgentDefinition`.
+    ```typescript
+    export const myAgentDefinition: AgentDefinition = {
+        name: "my_agent",
+        description: "What this agent does...",
+        tools: { myNewTool },
+        prompt: { ... }
+    };
+    ```
+2.  **Register Agent**: Add the agent to the `TEAM_REGISTRY` in `convex/ai_zone/agents/anan/teamRegistry.ts`.
+3.  **Register Team**: (Optional) Group multiple agents into a new team in the same registry.
+
+---
+
+## 📜 Coding Philosophy & Rules
+
+-   **Thin Controllers**: Route files (App Router) must only handle entry and exit. All logic lives in `web/server` or `shared_logic`.
+-   **Zone Ownership**: Never access data across zones directly. Use `shared_logic` as the broker.
+-   **Why/What/How**: Every module must have JSDoc explaining its existence.
+-   **Motion First**: Every UI interaction should feel premium. Default to `framer-motion` for state transitions.
+
+---
+
+## 📚 Resources
+
+| Resource | Description |
+| :--- | :--- |
+| [System Guide](docs/developer-system-guide.md) | Granular technical setup and standards. |
+| [Knowledge Base](docs/codebase-knowledge-base.md) | Living map of the entire codebase. |
+| [AI & Data Access](docs/llm-data-access-guide.md) | How the LLM interacts with platform data. |
+| [Logic Audit](docs/logic-audit-2026-03-13.md) | Security and logic verification results. |
