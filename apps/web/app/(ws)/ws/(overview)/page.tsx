@@ -15,16 +15,12 @@ type WorkspacePageProps = {
 /**
  * WHY:   `/ws` is the primary authenticated entry point for all three workspace audiences.
  * WHAT:  Renders either onboarding (no organization yet) or the workspace dashboard with an optional selected thread.
- * HOW:   Forces dynamic rendering (session/headers) and resolves workspace + thread snapshot concurrently on the server.
+ * HOW:   Forces dynamic rendering (session/headers), requires auth before loading optional thread state, and avoids noisy unauthorized errors.
  */
 export default async function WorkspacePage({ searchParams }: WorkspacePageProps) {
-  const resolvedSearchParams = searchParams;
-
-  const [{ orgError, threadId }, workspace, ananProThread] = await Promise.all([
-    resolvedSearchParams,
-    requireWorkspaceData("/ws"),
-    resolvedSearchParams.then(({ threadId }) => getAnanProThread(threadId)),
-  ]);
+  const { orgError, threadId } = await searchParams;
+  const workspace = await requireWorkspaceData("/ws");
+  const ananProThread = await getAnanProThread(threadId);
 
   if (workspace.organizations.length === 0) {
     return (

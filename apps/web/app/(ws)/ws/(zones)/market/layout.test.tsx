@@ -65,6 +65,7 @@ describe("/ws/market layout", () => {
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain("data-slot=\"market-shell\"");
+    expect(markup).toContain("data-slot=\"market-sidebar-placeholder\"");
     expect(markup).toContain("Broker Org");
     expect(markup).toContain("المدن");
     expect(markup).toContain("الأحياء");

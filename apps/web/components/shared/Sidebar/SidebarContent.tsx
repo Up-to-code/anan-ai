@@ -31,7 +31,6 @@ function formatThreadDate(timestamp: number) {
  */
 export default function SidebarContent({
   user,
-  organization,
   visibleZoneKeys,
   recentAssistantThreads = [],
   allAssistantThreads = [],
@@ -41,7 +40,9 @@ export default function SidebarContent({
 }: Pick<SidebarProps, "user" | "organization" | "visibleZoneKeys" | "recentAssistantThreads" | "allAssistantThreads" | "mode" | "onNavigate" | "titleId">) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const navItems = getWorkspaceZonesForKeys(visibleZoneKeys ?? ["overview", "settings"]);
+  const navItems = getWorkspaceZonesForKeys(visibleZoneKeys ?? ["overview"]).filter(
+    (item) => item.href !== "/ws/settings",
+  );
   const activeAssistantThreadId = pathname === "/ws" ? searchParams.get("threadId") : null;
   const { threads: assistantThreads } = useAssistantThreads({
     serverThreads: allAssistantThreads,
@@ -62,11 +63,11 @@ export default function SidebarContent({
           id={titleId}
           className="text-2xl font-black tracking-tighter text-white"
         >
-          {organization.name}
+          أنان
         </div>
         <div className="mt-3 inline-flex items-center gap-3">
           <span className="h-px w-8 bg-blue-500" />
-          <div className="text-xs font-bold text-slate-400">{organization.sidebarSubtitle}</div>
+          <div className="text-xs font-bold text-slate-400">مساحة العمل</div>
         </div>
       </div>
 

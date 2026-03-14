@@ -18,6 +18,11 @@ type MarketPageProps = {
  */
 export default async function WorkspaceMarketRoute({ searchParams }: MarketPageProps) {
   const model = await loadMarketPageModel(searchParams);
+  const isUnderDevelopment =
+    String(
+      (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process
+        ?.env?.NEXT_PUBLIC_MARKET_UNDER_DEVELOPMENT ?? "",
+    ).toLowerCase() === "true";
 
   return (
     <MarketPage
@@ -26,7 +31,9 @@ export default async function WorkspaceMarketRoute({ searchParams }: MarketPageP
       intro={{
         eyebrow: "ذكاء السوق",
         title: "نظرة السوق",
-        description: "هذه الصفحة تمثل الواجهة الشاملة القادمة لذكاء السوق، وتُعرض حالياً كمعاينة مغلقة أثناء التطوير.",
+        description: isUnderDevelopment
+          ? "هذه الصفحة تمثل الواجهة الشاملة القادمة لذكاء السوق، وتُعرض حالياً كمعاينة أثناء التطوير."
+          : "نظرة شاملة على إشارات الطلب والأبحاث والمخزون ضمن النطاق الحالي، مع إمكانية تصفح التحليلات عبر التبويبات.",
       }}
     >
       <MarketOverviewPreview model={model} />

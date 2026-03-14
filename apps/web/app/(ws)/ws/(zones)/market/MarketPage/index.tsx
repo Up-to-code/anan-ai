@@ -11,7 +11,13 @@ type MarketPageIntro = {
   description: string;
 };
 
-const isUnderDevelopment = true;
+function getMarketUnderDevelopmentFlag() {
+  const envValue =
+    (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env
+      ?.NEXT_PUBLIC_MARKET_UNDER_DEVELOPMENT;
+
+  return String(envValue ?? "").toLowerCase() === "true";
+}
 
 function buildScopeLabel(model: WorkspaceMarketPageModel) {
   if (model.headline.selectedAreaLabel && model.headline.selectedAreaLabel !== "كل الأحياء") {
@@ -37,6 +43,8 @@ export default function MarketPage({
   intro: MarketPageIntro;
   children: React.ReactNode;
 }) {
+  const isUnderDevelopment = getMarketUnderDevelopmentFlag();
+
   return (
     <div className="flex min-h-full flex-col pb-24">
       <BrandSectionFrame

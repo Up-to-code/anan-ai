@@ -1,11 +1,16 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { requireWorkspaceData, getLayoutSidebarData, redirect, usePathname } = vi.hoisted(() => ({
+const { useWorkspaceSignalCounts } = vi.hoisted(() => ({
+  useWorkspaceSignalCounts: vi.fn(() => ({ notificationCount: 0, inboxCount: 0 })),
+}));
+
+const { requireWorkspaceData, getLayoutSidebarData, redirect, usePathname, useSearchParams } = vi.hoisted(() => ({
   requireWorkspaceData: vi.fn(),
   getLayoutSidebarData: vi.fn(),
   redirect: vi.fn(),
   usePathname: vi.fn(),
+  useSearchParams: vi.fn(() => new URLSearchParams()),
 }));
 
 vi.mock("../../_lib/workspaceData", () => ({
@@ -16,6 +21,11 @@ vi.mock("../../_lib/workspaceData", () => ({
 vi.mock("next/navigation", () => ({
   redirect,
   usePathname,
+  useSearchParams,
+}));
+
+vi.mock("../inbox/InboxPage/useRealtimeInbox", () => ({
+  useWorkspaceSignalCounts,
 }));
 
 vi.mock("next/link", () => ({

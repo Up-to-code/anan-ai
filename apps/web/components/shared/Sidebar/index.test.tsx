@@ -44,7 +44,7 @@ describe("Sidebar", () => {
     expect(markup).toContain("/ws/crm");
     expect(markup).toContain("/ws/inbox");
     expect(markup).toContain("data-slot=\"workspace-sidebar-desktop\"");
-    expect(markup).toContain("Alpha Dev");
+    expect(markup).not.toContain("Alpha Dev");
     expect(markup).toContain("مساعد Anan Pro");
     expect(markup).not.toContain("ANAN");
     expect(markup).not.toContain("Institutional");
@@ -62,6 +62,7 @@ describe("Sidebar", () => {
     expect(markup).toContain("/ws/projects");
     expect(markup).toContain("/ws/offers");
     expect(markup).toContain("/ws/crm");
+    expect(markup).not.toContain("Broker Org");
   });
 
   it("falls back to overview and AI when the role has no business zones", () => {
@@ -74,10 +75,11 @@ describe("Sidebar", () => {
     );
 
     expect(markup).toContain("/ws");
-    expect(markup).toContain("/ws/settings");
+    expect(markup).not.toContain("/ws/settings");
     expect(markup).not.toContain("/ws/projects");
     expect(markup).not.toContain("/ws/offers");
     expect(markup).not.toContain("/ws/crm");
+    expect(markup).not.toContain("Admin Org");
   });
 
   it("renders the drawer variant with the shared navigation content", () => {

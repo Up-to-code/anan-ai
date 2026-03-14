@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mapMarketSnapshotToPageModel } from "../marketViewModel";
 import MarketPage from "./index";
 
@@ -13,6 +13,13 @@ vi.mock("next/link", () => ({
 }));
 
 describe("MarketPage", () => {
+  let previousFlag: string | undefined;
+
+  beforeEach(() => {
+    previousFlag = process.env.NEXT_PUBLIC_MARKET_UNDER_DEVELOPMENT;
+    process.env.NEXT_PUBLIC_MARKET_UNDER_DEVELOPMENT = "true";
+  });
+
   it("shows a simple coming-soon card above a strongly blurred page preview", () => {
     const model = mapMarketSnapshotToPageModel({
       filters: { city: "الرياض", area: "", query: "", windowDays: 90 },
@@ -60,5 +67,13 @@ describe("MarketPage", () => {
     expect(markup).toContain("Coming Soon");
     expect(markup).toContain("هذه الصفحة قريباً");
     expect(markup).toContain("Market content");
+  });
+
+  afterEach(() => {
+    if (previousFlag === undefined) {
+      delete process.env.NEXT_PUBLIC_MARKET_UNDER_DEVELOPMENT;
+    } else {
+      process.env.NEXT_PUBLIC_MARKET_UNDER_DEVELOPMENT = previousFlag;
+    }
   });
 });

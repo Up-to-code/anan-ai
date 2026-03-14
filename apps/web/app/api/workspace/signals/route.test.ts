@@ -5,8 +5,8 @@ const { getWorkspaceNotificationSummary } = vi.hoisted(() => ({
   getWorkspaceNotificationSummary: vi.fn(),
 }));
 
-const { listInboxConversations } = vi.hoisted(() => ({
-  listInboxConversations: vi.fn(),
+const { getInboxUnreadSummaryForCurrentUser } = vi.hoisted(() => ({
+  getInboxUnreadSummaryForCurrentUser: vi.fn(),
 }));
 
 vi.mock("@/server/domains/notifications/service", () => ({
@@ -14,7 +14,7 @@ vi.mock("@/server/domains/notifications/service", () => ({
 }));
 
 vi.mock("@/server/domains/inbox/service", () => ({
-  listInboxConversations,
+  getInboxUnreadSummaryForCurrentUser,
 }));
 
 import { GET } from "./route";
@@ -22,15 +22,12 @@ import { GET } from "./route";
 describe("GET /api/workspace/signals", () => {
   beforeEach(() => {
     getWorkspaceNotificationSummary.mockReset();
-    listInboxConversations.mockReset();
+    getInboxUnreadSummaryForCurrentUser.mockReset();
   });
 
   it("returns aggregated unread counts", async () => {
     getWorkspaceNotificationSummary.mockResolvedValue({ unreadCount: 3, latest: [] });
-    listInboxConversations.mockResolvedValue([
-      { id: "c1", unreadCount: 2 },
-      { id: "c2", unreadCount: 1 },
-    ]);
+    getInboxUnreadSummaryForCurrentUser.mockResolvedValue({ unreadCount: 3 });
 
     const response = await GET();
 

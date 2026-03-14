@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MarketSnapshot } from "@/server/contracts/market";
 
 const { getWorkspaceMarketSnapshot } = vi.hoisted(() => ({
@@ -84,6 +84,13 @@ vi.mock("@/server/market", () => ({
 import WorkspaceMarketRoute from "./page";
 
 describe("/ws/market page", () => {
+  let previousFlag: string | undefined;
+
+  beforeEach(() => {
+    previousFlag = process.env.NEXT_PUBLIC_MARKET_UNDER_DEVELOPMENT;
+    process.env.NEXT_PUBLIC_MARKET_UNDER_DEVELOPMENT = "true";
+  });
+
   it("renders the blurred market overview preview with an under-development overlay", async () => {
     const element = await WorkspaceMarketRoute({
       searchParams: Promise.resolve({ city: "الرياض", area: "الملقا", query: "مواقف", windowDays: "90" }),
@@ -127,5 +134,13 @@ describe("/ws/market page", () => {
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain("لا توجد إشارات كافية لهذا النطاق");
+  });
+
+  afterEach(() => {
+    if (previousFlag === undefined) {
+      delete process.env.NEXT_PUBLIC_MARKET_UNDER_DEVELOPMENT;
+    } else {
+      process.env.NEXT_PUBLIC_MARKET_UNDER_DEVELOPMENT = previousFlag;
+    }
   });
 });

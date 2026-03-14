@@ -33,15 +33,13 @@ vi.mock("@/server/domains/notifications/service", () => ({
     unreadCount: 2,
     latest: [],
   })),
-  getWorkspacePushConfig: vi.fn(async () => ({
-    publicKey: "pk_test",
-    browserPushEnabled: true,
-  })),
 }));
 
 describe("/ws/notifications page", () => {
   it("renders the visual notifications center", async () => {
-    const markup = renderToStaticMarkup(await WorkspaceNotificationsPage());
+    const markup = renderToStaticMarkup(await WorkspaceNotificationsPage({
+      searchParams: Promise.resolve({}),
+    }));
 
     expect(markup).toContain("مركز التنبيهات");
     expect(markup).toContain("تم ربط عميل جديد بمشروع مالقا ريزيدنس");

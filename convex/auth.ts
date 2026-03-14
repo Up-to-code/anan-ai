@@ -1,6 +1,27 @@
 import { convexAuth } from "@convex-dev/auth/server";
 import { getGoogleProvider } from "./_core/security/providers";
 
+function normalizeBaseUrl(value?: string | null) {
+  const trimmed = value?.trim().replace(/\/+$/, "");
+  if (!trimmed) return null;
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+  return trimmed;
+}
+
+function resolveWebBaseUrl() {
+  return normalizeBaseUrl(
+    process.env.ANAN_WEB_URL ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      process.env.NEXT_PUBLIC_WEB_URL ||
+      process.env.VERCEL_PROJECT_PRODUCTION_URL ||
+      process.env.VERCEL_URL ||
+      process.env.SITE_URL ||
+      "http://localhost:3000",
+  );
+}
+
 function deriveUsername(args: { email?: string | null; name?: string | null; authUserId: string }) {
   const emailLocalPart = args.email?.split("@")[0]?.trim();
   const seed = emailLocalPart || args.name || `user-${args.authUserId.slice(-6)}`;
@@ -67,16 +88,12 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [getGoogleProvider],
   callbacks: {
     async redirect({ redirectTo }) {
-      const webBaseUrl = (
-        process.env.ANAN_WEB_URL ||
-        process.env.SITE_URL ||
-        "http://localhost:3000"
-      ).trim();
-      const convexBaseUrl = process.env.CONVEX_SITE_URL?.trim();
+      const webBaseUrl = resolveWebBaseUrl();
+      const convexBaseUrl = normalizeBaseUrl(process.env.CONVEX_SITE_URL);
 
       const allowedOrigins = [webBaseUrl].filter(Boolean) as string[];
 
-      if (convexBaseUrl && redirectTo.startsWith(convexBaseUrl) && webBaseUrl) {
+      if (convexBaseUrl && webBaseUrl && redirectTo.startsWith(convexBaseUrl)) {
         const target = new URL(redirectTo);
         const web = new URL(webBaseUrl);
         target.protocol = web.protocol;

@@ -32,6 +32,7 @@ export default function ZoneShell({
 
       <div className="relative flex min-w-0 flex-1 flex-col bg-transparent lg:max-h-svh lg:overflow-hidden">
         <WorkspaceTopNavbar 
+          user={user}
           organization={organization} 
           visibleZoneKeys={[zone.key]} 
         />
