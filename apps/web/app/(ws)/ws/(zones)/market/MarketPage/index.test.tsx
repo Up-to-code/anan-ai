@@ -64,7 +64,7 @@ describe("MarketPage", () => {
       </MarketPage>,
     );
 
-    expect(markup).toContain("Coming Soon");
+    expect(markup).toContain("This coming soon");
     expect(markup).toContain("هذه الصفحة قريباً");
     expect(markup).toContain("Market content");
   });

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Building2, Mail, User } from "lucide-react";
+import { Bell, Mail } from "lucide-react";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
 import type { WorkspaceOrganizationDisplay } from "../_lib/organizationDisplay";
 import { cn } from "@/lib/utils";
@@ -40,7 +40,7 @@ export default function WorkspaceTopNavbar({
           <div className="flex min-w-0 items-center gap-3">
             {mobileNavigation ? <div className="lg:hidden">{mobileNavigation}</div> : null}
 
-            <div className="hidden min-w-[360px] overflow-hidden border border-slate-200 bg-white lg:flex lg:flex-col">
+            <div className="hidden min-w-[520px] overflow-hidden border border-slate-200 bg-white lg:flex">
               <IdentityCard
                 user={user}
                 organization={organization}
@@ -85,24 +85,23 @@ function IdentityCard({
   user,
   organization,
   canManageOrganization,
-  compact,
 }: {
   user: SidebarUser;
   organization: WorkspaceOrganizationDisplay;
   canManageOrganization: boolean;
   compact?: boolean;
 }) {
+  const accountInitial = (user.name || user.email || "A").trim().slice(0, 1).toUpperCase();
+  const organizationInitial = (organization.name || "O").trim().slice(0, 1).toUpperCase();
+
   return (
-    <>
+    <div className="flex w-full items-stretch">
       <Link
         href="/ws/me"
-        className={cn(
-          "flex items-center gap-3 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
-          compact ? "px-4 py-3" : "px-4 py-3",
-        )}
+        className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
       >
-        <div className="flex h-10 w-10 items-center justify-center border border-slate-200 bg-white text-slate-950">
-          <User className="h-5 w-5" />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-slate-200 bg-white text-sm font-black text-slate-950">
+          {accountInitial}
         </div>
         <div className="min-w-0">
           <div className="truncate text-sm font-black text-slate-950">
@@ -114,18 +113,15 @@ function IdentityCard({
         </div>
       </Link>
 
-      <div className="h-px bg-slate-200" />
+      <div className="w-px bg-slate-200" />
 
       {canManageOrganization ? (
         <Link
           href="/ws/settings"
-          className={cn(
-            "flex items-center gap-3 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
-            compact ? "px-4 py-3" : "px-4 py-3",
-          )}
+          className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
         >
-          <div className="flex h-10 w-10 items-center justify-center border border-slate-200 bg-white text-slate-950">
-            <Building2 className="h-5 w-5" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-slate-200 bg-white text-sm font-black text-slate-950">
+            {organizationInitial}
           </div>
           <div className="min-w-0">
             <div className="truncate text-sm font-black text-slate-950">{organization.name}</div>
@@ -133,9 +129,9 @@ function IdentityCard({
           </div>
         </Link>
       ) : (
-        <div className={cn("flex items-center gap-3", compact ? "px-4 py-3" : "px-4 py-3")}>
-          <div className="flex h-10 w-10 items-center justify-center border border-slate-200 bg-white text-slate-950">
-            <Building2 className="h-5 w-5" />
+        <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-slate-200 bg-white text-sm font-black text-slate-950">
+            {organizationInitial}
           </div>
           <div className="min-w-0">
             <div className="truncate text-sm font-black text-slate-950">{organization.name}</div>
@@ -143,7 +139,7 @@ function IdentityCard({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 
