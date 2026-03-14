@@ -65,8 +65,21 @@ async function syncUserProfile(ctx: any, userId: any, existingUserId: any) {
  */
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [getGoogleProvider],
-  authorizedRedirectOrigins: ["https://anan-lit-web.vercel.app"],
   callbacks: {
+    async redirect({ redirectTo }) {
+      const allowedOrigins = [
+        "https://anan-lit-web.vercel.app",
+        process.env.SITE_URL,
+      ].filter(Boolean) as string[];
+
+      if (
+        allowedOrigins.some((origin) => redirectTo.startsWith(origin)) ||
+        redirectTo.startsWith("/")
+      ) {
+        return redirectTo;
+      }
+      return process.env.SITE_URL || "/";
+    },
     async afterUserCreatedOrUpdated(ctx, { userId, existingUserId }) {
       await syncUserProfile(ctx, userId, existingUserId);
     },
