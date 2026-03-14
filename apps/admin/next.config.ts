@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   experimental: {
     externalDir: true,
   },
+  outputFileTracingRoot: path.resolve(import.meta.dirname, "../../"),
   turbopack: {
     root: path.resolve(import.meta.dirname, "../.."),
   },
