@@ -26,6 +26,15 @@ This chapter gives the Convex mental model and maps the folder structure into re
 - audience zones for owner-scoped endpoints (`broker_zone`, `red_zone`, `user_zone`, `admin_zone`, `public_zone`),
 - `http.ts` for HTTP ingress and OAuth routing.
 
+Key Convex components in use:
+
+- `convex-tenants` + `convex-authz` for organization membership and invitations.
+- `convex-audit-log` for security and compliance events.
+- `@mzedstudio/uploadthingtrack` for file tracking metadata.
+- `@mzedstudio/llm-cache` for LLM response caching.
+- `convex-cascading-delete` for safe cascade deletes.
+- `convex-batch-processor` and `@convex-dev/workpool` for background processing.
+
 ---
 
 ## HOW (Mental Model)

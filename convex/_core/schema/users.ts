@@ -36,6 +36,7 @@ const userTables = {
         ),
         brokerId: v.optional(v.id("brokers")),
         REDId: v.optional(v.id("RED")),
+        currentTenantOrgId: v.optional(v.string()),
         showInOffersDirectory: v.optional(v.boolean()),
         isActive: v.optional(v.boolean()),
         createdAt: v.optional(v.number()),
@@ -45,7 +46,8 @@ const userTables = {
         .index("email", ["email"])
         .index("usernameLower", ["usernameLower"])
         .index("role", ["role"])
-        .index("roleStatus", ["roleStatus"]),
+        .index("roleStatus", ["roleStatus"])
+        .index("currentTenantOrgId", ["currentTenantOrgId"]),
     users: defineTable({
         name: v.optional(v.string()),
         image: v.optional(v.string()),

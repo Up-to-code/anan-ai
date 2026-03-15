@@ -52,6 +52,15 @@ Avoid:
 - “scan all then filter in JS”.
 - “take(200)” to find a row.
 
+### Tenant org mapping
+
+Tenant organizations are stored in the `convex-tenants` component, with Anan’s domain ownership linked via:
+
+- `tenantOrgLinks` (in `convex/_core/schema/agencies.ts`) — maps tenant org id → broker/RED owner.
+- `userProfiles.currentTenantOrgId` — the active tenant for the current profile.
+
+Legacy membership tables remain only for migration and should not receive new writes.
+
 ### State fields
 
 Do not collapse different lifecycle concepts:
@@ -76,4 +85,3 @@ If a table needs both concepts, it gets both fields.
 - Adding a new table but forgetting the index for its primary lookup.
 - Introducing duplicate naming that conflicts with schema conventions.
 - Adding “helper” fields that are really projections that should be computed, not stored.
-

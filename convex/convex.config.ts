@@ -5,6 +5,14 @@ import rateLimiter from "@convex-dev/rate-limiter/convex.config";
 import rag from "@convex-dev/rag/convex.config";
 import stagehand from "@browserbasehq/convex-stagehand/convex.config";
 import workflow from "@convex-dev/workflow/convex.config";
+import workpool from "@convex-dev/workpool/convex.config.js";
+import tenants from "@djpanda/convex-tenants/convex.config.js";
+import authz from "@djpanda/convex-authz/convex.config.js";
+import cascadingDelete from "@00akshatsinha00/convex-cascading-delete/convex.config.js";
+import auditLog from "convex-audit-log/convex.config.js";
+import uploadthingFileTracker from "@mzedstudio/uploadthingtrack/convex.config.js";
+import batchProcessor from "convex-batch-processor/convex.config.js";
+import llmCache from "@mzedstudio/llm-cache/convex.config.js";
 
 const app = defineApp();
 app.use(agent);
@@ -13,5 +21,13 @@ app.use(rateLimiter);
 app.use(rag);
 app.use(stagehand, { name: "stagehand" });
 app.use(workflow);
+app.use(workpool, { name: "workpool" });
+app.use(tenants, { name: "tenants" });
+app.use(authz, { name: "authz" });
+app.use(cascadingDelete, { name: "cascadingDelete" });
+app.use(auditLog, { name: "auditLog" });
+app.use(uploadthingFileTracker, { name: "uploadthingFileTracker" });
+app.use(batchProcessor, { name: "batchProcessor" });
+app.use(llmCache, { name: "llmCache" });
 
 export default app;

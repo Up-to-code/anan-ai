@@ -56,6 +56,23 @@ const agenciesTables = {
         .index("ownerREDId", ["ownerREDId"])
         .index("status", ["status"]),
 
+    tenantOrgLinks: defineTable({
+        tenantOrgId: v.string(),
+        ownerType: v.union(v.literal("broker"), v.literal("RED")),
+        ownerBrokerId: v.optional(v.id("brokers")),
+        ownerREDId: v.optional(v.id("RED")),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    })
+        .index("tenantOrgId", ["tenantOrgId"])
+        .index("ownerBrokerId", ["ownerBrokerId"])
+        .index("ownerREDId", ["ownerREDId"])
+        .index("ownerType", ["ownerType"]),
+
+    /**
+     * Legacy org membership system. Deprecated after convex-tenants migration.
+     * Keep until data migration is completed and verified.
+     */
     teamInvites: defineTable({
         ownerType: v.union(v.literal("broker"), v.literal("RED")),
         ownerBrokerId: v.optional(v.id("brokers")),
@@ -75,6 +92,10 @@ const agenciesTables = {
         .index("ownerREDId", ["ownerREDId"])
         .index("status", ["status"]),
 
+    /**
+     * Legacy org membership system. Deprecated after convex-tenants migration.
+     * Keep until data migration is completed and verified.
+     */
     organizationMemberships: defineTable({
         ownerType: v.union(v.literal("broker"), v.literal("RED")),
         ownerBrokerId: v.optional(v.id("brokers")),

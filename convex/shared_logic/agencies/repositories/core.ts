@@ -4,19 +4,31 @@ import type { MutationCtx, QueryCtx } from "../../../_generated/server";
 
 export type AgenciesRepositoryCtx = QueryCtx | MutationCtx;
 export type UserProfileRecord = Doc<"userProfiles">;
-export type TeamInviteRecord = Doc<"teamInvites">;
-export type OrganizationMembershipRecord = Doc<"organizationMemberships">;
+export type OrganizationMembershipRecord = {
+  id: string;
+  ownerType: "broker" | "RED";
+  ownerId: string;
+  authUserId: string;
+  profileId: string;
+  role: "manager" | "member" | "viewer";
+  status: "active" | "inactive";
+  createdAt: number;
+  updatedAt: number;
+};
+export type TenantOrgLinkRecord = Doc<"tenantOrgLinks">;
 
 export type OwnerContext =
   | {
       ownerType: "broker";
       ownerBrokerId: GenericId<"brokers">;
       authUserId: string;
+      tenantOrgId?: string;
     }
   | {
       ownerType: "RED";
       ownerREDId: GenericId<"RED">;
       authUserId: string;
+      tenantOrgId?: string;
     };
 
 /**
@@ -112,6 +124,7 @@ export function buildOwnerContextFromProfile(profile: UserProfileRecord): OwnerC
       ownerType: "broker",
       ownerBrokerId: profile.brokerId,
       authUserId: profile.authUserId,
+      tenantOrgId: profile.currentTenantOrgId,
     };
   }
 
@@ -120,10 +133,106 @@ export function buildOwnerContextFromProfile(profile: UserProfileRecord): OwnerC
       ownerType: "RED",
       ownerREDId: profile.REDId,
       authUserId: profile.authUserId,
+      tenantOrgId: profile.currentTenantOrgId,
     };
   }
 
   throw new ConvexError({ code: "FORBIDDEN", message: "Organization owner profile required" });
+}
+
+export async function findTenantOrgLinkByTenantOrgId(
+  ctx: AgenciesRepositoryCtx,
+  tenantOrgId: string,
+): Promise<TenantOrgLinkRecord | null> {
+  return ctx.db
+    .query("tenantOrgLinks")
+    .withIndex("tenantOrgId", (q) => q.eq("tenantOrgId", tenantOrgId))
+    .first();
+}
+
+export async function findTenantOrgLinkByOwner(
+  ctx: AgenciesRepositoryCtx,
+  owner: OwnerContext,
+): Promise<TenantOrgLinkRecord | null> {
+  if (owner.ownerType === "broker") {
+    return ctx.db
+      .query("tenantOrgLinks")
+      .withIndex("ownerBrokerId", (q) => q.eq("ownerBrokerId", owner.ownerBrokerId))
+      .first();
+  }
+  return ctx.db
+    .query("tenantOrgLinks")
+    .withIndex("ownerREDId", (q) => q.eq("ownerREDId", owner.ownerREDId))
+    .first();
+}
+
+export async function resolveTenantOrgIdForOwner(
+  ctx: AgenciesRepositoryCtx,
+  owner: OwnerContext,
+): Promise<string> {
+  if (owner.tenantOrgId) return owner.tenantOrgId;
+  const link = await findTenantOrgLinkByOwner(ctx, owner);
+  if (!link) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Tenant organization required" });
+  }
+  return link.tenantOrgId;
+}
+
+export async function resolveTenantOrgIdForProfile(
+  ctx: AgenciesRepositoryCtx,
+  profile: UserProfileRecord,
+): Promise<string> {
+  if (profile.currentTenantOrgId) {
+    const link = await findTenantOrgLinkByTenantOrgId(ctx, profile.currentTenantOrgId);
+    if (link) return link.tenantOrgId;
+  }
+
+  if (profile.brokerId || profile.REDId) {
+    const owner = buildOwnerContextFromProfile(profile);
+    const link = await findTenantOrgLinkByOwner(ctx, owner);
+    if (link) {
+      if (isMutationCtx(ctx) && profile.currentTenantOrgId !== link.tenantOrgId) {
+        await ctx.db.patch(profile._id, { currentTenantOrgId: link.tenantOrgId, updatedAt: Date.now() });
+      }
+      return link.tenantOrgId;
+    }
+  }
+
+  throw new ConvexError({ code: "FORBIDDEN", message: "Tenant organization required" });
+}
+
+export async function resolveOwnerContextFromProfile(
+  ctx: AgenciesRepositoryCtx,
+  profile: UserProfileRecord,
+): Promise<OwnerContext> {
+  const tenantOrgId = await resolveTenantOrgIdForProfile(ctx, profile);
+  const link = await findTenantOrgLinkByTenantOrgId(ctx, tenantOrgId);
+  if (!link) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Tenant organization link required" });
+  }
+
+  if (link.ownerType === "broker") {
+    if (!link.ownerBrokerId) {
+      throw new ConvexError({ code: "FORBIDDEN", message: "Broker organization link required" });
+    }
+    return {
+      ownerType: "broker",
+      ownerBrokerId: link.ownerBrokerId,
+      authUserId: profile.authUserId,
+      tenantOrgId: link.tenantOrgId,
+    };
+  }
+
+  if (!link.ownerREDId) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Developer organization link required" });
+  }
+
+  return {
+    ownerType: "RED",
+    ownerREDId: link.ownerREDId,
+    authUserId: profile.authUserId,
+    tenantOrgId: link.tenantOrgId,
+  };
 }
 
 /**

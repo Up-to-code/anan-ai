@@ -46,6 +46,7 @@ import type * as admin_zone_overview from "../admin_zone/overview.js";
 import type * as admin_zone_properties from "../admin_zone/properties.js";
 import type * as admin_zone_services_propertiesService from "../admin_zone/services/propertiesService.js";
 import type * as admin_zone_services_usersService from "../admin_zone/services/usersService.js";
+import type * as admin_zone_tenantsMigration from "../admin_zone/tenantsMigration.js";
 import type * as admin_zone_threads from "../admin_zone/threads.js";
 import type * as admin_zone_users from "../admin_zone/users.js";
 import type * as admin_zone_verifications from "../admin_zone/verifications.js";
@@ -114,11 +115,14 @@ import type * as ai_zone_channels_whatsapp_webhook from "../ai_zone/channels/wha
 import type * as ai_zone_services_agUi from "../ai_zone/services/agUi.js";
 import type * as ai_zone_services_assistantService from "../ai_zone/services/assistantService.js";
 import type * as ai_zone_workflows_index from "../ai_zone/workflows/index.js";
+import type * as auditLog from "../auditLog.js";
 import type * as auth from "../auth.js";
+import type * as authz from "../authz.js";
 import type * as broker_zone_overview from "../broker_zone/overview.js";
 import type * as broker_zone_properties from "../broker_zone/properties.js";
 import type * as broker_zone_repositories_overviewRepository from "../broker_zone/repositories/overviewRepository.js";
 import type * as broker_zone_repositories_propertiesRepository from "../broker_zone/repositories/propertiesRepository.js";
+import type * as cascading from "../cascading.js";
 import type * as http from "../http.js";
 import type * as public_zone_contact from "../public_zone/contact.js";
 import type * as red_zone_overview from "../red_zone/overview.js";
@@ -134,6 +138,7 @@ import type * as shared_logic_agencies_repositories_invites from "../shared_logi
 import type * as shared_logic_agencies_repositories_membership from "../shared_logic/agencies/repositories/membership.js";
 import type * as shared_logic_agencies_repositories_organization from "../shared_logic/agencies/repositories/organization.js";
 import type * as shared_logic_banks_queries from "../shared_logic/banks/queries.js";
+import type * as shared_logic_batch_index from "../shared_logic/batch/index.js";
 import type * as shared_logic_content_queries from "../shared_logic/content/queries.js";
 import type * as shared_logic_crm_repositories from "../shared_logic/crm/repositories.js";
 import type * as shared_logic_developerHandbook_index from "../shared_logic/developerHandbook/index.js";
@@ -157,6 +162,7 @@ import type * as shared_logic_lib_providers from "../shared_logic/lib/providers.
 import type * as shared_logic_lib_retry from "../shared_logic/lib/retry.js";
 import type * as shared_logic_lib_storage from "../shared_logic/lib/storage.js";
 import type * as shared_logic_lib_toon from "../shared_logic/lib/toon.js";
+import type * as shared_logic_llmCache from "../shared_logic/llmCache.js";
 import type * as shared_logic_market from "../shared_logic/market.js";
 import type * as shared_logic_market_analytics from "../shared_logic/market/analytics.js";
 import type * as shared_logic_market_normalizers from "../shared_logic/market/normalizers.js";
@@ -191,10 +197,13 @@ import type * as shared_logic_properties_history from "../shared_logic/propertie
 import type * as shared_logic_properties_search from "../shared_logic/properties/search.js";
 import type * as shared_logic_properties_searchText from "../shared_logic/properties/searchText.js";
 import type * as shared_logic_subscriptions_index from "../shared_logic/subscriptions/index.js";
+import type * as shared_logic_uploadthing from "../shared_logic/uploadthing.js";
 import type * as shared_logic_users_index from "../shared_logic/users/index.js";
 import type * as shared_logic_users_session from "../shared_logic/users/session.js";
 import type * as shared_logic_users_whatsapp from "../shared_logic/users/whatsapp.js";
 import type * as shared_logic_workspaceWorkflows from "../shared_logic/workspaceWorkflows.js";
+import type * as tenants from "../tenants.js";
+import type * as uploadthing from "../uploadthing.js";
 import type * as user_zone_mobile_assistant from "../user_zone/mobile/assistant.js";
 import type * as user_zone_mobile_contracts from "../user_zone/mobile/contracts.js";
 import type * as user_zone_mobile_feed from "../user_zone/mobile/feed.js";
@@ -244,6 +253,7 @@ declare const fullApi: ApiFromModules<{
   "admin_zone/properties": typeof admin_zone_properties;
   "admin_zone/services/propertiesService": typeof admin_zone_services_propertiesService;
   "admin_zone/services/usersService": typeof admin_zone_services_usersService;
+  "admin_zone/tenantsMigration": typeof admin_zone_tenantsMigration;
   "admin_zone/threads": typeof admin_zone_threads;
   "admin_zone/users": typeof admin_zone_users;
   "admin_zone/verifications": typeof admin_zone_verifications;
@@ -312,11 +322,14 @@ declare const fullApi: ApiFromModules<{
   "ai_zone/services/agUi": typeof ai_zone_services_agUi;
   "ai_zone/services/assistantService": typeof ai_zone_services_assistantService;
   "ai_zone/workflows/index": typeof ai_zone_workflows_index;
+  auditLog: typeof auditLog;
   auth: typeof auth;
+  authz: typeof authz;
   "broker_zone/overview": typeof broker_zone_overview;
   "broker_zone/properties": typeof broker_zone_properties;
   "broker_zone/repositories/overviewRepository": typeof broker_zone_repositories_overviewRepository;
   "broker_zone/repositories/propertiesRepository": typeof broker_zone_repositories_propertiesRepository;
+  cascading: typeof cascading;
   http: typeof http;
   "public_zone/contact": typeof public_zone_contact;
   "red_zone/overview": typeof red_zone_overview;
@@ -332,6 +345,7 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/agencies/repositories/membership": typeof shared_logic_agencies_repositories_membership;
   "shared_logic/agencies/repositories/organization": typeof shared_logic_agencies_repositories_organization;
   "shared_logic/banks/queries": typeof shared_logic_banks_queries;
+  "shared_logic/batch/index": typeof shared_logic_batch_index;
   "shared_logic/content/queries": typeof shared_logic_content_queries;
   "shared_logic/crm/repositories": typeof shared_logic_crm_repositories;
   "shared_logic/developerHandbook/index": typeof shared_logic_developerHandbook_index;
@@ -355,6 +369,7 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/lib/retry": typeof shared_logic_lib_retry;
   "shared_logic/lib/storage": typeof shared_logic_lib_storage;
   "shared_logic/lib/toon": typeof shared_logic_lib_toon;
+  "shared_logic/llmCache": typeof shared_logic_llmCache;
   "shared_logic/market": typeof shared_logic_market;
   "shared_logic/market/analytics": typeof shared_logic_market_analytics;
   "shared_logic/market/normalizers": typeof shared_logic_market_normalizers;
@@ -389,10 +404,13 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/properties/search": typeof shared_logic_properties_search;
   "shared_logic/properties/searchText": typeof shared_logic_properties_searchText;
   "shared_logic/subscriptions/index": typeof shared_logic_subscriptions_index;
+  "shared_logic/uploadthing": typeof shared_logic_uploadthing;
   "shared_logic/users/index": typeof shared_logic_users_index;
   "shared_logic/users/session": typeof shared_logic_users_session;
   "shared_logic/users/whatsapp": typeof shared_logic_users_whatsapp;
   "shared_logic/workspaceWorkflows": typeof shared_logic_workspaceWorkflows;
+  tenants: typeof tenants;
+  uploadthing: typeof uploadthing;
   "user_zone/mobile/assistant": typeof user_zone_mobile_assistant;
   "user_zone/mobile/contracts": typeof user_zone_mobile_contracts;
   "user_zone/mobile/feed": typeof user_zone_mobile_feed;
@@ -4436,6 +4454,2105 @@ export declare const components: {
         "internal",
         { from?: number | string; startAsync?: boolean; workflowId: string },
         null
+      >;
+    };
+  };
+  workpool: {
+    config: {
+      update: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          logLevel?: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+          maxParallelism?: number;
+        },
+        any
+      >;
+    };
+    lib: {
+      cancel: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          id: string;
+          logLevel?: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+        },
+        any
+      >;
+      cancelAll: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          before?: number;
+          limit?: number;
+          logLevel?: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+        },
+        any
+      >;
+      enqueue: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            logLevel?: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+            maxParallelism?: number;
+          };
+          fnArgs: any;
+          fnHandle: string;
+          fnName: string;
+          fnType: "action" | "mutation" | "query";
+          onComplete?: { context?: any; fnHandle: string };
+          retryBehavior?: {
+            base: number;
+            initialBackoffMs: number;
+            maxAttempts: number;
+          };
+          runAt: number;
+        },
+        string
+      >;
+      enqueueBatch: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            logLevel?: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+            maxParallelism?: number;
+          };
+          items: Array<{
+            fnArgs: any;
+            fnHandle: string;
+            fnName: string;
+            fnType: "action" | "mutation" | "query";
+            onComplete?: { context?: any; fnHandle: string };
+            retryBehavior?: {
+              base: number;
+              initialBackoffMs: number;
+              maxAttempts: number;
+            };
+            runAt: number;
+          }>;
+        },
+        Array<string>
+      >;
+      status: FunctionReference<
+        "query",
+        "internal",
+        { id: string },
+        | { previousAttempts: number; state: "pending" }
+        | { previousAttempts: number; state: "running" }
+        | { state: "finished" }
+      >;
+      statusBatch: FunctionReference<
+        "query",
+        "internal",
+        { ids: Array<string> },
+        Array<
+          | { previousAttempts: number; state: "pending" }
+          | { previousAttempts: number; state: "running" }
+          | { state: "finished" }
+        >
+      >;
+    };
+  };
+  tenants: {
+    invitations: {
+      acceptInvitation: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          acceptingUserId: string;
+          acceptingUserIdentifier?: string;
+          invitationId: string;
+        },
+        null
+      >;
+      bulkInviteMembers: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          expiresAt?: number;
+          invitations: Array<{
+            identifierType?: string;
+            inviteeIdentifier: string;
+            message?: string;
+            role: string;
+            teamId?: string;
+          }>;
+          inviterName?: string;
+          organizationId: string;
+          userId: string;
+        },
+        {
+          errors: Array<{
+            code: string;
+            inviteeIdentifier: string;
+            message: string;
+          }>;
+          success: Array<{
+            expiresAt: number;
+            invitationId: string;
+            inviteeIdentifier: string;
+          }>;
+        }
+      >;
+      cancelInvitation: FunctionReference<
+        "mutation",
+        "internal",
+        { invitationId: string; userId: string },
+        null
+      >;
+      countInvitations: FunctionReference<
+        "query",
+        "internal",
+        { organizationId: string },
+        number
+      >;
+      getInvitation: FunctionReference<
+        "query",
+        "internal",
+        { invitationId: string },
+        null | {
+          _creationTime: number;
+          _id: string;
+          expiresAt: number;
+          identifierType?: string;
+          inviteeIdentifier: string;
+          inviterId: string;
+          inviterName?: string;
+          isExpired: boolean;
+          message?: string;
+          organizationId: string;
+          organizationName: string;
+          role: string;
+          status: "pending" | "accepted" | "cancelled" | "expired";
+          teamId: null | string;
+        }
+      >;
+      getPendingInvitationsForIdentifier: FunctionReference<
+        "query",
+        "internal",
+        { identifier: string },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          expiresAt: number;
+          identifierType?: string;
+          inviteeIdentifier: string;
+          inviterId: string;
+          inviterName?: string;
+          isExpired: boolean;
+          organizationId: string;
+          organizationName: string;
+          role: string;
+          teamId: null | string;
+        }>
+      >;
+      inviteMember: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          expiresAt?: number;
+          identifierType?: string;
+          inviteeIdentifier: string;
+          inviterName?: string;
+          message?: string;
+          organizationId: string;
+          role: string;
+          teamId?: string;
+          userId: string;
+        },
+        { expiresAt: number; invitationId: string; inviteeIdentifier: string }
+      >;
+      listInvitations: FunctionReference<
+        "query",
+        "internal",
+        {
+          organizationId: string;
+          sortBy?: "inviteeIdentifier" | "expiresAt" | "createdAt";
+          sortOrder?: "asc" | "desc";
+        },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          expiresAt: number;
+          identifierType?: string;
+          inviteeIdentifier: string;
+          inviterId: string;
+          inviterName?: string;
+          isExpired: boolean;
+          message?: string;
+          organizationId: string;
+          role: string;
+          status: "pending" | "accepted" | "cancelled" | "expired";
+          teamId: null | string;
+        }>
+      >;
+      listInvitationsPaginated: FunctionReference<
+        "query",
+        "internal",
+        {
+          organizationId: string;
+          paginationOpts: {
+            cursor: string | null;
+            endCursor?: string | null;
+            id?: number;
+            maximumBytesRead?: number;
+            maximumRowsRead?: number;
+            numItems: number;
+          };
+        },
+        any
+      >;
+      resendInvitation: FunctionReference<
+        "mutation",
+        "internal",
+        { invitationId: string; userId: string },
+        { invitationId: string; inviteeIdentifier: string }
+      >;
+    };
+    members: {
+      addMember: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          memberUserId: string;
+          organizationId: string;
+          role: string;
+          userId: string;
+        },
+        null
+      >;
+      bulkAddMembers: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          members: Array<{ memberUserId: string; role: string }>;
+          organizationId: string;
+          userId: string;
+        },
+        {
+          errors: Array<{ code: string; message: string; userId: string }>;
+          success: Array<string>;
+        }
+      >;
+      bulkRemoveMembers: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          memberUserIds: Array<string>;
+          organizationId: string;
+          userId: string;
+        },
+        {
+          errors: Array<{ code: string; message: string; userId: string }>;
+          success: Array<string>;
+        }
+      >;
+      checkMemberPermission: FunctionReference<
+        "query",
+        "internal",
+        {
+          minRole: "member" | "admin" | "owner";
+          organizationId: string;
+          userId: string;
+        },
+        {
+          currentRole: null | "owner" | "admin" | "member";
+          hasPermission: boolean;
+        }
+      >;
+      countOrganizationMembers: FunctionReference<
+        "query",
+        "internal",
+        { organizationId: string; status?: "active" | "suspended" | "all" },
+        number
+      >;
+      getMember: FunctionReference<
+        "query",
+        "internal",
+        { organizationId: string; userId: string },
+        null | {
+          _creationTime: number;
+          _id: string;
+          joinedAt?: number;
+          organizationId: string;
+          role: string;
+          status?: "active" | "suspended";
+          suspendedAt?: number;
+          userId: string;
+        }
+      >;
+      leaveOrganization: FunctionReference<
+        "mutation",
+        "internal",
+        { organizationId: string; userId: string },
+        null
+      >;
+      listOrganizationMembers: FunctionReference<
+        "query",
+        "internal",
+        {
+          organizationId: string;
+          sortBy?: "role" | "joinedAt" | "createdAt" | "userId";
+          sortOrder?: "asc" | "desc";
+          status?: "active" | "suspended" | "all";
+        },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          joinedAt?: number;
+          organizationId: string;
+          role: string;
+          status?: "active" | "suspended";
+          suspendedAt?: number;
+          userId: string;
+        }>
+      >;
+      listOrganizationMembersPaginated: FunctionReference<
+        "query",
+        "internal",
+        {
+          organizationId: string;
+          paginationOpts: {
+            cursor: string | null;
+            endCursor?: string | null;
+            id?: number;
+            maximumBytesRead?: number;
+            maximumRowsRead?: number;
+            numItems: number;
+          };
+          status?: "active" | "suspended" | "all";
+        },
+        any
+      >;
+      removeMember: FunctionReference<
+        "mutation",
+        "internal",
+        { memberUserId: string; organizationId: string; userId: string },
+        null
+      >;
+      suspendMember: FunctionReference<
+        "mutation",
+        "internal",
+        { memberUserId: string; organizationId: string; userId: string },
+        null
+      >;
+      unsuspendMember: FunctionReference<
+        "mutation",
+        "internal",
+        { memberUserId: string; organizationId: string; userId: string },
+        null
+      >;
+      updateMemberRole: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          memberUserId: string;
+          organizationId: string;
+          role: string;
+          userId: string;
+        },
+        null
+      >;
+    };
+    organizations: {
+      createOrganization: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          creatorRole?: string;
+          logo?: string;
+          metadata?: any;
+          name: string;
+          settings?: {
+            allowPublicSignup?: boolean;
+            requireInvitationToJoin?: boolean;
+          };
+          slug: string;
+          userId: string;
+        },
+        string
+      >;
+      deleteOrganization: FunctionReference<
+        "mutation",
+        "internal",
+        { organizationId: string; userId: string },
+        null
+      >;
+      getOrganization: FunctionReference<
+        "query",
+        "internal",
+        { organizationId: string },
+        null | {
+          _creationTime: number;
+          _id: string;
+          logo: null | string;
+          metadata?: any;
+          name: string;
+          ownerId: string;
+          settings?: {
+            allowPublicSignup?: boolean;
+            requireInvitationToJoin?: boolean;
+          };
+          slug: string;
+          status?: "active" | "suspended" | "archived";
+        }
+      >;
+      getOrganizationBySlug: FunctionReference<
+        "query",
+        "internal",
+        { slug: string },
+        null | {
+          _creationTime: number;
+          _id: string;
+          logo: null | string;
+          metadata?: any;
+          name: string;
+          ownerId: string;
+          settings?: {
+            allowPublicSignup?: boolean;
+            requireInvitationToJoin?: boolean;
+          };
+          slug: string;
+          status?: "active" | "suspended" | "archived";
+        }
+      >;
+      listUserOrganizations: FunctionReference<
+        "query",
+        "internal",
+        {
+          sortBy?: "name" | "createdAt" | "slug";
+          sortOrder?: "asc" | "desc";
+          userId: string;
+        },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          logo: null | string;
+          metadata?: any;
+          name: string;
+          ownerId: string;
+          role: string;
+          settings?: {
+            allowPublicSignup?: boolean;
+            requireInvitationToJoin?: boolean;
+          };
+          slug: string;
+          status?: "active" | "suspended" | "archived";
+        }>
+      >;
+      transferOwnership: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          newOwnerUserId: string;
+          organizationId: string;
+          previousOwnerRole?: string;
+          userId: string;
+        },
+        null
+      >;
+      updateOrganization: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          logo?: null | string;
+          metadata?: any;
+          name?: string;
+          organizationId: string;
+          settings?: {
+            allowPublicSignup?: boolean;
+            requireInvitationToJoin?: boolean;
+          };
+          slug?: string;
+          status?: "active" | "suspended" | "archived";
+          userId: string;
+        },
+        null
+      >;
+    };
+    teams: {
+      addTeamMember: FunctionReference<
+        "mutation",
+        "internal",
+        { memberUserId: string; role?: string; teamId: string; userId: string },
+        null
+      >;
+      countTeams: FunctionReference<
+        "query",
+        "internal",
+        { organizationId: string },
+        number
+      >;
+      createTeam: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          description?: string;
+          metadata?: any;
+          name: string;
+          organizationId: string;
+          parentTeamId?: string;
+          slug?: string;
+          userId: string;
+        },
+        string
+      >;
+      deleteTeam: FunctionReference<
+        "mutation",
+        "internal",
+        { teamId: string; userId: string },
+        null
+      >;
+      getTeam: FunctionReference<
+        "query",
+        "internal",
+        { teamId: string },
+        null | {
+          _creationTime: number;
+          _id: string;
+          description: null | string;
+          metadata?: any;
+          name: string;
+          organizationId: string;
+          parentTeamId?: string;
+          slug?: string;
+        }
+      >;
+      isTeamMember: FunctionReference<
+        "query",
+        "internal",
+        { teamId: string; userId: string },
+        boolean
+      >;
+      listTeamMembers: FunctionReference<
+        "query",
+        "internal",
+        {
+          sortBy?: "userId" | "role" | "createdAt";
+          sortOrder?: "asc" | "desc";
+          teamId: string;
+        },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          role?: string;
+          teamId: string;
+          userId: string;
+        }>
+      >;
+      listTeamMembersPaginated: FunctionReference<
+        "query",
+        "internal",
+        {
+          paginationOpts: {
+            cursor: string | null;
+            endCursor?: string | null;
+            id?: number;
+            maximumBytesRead?: number;
+            maximumRowsRead?: number;
+            numItems: number;
+          };
+          teamId: string;
+        },
+        any
+      >;
+      listTeams: FunctionReference<
+        "query",
+        "internal",
+        {
+          organizationId: string;
+          parentTeamId?: null | string;
+          sortBy?: "name" | "createdAt" | "slug";
+          sortOrder?: "asc" | "desc";
+        },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          description: null | string;
+          metadata?: any;
+          name: string;
+          organizationId: string;
+          parentTeamId?: string;
+          slug?: string;
+        }>
+      >;
+      listTeamsAsTree: FunctionReference<
+        "query",
+        "internal",
+        { organizationId: string },
+        Array<{
+          children: any;
+          team: {
+            _creationTime: number;
+            _id: string;
+            description: null | string;
+            metadata?: any;
+            name: string;
+            organizationId: string;
+            parentTeamId?: string;
+            slug?: string;
+          };
+        }>
+      >;
+      listTeamsPaginated: FunctionReference<
+        "query",
+        "internal",
+        {
+          organizationId: string;
+          paginationOpts: {
+            cursor: string | null;
+            endCursor?: string | null;
+            id?: number;
+            maximumBytesRead?: number;
+            maximumRowsRead?: number;
+            numItems: number;
+          };
+        },
+        any
+      >;
+      removeTeamMember: FunctionReference<
+        "mutation",
+        "internal",
+        { memberUserId: string; teamId: string; userId: string },
+        null
+      >;
+      updateTeam: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          description?: null | string;
+          metadata?: any;
+          name?: string;
+          parentTeamId?: null | string;
+          slug?: string;
+          teamId: string;
+          userId: string;
+        },
+        null
+      >;
+      updateTeamMemberRole: FunctionReference<
+        "mutation",
+        "internal",
+        { memberUserId: string; role: string; teamId: string; userId: string },
+        null
+      >;
+    };
+  };
+  authz: {
+    indexed: {
+      addRelationWithCompute: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          createdBy?: string;
+          inheritedRelations?: Array<{
+            fromObjectType: string;
+            fromRelation: string;
+            relation: string;
+          }>;
+          objectId: string;
+          objectType: string;
+          relation: string;
+          subjectId: string;
+          subjectType: string;
+        },
+        string
+      >;
+      assignRoleWithCompute: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          assignedBy?: string;
+          expiresAt?: number;
+          role: string;
+          rolePermissions: Array<string>;
+          scope?: { id: string; type: string };
+          userId: string;
+        },
+        string
+      >;
+      checkPermissionFast: FunctionReference<
+        "query",
+        "internal",
+        {
+          objectId?: string;
+          objectType?: string;
+          permission: string;
+          userId: string;
+        },
+        boolean
+      >;
+      cleanupExpired: FunctionReference<
+        "mutation",
+        "internal",
+        {},
+        { expiredPermissions: number; expiredRoles: number }
+      >;
+      denyPermissionDirect: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          deniedBy?: string;
+          expiresAt?: number;
+          permission: string;
+          reason?: string;
+          scope?: { id: string; type: string };
+          userId: string;
+        },
+        string
+      >;
+      getUserPermissionsFast: FunctionReference<
+        "query",
+        "internal",
+        { scopeKey?: string; userId: string },
+        Array<{
+          effect: string;
+          permission: string;
+          scopeKey: string;
+          sources: Array<string>;
+        }>
+      >;
+      getUserRolesFast: FunctionReference<
+        "query",
+        "internal",
+        { scopeKey?: string; userId: string },
+        Array<{
+          role: string;
+          scope?: { id: string; type: string };
+          scopeKey: string;
+        }>
+      >;
+      grantPermissionDirect: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          expiresAt?: number;
+          grantedBy?: string;
+          permission: string;
+          reason?: string;
+          scope?: { id: string; type: string };
+          userId: string;
+        },
+        string
+      >;
+      hasRelationFast: FunctionReference<
+        "query",
+        "internal",
+        {
+          objectId: string;
+          objectType: string;
+          relation: string;
+          subjectId: string;
+          subjectType: string;
+        },
+        boolean
+      >;
+      hasRoleFast: FunctionReference<
+        "query",
+        "internal",
+        {
+          objectId?: string;
+          objectType?: string;
+          role: string;
+          userId: string;
+        },
+        boolean
+      >;
+      removeRelationWithCompute: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          objectId: string;
+          objectType: string;
+          relation: string;
+          subjectId: string;
+          subjectType: string;
+        },
+        boolean
+      >;
+      revokeRoleWithCompute: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          role: string;
+          rolePermissions: Array<string>;
+          scope?: { id: string; type: string };
+          userId: string;
+        },
+        boolean
+      >;
+    };
+    mutations: {
+      assignRole: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          assignedBy?: string;
+          enableAudit?: boolean;
+          expiresAt?: number;
+          metadata?: any;
+          role: string;
+          scope?: { id: string; type: string };
+          userId: string;
+        },
+        string
+      >;
+      cleanupExpired: FunctionReference<
+        "mutation",
+        "internal",
+        {},
+        { expiredOverrides: number; expiredRoles: number }
+      >;
+      denyPermission: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          createdBy?: string;
+          enableAudit?: boolean;
+          expiresAt?: number;
+          permission: string;
+          reason?: string;
+          scope?: { id: string; type: string };
+          userId: string;
+        },
+        string
+      >;
+      grantPermission: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          createdBy?: string;
+          enableAudit?: boolean;
+          expiresAt?: number;
+          permission: string;
+          reason?: string;
+          scope?: { id: string; type: string };
+          userId: string;
+        },
+        string
+      >;
+      logPermissionCheck: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          permission: string;
+          reason?: string;
+          result: boolean;
+          scope?: { id: string; type: string };
+          userId: string;
+        },
+        null
+      >;
+      removeAllAttributes: FunctionReference<
+        "mutation",
+        "internal",
+        { enableAudit?: boolean; removedBy?: string; userId: string },
+        number
+      >;
+      removeAttribute: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          enableAudit?: boolean;
+          key: string;
+          removedBy?: string;
+          userId: string;
+        },
+        boolean
+      >;
+      removePermissionOverride: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          enableAudit?: boolean;
+          permission: string;
+          removedBy?: string;
+          scope?: { id: string; type: string };
+          userId: string;
+        },
+        boolean
+      >;
+      revokeAllRoles: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          enableAudit?: boolean;
+          revokedBy?: string;
+          scope?: { id: string; type: string };
+          userId: string;
+        },
+        number
+      >;
+      revokeRole: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          enableAudit?: boolean;
+          revokedBy?: string;
+          role: string;
+          scope?: { id: string; type: string };
+          userId: string;
+        },
+        boolean
+      >;
+      setAttribute: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          enableAudit?: boolean;
+          key: string;
+          setBy?: string;
+          userId: string;
+          value: any;
+        },
+        string
+      >;
+    };
+    queries: {
+      checkPermission: FunctionReference<
+        "query",
+        "internal",
+        {
+          permission: string;
+          rolePermissions: Record<string, Array<string>>;
+          scope?: { id: string; type: string };
+          userId: string;
+        },
+        {
+          allowed: boolean;
+          matchedOverride?: string;
+          matchedRole?: string;
+          reason: string;
+        }
+      >;
+      getAuditLog: FunctionReference<
+        "query",
+        "internal",
+        {
+          action?:
+            | "permission_check"
+            | "role_assigned"
+            | "role_revoked"
+            | "permission_granted"
+            | "permission_denied"
+            | "attribute_set"
+            | "attribute_removed";
+          limit?: number;
+          userId?: string;
+        },
+        Array<{
+          _id: string;
+          action: string;
+          actorId?: string;
+          details: any;
+          timestamp: number;
+          userId: string;
+        }>
+      >;
+      getEffectivePermissions: FunctionReference<
+        "query",
+        "internal",
+        {
+          rolePermissions: Record<string, Array<string>>;
+          scope?: { id: string; type: string };
+          userId: string;
+        },
+        {
+          deniedPermissions: Array<string>;
+          permissions: Array<string>;
+          roles: Array<string>;
+        }
+      >;
+      getPermissionOverrides: FunctionReference<
+        "query",
+        "internal",
+        { permission?: string; userId: string },
+        Array<{
+          _id: string;
+          effect: "allow" | "deny";
+          expiresAt?: number;
+          permission: string;
+          reason?: string;
+          scope?: { id: string; type: string };
+        }>
+      >;
+      getUserAttribute: FunctionReference<
+        "query",
+        "internal",
+        { key: string; userId: string },
+        null | any
+      >;
+      getUserAttributes: FunctionReference<
+        "query",
+        "internal",
+        { userId: string },
+        Array<{ _id: string; key: string; value: any }>
+      >;
+      getUserRoles: FunctionReference<
+        "query",
+        "internal",
+        { scope?: { id: string; type: string }; userId: string },
+        Array<{
+          _id: string;
+          expiresAt?: number;
+          metadata?: any;
+          role: string;
+          scope?: { id: string; type: string };
+        }>
+      >;
+      getUsersWithRole: FunctionReference<
+        "query",
+        "internal",
+        { role: string; scope?: { id: string; type: string } },
+        Array<{ assignedAt: number; expiresAt?: number; userId: string }>
+      >;
+      hasRole: FunctionReference<
+        "query",
+        "internal",
+        { role: string; scope?: { id: string; type: string }; userId: string },
+        boolean
+      >;
+    };
+    rebac: {
+      addRelation: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          createdBy?: string;
+          objectId: string;
+          objectType: string;
+          relation: string;
+          subjectId: string;
+          subjectType: string;
+        },
+        string
+      >;
+      checkRelationWithTraversal: FunctionReference<
+        "query",
+        "internal",
+        {
+          maxDepth?: number;
+          objectId: string;
+          objectType: string;
+          relation: string;
+          subjectId: string;
+          subjectType: string;
+          traversalRules?: any;
+        },
+        { allowed: boolean; path: Array<string>; reason: string }
+      >;
+      getObjectRelations: FunctionReference<
+        "query",
+        "internal",
+        { objectId: string; objectType: string; relation?: string },
+        Array<{
+          _id: string;
+          relation: string;
+          subjectId: string;
+          subjectType: string;
+        }>
+      >;
+      getSubjectRelations: FunctionReference<
+        "query",
+        "internal",
+        { objectType?: string; subjectId: string; subjectType: string },
+        Array<{
+          _id: string;
+          objectId: string;
+          objectType: string;
+          relation: string;
+        }>
+      >;
+      hasDirectRelation: FunctionReference<
+        "query",
+        "internal",
+        {
+          objectId: string;
+          objectType: string;
+          relation: string;
+          subjectId: string;
+          subjectType: string;
+        },
+        boolean
+      >;
+      listAccessibleObjects: FunctionReference<
+        "query",
+        "internal",
+        {
+          objectType: string;
+          relation: string;
+          subjectId: string;
+          subjectType: string;
+          traversalRules?: any;
+        },
+        Array<{ objectId: string; via: string }>
+      >;
+      listUsersWithAccess: FunctionReference<
+        "query",
+        "internal",
+        { objectId: string; objectType: string; relation: string },
+        Array<{ userId: string; via: string }>
+      >;
+      removeRelation: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          objectId: string;
+          objectType: string;
+          relation: string;
+          subjectId: string;
+          subjectType: string;
+        },
+        boolean
+      >;
+    };
+  };
+  cascadingDelete: {
+    lib: {
+      createBatchJob: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          batchSize: number;
+          deleteHandleStr: string;
+          targets: Array<{ id: string; table: string }>;
+        },
+        string
+      >;
+      getJobStatus: FunctionReference<
+        "query",
+        "internal",
+        { jobId: string },
+        {
+          completedCount: number;
+          completedSummary: string;
+          error?: string;
+          status: "pending" | "processing" | "completed" | "failed";
+          totalTargetCount: number;
+        } | null
+      >;
+      kickOffProcessing: FunctionReference<
+        "mutation",
+        "internal",
+        { jobId: string },
+        null
+      >;
+      reportBatchComplete: FunctionReference<
+        "mutation",
+        "internal",
+        { batchSummary: string; errors?: string; jobId: string },
+        null
+      >;
+    };
+  };
+  auditLog: {
+    lib: {
+      cleanup: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          batchSize?: number;
+          olderThanDays?: number;
+          preserveSeverity?: Array<"info" | "warning" | "error" | "critical">;
+          retentionCategory?: string;
+        },
+        number
+      >;
+      detectAnomalies: FunctionReference<
+        "query",
+        "internal",
+        {
+          patterns: Array<{
+            action: string;
+            threshold: number;
+            windowMinutes: number;
+          }>;
+        },
+        Array<{
+          action: string;
+          count: number;
+          detectedAt: number;
+          threshold: number;
+          windowMinutes: number;
+        }>
+      >;
+      generateReport: FunctionReference<
+        "query",
+        "internal",
+        {
+          endDate: number;
+          format: "json" | "csv";
+          groupBy?: string;
+          includeFields?: Array<string>;
+          maxRecords?: number;
+          startDate: number;
+        },
+        {
+          data: string;
+          format: "json" | "csv";
+          generatedAt: number;
+          recordCount: number;
+          truncated: boolean;
+        }
+      >;
+      get: FunctionReference<
+        "query",
+        "internal",
+        { id: string },
+        null | {
+          _creationTime: number;
+          _id: string;
+          action: string;
+          actorId?: string;
+          after?: any;
+          before?: any;
+          diff?: string;
+          ipAddress?: string;
+          metadata?: any;
+          resourceId?: string;
+          resourceType?: string;
+          retentionCategory?: string;
+          sessionId?: string;
+          severity: "info" | "warning" | "error" | "critical";
+          tags?: Array<string>;
+          timestamp: number;
+          userAgent?: string;
+        }
+      >;
+      getConfig: FunctionReference<
+        "query",
+        "internal",
+        {},
+        null | {
+          _creationTime: number;
+          _id: string;
+          criticalRetentionDays: number;
+          customRetention?: Array<{ category: string; retentionDays: number }>;
+          defaultRetentionDays: number;
+          piiFieldsToRedact: Array<string>;
+          samplingEnabled: boolean;
+          samplingRate: number;
+        }
+      >;
+      getStats: FunctionReference<
+        "query",
+        "internal",
+        { fromTimestamp?: number; toTimestamp?: number },
+        {
+          bySeverity: {
+            critical: number;
+            error: number;
+            info: number;
+            warning: number;
+          };
+          topActions: Array<{ action: string; count: number }>;
+          topActors: Array<{ actorId: string; count: number }>;
+          totalCount: number;
+        }
+      >;
+      log: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          action: string;
+          actorId?: string;
+          ipAddress?: string;
+          metadata?: any;
+          resourceId?: string;
+          resourceType?: string;
+          retentionCategory?: string;
+          sessionId?: string;
+          severity: "info" | "warning" | "error" | "critical";
+          tags?: Array<string>;
+          userAgent?: string;
+        },
+        string
+      >;
+      logBulk: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          events: Array<{
+            action: string;
+            actorId?: string;
+            ipAddress?: string;
+            metadata?: any;
+            resourceId?: string;
+            resourceType?: string;
+            retentionCategory?: string;
+            sessionId?: string;
+            severity: "info" | "warning" | "error" | "critical";
+            tags?: Array<string>;
+            userAgent?: string;
+          }>;
+        },
+        Array<string>
+      >;
+      logChange: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          action: string;
+          actorId?: string;
+          after?: any;
+          before?: any;
+          generateDiff?: boolean;
+          ipAddress?: string;
+          resourceId: string;
+          resourceType: string;
+          retentionCategory?: string;
+          sessionId?: string;
+          severity?: "info" | "warning" | "error" | "critical";
+          tags?: Array<string>;
+          userAgent?: string;
+        },
+        string
+      >;
+      queryByAction: FunctionReference<
+        "query",
+        "internal",
+        { action: string; fromTimestamp?: number; limit?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          action: string;
+          actorId?: string;
+          after?: any;
+          before?: any;
+          diff?: string;
+          ipAddress?: string;
+          metadata?: any;
+          resourceId?: string;
+          resourceType?: string;
+          retentionCategory?: string;
+          sessionId?: string;
+          severity: "info" | "warning" | "error" | "critical";
+          tags?: Array<string>;
+          timestamp: number;
+          userAgent?: string;
+        }>
+      >;
+      queryByActor: FunctionReference<
+        "query",
+        "internal",
+        {
+          actions?: Array<string>;
+          actorId: string;
+          fromTimestamp?: number;
+          limit?: number;
+        },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          action: string;
+          actorId?: string;
+          after?: any;
+          before?: any;
+          diff?: string;
+          ipAddress?: string;
+          metadata?: any;
+          resourceId?: string;
+          resourceType?: string;
+          retentionCategory?: string;
+          sessionId?: string;
+          severity: "info" | "warning" | "error" | "critical";
+          tags?: Array<string>;
+          timestamp: number;
+          userAgent?: string;
+        }>
+      >;
+      queryByResource: FunctionReference<
+        "query",
+        "internal",
+        {
+          fromTimestamp?: number;
+          limit?: number;
+          resourceId: string;
+          resourceType: string;
+        },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          action: string;
+          actorId?: string;
+          after?: any;
+          before?: any;
+          diff?: string;
+          ipAddress?: string;
+          metadata?: any;
+          resourceId?: string;
+          resourceType?: string;
+          retentionCategory?: string;
+          sessionId?: string;
+          severity: "info" | "warning" | "error" | "critical";
+          tags?: Array<string>;
+          timestamp: number;
+          userAgent?: string;
+        }>
+      >;
+      queryBySeverity: FunctionReference<
+        "query",
+        "internal",
+        {
+          fromTimestamp?: number;
+          limit?: number;
+          severity: Array<"info" | "warning" | "error" | "critical">;
+        },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          action: string;
+          actorId?: string;
+          after?: any;
+          before?: any;
+          diff?: string;
+          ipAddress?: string;
+          metadata?: any;
+          resourceId?: string;
+          resourceType?: string;
+          retentionCategory?: string;
+          sessionId?: string;
+          severity: "info" | "warning" | "error" | "critical";
+          tags?: Array<string>;
+          timestamp: number;
+          userAgent?: string;
+        }>
+      >;
+      runBackfill: FunctionReference<
+        "mutation",
+        "internal",
+        { batchSize?: number; cursor?: string },
+        { cursor: string | null; isDone: boolean; processed: number }
+      >;
+      search: FunctionReference<
+        "query",
+        "internal",
+        {
+          filters: {
+            actions?: Array<string>;
+            actorIds?: Array<string>;
+            fromTimestamp?: number;
+            resourceTypes?: Array<string>;
+            severity?: Array<"info" | "warning" | "error" | "critical">;
+            tags?: Array<string>;
+            toTimestamp?: number;
+          };
+          pagination: { cursor?: string; limit: number };
+        },
+        {
+          cursor: string | null;
+          hasMore: boolean;
+          items: Array<{
+            _creationTime: number;
+            _id: string;
+            action: string;
+            actorId?: string;
+            after?: any;
+            before?: any;
+            diff?: string;
+            ipAddress?: string;
+            metadata?: any;
+            resourceId?: string;
+            resourceType?: string;
+            retentionCategory?: string;
+            sessionId?: string;
+            severity: "info" | "warning" | "error" | "critical";
+            tags?: Array<string>;
+            timestamp: number;
+            userAgent?: string;
+          }>;
+        }
+      >;
+      updateConfig: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          criticalRetentionDays?: number;
+          customRetention?: Array<{ category: string; retentionDays: number }>;
+          defaultRetentionDays?: number;
+          piiFieldsToRedact?: Array<string>;
+          samplingEnabled?: boolean;
+          samplingRate?: number;
+        },
+        string
+      >;
+      watchCritical: FunctionReference<
+        "query",
+        "internal",
+        {
+          limit?: number;
+          severity?: Array<"info" | "warning" | "error" | "critical">;
+        },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          action: string;
+          actorId?: string;
+          after?: any;
+          before?: any;
+          diff?: string;
+          ipAddress?: string;
+          metadata?: any;
+          resourceId?: string;
+          resourceType?: string;
+          retentionCategory?: string;
+          sessionId?: string;
+          severity: "info" | "warning" | "error" | "critical";
+          tags?: Array<string>;
+          timestamp: number;
+          userAgent?: string;
+        }>
+      >;
+    };
+  };
+  uploadthingFileTracker: {
+    callbacks: {
+      handleUploadthingCallback: FunctionReference<
+        "action",
+        "internal",
+        { apiKey?: string; hook: string; rawBody: string; signature: string },
+        | { fileId: string; hook: string; ok: true }
+        | { error: string; ok: false }
+      >;
+    };
+    cleanup: {
+      cleanupExpired: FunctionReference<
+        "action",
+        "internal",
+        { apiKey?: string; batchSize?: number; dryRun?: boolean },
+        {
+          deletedCount: number;
+          hasMore: boolean;
+          keys: Array<string>;
+          remoteDeleteError?: string;
+          remoteDeleteFailed?: boolean;
+          remoteDeletedCount?: number;
+        }
+      >;
+    };
+    config: {
+      getConfig: FunctionReference<
+        "query",
+        "internal",
+        {},
+        {
+          defaultTtlMs?: number;
+          deleteBatchSize?: number;
+          deleteRemoteOnExpire?: boolean;
+          hasApiKey: boolean;
+          ttlByFileType?: Record<string, number>;
+          ttlByMimeType?: Record<string, number>;
+        }
+      >;
+      setConfig: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            defaultTtlMs?: number;
+            deleteBatchSize?: number;
+            deleteRemoteOnExpire?: boolean;
+            ttlByFileType?: Record<string, number>;
+            ttlByMimeType?: Record<string, number>;
+            uploadthingApiKey?: string;
+          };
+          replace?: boolean;
+        },
+        { created: boolean }
+      >;
+    };
+    files: {
+      deleteFiles: FunctionReference<
+        "mutation",
+        "internal",
+        { keys: Array<string> },
+        number
+      >;
+      setFileAccess: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          access?: {
+            allowUserIds?: Array<string>;
+            denyUserIds?: Array<string>;
+            visibility: "public" | "private" | "restricted";
+          } | null;
+          key: string;
+        },
+        string | null
+      >;
+      setFolderAccess: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          access?: {
+            allowUserIds?: Array<string>;
+            denyUserIds?: Array<string>;
+            visibility: "public" | "private" | "restricted";
+          } | null;
+          folder: string;
+        },
+        string | null
+      >;
+      upsertFile: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          file: {
+            customId?: string;
+            fileType?: string;
+            key: string;
+            mimeType: string;
+            name: string;
+            size: number;
+            uploadedAt?: number;
+            url: string;
+          };
+          options?: {
+            access?: {
+              allowUserIds?: Array<string>;
+              denyUserIds?: Array<string>;
+              visibility: "public" | "private" | "restricted";
+            };
+            expiresAt?: number;
+            fileType?: string;
+            folder?: string;
+            metadata?: any;
+            tags?: Array<string>;
+            ttlMs?: number;
+          };
+          userId: string;
+        },
+        string
+      >;
+    };
+    queries: {
+      getFileByKey: FunctionReference<
+        "query",
+        "internal",
+        { key: string; viewerUserId?: string },
+        {
+          _creationTime: number;
+          _id: string;
+          access?: {
+            allowUserIds?: Array<string>;
+            denyUserIds?: Array<string>;
+            visibility: "public" | "private" | "restricted";
+          };
+          customId?: string;
+          expiresAt?: number;
+          fileType?: string;
+          folder?: string;
+          key: string;
+          metadata?: any;
+          mimeType: string;
+          name: string;
+          replacedAt?: number;
+          size: number;
+          tags?: Array<string>;
+          uploadedAt: number;
+          url: string;
+          userId: string;
+        } | null
+      >;
+      getFolderRuleByFolder: FunctionReference<
+        "query",
+        "internal",
+        { folder: string },
+        {
+          _creationTime: number;
+          _id: string;
+          access: {
+            allowUserIds?: Array<string>;
+            denyUserIds?: Array<string>;
+            visibility: "public" | "private" | "restricted";
+          };
+          folder: string;
+          updatedAt: number;
+        } | null
+      >;
+      listAllFiles: FunctionReference<
+        "query",
+        "internal",
+        {
+          folder?: string;
+          includeExpired?: boolean;
+          limit?: number;
+          mimeType?: string;
+          tag?: string;
+          viewerUserId?: string;
+        },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          access?: {
+            allowUserIds?: Array<string>;
+            denyUserIds?: Array<string>;
+            visibility: "public" | "private" | "restricted";
+          };
+          customId?: string;
+          expiresAt?: number;
+          fileType?: string;
+          folder?: string;
+          key: string;
+          metadata?: any;
+          mimeType: string;
+          name: string;
+          replacedAt?: number;
+          size: number;
+          tags?: Array<string>;
+          uploadedAt: number;
+          url: string;
+          userId: string;
+        }>
+      >;
+      listFiles: FunctionReference<
+        "query",
+        "internal",
+        {
+          folder?: string;
+          includeExpired?: boolean;
+          limit?: number;
+          mimeType?: string;
+          ownerUserId: string;
+          tag?: string;
+          viewerUserId?: string;
+        },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          access?: {
+            allowUserIds?: Array<string>;
+            denyUserIds?: Array<string>;
+            visibility: "public" | "private" | "restricted";
+          };
+          customId?: string;
+          expiresAt?: number;
+          fileType?: string;
+          folder?: string;
+          key: string;
+          metadata?: any;
+          mimeType: string;
+          name: string;
+          replacedAt?: number;
+          size: number;
+          tags?: Array<string>;
+          uploadedAt: number;
+          url: string;
+          userId: string;
+        }>
+      >;
+      listFolderRules: FunctionReference<
+        "query",
+        "internal",
+        { limit?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          access: {
+            allowUserIds?: Array<string>;
+            denyUserIds?: Array<string>;
+            visibility: "public" | "private" | "restricted";
+          };
+          folder: string;
+          updatedAt: number;
+        }>
+      >;
+    };
+    stats: {
+      getUsageStats: FunctionReference<
+        "query",
+        "internal",
+        { userId: string },
+        { totalBytes: number; totalFiles: number }
+      >;
+    };
+  };
+  batchProcessor: {
+    lib: {
+      addItems: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          batchId: string;
+          config: {
+            flushIntervalMs: number;
+            immediateFlushThreshold?: number;
+            maxBatchSize?: number;
+            processBatchHandle: string;
+            retry?: {
+              initialDelayMs?: number;
+              maxAttempts?: number;
+              maxDelayMs?: number;
+              multiplier?: number;
+            };
+          };
+          items: Array<any>;
+        },
+        any
+      >;
+      cancelIteratorJob: FunctionReference<
+        "mutation",
+        "internal",
+        { jobId: string },
+        any
+      >;
+      deleteBatch: FunctionReference<
+        "mutation",
+        "internal",
+        { batchId: string },
+        any
+      >;
+      deleteIteratorJob: FunctionReference<
+        "mutation",
+        "internal",
+        { jobId: string },
+        any
+      >;
+      flushBatch: FunctionReference<
+        "mutation",
+        "internal",
+        { batchId: string },
+        any
+      >;
+      getAllBatchesForBaseId: FunctionReference<
+        "query",
+        "internal",
+        { baseBatchId: string },
+        any
+      >;
+      getBatchStatus: FunctionReference<
+        "query",
+        "internal",
+        { batchId: string },
+        any
+      >;
+      getFlushHistory: FunctionReference<
+        "query",
+        "internal",
+        { batchId: string; limit?: number },
+        any
+      >;
+      getIteratorJobStatus: FunctionReference<
+        "query",
+        "internal",
+        { jobId: string },
+        any
+      >;
+      listIteratorJobs: FunctionReference<
+        "query",
+        "internal",
+        {
+          limit?: number;
+          status?: "pending" | "running" | "paused" | "completed" | "failed";
+        },
+        any
+      >;
+      pauseIteratorJob: FunctionReference<
+        "mutation",
+        "internal",
+        { jobId: string },
+        any
+      >;
+      resumeIteratorJob: FunctionReference<
+        "mutation",
+        "internal",
+        { jobId: string },
+        any
+      >;
+      startIteratorJob: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            batchSize: number;
+            delayBetweenBatchesMs?: number;
+            getNextBatchHandle: string;
+            maxRetries?: number;
+            onCompleteHandle?: string;
+            processBatchHandle: string;
+          };
+          jobId: string;
+        },
+        any
+      >;
+    };
+  };
+  llmCache: {
+    cache: {
+      get: FunctionReference<
+        "query",
+        "internal",
+        { cacheKey: string },
+        {
+          _creationTime: number;
+          _id: string;
+          cacheKey: string;
+          createdAt: number;
+          expiresAt?: number;
+          hitCount: number;
+          lastAccessedAt: number;
+          metadata?: any;
+          model: string;
+          modelVersion?: string;
+          request: any;
+          response: any;
+          tags?: Array<string>;
+          ttlTier: number;
+        } | null
+      >;
+      incrementHitCount: FunctionReference<
+        "mutation",
+        "internal",
+        { cacheKey: string },
+        null
+      >;
+      lookup: FunctionReference<
+        "query",
+        "internal",
+        { modelVersion?: string; request: any },
+        {
+          _creationTime: number;
+          _id: string;
+          cacheKey: string;
+          createdAt: number;
+          expiresAt?: number;
+          hitCount: number;
+          lastAccessedAt: number;
+          metadata?: any;
+          model: string;
+          modelVersion?: string;
+          request: any;
+          response: any;
+          tags?: Array<string>;
+          ttlTier: number;
+        } | null
+      >;
+      store: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          metadata?: any;
+          modelVersion?: string;
+          pin?: boolean;
+          request: any;
+          response: any;
+          tags?: Array<string>;
+        },
+        string
+      >;
+    };
+    cleanup: {
+      cleanup: FunctionReference<
+        "action",
+        "internal",
+        { batchSize?: number; dryRun?: boolean },
+        { deletedCount: number; hasMore: boolean; keys: Array<string> }
+      >;
+    };
+    config: {
+      getConfig: FunctionReference<
+        "query",
+        "internal",
+        {},
+        {
+          defaultTtlMs?: number;
+          maxEntries?: number;
+          normalizeRequests?: boolean;
+          promotionTtlMs?: number;
+          ttlByModel?: Record<string, number>;
+          ttlByTag?: Record<string, number>;
+        }
+      >;
+      getStats: FunctionReference<
+        "query",
+        "internal",
+        {},
+        {
+          entriesByModel: Record<string, number>;
+          hitsByModel: Record<string, number>;
+          newestEntry?: number;
+          oldestEntry?: number;
+          totalEntries: number;
+          totalHits: number;
+        }
+      >;
+      setConfig: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            defaultTtlMs?: number;
+            maxEntries?: number;
+            normalizeRequests?: boolean;
+            promotionTtlMs?: number;
+            ttlByModel?: Record<string, number>;
+            ttlByTag?: Record<string, number>;
+          };
+          replace?: boolean;
+        },
+        null
+      >;
+    };
+    manage: {
+      invalidate: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          before?: number;
+          cacheKey?: string;
+          model?: string;
+          modelVersion?: string;
+          tag?: string;
+        },
+        number
+      >;
+    };
+    queries: {
+      history: FunctionReference<
+        "query",
+        "internal",
+        { request: any },
+        Array<{
+          cacheKey: string;
+          isCurrent: boolean;
+          metadata?: any;
+          model: string;
+          modelVersion?: string;
+          request: any;
+          response: any;
+          storedAt: number;
+          tags?: Array<string>;
+        }>
+      >;
+      queryEntries: FunctionReference<
+        "query",
+        "internal",
+        {
+          after?: number;
+          before?: number;
+          limit?: number;
+          model?: string;
+          tag?: string;
+        },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          cacheKey: string;
+          createdAt: number;
+          expiresAt?: number;
+          hitCount: number;
+          lastAccessedAt: number;
+          metadata?: any;
+          model: string;
+          modelVersion?: string;
+          request: any;
+          response: any;
+          tags?: Array<string>;
+          ttlTier: number;
+        }>
       >;
     };
   };

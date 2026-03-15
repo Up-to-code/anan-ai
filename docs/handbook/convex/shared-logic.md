@@ -69,10 +69,13 @@ If the capability is small, it may live in a single module, but the same separat
 Examples of existing shared capabilities:
 
 - Inbox: `convex/shared_logic/inbox.ts` (plus tests).
+- Organizations/tenants: `convex/shared_logic/agencies/repositories/*`.
 - Offers: `convex/shared_logic/offers/*`.
 - Market: `convex/shared_logic/market/*`.
 - Properties/search: `convex/shared_logic/properties/*`.
 - Knowledge: `convex/shared_logic/knowledge/*`.
+- UploadThing tracking: `convex/shared_logic/uploadthing.ts`.
+- LLM caching: `convex/shared_logic/llmCache.ts`.
 
 ---
 
@@ -81,4 +84,3 @@ Examples of existing shared capabilities:
 - Adding “just one more rule” inside a route/controller instead of inside the capability.
 - Returning raw table rows to surfaces (locks in schema internals and makes refactors painful).
 - Allowing state transitions without verifying the prior state (causes repeated acceptance/duplicate deals).
-

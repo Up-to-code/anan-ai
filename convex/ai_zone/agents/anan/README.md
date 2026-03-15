@@ -19,11 +19,11 @@ results into a coherent response.
 ```
 orchestrate(input)
   → getAvailableTeams(role)     ← from teamRegistry.ts
-  → analyzeIntent(prompt)       ← from intentAnalyzer.ts
+  → analyzeIntent(ctx, prompt)  ← from intentAnalyzer.ts
   → getTeamAgents(teams)        ← from teamRegistry.ts via shared agent factory
   → Promise.allSettled(agents)  ← parallel execution
   → collectResults(settled)     ← from resultMerger.ts
-  → mergeResults(outputs)       ← from resultMerger.ts
+  → mergeResults(ctx, outputs)  ← from resultMerger.ts
   → trainer definition via factory (bg)
   → return OrchestrateOutput
 ```

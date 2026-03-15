@@ -1,8 +1,8 @@
 // @ts-nocheck
-import { generateText } from "ai";
 import type { ActionCtx } from "../../../_generated/server";
 import { internal } from "../../../_generated/api";
 import { getChatModel } from "../../../shared_logic/lib/providers";
+import { cachedGenerateText } from "../../../shared_logic/llmCache";
 import { getAgentLLMConfigSafe } from "../config";
 import { DEFAULT_RETRY_CONFIG, FALLBACK_MODEL, withRetry, type AgentError } from "../shared/errorHandler";
 import { extractTokenUsageFromResult } from "../shared/tokenTracker";
@@ -52,14 +52,26 @@ export class BaseConfiguredAgent {
       const tools = resolveTools(ctx, runtime, this.definition.tools ?? {});
       const result = await withRetry(
         () =>
-          generateText({
-            model,
-            prompt: fullPrompt,
-            temperature: this.definition.modelPolicy?.temperature ?? 0.3,
-            maxSteps: this.definition.runtimePolicy?.maxSteps ?? 4,
-            toolChoice: "auto",
-            tools,
-          }),
+          cachedGenerateText(
+            ctx,
+            {
+              model,
+              prompt: fullPrompt,
+              temperature: this.definition.modelPolicy?.temperature ?? 0.3,
+              maxSteps: this.definition.runtimePolicy?.maxSteps ?? 4,
+              toolChoice: "auto",
+              tools,
+            },
+            {
+              modelName,
+              tags: ["agent", this.definition.name, `team:${this.definition.team}`],
+              metadata: {
+                agent: this.definition.name,
+                team: this.definition.team,
+                promptVersion: this.definition.prompt.version,
+              },
+            },
+          ),
         this.definition.name,
         retryConfig as any,
       );
@@ -89,14 +101,27 @@ export class BaseConfiguredAgent {
       try {
         const model = getChatModel(FALLBACK_MODEL);
         const tools = resolveTools(ctx, runtime, this.definition.tools ?? {});
-        const result = await generateText({
-          model,
-          prompt: fullPrompt,
-          temperature: this.definition.modelPolicy?.temperature ?? 0.3,
-          maxSteps: this.definition.runtimePolicy?.maxSteps ?? 4,
-          toolChoice: "auto",
-          tools,
-        });
+        const result = await cachedGenerateText(
+          ctx,
+          {
+            model,
+            prompt: fullPrompt,
+            temperature: this.definition.modelPolicy?.temperature ?? 0.3,
+            maxSteps: this.definition.runtimePolicy?.maxSteps ?? 4,
+            toolChoice: "auto",
+            tools,
+          },
+          {
+            modelName: FALLBACK_MODEL,
+            tags: ["agent", this.definition.name, `team:${this.definition.team}`, "fallback"],
+            metadata: {
+              agent: this.definition.name,
+              team: this.definition.team,
+              promptVersion: this.definition.prompt.version,
+              fallback: true,
+            },
+          },
+        );
 
         const tokenUsage = extractTokenUsageFromResult(result);
         await trackAgentUsage(ctx, {
