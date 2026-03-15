@@ -89,3 +89,11 @@ Rule: persistence must be done in the service layer, not in UI, not in webhook h
 - Blending deterministic mobile assistant logic into orchestrated runtime without a deliberate migration.
 - Logging user prompts/PII.
 - Creating agent tools that bypass access checks (tools must enforce ownership).
+
+---
+
+## Deep Docs
+
+- Deep architecture and data flow: `docs/handbook/convex/ai-zone-deep.md`
+- Usage guide for non-AI-zone teams: `docs/handbook/convex/ai-zone-usage.md`
+- Prompt and tool discovery guide: `docs/handbook/convex/ai-zone-discovery.md`
