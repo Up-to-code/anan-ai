@@ -52,6 +52,111 @@ Break the circle and you break the platform.
 
 ---
 
+## Emoji Thread (Overview → Tech → Architecture → Flows) ✨
+
+**🚀 Project Overview**
+- Anan is a multi-surface real estate platform: Web + Admin + Mobile + Channels.
+- It serves 3 audiences: Users (buyers/investors), Brokers, Developers (RED).
+- It is Convex-first: one backend powers all surfaces with shared rules and data truth.
+
+**🧰 Technology In The Project (High-Level)**
+- Convex for backend runtime, data, auth, access control, AI orchestration, and channels.
+- Next.js App Router for Web + Admin.
+- Expo Router for Mobile.
+- TypeScript across the stack with shared contracts and DTOs.
+
+**🧭 Architecture Overview (The Circle)**
+Surface → Owning layer → Convex → Capability → Projection → UI.
+```mermaid
+graph TD
+    A[Surface: Web, Admin, Mobile, Channel] --> B[Owning Layer: Web Gateway / Direct Convex]
+    B --> C[Convex Backend (Identity + Policy)]
+    C --> D[Capability: Shared Logic / AI / Owner Zone]
+    D --> E[Stable Projections]
+    E --> A
+```
+Summary: Every surface delegates; Convex enforces policy and returns stable projections.
+
+**🧱 Technology Stack (No Music)**
+- Frontend: Web (Next.js App Router), Admin (Next.js App Router), Mobile (Expo Router).
+- Backend: Convex (schema, auth, access policy, shared logic, AI, channels).
+- Tooling: TypeScript, pnpm, shared repo rules and handbooks.
+
+**🏰 Detailed Architecture (Surfaces + Gateway + Zones)**
+- Surfaces are clients: Web, Admin, Mobile, Channels.
+- Web gateway (`apps/web/server/**`) handles orchestration and Convex adapters.
+- Convex zones own business logic and boundaries (no cross-zone deep imports).
+
+**🕸️ Flowcharts — Each Project**
+
+**1) `apps/web`**
+```mermaid
+flowchart LR
+  R["apps/web/app/* (App Router)"] --> S["apps/web/server/* (Gateway)"]
+  S --> A["apps/web/server/infrastructure/convex/* (Adapters)"]
+  A --> Z["convex/* (Zones)"]
+```
+Summary: Web routes are thin → server gateway orchestrates → Convex zones execute.
+
+**2) `apps/admin`**
+```mermaid
+flowchart LR
+  R["apps/admin/app/* (App Router)"] --> O["apps/admin/admin_zone/* (Orchestrators)"]
+  O --> Z["convex/admin_zone/* (Admin Projections)"]
+```
+Summary: Admin UI reads rich projections from Convex admin zone.
+
+**3) `apps/mobile`**
+```mermaid
+flowchart LR
+  R["apps/mobile/app/* (Expo Router)"] --> F["src/features/* (Screens)"]
+  F --> H["src/hooks/* (Data + State)"]
+  H --> C["src/lib/convex* (Provider + API)"]
+  C --> Z["convex/user_zone/mobile/*"]
+```
+Summary: Mobile flow is Router → Features → Hooks → Convex user_zone.
+
+**4) `convex`**
+```mermaid
+flowchart LR
+  H["convex/http.ts (Router)"] --> W["ai_zone/channels/* (Webhook/Preprocess)"]
+  W --> A["Actions/Mutations/Queries"]
+  A --> Z["Zones: _core/shared_logic/ai/user/admin/broker/red/public"]
+```
+Summary: Convex HTTP routes stay thin and delegate into zone services.
+
+**🗺️ Zones (What They Own)**
+- `_core` — schema, auth, identity, access policy.
+- `shared_logic` — shared business capabilities (offers, inbox, properties, market, knowledge).
+- `ai_zone` — assistant endpoints, agent orchestration, channel adapters.
+- `user_zone` — buyer/mobile specific endpoints (feed + assistant).
+- `admin_zone` — admin projections and operations.
+- `broker_zone` — broker-scoped adapters and views.
+- `red_zone` — developer (RED) scoped adapters and views.
+- `public_zone` — unauthenticated/public entry flows.
+
+**📱 Mobile + 💻 Web Specifics**
+- Mobile uses DTO-focused Convex endpoints (`convex/user_zone/mobile/*`).
+- Web uses server gateway orchestration plus Convex adapters, not direct DB logic.
+- Both require thin controllers that delegate to zone services.
+
+**👥 Org Roles + Rules**
+- User: buyer/investor experiences (mobile + assistant).
+- Broker: distribution, collaboration, and CRM.
+- Developer (RED): projects, offers, broker management.
+- Admin: platform operations, verification, diagnostics.
+- Rules: role gating, verification checks, and zone boundaries must be enforced in Convex.
+
+**📐 Architecture Coding Rules (Non-Negotiable)**
+- Thin controllers only: parse, validate, delegate.
+- Zone boundaries are strict: no deep imports across zones.
+- Orchestrator pattern: small index orchestrators, focused sub-modules.
+- WHY/WHAT/HOW JSDoc on all exported components/functions.
+- Shared logic lives once (no duplicated business rules).
+- Index-first queries and stable projections for performance and consistency.
+
+---
+
 ## Docs index (by topic) 🗂️
 
 - Convex backend: `docs/handbook/convex/README.md`
