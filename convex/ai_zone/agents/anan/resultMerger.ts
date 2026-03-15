@@ -13,15 +13,19 @@
  * - To change fallback behavior: Edit the catch block
  */
 
-import { generateText } from "ai";
+import type { ActionCtx } from "../../../_generated/server";
 import { getChatModel } from "../../../shared_logic/lib/providers";
+import { cachedGenerateText } from "../../../shared_logic/llmCache";
 import { FALLBACK_MESSAGES } from "../shared/errorHandler";
 import type { AnanAgentResult } from "../AnanAgent";
+import { getAgentLLMConfigSafe } from "../config";
 
 /**
  * MergeInput — What the merger needs to produce a final response.
  */
 export interface MergeInput {
+    /** Convex action context (required for cached LLM calls) */
+    ctx: ActionCtx;
     /** The user's original message (for context) */
     prompt: string;
     /** Successful agent outputs with agent names */
@@ -53,11 +57,11 @@ export interface MergeResult {
  *   3. If many outputs → call LLM to merge into natural Arabic response
  *   4. If merge LLM fails → concatenate with separators
  *
- * @param input - The merge input (prompt, outputs, failure flag)
+ * @param input - The merge input (ctx, prompt, outputs, failure flag)
  * @returns MergeResult with final text and token usage
  */
 export async function mergeResults(input: MergeInput): Promise<MergeResult> {
-    const { prompt, successOutputs, hasFailures, modelOverride } = input;
+    const { ctx, prompt, successOutputs, hasFailures, modelOverride } = input;
 
     // Case 1: No successful outputs
     if (successOutputs.length === 0) {
@@ -78,9 +82,12 @@ export async function mergeResults(input: MergeInput): Promise<MergeResult> {
     // Case 3: Multiple outputs — merge with LLM
     try {
         const model = getChatModel(modelOverride);
-        const mergeResult = await generateText({
-            model: model as any,
-            prompt: `You are merging results from multiple AI agents into one coherent Arabic response.
+        const modelName = modelOverride ?? getAgentLLMConfigSafe()?.model ?? "unknown";
+        const mergeResult = await cachedGenerateText(
+            ctx,
+            {
+                model: model as any,
+                prompt: `You are merging results from multiple AI agents into one coherent Arabic response.
 User's original question: "${prompt}"
 
 Agent outputs:
@@ -88,8 +95,17 @@ ${successOutputs.join("\n\n---\n\n")}
 
 Merge these into a single, natural Arabic response. Do not mention the agents.
 ${hasFailures ? `Note: ${FALLBACK_MESSAGES.partialFailure}` : ""}`,
-            temperature: 0.3,
-        });
+                temperature: 0.3,
+            },
+            {
+                modelName,
+                tags: ["merge", "anan_orchestrator"],
+                metadata: {
+                    outputsCount: successOutputs.length,
+                    hasFailures,
+                },
+            },
+        );
 
         const usage = mergeResult.usage as any;
         return {

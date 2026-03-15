@@ -12,6 +12,17 @@ vi.mock("./notifications", () => ({
   createWorkspaceNotification: vi.fn(async () => null),
 }));
 
+const { mockTenants } = vi.hoisted(() => ({
+  mockTenants: {
+    listInvitations: vi.fn(async () => []),
+    getMember: vi.fn(async () => null),
+  },
+}));
+
+vi.mock("../tenants", () => ({
+  tenants: mockTenants,
+}));
+
 function makeIdentity(args: { subject: string; email: string; name: string }) {
   return {
     subject: args.subject,
@@ -192,6 +203,13 @@ describe("shared inbox", () => {
       redId = await ctx.db.insert("RED", {
         name: "Palm Hills",
         slug: "palm-hills",
+      } as any);
+      await ctx.db.insert("tenantOrgLinks", {
+        tenantOrgId: "tenant-broker",
+        ownerType: "broker",
+        ownerBrokerId: brokerId,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       } as any);
     });
 

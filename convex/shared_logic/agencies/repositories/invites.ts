@@ -1,32 +1,32 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "../../../_generated/server";
-import type { MutationCtx } from "../../../_generated/server";
 import { requireCurrentProfile } from "../../lib/profile";
 import {
   buildOwnerContext,
   findProfileByAuthUserId,
-  normalizeDirectPair,
+  findTenantOrgLinkByTenantOrgId,
+  getOrganizationRecord,
   normalizeEmail,
+  resolveTenantOrgIdForOwner,
   type AgenciesRepositoryCtx,
   type OwnerContext,
-  type TeamInviteRecord,
   type UserProfileRecord,
 } from "./core";
-import {
-  ensureMembershipRecord,
-  getMembershipByOwnerAndAuthUserId,
-  listMembershipsByOwner,
-  requireManagerAccess,
-} from "./membership";
 import { appendInboxCollaborationEvent } from "../../inbox";
+import { requireManagerAccess } from "./membership";
+import { tenants } from "../../../tenants";
+import { auditLog } from "../../../auditLog";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-async function getOwnerDisplay(ctx: MutationCtx, owner: OwnerContext) {
-  const organization = owner.ownerType === "broker"
-    ? await ctx.db.get(owner.ownerBrokerId)
-    : await ctx.db.get(owner.ownerREDId);
+function normalizeTenantRole(role?: string): "manager" | "member" | "viewer" {
+  if (role === "owner" || role === "admin" || role === "manager") return "manager";
+  if (role === "viewer") return "viewer";
+  return "member";
+}
 
+async function getOwnerDisplay(ctx: AgenciesRepositoryCtx, owner: OwnerContext) {
+  const organization = await getOrganizationRecord(ctx, owner);
   return {
     organizationId: owner.ownerType === "broker" ? String(owner.ownerBrokerId) : String(owner.ownerREDId),
     organizationName: organization?.name ?? "منظمة أنان",
@@ -34,55 +34,51 @@ async function getOwnerDisplay(ctx: MutationCtx, owner: OwnerContext) {
   };
 }
 
-/**
- * WHY:   Invite acceptance must enforce expiry consistently across current-user and auth-user flows.
- * WHAT:  Throws a normalized error when a pending invite is expired.
- * HOW:   Checks status and compares `expiresAt` against the current time.
- */
-export function ensureInviteNotExpired(invite: { expiresAt: number; status: string }) {
-  if (invite.status !== "pending") return;
-  if (invite.expiresAt < Date.now()) {
-    throw new ConvexError({ code: "INVITE_EXPIRED", message: "Invite has expired" });
-  }
+async function listTeamInvitesForOwnerInternal(ctx: AgenciesRepositoryCtx, owner: OwnerContext) {
+  const tenantOrgId = await resolveTenantOrgIdForOwner(ctx, owner);
+  const invitations = await tenants.listInvitations(ctx as never, tenantOrgId);
+
+  return invitations
+    .filter((invite) => invite.status === "pending" || invite.status === "accepted" || invite.status === "cancelled")
+    .map((invite) => ({
+      id: invite._id,
+      email: invite.inviteeIdentifier,
+      role: normalizeTenantRole(invite.role),
+      status: invite.status === "cancelled" ? "canceled" : (invite.status as "pending" | "accepted" | "canceled"),
+      token: invite._id,
+      expiresAt: invite.expiresAt,
+      acceptedAt: invite.acceptedAt ?? undefined,
+    }));
 }
 
 /**
  * WHY:   Team management and directory flows both need the current invite list for one owner.
  * WHAT:  Lists pending and accepted invites for an owner context.
- * HOW:   Reads the owner-specific invite index and projects the normalized invite DTO.
+ * HOW:   Reads tenant invitations and projects the normalized invite DTO.
  */
 export async function listTeamInvitesForOwner(ctx: AgenciesRepositoryCtx, owner: OwnerContext) {
-  const records =
-    owner.ownerType === "broker"
-      ? await ctx.db
-          .query("teamInvites")
-          .withIndex("ownerBrokerId", (q) => q.eq("ownerBrokerId", owner.ownerBrokerId))
-          .collect()
-      : await ctx.db
-          .query("teamInvites")
-          .withIndex("ownerREDId", (q) => q.eq("ownerREDId", owner.ownerREDId))
-          .collect();
-
-  return records
-    .filter((invite: TeamInviteRecord) => invite.status === "pending" || invite.status === "accepted")
-    .map((invite: TeamInviteRecord) => ({
-      id: invite._id,
-      email: invite.email,
-      role: invite.role,
-      status: invite.status,
-      token: invite.token,
-      expiresAt: invite.expiresAt,
-      acceptedAt: invite.acceptedAt,
-    }));
+  return listTeamInvitesForOwnerInternal(ctx, owner);
 }
 
 /**
- * WHY:   Invite creation needs one shared implementation regardless of whether the owner is passed explicitly or inferred from the current user.
- * WHAT:  Creates a pending invite for an organization owner.
- * HOW:   Prevents duplicate active membership or pending invite rows, then inserts the invite with a generated token.
+ * WHY:   Admin and gateway flows need owner-scoped invite lists without relying on the current session.
+ * WHAT:  Lists team invites for an explicit owner context.
+ * HOW:   Builds the owner context from the args then delegates to the shared invite list helper.
  */
-export async function createTeamInviteForOwnerRecord(
-  ctx: MutationCtx,
+export const listTeamInvitesByOwner = query({
+  args: {
+    ownerType: v.union(v.literal("broker"), v.literal("RED")),
+    ownerBrokerId: v.optional(v.id("brokers")),
+    ownerREDId: v.optional(v.id("RED")),
+  },
+  handler: async (ctx, args) => {
+    const owner = buildOwnerContext(args);
+    return listTeamInvitesForOwnerInternal(ctx, owner);
+  },
+});
+
+async function createTeamInviteForOwnerRecord(
+  ctx: AgenciesRepositoryCtx,
   args: {
     owner: OwnerContext;
     email: string;
@@ -94,59 +90,29 @@ export async function createTeamInviteForOwnerRecord(
     throw new ConvexError({ code: "INVALID_ARGUMENT", message: "Email is required" });
   }
 
-  const memberships = await listMembershipsByOwner(ctx, args.owner);
-  const existingMembers = await Promise.all(
-    memberships.map(async (membership) => {
-      const profile = await findProfileByAuthUserId(ctx, membership.authUserId);
-      return {
-        membership,
-        email: profile?.email ? normalizeEmail(profile.email) : null,
-      };
-    }),
-  );
-
-  if (existingMembers.some((entry) => entry.membership.status === "active" && entry.email === normalizedEmail)) {
-    throw new ConvexError({ code: "MEMBER_EXISTS", message: "User is already a member of this organization" });
-  }
-
-  let existingInvites: TeamInviteRecord[];
-  if (args.owner.ownerType === "broker") {
-    const ownerBrokerId = args.owner.ownerBrokerId;
-    existingInvites = await ctx.db
-      .query("teamInvites")
-      .withIndex("ownerBrokerId", (q) => q.eq("ownerBrokerId", ownerBrokerId))
-      .collect();
-  } else {
-    const ownerREDId = args.owner.ownerREDId;
-    existingInvites = await ctx.db
-      .query("teamInvites")
-      .withIndex("ownerREDId", (q) => q.eq("ownerREDId", ownerREDId))
-      .collect();
-  }
-
+  const tenantOrgId = await resolveTenantOrgIdForOwner(ctx, args.owner);
+  const existingInvites = await tenants.listInvitations(ctx as never, tenantOrgId);
   const duplicate = existingInvites.find(
-    (invite: TeamInviteRecord) => normalizeEmail(invite.email) === normalizedEmail && invite.status === "pending",
+    (invite) => invite.status === "pending" && normalizeEmail(invite.inviteeIdentifier) === normalizedEmail,
   );
   if (duplicate) {
     throw new ConvexError({ code: "INVITE_EXISTS", message: "Pending invite already exists for this email" });
   }
 
-  const now = Date.now();
-  const inviteId = await ctx.db.insert("teamInvites", {
-    ownerType: args.owner.ownerType,
-    ownerBrokerId: args.owner.ownerType === "broker" ? args.owner.ownerBrokerId : undefined,
-    ownerREDId: args.owner.ownerType === "RED" ? args.owner.ownerREDId : undefined,
-    email: normalizedEmail,
-    role: args.role,
-    token: `invite_${crypto.randomUUID().replace(/-/g, "")}`,
-    status: "pending",
-    invitedBy: args.owner.authUserId,
-    expiresAt: now + INVITE_TTL_MS,
-  });
-
   const invitedProfile = (await ctx.db.query("userProfiles").collect()).find(
     (profile) => normalizeEmail(profile.email ?? "") === normalizedEmail,
   );
+  if (invitedProfile?.authUserId) {
+    const existingMember = await tenants.getMember(ctx as never, tenantOrgId, invitedProfile.authUserId);
+    if (existingMember && (existingMember.status ?? "active") === "active") {
+      throw new ConvexError({ code: "MEMBER_EXISTS", message: "User is already a member of this organization" });
+    }
+  }
+
+  const inviteResult = await tenants.inviteMember(ctx as never, args.owner.authUserId, tenantOrgId, normalizedEmail, args.role, {
+    expiresAt: Date.now() + INVITE_TTL_MS,
+  });
+
   const inviterProfile = await findProfileByAuthUserId(ctx, args.owner.authUserId);
   const ownerDisplay = await getOwnerDisplay(ctx, args.owner);
 
@@ -168,8 +134,8 @@ export async function createTeamInviteForOwnerRecord(
         },
         recipient: {
           recipientAuthUserId: invitedProfile.authUserId,
-          organizationId: invitedProfile.brokerId ? String(invitedProfile.brokerId) : invitedProfile.REDId ? String(invitedProfile.REDId) : null,
-          organizationType: invitedProfile.brokerId ? "broker" : invitedProfile.REDId ? "developer" : null,
+          organizationId: ownerDisplay.organizationId,
+          organizationType: ownerDisplay.organizationType,
           organizationName: ownerDisplay.organizationName,
         },
         title: ownerDisplay.organizationName,
@@ -180,7 +146,7 @@ export async function createTeamInviteForOwnerRecord(
           label: "افتح الدعوة",
           href: "/ws/inbox",
         },
-        inviteId: String(inviteId),
+        inviteId: inviteResult.invitationId,
         inviteRole: args.role,
         inviteStatus: "pending",
         organizationName: ownerDisplay.organizationName,
@@ -189,204 +155,47 @@ export async function createTeamInviteForOwnerRecord(
     });
   }
 
-  return inviteId;
+  await auditLog.log(ctx, {
+    action: "invitation.created",
+    actorId: args.owner.authUserId,
+    resourceType: "tenantInvitations",
+    resourceId: inviteResult.invitationId,
+    severity: "info",
+    metadata: {
+      tenantOrgId,
+      inviteeEmail: normalizedEmail,
+      role: args.role,
+      ownerType: args.owner.ownerType,
+    },
+    tags: ["organizations", "invites"],
+  });
+
+  return inviteResult.invitationId;
 }
 
 /**
- * WHY:   Invite acceptance powers both the current-user flow and explicit auth-user gateway fallback.
- * WHAT:  Accepts a team invite for the given auth user id.
- * HOW:   Loads the invite, validates expiry, patches the profile owner link, upserts membership, and marks the invite accepted.
- */
-export async function acceptInviteForAuthUserRecord(
-  ctx: MutationCtx,
-  args: { authUserId: string; token: string },
-) {
-  const profile = await findProfileByAuthUserId(ctx, args.authUserId);
-  if (!profile) {
-    throw new ConvexError({ code: "FORBIDDEN", message: "Profile not found" });
-  }
-
-  const invite = await ctx.db
-    .query("teamInvites")
-    .withIndex("token", (q) => q.eq("token", args.token))
-    .first();
-
-  if (!invite) {
-    throw new ConvexError({ code: "NOT_FOUND", message: "Invite not found" });
-  }
-
-  ensureInviteNotExpired(invite);
-
-  const now = Date.now();
-  const owner = buildOwnerContext({
-    ownerType: invite.ownerType,
-    ownerBrokerId: invite.ownerBrokerId,
-    ownerREDId: invite.ownerREDId,
-    authUserId: invite.invitedBy,
-  });
-
-  if (invite.ownerType === "broker") {
-    await ctx.db.patch(profile._id, {
-      brokerId: invite.ownerBrokerId,
-      REDId: undefined,
-      role: "broker",
-      isActive: true,
-      updatedAt: now,
-    });
-  } else {
-    await ctx.db.patch(profile._id, {
-      REDId: invite.ownerREDId,
-      brokerId: undefined,
-      role: "developer",
-      isActive: true,
-      updatedAt: now,
-    });
-  }
-
-  await ensureMembershipRecord(ctx, {
-    owner,
-    profile: invite.ownerType === "broker"
-      ? { ...profile, brokerId: invite.ownerBrokerId, REDId: undefined }
-      : { ...profile, REDId: invite.ownerREDId, brokerId: undefined },
-    role: invite.role,
-    status: "active",
-    invitedBy: invite.invitedBy,
-    inviteId: invite._id,
-  });
-
-  await ctx.db.patch(invite._id, {
-    status: "accepted",
-    acceptedBy: args.authUserId,
-    acceptedAt: now,
-  });
-
-  const inviterProfile = await findProfileByAuthUserId(ctx, invite.invitedBy);
-  const ownerDisplay = await getOwnerDisplay(ctx, owner);
-  if (inviterProfile?.authUserId) {
-    await appendInboxCollaborationEvent(ctx, {
-      senderUserId: args.authUserId,
-      recipientUserId: inviterProfile.authUserId,
-      type: "invite_event",
-      body: `تم قبول دعوة ${ownerDisplay.organizationName}`,
-      metadata: {
-        contextType: "invite_event",
-        actor: {
-          authUserId: args.authUserId,
-          name: profile.name ?? profile.email ?? "عضو الفريق",
-          role: invite.ownerType === "broker" ? "broker" : "developer",
-          organizationId: ownerDisplay.organizationId,
-          organizationType: ownerDisplay.organizationType,
-          organizationName: ownerDisplay.organizationName,
-        },
-        recipient: {
-          recipientAuthUserId: inviterProfile.authUserId,
-          organizationId: ownerDisplay.organizationId,
-          organizationType: ownerDisplay.organizationType,
-          organizationName: ownerDisplay.organizationName,
-        },
-        title: ownerDisplay.organizationName,
-        summary: `تم قبول الدعوة بدور ${invite.role}`,
-        href: "/ws/inbox",
-        action: {
-          type: "open_invite",
-          label: "افتح الدعوة",
-          href: "/ws/inbox",
-        },
-        inviteId: String(invite._id),
-        inviteRole: invite.role,
-        inviteStatus: "accepted",
-        organizationName: ownerDisplay.organizationName,
-        organizationType: ownerDisplay.organizationType,
-      },
-    });
-  }
-
-  return { ok: true } as const;
-}
-
-/**
- * WHY:   Workspace notifications/settings need the current user's pending incoming organization invites.
- * WHAT:  Lists incoming invites for a profile email together with inviter and conversation metadata.
- * HOW:   Matches pending invites by normalized email, joins owner + inviter records, and projects the invite card payload.
- */
-export async function listIncomingTeamInvitesForProfile(
-  ctx: AgenciesRepositoryCtx,
-  profile: UserProfileRecord,
-) {
-  const normalizedEmail = normalizeEmail(profile.email ?? "");
-  if (!normalizedEmail) {
-    return [];
-  }
-
-  const invites = (await ctx.db.query("teamInvites").collect())
-    .filter((invite) => invite.status === "pending" && normalizeEmail(invite.email) === normalizedEmail);
-
-  const incoming = await Promise.all(
-    invites.map(async (invite) => {
-      const owner = invite.ownerBrokerId
-        ? await ctx.db.get(invite.ownerBrokerId)
-        : invite.ownerREDId
-          ? await ctx.db.get(invite.ownerREDId)
-          : null;
-      const inviterProfile = await findProfileByAuthUserId(ctx, invite.invitedBy);
-      if (!owner || !inviterProfile) {
-        return null;
-      }
-
-      const directKey = normalizeDirectPair(profile.authUserId, inviterProfile.authUserId);
-      const conversation = await ctx.db
-        .query("inboxConversations")
-        .withIndex("directKey", (q) => q.eq("directKey", directKey))
-        .unique();
-
-      return {
-        id: String(invite._id),
-        token: invite.token,
-        email: invite.email,
-        role: invite.role,
-        organizationName: owner.name,
-        organizationType: invite.ownerBrokerId ? "broker" : "developer",
-        inviterName: inviterProfile.name ?? inviterProfile.email ?? "عضو الفريق",
-        inviterAuthUserId: inviterProfile.authUserId,
-        canMessage: true,
-        conversationId: conversation?._id ?? null,
-        expiresAt: invite.expiresAt,
-      } as const;
-    }),
-  );
-
-  return incoming.filter((invite): invite is NonNullable<typeof invite> => Boolean(invite));
-}
-
-/**
- * WHY:   Some gateway flows still need team invite creation with explicit owner data during migration.
- * WHAT:  Creates a team invite for the provided owner context.
- * HOW:   Normalizes the explicit owner payload and delegates to the shared invite-create helper.
+ * WHY:   Team invite creation must be manager-gated and owner-aware.
+ * WHAT:  Creates a pending invite for the given owner context.
+ * HOW:   Validates duplicates, then delegates to tenants invitation creation.
  */
 export const createTeamInviteForOwner = mutation({
   args: {
     ownerType: v.union(v.literal("broker"), v.literal("RED")),
     ownerBrokerId: v.optional(v.id("brokers")),
     ownerREDId: v.optional(v.id("RED")),
-    authUserId: v.string(),
     email: v.string(),
     role: v.union(v.literal("manager"), v.literal("member"), v.literal("viewer")),
   },
   handler: async (ctx, args) => {
     const owner = buildOwnerContext(args);
-    owner.authUserId = args.authUserId;
-    return createTeamInviteForOwnerRecord(ctx, {
-      owner,
-      email: args.email,
-      role: args.role,
-    });
+    return createTeamInviteForOwnerRecord(ctx, { owner, email: args.email, role: args.role });
   },
 });
 
 /**
- * WHY:   Workspace managers need a current-user invite creation path that keeps owner ids off the client.
- * WHAT:  Creates a team invite for the current manager's organization.
- * HOW:   Requires manager access and delegates to the shared invite-create helper.
+ * WHY:   Workspace flows need a current-user invite mutation without exposing owner ids.
+ * WHAT:  Creates a pending invite for the current organization.
+ * HOW:   Requires manager access, then delegates to the shared invite creation helper.
  */
 export const createTeamInviteForCurrentUser = mutation({
   args: {
@@ -395,167 +204,214 @@ export const createTeamInviteForCurrentUser = mutation({
   },
   handler: async (ctx, args) => {
     const { owner } = await requireManagerAccess(ctx);
-    return createTeamInviteForOwnerRecord(ctx, {
-      owner,
-      email: args.email,
-      role: args.role,
-    });
+    return createTeamInviteForOwnerRecord(ctx, { owner, email: args.email, role: args.role });
   },
 });
 
 /**
- * WHY:   Legacy explicit-owner flows still need to cancel invites while verifying owner ownership.
- * WHAT:  Cancels an invite for the provided owner context.
- * HOW:   Loads the invite, verifies it belongs to the owner, then marks it canceled.
+ * WHY:   Invites can be canceled by managers and must stay scoped to their organization.
+ * WHAT:  Cancels an invite for an explicit owner context.
+ * HOW:   Resolves tenant org id and cancels via tenants API.
  */
 export const cancelTeamInviteForOwner = mutation({
   args: {
     ownerType: v.union(v.literal("broker"), v.literal("RED")),
     ownerBrokerId: v.optional(v.id("brokers")),
     ownerREDId: v.optional(v.id("RED")),
-    inviteId: v.id("teamInvites"),
+    inviteId: v.string(),
   },
   handler: async (ctx, args) => {
     const owner = buildOwnerContext(args);
-    const invite = await ctx.db.get(args.inviteId);
-    if (!invite) {
-      throw new ConvexError({ code: "NOT_FOUND", message: "Invite not found" });
-    }
-    const ownsInvite =
-      (owner.ownerType === "broker" && invite.ownerBrokerId === owner.ownerBrokerId) ||
-      (owner.ownerType === "RED" && invite.ownerREDId === owner.ownerREDId);
-    if (!ownsInvite) {
-      throw new ConvexError({ code: "FORBIDDEN", message: "Cannot cancel this invite" });
-    }
-    await ctx.db.patch(args.inviteId, { status: "canceled" });
-    return { ok: true } as const;
+    const tenantOrgId = await resolveTenantOrgIdForOwner(ctx, owner);
+    const invitation = await tenants.getInvitation(ctx as never, args.inviteId);
+    await tenants.cancelInvitation(ctx as never, owner.authUserId, args.inviteId);
+
+    await auditLog.log(ctx, {
+      action: "invitation.canceled",
+      actorId: owner.authUserId,
+      resourceType: "tenantInvitations",
+      resourceId: args.inviteId,
+      severity: "info",
+      metadata: {
+        tenantOrgId,
+        inviteeEmail: invitation?.inviteeIdentifier,
+        role: invitation?.role,
+        ownerType: owner.ownerType,
+      },
+      tags: ["organizations", "invites"],
+    });
+
+    return tenantOrgId;
   },
 });
 
 /**
- * WHY:   Workspace managers need an invite cancel action scoped to the current organization.
- * WHAT:  Cancels one current-organization invite.
- * HOW:   Requires manager access, verifies owner ownership of the invite, then marks it canceled.
+ * WHY:   Workspace flows need a current-user invite cancel mutation without exposing owner ids.
+ * WHAT:  Cancels a pending invite for the current organization.
+ * HOW:   Requires manager access, then cancels via tenants API.
  */
 export const cancelTeamInviteForCurrentUser = mutation({
-  args: {
-    inviteId: v.id("teamInvites"),
-  },
+  args: { inviteId: v.string() },
   handler: async (ctx, args) => {
-    const { owner } = await requireManagerAccess(ctx);
-    const invite = await ctx.db.get(args.inviteId);
-    if (!invite) {
-      throw new ConvexError({ code: "NOT_FOUND", message: "Invite not found" });
-    }
+    const { owner, profile } = await requireManagerAccess(ctx);
+    const tenantOrgId = await resolveTenantOrgIdForOwner(ctx, owner);
+    const invitation = await tenants.getInvitation(ctx as never, args.inviteId);
+    await tenants.cancelInvitation(ctx as never, profile.authUserId, args.inviteId);
 
-    const ownsInvite =
-      (owner.ownerType === "broker" && invite.ownerBrokerId === owner.ownerBrokerId) ||
-      (owner.ownerType === "RED" && invite.ownerREDId === owner.ownerREDId);
-    if (!ownsInvite) {
-      throw new ConvexError({ code: "FORBIDDEN", message: "Cannot cancel this invite" });
-    }
-
-    await ctx.db.patch(args.inviteId, { status: "canceled" });
-    return { ok: true } as const;
+    await auditLog.log(ctx, {
+      action: "invitation.canceled",
+      actorId: profile.authUserId,
+      resourceType: "tenantInvitations",
+      resourceId: args.inviteId,
+      severity: "info",
+      metadata: {
+        tenantOrgId,
+        inviteeEmail: invitation?.inviteeIdentifier,
+        role: invitation?.role,
+        ownerType: owner.ownerType,
+      },
+      tags: ["organizations", "invites"],
+    });
   },
 });
 
 /**
- * WHY:   Invite recipients need a decline path that does not require organization membership.
- * WHAT:  Cancels an incoming pending invite for the current user's email.
- * HOW:   Validates invite ownership by normalized email and marks the invite canceled.
+ * WHY:   Incoming invites need a cancel operation for the invitee.
+ * WHAT:  Cancels an invite for the current user.
+ * HOW:   Uses the tenants API to cancel the invitation.
  */
 export const cancelIncomingTeamInviteForCurrentUser = mutation({
-  args: {
-    inviteId: v.id("teamInvites"),
-  },
+  args: { inviteId: v.string() },
   handler: async (ctx, args) => {
     const profile = await requireCurrentProfile(ctx);
-    const invite = await ctx.db.get(args.inviteId);
-    if (!invite) {
-      throw new ConvexError({ code: "NOT_FOUND", message: "Invite not found" });
-    }
-    if (invite.status !== "pending" || normalizeEmail(invite.email) !== normalizeEmail(profile.email ?? "")) {
-      throw new ConvexError({ code: "FORBIDDEN", message: "Cannot cancel this invite" });
-    }
+    const invitation = await tenants.getInvitation(ctx as never, args.inviteId);
+    await tenants.declineInvitation(ctx as never, args.inviteId, profile.authUserId);
 
-    await ctx.db.patch(args.inviteId, { status: "canceled" });
-    return { ok: true } as const;
+    await auditLog.log(ctx, {
+      action: "invitation.declined",
+      actorId: profile.authUserId,
+      resourceType: "tenantInvitations",
+      resourceId: args.inviteId,
+      severity: "info",
+      metadata: {
+        inviteeEmail: invitation?.inviteeIdentifier,
+        role: invitation?.role,
+        tenantOrgId: invitation?.organizationId,
+      },
+      tags: ["organizations", "invites"],
+    });
   },
 });
 
 /**
- * WHY:   Admin and gateway readers still need explicit-owner invite listing during the migration boundary.
- * WHAT:  Lists invites for the provided owner context.
- * HOW:   Builds the owner context and delegates to the shared invite listing helper.
+ * WHY:   Invite acceptance powers both the current-user flow and explicit auth-user gateway fallback.
+ * WHAT:  Accepts a team invite for the given auth user id.
+ * HOW:   Delegates to tenants invitation acceptance using the invitation id.
  */
-export const listTeamInvitesByOwner = query({
-  args: {
-    ownerType: v.union(v.literal("broker"), v.literal("RED")),
-    ownerBrokerId: v.optional(v.id("brokers")),
-    ownerREDId: v.optional(v.id("RED")),
-  },
-  handler: async (ctx, args) => {
-    const owner = buildOwnerContext(args);
-    return listTeamInvitesForOwner(ctx, owner);
-  },
-});
+export async function acceptInviteForAuthUserRecord(
+  ctx: AgenciesRepositoryCtx,
+  args: { authUserId: string; token: string },
+) {
+  const invitation = await tenants.getInvitation(ctx as never, args.token);
+  await tenants.acceptInvitation(ctx as never, args.token, args.authUserId, {
+    acceptingUserIdentifier: args.authUserId,
+  });
 
-/**
- * WHY:   Workspace settings need the current organization's invite list with no exposed owner ids.
- * WHAT:  Lists invites for the current organization.
- * HOW:   Resolves the current organization owner and delegates to the shared invite listing helper.
- */
-export const listCurrentTeamInvites = query({
-  args: {},
-  handler: async (ctx) => {
-    const { owner } = await requireManagerAccess(ctx);
-    return listTeamInvitesForOwner(ctx, owner);
-  },
-});
+  await auditLog.log(ctx, {
+    action: "invitation.accepted",
+    actorId: args.authUserId,
+    resourceType: "tenantInvitations",
+    resourceId: args.token,
+    severity: "info",
+    metadata: {
+      tenantOrgId: invitation?.organizationId,
+      inviteeEmail: invitation?.inviteeIdentifier,
+      role: invitation?.role,
+    },
+    tags: ["organizations", "invites"],
+  });
+}
 
-/**
- * WHY:   Gateway migration flows still need explicit auth-user invite acceptance in addition to the current-user mutation.
- * WHAT:  Accepts a team invite for the provided auth user id.
- * HOW:   Delegates to the shared invite-accept helper.
- */
 export const acceptTeamInviteForAuthUser = mutation({
   args: {
     authUserId: v.string(),
     token: v.string(),
   },
   handler: async (ctx, args) => {
-    return acceptInviteForAuthUserRecord(ctx, args);
+    await acceptInviteForAuthUserRecord(ctx, args);
   },
 });
 
-/**
- * WHY:   Invite recipients in the workspace need a current-user accept action.
- * WHAT:  Accepts a team invite for the current authenticated profile.
- * HOW:   Resolves the current profile auth id and delegates to the shared invite-accept helper.
- */
 export const acceptTeamInviteForCurrentUser = mutation({
-  args: {
-    token: v.string(),
-  },
+  args: { token: v.string() },
   handler: async (ctx, args) => {
     const profile = await requireCurrentProfile(ctx);
-    return acceptInviteForAuthUserRecord(ctx, {
-      authUserId: profile.authUserId,
-      token: args.token,
-    });
+    await acceptInviteForAuthUserRecord(ctx, { authUserId: profile.authUserId, token: args.token });
   },
 });
 
 /**
- * WHY:   Workspace onboarding and settings need the current user's incoming invite cards.
- * WHAT:  Lists incoming team invites for the current profile.
- * HOW:   Resolves the current profile and delegates to the shared incoming-invite projection helper.
+ * WHY:   Incoming invite lists must be scoped to the current user's identifier.
+ * WHAT:  Lists pending invitations for the current user.
+ * HOW:   Uses tenants pending invites and enriches with organization context.
  */
 export const listIncomingTeamInvitesForCurrentUser = query({
   args: {},
   handler: async (ctx) => {
     const profile = await requireCurrentProfile(ctx);
-    return listIncomingTeamInvitesForProfile(ctx, profile as UserProfileRecord);
+    const email = profile.email ? normalizeEmail(profile.email) : null;
+    if (!email) return [];
+
+    const invitations = await tenants.getPendingInvitations(ctx as never, email);
+    const organizations = await Promise.all(
+      invitations.map(async (invite) => {
+        const link = await findTenantOrgLinkByTenantOrgId(ctx, invite.organizationId);
+        const ownerType = link?.ownerType === "broker" ? "broker" : "developer";
+        const tenantOrg = await tenants.getOrganization(ctx as never, invite.organizationId);
+        const organization = link
+          ? await getOrganizationRecord(ctx, {
+              ownerType: link.ownerType,
+              ownerBrokerId: link.ownerBrokerId!,
+              ownerREDId: link.ownerREDId!,
+              authUserId: profile.authUserId,
+              tenantOrgId: link.tenantOrgId,
+            })
+          : null;
+        return {
+          invite,
+          organizationName: organization?.name ?? tenantOrg?.name ?? "منظمة أنان",
+          organizationType: ownerType,
+          inviterName: invite.inviterName ?? "عضو الفريق",
+          inviterAuthUserId: invite.inviterId ?? "",
+        };
+      }),
+    );
+
+    return organizations.map((item) => ({
+      id: item.invite._id,
+      token: item.invite._id,
+      email: item.invite.inviteeIdentifier,
+      role: normalizeTenantRole(item.invite.role),
+      organizationName: item.organizationName,
+      organizationType: item.organizationType,
+      inviterName: item.inviterName,
+      inviterAuthUserId: item.inviterAuthUserId,
+      canMessage: true,
+      conversationId: null,
+      expiresAt: item.invite.expiresAt,
+    }));
+  },
+});
+
+/**
+ * WHY:   Team management views need invites for the current organization.
+ * WHAT:  Lists invites for the current organization.
+ * HOW:   Resolves the current organization context and delegates to the shared invite list.
+ */
+export const listCurrentTeamInvites = query({
+  args: {},
+  handler: async (ctx) => {
+    const { owner } = await requireManagerAccess(ctx);
+    return listTeamInvitesForOwnerInternal(ctx, owner);
   },
 });

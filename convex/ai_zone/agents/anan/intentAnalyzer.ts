@@ -13,9 +13,16 @@
  * - To change fallback behavior: Edit the catch block
  */
 
-import { generateText } from "ai";
+import type { ActionCtx } from "../../../_generated/server";
 import { getChatModel } from "../../../shared_logic/lib/providers";
+import { cachedGenerateText } from "../../../shared_logic/llmCache";
+import { getAgentLLMConfigSafe } from "../config";
 
+/**
+ * WHY:   Platform questions require the dedicated platform agent to avoid noisy routing.
+ * WHAT:  Heuristic detector for platform-related keywords in a user prompt.
+ * HOW:   Matches Arabic and English keyword lists against the prompt text.
+ */
 export function shouldIncludePlatformTeam(prompt: string) {
     const text = prompt.toLowerCase();
     const keywords = [
@@ -82,25 +89,30 @@ export function shouldIncludePlatformTeam(prompt: string) {
  * WHAT:  Classifies user intent → returns team names.
  * HOW:   LLM call with structured prompt → parse JSON array from response.
  *
+ * @param ctx - Convex action context
  * @param prompt - The user's message
  * @param availableTeams - Teams the user's role has access to
  * @param modelOverride - Optional model override
  * @returns Array of team names to dispatch
  *
  * @example
- * const teams = await analyzeIntent("ابحث لي عن شقة", ["team_search", "team_property"]);
+ * const teams = await analyzeIntent(ctx, "ابحث لي عن شقة", ["team_search", "team_property"]);
  * // → ["team_search", "team_property", "team_knowledge"]
  */
 export async function analyzeIntent(
+    ctx: ActionCtx,
     prompt: string,
     availableTeams: string[],
     modelOverride?: string,
 ): Promise<string[]> {
     try {
         const model = getChatModel(modelOverride);
-        const { text } = await generateText({
-            model: model as any,
-            prompt: `You are an intent classifier for a real estate AI platform.
+        const modelName = modelOverride ?? getAgentLLMConfigSafe()?.model ?? "unknown";
+        const { text } = await cachedGenerateText(
+            ctx,
+            {
+                model: model as any,
+                prompt: `You are an intent classifier for a real estate AI platform.
 Given the user's message, determine which teams should handle it.
 
 Available teams: ${availableTeams.join(", ")}
@@ -116,8 +128,16 @@ User message: "${prompt}"
 
 Respond with ONLY a JSON array of team names. Example: ["team_search", "team_finance"]
 Always include "team_knowledge" for context. Never include "team_trainer" (it runs separately).`,
-            temperature: 0.1,
-        });
+                temperature: 0.1,
+            },
+            {
+                modelName,
+                tags: ["intent", "anan_orchestrator"],
+                metadata: {
+                    availableTeamsCount: availableTeams.length,
+                },
+            },
+        );
 
         // Parse JSON array from response
         const match = text.match(/\[.*\]/s);

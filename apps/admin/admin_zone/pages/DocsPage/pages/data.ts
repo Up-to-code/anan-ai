@@ -18,7 +18,7 @@ export const dataPage: DocsPageDefinition = {
     {
       title: "Core entities",
       bullets: [
-        "`userProfiles`, `users`, `brokers`, `RED`, `organizationMemberships`, and `teamInvites` define people and organizations.",
+        "`userProfiles`, `users`, `brokers`, `RED`, `tenantOrgLinks`, and the tenants component define people and organizations.",
         "`properties`, `offers`, `orders`, and `deals` define the core commercial lifecycle.",
         "`knowledgePages`, `assistantThreads`, `assistantMessages`, `knowledgeResearch`, and `searchLogs` support AI and research flows.",
         "`inboxConversations`, `inboxConversationParticipants`, `inboxMessages`, and `workspaceNotifications` support collaboration and operational awareness.",
@@ -70,4 +70,3 @@ export const dataPage: DocsPageDefinition = {
   ],
   related: ["convex", "webGateway", "workflow"],
 };
-

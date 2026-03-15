@@ -5,6 +5,8 @@ import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { requireRole } from "../_core/security/accessPolicy";
 import { createWorkspaceNotification } from "./notifications";
 import { enforceHttpRateLimit } from "./lib/middleware/rateLimit";
+import { buildOwnerContext, resolveTenantOrgIdForOwner } from "./agencies/repositories/core";
+import { tenants } from "../tenants";
 
 function normalizeDirectPair(userA: string, userB: string) {
   const [first, second] = [userA.trim(), userB.trim()].sort();
@@ -825,11 +827,13 @@ export const searchConversationTargets = query({
       .query("userProfiles")
       .withIndex("roleStatus", (q) => q.eq("roleStatus", "approved"))
       .collect();
-    const invites = currentOwnerType === "broker" && access.brokerId
-      ? await ctx.db.query("teamInvites").withIndex("ownerBrokerId", (q) => q.eq("ownerBrokerId", access.brokerId!)).collect()
+    const owner = currentOwnerType === "broker" && access.brokerId
+      ? buildOwnerContext({ ownerType: "broker", ownerBrokerId: access.brokerId, authUserId: access.authUserId })
       : currentOwnerType === "RED" && access.REDId
-        ? await ctx.db.query("teamInvites").withIndex("ownerREDId", (q) => q.eq("ownerREDId", access.REDId!)).collect()
-        : [];
+        ? buildOwnerContext({ ownerType: "RED", ownerREDId: access.REDId, authUserId: access.authUserId })
+        : null;
+    const tenantOrgId = owner ? await resolveTenantOrgIdForOwner(ctx, owner) : null;
+    const invites = tenantOrgId ? await tenants.listInvitations(ctx as never, tenantOrgId) : [];
 
     const results = await Promise.all(
       profiles.map(async (profile) => {
@@ -858,19 +862,11 @@ export const searchConversationTargets = query({
           return null;
         }
 
-        const membership = currentOwnerType === "broker" && access.brokerId
-          ? await ctx.db
-              .query("organizationMemberships")
-              .withIndex("ownerBrokerId_authUserId", (q) => q.eq("ownerBrokerId", access.brokerId!).eq("authUserId", profile.authUserId))
-              .unique()
-          : currentOwnerType === "RED" && access.REDId
-            ? await ctx.db
-                .query("organizationMemberships")
-                .withIndex("ownerREDId_authUserId", (q) => q.eq("ownerREDId", access.REDId!).eq("authUserId", profile.authUserId))
-                .unique()
-            : null;
+        const membership = tenantOrgId
+          ? await tenants.getMember(ctx as never, tenantOrgId, profile.authUserId)
+          : null;
         const pendingInvite = invites.find(
-          (invite) => invite.status === "pending" && normalizeComparableText(invite.email) === normalizeComparableText(profile.email),
+          (invite) => invite.status === "pending" && normalizeComparableText(invite.inviteeIdentifier) === normalizeComparableText(profile.email),
         );
         const conversation = await ctx.db
           .query("inboxConversations")
@@ -887,7 +883,7 @@ export const searchConversationTargets = query({
           redId: profile.REDId ?? null,
           organizationName,
           organizationType: profile.brokerId ? "broker" : profile.REDId ? "developer" : null,
-          membershipState: membership?.status === "active" ? "member" : pendingInvite ? "pending-invite" : "not-member",
+          membershipState: (membership?.status ?? "active") === "active" ? "member" : pendingInvite ? "pending-invite" : "not-member",
           conversationId: conversation?._id ?? null,
         };
       }),

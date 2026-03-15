@@ -1,6 +1,10 @@
-import { query } from "../_generated/server";
+import { mutation, query } from "../_generated/server";
 import { ConvexError, v } from "convex/values";
 import { requireRole } from "../_core/security/accessPolicy";
+import { tenants } from "../tenants";
+import { cascadingDelete } from "../cascading";
+import { internal } from "../_generated/api";
+import { auditLog } from "../auditLog";
 
 function buildOrganizationKey(ownerType: "broker" | "red", id: string) {
   return `${ownerType}__${id}`;
@@ -74,30 +78,44 @@ export const listBrokerOrganizations = query({
   handler: async (ctx) => {
     await requireRole(ctx, ["admin"]);
 
-    const [brokers, profiles, memberships, properties, verificationRequests] = await Promise.all([
+    const [brokers, profiles, tenantLinks, properties, verificationRequests] = await Promise.all([
       ctx.db.query("brokers").collect(),
       ctx.db.query("userProfiles").collect(),
-      ctx.db.query("organizationMemberships").collect(),
+      ctx.db.query("tenantOrgLinks").collect(),
       ctx.db.query("properties").collect(),
       ctx.db.query("verificationRequests").collect(),
     ]);
 
-    return brokers.map((broker) => ({
-      organizationKey: buildOrganizationKey("broker", String(broker._id)),
-      id: String(broker._id),
-      ownerType: "broker" as const,
-      name: broker.name,
-      slug: broker.slug,
-      status: broker.status ?? "pending",
-      isVerified: broker.isVerified === true,
-      contactEmail: broker.contactEmail,
-      linkedProfilesCount: profiles.filter((profile) => profile.brokerId === broker._id).length,
-      membersCount: memberships.filter((membership) => membership.ownerBrokerId === broker._id).length,
-      propertyCount: properties.filter((property) => property.brokerId === broker._id).length,
-      pendingVerificationCount: verificationRequests.filter(
-        (request) => request.subjectBrokerId === broker._id && (request.currentStatus === "new" || request.currentStatus === "in_review"),
-      ).length,
-    }));
+    const tenantOrgIdByBrokerId = new Map<string, string>();
+    for (const link of tenantLinks) {
+      if (link.ownerBrokerId) {
+        tenantOrgIdByBrokerId.set(String(link.ownerBrokerId), link.tenantOrgId);
+      }
+    }
+
+    return Promise.all(
+      brokers.map(async (broker) => {
+        const tenantOrgId = tenantOrgIdByBrokerId.get(String(broker._id));
+        const members = tenantOrgId ? await tenants.listMembers(ctx as never, tenantOrgId) : [];
+
+        return {
+          organizationKey: buildOrganizationKey("broker", String(broker._id)),
+          id: String(broker._id),
+          ownerType: "broker" as const,
+          name: broker.name,
+          slug: broker.slug,
+          status: broker.status ?? "pending",
+          isVerified: broker.isVerified === true,
+          contactEmail: broker.contactEmail,
+          linkedProfilesCount: profiles.filter((profile) => profile.brokerId === broker._id).length,
+          membersCount: members.filter((member) => (member.status ?? "active") === "active").length,
+          propertyCount: properties.filter((property) => property.brokerId === broker._id).length,
+          pendingVerificationCount: verificationRequests.filter(
+            (request) => request.subjectBrokerId === broker._id && (request.currentStatus === "new" || request.currentStatus === "in_review"),
+          ).length,
+        };
+      }),
+    );
   },
 });
 
@@ -111,30 +129,44 @@ export const listDeveloperOrganizations = query({
   handler: async (ctx) => {
     await requireRole(ctx, ["admin"]);
 
-    const [developers, profiles, memberships, properties, verificationRequests] = await Promise.all([
+    const [developers, profiles, tenantLinks, properties, verificationRequests] = await Promise.all([
       ctx.db.query("RED").collect(),
       ctx.db.query("userProfiles").collect(),
-      ctx.db.query("organizationMemberships").collect(),
+      ctx.db.query("tenantOrgLinks").collect(),
       ctx.db.query("properties").collect(),
       ctx.db.query("verificationRequests").collect(),
     ]);
 
-    return developers.map((developer) => ({
-      organizationKey: buildOrganizationKey("red", String(developer._id)),
-      id: String(developer._id),
-      ownerType: "red" as const,
-      name: developer.name,
-      slug: developer.slug,
-      status: developer.status ?? "pending",
-      isVerified: developer.isVerified === true,
-      contactEmail: developer.contactEmail,
-      linkedProfilesCount: profiles.filter((profile) => profile.REDId === developer._id).length,
-      membersCount: memberships.filter((membership) => membership.ownerREDId === developer._id).length,
-      propertyCount: properties.filter((property) => property.REDId === developer._id).length,
-      pendingVerificationCount: verificationRequests.filter(
-        (request) => request.subjectREDId === developer._id && (request.currentStatus === "new" || request.currentStatus === "in_review"),
-      ).length,
-    }));
+    const tenantOrgIdByRedId = new Map<string, string>();
+    for (const link of tenantLinks) {
+      if (link.ownerREDId) {
+        tenantOrgIdByRedId.set(String(link.ownerREDId), link.tenantOrgId);
+      }
+    }
+
+    return Promise.all(
+      developers.map(async (developer) => {
+        const tenantOrgId = tenantOrgIdByRedId.get(String(developer._id));
+        const members = tenantOrgId ? await tenants.listMembers(ctx as never, tenantOrgId) : [];
+
+        return {
+          organizationKey: buildOrganizationKey("red", String(developer._id)),
+          id: String(developer._id),
+          ownerType: "red" as const,
+          name: developer.name,
+          slug: developer.slug,
+          status: developer.status ?? "pending",
+          isVerified: developer.isVerified === true,
+          contactEmail: developer.contactEmail,
+          linkedProfilesCount: profiles.filter((profile) => profile.REDId === developer._id).length,
+          membersCount: members.filter((member) => (member.status ?? "active") === "active").length,
+          propertyCount: properties.filter((property) => property.REDId === developer._id).length,
+          pendingVerificationCount: verificationRequests.filter(
+            (request) => request.subjectREDId === developer._id && (request.currentStatus === "new" || request.currentStatus === "in_review"),
+          ).length,
+        };
+      }),
+    );
   },
 });
 
@@ -148,41 +180,52 @@ export const listOrganizationMemberships = query({
   handler: async (ctx) => {
     await requireRole(ctx, ["admin"]);
 
-    const [memberships, brokers, developers, profiles] = await Promise.all([
-      ctx.db.query("organizationMemberships").collect(),
+    const [tenantLinks, brokers, developers, profiles] = await Promise.all([
+      ctx.db.query("tenantOrgLinks").collect(),
       ctx.db.query("brokers").collect(),
       ctx.db.query("RED").collect(),
       ctx.db.query("userProfiles").collect(),
     ]);
 
-    return memberships.map((membership) => {
-      const profile = profiles.find((item) => item._id === membership.profileId);
-      const broker = membership.ownerBrokerId ? brokers.find((item) => item._id === membership.ownerBrokerId) : null;
-      const developer = membership.ownerREDId ? developers.find((item) => item._id === membership.ownerREDId) : null;
-      const ownerType = membership.ownerBrokerId ? "broker" : "red";
-      const ownerId = membership.ownerBrokerId ?? membership.ownerREDId;
+    const rows = await Promise.all(
+      tenantLinks.map(async (link) => {
+        const ownerType = link.ownerType === "broker" ? "broker" : "red";
+        const ownerId = link.ownerType === "broker" ? link.ownerBrokerId : link.ownerREDId;
+        if (!ownerId) return [];
 
-      return {
-        id: String(membership._id),
-        organizationKey: buildOrganizationKey(ownerType, String(ownerId)),
-        organizationName: broker?.name ?? developer?.name ?? "منظمة غير معروفة",
-        ownerType,
-        authUserId: membership.authUserId,
-        role: membership.role,
-        status: membership.status,
-        createdAt: membership.createdAt,
-        updatedAt: membership.updatedAt,
-        profile: profile
-          ? {
-              id: String(profile._id),
-              name: profile.name ?? profile.email ?? "مستخدم أنان",
-              email: profile.email ?? null,
-              role: profile.role ?? null,
-              roleStatus: profile.roleStatus ?? null,
-            }
-          : null,
-      };
-    });
+        const ownerRecord =
+          ownerType === "broker"
+            ? brokers.find((item) => item._id === ownerId)
+            : developers.find((item) => item._id === ownerId);
+
+        const members = await tenants.listMembers(ctx as never, link.tenantOrgId);
+        return members.map((member) => {
+          const profile = profiles.find((item) => item.authUserId === member.userId);
+          return {
+            id: `${link.tenantOrgId}:${member.userId}`,
+            organizationKey: buildOrganizationKey(ownerType, String(ownerId)),
+            organizationName: ownerRecord?.name ?? "منظمة غير معروفة",
+            ownerType,
+            authUserId: member.userId,
+            role: member.role,
+            status: member.status ?? "active",
+            createdAt: member.joinedAt ?? member._creationTime,
+            updatedAt: member.joinedAt ?? member._creationTime,
+            profile: profile
+              ? {
+                  id: String(profile._id),
+                  name: profile.name ?? profile.email ?? "مستخدم أنان",
+                  email: profile.email ?? null,
+                  role: profile.role ?? null,
+                  roleStatus: profile.roleStatus ?? null,
+                }
+              : null,
+          };
+        });
+      }),
+    );
+
+    return rows.flat();
   },
 });
 
@@ -196,30 +239,39 @@ export const listOrganizationInvites = query({
   handler: async (ctx) => {
     await requireRole(ctx, ["admin"]);
 
-    const [invites, brokers, developers] = await Promise.all([
-      ctx.db.query("teamInvites").collect(),
+    const [tenantLinks, brokers, developers] = await Promise.all([
+      ctx.db.query("tenantOrgLinks").collect(),
       ctx.db.query("brokers").collect(),
       ctx.db.query("RED").collect(),
     ]);
 
-    return invites.map((invite) => {
-      const ownerType = invite.ownerBrokerId ? "broker" : "red";
-      const owner = invite.ownerBrokerId
-        ? brokers.find((item) => item._id === invite.ownerBrokerId)
-        : developers.find((item) => item._id === invite.ownerREDId);
+    const rows = await Promise.all(
+      tenantLinks.map(async (link) => {
+        const ownerType = link.ownerType === "broker" ? "broker" : "red";
+        const ownerId = link.ownerType === "broker" ? link.ownerBrokerId : link.ownerREDId;
+        if (!ownerId) return [];
 
-      return {
-        id: String(invite._id),
-        organizationKey: buildOrganizationKey(ownerType, String(invite.ownerBrokerId ?? invite.ownerREDId)),
-        organizationName: owner?.name ?? "منظمة غير معروفة",
-        ownerType,
-        email: invite.email,
-        role: invite.role,
-        status: invite.status,
-        invitedBy: invite.invitedBy,
-        expiresAt: invite.expiresAt,
-      };
-    });
+        const ownerRecord =
+          ownerType === "broker"
+            ? brokers.find((item) => item._id === ownerId)
+            : developers.find((item) => item._id === ownerId);
+
+        const invitations = await tenants.listInvitations(ctx as never, link.tenantOrgId);
+        return invitations.map((invite) => ({
+          id: String(invite._id),
+          organizationKey: buildOrganizationKey(ownerType, String(ownerId)),
+          organizationName: ownerRecord?.name ?? "منظمة غير معروفة",
+          ownerType,
+          email: invite.inviteeIdentifier,
+          role: invite.role,
+          status: invite.status === "cancelled" ? "canceled" : invite.status,
+          invitedBy: invite.inviterId ?? "",
+          expiresAt: invite.expiresAt,
+        }));
+      }),
+    );
+
+    return rows.flat();
   },
 });
 
@@ -237,8 +289,7 @@ export const getOrganizationDetail = query({
     const [
       brokers,
       developers,
-      memberships,
-      invites,
+      tenantOrgLinks,
       properties,
       profiles,
       verificationRequests,
@@ -253,8 +304,7 @@ export const getOrganizationDetail = query({
     ] = await Promise.all([
       ctx.db.query("brokers").collect(),
       ctx.db.query("RED").collect(),
-      ctx.db.query("organizationMemberships").collect(),
-      ctx.db.query("teamInvites").collect(),
+      ctx.db.query("tenantOrgLinks").collect(),
       ctx.db.query("properties").collect(),
       ctx.db.query("userProfiles").collect(),
       ctx.db.query("verificationRequests").collect(),
@@ -278,12 +328,13 @@ export const getOrganizationDetail = query({
     }
 
     const isBroker = parsed.ownerType === "broker";
-    const organizationMemberships = memberships.filter((membership) =>
-      isBroker ? String(membership.ownerBrokerId) === parsed.id : String(membership.ownerREDId) === parsed.id,
+    const tenantLink = tenantOrgLinks.find((link) =>
+      isBroker ? String(link.ownerBrokerId) === parsed.id : String(link.ownerREDId) === parsed.id,
     );
-    const organizationInvites = invites.filter((invite) =>
-      isBroker ? String(invite.ownerBrokerId) === parsed.id : String(invite.ownerREDId) === parsed.id,
-    );
+    const tenantMembers = tenantLink ? await tenants.listMembers(ctx as never, tenantLink.tenantOrgId) : [];
+    const tenantInvites = tenantLink ? await tenants.listInvitations(ctx as never, tenantLink.tenantOrgId) : [];
+    const organizationMemberships = tenantMembers;
+    const organizationInvites = tenantInvites;
     const organizationProperties = properties.filter((property) =>
       isBroker ? String(property.brokerId) === parsed.id : String(property.REDId) === parsed.id,
     );
@@ -468,25 +519,25 @@ export const getOrganizationDetail = query({
         verificationCount: organizationVerifications.length,
       },
       memberships: organizationMemberships.map((membership) => {
-        const profile = profiles.find((item) => item._id === membership.profileId);
+        const profile = profiles.find((item) => item.authUserId === membership.userId);
         return {
           id: String(membership._id),
-          authUserId: membership.authUserId,
+          authUserId: membership.userId,
           role: membership.role,
-          status: membership.status,
-          createdAt: membership.createdAt,
+          status: membership.status ?? "active",
+          createdAt: membership.joinedAt ?? membership._creationTime,
           profileName: profile?.name ?? profile?.email ?? "مستخدم أنان",
           profileEmail: profile?.email ?? null,
         };
       }),
       invites: organizationInvites.map((invite) => ({
         id: String(invite._id),
-        email: invite.email,
+        email: invite.inviteeIdentifier,
         role: invite.role,
-        status: invite.status,
-        invitedBy: invite.invitedBy,
+        status: invite.status === "cancelled" ? "canceled" : invite.status,
+        invitedBy: invite.inviterId ?? "",
         expiresAt: invite.expiresAt,
-        acceptedAt: invite.acceptedAt ?? null,
+        acceptedAt: null,
       })),
       properties: organizationProperties.map((property) => ({
         id: String(property._id),
@@ -615,5 +666,67 @@ export const getOrganizationDetail = query({
         linkedProfilesVisibleInOffersDirectory: linkedProfiles.filter((item) => item.showInOffersDirectory !== false).length,
       },
     };
+  },
+});
+
+/**
+ * WHY:   Admin tooling needs a safe way to remove broker organizations and related records.
+ * WHAT:  Cascades deletion across subscriptions and tenant links for brokers.
+ * HOW:   Uses the cascading delete component with batched processing.
+ */
+export const deleteBrokerOrganization = mutation({
+  args: { brokerId: v.id("brokers") },
+  handler: async (ctx, args) => {
+    const access = await requireRole(ctx, ["admin"]);
+    const broker = await ctx.db.get(args.brokerId);
+    const result = await cascadingDelete.deleteWithCascadeBatched(ctx, "brokers", args.brokerId, {
+      batchHandlerRef: internal.cascading._cascadeBatchHandler,
+      batchSize: 2000,
+    });
+
+    await auditLog.logChange(ctx, {
+      action: "broker.deleted",
+      actorId: access.authUserId,
+      resourceType: "brokers",
+      resourceId: args.brokerId,
+      before: broker,
+      after: null,
+      generateDiff: false,
+      severity: "warning",
+      tags: ["organizations", "delete"],
+    });
+
+    return result;
+  },
+});
+
+/**
+ * WHY:   Admin tooling needs a safe way to remove RED organizations and related records.
+ * WHAT:  Cascades deletion across subscriptions and tenant links for RED organizations.
+ * HOW:   Uses the cascading delete component with batched processing.
+ */
+export const deleteDeveloperOrganization = mutation({
+  args: { redId: v.id("RED") },
+  handler: async (ctx, args) => {
+    const access = await requireRole(ctx, ["admin"]);
+    const red = await ctx.db.get(args.redId);
+    const result = await cascadingDelete.deleteWithCascadeBatched(ctx, "RED", args.redId, {
+      batchHandlerRef: internal.cascading._cascadeBatchHandler,
+      batchSize: 2000,
+    });
+
+    await auditLog.logChange(ctx, {
+      action: "red.deleted",
+      actorId: access.authUserId,
+      resourceType: "RED",
+      resourceId: args.redId,
+      before: red,
+      after: null,
+      generateDiff: false,
+      severity: "warning",
+      tags: ["organizations", "delete"],
+    });
+
+    return result;
   },
 });

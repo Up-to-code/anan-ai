@@ -84,6 +84,7 @@ export async function orchestrate(
 
     // 2. Analyze intent to select teams
     const selectedTeams = await analyzeIntent(
+        ctx,
         prompt,
         availableTeams,
         modelOverride,
@@ -126,6 +127,7 @@ export async function orchestrate(
         collectResults(settled);
 
     const merged = await mergeResults({
+        ctx,
         prompt,
         successOutputs,
         hasFailures,

@@ -1,6 +1,7 @@
 import { query } from "../_generated/server";
 import { v } from "convex/values";
 import { requireRole } from "../_core/security/accessPolicy";
+import { tenants } from "../tenants";
 
 type Range = "day" | "week" | "month";
 
@@ -238,30 +239,43 @@ export const activeUsersAnalytics = query({
 /**
  * WHY:   The admin analytics area needs broker charts and inventory proxies in one payload.
  * WHAT:  Returns broker totals by state and the highest broker inventory counts.
- * HOW:   Aggregates brokers, linked profiles, memberships, and broker-owned properties into one summary.
+ * HOW:   Aggregates brokers, linked profiles, tenant members, and broker-owned properties into one summary.
  */
 export const brokerAnalytics = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit = 10 }) => {
     await requireRole(ctx, ["admin"]);
 
-    const [brokers, profiles, memberships, properties] = await Promise.all([
+    const [brokers, profiles, tenantLinks, properties] = await Promise.all([
       ctx.db.query("brokers").collect(),
       ctx.db.query("userProfiles").collect(),
-      ctx.db.query("organizationMemberships").collect(),
+      ctx.db.query("tenantOrgLinks").collect(),
       ctx.db.query("properties").collect(),
     ]);
 
-    const topByInventory = brokers
-      .map((broker) => ({
-        id: String(broker._id),
-        name: broker.name,
-        status: broker.status ?? "pending",
-        isVerified: broker.isVerified === true,
-        linkedProfilesCount: profiles.filter((profile) => profile.brokerId === broker._id).length,
-        membersCount: memberships.filter((membership) => membership.ownerBrokerId === broker._id).length,
-        inventoryCount: properties.filter((property) => property.brokerId === broker._id).length,
-      }))
+    const tenantOrgIdByBrokerId = new Map<string, string>();
+    for (const link of tenantLinks) {
+      if (link.ownerBrokerId) {
+        tenantOrgIdByBrokerId.set(String(link.ownerBrokerId), link.tenantOrgId);
+      }
+    }
+
+    const topByInventory = (await Promise.all(
+      brokers.map(async (broker) => {
+        const tenantOrgId = tenantOrgIdByBrokerId.get(String(broker._id));
+        const members = tenantOrgId ? await tenants.listMembers(ctx as never, tenantOrgId) : [];
+
+        return {
+          id: String(broker._id),
+          name: broker.name,
+          status: broker.status ?? "pending",
+          isVerified: broker.isVerified === true,
+          linkedProfilesCount: profiles.filter((profile) => profile.brokerId === broker._id).length,
+          membersCount: members.filter((member) => (member.status ?? "active") === "active").length,
+          inventoryCount: properties.filter((property) => property.brokerId === broker._id).length,
+        };
+      }),
+    ))
       .sort((left, right) => right.inventoryCount - left.inventoryCount)
       .slice(0, limit);
 
@@ -279,30 +293,43 @@ export const brokerAnalytics = query({
 /**
  * WHY:   The admin analytics area also needs developer charts using RED as the source of truth.
  * WHAT:  Returns developer totals by state and the highest RED inventory counts.
- * HOW:   Aggregates RED organizations, linked profiles, memberships, and RED-owned properties into one summary.
+ * HOW:   Aggregates RED organizations, linked profiles, tenant members, and RED-owned properties into one summary.
  */
 export const developerAnalytics = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit = 10 }) => {
     await requireRole(ctx, ["admin"]);
 
-    const [developers, profiles, memberships, properties] = await Promise.all([
+    const [developers, profiles, tenantLinks, properties] = await Promise.all([
       ctx.db.query("RED").collect(),
       ctx.db.query("userProfiles").collect(),
-      ctx.db.query("organizationMemberships").collect(),
+      ctx.db.query("tenantOrgLinks").collect(),
       ctx.db.query("properties").collect(),
     ]);
 
-    const topByInventory = developers
-      .map((developer) => ({
-        id: String(developer._id),
-        name: developer.name,
-        status: developer.status ?? "pending",
-        isVerified: developer.isVerified === true,
-        linkedProfilesCount: profiles.filter((profile) => profile.REDId === developer._id).length,
-        membersCount: memberships.filter((membership) => membership.ownerREDId === developer._id).length,
-        inventoryCount: properties.filter((property) => property.REDId === developer._id).length,
-      }))
+    const tenantOrgIdByRedId = new Map<string, string>();
+    for (const link of tenantLinks) {
+      if (link.ownerREDId) {
+        tenantOrgIdByRedId.set(String(link.ownerREDId), link.tenantOrgId);
+      }
+    }
+
+    const topByInventory = (await Promise.all(
+      developers.map(async (developer) => {
+        const tenantOrgId = tenantOrgIdByRedId.get(String(developer._id));
+        const members = tenantOrgId ? await tenants.listMembers(ctx as never, tenantOrgId) : [];
+
+        return {
+          id: String(developer._id),
+          name: developer.name,
+          status: developer.status ?? "pending",
+          isVerified: developer.isVerified === true,
+          linkedProfilesCount: profiles.filter((profile) => profile.REDId === developer._id).length,
+          membersCount: members.filter((member) => (member.status ?? "active") === "active").length,
+          inventoryCount: properties.filter((property) => property.REDId === developer._id).length,
+        };
+      }),
+    ))
       .sort((left, right) => right.inventoryCount - left.inventoryCount)
       .slice(0, limit);
 

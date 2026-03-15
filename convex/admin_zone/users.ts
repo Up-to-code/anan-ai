@@ -2,6 +2,7 @@ import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import { requireRole } from "../_core/security/accessPolicy";
+import { tenants } from "../tenants";
 import {
   listUsersService,
   getUserKnowledgeResearchService,
@@ -84,10 +85,54 @@ function extractOfferIdFromMetadata(metadata: unknown) {
   return typeof candidate.offerId === "string" ? candidate.offerId : null;
 }
 
+type TenantMembershipRow = {
+  tenantOrgId: string;
+  ownerType: "broker" | "red";
+  ownerId: string;
+  member: {
+    _id: string;
+    _creationTime: number;
+    userId: string;
+    role: string;
+    status?: string;
+    joinedAt?: number;
+  };
+};
+
+async function buildTenantMembershipRows(
+  ctx: Parameters<typeof tenants.listMembers>[0],
+  tenantLinks: Array<{ tenantOrgId: string; ownerType: "broker" | "RED"; ownerBrokerId?: unknown; ownerREDId?: unknown }>,
+): Promise<TenantMembershipRow[]> {
+  const rows = await Promise.all(
+    tenantLinks.map(async (link) => {
+      const ownerType = link.ownerType === "broker" ? "broker" : "red";
+      const ownerId = link.ownerType === "broker" ? link.ownerBrokerId : link.ownerREDId;
+      if (!ownerId) return [];
+
+      const members = await tenants.listMembers(ctx as never, link.tenantOrgId);
+      return members.map((member) => ({
+        tenantOrgId: link.tenantOrgId,
+        ownerType,
+        ownerId: String(ownerId),
+        member: {
+          _id: member._id,
+          _creationTime: member._creationTime,
+          userId: member.userId,
+          role: member.role,
+          status: member.status,
+          joinedAt: member.joinedAt,
+        },
+      }));
+    }),
+  );
+
+  return rows.flat();
+}
+
 /**
  * WHY:   The Arabic admin users section needs a joined all-users list instead of raw channel rows only.
  * WHAT:  Returns admin user rows enriched with profile, organization, and verification metadata.
- * HOW:   Joins `userProfiles`, `users`, memberships, organizations, and verification requests in memory before paginating.
+ * HOW:   Joins `userProfiles`, `users`, tenant memberships, organizations, and verification requests in memory before paginating.
  */
 export const listAdminUsers = query({
   args: {
@@ -105,14 +150,23 @@ export const listAdminUsers = query({
   handler: async (ctx, { paginationOpts, role }) => {
     await requireRole(ctx, ["admin"]);
 
-    const [profiles, users, brokers, developers, memberships, verificationRequests] = await Promise.all([
+    const [profiles, users, brokers, developers, tenantLinks, verificationRequests] = await Promise.all([
       ctx.db.query("userProfiles").collect(),
       ctx.db.query("users").collect(),
       ctx.db.query("brokers").collect(),
       ctx.db.query("RED").collect(),
-      ctx.db.query("organizationMemberships").collect(),
+      ctx.db.query("tenantOrgLinks").collect(),
       ctx.db.query("verificationRequests").collect(),
     ]);
+
+    const tenantMemberships = await buildTenantMembershipRows(ctx, tenantLinks);
+    const membershipCountByAuthUserId = new Map<string, number>();
+    for (const row of tenantMemberships) {
+      membershipCountByAuthUserId.set(
+        row.member.userId,
+        (membershipCountByAuthUserId.get(row.member.userId) ?? 0) + 1,
+      );
+    }
 
     const profileRows = profiles.map((profile) => {
       const latestRequest = verificationRequests
@@ -120,7 +174,7 @@ export const listAdminUsers = query({
         .sort((left, right) => right.submittedAt - left.submittedAt)[0];
       const linkedBroker = profile.brokerId ? brokers.find((item) => item._id === profile.brokerId) : null;
       const linkedDeveloper = profile.REDId ? developers.find((item) => item._id === profile.REDId) : null;
-      const orgMemberships = memberships.filter((item) => item.profileId === profile._id);
+      const membershipsCount = membershipCountByAuthUserId.get(profile.authUserId) ?? 0;
 
       return {
         userKey: buildUserKey({
@@ -139,7 +193,7 @@ export const listAdminUsers = query({
         isActive: profile.isActive ?? true,
         organizationName: linkedBroker?.name ?? linkedDeveloper?.name ?? null,
         organizationType: linkedBroker ? "broker" : linkedDeveloper ? "red" : null,
-        membershipsCount: orgMemberships.length,
+        membershipsCount,
         verificationStatus: resolveVerificationStatus(latestRequest?.currentStatus, profile.roleStatus),
       };
     });
@@ -229,7 +283,7 @@ export const listAdminProfiles = query({
 /**
  * WHY:   The memberships tab needs a joined membership list without forcing the frontend to reconstruct organizations.
  * WHAT:  Returns organization memberships with profile and organization metadata.
- * HOW:   Joins `organizationMemberships` against `userProfiles`, `brokers`, and `RED`.
+ * HOW:   Joins tenant memberships against `userProfiles`, `brokers`, and `RED`.
  */
 export const listAdminMemberships = query({
   args: {
@@ -238,28 +292,30 @@ export const listAdminMemberships = query({
   handler: async (ctx, { paginationOpts }) => {
     await requireRole(ctx, ["admin"]);
 
-    const [memberships, profiles, brokers, developers] = await Promise.all([
-      ctx.db.query("organizationMemberships").collect(),
+    const [tenantLinks, profiles, brokers, developers] = await Promise.all([
+      ctx.db.query("tenantOrgLinks").collect(),
       ctx.db.query("userProfiles").collect(),
       ctx.db.query("brokers").collect(),
       ctx.db.query("RED").collect(),
     ]);
 
+    const memberships = await buildTenantMembershipRows(ctx, tenantLinks);
+
     const rows = memberships
       .map((membership) => {
-        const profile = profiles.find((item) => item._id === membership.profileId);
-        const organizationName = membership.ownerBrokerId
-          ? brokers.find((item) => item._id === membership.ownerBrokerId)?.name
-          : developers.find((item) => item._id === membership.ownerREDId)?.name;
+        const profile = profiles.find((item) => item.authUserId === membership.member.userId);
+        const organizationName = membership.ownerType === "broker"
+          ? brokers.find((item) => String(item._id) === membership.ownerId)?.name
+          : developers.find((item) => String(item._id) === membership.ownerId)?.name;
 
         return {
-          id: String(membership._id),
+          id: `${membership.tenantOrgId}:${membership.member.userId}`,
           organizationName: organizationName ?? "منظمة غير معروفة",
-          ownerType: membership.ownerBrokerId ? "broker" : "red",
-          role: membership.role,
-          status: membership.status,
-          createdAt: membership.createdAt,
-          updatedAt: membership.updatedAt,
+          ownerType: membership.ownerType,
+          role: membership.member.role,
+          status: membership.member.status ?? "active",
+          createdAt: membership.member.joinedAt ?? membership.member._creationTime,
+          updatedAt: membership.member.joinedAt ?? membership.member._creationTime,
           profileName: profile?.name ?? profile?.email ?? "مستخدم أنان",
           profileEmail: profile?.email ?? null,
           userKey: profile
@@ -329,7 +385,7 @@ export const getAdminUserDetail = query({
       users,
       brokers,
       developers,
-      memberships,
+      tenantLinks,
       verificationRequests,
       assistantThreads,
       assistantMessages,
@@ -349,7 +405,7 @@ export const getAdminUserDetail = query({
       ctx.db.query("users").collect(),
       ctx.db.query("brokers").collect(),
       ctx.db.query("RED").collect(),
-      ctx.db.query("organizationMemberships").collect(),
+      ctx.db.query("tenantOrgLinks").collect(),
       ctx.db.query("verificationRequests").collect(),
       ctx.db.query("assistantThreads").collect(),
       ctx.db.query("assistantMessages").collect(),
@@ -365,6 +421,8 @@ export const getAdminUserDetail = query({
       ctx.db.query("deals").collect(),
       ctx.db.query("properties").collect(),
     ]);
+
+    const tenantMemberships = await buildTenantMembershipRows(ctx, tenantLinks);
 
     let profile: (typeof profiles)[number] | null = null;
     let channelUser: (typeof users)[number] | null = null;
@@ -399,7 +457,9 @@ export const getAdminUserDetail = query({
         : []),
     ];
 
-    const profileMemberships = profile ? memberships.filter((item) => item.profileId === profile._id) : [];
+    const profileMemberships = profile
+      ? tenantMemberships.filter((item) => item.member.userId === profile.authUserId)
+      : [];
     const userVerificationRequests = verificationRequests.filter(
       (request) =>
         (profile && request.subjectProfileId === profile._id) ||
@@ -656,17 +716,17 @@ export const getAdminUserDetail = query({
         : null,
       organizations,
       memberships: profileMemberships.map((membership) => ({
-        id: String(membership._id),
-        role: membership.role,
-        status: membership.status,
-        ownerType: membership.ownerBrokerId ? "broker" : "red",
-        createdAt: membership.createdAt,
-        organizationName: membership.ownerBrokerId
-          ? brokers.find((item) => item._id === membership.ownerBrokerId)?.name ?? "منظمة غير معروفة"
-          : developers.find((item) => item._id === membership.ownerREDId)?.name ?? "منظمة غير معروفة",
-        organizationKey: membership.ownerBrokerId
-          ? `broker__${String(membership.ownerBrokerId)}`
-          : `red__${String(membership.ownerREDId)}`,
+        id: `${membership.tenantOrgId}:${membership.member.userId}`,
+        role: membership.member.role,
+        status: membership.member.status ?? "active",
+        ownerType: membership.ownerType,
+        createdAt: membership.member.joinedAt ?? membership.member._creationTime,
+        organizationName: membership.ownerType === "broker"
+          ? brokers.find((item) => String(item._id) === membership.ownerId)?.name ?? "منظمة غير معروفة"
+          : developers.find((item) => String(item._id) === membership.ownerId)?.name ?? "منظمة غير معروفة",
+        organizationKey: membership.ownerType === "broker"
+          ? `broker__${membership.ownerId}`
+          : `red__${membership.ownerId}`,
       })),
       metrics: {
         organizationsCount: organizations.length,

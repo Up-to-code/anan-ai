@@ -160,6 +160,16 @@ The codebase currently uses both terms:
 
 **Rule:** keep schema naming at storage boundaries and normalize only at explicit contract boundaries. Do not invent a third naming convention.
 
+#### Tenant organizations (convex-tenants)
+
+Organization membership and invitations now flow through **convex-tenants**:
+
+- `tenantOrgLinks` maps a tenant organization to a broker or RED record.
+- `userProfiles.currentTenantOrgId` stores the active tenant for the session.
+- Legacy tables (`organizationMemberships`, `teamInvites`) exist only for migration and should not be written to by new code.
+
+If a capability needs membership checks or invites, use the tenant-backed helpers in `shared_logic/agencies/repositories/*`.
+
 ---
 
 ### 3.1) AuthZ checklist (must pass for every protected handler)

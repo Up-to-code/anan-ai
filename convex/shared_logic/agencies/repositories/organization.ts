@@ -2,64 +2,49 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query } from "../../../_generated/server";
 import type { MutationCtx } from "../../../_generated/server";
 import { requireCurrentProfile } from "../../lib/profile";
+import { auditLog } from "../../../auditLog";
+import { requireSession } from "../../../_core/security/accessPolicy";
 import {
   findProfileByAuthUserId,
+  findTenantOrgLinkByTenantOrgId,
   getOwnerId,
   normalizeEmail,
+  resolveOwnerContextFromProfile,
   type AgenciesRepositoryCtx,
   type OwnerContext,
   type UserProfileRecord,
 } from "./core";
-import { ensureOwnerManagerMembership, requireManagerAccess } from "./membership";
+import { requireManagerAccess } from "./membership";
+import { tenants } from "../../../tenants";
 
 async function listOrganizationsForProfile(ctx: AgenciesRepositoryCtx, profile: UserProfileRecord) {
-  const organizations: Array<{
-    id: typeof profile.brokerId | typeof profile.REDId;
-    type: "broker" | "red";
-    name: string;
-    slug: string;
-    status: "active" | "pending" | null;
-    isVerified: boolean;
-    description?: string;
-    website?: string;
-    contactEmail?: string;
-  }> = [];
+  const tenantOrgs = await tenants.listOrganizations(ctx as never, profile.authUserId);
+  const organizations = await Promise.all(
+    tenantOrgs.map(async (org) => {
+      const link = await findTenantOrgLinkByTenantOrgId(ctx, org._id);
+      if (!link) {
+        return null;
+      }
+      const ownerType = link.ownerType === "broker" ? "broker" as const : "red" as const;
+      const ownerRecord =
+        link.ownerType === "broker"
+          ? await ctx.db.get(link.ownerBrokerId!)
+          : await ctx.db.get(link.ownerREDId!);
+      return {
+        id: String(link.ownerType === "broker" ? link.ownerBrokerId : link.ownerREDId),
+        type: ownerType,
+        name: ownerRecord?.name ?? org.name,
+        slug: ownerRecord?.slug ?? org.slug,
+        status: (ownerRecord as any)?.status ?? null,
+        isVerified: (ownerRecord as any)?.isVerified === true,
+        description: (ownerRecord as any)?.description,
+        website: (ownerRecord as any)?.website,
+        contactEmail: (ownerRecord as any)?.contactEmail,
+      };
+    }),
+  );
 
-  if (profile?.brokerId) {
-    const broker = await ctx.db.get(profile.brokerId);
-    if (broker) {
-      organizations.push({
-        id: broker._id,
-        type: "broker",
-        name: broker.name,
-        slug: broker.slug,
-        status: broker.status ?? null,
-        isVerified: broker.isVerified === true,
-        description: broker.description,
-        website: broker.website,
-        contactEmail: broker.contactEmail,
-      });
-    }
-  }
-
-  if (profile?.REDId) {
-    const red = await ctx.db.get(profile.REDId);
-    if (red) {
-      organizations.push({
-        id: red._id,
-        type: "red",
-        name: red.name,
-        slug: red.slug,
-        status: red.status ?? null,
-        isVerified: red.isVerified === true,
-        description: red.description,
-        website: red.website,
-        contactEmail: red.contactEmail,
-      });
-    }
-  }
-
-  return organizations;
+  return organizations.filter((org): org is NonNullable<typeof org> => Boolean(org));
 }
 
 function slugifyOrganizationName(value: string) {
@@ -88,37 +73,6 @@ async function ensureUniqueOrganizationSlug(
   }
 
   return `${safeBase}-${crypto.randomUUID().slice(0, 6)}`;
-}
-
-async function reconcileOrganizationLinks(ctx: MutationCtx, profile: UserProfileRecord, now: number) {
-  let hasExistingOrganization = false;
-  const patch: Record<string, undefined | number> = {};
-
-  if (profile.brokerId) {
-    const broker = await ctx.db.get(profile.brokerId);
-    if (broker) {
-      hasExistingOrganization = true;
-    } else {
-      patch.brokerId = undefined;
-    }
-  }
-
-  if (profile.REDId) {
-    const red = await ctx.db.get(profile.REDId);
-    if (red) {
-      hasExistingOrganization = true;
-    } else {
-      patch.REDId = undefined;
-    }
-  }
-
-  if (Object.keys(patch).length > 0) {
-    patch.updatedAt = now;
-    await ctx.db.patch(profile._id, patch);
-    return { hasExistingOrganization, profile: { ...profile, ...patch } };
-  }
-
-  return { hasExistingOrganization, profile };
 }
 
 async function updateOrganizationForOwner(
@@ -176,7 +130,7 @@ async function updateOrganizationForOwner(
 /**
  * WHY:   Organization creation is the primary bootstrap path for users entering the workspace with no owner record yet.
  * WHAT:  Creates a broker or developer organization for the specified auth user and links the profile as manager.
- * HOW:   Reconciles stale owner links, blocks duplicates, creates the owner record, patches the profile, and ensures manager membership.
+ * HOW:   Ensures profile, creates broker/RED, creates tenant org, links, and patches the profile.
  */
 export async function createOrganizationForAuthUserRecord(
   ctx: MutationCtx,
@@ -186,6 +140,7 @@ export async function createOrganizationForAuthUserRecord(
     displayName?: string;
     name: string;
     type: "broker" | "red";
+    actorAuthUserId?: string;
   },
 ) {
   const now = Date.now();
@@ -207,10 +162,26 @@ export async function createOrganizationForAuthUserRecord(
     });
   }
 
-  if (profile) {
-    const reconciled = await reconcileOrganizationLinks(ctx, profile, now);
-    profile = reconciled.profile;
-    if (reconciled.hasExistingOrganization || profile.brokerId || profile.REDId) {
+  if (profile?.currentTenantOrgId) {
+    throw new ConvexError({
+      code: "ORGANIZATION_EXISTS",
+      message: "This account already has an organization",
+    });
+  }
+
+  if (profile?.brokerId) {
+    const existingBroker = await ctx.db.get(profile.brokerId);
+    if (existingBroker) {
+      throw new ConvexError({
+        code: "ORGANIZATION_EXISTS",
+        message: "This account already has an organization",
+      });
+    }
+  }
+
+  if (profile?.REDId) {
+    const existingRed = await ctx.db.get(profile.REDId);
+    if (existingRed) {
       throw new ConvexError({
         code: "ORGANIZATION_EXISTS",
         message: "This account already has an organization",
@@ -251,9 +222,26 @@ export async function createOrganizationForAuthUserRecord(
       contactEmail: args.email ?? profile.email,
     });
 
+    const tenantOrgId = await tenants.createOrganization(ctx as never, profile.authUserId, normalizedName, {
+      slug,
+      metadata: {
+        ownerType: "broker",
+        ownerBrokerId: String(brokerId),
+      },
+    });
+
+    await ctx.db.insert("tenantOrgLinks", {
+      tenantOrgId,
+      ownerType: "broker",
+      ownerBrokerId: brokerId,
+      createdAt: now,
+      updatedAt: now,
+    });
+
     await ctx.db.patch(profile._id, {
       brokerId,
       REDId: undefined,
+      currentTenantOrgId: tenantOrgId,
       role: "broker",
       requestedRole: "broker",
       roleStatus: "approved",
@@ -261,13 +249,36 @@ export async function createOrganizationForAuthUserRecord(
       updatedAt: now,
     });
 
-    await ensureOwnerManagerMembership(ctx, { ...profile, brokerId }, {
-      ownerType: "broker",
-      ownerBrokerId: brokerId,
-      authUserId: profile.authUserId,
+    const broker = await ctx.db.get(brokerId);
+
+    await auditLog.log(ctx, {
+      action: "organization.created",
+      actorId: args.actorAuthUserId ?? args.authUserId,
+      resourceType: "tenantOrganizations",
+      resourceId: tenantOrgId,
+      severity: "info",
+      metadata: {
+        ownerType: "broker",
+        ownerId: String(brokerId),
+        name: broker?.name ?? normalizedName,
+        slug,
+      },
+      tags: ["organizations", "create"],
     });
 
-    const broker = await ctx.db.get(brokerId);
+    await auditLog.log(ctx, {
+      action: "broker.created",
+      actorId: args.actorAuthUserId ?? args.authUserId,
+      resourceType: "brokers",
+      resourceId: brokerId,
+      severity: "info",
+      metadata: {
+        tenantOrgId,
+        name: broker?.name ?? normalizedName,
+        slug,
+      },
+      tags: ["organizations", "broker"],
+    });
     return {
       ok: true,
       organization: {
@@ -288,9 +299,26 @@ export async function createOrganizationForAuthUserRecord(
     contactEmail: args.email ?? profile.email,
   });
 
+  const tenantOrgId = await tenants.createOrganization(ctx as never, profile.authUserId, normalizedName, {
+    slug,
+    metadata: {
+      ownerType: "RED",
+      ownerREDId: String(redId),
+    },
+  });
+
+  await ctx.db.insert("tenantOrgLinks", {
+    tenantOrgId,
+    ownerType: "RED",
+    ownerREDId: redId,
+    createdAt: now,
+    updatedAt: now,
+  });
+
   await ctx.db.patch(profile._id, {
     REDId: redId,
     brokerId: undefined,
+    currentTenantOrgId: tenantOrgId,
     role: "developer",
     requestedRole: "developer",
     roleStatus: "approved",
@@ -298,13 +326,36 @@ export async function createOrganizationForAuthUserRecord(
     updatedAt: now,
   });
 
-  await ensureOwnerManagerMembership(ctx, { ...profile, REDId: redId }, {
-    ownerType: "RED",
-    ownerREDId: redId,
-    authUserId: profile.authUserId,
+  const red = await ctx.db.get(redId);
+
+  await auditLog.log(ctx, {
+    action: "organization.created",
+    actorId: args.actorAuthUserId ?? args.authUserId,
+    resourceType: "tenantOrganizations",
+    resourceId: tenantOrgId,
+    severity: "info",
+    metadata: {
+      ownerType: "red",
+      ownerId: String(redId),
+      name: red?.name ?? normalizedName,
+      slug,
+    },
+    tags: ["organizations", "create"],
   });
 
-  const red = await ctx.db.get(redId);
+  await auditLog.log(ctx, {
+    action: "red.created",
+    actorId: args.actorAuthUserId ?? args.authUserId,
+    resourceType: "RED",
+    resourceId: redId,
+    severity: "info",
+    metadata: {
+      tenantOrgId,
+      name: red?.name ?? normalizedName,
+      slug,
+    },
+    tags: ["organizations", "red"],
+  });
   return {
     ok: true,
     organization: {
@@ -319,7 +370,7 @@ export async function createOrganizationForAuthUserRecord(
 /**
  * WHY:   Backend gateways sometimes need to resolve organizations for another auth user directly.
  * WHAT:  Lists organizations linked to the provided auth user id.
- * HOW:   Loads the persisted profile and returns broker/developer summaries when the profile is active.
+ * HOW:   Loads the persisted profile and returns tenant-backed summaries when active.
  */
 export const listOrganizationsByAuthUserId = query({
   args: {
@@ -335,7 +386,7 @@ export const listOrganizationsByAuthUserId = query({
 /**
  * WHY:   Workspace bootstrapping needs the current user's linked organizations.
  * WHAT:  Lists organizations for the currently authenticated user.
- * HOW:   Resolves the persisted current profile and returns the linked organization summaries when active.
+ * HOW:   Resolves the persisted current profile and returns tenant-backed summaries when active.
  */
 export const listCurrentOrganizations = query({
   args: {},
@@ -361,7 +412,11 @@ export const createOrganizationForAuthUser = mutation({
     type: v.union(v.literal("broker"), v.literal("red")),
   },
   handler: async (ctx, args) => {
-    return createOrganizationForAuthUserRecord(ctx, args);
+    const actor = await requireSession(ctx);
+    return createOrganizationForAuthUserRecord(ctx, {
+      ...args,
+      actorAuthUserId: actor.authUserId,
+    });
   },
 });
 
@@ -381,6 +436,7 @@ export const createOrganizationForCurrentUser = mutation({
       authUserId: profile.authUserId,
       email: profile.email,
       displayName: profile.name,
+      actorAuthUserId: profile.authUserId,
       ...args,
     });
   },
@@ -389,7 +445,7 @@ export const createOrganizationForCurrentUser = mutation({
 /**
  * WHY:   Organization settings need one manager-gated mutation for editing the current owner's organization summary.
  * WHAT:  Updates the current organization name and returns the normalized summary DTO.
- * HOW:   Requires manager access, patches the owner record, and maps it into the stable response shape.
+ * HOW:   Requires manager access, updates tenants and broker/RED records, and maps to the stable response shape.
  */
 export const updateCurrentOrganization = mutation({
   args: {
@@ -399,7 +455,20 @@ export const updateCurrentOrganization = mutation({
     contactEmail: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { owner } = await requireManagerAccess(ctx);
+    const { owner, profile } = await requireManagerAccess(ctx);
+    if (!owner.tenantOrgId) {
+      throw new ConvexError({ code: "FORBIDDEN", message: "Tenant organization required" });
+    }
+
+    const [beforeTenantOrg, beforeOwnerRecord] = await Promise.all([
+      tenants.getOrganization(ctx as never, owner.tenantOrgId),
+      owner.ownerType === "broker" ? ctx.db.get(owner.ownerBrokerId) : ctx.db.get(owner.ownerREDId),
+    ]);
+
+    await tenants.updateOrganization(ctx as never, profile.authUserId, owner.tenantOrgId, {
+      name: args.name,
+    });
+
     const organization = await updateOrganizationForOwner(ctx, {
       owner,
       name: args.name,
@@ -410,6 +479,32 @@ export const updateCurrentOrganization = mutation({
     if (!organization) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Organization not found" });
     }
+
+    const afterTenantOrg = await tenants.getOrganization(ctx as never, owner.tenantOrgId);
+
+    await auditLog.logChange(ctx, {
+      action: "organization.updated",
+      actorId: profile.authUserId,
+      resourceType: "tenantOrganizations",
+      resourceId: owner.tenantOrgId,
+      before: beforeTenantOrg,
+      after: afterTenantOrg,
+      generateDiff: true,
+      severity: "info",
+      tags: ["organizations", "update"],
+    });
+
+    await auditLog.logChange(ctx, {
+      action: owner.ownerType === "broker" ? "broker.updated" : "red.updated",
+      actorId: profile.authUserId,
+      resourceType: owner.ownerType === "broker" ? "brokers" : "RED",
+      resourceId: getOwnerId(owner),
+      before: beforeOwnerRecord,
+      after: organization,
+      generateDiff: true,
+      severity: "info",
+      tags: ["organizations", owner.ownerType],
+    });
 
     return {
       id: getOwnerId(owner),

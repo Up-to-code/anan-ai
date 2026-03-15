@@ -5,16 +5,19 @@ import {
   normalizeDirectPair,
   normalizeEmail,
   normalizeUsername,
+  resolveTenantOrgIdForOwner,
   type AgenciesRepositoryCtx,
   type OwnerContext,
 } from "./core";
-import { getMembershipByOwnerAndAuthUserId, requireOrganizationMembership } from "./membership";
+import { requireOrganizationMembership } from "./membership";
 import { listTeamInvitesForOwner } from "./invites";
+import { tenants } from "../../../tenants";
 
 async function listOffersDirectoryProfilesForOwner(
   ctx: AgenciesRepositoryCtx,
   args: { owner: OwnerContext; role: "broker" | "developer"; currentAuthUserId: string },
 ) {
+  const tenantOrgId = await resolveTenantOrgIdForOwner(ctx, args.owner);
   const [profiles, invites] = await Promise.all([
     ctx.db
       .query("userProfiles")
@@ -50,7 +53,7 @@ async function listOffersDirectoryProfilesForOwner(
         return null;
       }
 
-      const existingMembership = await getMembershipByOwnerAndAuthUserId(ctx, args.owner, profile.authUserId);
+      const existingMembership = await tenants.getMember(ctx as never, tenantOrgId, profile.authUserId);
       const pendingInvite = invites.find(
         (invite) => invite.status === "pending" && normalizeEmail(invite.email) === normalizeEmail(profile.email ?? ""),
       );
@@ -69,7 +72,7 @@ async function listOffersDirectoryProfilesForOwner(
         role: isBroker ? "broker" : "developer",
         organizationName: organization.name,
         organizationSlug: organization.slug,
-        membershipState: existingMembership?.status === "active"
+        membershipState: (existingMembership?.status ?? "active") === "active"
           ? "member"
           : pendingInvite
             ? "pending-invite"
@@ -115,6 +118,7 @@ export const searchOrganizationDirectoryExact = query({
   },
   handler: async (ctx, args) => {
     const current = await requireOrganizationMembership(ctx);
+    const tenantOrgId = await resolveTenantOrgIdForOwner(ctx, current.owner);
     const normalized = args.query.trim();
     if (!normalized) {
       return [];
@@ -140,7 +144,7 @@ export const searchOrganizationDirectoryExact = query({
       return [];
     }
 
-    const existingMembership = await getMembershipByOwnerAndAuthUserId(ctx, current.owner, profile.authUserId);
+    const existingMembership = await tenants.getMember(ctx as never, tenantOrgId, profile.authUserId);
     const invites = await listTeamInvitesForOwner(ctx, current.owner);
     const pendingInvite = invites.find((invite) => invite.status === "pending" && normalizeEmail(invite.email) === normalizeEmail(profile.email ?? ""));
     const directKey = normalizeDirectPair(current.profile.authUserId, profile.authUserId);
@@ -155,7 +159,7 @@ export const searchOrganizationDirectoryExact = query({
       email: profile.email ?? "",
       name: profile.name ?? profile.email ?? "مستخدم أنان",
       username: profile.username,
-      membershipState: existingMembership?.status === "active"
+      membershipState: (existingMembership?.status ?? "active") === "active"
         ? "member"
         : pendingInvite
           ? "pending-invite"
