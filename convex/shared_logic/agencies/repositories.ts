@@ -10,6 +10,7 @@ export {
   createTeamInviteForCurrentUser,
   createTeamInviteForOwner,
   listCurrentOrganizations,
+  getCurrentOrganization,
   listCurrentTeamInvites,
   listCurrentTeamMembers,
   listIncomingTeamInvitesForCurrentUser,
