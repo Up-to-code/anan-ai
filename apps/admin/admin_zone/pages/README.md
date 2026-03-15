@@ -7,3 +7,4 @@
 - `OrdersPage/` manages deal/order status progression.
 - `KnowledgePage/` manages knowledge pages feeding the agent.
 - `DiagnosticsPage/` renders system health and failure telemetry.
+- `OAuthAuthorizePage/` handles admin OAuth consent flows.

@@ -8,6 +8,7 @@ import {
 } from "./constants";
 import { parseBasicAuth, randomToken, sha256Base64Url, sha256Hex } from "./crypto";
 import { getJwks, getOAuthIssuer, signJwt, verifyJwt } from "./jwt";
+import { parseOAuthSourceApp, resolveOAuthConsentBaseUrl } from "./consentRouting";
 
 const oauthInternal = internalRefs["shared_logic/oauth/internal"];
 
@@ -26,12 +27,8 @@ function formValue(params: URLSearchParams, key: string) {
   return value?.trim() || undefined;
 }
 
-function getWebBaseUrl(request: Request) {
-  return (
-    process.env.ANAN_WEB_URL?.trim() ??
-    process.env.SITE_URL?.trim() ??
-    new URL(request.url).origin
-  );
+function getRequestedSourceApp(url: URL) {
+  return parseOAuthSourceApp(url.searchParams.get("app") ?? url.searchParams.get("source"));
 }
 
 function getTokenFromRequest(request: Request) {
@@ -124,12 +121,14 @@ export const handleAuthorize = httpAction(async (ctx, request) => {
       codeChallenge,
       codeChallengeMethod: "S256",
     });
+    const sourceApp = getRequestedSourceApp(url) ?? "web";
     const flow = await ctx.runMutation(oauthInternal.createAuthorizationFlow, {
       ...validated,
+      sourceApp,
       expiresAt: Date.now() + FLOW_STATE_TTL_MS,
       now: Date.now(),
     });
-    const consentUrl = new URL("/oauth/authorize", getWebBaseUrl(request));
+    const consentUrl = new URL("/oauth/authorize", resolveOAuthConsentBaseUrl(request, sourceApp));
     consentUrl.searchParams.set("flow", String(flow.flowId));
     return Response.redirect(consentUrl.toString(), 302);
   } catch (error) {

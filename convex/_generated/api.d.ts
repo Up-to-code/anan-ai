@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as _core_oauth_consentRouting from "../_core/oauth/consentRouting.js";
 import type * as _core_oauth_constants from "../_core/oauth/constants.js";
 import type * as _core_oauth_crypto from "../_core/oauth/crypto.js";
 import type * as _core_oauth_http from "../_core/oauth/http.js";
@@ -215,6 +216,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  "_core/oauth/consentRouting": typeof _core_oauth_consentRouting;
   "_core/oauth/constants": typeof _core_oauth_constants;
   "_core/oauth/crypto": typeof _core_oauth_crypto;
   "_core/oauth/http": typeof _core_oauth_http;
