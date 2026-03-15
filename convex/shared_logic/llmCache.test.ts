@@ -53,7 +53,7 @@ describe("llm cache", () => {
   });
 
   it("returns cached response without calling generateText", async () => {
-    mockLookup.mockResolvedValueOnce({ response: { text: "cached" } });
+    mockLookup.mockResolvedValueOnce({ response: { text: "cached" } } as any);
 
     const result = await cachedGenerateText(
       {} as any,

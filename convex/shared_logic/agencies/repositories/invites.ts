@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import { mutation, query } from "../../../_generated/server";
+import { mutation, query, type MutationCtx } from "../../../_generated/server";
 import { requireCurrentProfile } from "../../lib/profile";
 import {
   buildOwnerContext,
@@ -47,7 +47,7 @@ async function listTeamInvitesForOwnerInternal(ctx: AgenciesRepositoryCtx, owner
       status: invite.status === "cancelled" ? "canceled" : (invite.status as "pending" | "accepted" | "canceled"),
       token: invite._id,
       expiresAt: invite.expiresAt,
-      acceptedAt: invite.acceptedAt ?? undefined,
+      acceptedAt: invite.status === "accepted" ? invite._creationTime : undefined,
     }));
 }
 
@@ -78,7 +78,7 @@ export const listTeamInvitesByOwner = query({
 });
 
 async function createTeamInviteForOwnerRecord(
-  ctx: AgenciesRepositoryCtx,
+  ctx: MutationCtx,
   args: {
     owner: OwnerContext;
     email: string;
@@ -285,7 +285,10 @@ export const cancelIncomingTeamInviteForCurrentUser = mutation({
   handler: async (ctx, args) => {
     const profile = await requireCurrentProfile(ctx);
     const invitation = await tenants.getInvitation(ctx as never, args.inviteId);
-    await tenants.declineInvitation(ctx as never, args.inviteId, profile.authUserId);
+    if (!invitation) {
+      throw new ConvexError({ code: "NOT_FOUND", message: "Invitation not found" });
+    }
+    await tenants.cancelInvitation(ctx as never, invitation.inviterId, args.inviteId);
 
     await auditLog.log(ctx, {
       action: "invitation.declined",
@@ -309,7 +312,7 @@ export const cancelIncomingTeamInviteForCurrentUser = mutation({
  * HOW:   Delegates to tenants invitation acceptance using the invitation id.
  */
 export async function acceptInviteForAuthUserRecord(
-  ctx: AgenciesRepositoryCtx,
+  ctx: MutationCtx,
   args: { authUserId: string; token: string },
 ) {
   const invitation = await tenants.getInvitation(ctx as never, args.token);

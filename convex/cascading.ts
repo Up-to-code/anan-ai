@@ -1,5 +1,5 @@
 import { CascadingDelete, defineCascadeRules, makeBatchDeleteHandler } from "@00akshatsinha00/convex-cascading-delete";
-import { internalMutation } from "./_generated/server";
+import { mutation } from "./_generated/server";
 import { components } from "./_generated/api";
 
 /**
@@ -33,6 +33,6 @@ export const cascadingDelete = new CascadingDelete(components.cascadingDelete, {
  * HOW:   Uses the component-provided batch handler factory.
  */
 export const _cascadeBatchHandler = makeBatchDeleteHandler(
-  internalMutation,
+  mutation,
   components.cascadingDelete,
-);
+) as ReturnType<typeof mutation>;

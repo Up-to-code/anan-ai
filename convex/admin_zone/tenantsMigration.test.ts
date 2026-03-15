@@ -27,14 +27,14 @@ vi.mock("../_core/security/accessPolicy", () => ({
 function stubRandomUUID() {
   const original = globalThis.crypto?.randomUUID;
   if (!globalThis.crypto) {
-    // @ts-expect-error - test shim
+    // @ts-ignore - test shim
     globalThis.crypto = {};
   }
-  // @ts-expect-error - test shim
+  // @ts-ignore - test shim
   globalThis.crypto.randomUUID = () => "test-uuid";
   return () => {
     if (original) {
-      // @ts-expect-error - test shim
+      // @ts-ignore - test shim
       globalThis.crypto.randomUUID = original;
     }
   };
@@ -126,10 +126,10 @@ describe("tenants migration", () => {
       } as any);
     });
 
-    const result = await t.mutation(
+    const result = (await t.mutation(
       apiRefs["admin_zone/tenantsMigration"].migrateTenantsFromLegacy as never,
       { dryRun: true } as never,
-    );
+    )) as any;
 
     const tenantOrgLinks = await t.run(async (ctx) => ctx.db.query("tenantOrgLinks").collect());
     const profiles = await t.run(async (ctx) => ctx.db.query("userProfiles").collect());
@@ -210,10 +210,10 @@ describe("tenants migration", () => {
       } as any);
     });
 
-    const result = await t.mutation(
+    const result = (await t.mutation(
       apiRefs["admin_zone/tenantsMigration"].migrateTenantsFromLegacy as never,
       {} as never,
-    );
+    )) as any;
 
     const tenantOrgLinks = await t.run(async (ctx) => ctx.db.query("tenantOrgLinks").collect());
     const profiles = await t.run(async (ctx) => ctx.db.query("userProfiles").collect());

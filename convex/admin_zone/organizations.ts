@@ -3,7 +3,7 @@ import { ConvexError, v } from "convex/values";
 import { requireRole } from "../_core/security/accessPolicy";
 import { tenants } from "../tenants";
 import { cascadingDelete } from "../cascading";
-import { internal } from "../_generated/api";
+import { api } from "../_generated/api";
 import { auditLog } from "../auditLog";
 
 function buildOrganizationKey(ownerType: "broker" | "red", id: string) {
@@ -680,7 +680,7 @@ export const deleteBrokerOrganization = mutation({
     const access = await requireRole(ctx, ["admin"]);
     const broker = await ctx.db.get(args.brokerId);
     const result = await cascadingDelete.deleteWithCascadeBatched(ctx, "brokers", args.brokerId, {
-      batchHandlerRef: internal.cascading._cascadeBatchHandler,
+      batchHandlerRef: api.cascading._cascadeBatchHandler,
       batchSize: 2000,
     });
 
@@ -711,7 +711,7 @@ export const deleteDeveloperOrganization = mutation({
     const access = await requireRole(ctx, ["admin"]);
     const red = await ctx.db.get(args.redId);
     const result = await cascadingDelete.deleteWithCascadeBatched(ctx, "RED", args.redId, {
-      batchHandlerRef: internal.cascading._cascadeBatchHandler,
+      batchHandlerRef: api.cascading._cascadeBatchHandler,
       batchSize: 2000,
     });
 

@@ -44,8 +44,8 @@ async function mapMembershipRecord(
     profileId: profile._id,
     role: normalizeTenantRole(member.role),
     status: (member.status ?? "active") === "active" ? "active" : "inactive",
-    createdAt: member.createdAt ?? Date.now(),
-    updatedAt: member.updatedAt ?? member.createdAt ?? Date.now(),
+    createdAt: member.joinedAt ?? member._creationTime ?? Date.now(),
+    updatedAt: member.joinedAt ?? member._creationTime ?? Date.now(),
   };
 }
 

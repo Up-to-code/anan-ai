@@ -276,7 +276,7 @@ describe("acceptInviteForAuthUserRecord", () => {
       role: "member",
       status: "pending",
       expiresAt: Date.now() + 60_000,
-    });
+    } as any);
 
     await acceptInviteForAuthUserRecord(ctx, {
       authUserId: "auth-user-1",

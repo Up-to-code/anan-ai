@@ -28,7 +28,9 @@ const tenantsApi = makeTenantsAPI(components.tenants, {
   getUser: async (ctx, userId) => {
     const profile = await ctx.db
       .query("userProfiles")
-      .withIndex("authUserId", (q) => q.eq("authUserId", userId))
+      .withIndex("authUserId", (q: { eq: (field: string, value: string) => unknown }) =>
+        q.eq("authUserId", userId),
+      )
       .first();
     if (!profile) return null;
     return { name: profile.name ?? undefined, email: profile.email ?? undefined };
@@ -173,14 +175,12 @@ export const listInvitations = tenantsApi.listInvitations;
  * WHAT:  Lists pending tenant invitations.
  * HOW:   Delegates to the tenants API instance.
  */
-export const listPendingInvitations = tenantsApi.listPendingInvitations;
-
 /**
- * WHY:   Users need their own invite inbox.
- * WHAT:  Lists invitations for the current user.
- * HOW:   Delegates to the tenants API instance.
+ * WHY:   Invite inbox views need pending invitations for an identifier.
+ * WHAT:  Lists pending invitations for a given identifier (email/user).
+ * HOW:   Delegates to the tenants API pending invitations query.
  */
-export const listUserInvitations = tenantsApi.listUserInvitations;
+export const listPendingInvitations = tenantsApi.getPendingInvitations;
 
 /**
  * WHY:   Invite acceptance must write membership.
@@ -188,13 +188,6 @@ export const listUserInvitations = tenantsApi.listUserInvitations;
  * HOW:   Delegates to the tenants API instance.
  */
 export const acceptInvitation = tenantsApi.acceptInvitation;
-
-/**
- * WHY:   Users can decline invitations.
- * WHAT:  Declines a tenant invitation.
- * HOW:   Delegates to the tenants API instance.
- */
-export const declineInvitation = tenantsApi.declineInvitation;
 
 /**
  * WHY:   Org teams need their own listing.

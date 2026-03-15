@@ -7,7 +7,6 @@ export {
   updateCurrentOrganization,
 } from "./organization";
 export {
-  getCurrentOrganization,
   listTeamMembersByOwner,
   listCurrentTeamMembers,
   updateMembershipRoleForCurrentUser,

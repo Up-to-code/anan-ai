@@ -105,7 +105,7 @@ async function buildTenantMembershipRows(
 ): Promise<TenantMembershipRow[]> {
   const rows = await Promise.all(
     tenantLinks.map(async (link) => {
-      const ownerType = link.ownerType === "broker" ? "broker" : "red";
+      const ownerType: TenantMembershipRow["ownerType"] = link.ownerType === "broker" ? "broker" : "red";
       const ownerId = link.ownerType === "broker" ? link.ownerBrokerId : link.ownerREDId;
       if (!ownerId) return [];
 
