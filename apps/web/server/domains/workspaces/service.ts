@@ -39,11 +39,15 @@ async function loadWorkspaceState(
 ): Promise<{
   session: ResolvedSession;
   organizations: OrganizationSummary[];
+  currentOrganization: OrganizationSummary | null;
 }> {
   const session = await dependencies.requireSession();
-  const organizations = await dependencies.organizationsRepository.listForCurrentUser(session.token);
+  const [organizations, currentOrganization] = await Promise.all([
+    dependencies.organizationsRepository.listForCurrentUser(session.token),
+    dependencies.organizationsRepository.getCurrentOrganization(session.token),
+  ]);
 
-  return { session, organizations };
+  return { session, organizations, currentOrganization: currentOrganization?.organization ?? null };
 }
 
 const loadWorkspaceStateCached = cache(async () => loadWorkspaceState(defaultDependencies));
@@ -56,11 +60,14 @@ const loadWorkspaceStateCached = cache(async () => loadWorkspaceState(defaultDep
 export async function getWorkspaceBehaviorForCurrentUser(
   dependencies: WorkspacesServiceDependencies = defaultDependencies,
 ): Promise<WorkspaceBehavior> {
-  const { session, organizations } =
+  const { session, organizations, currentOrganization } =
     dependencies === defaultDependencies
       ? await loadWorkspaceStateCached()
       : await loadWorkspaceState(dependencies);
-  const primaryOrganization = organizations[0] ?? null;
+  const primaryOrganization = currentOrganization ?? organizations[0] ?? null;
+  const orderedOrganizations = primaryOrganization
+    ? [primaryOrganization, ...organizations.filter((org) => org.id !== primaryOrganization.id)]
+    : organizations;
   const audience = resolveWorkspaceAudience({
     role: session.context.role,
     organizationType: primaryOrganization?.type,
@@ -72,7 +79,7 @@ export async function getWorkspaceBehaviorForCurrentUser(
     user: toSessionUser(session.context),
     session: session.context,
     profile: session.profile,
-    organizations,
+    organizations: orderedOrganizations,
     primaryOrganization,
     audience,
     ownerContext: getOrganizationOwnerContext(primaryOrganization),

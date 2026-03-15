@@ -38,6 +38,7 @@ describe("workspaces domain service", () => {
           isVerified: false,
         },
       ]),
+      getCurrentOrganization: vi.fn(async () => null),
       createForUser: vi.fn(),
       listTeamMembers: vi.fn(),
       listTeamInvites: vi.fn(),
@@ -91,6 +92,7 @@ describe("workspaces domain service", () => {
           isVerified: true,
         },
       ]),
+      getCurrentOrganization: vi.fn(async () => null),
       createForUser: vi.fn(),
       listTeamMembers: vi.fn(),
       listTeamInvites: vi.fn(),
@@ -135,6 +137,7 @@ describe("workspaces domain service", () => {
           isVerified: true,
         },
       ]),
+      getCurrentOrganization: vi.fn(async () => null),
       createForUser: vi.fn(),
       listTeamMembers: vi.fn(),
       listTeamInvites: vi.fn(),
@@ -167,6 +170,7 @@ describe("workspaces domain service", () => {
     }));
     const organizationsRepository = {
       listForCurrentUser: vi.fn(async () => []),
+      getCurrentOrganization: vi.fn(async () => null),
       createForUser: vi.fn(),
       listTeamMembers: vi.fn(),
       listTeamInvites: vi.fn(),
@@ -184,5 +188,71 @@ describe("workspaces domain service", () => {
     expect(behavior.audience).toBe("developer");
     expect(behavior.onboarding.needsOrganization).toBe(true);
     expect(behavior.onboarding.suggestedOrganizationType).toBe("red");
+  });
+
+  it("prefers the current organization when available", async () => {
+    const requireSession = vi.fn(async () => ({
+      token: "token-4",
+      context: {
+        userId: "user-4",
+        name: "Laila",
+        email: "laila@example.com",
+        role: "broker",
+        brokerId: "broker-2",
+        isActive: true,
+      },
+      profile: {
+        role: "broker",
+        roleStatus: "approved",
+        brokerId: "broker-2",
+      },
+    }));
+    const organizationsRepository = {
+      listForCurrentUser: vi.fn(async () => [
+        {
+          id: "broker-1",
+          type: "broker" as const,
+          name: "Legacy Org",
+          slug: "legacy-org",
+          status: "active" as const,
+          isVerified: true,
+        },
+      ]),
+      getCurrentOrganization: vi.fn(async () => ({
+        organization: {
+          id: "broker-2",
+          type: "broker" as const,
+          name: "Primary Org",
+          slug: "primary-org",
+          status: "active" as const,
+          isVerified: true,
+        },
+        membership: {
+          id: "member-1",
+          ownerType: "broker" as const,
+          ownerId: "broker-2",
+          authUserId: "user-4",
+          profileId: "profile-4",
+          role: "manager" as const,
+          status: "active" as const,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        },
+      })),
+      createForUser: vi.fn(),
+      listTeamMembers: vi.fn(),
+      listTeamInvites: vi.fn(),
+      createTeamInvite: vi.fn(),
+      cancelTeamInvite: vi.fn(),
+      acceptTeamInvite: vi.fn(),
+    };
+
+    const behavior = await getWorkspaceBehaviorForCurrentUser({
+      requireSession,
+      organizationsRepository,
+    });
+
+    expect(behavior.primaryOrganization?.id).toBe("broker-2");
+    expect(behavior.organizations[0]?.id).toBe("broker-2");
   });
 });
