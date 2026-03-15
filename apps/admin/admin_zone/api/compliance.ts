@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
-import { requireAdminPageSession, requireAdminSession } from "@/lib/serverSession";
+import { requireAdminPageSession } from "@/lib/serverSession";
+import { requireAdminSession } from "@/server/auth/guards";
 import { convexAdminComplianceRepository } from "@/server/infrastructure/convex/adminComplianceRepository";
 
 /**
