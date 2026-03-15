@@ -23,6 +23,7 @@ AI logic must be auditable, scoped, and testable.
 - context assembly (`services/*`),
 - multi-agent runtime (`agents/core/*`),
 - the `anan` orchestrator (`agents/anan/*`),
+- the `anan_workspace` orchestrator (`agents/anan_workspace/*`),
 - specialized agent teams (`agents/team_*/*`),
 - shared AI helpers (`agents/shared/*`),
 - channel adapters (`channels/*`).
@@ -76,6 +77,7 @@ Rule: persistence must be done in the service layer, not in UI, not in webhook h
 - Entry controller: `convex/ai_zone/assistant.ts`
 - Context assembly: `convex/ai_zone/services/assistantService.ts`
 - Orchestrator: `convex/ai_zone/agents/anan/*`
+- Workspace Orchestrator: `convex/ai_zone/agents/anan_workspace/*`
 - Team agents/tools: `convex/ai_zone/agents/team_*/*`
 - Channel adapters: `convex/ai_zone/channels/*` (see `channels.md`)
 
@@ -87,4 +89,3 @@ Rule: persistence must be done in the service layer, not in UI, not in webhook h
 - Blending deterministic mobile assistant logic into orchestrated runtime without a deliberate migration.
 - Logging user prompts/PII.
 - Creating agent tools that bypass access checks (tools must enforce ownership).
-

@@ -13,6 +13,6 @@ Property matching, comparison, analysis, and personalized recommendations.
 Available to: **User**, **Broker**, **RED**, **Admin**
 
 ## How to Edit
-- To change matching logic → edit `anan_property/config.ts` instructions
-- To change recommendation criteria → edit `anan_recommender/config.ts`
+- To change matching logic → edit `convex/ai_zone/agents/anan/orchestrationConfig.ts`
+- To change recommendation criteria → edit `convex/ai_zone/agents/anan/orchestrationConfig.ts`
 - To add new property analysis tools → create in `anan_property/tools/`

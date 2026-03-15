@@ -9,6 +9,8 @@
 import type { ActionCtx } from "../../_generated/server";
 import type { Tool } from "ai";
 
+export type OrchestratorId = "anan" | "anan_workspace";
+
 export type AgentRuntimeContext = {
   /** User message */
   prompt: string;
@@ -16,6 +18,8 @@ export type AgentRuntimeContext = {
   context?: string;
   /** User ID for caching/memory */
   userId: string;
+  /** Which orchestrator is running this agent */
+  orchestratorId: OrchestratorId;
   /** Optional thread ID for per-thread caching */
   threadId?: string;
   /** Channel for analytics/caching */

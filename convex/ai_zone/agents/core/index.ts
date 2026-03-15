@@ -3,3 +3,4 @@ export * from "./promptPolicy";
 export * from "./toolRegistry";
 export * from "./BaseConfiguredAgent";
 export * from "./AgentFactory";
+export * from "./registry";

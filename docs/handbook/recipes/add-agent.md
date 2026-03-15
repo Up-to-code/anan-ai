@@ -16,9 +16,10 @@ The AI system is multi-agent and team-based. Adding a new agent must not:
 
 Step-by-step for adding an agent under:
 
-`convex/ai_zone/agents/team_*/`
+`convex/ai_zone/agents/team_*/` (public)
+`convex/ai_zone/agents/team_workspace_*/` (partner workspace)
 
-and registering it in the orchestrator registry.
+and registering it in the appropriate orchestrator config.
 
 ---
 
@@ -29,7 +30,8 @@ and registering it in the orchestrator registry.
    - If not, create a new team folder deliberately.
 
 2. **Create the agent folder**
-   - `convex/ai_zone/agents/team_<team>/<agentName>/`
+   - Public: `convex/ai_zone/agents/team_<team>/<agentName>/`
+   - Workspace: `convex/ai_zone/agents/team_workspace_<team>/<agentName>/`
    - Define config and prompt policy consistent with the team.
 
 3. **Add or reuse tools**
@@ -37,7 +39,8 @@ and registering it in the orchestrator registry.
    - Tools must enforce access/ownership when reading data.
 
 4. **Register the agent**
-   - Add to `convex/ai_zone/agents/anan/teamRegistry.ts`.
+   - Public: add to `convex/ai_zone/agents/anan/orchestrationConfig.ts`.
+   - Workspace: add to `convex/ai_zone/agents/anan_workspace/orchestrationConfig.ts`.
    - Ensure the orchestrator can dispatch it by intent/role.
 
 5. **Wire shared helpers**
@@ -53,4 +56,3 @@ and registering it in the orchestrator registry.
 - Calling tools directly from the orchestrator instead of from the agent.
 - Adding a tool that scans large tables without indexes.
 - Logging full prompt context.
-

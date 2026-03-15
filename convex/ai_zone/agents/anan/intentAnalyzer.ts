@@ -17,6 +17,7 @@ import type { ActionCtx } from "../../../_generated/server";
 import { getChatModel } from "../../../shared_logic/lib/providers";
 import { cachedGenerateText } from "../../../shared_logic/llmCache";
 import { getAgentLLMConfigSafe } from "../config";
+import type { OrchestratorId } from "../types";
 
 /**
  * WHY:   Platform questions require the dedicated platform agent to avoid noisy routing.
@@ -104,10 +105,12 @@ export async function analyzeIntent(
     prompt: string,
     availableTeams: string[],
     modelOverride?: string,
+    orchestratorId: OrchestratorId = "anan",
 ): Promise<string[]> {
     try {
-        const model = getChatModel(modelOverride);
-        const modelName = modelOverride ?? getAgentLLMConfigSafe()?.model ?? "unknown";
+        const model = getChatModel(modelOverride, orchestratorId);
+        const modelName =
+            modelOverride ?? getAgentLLMConfigSafe(orchestratorId)?.model ?? "unknown";
         const { text } = await cachedGenerateText(
             ctx,
             {
@@ -132,7 +135,12 @@ Always include "team_knowledge" for context. Never include "team_trainer" (it ru
             },
             {
                 modelName,
-                tags: ["intent", "anan_orchestrator"],
+                tags: [
+                    "intent",
+                    orchestratorId === "anan_workspace"
+                        ? "anan_workspace_orchestrator"
+                        : "anan_orchestrator",
+                ],
                 metadata: {
                     availableTeamsCount: availableTeams.length,
                 },

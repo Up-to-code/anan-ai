@@ -36,7 +36,7 @@ function notifyAssistantThreadsChanged() {
 
 /**
  * WHY:   The workspace assistant needs one local state machine for thread selection, optimistic replies, and list refreshes.
- * WHAT:  Exposes thread state plus actions to select a thread, start a fresh one, and send messages through the Anan Pro API.
+ * WHAT:  Exposes thread state plus actions to select a thread, start a fresh one, and send messages through the Anan Workspace API.
  * HOW:   Uses optimistic local updates for message sends, re-fetches the durable thread list after changes, and mirrors the active thread in the URL query string.
  */
 export function useWorkspaceAssistant({

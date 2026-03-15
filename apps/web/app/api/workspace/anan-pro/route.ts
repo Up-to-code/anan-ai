@@ -5,7 +5,7 @@ import { DomainError, toErrorResponse } from "@/server/contracts/errors";
 import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
 
 /**
- * WHY:   The workspace assistant view needs one gateway endpoint for listing or loading Anan Pro threads.
+ * WHY:   The workspace assistant view needs one gateway endpoint for listing or loading Anan Workspace threads.
  * WHAT:  Returns either the current thread or the current user's thread list based on query params.
  * HOW:   Reads `threadId` and `list` from the request URL, delegates to the domain service, and normalizes failures.
  */
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * WHY:   Thread replies should be sent through one gateway-owned action instead of calling Convex directly from the client.
- * WHAT:  Validates and sends one Anan Pro message, returning the created message/thread payload.
+ * WHAT:  Validates and sends one Anan Workspace message, returning the created message/thread payload.
  * HOW:   Parses the JSON body with the shared schema, then delegates to the domain service with normalized error handling.
  */
 export async function POST(request: Request) {

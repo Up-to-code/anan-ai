@@ -8,6 +8,7 @@ import type { QueryCtx, ActionCtx } from "../../_generated/server";
 import type { Id, Doc } from "../../_generated/dataModel";
 import { ConvexError } from "convex/values";
 import { orchestrate } from "../agents/anan";
+import { orchestrate as orchestrateWorkspace } from "../agents/anan_workspace";
 import { apiRefs, internalRefs } from "../../shared_logic/lib/generatedApiRefs";
 import {
     findProfileForResolvedIdentity,
@@ -63,14 +64,20 @@ export async function resolveAssistantOwnerSafe(ctx: QueryCtx): Promise<Assistan
 export async function getLatestThread(
     ctx: QueryCtx,
     userId: string,
-    assistantKind?: "default" | "anan_pro",
+    assistantKind?: "default" | "anan_workspace" | "anan_pro",
 ): Promise<Doc<"assistantThreads"> | null> {
     const threads = await ctx.db
         .query("assistantThreads")
         .withIndex("userId", (q: any) => q.eq("userId", userId))
         .collect();
-    const filtered = assistantKind
-        ? threads.filter((thread) => (thread.assistantKind ?? "default") === assistantKind)
+    const acceptedKinds =
+        assistantKind === "anan_workspace"
+            ? ["anan_workspace", "anan_pro"]
+            : assistantKind
+              ? [assistantKind]
+              : null;
+    const filtered = acceptedKinds
+        ? threads.filter((thread) => acceptedKinds.includes(thread.assistantKind ?? "default"))
         : threads;
     if (filtered.length === 0) return null;
     return filtered.sort((a, b) => b.updatedAt - a.updatedAt)[0];
@@ -82,7 +89,7 @@ export async function getLatestThread(
 export async function listRecentThreads(
     ctx: QueryCtx,
     userId: string,
-    assistantKind?: "default" | "anan_pro",
+    assistantKind?: "default" | "anan_workspace" | "anan_pro",
     limit = 6,
 ) {
     const threads = await ctx.db
@@ -91,7 +98,15 @@ export async function listRecentThreads(
         .collect();
 
     return threads
-        .filter((thread) => !assistantKind || (thread.assistantKind ?? "default") === assistantKind)
+        .filter((thread) => {
+            if (!assistantKind) return true;
+            if (assistantKind === "anan_workspace") {
+                return ["anan_workspace", "anan_pro"].includes(
+                    thread.assistantKind ?? "default",
+                );
+            }
+            return (thread.assistantKind ?? "default") === assistantKind;
+        })
         .sort((a, b) => b.updatedAt - a.updatedAt)
         .slice(0, limit);
 }
@@ -104,13 +119,20 @@ export async function listThreadMessages(
     ctx: QueryCtx,
     owner: AssistantOwner,
     threadId?: Id<"assistantThreads">,
-    assistantKind?: "default" | "anan_pro",
+    assistantKind?: "default" | "anan_workspace" | "anan_pro",
 ) {
     const thread = threadId
         ? await ctx.db.get(threadId)
         : await getLatestThread(ctx, owner.userId, assistantKind);
     if (!thread || thread.userId !== owner.userId) return [];
-    if (assistantKind && (thread.assistantKind ?? "default") !== assistantKind) return [];
+    if (assistantKind) {
+        if (assistantKind === "anan_workspace") {
+            const kind = thread.assistantKind ?? "default";
+            if (kind !== "anan_workspace" && kind !== "anan_pro") return [];
+        } else if ((thread.assistantKind ?? "default") !== assistantKind) {
+            return [];
+        }
+    }
     return ctx.db
         .query("assistantMessages")
         .withIndex("threadId", (q) => q.eq("threadId", thread._id))
@@ -143,7 +165,7 @@ export async function handleAssistantMessage(
     args: {
         message: string;
         threadId?: Id<"assistantThreads">;
-        assistantKind?: "default" | "anan_pro";
+        assistantKind?: "default" | "anan_workspace" | "anan_pro";
         orchestratorName?: string;
         promptPrefix?: string;
     },
@@ -156,8 +178,8 @@ export async function handleAssistantMessage(
 }> {
     // 1. Resolve thread & owner via query
     const { thread, owner } = await ctx.runQuery(
-        (args.assistantKind === "anan_pro"
-            ? apiRefs["ai_zone/assistantPro"].getThread
+        (args.assistantKind === "anan_workspace" || args.assistantKind === "anan_pro"
+            ? apiRefs["ai_zone/assistantWorkspace"].getThread
             : apiRefs["ai_zone/assistant"].getThread),
         {},
     );
@@ -199,7 +221,17 @@ export async function handleAssistantMessage(
     };
 
     // 6. Run the multi-agent orchestrator
-    const result = await orchestrate({
+    const result = (args.assistantKind === "anan_workspace" || args.assistantKind === "anan_pro"
+        ? await orchestrateWorkspace({
+            ctx,
+            prompt: basePrompt,
+            role: roleMap[owner.ownerType] ?? "user",
+            userId: owner.userId,
+            threadId: (args.threadId ?? thread?._id) as string | undefined,
+            ragContext: knowledgeContext || undefined,
+            channel: "app",
+        })
+        : await orchestrate({
         ctx,
         prompt: basePrompt,
         role: roleMap[owner.ownerType] ?? "user",
@@ -207,9 +239,9 @@ export async function handleAssistantMessage(
         threadId: (args.threadId ?? thread?._id) as string | undefined,
         ragContext: knowledgeContext || undefined,
         channel: "app",
-    });
+    }));
 
-    const assistantUiTurn = args.assistantKind === "anan_pro"
+    const assistantUiTurn = args.assistantKind === "anan_workspace" || args.assistantKind === "anan_pro"
         ? resolveWorkspaceAgUiTurn(args.message, result.output)
         : null;
 
@@ -256,7 +288,7 @@ export async function saveConversationStep(
         assistantMessage: string;
         assistantMetadata?: Record<string, unknown>;
         mode: "qa" | "action";
-        assistantKind?: "default" | "anan_pro";
+        assistantKind?: "default" | "anan_workspace" | "anan_pro";
         orchestratorName?: string;
     },
 ) {

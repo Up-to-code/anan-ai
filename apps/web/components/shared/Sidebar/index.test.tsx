@@ -45,7 +45,7 @@ describe("Sidebar", () => {
     expect(markup).toContain("/ws/inbox");
     expect(markup).toContain("data-slot=\"workspace-sidebar-desktop\"");
     expect(markup).not.toContain("Alpha Dev");
-    expect(markup).toContain("مساعد Anan Pro");
+    expect(markup).toContain("مساعد Anan Workspace");
     expect(markup).not.toContain("ANAN");
     expect(markup).not.toContain("Institutional");
   });

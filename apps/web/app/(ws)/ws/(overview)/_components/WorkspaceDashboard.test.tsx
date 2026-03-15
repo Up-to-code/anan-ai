@@ -64,7 +64,7 @@ describe("WorkspaceDashboard", () => {
       <WorkspaceDashboard
         initialThread={{
           id: "thread-1",
-          title: "anan pro",
+          title: "anan workspace",
           messages: [
             {
               id: "message-1",

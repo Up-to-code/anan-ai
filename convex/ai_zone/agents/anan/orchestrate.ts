@@ -68,11 +68,11 @@ export async function orchestrate(
         channel,
     } = input;
 
-    if (!getAgentLLMConfigSafe()) {
+    if (!getAgentLLMConfigSafe("anan")) {
         return {
             ok: false,
             output:
-                "تعذر تشغيل anan pro حالياً لأن مفتاح النموذج غير مضبوط في Convex. أضف `OPENROUTER_API_KEY` من Convex Dashboard ثم أعد المحاولة.",
+                "تعذر تشغيل anan حالياً لأن مفتاح النموذج غير مضبوط في Convex. أضف `OPENROUTER_API_KEY` من Convex Dashboard ثم أعد المحاولة.",
             agentsDispatched: [],
             agentResults: [],
             totalTokenUsage: { inputTokens: 0, outputTokens: 0 },
@@ -88,6 +88,7 @@ export async function orchestrate(
         prompt,
         availableTeams,
         modelOverride,
+        "anan",
     );
 
     // 3. Gather agents from selected teams
@@ -115,6 +116,7 @@ export async function orchestrate(
                 prompt,
                 context,
                 userId,
+                orchestratorId: "anan",
                 threadId,
                 channel,
                 role,
@@ -132,6 +134,7 @@ export async function orchestrate(
         successOutputs,
         hasFailures,
         modelOverride,
+        orchestratorId: "anan",
     });
 
     // 6. Fire trainer in background (non-blocking, errors silently caught)
@@ -142,6 +145,7 @@ export async function orchestrate(
                 prompt: `Analyze this conversation for learnable facts:\nUser (${role}): ${prompt}\nResponse: ${merged.text}`,
                 context: `Role: ${role}\nUser ID: ${userId}`,
                 userId,
+                orchestratorId: "anan",
                 threadId,
                 channel,
                 role,

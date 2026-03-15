@@ -19,6 +19,7 @@ import { cachedGenerateText } from "../../../shared_logic/llmCache";
 import { FALLBACK_MESSAGES } from "../shared/errorHandler";
 import type { AnanAgentResult } from "../AnanAgent";
 import { getAgentLLMConfigSafe } from "../config";
+import type { OrchestratorId } from "../types";
 
 /**
  * MergeInput — What the merger needs to produce a final response.
@@ -34,6 +35,8 @@ export interface MergeInput {
     hasFailures: boolean;
     /** Optional model override for the merge LLM call */
     modelOverride?: string;
+    /** Which orchestrator is running the merge */
+    orchestratorId?: OrchestratorId;
 }
 
 /**
@@ -62,6 +65,7 @@ export interface MergeResult {
  */
 export async function mergeResults(input: MergeInput): Promise<MergeResult> {
     const { ctx, prompt, successOutputs, hasFailures, modelOverride } = input;
+    const orchestratorId = input.orchestratorId ?? "anan";
 
     // Case 1: No successful outputs
     if (successOutputs.length === 0) {
@@ -81,8 +85,9 @@ export async function mergeResults(input: MergeInput): Promise<MergeResult> {
 
     // Case 3: Multiple outputs — merge with LLM
     try {
-        const model = getChatModel(modelOverride);
-        const modelName = modelOverride ?? getAgentLLMConfigSafe()?.model ?? "unknown";
+        const model = getChatModel(modelOverride, orchestratorId);
+        const modelName =
+            modelOverride ?? getAgentLLMConfigSafe(orchestratorId)?.model ?? "unknown";
         const mergeResult = await cachedGenerateText(
             ctx,
             {
@@ -99,7 +104,12 @@ ${hasFailures ? `Note: ${FALLBACK_MESSAGES.partialFailure}` : ""}`,
             },
             {
                 modelName,
-                tags: ["merge", "anan_orchestrator"],
+                tags: [
+                    "merge",
+                    orchestratorId === "anan_workspace"
+                        ? "anan_workspace_orchestrator"
+                        : "anan_orchestrator",
+                ],
                 metadata: {
                     outputsCount: successOutputs.length,
                     hasFailures,
