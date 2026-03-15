@@ -37,7 +37,7 @@ export default async function WorkspaceMePage() {
 
       <ProfileWorkspace
         initialProfile={resolvedProfile}
-        fallbackName={workspace.user.name || "مستخدم أنان"}
+        fallbackName={workspace.user.name || "مستخدم عنان"}
         fallbackEmail={workspace.user.email || ""}
       />
     </div>

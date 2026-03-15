@@ -67,7 +67,7 @@ async function listOffersDirectoryProfilesForOwner(
         id: String(profile._id),
         authUserId: profile.authUserId,
         email: profile.email ?? "",
-        name: profile.name ?? profile.email ?? "مستخدم أنان",
+        name: profile.name ?? profile.email ?? "مستخدم عنان",
         username: profile.username ?? undefined,
         role: isBroker ? "broker" : "developer",
         organizationName: organization.name,
@@ -157,7 +157,7 @@ export const searchOrganizationDirectoryExact = query({
       id: profile._id,
       authUserId: profile.authUserId,
       email: profile.email ?? "",
-      name: profile.name ?? profile.email ?? "مستخدم أنان",
+      name: profile.name ?? profile.email ?? "مستخدم عنان",
       username: profile.username,
       membershipState: (existingMembership?.status ?? "active") === "active"
         ? "member"

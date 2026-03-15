@@ -27,7 +27,7 @@ export default async function WorkspaceOfferBrokerProfilesRoute({
   return (
     <OfferDirectoryPage
       title="ملفات الوسطاء"
-      description="دليل الوسطاء الظاهرين داخل أنان، مع إمكانية فتح محادثة مباشرة أو إرسال دعوة تعاون من نفس الصفحة."
+      description="دليل الوسطاء الظاهرين داخل عنان، مع إمكانية فتح محادثة مباشرة أو إرسال دعوة تعاون من نفس الصفحة."
       profiles={paginatedProfiles.items}
       totalItems={paginatedProfiles.totalItems}
       page={paginatedProfiles.page}

@@ -29,7 +29,7 @@ async function getOwnerDisplay(ctx: AgenciesRepositoryCtx, owner: OwnerContext) 
   const organization = await getOrganizationRecord(ctx, owner);
   return {
     organizationId: owner.ownerType === "broker" ? String(owner.ownerBrokerId) : String(owner.ownerREDId),
-    organizationName: organization?.name ?? "منظمة أنان",
+    organizationName: organization?.name ?? "منظمة عنان",
     organizationType: owner.ownerType === "broker" ? "broker" as const : "developer" as const,
   };
 }
@@ -382,7 +382,7 @@ export const listIncomingTeamInvitesForCurrentUser = query({
           : null;
         return {
           invite,
-          organizationName: organization?.name ?? tenantOrg?.name ?? "منظمة أنان",
+          organizationName: organization?.name ?? tenantOrg?.name ?? "منظمة عنان",
           organizationType: ownerType,
           inviterName: invite.inviterName ?? "عضو الفريق",
           inviterAuthUserId: invite.inviterId ?? "",

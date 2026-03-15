@@ -23,7 +23,7 @@ export default async function WorkspaceSecurityAppsPage() {
         <PageHeader
           eyebrow="Connected Apps"
           title="التطبيقات المرتبطة"
-          description="راجع التطبيقات المتصلة بحسابك في أنان."
+          description="راجع التطبيقات المتصلة بحسابك في عنان."
         />
       </div>
 

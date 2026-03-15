@@ -22,7 +22,7 @@ describe("WorkspaceZoneGrid", () => {
     );
 
     expect(markup).toContain("data-ai-motion-logo=\"true\"");
-    expect(markup).toContain("اسأل أنان، أو ابدأ بإنشاء عرض، أو ابحث في مشاريعك...");
+    expect(markup).toContain("اسأل عنان، أو ابدأ بإنشاء عرض، أو ابحث في مشاريعك...");
     expect(markup).toContain("Alpha Dev");
   });
 

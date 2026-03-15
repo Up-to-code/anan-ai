@@ -232,7 +232,7 @@ async function getOrganizationNameByOwner(
 
 async function getOfferAuthorProjection(ctx: MutationCtx, senderUserId: string) {
   const senderProfile = await getProfileByAuthUserId(ctx, senderUserId);
-  const authorName = senderProfile?.name ?? senderProfile?.email ?? "مستخدم أنان";
+  const authorName = senderProfile?.name ?? senderProfile?.email ?? "مستخدم عنان";
   const organizationName = (await getOrganizationNameByOwner(ctx, {
     brokerId: senderProfile?.brokerId ?? undefined,
     REDId: senderProfile?.REDId ?? undefined,
@@ -254,7 +254,7 @@ async function getCollaborationActorProjection(ctx: QueryCtx | MutationCtx, auth
 
   return {
     authUserId,
-    name: profile?.name ?? profile?.email ?? "مستخدم أنان",
+    name: profile?.name ?? profile?.email ?? "مستخدم عنان",
     role,
     organizationId: profile?.brokerId ? String(profile.brokerId) : profile?.REDId ? String(profile.REDId) : null,
     organizationType: profile?.brokerId ? "broker" : profile?.REDId ? "developer" : null,
@@ -408,7 +408,7 @@ async function mapConversationSummary(
     directKey: conversation.directKey,
     otherUser: {
       id: participant.otherUserId,
-      name: otherProfile?.name ?? otherProfile?.email ?? "مستخدم أنان",
+      name: otherProfile?.name ?? otherProfile?.email ?? "مستخدم عنان",
       email: otherProfile?.email ?? null,
       username: otherProfile?.username ?? null,
       role: otherProfile?.role === "RED" ? "developer" : otherProfile?.role ?? "user",
@@ -667,7 +667,7 @@ export const sendConversationMessage = mutation({
     await createWorkspaceNotification(ctx, {
       userId: membership.otherUserId,
       type: "message",
-      title: `رسالة جديدة من ${senderProfile?.name ?? senderProfile?.email ?? "مستخدم أنان"}`,
+      title: `رسالة جديدة من ${senderProfile?.name ?? senderProfile?.email ?? "مستخدم عنان"}`,
       summary: trimmedBody.slice(0, 160),
       href: `/ws/inbox/${conversation._id}`,
       source: "البريد الوارد",
@@ -809,7 +809,7 @@ export const searchConversationTargets = query({
 
       return [{
         id: profile.authUserId,
-        name: profile.name ?? profile.email ?? "مستخدم أنان",
+        name: profile.name ?? profile.email ?? "مستخدم عنان",
         email: profile.email ?? null,
         username: profile.username ?? null,
         role: profile.role === "RED" ? "developer" : profile.role ?? "user",
@@ -875,7 +875,7 @@ export const searchConversationTargets = query({
 
         return {
           id: profile.authUserId,
-          name: profile.name ?? profile.email ?? "مستخدم أنان",
+          name: profile.name ?? profile.email ?? "مستخدم عنان",
           email: profile.email ?? null,
           username: profile.username ?? null,
           role,

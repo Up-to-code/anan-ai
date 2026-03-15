@@ -174,7 +174,7 @@ export function buildAssistantResponse({ property, message, qualification }: Ass
       title: "حالة التصاريح",
       permitStatus: property.owner.isVerified ? ("verified" as const) : ("pending_review" as const),
       summary: property.owner.isVerified
-        ? `المالك ${property.owner.name} موثق داخل أنان، لكن التحقق النهائي من التصاريح يحتاج مستندات المشروع الرسمية.`
+        ? `المالك ${property.owner.name} موثق داخل عنان، لكن التحقق النهائي من التصاريح يحتاج مستندات المشروع الرسمية.`
         : "بيانات المشروع متاحة، لكن يلزم مراجعة المستندات النظامية قبل تأكيد التصاريح.",
     });
   }

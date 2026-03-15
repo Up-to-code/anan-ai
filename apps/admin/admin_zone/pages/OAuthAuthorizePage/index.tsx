@@ -68,7 +68,7 @@ export default async function OAuthAuthorizePage({ flow }: OAuthAuthorizePagePro
                 description={
                   <div className="space-y-4 text-sm font-bold leading-7 text-slate-500">
                     <p>الناشر: {preview.client.publisherName}</p>
-                    <p>سيتم ربط هذا التطبيق بحسابك في أنان باستخدام صلاحيات محددة فقط.</p>
+                    <p>سيتم ربط هذا التطبيق بحسابك في عنان باستخدام صلاحيات محددة فقط.</p>
                   </div>
                 }
                 contentClassName="space-y-8"
@@ -121,9 +121,9 @@ export default async function OAuthAuthorizePage({ flow }: OAuthAuthorizePagePro
               </div>
               <h2 className="text-3xl font-black tracking-tight">ما الذي يراه التطبيق؟</h2>
               <div className="space-y-3 text-sm font-bold leading-7 text-slate-300">
-                <p>أنان يرسل فقط الصلاحيات التي توافق عليها في هذه الشاشة.</p>
+                <p>عنان يرسل فقط الصلاحيات التي توافق عليها في هذه الشاشة.</p>
                 <p>يمكنك لاحقاً مراجعة أو إلغاء ربط التطبيق من صفحة الأمان داخل حسابك.</p>
-                <p>{preview.offlineAccess ? "هذا التطبيق طلب البقاء متصلاً حتى عند عدم فتحك لأنان." : "هذا التطبيق لن يحتفظ بصلاحية طويلة الأمد بدون طلب جديد."}</p>
+                <p>{preview.offlineAccess ? "هذا التطبيق طلب البقاء متصلاً حتى عند عدم فتحك لعنان." : "هذا التطبيق لن يحتفظ بصلاحية طويلة الأمد بدون طلب جديد."}</p>
               </div>
               {preview.existingAuthorization ? (
                 <div className="border border-white/10 bg-white/5 p-5 text-sm font-bold leading-7 text-slate-300">

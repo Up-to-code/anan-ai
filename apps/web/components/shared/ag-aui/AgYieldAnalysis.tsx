@@ -55,7 +55,7 @@ export default function AgYieldAnalysis() {
                 <div className="bg-slate-50   p-6 flex flex-col gap-4">
                     <div className="flex items-center gap-3 text-blue-600">
                         <ShieldCheck className="h-5 w-5" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">ضمانات الاستثمار أنان</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">ضمانات الاستثمار عنان</span>
                     </div>
                     <p className="text-xs font-bold text-slate-600 leading-relaxed italic">
                         &quot;يتم احتساب العوائد بناءً على بيانات السوق اللحظية ونسب الإشغال الفعلية لحي الملقا، مع هامش خطأ لا يتجاوز 2.5%.&quot;

@@ -57,7 +57,7 @@ export default function WorkspaceZoneGrid({
 
       <div className="flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">
         <AIMotionLogo state="idle" size="compact" />
-        <span>اسأل أنان، أو ابدأ بإنشاء عرض، أو ابحث في مشاريعك...</span>
+        <span>اسأل عنان، أو ابدأ بإنشاء عرض، أو ابحث في مشاريعك...</span>
       </div>
     </div>
   );

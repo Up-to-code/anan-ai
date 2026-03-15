@@ -96,7 +96,7 @@ export default function ZoneSidebar({
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[10px] font-black uppercase tracking-widest text-white">
-              {user.name || "مستخدم أنان"}
+              {user.name || "مستخدم عنان"}
             </div>
             <div className="truncate text-[10px] font-bold text-slate-400">
               {user.email || "حساب google"}

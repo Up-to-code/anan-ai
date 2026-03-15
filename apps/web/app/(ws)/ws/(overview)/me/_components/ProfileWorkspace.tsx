@@ -126,7 +126,7 @@ export default function ProfileWorkspace({
         <section className="border border-slate-200 bg-white p-6">
           <h2 className="text-xl font-black text-slate-950">الأمان</h2>
           <p className="mt-3 text-sm font-medium leading-7 text-slate-600">
-            تسجيل الدخول يتم عبر Google فقط في هذه المرحلة. لا توجد كلمة مرور محلية في أنان، ويمكنك إدارة التطبيقات المرتبطة من قسم الأمان.
+            تسجيل الدخول يتم عبر Google فقط في هذه المرحلة. لا توجد كلمة مرور محلية في عنان، ويمكنك إدارة التطبيقات المرتبطة من قسم الأمان.
           </p>
           <div className="mt-5 space-y-3">
             <div className="border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">

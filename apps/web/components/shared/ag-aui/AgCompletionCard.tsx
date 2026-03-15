@@ -12,7 +12,7 @@ export default function AgCompletionCard() {
                     <div className="text-[12px] font-black uppercase tracking-[0.5em] text-blue-600">اكتملت المهمة</div>
                     <h2 className="text-3xl font-black text-slate-900 leading-tight tracking-tight uppercase">تم استعراض المنظومة بنجاح</h2>
                     <p className="text-sm font-bold text-slate-500 max-w-md mx-auto leading-relaxed">
-                        لقد أكملت الجولة الشاملة في نظام أنان برو. محركك الآن مجهز بأحدث أدوات الذكاء الاصطناعي العقاري لإدارة، تحليل، وإغلاق الصفقات بكفاءة غير مسبوقة.
+                        لقد أكملت الجولة الشاملة في نظام عنان برو. محركك الآن مجهز بأحدث أدوات الذكاء الاصطناعي العقاري لإدارة، تحليل، وإغلاق الصفقات بكفاءة غير مسبوقة.
                     </p>
                 </div>
             </div>

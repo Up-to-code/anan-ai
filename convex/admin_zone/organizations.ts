@@ -214,7 +214,7 @@ export const listOrganizationMemberships = query({
             profile: profile
               ? {
                   id: String(profile._id),
-                  name: profile.name ?? profile.email ?? "مستخدم أنان",
+                  name: profile.name ?? profile.email ?? "مستخدم عنان",
                   email: profile.email ?? null,
                   role: profile.role ?? null,
                   roleStatus: profile.roleStatus ?? null,
@@ -526,7 +526,7 @@ export const getOrganizationDetail = query({
           role: membership.role,
           status: membership.status ?? "active",
           createdAt: membership.joinedAt ?? membership._creationTime,
-          profileName: profile?.name ?? profile?.email ?? "مستخدم أنان",
+          profileName: profile?.name ?? profile?.email ?? "مستخدم عنان",
           profileEmail: profile?.email ?? null,
         };
       }),
@@ -549,7 +549,7 @@ export const getOrganizationDetail = query({
       linkedProfiles: linkedProfiles.map((profile) => ({
         id: String(profile._id),
         authUserId: profile.authUserId,
-        name: profile.name ?? profile.email ?? "مستخدم أنان",
+        name: profile.name ?? profile.email ?? "مستخدم عنان",
         email: profile.email ?? null,
         role: profile.role ?? null,
         roleStatus: profile.roleStatus ?? null,

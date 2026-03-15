@@ -49,7 +49,7 @@ export default function WorkspaceChatInput({
                     <div className="flex items-start gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-blue-600 text-white font-black">أ</div>
                         <div className="bg-white border border-slate-200 p-4 rounded-none text-slate-700 w-full max-w-2xl shadow-none">
-                            أهلاً بك. أنا أنان، مساعدك الذكي. كيف يمكنني مساعدتك في مهامك العقارية اليوم؟
+                            أهلاً بك. أنا عنان، مساعدك الذكي. كيف يمكنني مساعدتك في مهامك العقارية اليوم؟
                         </div>
                     </div>
                 </div>
@@ -63,7 +63,7 @@ export default function WorkspaceChatInput({
                     value={value}
                     onChange={handleInput}
                     onKeyDown={handleKeyDown}
-                    placeholder="اسأل أنان، أو ابدأ بإنشاء عرض، أو ابحث في مشاريعك..."
+                    placeholder="اسأل عنان، أو ابدأ بإنشاء عرض، أو ابحث في مشاريعك..."
                     className="w-full resize-none bg-transparent px-5 py-5 text-lg font-black text-slate-900 placeholder-slate-400 outline-none"
                     rows={1}
                     style={{ minHeight: "85px", maxHeight: "240px", overflowY: value.split('\n').length > 5 ? 'auto' : 'hidden' }}

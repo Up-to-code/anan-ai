@@ -27,7 +27,7 @@ export default async function WorkspaceOfferDeveloperProfilesRoute({
   return (
     <OfferDirectoryPage
       title="ملفات المطورين"
-      description="دليل المطورين الظاهرين داخل أنان، مع إجراءات سريعة لإرسال دعوة تعاون أو بدء محادثة مباشرة."
+      description="دليل المطورين الظاهرين داخل عنان، مع إجراءات سريعة لإرسال دعوة تعاون أو بدء محادثة مباشرة."
       profiles={paginatedProfiles.items}
       totalItems={paginatedProfiles.totalItems}
       page={paginatedProfiles.page}

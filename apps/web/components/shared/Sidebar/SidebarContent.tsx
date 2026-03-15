@@ -63,7 +63,7 @@ export default function SidebarContent({
           id={titleId}
           className="text-2xl font-black tracking-tighter text-white"
         >
-          أنان
+          عنان
         </div>
         <div className="mt-3 inline-flex items-center gap-3">
           <span className="h-px w-8 bg-blue-500" />
@@ -186,7 +186,7 @@ export default function SidebarContent({
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[10px] font-black uppercase tracking-widest text-white">
-              {user.name || "مستخدم أنان"}
+              {user.name || "مستخدم عنان"}
             </div>
             <div className="truncate text-[9px] font-bold text-slate-500">
               {user.email || "حساب google"}

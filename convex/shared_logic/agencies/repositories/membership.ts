@@ -108,7 +108,7 @@ export async function listTeamMembersForOwner(ctx: AgenciesRepositoryCtx, owner:
         id: profile._id,
         membershipId: membership.userId,
         authUserId: membership.userId,
-        name: profile.name ?? profile.email ?? "مستخدم أنان",
+        name: profile.name ?? profile.email ?? "مستخدم عنان",
         email: profile.email ?? "",
         username: profile.username ?? undefined,
         role: normalizeTenantRole(membership.role),

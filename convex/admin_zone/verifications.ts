@@ -86,7 +86,7 @@ export const getVerificationRequest = query({
         profile: profile
           ? {
               id: String(profile._id),
-              name: profile.name ?? profile.email ?? "مستخدم أنان",
+              name: profile.name ?? profile.email ?? "مستخدم عنان",
               email: profile.email ?? null,
               role: profile.role ?? null,
               roleStatus: profile.roleStatus ?? null,

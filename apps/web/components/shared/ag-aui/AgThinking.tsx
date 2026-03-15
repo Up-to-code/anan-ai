@@ -23,7 +23,7 @@ export default function AgThinking() {
                     </div>
 
                     <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                        تفكير أنان العقاري...
+                        تفكير عنان العقاري...
                     </div>
                 </div>
             </div>

@@ -103,7 +103,7 @@ export async function notifyOfferRecipient(
   const organizationName = (await getOrganizationNameByParty(ctx, {
     brokerId: args.toBrokerId,
     redId: args.toREDId,
-  })) ?? targetedRecipientProfile?.name ?? recipientProfile?.name ?? "مستخدم أنان";
+  })) ?? targetedRecipientProfile?.name ?? recipientProfile?.name ?? "مستخدم عنان";
 
   const notificationTargetUserId = args.recipientAuthUserId ?? recipientProfile?.authUserId;
   if (!notificationTargetUserId) {
@@ -143,7 +143,7 @@ export async function notifyOfferRecipient(
         recipientProfile?.name ??
         targetedRecipientProfile?.email ??
         recipientProfile?.email ??
-        "مستخدم أنان",
+        "مستخدم عنان",
       organizationName,
       href,
       pushStatus: "pending",

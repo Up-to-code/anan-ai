@@ -256,7 +256,7 @@ export function mockAssistantResponse(property: MobilePropertyFeedItem, query: s
     cards.push({
       type: "permit_status", title: "حالة التصاريح",
       permitStatus: property.owner.isVerified ? "verified" : "pending_review",
-      summary: property.owner.isVerified ? "الوسيط موثق داخل أنان." : "يحتاج مراجعة مستندية إضافية.",
+      summary: property.owner.isVerified ? "الوسيط موثق داخل عنان." : "يحتاج مراجعة مستندية إضافية.",
     });
   }
 

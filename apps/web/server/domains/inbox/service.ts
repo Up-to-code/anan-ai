@@ -83,7 +83,7 @@ async function requireCollaborationContext(
 function buildActor(workspace: WorkspaceBehavior, authUserId: string) {
   return {
     authUserId,
-    name: workspace.user.name ?? workspace.user.email ?? "عضو أنان",
+    name: workspace.user.name ?? workspace.user.email ?? "عضو عنان",
     role: workspace.audience,
     organizationId: workspace.primaryOrganization?.id ?? null,
     organizationType: workspace.audience,

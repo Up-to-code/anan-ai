@@ -105,7 +105,7 @@ function IdentityCard({
         </div>
         <div className="min-w-0">
           <div className="truncate text-sm font-black text-slate-950">
-            {user.name || "مستخدم أنان"}
+            {user.name || "مستخدم عنان"}
           </div>
           <div className="truncate text-xs font-medium text-slate-500">
             {user.email || "حساب Google"}

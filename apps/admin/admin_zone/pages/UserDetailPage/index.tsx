@@ -420,7 +420,7 @@ export default async function UserDetailPage({ userKey, tab = "profile" }: UserD
           <div className="space-y-3">
             <div className="border-2 border-slate-100 bg-slate-50 p-4">
               <div className="text-xs font-black text-slate-500">الاسم</div>
-              <div className="mt-2 text-xl font-black text-slate-900">{String(identity.name ?? "مستخدم أنان")}</div>
+              <div className="mt-2 text-xl font-black text-slate-900">{String(identity.name ?? "مستخدم عنان")}</div>
             </div>
             <div className="border-2 border-slate-100 bg-slate-50 p-4">
               <div className="text-xs font-black text-slate-500">البريد</div>

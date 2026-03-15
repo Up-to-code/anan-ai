@@ -47,7 +47,7 @@ export default function AgDeepThink() {
                     </div>
 
                     <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                        محرك أنان للتفكير العميق
+                        محرك عنان للتفكير العميق
                     </div>
                 </div>
             </div>

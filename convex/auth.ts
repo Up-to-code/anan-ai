@@ -50,7 +50,7 @@ async function syncUserProfile(ctx: any, userId: any, existingUserId: any) {
   const patch = {
     authUserId,
     email: user.email,
-    name: user.name ?? user.displayName ?? existingByAuth?.name ?? existingByEmail?.name ?? "مستخدم أنان",
+    name: user.name ?? user.displayName ?? existingByAuth?.name ?? existingByEmail?.name ?? "مستخدم عنان",
     username,
     usernameLower: username.toLowerCase(),
     isActive: existingByAuth?.isActive ?? existingByEmail?.isActive ?? true,

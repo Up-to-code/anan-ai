@@ -23,7 +23,7 @@ export default function InstitutionalChatInput({
   onChange,
   onSend,
   isSending,
-  placeholder = "اسأل أنان، أو ابدأ بإنشاء عرض، أو ابحث في مشاريعك...",
+  placeholder = "اسأل عنان، أو ابدأ بإنشاء عرض، أو ابحث في مشاريعك...",
   layout = "thread",
 }: InstitutionalChatInputProps) {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
