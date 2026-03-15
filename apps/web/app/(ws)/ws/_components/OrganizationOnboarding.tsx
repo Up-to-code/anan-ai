@@ -6,25 +6,35 @@ import WorkspacePanel from "@/components/shared/WorkspacePanel";
 import { normalizeDomainError } from "@/server/contracts/errors";
 import { createOrganizationForCurrentUser } from "@/server/domains/organizations/service";
 import type { WorkspaceAudience } from "@/server/contracts/workspace";
+import type { IncomingOrganizationInvite } from "@/server/contracts/organizations";
+import OrganizationInvitesClient from "./OrganizationInvitesClient";
 
 type OrganizationOnboardingProps = {
   user: SessionUser;
   suggestedOrganizationType: "broker" | "red";
   audience: WorkspaceAudience;
+  incomingInvites?: IncomingOrganizationInvite[];
   errorMessage?: string;
 };
 
+/**
+ * WHY:   New workspace users need a single onboarding surface for invites and org creation.
+ * WHAT:  Renders incoming invites (if any) plus a broker/developer organization setup form.
+ * HOW:   Delegates invite actions to a client subcomponent and submits create-org via server action.
+ */
 export default function OrganizationOnboarding({
   user,
   suggestedOrganizationType,
   audience,
+  incomingInvites = [],
   errorMessage,
 }: OrganizationOnboardingProps) {
   async function createOrganization(formData: FormData) {
     "use server";
 
     const name = String(formData.get("name") ?? "").trim();
-    const type = String(formData.get("type") ?? suggestedOrganizationType);
+    const rawType = String(formData.get("type") ?? suggestedOrganizationType);
+    const type = rawType === "broker" || rawType === "red" ? rawType : suggestedOrganizationType;
 
     try {
       await createOrganizationForCurrentUser({ name, type });
@@ -36,13 +46,26 @@ export default function OrganizationOnboarding({
     }
   }
 
-  const inferredLabel = suggestedOrganizationType === "red" ? "مساحة المطور" : "مساحة الوسيط";
+  const suggestedTypeLabel = suggestedOrganizationType === "red" ? "مطور عقاري" : "وسيط عقاري";
+  const inferredLabel = "مساحة العمل المختارة";
   const inferredDescription =
     audience === "developer"
-      ? "سنجهز لك بيئة المطور العقاري وربط المشاريع والتحليلات من أول جهة."
+      ? "اختر جهة مطور لتفعيل إدارة المشاريع والعروض والتعاون."
       : audience === "broker"
-        ? "سنجهز لك بيئة الوسيط وربط العملاء والعروض والتعاون من أول جهة."
-        : "سننشئ أول جهة لك ثم نفعّل الأدوات المناسبة داخل مساحة العمل.";
+        ? "اختر جهة وسيط لتفعيل إدارة العملاء والعروض والتعاون."
+        : "اختر نوع الجهة لتفعيل الأدوات المناسبة داخل مساحة العمل.";
+  const inviteStrings = {
+    eyebrow: "Incoming Invites",
+    title: "دعوات الانضمام",
+    description: "لديك دعوات جاهزة. اختر الانضمام لجهة حالية أو تجاهلها لإنشاء جهة جديدة.",
+    acceptLabel: "قبول الدعوة",
+    declineLabel: "رفض الدعوة",
+    brokerTypeLabel: "وسيط عقاري",
+    developerTypeLabel: "مطور عقاري",
+    inviterPrefix: "دعوة من",
+    acceptError: "تعذر قبول الدعوة حالياً.",
+    declineError: "تعذر رفض الدعوة حالياً.",
+  };
 
   return (
     <div className="flex flex-col">
@@ -61,10 +84,11 @@ export default function OrganizationOnboarding({
       <div className="space-y-8 p-6 lg:p-10">
         <div className="mx-auto grid max-w-7xl gap-12 items-start lg:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-8">
+            {incomingInvites.length > 0 ? (
+              <OrganizationInvitesClient invites={incomingInvites} strings={inviteStrings} />
+            ) : null}
             <WorkspacePanel className="border-slate-200">
               <form action={createOrganization} className="space-y-8">
-                <input type="hidden" name="type" value={suggestedOrganizationType} />
-
                 <div className="flex flex-row flex-wrap items-center gap-4">
                   <label htmlFor="organization-name" className="shrink-0 text-xs font-black uppercase tracking-widest text-slate-500">
                     اسم الجهة
@@ -77,6 +101,45 @@ export default function OrganizationOnboarding({
                     placeholder="مثال: مؤسسة أنان العقارية"
                     className="min-w-0 flex-1 max-w-[420px] border-2 border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-50"
                   />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="text-xs font-black uppercase tracking-widest text-slate-500">نوع الجهة</div>
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <label className="flex cursor-pointer items-start gap-3 border-2 border-slate-200 bg-white px-4 py-4 text-sm font-bold text-slate-800 transition hover:border-blue-400">
+                      <input
+                        type="radio"
+                        name="type"
+                        value="broker"
+                        defaultChecked={suggestedOrganizationType === "broker"}
+                        className="mt-1 accent-blue-600"
+                      />
+                      <span className="space-y-1">
+                        <span className="block text-sm font-black text-slate-900">وسيط عقاري</span>
+                        <span className="block text-xs text-slate-500">
+                          إدارة العملاء والعروض والتعاون مع المطورين.
+                        </span>
+                      </span>
+                    </label>
+                    <label className="flex cursor-pointer items-start gap-3 border-2 border-slate-200 bg-white px-4 py-4 text-sm font-bold text-slate-800 transition hover:border-blue-400">
+                      <input
+                        type="radio"
+                        name="type"
+                        value="red"
+                        defaultChecked={suggestedOrganizationType === "red"}
+                        className="mt-1 accent-blue-600"
+                      />
+                      <span className="space-y-1">
+                        <span className="block text-sm font-black text-slate-900">مطور عقاري</span>
+                        <span className="block text-xs text-slate-500">
+                          إدارة المشاريع والعروض وربط الوسطاء.
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                  <div className="text-xs font-bold text-slate-400">
+                    الاقتراح: {suggestedTypeLabel}
+                  </div>
                 </div>
 
                 <div className="border-2 border-slate-100 bg-slate-50 p-8">

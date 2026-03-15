@@ -2,6 +2,7 @@ import OrganizationOnboarding from "../_components/OrganizationOnboarding";
 import WorkspaceDashboard from "./_components/WorkspaceDashboard";
 import { requireWorkspaceData } from "../_lib/workspaceData";
 import { getAnanProThread } from "@/server/domains/ananPro/service";
+import { listIncomingOrganizationInvitesForCurrentUser } from "@/server/domains/organizations/service";
 
 export const dynamic = "force-dynamic";
 
@@ -23,11 +24,13 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
   const ananProThread = await getAnanProThread(threadId);
 
   if (workspace.organizations.length === 0) {
+    const incomingInvites = await listIncomingOrganizationInvitesForCurrentUser();
     return (
       <OrganizationOnboarding
         user={workspace.user}
         suggestedOrganizationType={workspace.onboarding.suggestedOrganizationType}
         audience={workspace.audience}
+        incomingInvites={incomingInvites}
         errorMessage={orgError}
       />
     );

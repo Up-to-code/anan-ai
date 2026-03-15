@@ -28,6 +28,7 @@ import type * as _core_schema_users from "../_core/schema/users.js";
 import type * as _core_schema_workspace from "../_core/schema/workspace.js";
 import type * as _core_security_accessPolicy from "../_core/security/accessPolicy.js";
 import type * as _core_security_authConfig from "../_core/security/authConfig.js";
+import type * as _core_security_authRedirects from "../_core/security/authRedirects.js";
 import type * as _core_security_channelAuth from "../_core/security/channelAuth.js";
 import type * as _core_security_delegatedAccess from "../_core/security/delegatedAccess.js";
 import type * as _core_security_identity from "../_core/security/identity.js";
@@ -251,6 +252,7 @@ declare const fullApi: ApiFromModules<{
   "_core/schema/workspace": typeof _core_schema_workspace;
   "_core/security/accessPolicy": typeof _core_security_accessPolicy;
   "_core/security/authConfig": typeof _core_security_authConfig;
+  "_core/security/authRedirects": typeof _core_security_authRedirects;
   "_core/security/channelAuth": typeof _core_security_channelAuth;
   "_core/security/delegatedAccess": typeof _core_security_delegatedAccess;
   "_core/security/identity": typeof _core_security_identity;

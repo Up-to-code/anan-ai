@@ -88,7 +88,9 @@ pnpm install
 Auth redirect base (required for Google OAuth + consent):
 
 - Set `SITE_URL` (and optionally `ANAN_WEB_URL`) to the **public web origin** you want to land on after Google sign-in (example: `http://localhost:3000`).
+- Ensure `SITE_URL`/`ANAN_WEB_URL` are set per **Convex deployment** (dev vs prod) to avoid redirecting to the wrong environment.
 - Set `ANAN_ADMIN_URL` to the admin app origin and `ANAN_MOBILE_URL` to the mobile app origin so OAuth consent redirects into the correct app.
+- If you need extra safe redirect origins (local dev, staging), set `ANAN_AUTH_ALLOWED_ORIGINS` as a comma-separated list.
 - If `SITE_URL` points to a `*.convex.site` URL, OAuth will redirect back to that domain (often not what you want for a “real domain” deploy).
 
 Backend + apps:

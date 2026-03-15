@@ -1,14 +1,6 @@
 import { convexAuth } from "@convex-dev/auth/server";
 import { getGoogleProvider } from "./_core/security/providers";
-
-function normalizeBaseUrl(value?: string | null) {
-  const trimmed = value?.trim().replace(/\/+$/, "");
-  if (!trimmed) return null;
-  if (!/^https?:\/\//i.test(trimmed)) {
-    return `https://${trimmed}`;
-  }
-  return trimmed;
-}
+import { normalizeBaseUrl, resolveAllowedOrigins } from "./_core/security/authRedirects";
 
 function resolveWebBaseUrl() {
   return normalizeBaseUrl(
@@ -90,8 +82,12 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
     async redirect({ redirectTo }) {
       const webBaseUrl = resolveWebBaseUrl();
       const convexBaseUrl = normalizeBaseUrl(process.env.CONVEX_SITE_URL);
-
-      const allowedOrigins = [webBaseUrl].filter(Boolean) as string[];
+      const allowedOrigins = resolveAllowedOrigins({
+        webBaseUrl,
+        allowedOriginsEnv: process.env.ANAN_AUTH_ALLOWED_ORIGINS,
+        nodeEnv: process.env.NODE_ENV,
+        vercelEnv: process.env.VERCEL_ENV,
+      });
 
       if (convexBaseUrl && webBaseUrl && redirectTo.startsWith(convexBaseUrl)) {
         const target = new URL(redirectTo);
