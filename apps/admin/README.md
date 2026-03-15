@@ -25,6 +25,10 @@ The deep canonical handbook lives in markdown under `docs/handbook/**`. The in-a
 - `server/infrastructure/convex/` contains repository adapters that call `convex/admin_zone/*`.
 - `components/shared/` contains copied institutional UI primitives adapted from `web/`.
 
+## Deployment
+
+- Vercel: see [DEPLOY.md](DEPLOY.md) for project settings and env checklist.
+
 ## References
 
 - Deep handbook: `docs/handbook/admin/README.md`
