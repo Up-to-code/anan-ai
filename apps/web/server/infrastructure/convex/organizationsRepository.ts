@@ -95,7 +95,12 @@ export const convexOrganizationsRepository: OrganizationsRepository = {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
-      if (message.includes("Organization owner profile required") || message.includes("Organization membership required")) {
+      if (
+        message.includes("Organization owner profile required") ||
+        message.includes("Organization membership required") ||
+        message.includes("Tenant organization required") ||
+        message.includes("Tenant organization link required")
+      ) {
         return null;
       }
       throw error;

@@ -4,6 +4,7 @@ import {
   listCurrentOrganizationTeamInvites,
   listCurrentOrganizationTeamMembers,
 } from "@/server/domains/organizations/service";
+import { normalizeDomainError } from "@/server/contracts/errors";
 import type { OrganizationInviteDisplay, OrganizationMemberDisplay } from "./entities";
 
 /**
@@ -26,16 +27,16 @@ export async function getWorkspaceOrganizationTeam() {
     };
   }
 
-  const [members, invites] = await Promise.all([
-    listCurrentOrganizationTeamMembers(),
-    listCurrentOrganizationTeamInvites(),
-  ]);
+  let members: OrganizationMemberDisplay[] = [];
+  let invites: OrganizationInviteDisplay[] = [];
+  let currentMembershipRole = currentOrganization?.membership.role ?? null;
 
-  return {
-    organization,
-    authUserId: workspace.session.userId,
-    currentMembershipRole: currentOrganization?.membership.role ?? null,
-    members: members.map((member) => ({
+  try {
+    const [rawMembers, rawInvites] = await Promise.all([
+      listCurrentOrganizationTeamMembers(),
+      listCurrentOrganizationTeamInvites(),
+    ]);
+    members = rawMembers.map((member) => ({
       id: member.id,
       authUserId: member.authUserId,
       name: member.name,
@@ -44,13 +45,27 @@ export async function getWorkspaceOrganizationTeam() {
       username: member.username,
       role: member.role,
       statusLabel: member.isActive ? "نشط" : member.roleStatus ?? "قيد التفعيل",
-    })),
-    invites: invites.map((invite) => ({
+    }));
+    invites = rawInvites.map((invite) => ({
       id: invite.id,
       email: invite.email,
       role: invite.role,
       status: invite.status,
       expiresLabel: new Date(invite.expiresAt).toLocaleDateString("ar-EG"),
-    })),
+    }));
+  } catch (error) {
+    const domainError = normalizeDomainError(error);
+    if (domainError.code !== "FORBIDDEN" || !domainError.message.includes("Tenant organization")) {
+      throw error;
+    }
+    currentMembershipRole = null;
+  }
+
+  return {
+    organization,
+    authUserId: workspace.session.userId,
+    currentMembershipRole,
+    members,
+    invites,
   };
 }

@@ -7,6 +7,7 @@ import { requireSession } from "../../../_core/security/accessPolicy";
 import {
   findProfileByAuthUserId,
   findTenantOrgLinkByTenantOrgId,
+  buildOwnerContextFromProfile,
   getOwnerId,
   getOrganizationRecord,
   normalizeEmail,
@@ -45,7 +46,34 @@ async function listOrganizationsForProfile(ctx: AgenciesRepositoryCtx, profile: 
     }),
   );
 
-  return organizations.filter((org): org is NonNullable<typeof org> => Boolean(org));
+  const hydratedOrganizations = organizations.filter((org): org is NonNullable<typeof org> => Boolean(org));
+  if (hydratedOrganizations.length > 0) {
+    return hydratedOrganizations;
+  }
+
+  if (!profile.brokerId && !profile.REDId) {
+    return [];
+  }
+
+  const owner = buildOwnerContextFromProfile(profile);
+  const ownerRecord = await getOrganizationRecord(ctx, owner);
+  if (!ownerRecord) {
+    return [];
+  }
+
+  return [
+    {
+      id: String(getOwnerId(owner)),
+      type: owner.ownerType === "broker" ? "broker" : "red",
+      name: ownerRecord.name,
+      slug: ownerRecord.slug,
+      status: (ownerRecord as any)?.status ?? null,
+      isVerified: (ownerRecord as any)?.isVerified === true,
+      description: (ownerRecord as any)?.description,
+      website: (ownerRecord as any)?.website,
+      contactEmail: (ownerRecord as any)?.contactEmail,
+    },
+  ];
 }
 
 function slugifyOrganizationName(value: string) {
