@@ -25,7 +25,7 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
   const ananProThread = await getAnanProThread(threadId);
 
   const shouldRenderOnboarding =
-    workspace.organizations.length === 0 || onboarding === "verification";
+    workspace.onboarding.needsOrganization || onboarding === "verification";
 
   if (shouldRenderOnboarding) {
     const incomingInvites = await listIncomingOrganizationInvitesForCurrentUser();
