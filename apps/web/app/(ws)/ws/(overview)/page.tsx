@@ -10,6 +10,7 @@ type WorkspacePageProps = {
   searchParams: Promise<{
     orgError?: string;
     threadId?: string;
+    onboarding?: string;
   }>;
 };
 
@@ -19,11 +20,14 @@ type WorkspacePageProps = {
  * HOW:   Forces dynamic rendering (session/headers), requires auth before loading optional thread state, and avoids noisy unauthorized errors.
  */
 export default async function WorkspacePage({ searchParams }: WorkspacePageProps) {
-  const { orgError, threadId } = await searchParams;
+  const { orgError, threadId, onboarding } = await searchParams;
   const workspace = await requireWorkspaceData("/ws");
   const ananProThread = await getAnanProThread(threadId);
 
-  if (workspace.organizations.length === 0) {
+  const shouldRenderOnboarding =
+    workspace.organizations.length === 0 || onboarding === "verification";
+
+  if (shouldRenderOnboarding) {
     const incomingInvites = await listIncomingOrganizationInvitesForCurrentUser();
     return (
       <OrganizationOnboarding
@@ -32,6 +36,12 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
         audience={workspace.audience}
         incomingInvites={incomingInvites}
         errorMessage={orgError}
+        initialStep={onboarding === "verification" ? 3 : 1}
+        initialOrganization={
+          workspace.primaryOrganization
+            ? { id: workspace.primaryOrganization.id, type: workspace.primaryOrganization.type }
+            : null
+        }
       />
     );
   }

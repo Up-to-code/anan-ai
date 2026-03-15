@@ -8,6 +8,7 @@ const uploadCategoryValidator = v.union(
   v.literal("propertyMedia"),
   v.literal("offerAttachments"),
   v.literal("crmDocuments"),
+  v.literal("verificationDocuments"),
 );
 
 const uploadFileValidator = v.object({

@@ -18,7 +18,7 @@ async function requireUploadthingMetadata() {
 
 async function trackUploadthingCompletion(args: {
   token: string;
-  category: "propertyMedia" | "offerAttachments" | "crmDocuments";
+  category: "propertyMedia" | "offerAttachments" | "crmDocuments" | "verificationDocuments";
   file: { key: string; ufsUrl: string; name: string; size: number; type?: string };
 }) {
   await fetchMutation(
@@ -86,6 +86,22 @@ export const uploadRouter = {
       await trackUploadthingCompletion({
         token: metadata.convexToken,
         category: "crmDocuments",
+        file,
+      });
+      return {
+        key: file.key,
+        url: file.ufsUrl,
+        name: file.name,
+        size: file.size,
+        mime: file.type || undefined,
+      };
+    }),
+  verificationDocuments: f(["image", "pdf"])
+    .middleware(async () => requireUploadthingMetadata())
+    .onUploadComplete(async ({ file, metadata }) => {
+      await trackUploadthingCompletion({
+        token: metadata.convexToken,
+        category: "verificationDocuments",
         file,
       });
       return {

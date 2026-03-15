@@ -12,11 +12,12 @@ import { uploadRouter } from "./core";
 import { GET, POST } from "./route";
 
 describe("uploadthing route", () => {
-  it("exposes property, offer, and crm upload endpoints", () => {
+  it("exposes property, offer, crm, and verification upload endpoints", () => {
     expect(Object.keys(uploadRouter).sort()).toEqual([
       "crmDocuments",
       "offerAttachments",
       "propertyMedia",
+      "verificationDocuments",
     ]);
   });
 
@@ -29,5 +30,6 @@ describe("uploadthing route", () => {
     expect(uploadRouter.propertyMedia).toBeTruthy();
     expect(uploadRouter.offerAttachments).toBeTruthy();
     expect(uploadRouter.crmDocuments).toBeTruthy();
+    expect(uploadRouter.verificationDocuments).toBeTruthy();
   });
 });

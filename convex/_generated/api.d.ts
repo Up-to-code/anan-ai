@@ -218,6 +218,7 @@ import type * as shared_logic_uploadthing from "../shared_logic/uploadthing.js";
 import type * as shared_logic_users_index from "../shared_logic/users/index.js";
 import type * as shared_logic_users_session from "../shared_logic/users/session.js";
 import type * as shared_logic_users_whatsapp from "../shared_logic/users/whatsapp.js";
+import type * as shared_logic_verifications_index from "../shared_logic/verifications/index.js";
 import type * as shared_logic_workspaceWorkflows from "../shared_logic/workspaceWorkflows.js";
 import type * as tenants from "../tenants.js";
 import type * as uploadthing from "../uploadthing.js";
@@ -442,6 +443,7 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/users/index": typeof shared_logic_users_index;
   "shared_logic/users/session": typeof shared_logic_users_session;
   "shared_logic/users/whatsapp": typeof shared_logic_users_whatsapp;
+  "shared_logic/verifications/index": typeof shared_logic_verifications_index;
   "shared_logic/workspaceWorkflows": typeof shared_logic_workspaceWorkflows;
   tenants: typeof tenants;
   uploadthing: typeof uploadthing;

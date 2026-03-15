@@ -1,0 +1,131 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import type { IncomingOrganizationInvite } from "@/server/contracts/organizations";
+import { acceptIncomingInvite, declineIncomingInvite } from "./organizationInvitesActions";
+
+type OrganizationInvitesStepProps = {
+  invites: IncomingOrganizationInvite[];
+  onCreateNew: () => void;
+};
+
+/**
+ * WHY:   Users should resolve invites before creating a new organization.
+ * WHAT:  Renders incoming invites with accept/decline actions and a create-new CTA.
+ * HOW:   Calls invite endpoints, then refreshes or advances the journey as needed.
+ */
+export default function OrganizationInvitesStep({
+  invites,
+  onCreateNew,
+}: OrganizationInvitesStepProps) {
+  const router = useRouter();
+  const [pendingInvites, setPendingInvites] = useState(invites);
+  const [pendingInviteId, setPendingInviteId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+
+  const handleAcceptInvite = async (invite: IncomingOrganizationInvite) => {
+    setErrorMessage(null);
+    setPendingInviteId(invite.id);
+    const ok = await acceptIncomingInvite(invite.token);
+
+    if (!ok) {
+      setErrorMessage("تعذر قبول الدعوة حالياً.");
+      setPendingInviteId(null);
+      return;
+    }
+
+    setPendingInvites((current) => current.filter((entry) => entry.id !== invite.id));
+    startTransition(() => {
+      router.refresh();
+      router.replace("/ws");
+    });
+  };
+
+  const handleDeclineInvite = async (inviteId: string) => {
+    setErrorMessage(null);
+    setPendingInviteId(inviteId);
+    const ok = await declineIncomingInvite(inviteId);
+
+    if (!ok) {
+      setErrorMessage("تعذر رفض الدعوة حالياً.");
+      setPendingInviteId(null);
+      return;
+    }
+
+    setPendingInvites((current) => current.filter((entry) => entry.id !== inviteId));
+    setPendingInviteId(null);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <div className="text-base font-semibold text-slate-900">الدعوات والمسار</div>
+        <p className="text-sm text-slate-600">
+          إذا كانت لديك دعوة، اقبلها للانضمام مباشرة. أو أنشئ جهة جديدة.
+        </p>
+      </div>
+
+      {pendingInvites.length > 0 ? (
+        <div className="grid gap-4">
+          {pendingInvites.map((invite) => {
+            const typeLabel = invite.organizationType === "broker" ? "وسيط عقاري" : "مطور عقاري";
+            const isPending = pendingInviteId === invite.id;
+
+            return (
+              <div key={invite.id} className="border border-slate-200 bg-white p-4">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="text-sm font-semibold text-slate-900">{invite.organizationName}</div>
+                    <div className="text-xs text-slate-500">{typeLabel}</div>
+                    <div className="text-xs text-slate-500">دعوة من {invite.inviterName}</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => void handleAcceptInvite(invite)}
+                      disabled={isPending}
+                      className="border border-slate-900 bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+                    >
+                      قبول الدعوة
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleDeclineInvite(invite.id)}
+                      disabled={isPending}
+                      className="border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 disabled:opacity-60"
+                    >
+                      رفض
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          لا توجد دعوات حالياً.
+        </div>
+      )}
+
+      {errorMessage ? (
+        <div className="border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          {errorMessage}
+        </div>
+      ) : null}
+
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-slate-500">أو أنشئ جهة جديدة لتبدأ العمل.</div>
+        <button
+          type="button"
+          onClick={onCreateNew}
+          className="border border-slate-900 bg-white px-4 py-2 text-xs font-semibold text-slate-900 transition hover:bg-slate-100"
+        >
+          إنشاء جهة جديدة
+        </button>
+      </div>
+    </div>
+  );
+}
