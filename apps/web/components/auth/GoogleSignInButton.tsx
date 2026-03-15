@@ -28,7 +28,10 @@ export default function GoogleSignInButton({
       onClick={() => {
         setPending(true);
         startTransition(() => {
-          signIn("google", { redirectTo }).catch(() => setPending(false));
+          const resolvedRedirectTo = redirectTo.startsWith("/")
+            ? `${window.location.origin}${redirectTo}`
+            : redirectTo;
+          signIn("google", { redirectTo: resolvedRedirectTo }).catch(() => setPending(false));
         });
       }}
     >

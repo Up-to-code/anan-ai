@@ -23,4 +23,15 @@ describe("resolveAllowedOrigins", () => {
     expect(origins).not.toContain("http://localhost:3000");
     expect(origins).not.toContain("http://127.0.0.1:3000");
   });
+
+  it("adds explicit extra origins", () => {
+    const origins = resolveAllowedOrigins({
+      webBaseUrl: "https://web.example.com",
+      extraOrigins: ["https://admin.example.com"],
+      nodeEnv: "production",
+    });
+
+    expect(origins).toContain("https://web.example.com");
+    expect(origins).toContain("https://admin.example.com");
+  });
 });

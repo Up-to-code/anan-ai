@@ -7,6 +7,7 @@
 export type AllowedOriginsOptions = {
   webBaseUrl: string | null;
   allowedOriginsEnv?: string | null;
+  extraOrigins?: Array<string | null | undefined>;
   nodeEnv?: string | null;
   vercelEnv?: string | null;
 };
@@ -28,7 +29,7 @@ export function normalizeBaseUrl(value?: string | null) {
 /**
  * WHY:   Auth redirects should never default to production when running locally.
  * WHAT:  Builds the allowed redirect origins list from configured envs and safe defaults.
- * HOW:   Combines web base + explicit allowlist, and appends localhost for non-production.
+ * HOW:   Combines web base, optional extra origins, explicit allowlist, and appends localhost for non-production.
  */
 export function resolveAllowedOrigins(options: AllowedOriginsOptions): string[] {
   const origins = new Set<string>();
@@ -39,12 +40,20 @@ export function resolveAllowedOrigins(options: AllowedOriginsOptions): string[] 
     origins.add(options.webBaseUrl);
   }
 
-  const extraOrigins = (options.allowedOriginsEnv ?? "")
-    .split(",")
+  const extraOrigins = (options.extraOrigins ?? [])
     .map((entry) => normalizeBaseUrl(entry))
     .filter((entry): entry is string => Boolean(entry));
 
   for (const entry of extraOrigins) {
+    origins.add(entry);
+  }
+
+  const allowlistOrigins = (options.allowedOriginsEnv ?? "")
+    .split(",")
+    .map((entry) => normalizeBaseUrl(entry))
+    .filter((entry): entry is string => Boolean(entry));
+
+  for (const entry of allowlistOrigins) {
     origins.add(entry);
   }
 

@@ -84,6 +84,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       const convexBaseUrl = normalizeBaseUrl(process.env.CONVEX_SITE_URL);
       const allowedOrigins = resolveAllowedOrigins({
         webBaseUrl,
+        extraOrigins: [process.env.ANAN_ADMIN_URL],
         allowedOriginsEnv: process.env.ANAN_AUTH_ALLOWED_ORIGINS,
         nodeEnv: process.env.NODE_ENV,
         vercelEnv: process.env.VERCEL_ENV,
