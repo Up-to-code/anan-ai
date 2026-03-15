@@ -19,6 +19,7 @@ export default function WorkspaceShell({
   recentAssistantThreads = [],
   allAssistantThreads = [],
   signalCounts = { notificationCount: 0, inboxCount: 0 },
+  complianceBanner = null,
   children,
 }: {
   user: SidebarUser;
@@ -27,6 +28,12 @@ export default function WorkspaceShell({
   recentAssistantThreads?: AnanProThreadSummary[];
   allAssistantThreads?: AnanProThreadSummary[];
   signalCounts?: { notificationCount: number; inboxCount: number };
+  complianceBanner?: {
+    title: string;
+    body: string;
+    ctaLabel?: string;
+    ctaHref?: string;
+  } | null;
   children: React.ReactNode;
 }) {
   return (
@@ -61,6 +68,23 @@ export default function WorkspaceShell({
             />
           }
         />
+
+        {complianceBanner ? (
+          <div className="border-b border-amber-200 bg-amber-50 px-6 py-4 text-right">
+            <div className="text-sm font-black text-amber-900">{complianceBanner.title}</div>
+            <div className="mt-1 text-xs font-semibold text-amber-800">{complianceBanner.body}</div>
+            {complianceBanner.ctaLabel ? (
+              <div className="mt-3">
+                <a
+                  href={complianceBanner.ctaHref ?? "/ws?onboarding=verification"}
+                  className="inline-flex items-center border border-amber-300 bg-white px-3 py-1.5 text-[10px] font-black tracking-[0.18em] text-amber-900"
+                >
+                  {complianceBanner.ctaLabel}
+                </a>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <main className="min-w-0 flex-1 overflow-visible motion-safe:animate-zone-page-enter lg:overflow-auto">
           {children}

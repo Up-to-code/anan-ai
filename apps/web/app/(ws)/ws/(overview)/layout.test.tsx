@@ -5,10 +5,16 @@ const { requireWorkspaceData, getLayoutSidebarData } = vi.hoisted(() => ({
   requireWorkspaceData: vi.fn(),
   getLayoutSidebarData: vi.fn(),
 }));
+const { getComplianceRulesetForCurrentOrg } = vi.hoisted(() => ({
+  getComplianceRulesetForCurrentOrg: vi.fn(),
+}));
 
 vi.mock("../_lib/workspaceData", () => ({
   requireWorkspaceData,
   getLayoutSidebarData,
+}));
+vi.mock("@/server/domains/compliance/service", () => ({
+  getComplianceRulesetForCurrentOrg,
 }));
 
 vi.mock("../_components/WorkspaceShell", () => ({
@@ -60,6 +66,7 @@ describe("workspace overview layout", () => {
       allConversations: [],
       signalCounts: { notificationCount: 0, inboxCount: 0 },
     });
+    getComplianceRulesetForCurrentOrg.mockResolvedValue(null);
 
     const element = await WorkspaceOverviewLayout({ children: <div>Body</div> });
     const markup = renderToStaticMarkup(element);

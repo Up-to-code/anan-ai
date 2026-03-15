@@ -16,6 +16,14 @@ import {
   convexBrokerZoneRepository,
   type BrokerZoneRepository,
 } from "@/server/infrastructure/convex/brokerZoneRepository";
+import {
+  convexOrganizationsRepository,
+  type OrganizationsRepository,
+} from "@/server/infrastructure/convex/organizationsRepository";
+import {
+  convexComplianceRepository,
+  type ComplianceRepository,
+} from "@/server/infrastructure/convex/complianceRepository";
 
 type BrokerPropertiesDependencies = {
   requireSession: () => Promise<ResolvedSession>;
@@ -23,11 +31,15 @@ type BrokerPropertiesDependencies = {
     BrokerZoneRepository,
     "listProperties" | "getProperty" | "createProperty" | "updateProperty" | "deleteProperty" | "publishProperty"
   >;
+  organizationsRepository: Pick<OrganizationsRepository, "getCurrentOrganization">;
+  complianceRepository: ComplianceRepository;
 };
 
 const defaultDependencies: BrokerPropertiesDependencies = {
   requireSession: requireBrokerSession,
   repository: convexBrokerZoneRepository,
+  organizationsRepository: convexOrganizationsRepository,
+  complianceRepository: convexComplianceRepository,
 };
 
 async function requireBrokerOwnerId(
@@ -62,6 +74,42 @@ async function requireOwnedBrokerProperty(
     });
   }
   return property;
+}
+
+async function requireComplianceForPublish(
+  property: PropertyDetail,
+  dependencies: BrokerPropertiesDependencies,
+) {
+  const session = await dependencies.requireSession();
+  const ruleset = await dependencies.complianceRepository.getForCurrentOrg(session.token);
+  if (!ruleset) {
+    throw new DomainError({
+      code: "VERIFICATION_REQUIRED",
+      message: "Compliance ruleset required before publishing",
+      status: 403,
+    });
+  }
+
+  if (ruleset.enforcement.requireOrgVerification && ruleset.enforcement.blockPublish) {
+    const currentOrg = await dependencies.organizationsRepository.getCurrentOrganization(session.token);
+    if (!currentOrg?.organization?.isVerified) {
+      throw new DomainError({
+        code: "VERIFICATION_REQUIRED",
+        message: "Organization verification is required before publishing",
+        status: 403,
+      });
+    }
+  }
+
+  if (ruleset.enforcement.requireListingVerification && ruleset.enforcement.blockPublish) {
+    if (property.adLicenseStatus !== "approved") {
+      throw new DomainError({
+        code: "VERIFICATION_REQUIRED",
+        message: "Ad license verification is required before publishing",
+        status: 403,
+      });
+    }
+  }
 }
 
 /**
@@ -161,6 +209,7 @@ export async function publishBrokerProperty(
   input: { id: string },
   dependencies: BrokerPropertiesDependencies = defaultDependencies,
 ): Promise<PublishPropertyResult> {
-  await requireOwnedBrokerProperty(input.id, dependencies);
+  const property = await requireOwnedBrokerProperty(input.id, dependencies);
+  await requireComplianceForPublish(property, dependencies);
   return dependencies.repository.publishProperty(input.id);
 }

@@ -4,6 +4,7 @@ import {
   Building2,
   ClipboardCheck,
   LayoutDashboard,
+  ShieldCheck,
   Users,
   Waypoints,
 } from "lucide-react";
@@ -27,10 +28,16 @@ export const adminPrimaryNav: AdminNavItem[] = [
   { href: "/users", label: "المستخدمون", icon: Users, sectionKey: "users" },
   { href: "/organizations", label: "المنظمات", icon: Waypoints, sectionKey: "organizations" },
   { href: "/verifications", label: "التحقق", icon: ClipboardCheck, sectionKey: "verifications" },
+  { href: "/compliance", label: "الامتثال", icon: ShieldCheck, sectionKey: "compliance" },
   { href: "/properties", label: "العقارات", icon: Building2, sectionKey: "properties" },
   { href: "/activity", label: "النشاط", icon: Activity, sectionKey: "activity" },
 ];
 
+/**
+ * WHY:   Admin pages need a reliable breadcrumb label for the primary navigation header.
+ * WHAT:  Resolves the label for the active primary navigation item.
+ * HOW:   Finds the first nav item whose href matches or prefixes the pathname.
+ */
 export function getPrimaryNavLabel(pathname: string) {
   const item =
     adminPrimaryNav.find((navItem) => pathname === navItem.href || pathname.startsWith(`${navItem.href}/`)) ??

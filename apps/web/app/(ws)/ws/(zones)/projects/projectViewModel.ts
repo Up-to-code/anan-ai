@@ -45,6 +45,11 @@ export function mapPropertyToWorkspaceProject(property: PropertyDetail): Workspa
   };
 }
 
+/**
+ * WHY:   Project forms still submit a legacy view-model payload that must reach Convex safely.
+ * WHAT:  Converts the project form payload into the property input contract.
+ * HOW:   Normalizes numeric fields, trims strings, and forwards media plus ad-license data.
+ */
 export function mapWorkspaceProjectToPropertyInput(project: {
   name: string;
   price: string;
@@ -54,6 +59,7 @@ export function mapWorkspaceProjectToPropertyInput(project: {
   baths: string;
   area: string;
   images: PropertyDetail["media"];
+  adLicenseNumber?: string;
 }) {
   const numericPrice = Number(project.price.replace(/[^\d.]/g, "")) || 0;
   const numericArea = Number(project.area.replace(/[^\d.]/g, "")) || undefined;
@@ -68,5 +74,6 @@ export function mapWorkspaceProjectToPropertyInput(project: {
     baths: Number(project.baths) || 0,
     sqft: numericArea,
     media: project.images ?? [],
+    adLicenseNumber: project.adLicenseNumber?.trim() || undefined,
   };
 }

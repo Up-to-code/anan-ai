@@ -28,6 +28,14 @@ vi.mock("../inbox/InboxPage/useRealtimeInbox", () => ({
   useWorkspaceSignalCounts,
 }));
 
+const { getComplianceRulesetForCurrentOrg } = vi.hoisted(() => ({
+  getComplianceRulesetForCurrentOrg: vi.fn(() => Promise.resolve(null)),
+}));
+
+vi.mock("@/server/domains/compliance/service", () => ({
+  getComplianceRulesetForCurrentOrg,
+}));
+
 vi.mock("next/link", () => ({
   default: ({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) => (
     <a href={href} className={className}>

@@ -71,6 +71,7 @@ flowchart LR
 - **New channel adapter:** `convex/ai_zone/channels/<channel>/` + add route in `convex/http.ts` (see `channels.md`).
 - **New admin operational projection:** `convex/admin_zone/*`.
 - **New mobile endpoint:** `convex/user_zone/mobile/*`.
+- **New compliance logic or rulesets:** `convex/shared_logic/compliance/*` and `convex/admin_zone/compliance.ts`.
 
 ---
 

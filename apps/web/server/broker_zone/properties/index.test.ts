@@ -37,12 +37,35 @@ function requireBrokerSession() {
   }));
 }
 
+function makeComplianceRepository() {
+  return {
+    getForCurrentOrg: vi.fn(async () => ({
+      enforcement: {
+        blockPublish: true,
+        hideUnverified: true,
+        showBanner: true,
+        requireOrgVerification: true,
+        requireListingVerification: true,
+      },
+    })),
+  };
+}
+
+function makeOrganizationsRepository() {
+  return {
+    getCurrentOrganization: vi.fn(async () => ({
+      organization: { isVerified: true },
+      membership: { id: "m-1" },
+    })),
+  };
+}
+
 describe("broker property server functions", () => {
   it("lists broker properties through the repository", async () => {
     const repository = makeRepository();
     await listBrokerProperties(
       { paginationOpts: { cursor: null, numItems: 10 } },
-      { requireSession: requireBrokerSession(), repository },
+      { requireSession: requireBrokerSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
     );
     expect(repository.listProperties).toHaveBeenCalledWith("broker-1", {
       paginationOpts: { cursor: null, numItems: 10 },
@@ -63,7 +86,7 @@ describe("broker property server functions", () => {
     });
 
     await expect(
-      getBrokerProperty({ id: "property-1" }, { requireSession: requireBrokerSession(), repository }),
+      getBrokerProperty({ id: "property-1" }, { requireSession: requireBrokerSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() }),
     ).rejects.toBeInstanceOf(DomainError);
   });
 
@@ -79,7 +102,7 @@ describe("broker property server functions", () => {
           beds: 3,
           baths: 2,
         },
-        { requireSession: requireBrokerSession(), repository },
+        { requireSession: requireBrokerSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
       ),
     ).resolves.toBe("property-1");
     expect(repository.createProperty).toHaveBeenCalledWith("broker-1", expect.any(Object));
@@ -99,7 +122,7 @@ describe("broker property server functions", () => {
     });
     await updateBrokerProperty(
       { id: "property-1", patch: { price: 200 } },
-      { requireSession: requireBrokerSession(), repository },
+      { requireSession: requireBrokerSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
     );
     expect(repository.updateProperty).toHaveBeenCalledWith("property-1", { price: 200 });
   });
@@ -118,7 +141,7 @@ describe("broker property server functions", () => {
     });
     await deleteBrokerProperty(
       { id: "property-1" },
-      { requireSession: requireBrokerSession(), repository },
+      { requireSession: requireBrokerSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
     );
     expect(repository.deleteProperty).toHaveBeenCalledWith("property-1");
   });
@@ -134,11 +157,12 @@ describe("broker property server functions", () => {
       beds: 1,
       baths: 1,
       brokerId: "broker-1",
+      adLicenseStatus: "approved",
     });
     await expect(
       publishBrokerProperty(
         { id: "property-1" },
-        { requireSession: requireBrokerSession(), repository },
+        { requireSession: requireBrokerSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
       ),
     ).resolves.toEqual({ ok: true });
   });

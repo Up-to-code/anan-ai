@@ -2,25 +2,31 @@ import WorkspaceShell from "../../_components/WorkspaceShell";
 import { getWorkspaceOrganizationDisplay } from "../../_lib/organizationDisplay";
 import { getLayoutSidebarData, requireWorkspaceData } from "../../_lib/workspaceData";
 import OffersTabs from "./OffersTabs";
+import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
+import { buildComplianceBanner } from "../../_lib/complianceBanner";
 
 /**
  * WHY:   Offers now uses the unified workspace shell - no more separate zone.
  * WHAT:  Wraps the offers route with the main workspace layout.
+ * HOW:   Loads workspace chrome data and renders offer tabs inside the shared shell.
  */
 export default async function OffersZoneLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [workspace, chrome] = await Promise.all([
+  const [workspace, chrome, complianceRuleset] = await Promise.all([
     requireWorkspaceData("/ws/offers"),
     getLayoutSidebarData("/ws/offers"),
+    getComplianceRulesetForCurrentOrg().catch(() => null),
   ]);
   const primaryOrganization = chrome.organizations?.[0];
 
   if (!primaryOrganization) {
     return <div className="min-h-svh bg-white">{children}</div>;
   }
+
+  const complianceBanner = buildComplianceBanner(primaryOrganization, complianceRuleset);
 
   return (
     <WorkspaceShell
@@ -29,6 +35,7 @@ export default async function OffersZoneLayout({
       recentAssistantThreads={chrome.recentAssistantThreads}
       allAssistantThreads={chrome.allAssistantThreads}
       signalCounts={chrome.signalCounts}
+      complianceBanner={complianceBanner}
       organization={getWorkspaceOrganizationDisplay({
         name: primaryOrganization?.name,
         type: primaryOrganization?.type,

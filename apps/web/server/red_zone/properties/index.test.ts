@@ -37,12 +37,35 @@ function requireRedSession() {
   }));
 }
 
+function makeComplianceRepository() {
+  return {
+    getForCurrentOrg: vi.fn(async () => ({
+      enforcement: {
+        blockPublish: true,
+        hideUnverified: true,
+        showBanner: true,
+        requireOrgVerification: true,
+        requireListingVerification: true,
+      },
+    })),
+  };
+}
+
+function makeOrganizationsRepository() {
+  return {
+    getCurrentOrganization: vi.fn(async () => ({
+      organization: { isVerified: true },
+      membership: { id: "m-1" },
+    })),
+  };
+}
+
 describe("red property server functions", () => {
   it("lists RED properties through the repository", async () => {
     const repository = makeRepository();
     await listRedProperties(
       { paginationOpts: { cursor: null, numItems: 10 } },
-      { requireSession: requireRedSession(), repository },
+      { requireSession: requireRedSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
     );
     expect(repository.listProperties).toHaveBeenCalledWith("red-1", {
       paginationOpts: { cursor: null, numItems: 10 },
@@ -63,7 +86,7 @@ describe("red property server functions", () => {
     });
 
     await expect(
-      getRedProperty({ id: "property-1" }, { requireSession: requireRedSession(), repository }),
+      getRedProperty({ id: "property-1" }, { requireSession: requireRedSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() }),
     ).rejects.toBeInstanceOf(DomainError);
   });
 
@@ -79,7 +102,7 @@ describe("red property server functions", () => {
           beds: 3,
           baths: 2,
         },
-        { requireSession: requireRedSession(), repository },
+        { requireSession: requireRedSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
       ),
     ).resolves.toBe("property-1");
     expect(repository.createProperty).toHaveBeenCalledWith("red-1", expect.any(Object));
@@ -99,7 +122,7 @@ describe("red property server functions", () => {
     });
     await updateRedProperty(
       { id: "property-1", patch: { price: 200 } },
-      { requireSession: requireRedSession(), repository },
+      { requireSession: requireRedSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
     );
     expect(repository.updateProperty).toHaveBeenCalledWith("property-1", { price: 200 });
   });
@@ -118,7 +141,7 @@ describe("red property server functions", () => {
     });
     await deleteRedProperty(
       { id: "property-1" },
-      { requireSession: requireRedSession(), repository },
+      { requireSession: requireRedSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
     );
     expect(repository.deleteProperty).toHaveBeenCalledWith("property-1");
   });
@@ -134,11 +157,12 @@ describe("red property server functions", () => {
       beds: 1,
       baths: 1,
       REDId: "red-1",
+      adLicenseStatus: "approved",
     });
     await expect(
       publishRedProperty(
         { id: "property-1" },
-        { requireSession: requireRedSession(), repository },
+        { requireSession: requireRedSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
       ),
     ).resolves.toEqual({ ok: true });
   });

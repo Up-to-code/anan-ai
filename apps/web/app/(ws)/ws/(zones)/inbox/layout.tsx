@@ -1,6 +1,8 @@
 import WorkspaceShell from "../../_components/WorkspaceShell";
 import { getWorkspaceOrganizationDisplay } from "../../_lib/organizationDisplay";
 import { getLayoutSidebarData, requireWorkspaceData } from "../../_lib/workspaceData";
+import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
+import { buildComplianceBanner } from "../../_lib/complianceBanner";
 
 /**
  * WHY:   The inbox zone needs the shared workspace chrome (sidebar and top navbar).
@@ -12,15 +14,18 @@ export default async function InboxZoneLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [workspace, chrome] = await Promise.all([
+  const [workspace, chrome, complianceRuleset] = await Promise.all([
     requireWorkspaceData("/ws/inbox"),
     getLayoutSidebarData("/ws/inbox"),
+    getComplianceRulesetForCurrentOrg().catch(() => null),
   ]);
   const primaryOrganization = chrome.organizations?.[0];
 
   if (!primaryOrganization) {
     return <div className="min-h-svh bg-white">{children}</div>;
   }
+
+  const complianceBanner = buildComplianceBanner(primaryOrganization, complianceRuleset);
 
   return (
     <WorkspaceShell
@@ -29,6 +34,7 @@ export default async function InboxZoneLayout({
       recentAssistantThreads={chrome.recentAssistantThreads}
       allAssistantThreads={chrome.allAssistantThreads}
       signalCounts={chrome.signalCounts}
+      complianceBanner={complianceBanner}
       organization={getWorkspaceOrganizationDisplay({
         name: primaryOrganization?.name,
         type: primaryOrganization?.type,

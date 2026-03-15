@@ -68,6 +68,8 @@ export default async function EditProjectRoute({ params }: EditProjectRouteProps
               : "pending",
         images: property?.media ?? [],
         brokerId: null,
+        adLicenseNumber: property?.adLicenseNumber ?? "",
+        adLicenseStatus: property?.adLicenseStatus ?? null,
       }}
       title="تعديل المشروع"
       description={`${project.title} — تعديل البيانات والصور.`}

@@ -21,6 +21,7 @@ type RedPropertyWriteFields = {
   status?: PropertyStatus;
   bankId?: Id<"banks">;
   media?: Infer<typeof uploadedFileReferenceValidator>[];
+  adLicenseNumber?: string;
 };
 
 type RedPropertyCreateArgs = RedPropertyWriteFields & {

@@ -36,6 +36,7 @@ export default function ProjectFormScreen({
   return (
     <div className="flex min-h-full flex-col p-6 lg:p-12">
       <AgPropertyForm
+        propertyId={projectId}
         initialData={initialData}
         title={title}
         description={description}

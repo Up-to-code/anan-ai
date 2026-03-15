@@ -21,7 +21,7 @@ export const listVerificationRequests = query({
   handler: async (ctx, { status }) => {
     await requireRole(ctx, ["admin"]);
 
-    const [requests, profiles, brokers, developers] = await Promise.all([
+    const [requests, profiles, brokers, developers, properties] = await Promise.all([
       status
       ? await ctx.db
           .query("verificationRequests")
@@ -31,6 +31,7 @@ export const listVerificationRequests = query({
       ctx.db.query("userProfiles").collect(),
       ctx.db.query("brokers").collect(),
       ctx.db.query("RED").collect(),
+      ctx.db.query("properties").collect(),
     ]);
 
     return requests
@@ -38,6 +39,13 @@ export const listVerificationRequests = query({
         const profile = request.subjectProfileId ? profiles.find((item) => item._id === request.subjectProfileId) : null;
         const broker = request.subjectBrokerId ? brokers.find((item) => item._id === request.subjectBrokerId) : null;
         const developer = request.subjectREDId ? developers.find((item) => item._id === request.subjectREDId) : null;
+        const property = request.subjectPropertyId ? properties.find((item) => item._id === request.subjectPropertyId) : null;
+        const propertyOwner =
+          property?.brokerId
+            ? brokers.find((item) => item._id === property.brokerId)
+            : property?.REDId
+              ? developers.find((item) => item._id === property.REDId)
+              : null;
 
         return {
           ...request,
@@ -46,9 +54,10 @@ export const listVerificationRequests = query({
             profile?.email ??
             broker?.name ??
             developer?.name ??
+            property?.title ??
             request.title ??
             request.requestType,
-          organizationName: broker?.name ?? developer?.name ?? null,
+          organizationName: broker?.name ?? developer?.name ?? propertyOwner?.name ?? null,
           documentsCount: request.attachedDocuments.length,
         };
       })
@@ -65,11 +74,12 @@ export const getVerificationRequest = query({
   args: { id: v.id("verificationRequests") },
   handler: async (ctx, { id }) => {
     await requireRole(ctx, ["admin"]);
-    const [request, profiles, brokers, developers] = await Promise.all([
+    const [request, profiles, brokers, developers, properties] = await Promise.all([
       ctx.db.get(id),
       ctx.db.query("userProfiles").collect(),
       ctx.db.query("brokers").collect(),
       ctx.db.query("RED").collect(),
+      ctx.db.query("properties").collect(),
     ]);
 
     if (!request) {
@@ -79,6 +89,7 @@ export const getVerificationRequest = query({
     const profile = request.subjectProfileId ? profiles.find((item) => item._id === request.subjectProfileId) : null;
     const broker = request.subjectBrokerId ? brokers.find((item) => item._id === request.subjectBrokerId) : null;
     const developer = request.subjectREDId ? developers.find((item) => item._id === request.subjectREDId) : null;
+    const property = request.subjectPropertyId ? properties.find((item) => item._id === request.subjectPropertyId) : null;
 
     return {
       ...request,
@@ -106,6 +117,15 @@ export const getVerificationRequest = query({
               name: developer.name,
               status: developer.status ?? null,
               isVerified: developer.isVerified === true,
+            }
+          : null,
+        property: property
+          ? {
+              id: String(property._id),
+              title: property.title,
+              address: property.address,
+              adLicenseNumber: property.adLicenseNumber ?? null,
+              adLicenseStatus: property.adLicenseStatus ?? null,
             }
           : null,
       },
@@ -218,6 +238,19 @@ export const reviewVerificationRequest = mutation({
         await ctx.db.patch(developer._id, {
           isVerified: status === "approved",
           status: status === "approved" ? "active" : developer.status,
+        });
+      }
+    }
+
+    if (request.requestType === "property" && request.subjectPropertyId) {
+      const property = await ctx.db.get(request.subjectPropertyId);
+      if (property) {
+        const nextStatus = status === "approved" ? "approved" : status === "rejected" ? "rejected" : "pending";
+        const submittedLicense = (request.submittedData as { adLicenseNumber?: string } | null)?.adLicenseNumber;
+        await ctx.db.patch(property._id, {
+          adLicenseStatus: nextStatus,
+          adLicenseNumber: submittedLicense ?? property.adLicenseNumber,
+          adLicenseVerificationRequestId: request._id,
         });
       }
     }

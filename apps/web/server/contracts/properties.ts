@@ -38,6 +38,7 @@ export const createPropertyInputSchema = z.object({
   status: propertyStatusSchema.optional(),
   bankId: z.string().optional(),
   media: z.array(uploadedFileReferenceSchema).optional(),
+  adLicenseNumber: z.string().trim().optional(),
 });
 
 /**
@@ -72,6 +73,9 @@ export type PropertyDetail = {
   heroImage?: import("@/server/contracts/files").UploadedFileReference | null;
   media?: import("@/server/contracts/files").UploadedFileReference[];
   body?: unknown;
+  adLicenseNumber?: string;
+  adLicenseStatus?: "pending" | "approved" | "rejected";
+  adLicenseVerificationRequestId?: string;
 };
 
 export type PropertyListItem = PropertyDetail;

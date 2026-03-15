@@ -1,9 +1,10 @@
 import { fetchMutation } from "convex/nextjs";
 import { apiUnsafe } from "@/lib/convexApi";
-import type { VerificationRequestInput } from "@/server/contracts/verifications";
+import type { PropertyVerificationRequestInput, VerificationRequestInput } from "@/server/contracts/verifications";
 
 type VerificationsApiRefs = {
   createVerificationRequestForCurrentOrg: unknown;
+  createPropertyVerificationRequestForCurrentOrg: unknown;
 };
 
 const verificationsApi = apiUnsafe[
@@ -20,6 +21,10 @@ export type VerificationsRepository = {
     token: string,
     input: VerificationRequestInput,
   ): Promise<{ requestId: string }>;
+  createPropertyForCurrentOrganization(
+    token: string,
+    input: PropertyVerificationRequestInput,
+  ): Promise<{ requestId: string }>;
 };
 
 /**
@@ -31,6 +36,13 @@ export const convexVerificationsRepository: VerificationsRepository = {
   async createForCurrentOrganization(token, input) {
     return fetchMutation(
       verificationsApi.createVerificationRequestForCurrentOrg as never,
+      input as never,
+      { token },
+    ) as Promise<{ requestId: string }>;
+  },
+  async createPropertyForCurrentOrganization(token, input) {
+    return fetchMutation(
+      verificationsApi.createPropertyVerificationRequestForCurrentOrg as never,
       input as never,
       { token },
     ) as Promise<{ requestId: string }>;

@@ -8,11 +8,8 @@ import type { IncomingOrganizationInvite } from "@/server/contracts/organization
 import OrganizationInvitesStep from "./OrganizationInvitesStep";
 import OrganizationDetailsStep from "./OrganizationDetailsStep";
 import VerificationDocsStep from "./VerificationDocsStep";
-import {
-  brokerRequirements,
-  developerRequirements,
-  requirementSources,
-} from "./requirements";
+import type { ComplianceRuleset } from "@/server/contracts/compliance";
+import type { RequirementItem, RequirementSourceLink } from "./requirements";
 
 type OrganizationOnboardingJourneyProps = {
   user: SessionUser;
@@ -22,6 +19,8 @@ type OrganizationOnboardingJourneyProps = {
   errorMessage?: string;
   initialStep?: 1 | 2 | 3;
   initialOrganization?: { id: string; type: "broker" | "red" } | null;
+  brokerRuleset: ComplianceRuleset | null;
+  redRuleset: ComplianceRuleset | null;
 };
 
 type OrganizationSnapshot = {
@@ -42,6 +41,8 @@ export default function OrganizationOnboardingJourney({
   errorMessage,
   initialStep = 1,
   initialOrganization = null,
+  brokerRuleset,
+  redRuleset,
 }: OrganizationOnboardingJourneyProps) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(initialStep);
@@ -80,7 +81,11 @@ export default function OrganizationOnboardingJourney({
     });
   };
 
-  const requirements = organization?.type === "red" ? developerRequirements : brokerRequirements;
+  const inferredType = organization?.type ?? suggestedOrganizationType;
+  const activeRuleset = inferredType === "red" ? redRuleset : brokerRuleset;
+  const currentRequirements = (activeRuleset?.requirements ?? []) as RequirementItem[];
+  const currentSources = (activeRuleset?.sources ?? []) as RequirementSourceLink[];
+  const countryLabel = activeRuleset?.countryLabel ?? null;
 
   return (
     <div className="space-y-6">
@@ -154,8 +159,9 @@ export default function OrganizationOnboardingJourney({
           {step === 3 ? (
             <VerificationDocsStep
               organizationType={organization?.type ?? suggestedOrganizationType}
-              requirements={requirements}
-              sources={requirementSources}
+              requirements={currentRequirements}
+              sources={currentSources}
+              countryLabel={countryLabel}
               onBack={() => handleAdvance(2)}
               onSkip={() => router.replace("/ws")}
             />

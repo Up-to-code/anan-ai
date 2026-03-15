@@ -25,6 +25,8 @@ describe("OrganizationOnboardingJourney", () => {
         suggestedOrganizationType="broker"
         audience="broker"
         incomingInvites={[]}
+        brokerRuleset={null}
+        redRuleset={null}
       />,
     );
 

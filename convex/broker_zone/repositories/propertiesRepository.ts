@@ -21,6 +21,7 @@ type BrokerPropertyWriteFields = {
   status?: PropertyStatus;
   bankId?: Id<"banks">;
   media?: Infer<typeof uploadedFileReferenceValidator>[];
+  adLicenseNumber?: string;
 };
 
 type BrokerPropertyCreateArgs = BrokerPropertyWriteFields & {

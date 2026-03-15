@@ -36,6 +36,12 @@ const propertiesTables = {
         heroImage: v.optional(uploadedFileReferenceValidator),
         media: v.optional(uploadedFileReferenceListValidator),
         body: v.optional(v.any()), // dynamic structured content block
+        adLicenseNumber: v.optional(v.string()),
+        adLicenseStatus: v.optional(
+            v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+        ),
+        adLicenseExpiresAt: v.optional(v.number()),
+        adLicenseVerificationRequestId: v.optional(v.id("verificationRequests")),
     })
         .index("status", ["status"])
         .index("publicationState", ["publicationState"])

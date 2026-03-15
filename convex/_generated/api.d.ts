@@ -39,6 +39,7 @@ import type * as admin_zone_activities from "../admin_zone/activities.js";
 import type * as admin_zone_analytics from "../admin_zone/analytics.js";
 import type * as admin_zone_banks from "../admin_zone/banks.js";
 import type * as admin_zone_charts from "../admin_zone/charts.js";
+import type * as admin_zone_compliance from "../admin_zone/compliance.js";
 import type * as admin_zone_developers from "../admin_zone/developers.js";
 import type * as admin_zone_knowledge from "../admin_zone/knowledge.js";
 import type * as admin_zone_notifications from "../admin_zone/notifications.js";
@@ -156,6 +157,8 @@ import type * as shared_logic_agencies_repositories_membership from "../shared_l
 import type * as shared_logic_agencies_repositories_organization from "../shared_logic/agencies/repositories/organization.js";
 import type * as shared_logic_banks_queries from "../shared_logic/banks/queries.js";
 import type * as shared_logic_batch_index from "../shared_logic/batch/index.js";
+import type * as shared_logic_compliance_index from "../shared_logic/compliance/index.js";
+import type * as shared_logic_compliance_utils from "../shared_logic/compliance/utils.js";
 import type * as shared_logic_content_queries from "../shared_logic/content/queries.js";
 import type * as shared_logic_crm_repositories from "../shared_logic/crm/repositories.js";
 import type * as shared_logic_developerHandbook_index from "../shared_logic/developerHandbook/index.js";
@@ -264,6 +267,7 @@ declare const fullApi: ApiFromModules<{
   "admin_zone/analytics": typeof admin_zone_analytics;
   "admin_zone/banks": typeof admin_zone_banks;
   "admin_zone/charts": typeof admin_zone_charts;
+  "admin_zone/compliance": typeof admin_zone_compliance;
   "admin_zone/developers": typeof admin_zone_developers;
   "admin_zone/knowledge": typeof admin_zone_knowledge;
   "admin_zone/notifications": typeof admin_zone_notifications;
@@ -381,6 +385,8 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/agencies/repositories/organization": typeof shared_logic_agencies_repositories_organization;
   "shared_logic/banks/queries": typeof shared_logic_banks_queries;
   "shared_logic/batch/index": typeof shared_logic_batch_index;
+  "shared_logic/compliance/index": typeof shared_logic_compliance_index;
+  "shared_logic/compliance/utils": typeof shared_logic_compliance_utils;
   "shared_logic/content/queries": typeof shared_logic_content_queries;
   "shared_logic/crm/repositories": typeof shared_logic_crm_repositories;
   "shared_logic/developerHandbook/index": typeof shared_logic_developerHandbook_index;

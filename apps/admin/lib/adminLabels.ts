@@ -61,6 +61,7 @@ const verificationTypeLabels: Record<string, string> = {
   user: "مستخدم",
   broker: "وسيط",
   RED: "مطور",
+  property: "إعلان عقاري",
 };
 
 function fallbackLabel(value?: string | null) {
@@ -71,6 +72,11 @@ function fallbackLabel(value?: string | null) {
   return value.replaceAll("_", " ");
 }
 
+/**
+ * WHY:   Admin UI tables need consistent Arabic labels for statuses without re-implementing logic.
+ * WHAT:  Resolves a status label for known values with a readable fallback.
+ * HOW:   Looks up the status in a map and normalizes unknown values.
+ */
 export function labelForStatus(value?: string | null) {
   if (!value) {
     return "غير متوفر";
@@ -79,6 +85,11 @@ export function labelForStatus(value?: string | null) {
   return statusLabels[value] ?? fallbackLabel(value);
 }
 
+/**
+ * WHY:   Admin UI tables need consistent Arabic labels for channels without re-implementing logic.
+ * WHAT:  Resolves a channel label for known values with a readable fallback.
+ * HOW:   Looks up the channel in a map and normalizes unknown values.
+ */
 export function labelForChannel(value?: string | null) {
   if (!value) {
     return "غير متوفر";
@@ -87,6 +98,11 @@ export function labelForChannel(value?: string | null) {
   return channelLabels[value] ?? fallbackLabel(value);
 }
 
+/**
+ * WHY:   Admin UI cards and tables should show roles in Arabic consistently.
+ * WHAT:  Resolves a role label for known values with a readable fallback.
+ * HOW:   Looks up the role in a map and normalizes unknown values.
+ */
 export function labelForRole(value?: string | null) {
   if (!value) {
     return "غير متوفر";
@@ -95,6 +111,11 @@ export function labelForRole(value?: string | null) {
   return roleLabels[value] ?? fallbackLabel(value);
 }
 
+/**
+ * WHY:   Admin views need consistent Arabic labels for broker/developer owner types.
+ * WHAT:  Resolves an owner type label for known values with a readable fallback.
+ * HOW:   Looks up the owner type in a map and normalizes unknown values.
+ */
 export function labelForOwnerType(value?: string | null) {
   if (!value) {
     return "غير متوفر";
@@ -103,6 +124,11 @@ export function labelForOwnerType(value?: string | null) {
   return ownerTypeLabels[value] ?? fallbackLabel(value);
 }
 
+/**
+ * WHY:   Verification lists and details need readable Arabic labels for request types.
+ * WHAT:  Resolves a verification request type label with a readable fallback.
+ * HOW:   Looks up the type in a map and normalizes unknown values.
+ */
 export function labelForVerificationType(value?: string | null) {
   if (!value) {
     return "غير متوفر";

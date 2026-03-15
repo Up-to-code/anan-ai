@@ -62,11 +62,14 @@ describe("verification requests", () => {
 
   it("rejects submissions without documents", async () => {
     const t = convexTest(schema, modules);
+    const redId = await t.run((ctx) =>
+      ctx.db.insert("RED", { name: "Developer One", slug: "developer-one" }),
+    );
     mockRequireOrganizationMembership.mockReset();
     mockRequireOrganizationMembership.mockResolvedValue({
       owner: {
         ownerType: "RED",
-        ownerREDId: "red-1",
+        ownerREDId: redId,
         tenantOrgId: "tenant-1",
       },
       profile: {

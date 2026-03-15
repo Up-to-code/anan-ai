@@ -36,9 +36,12 @@ export type ProjectFormData = {
   images: UploadedFileReference[];
   video: string | null;
   brokerId: string | null;
+  adLicenseNumber?: string;
+  adLicenseStatus?: "pending" | "approved" | "rejected" | null;
 };
 
 type AgPropertyFormProps = {
+  propertyId?: string;
   initialData?: Partial<ProjectFormData>;
   brokers?: BrokerPresence[];
   title?: string;
@@ -55,6 +58,7 @@ type AgPropertyFormProps = {
  * HOW:   Redesigned to follow the flat, stark, minimalist "lazy/base" aesthetic like the Market page.
  */
 export default function AgPropertyForm({
+  propertyId,
   initialData,
   brokers = [],
   title = "مسؤولية الاطلاع",
@@ -72,6 +76,7 @@ export default function AgPropertyForm({
     const [uploadError, setUploadError] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement | null>(null);
     const { startUpload, isUploading } = useUploadThing("propertyMedia");
+    const { startUpload: startLicenseUpload, isUploading: isLicenseUploading } = useUploadThing("verificationDocuments");
 
     const [formState, setFormState] = useState({
         name: initialData?.name ?? "",
@@ -83,10 +88,33 @@ export default function AgPropertyForm({
         area: initialData?.area ?? "",
         status: initialData?.status ?? "active",
         images: initialData?.images ?? [],
-        video: initialData?.video ?? null
+        video: initialData?.video ?? null,
+        adLicenseNumber: initialData?.adLicenseNumber ?? ""
     });
+    const adLicenseStatus = initialData?.adLicenseStatus ?? null;
+    const [licenseDocs, setLicenseDocs] = useState<UploadedFileReference[]>([]);
+    const [licenseError, setLicenseError] = useState<string | null>(null);
+    const [licenseSubmitting, setLicenseSubmitting] = useState(false);
+    const [licenseSubmitted, setLicenseSubmitted] = useState(false);
+    const licenseInputRef = useRef<HTMLInputElement | null>(null);
 
     const isEditMode = Boolean(initialData);
+    const adLicenseLabel =
+      adLicenseStatus === "approved"
+        ? "معتمد"
+        : adLicenseStatus === "rejected"
+          ? "مرفوض"
+          : adLicenseStatus === "pending"
+            ? "قيد المراجعة"
+            : "غير مكتمل";
+    const adLicenseTone =
+      adLicenseStatus === "approved"
+        ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+        : adLicenseStatus === "rejected"
+          ? "text-rose-700 bg-rose-50 border-rose-200"
+          : adLicenseStatus === "pending"
+            ? "text-amber-700 bg-amber-50 border-amber-200"
+            : "text-slate-600 bg-slate-50 border-slate-200";
 
     const filteredBrokers = useMemo(() => {
         return brokers.filter(b => 
@@ -123,8 +151,70 @@ export default function AgPropertyForm({
       }
     };
 
+    const handleLicenseFiles = async (event: ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.target.files ?? []);
+      if (files.length === 0) {
+        return;
+      }
+      setLicenseError(null);
+      setLicenseSubmitted(false);
+
+      try {
+        const uploaded = await startLicenseUpload(files);
+        const nextDocs =
+          uploaded?.map((file) => file.serverData as UploadedFileReference) ?? [];
+        setLicenseDocs((current) => [...current, ...nextDocs]);
+      } catch (error) {
+        setLicenseError(error instanceof Error ? error.message : "تعذر رفع مستندات الترخيص.");
+      } finally {
+        event.target.value = "";
+      }
+    };
+
+    const handleLicenseSubmit = async () => {
+      if (!propertyId) {
+        setLicenseError("الرجاء حفظ المشروع أولاً ثم إرسال طلب الترخيص.");
+        return;
+      }
+      if (!formState.adLicenseNumber?.trim()) {
+        setLicenseError("الرجاء إدخال رقم رخصة الإعلان العقاري.");
+        return;
+      }
+      if (licenseDocs.length === 0) {
+        setLicenseError("الرجاء رفع مستند واحد على الأقل لإرسال الطلب.");
+        return;
+      }
+
+      setLicenseSubmitting(true);
+      setLicenseError(null);
+      setLicenseSubmitted(false);
+
+      try {
+        const response = await fetch("/api/property-verification-requests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            propertyId,
+            adLicenseNumber: formState.adLicenseNumber.trim(),
+            documents: licenseDocs,
+          }),
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          throw new Error(payload?.message ?? "تعذر إرسال الطلب.");
+        }
+
+        setLicenseSubmitted(true);
+      } catch (error) {
+        setLicenseError(error instanceof Error ? error.message : "تعذر إرسال الطلب.");
+      } finally {
+        setLicenseSubmitting(false);
+      }
+    };
+
     const handleConfirm = async () => {
-      const payload: ProjectFormData = { ...formState, brokerId: selectedBrokerId };
+      const payload: ProjectFormData = { ...formState, brokerId: selectedBrokerId, adLicenseStatus };
       setSavePending(true);
       try {
         if (onSave) {
@@ -453,6 +543,79 @@ export default function AgPropertyForm({
                                     </select>
                                     <ChevronRight className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 pointer-events-none rotate-90" />
                                 </div>
+                            </div>
+
+                            <div className="grid gap-3 text-right border border-slate-200 bg-slate-50/60 p-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="text-xs font-black text-slate-900">ترخيص الإعلان العقاري</div>
+                                    <span className={`rounded-full border px-3 py-1 text-[10px] font-black ${adLicenseTone}`}>
+                                      {adLicenseLabel}
+                                    </span>
+                                </div>
+                                <input
+                                  type="text"
+                                  value={formState.adLicenseNumber}
+                                  onChange={(e) => setFormState(prev => ({ ...prev, adLicenseNumber: e.target.value }))}
+                                  placeholder="رقم رخصة الإعلان"
+                                  className="h-12 w-full border-2 border-slate-200 bg-white px-4 text-sm font-bold text-slate-900 outline-none focus:border-blue-600"
+                                />
+                                {propertyId ? (
+                                  <div className="grid gap-3">
+                                    <input
+                                      ref={licenseInputRef}
+                                      type="file"
+                                      multiple
+                                      className="hidden"
+                                      onChange={handleLicenseFiles}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => licenseInputRef.current?.click()}
+                                      className="flex w-full items-center justify-center gap-2 border border-dashed border-slate-300 bg-white px-4 py-3 text-xs font-black text-slate-700"
+                                    >
+                                      <Upload className="h-4 w-4" />
+                                      {isLicenseUploading ? "جارٍ رفع المستندات..." : "رفع مستندات الترخيص"}
+                                    </button>
+                                    {licenseDocs.length > 0 ? (
+                                      <div className="grid gap-2">
+                                        {licenseDocs.map((doc) => (
+                                          <div key={doc.key} className="flex items-center justify-between border border-slate-200 bg-white px-3 py-2 text-[10px] font-bold text-slate-600">
+                                            <span className="truncate">{doc.name}</span>
+                                            <button
+                                              type="button"
+                                              onClick={() => setLicenseDocs((current) => current.filter((item) => item.key !== doc.key))}
+                                              className="text-[10px] text-slate-500 hover:text-slate-900"
+                                            >
+                                              إزالة
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : null}
+                                    {licenseError ? (
+                                      <div className="border border-rose-200 bg-rose-50 px-3 py-2 text-[10px] font-bold text-rose-700">
+                                        {licenseError}
+                                      </div>
+                                    ) : null}
+                                    {licenseSubmitted ? (
+                                      <div className="border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-bold text-emerald-700">
+                                        تم إرسال الطلب بنجاح.
+                                      </div>
+                                    ) : null}
+                                    <button
+                                      type="button"
+                                      onClick={handleLicenseSubmit}
+                                      disabled={licenseSubmitting}
+                                      className="h-11 border-2 border-slate-950 bg-slate-950 px-4 text-[10px] font-black tracking-[0.2em] text-white hover:bg-blue-600 hover:border-blue-600 transition"
+                                    >
+                                      {licenseSubmitting ? "جارٍ الإرسال..." : "إرسال طلب التوثيق"}
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="text-[10px] font-bold text-slate-500">
+                                    احفظ المشروع أولاً لإرسال طلب ترخيص الإعلان.
+                                  </div>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-2 gap-4 flex-row-reverse">

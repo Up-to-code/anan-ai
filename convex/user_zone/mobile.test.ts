@@ -26,6 +26,26 @@ describe("user_zone mobile", () => {
     let brokerId: any;
 
     await t.run(async (ctx) => {
+      const now = Date.now();
+      await ctx.db.insert("complianceRulesets", {
+        countryCode: "SA",
+        countryLabel: "المملكة العربية السعودية",
+        orgType: "broker",
+        status: "active",
+        requirements: [],
+        sources: [],
+        enforcement: {
+          blockPublish: true,
+          hideUnverified: true,
+          showBanner: true,
+          requireOrgVerification: true,
+          requireListingVerification: true,
+        },
+        version: 1,
+        createdAt: now,
+        updatedAt: now,
+      });
+
       brokerId = await ctx.db.insert("brokers", {
         name: "Broker One",
         slug: "broker-one",
@@ -41,6 +61,7 @@ describe("user_zone mobile", () => {
         baths: 3,
         description: "Published home",
         publicationState: "published",
+        adLicenseStatus: "approved",
         media: [{ key: "1", url: "https://example.com/1.jpg", name: "1.jpg" }],
       });
 

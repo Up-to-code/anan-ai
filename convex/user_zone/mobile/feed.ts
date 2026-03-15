@@ -2,6 +2,7 @@ import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { internalQuery, query } from "../../_generated/server";
 import { mobilePropertyFeedItemValidator } from "./contracts";
+import { DEFAULT_COMPLIANCE_COUNTRY, findActiveComplianceRuleset } from "../../shared_logic/compliance/utils";
 
 type PropertyDoc = {
   _id: any;
@@ -37,9 +38,10 @@ export const listFeed = query({
       .order("desc")
       .paginate(paginationOpts);
 
-    const page: Array<any> = await Promise.all(
+    const pageItems = await Promise.all(
       results.page.map((property) => buildMobilePropertyFeedItem(ctx, property as PropertyDoc)),
     );
+    const page = pageItems.filter(Boolean);
 
     return {
       ...results,
@@ -75,12 +77,24 @@ export async function buildMobilePropertyFeedItem(
   ctx: any,
   property: PropertyDoc,
 ) {
+  const adLicenseStatus = (property as { adLicenseStatus?: string }).adLicenseStatus;
   const owner =
     property.brokerId
       ? await ctx.db.get(property.brokerId)
       : property.REDId
         ? await ctx.db.get(property.REDId)
         : null;
+  if (!owner) return null;
+
+  const orgType: "broker" | "red" = property.brokerId ? "broker" : "red";
+  const countryCode = (owner as { countryCode?: string }).countryCode ?? DEFAULT_COMPLIANCE_COUNTRY;
+  const ruleset = await findActiveComplianceRuleset(ctx, { countryCode, orgType });
+  if (!ruleset) return null;
+  const enforcement = ruleset.enforcement;
+  if (enforcement.hideUnverified) {
+    if (enforcement.requireOrgVerification && owner.isVerified !== true) return null;
+    if (enforcement.requireListingVerification && adLicenseStatus !== "approved") return null;
+  }
 
   const ownerType: "broker" | "RED" = property.brokerId ? "broker" : "RED";
   const media = (property.media ?? []).map((item) => item.url).filter(Boolean);

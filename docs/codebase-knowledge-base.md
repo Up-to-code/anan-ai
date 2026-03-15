@@ -52,6 +52,7 @@ The main persisted entities visible in the current code are:
 - `properties`
   - Shared inventory table. Ownership is stored through `brokerId` and/or `REDId`.
   - Visibility depends on `publicationState`; availability depends on `status`.
+  - Compliance fields include ad license number/status and the latest verification request id.
 - `offers`
   - Offer records between broker/developer organizations.
   - Owner and recipient are split across `fromBrokerId`, `fromREDId`, `toBrokerId`, and `toREDId`.
@@ -72,7 +73,11 @@ The main persisted entities visible in the current code are:
 - `orders`
   - Lead or loan intent records used by admin/CRM-like flows.
 - `verificationRequests`
-  - Verification workflow state for profiles and organizations.
+  - Verification workflow state for profiles, organizations, and property ad licenses.
+  - Stores the compliance ruleset id and version used at submission time.
+- `complianceRulesets`
+  - Config-driven compliance requirements by country + org type.
+  - Drives onboarding checklists, workspace banners, publish gates, and public visibility rules.
 - `subscriptions`
   - Organization-scoped entitlement source for assistant action mode.
 
@@ -96,6 +101,7 @@ Behavior:
 - The backend feed query:
   - reads only `publicationState = "published"` properties,
   - hydrates owner projection from broker or developer tables,
+  - enforces compliance visibility rules from `complianceRulesets` (org + listing verification),
   - maps media and summary fields into a mobile-specific DTO.
 
 Important boundary:

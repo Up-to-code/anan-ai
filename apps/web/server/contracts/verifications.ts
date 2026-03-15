@@ -21,3 +21,12 @@ export const verificationRequestInputSchema = z.object({
  * HOW:   Derived directly from `verificationRequestInputSchema`.
  */
 export type VerificationRequestInput = z.infer<typeof verificationRequestInputSchema>;
+
+export const propertyVerificationRequestInputSchema = z.object({
+  propertyId: z.string().min(1),
+  adLicenseNumber: z.string().trim().min(3),
+  documents: z.array(uploadedFileReferenceSchema).min(1, "At least one document is required"),
+  notes: z.string().trim().min(1).max(1000).optional(),
+});
+
+export type PropertyVerificationRequestInput = z.infer<typeof propertyVerificationRequestInputSchema>;

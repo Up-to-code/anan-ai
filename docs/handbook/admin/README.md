@@ -8,6 +8,7 @@ The admin app is the operational control surface for Anan. It should:
 
 - observe the platform,
 - manage platform knowledge and verifications,
+- configure compliance rulesets and enforcement defaults,
 - run operational mutations safely,
 - avoid duplicating backend logic.
 
@@ -38,4 +39,4 @@ Admin is not a separate backend. It is a client of Convex with admin-specific pr
 - App Router: `apps/admin/app/**`
 - Admin orchestration: `apps/admin/admin_zone/**`
 - Convex admin backend: `convex/admin_zone/**`
-
+- Compliance ruleset UI: `apps/admin/admin_zone/pages/ComplianceRulesetsPage`

@@ -1,25 +1,31 @@
 import WorkspaceShell from "../../_components/WorkspaceShell";
 import { getWorkspaceOrganizationDisplay } from "../../_lib/organizationDisplay";
 import { getLayoutSidebarData, requireWorkspaceData } from "../../_lib/workspaceData";
+import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
+import { buildComplianceBanner } from "../../_lib/complianceBanner";
 
 /**
  * WHY:   Projects now uses the unified workspace shell - no more separate zone.
  * WHAT:  Wraps the projects route with the main workspace layout.
+ * HOW:   Resolves workspace chrome data and renders children inside `WorkspaceShell`.
  */
 export default async function ProjectsZoneLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [workspace, chrome] = await Promise.all([
+  const [workspace, chrome, complianceRuleset] = await Promise.all([
     requireWorkspaceData("/ws/projects"),
     getLayoutSidebarData("/ws/projects"),
+    getComplianceRulesetForCurrentOrg().catch(() => null),
   ]);
   const primaryOrganization = chrome.organizations?.[0];
 
   if (!primaryOrganization) {
     return <div className="min-h-svh bg-white">{children}</div>;
   }
+
+  const complianceBanner = buildComplianceBanner(primaryOrganization, complianceRuleset);
 
   return (
     <WorkspaceShell
@@ -28,6 +34,7 @@ export default async function ProjectsZoneLayout({
       recentAssistantThreads={chrome.recentAssistantThreads}
       allAssistantThreads={chrome.allAssistantThreads}
       signalCounts={chrome.signalCounts}
+      complianceBanner={complianceBanner}
       organization={getWorkspaceOrganizationDisplay({
         name: primaryOrganization?.name,
         type: primaryOrganization?.type,

@@ -22,6 +22,7 @@ const agenciesTables = {
         description: v.optional(v.string()),
         website: v.optional(v.string()),
         notes: v.optional(v.string()),
+        countryCode: v.optional(v.string()),
     })
         .index("slug", ["slug"])
         .index("status", ["status"]),
@@ -38,6 +39,7 @@ const agenciesTables = {
         description: v.optional(v.string()),
         website: v.optional(v.string()),
         notes: v.optional(v.string()),
+        countryCode: v.optional(v.string()),
     })
         .index("slug", ["slug"])
         .index("status", ["status"]),

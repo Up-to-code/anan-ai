@@ -1,6 +1,8 @@
 import WorkspaceShell from "../_components/WorkspaceShell";
 import { getWorkspaceOrganizationDisplay } from "../_lib/organizationDisplay";
 import { getLayoutSidebarData, requireWorkspaceData } from "../_lib/workspaceData";
+import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
+import { buildComplianceBanner } from "../_lib/complianceBanner";
 
 /**
  * WHY:   The overview dashboard and account pages still share the original workspace chrome.
@@ -12,9 +14,10 @@ export default async function WorkspaceOverviewLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [workspace, chrome] = await Promise.all([
+  const [workspace, chrome, complianceRuleset] = await Promise.all([
     requireWorkspaceData("/ws"),
     getLayoutSidebarData("/ws"),
+    getComplianceRulesetForCurrentOrg().catch(() => null),
   ]);
   const primaryOrganization = chrome.organizations[0];
 
@@ -28,12 +31,14 @@ export default async function WorkspaceOverviewLayout({
     status: primaryOrganization.status,
     zoneLabel: "لوحة العمل",
   });
+  const complianceBanner = buildComplianceBanner(primaryOrganization, complianceRuleset);
 
   return (
     <WorkspaceShell
       user={chrome.user}
       visibleZoneKeys={workspace.visibleZoneKeys}
       organization={organizationDisplay}
+      complianceBanner={complianceBanner}
       recentAssistantThreads={chrome.recentAssistantThreads}
       allAssistantThreads={chrome.allAssistantThreads}
       signalCounts={chrome.signalCounts}

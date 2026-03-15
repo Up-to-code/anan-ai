@@ -2,6 +2,7 @@ import type { SessionUser } from "@/lib/serverSession";
 import type { WorkspaceAudience } from "@/server/contracts/workspace";
 import type { IncomingOrganizationInvite } from "@/server/contracts/organizations";
 import OrganizationOnboardingJourney from "./OrganizationOnboardingJourney";
+import { getComplianceRulesetForOnboarding } from "@/server/domains/compliance/service";
 
 type OrganizationOnboardingProps = {
   user: SessionUser;
@@ -19,10 +20,36 @@ type OrganizationOnboardingProps = {
  * HOW:   Passes session-derived props to the journey stepper component.
  */
 export default function OrganizationOnboarding(props: OrganizationOnboardingProps) {
+  const brokerRulesetPromise = getComplianceRulesetForOnboarding("broker");
+  const redRulesetPromise = getComplianceRulesetForOnboarding("red");
+  return (
+    <OrganizationOnboardingServerWrapper
+      brokerRulesetPromise={brokerRulesetPromise}
+      redRulesetPromise={redRulesetPromise}
+      {...props}
+    />
+  );
+}
+
+async function OrganizationOnboardingServerWrapper(
+  props: OrganizationOnboardingProps & {
+    brokerRulesetPromise: Promise<import("@/server/contracts/compliance").ComplianceRuleset | null>;
+    redRulesetPromise: Promise<import("@/server/contracts/compliance").ComplianceRuleset | null>;
+  },
+) {
+  const { brokerRulesetPromise, redRulesetPromise, ...journeyProps } = props;
+  const [brokerRuleset, redRuleset] = await Promise.all([
+    brokerRulesetPromise,
+    redRulesetPromise,
+  ]);
   return (
     <div className="flex flex-col bg-white text-slate-900">
       <div className="mx-auto w-full max-w-5xl px-6 py-8">
-        <OrganizationOnboardingJourney {...props} />
+        <OrganizationOnboardingJourney
+          {...journeyProps}
+          brokerRuleset={brokerRuleset}
+          redRuleset={redRuleset}
+        />
       </div>
     </div>
   );

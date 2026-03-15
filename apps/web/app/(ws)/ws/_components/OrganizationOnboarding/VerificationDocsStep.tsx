@@ -11,6 +11,7 @@ type VerificationDocsStepProps = {
   organizationType: "broker" | "red";
   requirements: RequirementItem[];
   sources: RequirementSourceLink[];
+  countryLabel?: string | null;
   onBack: () => void;
   onSkip: () => void;
 };
@@ -24,6 +25,7 @@ export default function VerificationDocsStep({
   organizationType,
   requirements,
   sources,
+  countryLabel,
   onBack,
   onSkip,
 }: VerificationDocsStepProps) {
@@ -121,7 +123,9 @@ export default function VerificationDocsStep({
       </div>
 
       <div className="border border-slate-200 bg-white p-4 space-y-4">
-        <div className="text-sm font-semibold text-slate-900">البحث في متطلبات السعودية</div>
+        <div className="text-sm font-semibold text-slate-900">
+          البحث في متطلبات {countryLabel ?? "الامتثال"}
+        </div>
         <div className="text-xs text-slate-500">القائمة الحالية: {typeLabel}</div>
         <input
           type="search"
