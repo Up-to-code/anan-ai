@@ -20,7 +20,7 @@ type WorkspaceAssistantCanvasProps = {
 
 /**
  * WHY:   The workspace assistant needs one canvas that can gracefully switch between first-run prompting and normal thread playback.
- * WHAT:  Renders the landing view, active conversation stream, loading states, and the shared composer for Anan Pro.
+ * WHAT:  Renders the landing view, active conversation stream, loading states, and the shared composer for Anan Workspace.
  * HOW:   Scrolls the active thread to the latest message and keeps the thread/non-thread layouts visually consistent inside the workspace.
  */
 export default function WorkspaceAssistantCanvas({
@@ -56,7 +56,7 @@ export default function WorkspaceAssistantCanvas({
             <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
               <div className="min-w-0">
                 <h1 className="truncate text-base font-semibold text-slate-950">
-                  {thread?.title?.trim() || "محادثة Anan Pro"}
+                  {thread?.title?.trim() || "محادثة Anan Workspace"}
                 </h1>
                 <p className="mt-1 text-sm text-slate-500">استكمل العمل من آخر نقطة وصلت إليها داخل هذه المحادثة.</p>
               </div>
@@ -75,7 +75,7 @@ export default function WorkspaceAssistantCanvas({
                   {message.role === "assistant" && message.uiTurn ? <AgUiTurnRenderer turn={message.uiTurn} /> : null}
                 </MessageRow>
               ))}
-              {isSending ? <TypingIndicator state="thinking" text="anan pro يجهز الخطوة التالية..." /> : null}
+              {isSending ? <TypingIndicator state="thinking" text="anan workspace يجهز الخطوة التالية..." /> : null}
             </div>
           </div>
 

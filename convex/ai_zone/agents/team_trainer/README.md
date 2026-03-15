@@ -19,5 +19,5 @@ Available to: **Admin** only (runs automatically in background)
 5. Approved entries move to `rag_production` (active training data)
 
 ## How to Edit
-- To change what gets extracted → edit `anan_trainer/config.ts` instructions
+- To change what gets extracted → edit `convex/ai_zone/agents/anan/orchestrationConfig.ts`
 - To change extraction quality → adjust temperature or model

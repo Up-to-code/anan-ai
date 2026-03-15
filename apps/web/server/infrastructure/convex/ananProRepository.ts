@@ -9,7 +9,7 @@ type AnanProApiRefs = {
   sendMessage: unknown;
 };
 
-const ananProApi = apiUnsafe["ai_zone/assistantPro"] as AnanProApiRefs;
+const ananProApi = apiUnsafe["ai_zone/assistantWorkspace"] as AnanProApiRefs;
 
 type RawAssistantThread = {
   _id: string;
@@ -46,7 +46,9 @@ export const convexAnanProRepository: AnanProRepository = {
 
       return {
         id: threadId,
-        title: messages.find((message) => message.role === "user")?.content.slice(0, 80) ?? "anan pro",
+        title:
+          messages.find((message) => message.role === "user")?.content.slice(0, 80) ??
+          "anan workspace",
         messages: messages.map((message) => ({
           id: message._id,
           role: message.role,
@@ -105,7 +107,7 @@ export const convexAnanProRepository: AnanProRepository = {
 
     return {
       id: response.threadId,
-      title: messages[0]?.content.slice(0, 80) ?? "anan pro",
+      title: messages[0]?.content.slice(0, 80) ?? "anan workspace",
       messages: messages.map((message) => ({
         id: message._id,
         role: message.role,

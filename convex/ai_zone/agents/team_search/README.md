@@ -13,6 +13,6 @@ Handles all property search and web data retrieval tasks.
 Available to: **User**, **Broker**, **Admin**
 
 ## How to Edit
-- To change search behavior → edit `anan_search/config.ts` instructions
+- To change search behavior → edit `convex/ai_zone/agents/anan/orchestrationConfig.ts`
 - To add a new search tool → create file in `anan_search/tools/`, import in config
 - To add a new web scraper → create file in `anan_web/tools/`, import in config

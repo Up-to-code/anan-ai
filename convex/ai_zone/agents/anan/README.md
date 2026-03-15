@@ -14,6 +14,7 @@ results into a coherent response.
 | `resultMerger.ts` | Merging multi-agent outputs into one response |
 | `teamRegistry.ts` | Team definitions and role-aware registry lookup |
 | `types.ts` | TypeScript type definitions |
+| `orchestrationConfig.ts` | Centralized agent + team configuration |
 
 ## How It Works
 ```
@@ -29,7 +30,7 @@ orchestrate(input)
 ```
 
 ## How to Edit
-- **Add a team/agent**: Edit `teamRegistry.ts`
+- **Add a team/agent**: Edit `orchestrationConfig.ts`
 - **Change intent detection**: Edit `intentAnalyzer.ts`
 - **Change how outputs merge**: Edit `resultMerger.ts`
 - **Change the dispatch flow**: Edit `orchestrate.ts`

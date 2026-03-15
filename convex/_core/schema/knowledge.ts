@@ -91,7 +91,13 @@ const knowledgeTables = {
         ownerREDId: v.optional(v.id("RED")),
         mode: v.union(v.literal("qa"), v.literal("action")),
         orchestratorName: v.optional(v.string()),
-        assistantKind: v.optional(v.union(v.literal("default"), v.literal("anan_pro"))),
+        assistantKind: v.optional(
+            v.union(
+                v.literal("default"),
+                v.literal("anan_workspace"),
+                v.literal("anan_pro"),
+            ),
+        ),
         title: v.optional(v.string()),
         createdAt: v.number(),
         updatedAt: v.number(),

@@ -17,5 +17,5 @@ Available to: **User**, **Broker**, **RED**, **Admin**
 - `kb_{userId}` → Used by `anan_memory` (personal memory)
 
 ## How to Edit
-- To change RAG search parameters → edit `anan_knowledge/config.ts`
-- To change what gets remembered → edit `anan_memory/config.ts`
+- To change RAG search parameters → edit `convex/ai_zone/agents/anan/orchestrationConfig.ts`
+- To change what gets remembered → edit `convex/ai_zone/agents/anan/orchestrationConfig.ts`

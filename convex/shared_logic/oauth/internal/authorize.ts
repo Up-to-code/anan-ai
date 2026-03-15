@@ -46,6 +46,7 @@ export const createAuthorizationFlow = internalMutation({
     redirectUri: v.string(),
     requestedScopes: v.array(v.string()),
     state: v.string(),
+    sourceApp: v.optional(v.union(v.literal("web"), v.literal("admin"), v.literal("mobile"))),
     nonce: v.optional(v.string()),
     codeChallenge: v.string(),
     codeChallengeMethod: v.literal("S256"),
@@ -58,6 +59,7 @@ export const createAuthorizationFlow = internalMutation({
       redirectUri: args.redirectUri,
       requestedScopes: args.requestedScopes,
       state: args.state,
+      sourceApp: args.sourceApp,
       nonce: args.nonce,
       codeChallenge: args.codeChallenge,
       codeChallengeMethod: args.codeChallengeMethod,
@@ -70,6 +72,7 @@ export const createAuthorizationFlow = internalMutation({
       metadata: {
         requestedScopes: args.requestedScopes,
         redirectUri: args.redirectUri,
+        sourceApp: args.sourceApp ?? null,
       },
       createdAt: args.now,
     });

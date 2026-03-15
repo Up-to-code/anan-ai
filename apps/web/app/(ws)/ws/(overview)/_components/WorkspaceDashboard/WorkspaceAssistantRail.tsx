@@ -28,7 +28,7 @@ function getThreadLabel(thread: AnanProThreadSummary) {
 
 /**
  * WHY:   Workspace operators need a simple way to reopen recent assistant work without leaving the main dashboard.
- * WHAT:  Renders the assistant thread history and the action for starting a new Anan Pro thread.
+ * WHAT:  Renders the assistant thread history and the action for starting a new Anan Workspace thread.
  * HOW:   Uses one responsive list that scrolls horizontally on small screens and becomes a fixed rail on larger layouts.
  */
 export default function WorkspaceAssistantRail({
@@ -58,7 +58,7 @@ export default function WorkspaceAssistantRail({
       <div className="flex gap-3 overflow-x-auto px-4 py-4 sm:px-6 lg:flex-1 lg:flex-col lg:overflow-y-auto lg:px-5">
         {threads.length === 0 ? (
           <div className="flex min-h-28 min-w-64 items-center justify-center border border-dashed border-stone-300 bg-stone-50 px-4 text-sm text-slate-500 lg:min-w-0">
-            ستظهر هنا المحادثات بعد أول رسالة ترسلها إلى Anan Pro.
+            ستظهر هنا المحادثات بعد أول رسالة ترسلها إلى Anan Workspace.
           </div>
         ) : (
           threads.map((thread) => {

@@ -99,7 +99,7 @@ export default function SidebarContent({
 
       <div className="border-t border-white/5 px-3 py-4">
         <div className="mb-3 flex items-center justify-between px-3">
-          <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">مساعد Anan Pro</span>
+          <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">مساعد Anan Workspace</span>
           <Link
             href="/ws"
             onClick={onNavigate}

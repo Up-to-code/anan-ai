@@ -38,7 +38,10 @@ export class BaseConfiguredAgent {
   }
 
   async run(ctx: ActionCtx, runtime: AgentRuntimeContext): Promise<ConfiguredAgentResult> {
-    const modelName = this.definition.modelPolicy?.modelOverride ?? getAgentLLMConfigSafe()?.model ?? "unknown";
+    const modelName =
+      this.definition.modelPolicy?.modelOverride ??
+      getAgentLLMConfigSafe(runtime.orchestratorId)?.model ??
+      "unknown";
     const retryConfig = this.definition.runtimePolicy?.retryConfig ?? DEFAULT_RETRY_CONFIG;
     const systemPrompt = buildSystemPrompt(this.definition.prompt);
     const fullPrompt = [
@@ -48,7 +51,7 @@ export class BaseConfiguredAgent {
     ].join("\n");
 
     try {
-      const model = getChatModel(this.definition.modelPolicy?.modelOverride);
+      const model = getChatModel(this.definition.modelPolicy?.modelOverride, runtime.orchestratorId);
       const tools = resolveTools(ctx, runtime, this.definition.tools ?? {});
       const result = await withRetry(
         () =>
@@ -99,7 +102,7 @@ export class BaseConfiguredAgent {
       };
     } catch (primaryError) {
       try {
-        const model = getChatModel(FALLBACK_MODEL);
+        const model = getChatModel(FALLBACK_MODEL, runtime.orchestratorId);
         const tools = resolveTools(ctx, runtime, this.definition.tools ?? {});
         const result = await cachedGenerateText(
           ctx,
