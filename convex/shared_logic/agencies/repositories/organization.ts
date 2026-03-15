@@ -8,13 +8,14 @@ import {
   findProfileByAuthUserId,
   findTenantOrgLinkByTenantOrgId,
   getOwnerId,
+  getOrganizationRecord,
   normalizeEmail,
   resolveOwnerContextFromProfile,
   type AgenciesRepositoryCtx,
   type OwnerContext,
   type UserProfileRecord,
 } from "./core";
-import { requireManagerAccess } from "./membership";
+import { requireManagerAccess, requireOrganizationMembership } from "./membership";
 import { tenants } from "../../../tenants";
 
 async function listOrganizationsForProfile(ctx: AgenciesRepositoryCtx, profile: UserProfileRecord) {
@@ -395,6 +396,53 @@ export const listCurrentOrganizations = query({
     const persistedProfile = await findProfileByAuthUserId(ctx, profile.authUserId);
     if (!persistedProfile || persistedProfile.isActive === false) return [];
     return listOrganizationsForProfile(ctx, persistedProfile);
+  },
+});
+
+/**
+ * WHY:   Workspace root pages need a single organization + membership payload for the current user.
+ * WHAT:  Returns the current organization summary plus the user's membership record.
+ * HOW:   Reuses membership gating, then maps the owner record into the stable DTO.
+ */
+export const getCurrentOrganization = query({
+  args: {},
+  handler: async (ctx) => {
+    try {
+      const { owner, membership } = await requireOrganizationMembership(ctx);
+      const organization = await getOrganizationRecord(ctx, owner);
+      if (!organization) {
+        throw new ConvexError({ code: "NOT_FOUND", message: "Organization not found" });
+      }
+
+      return {
+        organization: {
+          id: String(getOwnerId(owner)),
+          type: owner.ownerType === "broker" ? "broker" : "red",
+          name: organization.name,
+          slug: organization.slug,
+          status: organization.status ?? null,
+          isVerified: organization.isVerified === true,
+          description: organization.description,
+          website: organization.website,
+          contactEmail: organization.contactEmail,
+        },
+        membership,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (
+        message.includes("Organization owner profile required") ||
+        message.includes("Organization membership required") ||
+        message.includes("Profile not found") ||
+        message.includes("Tenant organization required") ||
+        message.includes("Tenant organization link required") ||
+        message.includes("Broker organization link required") ||
+        message.includes("Developer organization link required")
+      ) {
+        throw new ConvexError({ code: "FORBIDDEN", message: "Organization membership required" });
+      }
+      throw error;
+    }
   },
 });
 

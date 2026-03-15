@@ -2,6 +2,7 @@ export {
   createOrganizationForAuthUserRecord,
   listOrganizationsByAuthUserId,
   listCurrentOrganizations,
+  getCurrentOrganization,
   createOrganizationForAuthUser,
   createOrganizationForCurrentUser,
   updateCurrentOrganization,
