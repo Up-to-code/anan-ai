@@ -8,6 +8,15 @@ import { listAnanProThreads } from "@/server/domains/ananPro/service";
 import { getWorkspaceNotificationSummary } from "@/server/domains/notifications/service";
 import { getInboxUnreadSummaryForCurrentUser } from "@/server/domains/inbox/service";
 
+function isNextRedirectError(error: unknown) {
+  const digest = (error as { digest?: string } | null)?.digest;
+  if (typeof digest === "string" && digest.startsWith("NEXT_REDIRECT")) {
+    return true;
+  }
+  const message = error instanceof Error ? error.message : "";
+  return message.includes("NEXT_REDIRECT");
+}
+
 /**
  * WHY: Layout needs user + organizations for sidebar (org name, user/org block).
  * WHAT: Returns { user, organizations } without full profile. Redirects if unauthenticated.
@@ -32,6 +41,9 @@ export async function getLayoutSidebarData(returnTo: string) {
       },
     };
   } catch (error) {
+    if (isNextRedirectError(error)) {
+      throw error;
+    }
     const domainError = normalizeDomainError(error);
     if (domainError.code === "UNAUTHORIZED") {
       redirect(`/signin?returnTo=${encodeURIComponent(returnTo)}`);
@@ -48,6 +60,9 @@ export async function requireWorkspaceData(returnTo: string) {
     }
     return behavior;
   } catch (error) {
+    if (isNextRedirectError(error)) {
+      throw error;
+    }
     const domainError = normalizeDomainError(error);
     if (domainError.code === "UNAUTHORIZED") {
       redirect(`/signin?returnTo=${encodeURIComponent(returnTo)}`);
