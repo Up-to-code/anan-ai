@@ -29,7 +29,7 @@ export async function getWorkspaceOrganizationTeam() {
 
   let members: OrganizationMemberDisplay[] = [];
   let invites: OrganizationInviteDisplay[] = [];
-  let currentMembershipRole = currentOrganization?.membership.role ?? null;
+  let currentMembershipRole = currentOrganization?.membership?.role ?? null;
 
   try {
     const [rawMembers, rawInvites] = await Promise.all([
