@@ -64,7 +64,10 @@ export async function getWorkspaceBehaviorForCurrentUser(
     dependencies === defaultDependencies
       ? await loadWorkspaceStateCached()
       : await loadWorkspaceState(dependencies);
-  const primaryOrganization = currentOrganization ?? organizations[0] ?? null;
+  // `getCurrentOrganization` returns null not only for "no org", but also when the backend cannot
+  // resolve a valid tenant membership (e.g. "Tenant organization required"). In that state, the
+  // workspace must render onboarding instead of attempting org-scoped queries.
+  const primaryOrganization = currentOrganization;
   const orderedOrganizations = primaryOrganization
     ? [primaryOrganization, ...organizations.filter((org) => org.id !== primaryOrganization.id)]
     : organizations;
