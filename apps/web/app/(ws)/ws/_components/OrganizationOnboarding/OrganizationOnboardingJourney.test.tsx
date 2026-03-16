@@ -25,6 +25,7 @@ describe("OrganizationOnboardingJourney", () => {
         suggestedOrganizationType="broker"
         audience="broker"
         incomingInvites={[]}
+        canCreateOrganization
         brokerRuleset={null}
         redRuleset={null}
       />,
@@ -34,5 +35,6 @@ describe("OrganizationOnboardingJourney", () => {
     expect(markup).toContain("بيانات الجهة");
     expect(markup).toContain("التوثيق والمستندات");
     expect(markup).toContain("إنشاء جهة جديدة");
+    expect(markup).toContain("تسجيل الخروج");
   });
 });

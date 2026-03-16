@@ -122,11 +122,13 @@ export default function VerificationDocsStep({
         </p>
       </div>
 
-      <div className="border border-slate-200 bg-white p-4 space-y-4">
-        <div className="text-sm font-semibold text-slate-900">
-          البحث في متطلبات {countryLabel ?? "الامتثال"}
+      <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+        <div className="space-y-1">
+          <div className="text-sm font-semibold text-slate-900">
+            مرجع المتطلبات {countryLabel ?? "للامتثال"}
+          </div>
+          <div className="text-xs text-slate-500">القائمة الحالية: {typeLabel}</div>
         </div>
-        <div className="text-xs text-slate-500">القائمة الحالية: {typeLabel}</div>
         <input
           type="search"
           placeholder="ابحث عن مستند أو متطلب..."
@@ -137,7 +139,7 @@ export default function VerificationDocsStep({
         <div className="grid gap-3">
           {filteredRequirements.length > 0 ? (
             filteredRequirements.map((item) => (
-              <label key={item.id} className="flex items-start gap-3 border border-slate-200 bg-white px-3 py-3 text-sm text-slate-800">
+              <label key={item.id} className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-800">
                 <input
                   type="checkbox"
                   checked={Boolean(selected[item.id])}
@@ -145,16 +147,22 @@ export default function VerificationDocsStep({
                   className="mt-1"
                 />
                 <span className="space-y-1">
-                  <span className="block font-semibold text-slate-900">
+                  <span className="flex flex-wrap items-center gap-2 font-semibold text-slate-900">
                     {item.label}
-                    {item.required ? " (أساسي)" : " (اختياري)"}
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        item.required ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {item.required ? "أساسي" : "اختياري"}
+                    </span>
                   </span>
                   {item.note ? <span className="block text-xs text-slate-500">{item.note}</span> : null}
                 </span>
               </label>
             ))
           ) : (
-            <div className="border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
               لا توجد نتائج مطابقة.
             </div>
           )}
@@ -178,8 +186,11 @@ export default function VerificationDocsStep({
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="border border-slate-200 bg-white p-4 space-y-3">
-          <div className="text-sm font-semibold text-slate-900">المستندات الأساسية</div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
+          <div className="space-y-1">
+            <div className="text-sm font-semibold text-slate-900">المستندات الأساسية</div>
+            <div className="text-xs text-slate-500">ملفات الهوية والسجلات النظامية الأساسية.</div>
+          </div>
           <input ref={requiredInputRef} type="file" multiple className="hidden" onChange={handleRequiredFiles} />
           <button
             type="button"
@@ -205,8 +216,11 @@ export default function VerificationDocsStep({
           </div>
         </div>
 
-        <div className="border border-slate-200 bg-white p-4 space-y-3">
-          <div className="text-sm font-semibold text-slate-900">إثبات العمل (اختياري)</div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
+          <div className="space-y-1">
+            <div className="text-sm font-semibold text-slate-900">إثبات العمل (اختياري)</div>
+            <div className="text-xs text-slate-500">نماذج أعمال أو مستندات داعمة لنشاطك.</div>
+          </div>
           <input ref={proofInputRef} type="file" multiple className="hidden" onChange={handleProofFiles} />
           <button
             type="button"

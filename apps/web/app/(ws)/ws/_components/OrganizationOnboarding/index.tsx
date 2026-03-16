@@ -9,6 +9,8 @@ type OrganizationOnboardingProps = {
   suggestedOrganizationType: "broker" | "red";
   audience: WorkspaceAudience;
   incomingInvites: IncomingOrganizationInvite[];
+  canCreateOrganization: boolean;
+  organizationCreationDisabledReason?: string;
   errorMessage?: string;
   initialStep?: 1 | 2 | 3;
   initialOrganization?: { id: string; type: "broker" | "red" } | null;

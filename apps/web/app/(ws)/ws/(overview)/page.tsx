@@ -26,6 +26,10 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
 
   const shouldRenderOnboarding =
     workspace.onboarding.needsOrganization || onboarding === "verification";
+  const canCreateOrganization = workspace.session.role !== "admin";
+  const organizationCreationDisabledReason = canCreateOrganization
+    ? undefined
+    : "هذا الحساب لا يملك صلاحية إنشاء جهة جديدة. تواصل مع مسؤول النظام أو سجّل الخروج لتبديل الحساب.";
 
   if (shouldRenderOnboarding) {
     const incomingInvites = await listIncomingOrganizationInvitesForCurrentUser();
@@ -35,6 +39,8 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
         suggestedOrganizationType={workspace.onboarding.suggestedOrganizationType}
         audience={workspace.audience}
         incomingInvites={incomingInvites}
+        canCreateOrganization={canCreateOrganization}
+        organizationCreationDisabledReason={organizationCreationDisabledReason}
         errorMessage={orgError}
         initialStep={onboarding === "verification" ? 3 : 1}
         initialOrganization={
