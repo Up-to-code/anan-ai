@@ -1,5 +1,5 @@
-import ZonePageIntro from "../../../_components/ZoneShell/ZonePageIntro";
 import { getWorkspaceOrganizationTeam } from "../../../_lib/organizationTeam";
+import SettingsHeader from "../_components/SettingsHeader";
 import MembersWorkspace from "../_components/MembersWorkspace";
 
 /**
@@ -11,15 +11,12 @@ export default async function WorkspaceMembersPage() {
   const { members, invites, currentMembershipRole } = await getWorkspaceOrganizationTeam();
 
   return (
-    <div className="flex min-h-full flex-col">
-      <ZonePageIntro
-        eyebrow="الإعدادات"
+    <div className="space-y-6 p-6 lg:p-10">
+      <SettingsHeader
         title="الأعضاء والدعوات"
         description="إدارة أعضاء المنظمة الحاليين والدعوات المعلقة والأدوار الممنوحة لهم."
       />
-      <div className="px-6 py-6 lg:px-8 lg:py-8">
-        <MembersWorkspace initialMembers={members} invites={invites} canManage={currentMembershipRole === "manager"} />
-      </div>
+      <MembersWorkspace initialMembers={members} invites={invites} canManage={currentMembershipRole === "manager"} />
     </div>
   );
 }

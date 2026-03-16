@@ -24,91 +24,101 @@ export default function MembersWorkspace({
   return (
     <div className="space-y-6">
       {status ? <div aria-live="polite" className="text-sm font-medium text-slate-600">{status}</div> : null}
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {members.map((member) => (
-          <article key={member.id} className="border border-slate-200 bg-white p-4">
-            <div className="flex items-start justify-between gap-3">
+      <section className="border border-slate-200 bg-white">
+        <div className="border-b border-slate-200 px-5 py-4">
+          <h2 className="text-lg font-black text-slate-950">أعضاء المنظمة</h2>
+          <p className="mt-1 text-sm font-medium text-slate-500">حدّث الدور لكل عضو حسب الحاجة.</p>
+        </div>
+        <div className="divide-y divide-slate-200">
+          {members.map((member) => (
+            <article key={member.id} className="flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <div className="text-base font-black text-slate-950">{member.name}</div>
                 <div className="mt-1 text-sm font-medium text-slate-500">{member.email}</div>
               </div>
-              <span className="border border-blue-200 bg-blue-50 px-2 py-1 text-[10px] font-black tracking-[0.16em] text-blue-700">
-                {member.statusLabel}
-              </span>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {(["manager", "member", "viewer"] as const).map((role) => (
-                <button
-                  key={role}
-                  type="button"
-                  disabled={!canManage}
-                  onClick={async () => {
-                    if (!canManage || member.role === role) return;
-                    setStatus("جاري تحديث الدور...");
-                    const response = await fetch(`/api/workspace/team-members/${member.membershipId}`, {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ role }),
-                    });
-                    if (!response.ok) {
-                      const payload = (await response.json()) as { message?: string };
-                      setStatus(payload.message ?? "تعذر تحديث الدور.");
-                      return;
-                    }
-                    setMembers((current) =>
-                      current.map((entry) => (entry.id === member.id ? { ...entry, role } : entry)),
-                    );
-                    setStatus("تم تحديث الدور.");
-                  }}
-                  className={`border px-3 py-2 text-[10px] font-black tracking-[0.18em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 ${
-                    member.role === role
-                      ? "border-blue-500 bg-blue-500 text-white"
-                      : "border-slate-200 bg-white text-slate-600"
-                  } disabled:cursor-not-allowed disabled:opacity-60`}
-                >
-                  {role}
-                </button>
-              ))}
-            </div>
-          </article>
-        ))}
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600">
+                  {member.statusLabel}
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {(["manager", "member", "viewer"] as const).map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      disabled={!canManage}
+                      onClick={async () => {
+                        if (!canManage || member.role === role) return;
+                        setStatus("جاري تحديث الدور...");
+                        const response = await fetch(`/api/workspace/team-members/${member.membershipId}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ role }),
+                        });
+                        if (!response.ok) {
+                          const payload = (await response.json()) as { message?: string };
+                          setStatus(payload.message ?? "تعذر تحديث الدور.");
+                          return;
+                        }
+                        setMembers((current) =>
+                          current.map((entry) => (entry.id === member.id ? { ...entry, role } : entry)),
+                        );
+                        setStatus("تم تحديث الدور.");
+                      }}
+                      className={`border px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 ${
+                        member.role === role
+                          ? "border-slate-900 bg-slate-900 text-white"
+                          : "border-slate-200 bg-white text-slate-600"
+                      } disabled:cursor-not-allowed disabled:opacity-60`}
+                    >
+                      {role}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-black text-slate-950">الدعوات المعلقة</h2>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <section className="border border-slate-200 bg-white">
+        <div className="border-b border-slate-200 px-5 py-4">
+          <h2 className="text-lg font-black text-slate-950">الدعوات المعلقة</h2>
+          <p className="mt-1 text-sm font-medium text-slate-500">راجع الدعوات المرسلة وألغِ غير المطلوبة.</p>
+        </div>
+        <div className="divide-y divide-slate-200">
           {pendingInvites.map((invite) => (
-            <article key={invite.id} className="border border-slate-200 bg-white p-4">
-              <div className="text-sm font-black text-slate-950">{invite.email}</div>
-              <div className="mt-2 text-xs font-medium text-slate-500">تنتهي {invite.expiresLabel}</div>
-              <div className="mt-4 flex items-center justify-between">
-                <span className="border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-black tracking-[0.16em] text-slate-600">
+            <article key={invite.id} className="flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="text-sm font-black text-slate-950">{invite.email}</div>
+                <div className="mt-1 text-xs font-medium text-slate-500">تنتهي {invite.expiresLabel}</div>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600">
                   {invite.role}
                 </span>
-                <span className="text-[10px] font-black tracking-[0.16em] text-blue-700">{invite.status}</span>
+                <span className="text-xs font-semibold text-slate-600">{invite.status}</span>
+                {canManage ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setStatus("جاري إلغاء الدعوة...");
+                      const response = await fetch(`/api/workspace/team-invites/${invite.id}`, {
+                        method: "DELETE",
+                      });
+                      if (!response.ok) {
+                        const payload = (await response.json()) as { message?: string };
+                        setStatus(payload.message ?? "تعذر إلغاء الدعوة.");
+                        return;
+                      }
+                      setPendingInvites((current) => current.filter((entry) => entry.id !== invite.id));
+                      setStatus("تم إلغاء الدعوة.");
+                    }}
+                    className="border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200"
+                  >
+                    إلغاء الدعوة
+                  </button>
+                ) : null}
               </div>
-              {canManage ? (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setStatus("جاري إلغاء الدعوة...");
-                    const response = await fetch(`/api/workspace/team-invites/${invite.id}`, {
-                      method: "DELETE",
-                    });
-                    if (!response.ok) {
-                      const payload = (await response.json()) as { message?: string };
-                      setStatus(payload.message ?? "تعذر إلغاء الدعوة.");
-                      return;
-                    }
-                    setPendingInvites((current) => current.filter((entry) => entry.id !== invite.id));
-                    setStatus("تم إلغاء الدعوة.");
-                  }}
-                  className="mt-4 border border-slate-200 px-3 py-2 text-[10px] font-black tracking-[0.18em] text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
-                >
-                  إلغاء الدعوة
-                </button>
-              ) : null}
             </article>
           ))}
         </div>

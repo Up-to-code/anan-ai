@@ -1,8 +1,8 @@
-import ZonePageIntro from "../../_components/ZoneShell/ZonePageIntro";
-import BrandStatStrip from "../../_components/WorkspaceBrand/BrandStatStrip";
 import { getWorkspaceOrganizationTeam } from "../../_lib/organizationTeam";
+import SettingsHeader from "./_components/SettingsHeader";
 import InviteMemberForm from "./_components/InviteMemberForm";
 import OrganizationSettingsWorkspace from "./_components/OrganizationSettingsWorkspace";
+import SettingsSummary from "./_components/SettingsSummary";
 
 /**
  * WHY:   Organization settings need a top-level summary page under the overview shell.
@@ -14,28 +14,22 @@ export default async function WorkspaceSettingsPage() {
   const canManage = currentMembershipRole === "manager";
 
   return (
-    <div className="flex min-h-full flex-col">
-      <ZonePageIntro
-        eyebrow="الإعدادات"
+    <div className="space-y-6 p-6 lg:p-10">
+      <SettingsHeader
         title="إعدادات المنظمة"
         description="إدارة الأعضاء، الدعوات، والأدوار من داخل مساحة العمل."
       />
-      <div className="space-y-6 px-6 py-6 lg:px-8 lg:py-8">
-        <BrandStatStrip
-          items={[
-            { label: "المنظمة", value: organization?.name ?? "بدون منظمة", tone: "blue" },
-            { label: "الأعضاء", value: members.length },
-            { label: "الدعوات", value: invites.length },
-            { label: "الحالة", value: organization?.status ?? "غير متوفر" },
-          ]}
-        />
-
-        <div className="grid gap-6 lg:grid-cols-2 mt-8">
-          <OrganizationSettingsWorkspace organization={organization} canManage={canManage} />
-          <div className="space-y-4">
-            <InviteMemberForm canManage={canManage} />
-          </div>
-        </div>
+      <SettingsSummary
+        items={[
+          { label: "المنظمة", value: organization?.name ?? "بدون منظمة" },
+          { label: "الأعضاء", value: members.length },
+          { label: "الدعوات", value: invites.length },
+          { label: "الحالة", value: organization?.status ?? "غير متوفر" },
+        ]}
+      />
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
+        <OrganizationSettingsWorkspace organization={organization} canManage={canManage} />
+        <InviteMemberForm canManage={canManage} hasOrganization={Boolean(organization)} />
       </div>
     </div>
   );

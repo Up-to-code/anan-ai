@@ -1,6 +1,6 @@
-import ZonePageIntro from "../../../_components/ZoneShell/ZonePageIntro";
 import InviteMemberForm from "../_components/InviteMemberForm";
 import { getWorkspaceOrganizationTeam } from "../../../_lib/organizationTeam";
+import SettingsHeader from "../_components/SettingsHeader";
 
 /**
  * WHY:   Inviting teammates is a first-class settings task and needs its own focused page.
@@ -8,18 +8,19 @@ import { getWorkspaceOrganizationTeam } from "../../../_lib/organizationTeam";
  * HOW:   Uses the shared invite form client component backed by the workspace invite API route.
  */
 export default async function WorkspaceInviteMemberPage() {
-  const { currentMembershipRole } = await getWorkspaceOrganizationTeam();
+  const { currentMembershipRole, organization } = await getWorkspaceOrganizationTeam();
 
   return (
-    <div className="flex min-h-full flex-col">
-      <ZonePageIntro
-        eyebrow="الإعدادات"
+    <div className="space-y-6 p-6 lg:p-10">
+      <SettingsHeader
         title="دعوة عضو جديد"
         description="أرسل دعوة إلى مدير أو عضو أو مشاهد ضمن نفس المنظمة."
       />
-      <div className="px-6 py-6 lg:px-8 lg:py-8">
-        <InviteMemberForm canManage={currentMembershipRole === "manager"} />
-      </div>
+      <InviteMemberForm
+        canManage={currentMembershipRole === "manager"}
+        showHeader={false}
+        hasOrganization={Boolean(organization)}
+      />
     </div>
   );
 }

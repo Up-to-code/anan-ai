@@ -25,17 +25,20 @@ export default function OrganizationSettingsWorkspace({
   if (!organization) {
     return (
       <section className="border border-slate-200 bg-white p-6">
-        <h3 className="text-lg font-black text-slate-950">تعديل بيانات المنظمة</h3>
-        <p className="mt-3 text-sm font-medium text-slate-500">لا توجد منظمة مرتبطة بالحساب الحالي.</p>
+        <h2 className="text-xl font-black text-slate-950">بيانات المنظمة</h2>
+        <p className="mt-2 text-sm font-medium text-slate-500">لا توجد منظمة مرتبطة بالحساب الحالي.</p>
       </section>
     );
   }
 
   return (
     <section className="border border-slate-200 bg-white p-6">
-      <h3 className="text-lg font-black text-slate-950">تعديل بيانات المنظمة</h3>
+      <h2 className="text-xl font-black text-slate-950">بيانات المنظمة</h2>
+      <p className="mt-2 text-sm font-medium text-slate-500">
+        حدّث اسم المنظمة وبيانات التواصل الأساسية الخاصة بها.
+      </p>
       <form
-        className="mt-4 space-y-4"
+        className="mt-6 space-y-4"
         onSubmit={async (event) => {
           event.preventDefault();
           if (!canManage) {
@@ -69,63 +72,63 @@ export default function OrganizationSettingsWorkspace({
       >
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <div className="block text-xs font-black tracking-widest text-slate-500">المعرف</div>
-            <div className="mt-2 border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black text-slate-700">
+            <div className="block text-sm font-semibold text-slate-600">المعرف</div>
+            <div className="mt-2 border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
               {organization.slug}
             </div>
           </div>
           <div>
-            <div className="block text-xs font-black tracking-widest text-slate-500">الحالة</div>
-            <div className="mt-2 border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black text-slate-700">
+            <div className="block text-sm font-semibold text-slate-600">الحالة</div>
+            <div className="mt-2 border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
               {organization.status ?? "غير متوفر"}
             </div>
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-black tracking-widest text-slate-500">الاسم</label>
+          <label className="block text-sm font-semibold text-slate-600">الاسم</label>
           <input
             type="text"
             value={name}
             onChange={(event) => setName(event.target.value)}
             disabled={!canManage || isSaving}
-            className="mt-2 w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 transition focus:bg-white focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-2 w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 transition focus:bg-white focus-visible:border-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-70"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-black tracking-widest text-slate-500">نبذة</label>
+          <label className="block text-sm font-semibold text-slate-600">نبذة</label>
           <textarea
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             disabled={!canManage || isSaving}
             rows={4}
-            className="mt-2 w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 transition focus:bg-white focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-2 w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 transition focus:bg-white focus-visible:border-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-70"
           />
           <div className="mt-2 text-xs font-medium text-slate-500">اختياري — حتى 500 حرف.</div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-xs font-black tracking-widest text-slate-500">الموقع الإلكتروني</label>
+            <label className="block text-sm font-semibold text-slate-600">الموقع الإلكتروني</label>
             <input
               type="text"
               value={website}
               onChange={(event) => setWebsite(event.target.value)}
               disabled={!canManage || isSaving}
               placeholder="https://example.com"
-              className="mt-2 w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 transition focus:bg-white focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-70"
+              className="mt-2 w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 transition focus:bg-white focus-visible:border-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-70"
             />
           </div>
           <div>
-            <label className="block text-xs font-black tracking-widest text-slate-500">بريد التواصل</label>
+            <label className="block text-sm font-semibold text-slate-600">بريد التواصل</label>
             <input
               type="email"
               value={contactEmail}
               onChange={(event) => setContactEmail(event.target.value)}
               disabled={!canManage || isSaving}
               placeholder="contact@example.com"
-              className="mt-2 w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 transition focus:bg-white focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-70"
+              className="mt-2 w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 transition focus:bg-white focus-visible:border-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-70"
             />
           </div>
         </div>
@@ -136,7 +139,7 @@ export default function OrganizationSettingsWorkspace({
         <button
           type="submit"
           disabled={!canManage || isSaving}
-          className="bg-slate-950 px-6 py-3 text-xs font-black tracking-widest text-white transition hover:bg-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex items-center justify-center border border-slate-950 bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:border-slate-900 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {isSaving ? "جاري الحفظ..." : "حفظ التعديلات"}
         </button>
