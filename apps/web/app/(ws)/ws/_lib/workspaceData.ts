@@ -42,7 +42,11 @@ export async function getLayoutSidebarData(returnTo: string) {
 
 export async function requireWorkspaceData(returnTo: string) {
   try {
-    return await getWorkspaceBehaviorForCurrentUser();
+    const behavior = await getWorkspaceBehaviorForCurrentUser();
+    if (behavior.onboarding.needsOrganization && returnTo !== "/ws") {
+      redirect(`/ws?onboarding=required&returnTo=${encodeURIComponent(returnTo)}`);
+    }
+    return behavior;
   } catch (error) {
     const domainError = normalizeDomainError(error);
     if (domainError.code === "UNAUTHORIZED") {
