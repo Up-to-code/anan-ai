@@ -64,7 +64,7 @@ describe("workspaces domain service", () => {
     expect(organizationsRepository.listForCurrentUser).toHaveBeenCalledWith("token-1");
   });
 
-  it("resolves broker workspace behavior with centralized audience and owner context", async () => {
+  it("resolves broker workspace behavior when current organization is unavailable", async () => {
     const requireSession = vi.fn(async () => ({
       token: "token-1",
       context: {
@@ -107,8 +107,8 @@ describe("workspaces domain service", () => {
     });
 
     expect(behavior.audience).toBe("broker");
-    expect(behavior.ownerContext).toEqual({ ownerType: "broker", ownerId: "broker-1" });
-    expect(behavior.onboarding.needsOrganization).toBe(false);
+    expect(behavior.ownerContext).toBeNull();
+    expect(behavior.onboarding.needsOrganization).toBe(true);
     expect(behavior.visibleZoneKeys).toContain("projects");
   });
 
@@ -152,7 +152,8 @@ describe("workspaces domain service", () => {
     });
 
     expect(behavior.audience).toBe("developer");
-    expect(behavior.ownerContext).toEqual({ ownerType: "RED", ownerId: "red-1" });
+    expect(behavior.ownerContext).toBeNull();
+    expect(behavior.onboarding.needsOrganization).toBe(true);
     expect(behavior.onboarding.suggestedOrganizationType).toBe("red");
   });
 

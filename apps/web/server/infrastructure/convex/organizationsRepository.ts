@@ -42,6 +42,20 @@ const agenciesApi = (apiUnsafe[
   "shared_logic/agencies/repositories"
 ]) as OrganizationsApiRefs;
 
+const organizationAccessMessages = [
+  "Organization owner profile required",
+  "Organization membership required",
+  "Tenant organization required",
+  "Tenant organization link required",
+  "Broker organization link required",
+  "Developer organization link required",
+];
+
+function isOrganizationAccessError(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  return organizationAccessMessages.some((entry) => message.includes(entry));
+}
+
 /**
  * WHY:   Organization reads and writes are the first business operations moving behind the Next.js gateway.
  * WHAT:  Repository contract for listing and creating organizations for the current session user.
@@ -94,13 +108,7 @@ export const convexOrganizationsRepository: OrganizationsRepository = {
         membership: OrganizationMembershipSummary;
       };
     } catch (error) {
-      const message = error instanceof Error ? error.message : "";
-      if (
-        message.includes("Organization owner profile required") ||
-        message.includes("Organization membership required") ||
-        message.includes("Tenant organization required") ||
-        message.includes("Tenant organization link required")
-      ) {
+      if (isOrganizationAccessError(error)) {
         return null;
       }
       throw error;
@@ -149,9 +157,16 @@ export const convexOrganizationsRepository: OrganizationsRepository = {
   },
 
   async listOffersDirectoryProfiles(token, role) {
-    return fetchQuery(agenciesApi.listOffersDirectoryProfiles as never, {
-      role,
-    } as never, { token }) as Promise<OffersDirectoryProfile[]>;
+    try {
+      return fetchQuery(agenciesApi.listOffersDirectoryProfiles as never, {
+        role,
+      } as never, { token }) as Promise<OffersDirectoryProfile[]>;
+    } catch (error) {
+      if (isOrganizationAccessError(error)) {
+        return [];
+      }
+      throw error;
+    }
   },
 
   async listIncomingTeamInvites(token) {
