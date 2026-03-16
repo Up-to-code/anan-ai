@@ -89,11 +89,17 @@ export default function CreateOfferForm({ properties, onSubmit }: CreateOfferFor
             event.preventDefault();
             setError(null);
             startTransition(async () => {
-              const result = await onSubmit({
-                ...form,
-                attachments,
-              });
-              router.push(result.redirectTo);
+              try {
+                const result = await onSubmit({
+                  ...form,
+                  attachments,
+                });
+                router.push(result.redirectTo);
+              } catch (submitError) {
+                setError(
+                  submitError instanceof Error ? submitError.message : "تعذر حفظ العرض. حاول مرة أخرى.",
+                );
+              }
             });
           }}
         >

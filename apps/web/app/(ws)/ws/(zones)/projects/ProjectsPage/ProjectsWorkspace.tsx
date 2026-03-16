@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FolderOpen, Pencil, UploadCloud } from "lucide-react";
 import { useState, useTransition } from "react";
 import FilterChipBar from "../../../_components/Visuals/FilterChipBar";
@@ -31,6 +32,7 @@ export default function ProjectsWorkspace({
   onDeleteProject,
   onPublishProject,
 }: ProjectsWorkspaceProps) {
+  const router = useRouter();
   const [projects, setProjects] = useState(initialProjects);
   const [filterKey, setFilterKey] = useState("all");
   const [deleteTarget, setDeleteTarget] = useState<WorkspaceProject | null>(null);
@@ -162,7 +164,7 @@ export default function ProjectsWorkspace({
                                 entry.id === project.id ? { ...entry, publicationState: "published" } : entry,
                               ),
                             );
-                            refreshPage();
+                            router.refresh();
                           });
                         })
                       }
@@ -222,7 +224,7 @@ export default function ProjectsWorkspace({
             void onDeleteProject(deleteTarget.id).then(() => {
               setProjects((current) => current.filter((entry) => entry.id !== deleteTarget.id));
               setDeleteTarget(null);
-              refreshPage();
+              router.refresh();
             });
           });
         }}
@@ -233,8 +235,3 @@ export default function ProjectsWorkspace({
     </div>
   );
 }
-  function refreshPage() {
-    if (typeof window !== "undefined") {
-      window.location.reload();
-    }
-  }
