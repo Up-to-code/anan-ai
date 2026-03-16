@@ -29,7 +29,7 @@ export default async function WorkspaceSettingsPage() {
       />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
         <OrganizationSettingsWorkspace organization={organization} canManage={canManage} />
-        <InviteMemberForm canManage={canManage} hasOrganization={Boolean(organization)} />
+        <InviteMemberForm canManage={canManage} hasOrganization={Boolean(organization && currentMembershipRole)} />
       </div>
     </div>
   );

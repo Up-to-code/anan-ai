@@ -19,7 +19,7 @@ export default async function WorkspaceInviteMemberPage() {
       <InviteMemberForm
         canManage={currentMembershipRole === "manager"}
         showHeader={false}
-        hasOrganization={Boolean(organization)}
+        hasOrganization={Boolean(organization && currentMembershipRole)}
       />
     </div>
   );

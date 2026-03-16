@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { searchCurrentOrganizationDirectoryExact } from "@/server/domains/organizations/service";
-import { toErrorResponse } from "@/server/contracts/errors";
+import { normalizeDomainError, toErrorResponse } from "@/server/contracts/errors";
 
 /**
  * WHY:   Team invite and direct-message flows need one exact-match directory lookup owned by the server.
@@ -12,6 +12,10 @@ export async function GET(request: NextRequest) {
     const query = request.nextUrl.searchParams.get("q") ?? "";
     return Response.json(await searchCurrentOrganizationDirectoryExact(query));
   } catch (error) {
+    const domainError = normalizeDomainError(error);
+    if (domainError.code === "FORBIDDEN" && domainError.message.includes("Tenant organization")) {
+      return Response.json([]);
+    }
     return toErrorResponse(error);
   }
 }
