@@ -37,4 +37,21 @@ describe("OrganizationOnboardingJourney", () => {
     expect(markup).toContain("إنشاء جهة جديدة");
     expect(markup).toContain("تسجيل الخروج");
   });
+
+  it("shows the create-org warning when creation is disabled", () => {
+    const markup = renderToStaticMarkup(
+      <OrganizationOnboardingJourney
+        user={{ name: "Ahmed", email: "ahmed@example.com" }}
+        suggestedOrganizationType="broker"
+        audience="broker"
+        incomingInvites={[]}
+        canCreateOrganization={false}
+        brokerRuleset={null}
+        redRuleset={null}
+      />,
+    );
+
+    expect(markup).toContain("لا يمكن إنشاء جهة جديدة");
+    expect(markup).toContain("تسجيل الخروج");
+  });
 });

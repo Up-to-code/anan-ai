@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { SessionUser } from "@/lib/serverSession";
 import type { WorkspaceAudience } from "@/server/contracts/workspace";
@@ -53,6 +53,12 @@ export default function OrganizationOnboardingJourney({
   const [step, setStep] = useState<1 | 2 | 3>(initialStep);
   const [organization, setOrganization] = useState<OrganizationSnapshot | null>(initialOrganization);
   const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!canCreateOrganization && step === 2) {
+      setStep(1);
+    }
+  }, [canCreateOrganization, step]);
 
   const steps = useMemo(
     () => [
@@ -120,7 +126,8 @@ export default function OrganizationOnboardingJourney({
             <div className="space-y-3">
               {steps.map((item) => {
                 const isActive = item.id === step;
-                const isLocked = item.id === 3 && !organization;
+                const isLocked =
+                  (item.id === 2 && !canCreateOrganization) || (item.id === 3 && !organization);
                 return (
                   <button
                     key={item.id}

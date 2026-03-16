@@ -64,7 +64,59 @@ describe("workspaces domain service", () => {
     expect(organizationsRepository.listForCurrentUser).toHaveBeenCalledWith("token-1");
   });
 
-  it("resolves broker workspace behavior when current organization is unavailable", async () => {
+  it("resolves broker workspace behavior when organization access is blocked", async () => {
+    const requireSession = vi.fn(async () => ({
+      token: "token-1",
+      context: {
+        userId: "user-1",
+        name: "Ahmed",
+        email: "ahmed@example.com",
+        role: "broker",
+        brokerId: "broker-1",
+        isActive: true,
+      },
+      profile: {
+        role: "broker",
+        roleStatus: "approved",
+        brokerId: "broker-1",
+      },
+    }));
+    const organizationsRepository = {
+      listForCurrentUser: vi.fn(async () => [
+        {
+          id: "broker-1",
+          type: "broker" as const,
+          name: "Fresh Start Realty",
+          slug: "fresh-start-realty",
+          status: "active" as const,
+          isVerified: true,
+        },
+      ]),
+      getCurrentOrganization: vi.fn(async () => ({
+        organization: null,
+        membership: null,
+        accessError: true as const,
+      })),
+      createForUser: vi.fn(),
+      listTeamMembers: vi.fn(),
+      listTeamInvites: vi.fn(),
+      createTeamInvite: vi.fn(),
+      cancelTeamInvite: vi.fn(),
+      acceptTeamInvite: vi.fn(),
+    };
+
+    const behavior = await getWorkspaceBehaviorForCurrentUser({
+      requireSession,
+      organizationsRepository,
+    });
+
+    expect(behavior.audience).toBe("broker");
+    expect(behavior.ownerContext).toBeNull();
+    expect(behavior.onboarding.needsOrganization).toBe(true);
+    expect(behavior.visibleZoneKeys).toContain("projects");
+  });
+
+  it("falls back to the first organization when the current org is not set", async () => {
     const requireSession = vi.fn(async () => ({
       token: "token-1",
       context: {
@@ -106,10 +158,9 @@ describe("workspaces domain service", () => {
       organizationsRepository,
     });
 
-    expect(behavior.audience).toBe("broker");
-    expect(behavior.ownerContext).toBeNull();
-    expect(behavior.onboarding.needsOrganization).toBe(true);
-    expect(behavior.visibleZoneKeys).toContain("projects");
+    expect(behavior.primaryOrganization?.id).toBe("broker-1");
+    expect(behavior.onboarding.needsOrganization).toBe(false);
+    expect(behavior.ownerContext).toEqual({ ownerType: "broker", ownerId: "broker-1" });
   });
 
   it("normalizes legacy RED roles into the developer audience", async () => {
@@ -152,8 +203,8 @@ describe("workspaces domain service", () => {
     });
 
     expect(behavior.audience).toBe("developer");
-    expect(behavior.ownerContext).toBeNull();
-    expect(behavior.onboarding.needsOrganization).toBe(true);
+    expect(behavior.ownerContext).toEqual({ ownerType: "RED", ownerId: "red-1" });
+    expect(behavior.onboarding.needsOrganization).toBe(false);
     expect(behavior.onboarding.suggestedOrganizationType).toBe("red");
   });
 

@@ -90,7 +90,11 @@ export async function createOrganizationForCurrentUser(
 
 export async function getCurrentOrganizationForCurrentUser(
   dependencies: OrganizationsServiceDependencies = defaultDependencies,
-): Promise<{ organization: OrganizationSummary; membership: OrganizationMembershipSummary } | null> {
+): Promise<{
+  organization: OrganizationSummary | null;
+  membership: OrganizationMembershipSummary | null;
+  accessError?: true;
+} | null> {
   const session = await dependencies.requireSession();
   return dependencies.organizationsRepository.getCurrentOrganization(session.token);
 }

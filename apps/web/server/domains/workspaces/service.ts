@@ -1,5 +1,5 @@
 import { requireSessionContext, type ResolvedSession } from "@/server/auth/session";
-import type { OrganizationSummary } from "@/server/contracts/organizations";
+import type { OrganizationMembershipSummary, OrganizationSummary } from "@/server/contracts/organizations";
 import type { ProfileSummary } from "@/server/contracts/profiles";
 import type { SessionContext, SessionUser } from "@/server/contracts/session";
 import { toSessionUser } from "@/server/contracts/session";
@@ -39,7 +39,11 @@ async function loadWorkspaceState(
 ): Promise<{
   session: ResolvedSession;
   organizations: OrganizationSummary[];
-  currentOrganization: OrganizationSummary | null;
+  currentOrganization: {
+    organization: OrganizationSummary | null;
+    membership: OrganizationMembershipSummary | null;
+    accessError?: true;
+  } | null;
 }> {
   const session = await dependencies.requireSession();
   const [organizations, currentOrganization] = await Promise.all([
@@ -47,7 +51,7 @@ async function loadWorkspaceState(
     dependencies.organizationsRepository.getCurrentOrganization(session.token),
   ]);
 
-  return { session, organizations, currentOrganization: currentOrganization?.organization ?? null };
+  return { session, organizations, currentOrganization };
 }
 
 const loadWorkspaceStateCached = cache(async () => loadWorkspaceState(defaultDependencies));
@@ -64,10 +68,10 @@ export async function getWorkspaceBehaviorForCurrentUser(
     dependencies === defaultDependencies
       ? await loadWorkspaceStateCached()
       : await loadWorkspaceState(dependencies);
-  // `getCurrentOrganization` returns null not only for "no org", but also when the backend cannot
-  // resolve a valid tenant membership (e.g. "Tenant organization required"). In that state, the
-  // workspace must render onboarding instead of attempting org-scoped queries.
-  const primaryOrganization = currentOrganization;
+  const accessError = currentOrganization?.accessError === true;
+  const primaryOrganization = accessError
+    ? null
+    : (currentOrganization?.organization ?? organizations[0] ?? null);
   const orderedOrganizations = primaryOrganization
     ? [primaryOrganization, ...organizations.filter((org) => org.id !== primaryOrganization.id)]
     : organizations;

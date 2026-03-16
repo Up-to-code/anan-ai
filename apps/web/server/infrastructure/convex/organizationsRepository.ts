@@ -65,8 +65,9 @@ export type OrganizationsRepository = {
   listForCurrentUser(token: string): Promise<OrganizationSummary[]>;
   createForCurrentUser(token: string, input: CreateOrganizationInput): Promise<OrganizationSummary>;
   getCurrentOrganization(token: string): Promise<{
-    organization: OrganizationSummary;
-    membership: OrganizationMembershipSummary;
+    organization: OrganizationSummary | null;
+    membership: OrganizationMembershipSummary | null;
+    accessError?: true;
   } | null>;
   updateCurrentOrganization(token: string, input: UpdateOrganizationInput): Promise<OrganizationSummary>;
   listCurrentTeamMembers(token: string): Promise<OrganizationTeamMember[]>;
@@ -109,7 +110,7 @@ export const convexOrganizationsRepository: OrganizationsRepository = {
       };
     } catch (error) {
       if (isOrganizationAccessError(error)) {
-        return null;
+        return { organization: null, membership: null, accessError: true };
       }
       throw error;
     }
