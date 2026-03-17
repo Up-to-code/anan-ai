@@ -84,7 +84,7 @@ describe("InboxSidebar", () => {
       />,
     );
 
-    expect(html).toContain("لا توجد نتائج مطابقة لهذا البحث.");
+    expect(html).toContain("لا توجد نتائج مطابقة.");
   });
 
   it("renders compact invite actions above the conversation list", () => {

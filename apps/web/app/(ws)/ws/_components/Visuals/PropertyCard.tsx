@@ -55,7 +55,7 @@ export default function PropertyCard({
   const Content = (
     <article
       className={cn(
-        "group relative border border-slate-200 bg-white transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:border-blue-600 hover:shadow-[0_22px_45px_-15px_rgba(0,41,255,0.08)] active:scale-[0.98] overflow-hidden",
+        "group relative border border-slate-200 bg-white transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:border-blue-600 hover:bg-slate-50 active:scale-[0.98] overflow-hidden",
         widthClass
       )}
     >
@@ -79,9 +79,9 @@ export default function PropertyCard({
           <div className="shrink-0 border-2 border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-black text-white shadow-none">{priceLabel}</div>
         </div>
 
-        <div className="grid grid-cols-4 gap-px bg-slate-100/30 border border-slate-100/50 backdrop-blur-md">
+        <div className="grid grid-cols-4 gap-px border border-slate-100 bg-slate-50">
           {specs.map((spec) => (
-            <div key={spec.label} className="bg-white/90 px-2 py-3 text-center transition-colors duration-500 group-hover:bg-white/100">
+            <div key={spec.label} className="bg-white px-2 py-3 text-center transition-colors duration-500 group-hover:bg-white">
               <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 group-hover:text-blue-600 transition-colors duration-500">{spec.label}</div>
               <div className="mt-1 text-xs font-black text-slate-950">{spec.value}</div>
             </div>

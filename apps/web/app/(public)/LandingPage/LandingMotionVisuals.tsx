@@ -187,6 +187,11 @@ function ChartOverlay() {
  * WHAT:  Wraps the hero brand vector and overlays the shared Anan mark.
  * HOW:   Applies restrained pulse/hover motion to the vector block and logo chip.
  */
+/**
+ * WHY:   The landing hero needs a central brand focal point that reinforces Anan's network motif.
+ * WHAT:  Renders the hero network illustration with animated signal overlays and a brand mark core.
+ * HOW:   Composes MotionVector/ConnectionOverlay with reduced-motion awareness for accessibility.
+ */
 export function HeroBrandNetworkVisual() {
   const reduceMotion = useReducedMotion();
 
@@ -226,7 +231,7 @@ export function HeroBrandNetworkVisual() {
         transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
         whileHover={reduceMotion ? undefined : { scale: 1.04 }}
       >
-        <div className="rounded-none border border-slate-200 bg-white/96 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.10)]">
+        <div className="rounded-none border border-slate-200 bg-white/96 p-4">
           <Image src="/brand-mark.svg" alt="Anan" width={104} height={104} className="h-[104px] w-[104px]" priority />
         </div>
       </motion.div>
@@ -234,6 +239,11 @@ export function HeroBrandNetworkVisual() {
   );
 }
 
+/**
+ * WHY:   Investor-facing sections need a distinct motion visual to anchor the narrative.
+ * WHAT:  Displays the buyer intelligence vector with animated connection lines.
+ * HOW:   Wraps the static SVG in MotionVector with a ConnectionOverlay.
+ */
 export function BuyerIntelligenceVisual() {
   return (
     <MotionVector
@@ -253,6 +263,11 @@ export function BuyerIntelligenceVisual() {
   );
 }
 
+/**
+ * WHY:   Developer sections need a darker, data-forward visual identity.
+ * WHAT:  Shows the developer pulse vector with chart-style overlay motion.
+ * HOW:   Uses MotionVector in dark mode and layers the chart overlay.
+ */
 export function DeveloperPulseVisual() {
   return (
     <MotionVector
@@ -264,6 +279,11 @@ export function DeveloperPulseVisual() {
   );
 }
 
+/**
+ * WHY:   The broker section requires a network visual that signals collaboration.
+ * WHAT:  Renders the broker network illustration with moving signal paths.
+ * HOW:   Uses MotionVector and ConnectionOverlay with tuned line timings.
+ */
 export function BrokerNetworkVisual() {
   return (
     <MotionVector
@@ -285,6 +305,11 @@ export function BrokerNetworkVisual() {
   );
 }
 
+/**
+ * WHY:   The convergence section needs a single, central symbol of market unification.
+ * WHAT:  Displays the convergence field illustration with pulsing center mark.
+ * HOW:   Combines MotionVector-like animation with a layered brand mark core.
+ */
 export function ConvergenceFieldVisual() {
   const reduceMotion = useReducedMotion();
 
@@ -320,7 +345,7 @@ export function ConvergenceFieldVisual() {
           animate={reduceMotion ? undefined : { scale: [1, 1.02, 1] }}
           transition={{ duration: 4.4, repeat: Infinity, ease: "easeInOut" }}
         >
-          <div className="border border-slate-200 bg-white/96 p-3 shadow-[0_16px_36px_rgba(15,23,42,0.08)]">
+          <div className="border border-slate-200 bg-white/96 p-3">
             <Image src="/brand-mark.svg" alt="A" width={72} height={72} className="h-[72px] w-[72px]" />
           </div>
         </motion.div>
@@ -329,6 +354,11 @@ export function ConvergenceFieldVisual() {
   );
 }
 
+/**
+ * WHY:   The AI section needs a dedicated visual to reinforce the intelligence layer.
+ * WHAT:  Shows the AI intelligence vector with animated network lines.
+ * HOW:   Uses MotionVector with ConnectionOverlay for subtle motion.
+ */
 export function AiIntelligenceVisual() {
   return (
     <MotionVector
@@ -350,6 +380,11 @@ export function AiIntelligenceVisual() {
   );
 }
 
+/**
+ * WHY:   The ecosystem section must show cross-party connectivity at a glance.
+ * WHAT:  Renders the ecosystem connection vector with animated signal lines.
+ * HOW:   Composes MotionVector with ConnectionOverlay line animation.
+ */
 export function EcosystemConnectionVisual() {
   return (
     <MotionVector

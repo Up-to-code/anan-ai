@@ -27,7 +27,7 @@ export default function WorkspaceZoneGrid({
             <Link
               key={zone.key}
               href={zone.href}
-              className="group border border-slate-200 bg-white p-5 text-right transition hover:border-blue-600 hover:shadow-[0_16px_35px_-18px_rgba(37,99,235,0.45)]"
+              className="group border border-slate-200 bg-white p-5 text-right transition hover:border-blue-600 hover:bg-slate-50"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex h-12 w-12 items-center justify-center border border-slate-200 bg-slate-50 text-slate-900 transition group-hover:border-blue-100 group-hover:bg-blue-50 group-hover:text-blue-600">

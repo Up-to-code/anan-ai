@@ -104,8 +104,8 @@ export default function OrganizationOnboardingJourney({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <div className="text-lg font-semibold text-slate-900">رحلة التفعيل</div>
-          <p className="text-sm text-slate-600">
+          <div className="text-sm font-black text-slate-900">رحلة التفعيل</div>
+          <p className="text-sm text-slate-500">
             {shouldShowGreeting ? `${greetingName}، ` : ""}
             خطوات بسيطة لتفعيل مساحة العمل بشكل احترافي.
           </p>
@@ -113,17 +113,17 @@ export default function OrganizationOnboardingJourney({
         <OnboardingLogoutButton variant="ghost" />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start">
+      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
         <div className="space-y-6">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
-            <div className="text-sm font-semibold text-slate-900">لماذا هذه الخطوات؟</div>
-            <p className="text-xs text-slate-600">
+          <div className="space-y-3 border-2 border-slate-100 bg-white p-4">
+            <div className="text-xs font-black text-slate-900">لماذا هذه الخطوات؟</div>
+            <p className="text-xs text-slate-500">
               نرتّب إنشاء الجهة ودعوات الفريق والتوثيق حتى تبدأ العمل بثقة وبأقل وقت ممكن.
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <div className="space-y-3">
+          <div className="border-2 border-slate-100 bg-white">
+            <div className="divide-y-2 divide-slate-100">
               {steps.map((item) => {
                 const isActive = item.id === step;
                 const isLocked =
@@ -137,20 +137,20 @@ export default function OrganizationOnboardingJourney({
                       handleAdvance(item.id as 1 | 2 | 3);
                     }}
                     disabled={isLocked}
-                    className={`flex w-full items-start gap-3 text-right transition ${
-                      isActive ? "text-slate-900" : "text-slate-500 hover:text-slate-800"
-                    } ${isLocked ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`flex w-full items-start gap-3 px-4 py-3 text-right transition ${
+                      isActive ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    } ${isLocked ? "cursor-not-allowed opacity-50 hover:bg-white hover:text-slate-600" : ""}`}
                   >
                     <span
-                      className={`flex h-7 w-7 items-center justify-center border border-slate-300 text-xs font-semibold ${
-                        isActive ? "bg-slate-900 text-white border-slate-900" : "bg-white"
+                      className={`flex h-7 w-7 items-center justify-center border-2 text-xs font-black ${
+                        isActive ? "border-blue-600 bg-blue-600 text-white" : "border-slate-100 bg-white text-slate-700"
                       }`}
                     >
                       {item.id}
                     </span>
                     <span className="space-y-1">
-                      <span className="block text-sm font-semibold">{item.title}</span>
-                      <span className="block text-xs">{item.description}</span>
+                      <span className="block text-sm font-black text-slate-900">{item.title}</span>
+                      <span className="block text-xs text-slate-500">{item.description}</span>
                     </span>
                   </button>
                 );
@@ -159,9 +159,9 @@ export default function OrganizationOnboardingJourney({
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-2 border-slate-100 bg-white">
           {errorMessage ? (
-            <div className="border-b border-red-200 bg-red-50 px-6 py-4 text-sm font-semibold text-red-700">
+            <div className="border-b-2 border-red-200 bg-red-50 px-6 py-4 text-sm font-bold text-red-700">
               {errorMessage}
             </div>
           ) : null}

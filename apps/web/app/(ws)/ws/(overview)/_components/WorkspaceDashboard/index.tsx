@@ -24,7 +24,7 @@ export default function WorkspaceDashboard({
   });
 
   return (
-    <div className="min-h-[calc(100svh-7rem)] bg-stone-50">
+    <div className="min-h-[calc(100svh-7rem)] bg-white">
       <div className="flex min-h-[calc(100svh-7rem)] flex-col">
         <WorkspaceAssistantCanvas
           thread={assistant.thread}

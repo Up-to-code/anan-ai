@@ -1,4 +1,5 @@
 import { User, Code2, Briefcase, Globe } from "lucide-react";
+import ButtonLink from "@/components/shared/ButtonLink";
 import PageHero from "@/components/shared/PageHero";
 import Section from "@/components/shared/Section";
 import SectionLabel from "@/components/shared/SectionLabel";
@@ -73,9 +74,9 @@ export default function TeamPage() {
                     <h2 className="text-4xl font-black text-slate-900 uppercase">انضم إلى القادة</h2>
                     <p className="font-bold text-slate-500 text-xl leading-relaxed">نبني الجيل القادم من البنية العقارية، ونبحث دائمًا عن العقول الطموحة لمشاركتنا هذه الرحلة.</p>
                     <div className="pt-6">
-                        <a href="/contact" className="inline-flex min-w-[180px] items-center justify-center bg-blue-600 px-10 py-5 text-base font-black tracking-wide text-white transition-all hover:bg-blue-700 active:scale-95 border-none shadow-none uppercase">
+                        <ButtonLink href="/contact" variant="primary" className="px-10 py-5">
                             ابحث عن وظيفة
-                        </a>
+                        </ButtonLink>
                     </div>
                 </div>
             </Section>

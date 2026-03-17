@@ -41,7 +41,7 @@ export default function ZoneSidebar({
       <div className="border-b border-white/5 px-4 py-4">
         <Link
           href="/ws"
-          className="flex items-center justify-between border border-white/5 bg-white/5 px-5 py-4 text-[11px] font-black tracking-[0.18em] text-white transition hover:border-blue-600 hover:bg-blue-600 shadow-none"
+          className="flex items-center justify-between border border-white/5 bg-white/5 px-5 py-4 text-[11px] font-black tracking-[0.18em] text-white transition hover:border-blue-600 hover:bg-blue-600"
         >
           <span className="flex items-center gap-3">
             <ArrowLeft className="h-4 w-4" />
@@ -75,7 +75,7 @@ export default function ZoneSidebar({
               className={cn(
                 "flex items-center justify-between border px-5 py-4 text-[11px] font-black tracking-[0.18em] transition-all",
                 isActive
-                  ? "border-blue-600 bg-blue-600 text-white shadow-none"
+                  ? "border-blue-600 bg-blue-600 text-white"
                   : "border-transparent text-slate-400 hover:border-white/5 hover:bg-white/5 hover:text-white",
               )}
             >

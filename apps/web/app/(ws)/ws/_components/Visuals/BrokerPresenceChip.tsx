@@ -82,7 +82,7 @@ export default function BrokerPresenceChip({
 
       <div
         className={cn(
-          "absolute top-full z-20 mt-2 w-72 border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 shadow-[0_20px_48px_rgba(15,23,42,0.10)] transition",
+          "absolute top-full z-20 mt-2 w-72 border-2 border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 transition",
           open ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-1 opacity-0",
         )}
       >

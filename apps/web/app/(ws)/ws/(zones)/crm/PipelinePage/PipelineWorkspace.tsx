@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import BrandEmptyState from "../../../_components/WorkspaceBrand/BrandEmptyState";
 import FilterChipBar from "../../../_components/Visuals/FilterChipBar";
 import PersonCard from "../../../_components/Visuals/PersonCard";
@@ -38,12 +39,7 @@ export default function PipelineWorkspace({
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<PipelineStage | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  function refreshPage() {
-    if (typeof window !== "undefined") {
-      window.location.reload();
-    }
-  }
+  const router = useRouter();
 
   const visibleClients = clients.filter((client) => {
     if (activeFilter === "all") return true;
@@ -77,7 +73,7 @@ export default function PipelineWorkspace({
                 startTransition(() => {
                   void onCreateClient({ name: trimmedName }).then(() => {
                     setDraftName("");
-                    refreshPage();
+                    router.refresh();
                   });
                 });
               }}
@@ -139,7 +135,7 @@ export default function PipelineWorkspace({
                 );
 
                 startTransition(() => {
-                  void onStageChange({ dealId: draggedId, stage: stageMap[stage] }).then(() => refreshPage());
+                  void onStageChange({ dealId: draggedId, stage: stageMap[stage] }).then(() => router.refresh());
                 });
                 setDraggedId(null);
               }}

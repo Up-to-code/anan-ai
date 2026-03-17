@@ -46,7 +46,7 @@ async function OrganizationOnboardingServerWrapper(
   ]);
   return (
     <div className="flex flex-col bg-white text-slate-900">
-      <div className="mx-auto w-full max-w-5xl px-6 py-8">
+      <div className="mx-auto w-full max-w-6xl px-6 py-8">
         <OrganizationOnboardingJourney
           {...journeyProps}
           brokerRuleset={brokerRuleset}

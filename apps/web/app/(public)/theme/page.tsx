@@ -1,4 +1,5 @@
 import { Zap, Shield, Globe, Cpu } from "lucide-react";
+import ButtonLink from "@/components/shared/ButtonLink";
 import FeatureCardGrid from "@/components/shared/FeatureCardGrid";
 import PageHero from "@/components/shared/PageHero";
 import Section from "@/components/shared/Section";
@@ -110,9 +111,9 @@ export default function ThemePage() {
                         <span>جرب البنية التحتية لعنان اليوم.</span>
                     </p>
                     <div className="pt-6">
-                        <a href="/signin" className="inline-flex min-w-[180px] items-center justify-center bg-blue-600 px-10 py-5 text-base font-black tracking-wide text-white transition-all hover:bg-blue-700 active:scale-95 border-none shadow-none uppercase">
+                        <ButtonLink href="/signin" variant="primary" className="px-10 py-5">
                             ابدأ الوصول المجاني
-                        </a>
+                        </ButtonLink>
                     </div>
                 </div>
             </Section>

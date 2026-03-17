@@ -92,7 +92,7 @@ export default function ProjectsWorkspace({
           {filteredProjects.map((project) => (
             <article
               key={project.id}
-              className="group overflow-hidden border border-slate-200 bg-white transition-all duration-700 hover:border-blue-600 hover:shadow-[0_22px_45px_-15px_rgba(0,41,255,0.08)]"
+              className="group overflow-hidden border border-slate-200 bg-white transition-all duration-700 hover:border-blue-600 hover:bg-slate-50"
             >
               <div className="h-52 overflow-hidden">
                 <div className="h-full transition-transform duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-105">

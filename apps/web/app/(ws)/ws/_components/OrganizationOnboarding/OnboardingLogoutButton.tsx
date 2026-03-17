@@ -25,11 +25,12 @@ export default function OnboardingLogoutButton({
   const { signOut } = useAuthActions();
   const [isPending, startTransition] = useTransition();
 
-  const baseClasses = "inline-flex items-center justify-center gap-2 text-xs font-semibold transition disabled:opacity-60";
+  const baseClasses =
+    "inline-flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition disabled:opacity-60";
   const variantClasses =
     variant === "ghost"
-      ? "border border-slate-200 bg-white px-3 py-2 text-slate-700 hover:border-red-200 hover:bg-red-50 hover:text-red-700"
-      : "border border-slate-900 bg-slate-900 px-3 py-2 text-white hover:bg-slate-800";
+      ? "border-2 border-slate-100 bg-white px-6 py-2.5 text-slate-500 hover:border-blue-600 hover:text-blue-600"
+      : "border-2 border-blue-600 bg-blue-600 px-6 py-2.5 text-white hover:bg-blue-700";
 
   return (
     <button

@@ -97,7 +97,7 @@ describe("/ws/market page", () => {
     });
     const markup = renderToStaticMarkup(element);
 
-    expect(markup).toContain("This coming soon");
+    expect(markup).toContain("Coming soon");
     expect(markup).toContain("هذه الصفحة قريباً");
     expect(markup).toContain("المدن الأعلى طلباً");
     expect(markup).toContain("الفرص الحالية");

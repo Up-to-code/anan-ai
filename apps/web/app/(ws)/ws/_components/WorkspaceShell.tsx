@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import { PanelLeft, PanelLeftClose } from "lucide-react";
 import Sidebar from "@/components/shared/Sidebar";
 import type { SidebarUser } from "@/components/shared/Sidebar/types";
 import type { WorkspaceOrganizationDisplay } from "../_lib/organizationDisplay";
@@ -36,21 +40,42 @@ export default function WorkspaceShell({
   } | null;
   children: React.ReactNode;
 }) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   return (
     <div
       data-slot="workspace-shell"
       className="min-h-svh bg-slate-50 lg:flex lg:h-svh lg:overflow-hidden"
     >
-      <div className={`hidden shrink-0 lg:flex lg:h-svh ${WORKSPACE_SIDEBAR_WIDTH_CLASS}`}>
-        <Sidebar
-          user={user}
-          organization={organization}
-          visibleZoneKeys={visibleZoneKeys}
-          recentAssistantThreads={recentAssistantThreads}
-          allAssistantThreads={allAssistantThreads}
-          className="w-full"
-        />
-      </div>
+      {!sidebarCollapsed ? (
+        <div className={`hidden shrink-0 lg:flex lg:h-svh relative group ${WORKSPACE_SIDEBAR_WIDTH_CLASS}`}>
+          <Sidebar
+            user={user}
+            organization={organization}
+            visibleZoneKeys={visibleZoneKeys}
+            recentAssistantThreads={recentAssistantThreads}
+            allAssistantThreads={allAssistantThreads}
+            className="w-full"
+          />
+          <button
+            onClick={() => setSidebarCollapsed(true)}
+            className="absolute -right-3 top-6 flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:text-slate-600 group-hover:opacity-100 focus-visible:opacity-100 z-10"
+            aria-label="إخفاء القائمة"
+          >
+            <PanelLeftClose className="h-3 w-3" />
+          </button>
+        </div>
+      ) : (
+        <div className="hidden shrink-0 lg:flex lg:h-svh lg:w-16 flex-col items-center border-e border-slate-200 bg-white py-6">
+          <button
+            onClick={() => setSidebarCollapsed(false)}
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            aria-label="إظهار القائمة"
+          >
+            <PanelLeft className="h-5 w-5" />
+          </button>
+        </div>
+      )}
 
       <div className="relative flex min-w-0 flex-1 flex-col bg-transparent lg:max-h-svh lg:overflow-hidden">
         <WorkspaceTopNavbar

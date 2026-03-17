@@ -67,7 +67,7 @@ export default async function OAuthAuthorizePage({ searchParams }: AuthorizePage
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.08),_transparent_45%),linear-gradient(180deg,#f8fafc_0%,#ffffff_35%,#eef2ff_100%)] pt-20 text-slate-900">
       <Section className="py-10">
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="border border-slate-200 bg-white p-8 shadow-[0_30px_80px_-50px_rgba(15,23,42,0.35)]">
+          <div className="border-2 border-slate-200 bg-white p-8">
             <PageHero
               badge={
                 <div className="inline-flex items-center gap-3 border border-blue-200 bg-blue-50 px-4 py-2 text-[11px] font-black uppercase tracking-[0.35em] text-blue-700">
@@ -125,7 +125,7 @@ export default async function OAuthAuthorizePage({ searchParams }: AuthorizePage
             </div>
           </div>
 
-          <aside className="space-y-4 border border-slate-200 bg-slate-950 p-8 text-white shadow-[0_30px_80px_-55px_rgba(15,23,42,0.55)]">
+          <aside className="space-y-4 border-2 border-slate-200 bg-slate-950 p-8 text-white">
             <div className="inline-flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.35em] text-blue-300">
               <ShieldCheck className="h-4 w-4" />
               Security Review

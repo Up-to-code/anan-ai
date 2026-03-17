@@ -64,8 +64,8 @@ export default function OrganizationDetailsStep({
   return (
     <form className="space-y-6" onSubmit={handleSubmit}>
       <div className="space-y-2">
-        <div className="text-base font-semibold text-slate-900">بيانات الجهة</div>
-        <p className="text-sm text-slate-600">{helperText}</p>
+        <div className="text-sm font-black text-slate-900">بيانات الجهة</div>
+        <p className="text-sm text-slate-500">{helperText}</p>
       </div>
 
       <div className="grid gap-4">
@@ -77,14 +77,14 @@ export default function OrganizationDetailsStep({
             onChange={(event) => setName(event.target.value)}
             required
             placeholder="مثال: مؤسسة عنان العقارية"
-            className="border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+            className="border-2 border-slate-100 bg-white px-3 py-2 text-sm text-slate-900"
           />
         </label>
 
         <div className="space-y-2">
           <div className="text-sm text-slate-700">نوع الجهة</div>
           <div className="grid gap-3 md:grid-cols-2">
-            <label className="flex items-start gap-3 border border-slate-300 bg-white px-3 py-3 text-sm text-slate-800">
+            <label className="flex items-start gap-3 border-2 border-slate-100 bg-white px-3 py-3 text-sm text-slate-800">
               <input
                 type="radio"
                 name="type"
@@ -98,7 +98,7 @@ export default function OrganizationDetailsStep({
                 <span className="block text-xs text-slate-500">إدارة العملاء والعروض.</span>
               </span>
             </label>
-            <label className="flex items-start gap-3 border border-slate-300 bg-white px-3 py-3 text-sm text-slate-800">
+            <label className="flex items-start gap-3 border-2 border-slate-100 bg-white px-3 py-3 text-sm text-slate-800">
               <input
                 type="radio"
                 name="type"
@@ -117,7 +117,7 @@ export default function OrganizationDetailsStep({
       </div>
 
       {error ? (
-        <div className="border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+        <div className="border-2 border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
           {error}
         </div>
       ) : null}
@@ -126,14 +126,14 @@ export default function OrganizationDetailsStep({
         <button
           type="button"
           onClick={onBack}
-          className="border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400"
+          className="border-2 border-blue-600 bg-white px-8 py-2.5 text-xs font-black uppercase tracking-widest text-blue-600 transition hover:bg-blue-50"
         >
           رجوع
         </button>
         <button
           type="submit"
           disabled={pending || isSubmitting}
-          className="border border-slate-900 bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+          className="border-2 border-blue-600 bg-blue-600 px-8 py-2.5 text-xs font-black uppercase tracking-widest text-white transition hover:bg-blue-700 disabled:opacity-60"
         >
           {isSubmitting ? "جارٍ الحفظ..." : "متابعة"}
         </button>

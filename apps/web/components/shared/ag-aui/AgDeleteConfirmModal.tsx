@@ -29,7 +29,7 @@ export default function AgDeleteConfirmModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="relative w-full max-w-md bg-white shadow-[0_32px_80px_rgba(15,23,42,0.3)]">
+      <div className="relative w-full max-w-md border-2 border-slate-100 bg-white">
         {/* Red top bar */}
         <div className="h-1.5 w-full bg-red-600" />
 

@@ -6,6 +6,11 @@ type DraftField = {
   emphasized?: boolean;
 };
 
+/**
+ * WHY:   Draft summaries need a consistent card layout for previewing AI-generated entities.
+ * WHAT:  Displays a compact summary block with key fields and a context icon.
+ * HOW:   Maps field metadata into a bordered card with preset typographic hierarchy.
+ */
 export default function AgEntityDraftCard({
   title,
   subtitle,
@@ -20,7 +25,7 @@ export default function AgEntityDraftCard({
   const Icon = kind === "person" ? UserRound : kind === "offer" ? BadgeCheck : Building2;
 
   return (
-    <section className="w-full max-w-[340px] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.45)]">
+    <section className="w-full max-w-[340px] border-2 border-slate-200 bg-white p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="text-[10px] font-black tracking-[0.28em] text-blue-700">

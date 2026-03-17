@@ -31,6 +31,7 @@ function formatThreadDate(timestamp: number) {
  */
 export default function SidebarContent({
   user,
+  organization,
   visibleZoneKeys,
   recentAssistantThreads = [],
   allAssistantThreads = [],
@@ -58,16 +59,22 @@ export default function SidebarContent({
         mode === "desktop" ? "h-full border-e border-white/5" : "w-full shadow-none",
       )}
     >
-      <div className="border-b border-white/5 px-6 py-6">
-        <div
-          id={titleId}
-          className="text-2xl font-black tracking-tighter text-white"
-        >
-          عنان
-        </div>
-        <div className="mt-3 inline-flex items-center gap-3">
-          <span className="h-px w-8 bg-blue-500" />
-          <div className="text-xs font-bold text-slate-400">مساحة العمل</div>
+      <div className="border-b border-white/5 px-4 py-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-white/10 bg-white/5 text-sm font-black uppercase text-white">
+            {(user.name || user.email || "A").slice(0, 1).toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div
+              id={titleId}
+              className="truncate text-sm font-black text-white"
+            >
+              {user.name || "مستخدم عنان"}
+            </div>
+            <div className="truncate text-[10px] font-bold tracking-widest text-slate-400 uppercase mt-0.5">
+              {organization?.name || "مساحة العمل"}
+            </div>
+          </div>
         </div>
       </div>
 

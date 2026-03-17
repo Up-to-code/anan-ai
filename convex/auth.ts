@@ -3,6 +3,19 @@ import { getGoogleProvider } from "./_core/security/providers";
 import { normalizeBaseUrl, resolveAllowedOrigins } from "./_core/security/authRedirects";
 
 function resolveWebBaseUrl() {
+  const isProduction =
+    process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
+  if (!isProduction) {
+    return normalizeBaseUrl(
+      process.env.SITE_URL ||
+        process.env.NEXT_PUBLIC_SITE_URL ||
+        process.env.NEXT_PUBLIC_WEB_URL ||
+        process.env.ANAN_WEB_URL ||
+        process.env.VERCEL_PROJECT_PRODUCTION_URL ||
+        process.env.VERCEL_URL ||
+        "http://localhost:3000",
+    );
+  }
   return normalizeBaseUrl(
     process.env.ANAN_WEB_URL ||
       process.env.NEXT_PUBLIC_SITE_URL ||

@@ -42,8 +42,8 @@ export default function AboutPage() {
             <Section bg="none" className="pt-48 pb-32 relative overflow-hidden bg-white">
                 {/* Dynamic Background Patterns */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-blue-50/50 rounded-full blur-[120px]" />
-                    <div className="absolute -bottom-[10%] -right-[10%] w-[50%] h-[50%] bg-blue-50/50 rounded-full blur-[120px]" />
+                    <div className="absolute -top-[10%] -left-[10%] h-[50%] w-[50%] bg-blue-50/50 blur-[120px]" />
+                    <div className="absolute -bottom-[10%] -right-[10%] h-[50%] w-[50%] bg-blue-50/50 blur-[120px]" />
                     <img 
                         src="/vectors/landing/ecosystem_hub.svg" 
                         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] opacity-[0.03] animate-pulse" 
@@ -59,7 +59,7 @@ export default function AboutPage() {
                         className="space-y-12 text-center"
                     >
                         <motion.div variants={itemVariants} className="flex justify-center">
-                            <span className="px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-sm font-black tracking-widest uppercase">
+                            <span className="px-4 py-1.5 border border-blue-100 bg-blue-50 text-blue-600 text-sm font-black tracking-widest uppercase">
                                 من نحن
                             </span>
                         </motion.div>
@@ -177,7 +177,7 @@ export default function AboutPage() {
 
             <Section bg="dark" className="py-48 relative overflow-hidden">
                 <div className="absolute inset-0 bg-blue-600/5 mix-blend-overlay" />
-                <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[100px]" />
+                <div className="absolute top-0 right-1/4 h-[500px] w-[500px] bg-blue-600/10 blur-[100px]" />
                 
                 <div className="max-w-5xl mx-auto space-y-20 text-right relative z-10">
                     <motion.h2 

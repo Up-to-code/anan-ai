@@ -52,7 +52,7 @@ export default function WorkspaceAssistantCanvas({
     <section className="flex min-h-[calc(100svh-7rem)] min-w-0 flex-1 flex-col">
       {hasMessages ? (
         <>
-          <div className="border-b border-stone-200 bg-stone-50 px-4 py-4 sm:px-6 lg:px-8">
+          <div className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
             <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
               <div className="min-w-0">
                 <h1 className="truncate text-base font-semibold text-slate-950">
@@ -79,7 +79,7 @@ export default function WorkspaceAssistantCanvas({
             </div>
           </div>
 
-          <div className="border-t border-stone-200 bg-stone-50 px-4 py-4 sm:px-6 lg:px-8">
+          <div className="border-t border-slate-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
             <div className="mx-auto w-full max-w-4xl">
               {sendError ? <div className="mb-3 text-sm text-red-600">{sendError}</div> : null}
               <InstitutionalChatInput

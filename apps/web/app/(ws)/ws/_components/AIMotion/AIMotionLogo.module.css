@@ -245,7 +245,7 @@
 .stateSuccess .basePath {
   stroke: var(--ai-brand-success);
   stroke-width: 6;
-  filter: drop-shadow(0 0 8px rgb(16 185 129 / 0.6));
+  filter: none;
 }
 
 .stateSuccess .node {
@@ -839,7 +839,7 @@
 @keyframes aiGlitchSvg {
   0%,
   100% {
-    filter: drop-shadow(2px 0 0 rgb(239 68 68 / 0.8)) drop-shadow(-2px 0 0 rgb(0 0 255 / 0.5));
+    filter: none;
     transform: skewX(0deg);
   }
 

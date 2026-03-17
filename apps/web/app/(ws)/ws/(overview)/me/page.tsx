@@ -1,6 +1,7 @@
 import { requireWorkspaceData } from "../../_lib/workspaceData";
 import { getCurrentProfileForCurrentUser } from "@/server/domains/profiles/service";
 import ProfileWorkspace from "./_components/ProfileWorkspace";
+import ZonePageIntro from "../../_components/ZoneShell/ZonePageIntro";
 
 /**
  * WHY:   The workspace account center should reflect real profile and security state, not a placeholder card.
@@ -28,12 +29,11 @@ export default async function WorkspaceMePage() {
 
   return (
     <div className="space-y-8 p-6 lg:p-10">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-black tracking-tight text-slate-950">الحساب والأمان</h1>
-        <p className="text-sm font-medium text-slate-500">
-          إدارة معلومات الحساب، اسم المستخدم، والأدوات المرتبطة بمساحة العمل.
-        </p>
-      </header>
+      <ZonePageIntro
+        eyebrow="مساحة العمل"
+        title="الحساب والأمان"
+        description="إدارة معلومات الحساب، اسم المستخدم، والأدوات المرتبطة بمساحة العمل."
+      />
 
       <ProfileWorkspace
         initialProfile={resolvedProfile}

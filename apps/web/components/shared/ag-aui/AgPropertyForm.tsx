@@ -548,7 +548,7 @@ export default function AgPropertyForm({
                             <div className="grid gap-3 text-right border border-slate-200 bg-slate-50/60 p-4">
                                 <div className="flex items-center justify-between">
                                     <div className="text-xs font-black text-slate-900">ترخيص الإعلان العقاري</div>
-                                    <span className={`rounded-full border px-3 py-1 text-[10px] font-black ${adLicenseTone}`}>
+                                    <span className={`rounded-none border px-3 py-1 text-[10px] font-black ${adLicenseTone}`}>
                                       {adLicenseLabel}
                                     </span>
                                 </div>

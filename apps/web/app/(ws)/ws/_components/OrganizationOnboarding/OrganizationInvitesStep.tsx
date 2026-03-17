@@ -66,8 +66,8 @@ export default function OrganizationInvitesStep({
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <div className="text-base font-semibold text-slate-900">الدعوات والمسار</div>
-        <p className="text-sm text-slate-600">
+        <div className="text-sm font-black text-slate-900">الدعوات والمسار</div>
+        <p className="text-sm text-slate-500">
           إذا كانت لديك دعوة، اقبلها للانضمام مباشرة. أو أنشئ جهة جديدة.
         </p>
       </div>
@@ -79,10 +79,10 @@ export default function OrganizationInvitesStep({
             const isPending = pendingInviteId === invite.id;
 
             return (
-              <div key={invite.id} className="border border-slate-200 bg-white p-4">
+              <div key={invite.id} className="border-2 border-slate-100 bg-white p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="space-y-1">
-                    <div className="text-sm font-semibold text-slate-900">{invite.organizationName}</div>
+                    <div className="text-sm font-black text-slate-900">{invite.organizationName}</div>
                     <div className="text-xs text-slate-500">{typeLabel}</div>
                     <div className="text-xs text-slate-500">دعوة من {invite.inviterName}</div>
                   </div>
@@ -91,7 +91,7 @@ export default function OrganizationInvitesStep({
                       type="button"
                       onClick={() => void handleAcceptInvite(invite)}
                       disabled={isPending}
-                      className="border border-slate-900 bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+                      className="border-2 border-blue-600 bg-blue-600 px-8 py-2.5 text-xs font-black uppercase tracking-widest text-white transition hover:bg-blue-700 disabled:opacity-60"
                     >
                       قبول الدعوة
                     </button>
@@ -99,7 +99,7 @@ export default function OrganizationInvitesStep({
                       type="button"
                       onClick={() => void handleDeclineInvite(invite.id)}
                       disabled={isPending}
-                      className="border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 disabled:opacity-60"
+                      className="border-2 border-blue-600 bg-white px-8 py-2.5 text-xs font-black uppercase tracking-widest text-blue-600 transition hover:bg-blue-50 disabled:opacity-60"
                     >
                       رفض
                     </button>
@@ -110,38 +110,41 @@ export default function OrganizationInvitesStep({
           })}
         </div>
       ) : (
-        <div className="border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        <div className="border-2 border-slate-100 bg-white px-4 py-3 text-sm text-slate-500">
           لا توجد دعوات حالياً.
         </div>
       )}
 
       {errorMessage ? (
-        <div className="border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+        <div className="border-2 border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
           {errorMessage}
         </div>
       ) : null}
 
       {canCreateOrganization ? (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="text-sm text-slate-500">أو أنشئ جهة جديدة لتبدأ العمل.</div>
           <button
             type="button"
             onClick={onCreateNew}
-            className="border border-slate-900 bg-white px-4 py-2 text-xs font-semibold text-slate-900 transition hover:bg-slate-100"
+            className="border-2 border-blue-600 bg-white px-8 py-2.5 text-xs font-black uppercase tracking-widest text-blue-600 transition hover:bg-blue-50"
           >
             إنشاء جهة جديدة
           </button>
         </div>
       ) : (
-        <div className="border border-amber-200 bg-amber-50 px-4 py-4">
+        <div className="border-2 border-amber-200 bg-amber-50 px-4 py-4">
           <div className="space-y-3">
-            <div className="text-sm font-semibold text-amber-900">لا يمكن إنشاء جهة جديدة</div>
+            <div className="text-sm font-black text-amber-900">لا يمكن إنشاء جهة جديدة</div>
             <p className="text-xs text-amber-800">
               {organizationCreationDisabledReason
                 ?? "هذا الحساب لا يملك صلاحية إنشاء جهة جديدة. تواصل مع مسؤول النظام أو سجّل الخروج لتبديل الحساب."}
             </p>
             <div>
-              <OnboardingLogoutButton variant="ghost" className="text-amber-900 border-amber-200 hover:bg-amber-100" />
+              <OnboardingLogoutButton
+                variant="ghost"
+                className="border-amber-200 text-amber-900 hover:border-amber-300 hover:bg-amber-100 hover:text-amber-900"
+              />
             </div>
           </div>
         </div>

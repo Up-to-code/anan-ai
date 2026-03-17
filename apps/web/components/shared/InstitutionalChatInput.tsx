@@ -39,8 +39,8 @@ export default function InstitutionalChatInput({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden border bg-white transition-colors duration-150 focus-within:border-slate-400",
-        isLanding ? "border-stone-300" : "border-stone-200",
+        "relative w-full overflow-hidden border bg-white transition-colors duration-150 focus-within:border-blue-600",
+        isLanding ? "border-slate-200" : "border-slate-200",
       )}
     >
       <textarea
@@ -66,7 +66,7 @@ export default function InstitutionalChatInput({
       <div
         className={cn(
           "flex items-center justify-between border-t px-4 py-3",
-          isLanding ? "border-stone-200 bg-stone-50" : "border-stone-100 bg-white",
+          isLanding ? "border-slate-100 bg-slate-50" : "border-slate-100 bg-white",
         )}
       >
         <div className="text-xs text-slate-500">اضغط Enter للإرسال و Shift + Enter لسطر جديد</div>
@@ -74,7 +74,7 @@ export default function InstitutionalChatInput({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center border border-stone-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-700"
+            className="flex h-10 w-10 items-center justify-center border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-700"
           >
             <Mic className="h-4 w-4" />
           </button>
@@ -86,7 +86,7 @@ export default function InstitutionalChatInput({
               "flex h-10 w-10 items-center justify-center transition-colors",
               value.trim() && !isSending
                 ? "bg-slate-950 text-white hover:bg-slate-800"
-                : "cursor-not-allowed bg-stone-100 text-stone-400"
+                : "cursor-not-allowed bg-slate-100 text-slate-400"
             )}
           >
             <ArrowUp className="h-4 w-4" />
