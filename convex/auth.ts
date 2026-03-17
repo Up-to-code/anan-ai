@@ -1,6 +1,7 @@
 import { convexAuth } from "@convex-dev/auth/server";
 import { getGoogleProvider } from "./_core/security/providers";
 import { normalizeBaseUrl, resolveAllowedOrigins } from "./_core/security/authRedirects";
+import { resolveConvexAuthIssuer } from "./_core/security/authIssuer";
 import { getProfileByAuthUserId } from "./shared_logic/lib/profile";
 
 function resolveWebBaseUrl() {
@@ -92,7 +93,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   callbacks: {
     async redirect({ redirectTo }) {
       const webBaseUrl = resolveWebBaseUrl();
-      const convexBaseUrl = normalizeBaseUrl(process.env.CONVEX_SITE_URL);
+      const convexBaseUrl = resolveConvexAuthIssuer();
       const allowedOrigins = resolveAllowedOrigins({
         webBaseUrl,
         extraOrigins: [process.env.ANAN_ADMIN_URL],
@@ -133,7 +134,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
     },
   },
   jwt: {
-    durationMs: 1000 * 60 * 60,
+    durationMs: 1000 * 60 * 60 * 24,
     customClaims: async (ctx, { userId }) => {
       const user = await ctx.db.get(userId);
       return {

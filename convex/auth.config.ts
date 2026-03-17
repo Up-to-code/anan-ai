@@ -1,4 +1,5 @@
 import type { AuthConfig } from "convex/server";
+import { resolveConvexAuthIssuer } from "./_core/security/authIssuer";
 
 /**
  * WHY:   Convex still needs an auth config so deployed functions can verify JWTs issued by Convex Auth.
@@ -8,7 +9,7 @@ import type { AuthConfig } from "convex/server";
 export default {
   providers: [
     {
-      domain: process.env.CONVEX_SITE_URL ?? "https://example.convex.site",
+      domain: resolveConvexAuthIssuer(),
       applicationID: "convex",
     },
   ],

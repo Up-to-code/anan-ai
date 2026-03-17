@@ -55,4 +55,23 @@ describe("GET /api/session", () => {
       status: 401,
     });
   });
+
+  it("serializes auth configuration errors", async () => {
+    requireSessionContext.mockRejectedValue(
+      new DomainError({
+        code: "AUTH_CONFIGURATION_ERROR",
+        message: "Issuer mismatch",
+        status: 503,
+      }),
+    );
+
+    const response = await GET();
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      code: "AUTH_CONFIGURATION_ERROR",
+      message: "Issuer mismatch",
+      status: 503,
+    });
+  });
 });

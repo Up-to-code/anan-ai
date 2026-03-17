@@ -227,7 +227,27 @@ export const handleToken = httpAction(async (ctx, request) => {
         nextRefreshTokenHash: await sha256Hex(nextRefreshToken),
         nextRefreshTokenExpiresAt: Date.now() + REFRESH_TOKEN_TTL_MS,
         now: Date.now(),
-      });
+      }) as
+        | { replayDetected: true }
+        | {
+            replayDetected?: false;
+            userId: string;
+            pairwiseSubject: string;
+            scopes: string[];
+            user: {
+              email?: string | null;
+              name?: string | null;
+              displayName?: string | null;
+              image?: string | null;
+            };
+            profile?: {
+              name?: string | null;
+            } | null;
+          };
+
+      if (rotated.replayDetected) {
+        return jsonResponse({ error: "invalid_grant", error_description: "Refresh token replay detected" }, 400);
+      }
 
       const tokens = await issueTokenSet({
         clientId,

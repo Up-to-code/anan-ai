@@ -3,6 +3,33 @@ import { internalMutation, internalQuery } from "../../../_generated/server";
 import { getClientOrThrow } from "./helpers";
 import { loadUserBundle } from "./subjects";
 
+async function revokeAuthorizationAccessTokens(args: {
+  ctx: any;
+  clientId: string;
+  authorizationId: any;
+  now: number;
+}) {
+  const issuedForClient = await args.ctx.db
+    .query("oauthAccessTokens")
+    .withIndex("clientId", (q: any) => q.eq("clientId", args.clientId))
+    .collect();
+  const matching = issuedForClient.filter(
+    (token: any) =>
+      token.authorizationId === args.authorizationId
+      && token.revokedAt === undefined,
+  );
+
+  await Promise.all(
+    matching.map((token: any) =>
+      args.ctx.db.patch(token._id, {
+        revokedAt: args.now,
+      }),
+    ),
+  );
+
+  return matching.length;
+}
+
 /**
  * WHY:   Token issuance must atomically consume auth codes and persist new token records.
  * WHAT:  Validates a code exchange and stores the resulting access/refresh token rows.
@@ -162,15 +189,27 @@ export const rotateRefreshToken = internalMutation({
           }),
         ),
       );
+      const revokedAccessTokenCount = await revokeAuthorizationAccessTokens({
+        ctx,
+        clientId: args.clientId,
+        authorizationId: refresh.authorizationId,
+        now: args.now,
+      });
       await ctx.db.insert("oauthAuditLogs", {
         eventType: "token.refresh_replay_detected",
         clientId: args.clientId,
         userId: refresh.userId,
         authorizationId: refresh.authorizationId,
         refreshFamilyId: refresh.familyId,
+        metadata: {
+          revokedRefreshTokenCount: family.length,
+          revokedAccessTokenCount,
+        },
         createdAt: args.now,
       });
-      throw new ConvexError({ code: "INVALID_GRANT", message: "Refresh token replay detected" });
+      return {
+        replayDetected: true as const,
+      };
     }
 
     const authorization = await ctx.db.get(refresh.authorizationId);
@@ -216,6 +255,7 @@ export const rotateRefreshToken = internalMutation({
 
     const bundle = await loadUserBundle(ctx, refresh.userId, args.clientId);
     return {
+      replayDetected: false as const,
       clientId: args.clientId,
       userId: refresh.userId,
       authorizationId: refresh.authorizationId,
@@ -334,6 +374,12 @@ export const revokeRefreshTokenFamily = internalMutation({
         }),
       ),
     );
+    const revokedAccessTokenCount = await revokeAuthorizationAccessTokens({
+      ctx,
+      clientId: args.clientId,
+      authorizationId: refresh.authorizationId,
+      now: args.now,
+    });
     await ctx.db.patch(refresh.authorizationId, {
       revokedAt: args.now,
       updatedAt: args.now,
@@ -344,6 +390,10 @@ export const revokeRefreshTokenFamily = internalMutation({
       userId: refresh.userId,
       authorizationId: refresh.authorizationId,
       refreshFamilyId: refresh.familyId,
+      metadata: {
+        revokedRefreshTokenCount: family.length,
+        revokedAccessTokenCount,
+      },
       createdAt: args.now,
     });
     return { revoked: true } as const;

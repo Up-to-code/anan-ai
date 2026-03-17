@@ -1,5 +1,9 @@
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { cache } from "react";
+import {
+  isClearlyExpiredJwtToken,
+  isNoAuthProviderError,
+} from "../../../../convex/_core/security/authProviderErrors";
 import { DomainError } from "@/server/contracts/errors";
 import type { ProfileSummary } from "@/server/contracts/profiles";
 import type { SessionContext } from "@/server/contracts/session";
@@ -24,32 +28,6 @@ const defaultDependencies: SessionDependencies = {
   profilesRepository: convexProfilesRepository,
 };
 
-function isNoAuthProviderError(error: unknown): boolean {
-  if (!error || typeof error !== "object") {
-    return false;
-  }
-
-  if ("code" in error && error.code === "NoAuthProvider") {
-    return true;
-  }
-
-  if (!("message" in error) || typeof error.message !== "string") {
-    return false;
-  }
-
-  if (error.message.includes("No auth provider found matching the given token")) {
-    return true;
-  }
-
-  try {
-    const payload = JSON.parse(error.message) as { code?: unknown; message?: unknown };
-    return payload.code === "NoAuthProvider"
-      || (typeof payload.message === "string" && payload.message.includes("No auth provider found matching the given token"));
-  } catch {
-    return false;
-  }
-}
-
 async function resolveOptionalSessionContext(
   dependencies: SessionDependencies,
 ): Promise<ResolvedSession | null> {
@@ -66,9 +44,16 @@ async function resolveOptionalSessionContext(
       dependencies.profilesRepository.getCurrent(token),
     ]);
   } catch (error) {
-    // Stale tokens signed by an old issuer/audience should behave as logged-out sessions.
     if (isNoAuthProviderError(error)) {
-      return null;
+      if (isClearlyExpiredJwtToken(token)) {
+        return null;
+      }
+      throw new DomainError({
+        code: "AUTH_CONFIGURATION_ERROR",
+        message:
+          "Active session token could not be matched to an auth provider. Verify CONVEX_SITE_URL issuer alignment.",
+        status: 503,
+      });
     }
     throw error;
   }
