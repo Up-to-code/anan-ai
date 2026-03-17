@@ -1,22 +1,10 @@
-import { getWorkspaceOrganizationTeam } from "../../../_lib/organizationTeam";
-import SettingsHeader from "../_components/SettingsHeader";
-import MembersWorkspace from "../_components/MembersWorkspace";
+import { redirect } from "next/navigation";
 
 /**
- * WHY:   Team management needs a dedicated members page inside organization settings.
- * WHAT:  Renders current members and pending invites using repository-backed reads.
- * HOW:   Loads the team snapshot on the server and hands it to a small client workspace for local role editing.
+ * WHY:   Existing deep links still point to `/ws/settings/members` and should remain valid.
+ * WHAT:  Redirects the legacy members route to the canonical tabbed settings URL.
+ * HOW:   Uses a server redirect so clients and crawlers always resolve to one source of truth.
  */
 export default async function WorkspaceMembersPage() {
-  const { members, invites, currentMembershipRole } = await getWorkspaceOrganizationTeam();
-
-  return (
-    <div className="space-y-6 p-6 lg:p-10">
-      <SettingsHeader
-        title="الأعضاء والدعوات"
-        description="إدارة أعضاء المنظمة الحاليين والدعوات المعلقة والأدوار الممنوحة لهم."
-      />
-      <MembersWorkspace initialMembers={members} invites={invites} canManage={currentMembershipRole === "manager"} />
-    </div>
-  );
+  redirect("/ws/settings?tab=members");
 }

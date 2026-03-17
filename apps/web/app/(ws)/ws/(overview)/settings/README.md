@@ -2,6 +2,9 @@
 
 Organization settings surfaces under the overview shell.
 
-- `page.tsx`: organization settings overview.
-- `members/page.tsx`: members and pending invites.
-- `invite/page.tsx`: invite form for new organization members.
+- Canonical route: `/ws/settings` with tab query state:
+  - `/ws/settings?tab=org`
+  - `/ws/settings?tab=members`
+- `page.tsx`: unified tabbed settings page (organization + members/invites).
+- `members/page.tsx`: legacy route redirected to `/ws/settings?tab=members`.
+- `invite/page.tsx`: legacy route redirected to `/ws/settings?tab=members`.

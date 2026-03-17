@@ -142,6 +142,7 @@ import type * as broker_zone_repositories_overviewRepository from "../broker_zon
 import type * as broker_zone_repositories_propertiesRepository from "../broker_zone/repositories/propertiesRepository.js";
 import type * as cascading from "../cascading.js";
 import type * as http from "../http.js";
+import type * as properties from "../properties.js";
 import type * as public_zone_contact from "../public_zone/contact.js";
 import type * as red_zone_overview from "../red_zone/overview.js";
 import type * as red_zone_properties from "../red_zone/properties.js";
@@ -370,6 +371,7 @@ declare const fullApi: ApiFromModules<{
   "broker_zone/repositories/propertiesRepository": typeof broker_zone_repositories_propertiesRepository;
   cascading: typeof cascading;
   http: typeof http;
+  properties: typeof properties;
   "public_zone/contact": typeof public_zone_contact;
   "red_zone/overview": typeof red_zone_overview;
   "red_zone/properties": typeof red_zone_properties;

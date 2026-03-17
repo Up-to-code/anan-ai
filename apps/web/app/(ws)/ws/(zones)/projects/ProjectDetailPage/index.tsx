@@ -81,7 +81,7 @@ export default function ProjectDetailPage({ project }: { project: WorkspaceProje
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
-                href="/ws/settings/invite"
+                href="/ws/settings?tab=members"
                 className="inline-flex items-center justify-center border border-blue-600 bg-blue-600 px-4 py-3 text-[10px] font-black tracking-[0.18em] text-white transition hover:border-slate-950 hover:bg-slate-950"
               >
                 دعوة عضو

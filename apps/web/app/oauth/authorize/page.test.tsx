@@ -137,5 +137,8 @@ describe("/oauth/authorize page", () => {
 
     expect(markup).toContain("السماح لتطبيق Partner App");
     expect(markup).toContain("السماح للتطبيق");
+    expect(markup).toContain("name=\"flowId\"");
+    expect(markup).not.toContain("name=\"redirectUri\"");
+    expect(markup).not.toContain("name=\"state\"");
   });
 });

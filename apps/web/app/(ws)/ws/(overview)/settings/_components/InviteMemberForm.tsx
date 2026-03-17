@@ -4,6 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
+const roleLabels: Record<"manager" | "member" | "viewer", string> = {
+  manager: "مدير",
+  member: "عضو",
+  viewer: "مشاهد",
+};
+
 /**
  * WHY:   The workspace settings area needs a simple invite flow that maps to the existing team-invite API.
  * WHAT:  Renders exact-match directory search plus invite/message actions for the current organization.
@@ -165,7 +171,7 @@ export default function InviteMemberForm({
                   : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700"
               )}
             >
-              {entry}
+              {roleLabels[entry]}
             </button>
           ))}
         </div>

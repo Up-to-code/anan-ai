@@ -16,6 +16,14 @@ type AuthorizePageProps = {
   }>;
 };
 
+function buildAuthorizeFlowPath(flowId: string) {
+  return `/oauth/authorize?flow=${encodeURIComponent(flowId)}`;
+}
+
+function buildSigninRedirectForFlow(flowId: string) {
+  return `/signin?returnTo=${encodeURIComponent(buildAuthorizeFlowPath(flowId))}`;
+}
+
 /**
  * WHY:   Partner app authorization needs a first-party consent screen tied to the user's Anan session.
  * WHAT:  Renders the app permission prompt and completes or denies the authorization request.
@@ -29,7 +37,7 @@ export default async function OAuthAuthorizePage({ searchParams }: AuthorizePage
     redirect("/signin");
   }
   if (!session) {
-    redirect(`/signin?returnTo=${encodeURIComponent(`/oauth/authorize?flow=${flow}`)}`);
+    redirect(buildSigninRedirectForFlow(flow));
   }
 
   const preview = await getAuthorizationPromptForCurrentUser(flow);
@@ -43,9 +51,13 @@ export default async function OAuthAuthorizePage({ searchParams }: AuthorizePage
     "use server";
 
     const flowId = String(formData.get("flowId") ?? "");
+    if (!flowId) {
+      redirect("/signin");
+    }
+
     const currentSession = await getOptionalSessionContext();
     if (!currentSession) {
-      redirect(`/signin?returnTo=${encodeURIComponent(`/oauth/authorize?flow=${String(formData.get("flowId") ?? "")}`)}`);
+      redirect(buildSigninRedirectForFlow(flowId));
     }
 
     const result = await approveAuthorizationForCurrentUser(flowId);
@@ -55,11 +67,20 @@ export default async function OAuthAuthorizePage({ searchParams }: AuthorizePage
   async function denyAuthorization(formData: FormData) {
     "use server";
 
-    const redirectUri = String(formData.get("redirectUri") ?? "");
-    const state = String(formData.get("state") ?? "");
-    const destination = new URL(redirectUri);
+    const flowId = String(formData.get("flowId") ?? "");
+    if (!flowId) {
+      redirect("/signin");
+    }
+
+    const currentSession = await getOptionalSessionContext();
+    if (!currentSession) {
+      redirect(buildSigninRedirectForFlow(flowId));
+    }
+
+    const prompt = await getAuthorizationPromptForCurrentUser(flowId);
+    const destination = new URL(prompt.redirectUri);
     destination.searchParams.set("error", "access_denied");
-    destination.searchParams.set("state", state);
+    destination.searchParams.set("state", prompt.state);
     redirect(destination.toString());
   }
 
@@ -113,8 +134,7 @@ export default async function OAuthAuthorizePage({ searchParams }: AuthorizePage
                 <input type="hidden" name="flowId" value={preview.flowId} />
               </ConsentAutoSubmit>
               <form action={denyAuthorization}>
-                <input type="hidden" name="redirectUri" value={preview.redirectUri} />
-                <input type="hidden" name="state" value={preview.state} />
+                <input type="hidden" name="flowId" value={preview.flowId} />
                 <button
                   type="submit"
                   className="inline-flex w-full items-center justify-center border border-slate-300 px-6 py-5 text-sm font-black uppercase tracking-[0.3em] text-slate-700 transition hover:bg-slate-50"

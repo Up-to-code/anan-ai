@@ -20,15 +20,15 @@ type WorkspaceSecurityDetailPageProps = { params: Promise<{ clientId: string }> 
 export default async function WorkspaceSecurityDetailPage({ params }: WorkspaceSecurityDetailPageProps) {
   const { clientId } = await params;
   const requestedPath = buildWorkspaceSecurityAppsPath(clientId);
-  const { token, user } = await getAuthenticatedSession();
-  if (!token || !user) redirect(`/signin?returnTo=${encodeURIComponent(requestedPath)}`);
+  const { token } = await getAuthenticatedSession();
+  if (!token) redirect(`/signin?returnTo=${encodeURIComponent(requestedPath)}`);
   const app = await getAuthorizedAppDetailForCurrentUser(clientId);
   if (!app) notFound();
 
   async function revokeAppAccess() {
     "use server";
     const currentSession = await getAuthenticatedSession();
-    if (!currentSession.token || !currentSession.user) redirect(`/signin?returnTo=${encodeURIComponent(requestedPath)}`);
+    if (!currentSession.token) redirect(`/signin?returnTo=${encodeURIComponent(requestedPath)}`);
     await revokeAuthorizedAppForCurrentUser(clientId);
     redirect(buildWorkspaceSecurityAppsPath());
   }

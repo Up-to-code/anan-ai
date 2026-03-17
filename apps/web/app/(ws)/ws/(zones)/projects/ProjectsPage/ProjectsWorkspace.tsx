@@ -187,7 +187,7 @@ export default function ProjectsWorkspace({
                       حذف
                     </button>
                     <Link
-                      href="/ws/settings/invite"
+                      href="/ws/settings?tab=members"
                       className="flex items-center gap-1.5 border border-slate-200 px-3 py-2.5 text-[10px] font-black text-slate-500 transition hover:border-blue-600 hover:text-blue-600"
                     >
                       دعوة عضو

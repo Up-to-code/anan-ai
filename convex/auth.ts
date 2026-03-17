@@ -1,6 +1,7 @@
 import { convexAuth } from "@convex-dev/auth/server";
 import { getGoogleProvider } from "./_core/security/providers";
 import { normalizeBaseUrl, resolveAllowedOrigins } from "./_core/security/authRedirects";
+import { getProfileByAuthUserId } from "./shared_logic/lib/profile";
 
 function resolveWebBaseUrl() {
   const isProduction =
@@ -37,15 +38,12 @@ function deriveUsername(args: { email?: string | null; name?: string | null; aut
     .slice(0, 32) || `user-${args.authUserId.slice(-6)}`;
 }
 
-async function syncUserProfile(ctx: any, userId: any, existingUserId: any) {
+async function syncUserProfile(ctx: any, userId: any) {
   const user = await ctx.db.get(userId);
   if (!user) return;
 
   const authUserId = String(userId);
-  const existingByAuth = await ctx.db
-    .query("userProfiles")
-    .withIndex("authUserId", (q: any) => q.eq("authUserId", authUserId))
-    .first();
+  const existingByAuth = await getProfileByAuthUserId(ctx, authUserId);
   const existingByEmail =
     typeof user.email === "string"
       ? await ctx.db
@@ -123,14 +121,12 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
 
       return webBaseUrl || "/";
     },
-    async afterUserCreatedOrUpdated(ctx, { userId, existingUserId }) {
-      await syncUserProfile(ctx, userId, existingUserId);
+    async afterUserCreatedOrUpdated(ctx, { userId }) {
+      await syncUserProfile(ctx, userId);
     },
     async beforeSessionCreation(ctx, { userId }) {
       const authUserId = String(userId);
-      const profile = (await ctx.db.query("userProfiles").collect()).find(
-        (entry: any) => entry.authUserId === authUserId,
-      );
+      const profile = await getProfileByAuthUserId(ctx, authUserId);
       if (profile?.isActive === false) {
         throw new Error("Account is deactivated");
       }

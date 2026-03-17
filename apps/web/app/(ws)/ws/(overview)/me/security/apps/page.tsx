@@ -13,8 +13,8 @@ import { listAuthorizedAppsForCurrentUser } from "@/server/domains/oauth/service
  * HOW:   Reads the authenticated session, redirects anonymous users, and renders the app summaries in workspace panels.
  */
 export default async function WorkspaceSecurityAppsPage() {
-  const { token, user } = await getAuthenticatedSession();
-  if (!token || !user) redirect(`/signin?returnTo=${encodeURIComponent(buildWorkspaceSecurityAppsPath())}`);
+  const { token } = await getAuthenticatedSession();
+  if (!token) redirect(`/signin?returnTo=${encodeURIComponent(buildWorkspaceSecurityAppsPath())}`);
   const apps = await listAuthorizedAppsForCurrentUser();
 
   return (

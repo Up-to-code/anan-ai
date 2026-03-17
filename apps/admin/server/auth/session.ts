@@ -23,6 +23,32 @@ const defaultDependencies: SessionDependencies = {
   profilesRepository: convexProfilesRepository,
 };
 
+function isNoAuthProviderError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  if ("code" in error && error.code === "NoAuthProvider") {
+    return true;
+  }
+
+  if (!("message" in error) || typeof error.message !== "string") {
+    return false;
+  }
+
+  if (error.message.includes("No auth provider found matching the given token")) {
+    return true;
+  }
+
+  try {
+    const payload = JSON.parse(error.message) as { code?: unknown; message?: unknown };
+    return payload.code === "NoAuthProvider"
+      || (typeof payload.message === "string" && payload.message.includes("No auth provider found matching the given token"));
+  } catch {
+    return false;
+  }
+}
+
 /**
  * WHY:   Every admin server entrypoint needs the same authenticated context without duplicating token and profile lookups.
  * WHAT:  Resolves the optional current session, returning null when no active authenticated user exists.
@@ -36,10 +62,20 @@ export async function getOptionalSessionContext(
     return null;
   }
 
-  const [user, profile] = await Promise.all([
-    dependencies.sessionsRepository.getCurrent(token),
-    dependencies.profilesRepository.getCurrent(token),
-  ]);
+  let user: Awaited<ReturnType<SessionsRepository["getCurrent"]>>;
+  let profile: Awaited<ReturnType<ProfilesRepository["getCurrent"]>>;
+  try {
+    [user, profile] = await Promise.all([
+      dependencies.sessionsRepository.getCurrent(token),
+      dependencies.profilesRepository.getCurrent(token),
+    ]);
+  } catch (error) {
+    // Stale tokens signed by an old issuer/audience should behave as logged-out sessions.
+    if (isNoAuthProviderError(error)) {
+      return null;
+    }
+    throw error;
+  }
 
   if (!user || user.isActive === false) {
     return null;
