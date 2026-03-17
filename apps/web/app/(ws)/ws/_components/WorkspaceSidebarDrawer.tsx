@@ -75,6 +75,7 @@ export default function WorkspaceSidebarDrawer({
                 className="h-full w-full"
               />
 
+
               <Dialog.Close
                 aria-label="إغلاق القائمة"
                 className="absolute left-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-none border border-white/10 bg-white/5 text-white transition hover:border-white/20 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"

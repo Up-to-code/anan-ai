@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 /**
  * WHY:   The workspace settings area needs a simple invite flow that maps to the existing team-invite API.
@@ -84,7 +85,7 @@ export default function InviteMemberForm({
 
   return (
     <form
-      className="grid w-full gap-4 border border-slate-200 bg-white p-6"
+      className="flex flex-col gap-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
       onSubmit={async (event) => {
         event.preventDefault();
         if (!hasOrganization) {
@@ -118,72 +119,84 @@ export default function InviteMemberForm({
       }}
     >
       {showHeader ? (
-        <div>
-          <h2 className="text-xl font-black text-slate-950">دعوة عضو جديد</h2>
-          <p className="mt-2 text-sm font-medium text-slate-500">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-xl font-black tracking-tight text-slate-950">دعوة عضو جديد</h2>
+          <p className="text-sm font-medium text-slate-500">
             ابحث بالبريد أو اسم المستخدم ثم أرسل الدعوة أو افتح محادثة مباشرة.
           </p>
         </div>
       ) : null}
+
       {!hasOrganization ? (
-        <div className="border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
+        <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
           لا يمكنك إرسال دعوات قبل ربط الحساب بمنظمة.
         </div>
       ) : null}
-      <div>
-        <label className="text-sm font-semibold text-slate-600">البحث بالبريد الكامل أو اسم المستخدم</label>
+
+      <div className="space-y-2">
+        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">البحث بالبريد الكامل أو اسم المستخدم</label>
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          className="mt-2 w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-950 transition focus:bg-white focus-visible:border-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-70"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-medium text-slate-950 transition focus:bg-white focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-70"
           placeholder="name@company.com أو username"
           type="text"
           dir="ltr"
           disabled={!hasOrganization}
         />
-        <p className="mt-2 text-xs font-medium text-slate-500">
+        <p className="text-[10px] font-bold text-slate-400">
           لن يظهر أي مستخدم إلا إذا كتبت بريده الكامل أو اسم المستخدم المطابق تماماً.
         </p>
       </div>
-      <div>
-        <label className="text-sm font-semibold text-slate-600">الدور</label>
-        <div className="mt-2 flex flex-wrap gap-2">
+
+      <div className="space-y-3">
+        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">الدور</label>
+        <div className="flex flex-wrap gap-2">
           {(["manager", "member", "viewer"] as const).map((entry) => (
             <button
               key={entry}
               type="button"
               onClick={() => setRole(entry)}
               disabled={isSubmitting || !hasOrganization}
-              className={`border px-4 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 ${
-                role === entry ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-600"
-              } disabled:cursor-not-allowed disabled:opacity-60`}
+              className={cn(
+                "rounded-lg border px-4 py-2 text-xs font-black tracking-widest uppercase transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
+                role === entry 
+                  ? "border-blue-600 bg-blue-600 text-white shadow-sm" 
+                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700"
+              )}
             >
               {entry}
             </button>
           ))}
         </div>
       </div>
+
       <button
         type="submit"
         disabled={isSearching || !hasOrganization}
-        className="inline-flex w-fit items-center justify-center border border-slate-900 bg-slate-900 px-5 py-3 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+        className="inline-flex w-fit items-center justify-center rounded-lg bg-slate-950 px-6 py-3 text-xs font-black tracking-[0.18em] text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
       >
         {isSearching ? "جاري البحث..." : "بحث"}
       </button>
 
       {results.length > 0 ? (
-        <div className="divide-y divide-slate-200 border border-slate-200 bg-white">
+        <div className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           {results.map((result) => (
-            <div key={result.id} className="p-4">
+            <div key={result.id} className="p-4 transition hover:bg-slate-50/50">
               <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="text-sm font-black text-slate-950">{result.name}</div>
-                  <div className="mt-1 text-xs font-medium text-slate-500" dir="ltr">{result.email}</div>
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-black text-slate-950">{result.name}</div>
+                  <div className="mt-1 truncate text-[11px] font-medium text-slate-500" dir="ltr">{result.email}</div>
                   {result.username ? (
-                    <div className="mt-1 text-xs font-medium text-slate-400" dir="ltr">@{result.username}</div>
+                    <div className="mt-1 text-[10px] font-bold text-slate-400" dir="ltr">@{result.username}</div>
                   ) : null}
                 </div>
-                <span className="border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600">
+                <span className={cn(
+                  "shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest",
+                  result.membershipState === "member" ? "border-green-100 bg-green-50 text-green-700" :
+                  result.membershipState === "pending-invite" ? "border-amber-100 bg-amber-50 text-amber-700" :
+                  "border-slate-200 bg-slate-50 text-slate-500"
+                )}>
                   {result.membershipState === "member"
                     ? "عضو حالي"
                     : result.membershipState === "pending-invite"
@@ -198,7 +211,7 @@ export default function InviteMemberForm({
                     type="button"
                     onClick={() => void handleInvite(result.email)}
                     disabled={isSubmitting}
-                    className="border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:border-slate-800 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-70"
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-[11px] font-black tracking-widest uppercase text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     دعوة
                   </button>
@@ -208,7 +221,7 @@ export default function InviteMemberForm({
                   <button
                     type="button"
                     onClick={() => void handleMessage(result.authUserId, result.conversationId)}
-                    className="border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
+                    className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-[11px] font-black tracking-widest uppercase text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
                   >
                     رسالة
                   </button>
@@ -224,13 +237,17 @@ export default function InviteMemberForm({
           type="button"
           onClick={() => void handleInvite(query.trim())}
           disabled={isSubmitting}
-          className="inline-flex w-fit items-center justify-center border border-slate-900 bg-slate-900 px-5 py-3 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex w-fit items-center justify-center rounded-lg bg-blue-600 px-6 py-3 text-xs font-black tracking-[0.18em] text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {isSubmitting ? "جاري إرسال الدعوة..." : "دعوة هذا البريد مباشرة"}
         </button>
       ) : null}
 
-      {status ? <div aria-live="polite" className="text-sm font-medium text-slate-600">{status}</div> : null}
+      {status ? (
+        <div className="border-t border-slate-100 pt-4">
+          <div aria-live="polite" className="text-xs font-bold text-slate-500">{status}</div>
+        </div>
+      ) : null}
     </form>
   );
 }

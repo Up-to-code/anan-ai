@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Mail } from "lucide-react";
+import { Bell, ChevronDown, Mail } from "lucide-react";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
 import type { WorkspaceOrganizationDisplay } from "../_lib/organizationDisplay";
 import { cn } from "@/lib/utils";
@@ -11,8 +11,8 @@ import type { SidebarUser } from "@/components/shared/Sidebar/types";
 
 /**
  * WHY:   Workspace screens need one shared top navbar for identity, organization context, and incoming signals.
- * WHAT:  Renders the user card, organization summary, mobile nav trigger slot, and notifications/messages badges.
- * HOW:   Receives serializable user, organization, and optional mobile-navigation UI from the workspace shell.
+ * WHAT:  Renders a compact unified account/org button, signal badges, and mobile nav trigger.
+ * HOW:   Follows the dashboard redesign: unified profile on the end side, page context on the start side.
  */
 export default function WorkspaceTopNavbar({
   user,
@@ -31,115 +31,57 @@ export default function WorkspaceTopNavbar({
   const signalCounts = useWorkspaceSignalCounts(initialSignalCounts);
   const isInboxActive = pathname.startsWith("/ws/inbox");
   const canUseInbox = (visibleZoneKeys ?? []).includes("inbox");
-  const canManageOrganization = (visibleZoneKeys ?? []).includes("settings");
-
-  return (
-    <div className="border-b border-slate-200 bg-white">
-      <div className="px-6 py-4 lg:px-8">
-        <div className="flex w-full items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            {mobileNavigation ? <div className="lg:hidden">{mobileNavigation}</div> : null}
-
-            <div className="hidden min-w-[520px] overflow-hidden border border-slate-200 bg-white lg:flex">
-              <IdentityCard
-                user={user}
-                organization={organization}
-                canManageOrganization={canManageOrganization}
-              />
-            </div>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2">
-            <SignalButton
-              label="الإشعارات"
-              count={signalCounts.notificationCount}
-              href="/ws/notifications"
-              icon={<Bell className="h-4 w-4" />}
-            />
-            {canUseInbox ? (
-              <SignalButton
-                label="الرسائل"
-                count={signalCounts.inboxCount}
-                href="/ws/inbox"
-                isActive={isInboxActive}
-                icon={<Mail className="h-4 w-4" />}
-              />
-            ) : null}
-          </div>
-        </div>
-
-        <div className="mt-3 border border-slate-200 bg-white lg:hidden">
-          <IdentityCard
-            user={user}
-            organization={organization}
-            canManageOrganization={canManageOrganization}
-            compact
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function IdentityCard({
-  user,
-  organization,
-  canManageOrganization,
-}: {
-  user: SidebarUser;
-  organization: WorkspaceOrganizationDisplay;
-  canManageOrganization: boolean;
-  compact?: boolean;
-}) {
   const accountInitial = (user.name || user.email || "A").trim().slice(0, 1).toUpperCase();
-  const organizationInitial = (organization.name || "O").trim().slice(0, 1).toUpperCase();
 
   return (
-    <div className="flex w-full items-stretch">
-      <Link
-        href="/ws/me"
-        className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-      >
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-slate-200 bg-white text-sm font-black text-slate-950">
-          {accountInitial}
-        </div>
-        <div className="min-w-0">
-          <div className="truncate text-sm font-black text-slate-950">
-            {user.name || "مستخدم عنان"}
-          </div>
-          <div className="truncate text-xs font-medium text-slate-500">
-            {user.email || "حساب Google"}
-          </div>
-        </div>
-      </Link>
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6">
+      {/* Start side (right in RTL): Mobile nav + page context */}
+      <div className="flex items-center gap-3">
+        {mobileNavigation ? <div className="lg:hidden">{mobileNavigation}</div> : null}
+        <h1 className="text-lg font-black text-slate-800">نظرة عامة</h1>
+      </div>
 
-      <div className="w-px bg-slate-200" />
+      {/* End side (left in RTL): Signal buttons + unified account */}
+      <div className="flex items-center gap-4">
+        {/* Action Group */}
+        <div className="flex items-center gap-1 border-s border-slate-200 ps-4">
+          <SignalButton
+            label="الإشعارات"
+            count={signalCounts.notificationCount}
+            href="/ws/notifications"
+            icon={<Bell className="h-5 w-5" />}
+          />
+          {canUseInbox ? (
+            <SignalButton
+              label="الرسائل"
+              count={signalCounts.inboxCount}
+              href="/ws/inbox"
+              isActive={isInboxActive}
+              icon={<Mail className="h-5 w-5" />}
+            />
+          ) : null}
+        </div>
 
-      {canManageOrganization ? (
+        {/* Unified Account / Org Button */}
         <Link
-          href="/ws/settings"
-          className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+          href="/ws/me"
+          className="group flex items-center gap-3 rounded-full p-1 pe-3 text-right transition hover:bg-slate-50"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-slate-200 bg-white text-sm font-black text-slate-950">
-            {organizationInitial}
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white shadow-sm ring-2 ring-transparent transition group-hover:ring-blue-100">
+            {accountInitial}
           </div>
-          <div className="min-w-0">
-            <div className="truncate text-sm font-black text-slate-950">{organization.name}</div>
-            <div className="truncate text-xs font-medium text-slate-500">{organization.navbarSubtitle}</div>
+          <div className="hidden sm:block">
+            <p className="text-[13px] font-black leading-none text-slate-700">
+              {user.name || "مستخدم عنان"}
+            </p>
+            <p className="mt-1 text-[11px] font-bold leading-none text-slate-500">
+              {organization.name}
+            </p>
           </div>
+          <ChevronDown className="hidden h-4 w-4 text-slate-400 transition group-hover:text-slate-600 sm:block" />
         </Link>
-      ) : (
-        <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-slate-200 bg-white text-sm font-black text-slate-950">
-            {organizationInitial}
-          </div>
-          <div className="min-w-0">
-            <div className="truncate text-sm font-black text-slate-950">{organization.name}</div>
-            <div className="truncate text-xs font-medium text-slate-500">{organization.navbarSubtitle}</div>
-          </div>
-        </div>
-      )}
-    </div>
+      </div>
+    </header>
   );
 }
 
@@ -160,22 +102,16 @@ function SignalButton({
     <Link
       href={href}
       className={cn(
-        "relative inline-flex items-center gap-3 border px-5 py-3 text-[10px] font-black uppercase tracking-[0.15em] transition-all",
+        "relative rounded-full p-2 transition",
         isActive
-          ? "border-blue-600 bg-blue-600 text-white"
-          : "border-slate-200 bg-white text-slate-950 hover:bg-slate-50"
+          ? "bg-blue-50 text-blue-600"
+          : "text-slate-400 hover:bg-slate-100 hover:text-slate-600",
       )}
       aria-label={`${label}: ${count}`}
     >
       {icon}
-      <span className="hidden sm:inline">{label}</span>
       {count > 0 ? (
-        <span className={cn(
-          "inline-flex min-w-6 items-center justify-center rounded-none px-2 py-0.5 text-[11px] font-black",
-          isActive ? "bg-white text-blue-600" : "bg-blue-600 text-white"
-        )}>
-          {count}
-        </span>
+        <span className="absolute end-1 top-1 flex h-2 w-2 items-center justify-center rounded-full bg-red-500 ring-2 ring-white" />
       ) : null}
     </Link>
   );

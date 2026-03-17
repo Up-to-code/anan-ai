@@ -57,12 +57,12 @@ export default function PipelineWorkspace({
         title="خط الأنابيب"
         description="بطاقات الأشخاص تمثل الصفقات الحقيقية في CRM، مع تحريك المراحل من نفس المصدر."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <input
               value={draftName}
               onChange={(event) => setDraftName(event.currentTarget.value)}
               placeholder="اسم صفقة أو عميل جديد"
-              className="border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700"
+              className="w-64 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"
             />
             <button
               type="button"
@@ -77,10 +77,10 @@ export default function PipelineWorkspace({
                   });
                 });
               }}
-              className="inline-flex items-center gap-2 border border-slate-200 bg-white px-4 py-3 text-xs font-black tracking-[0.18em] text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-xs font-black tracking-[0.18em] text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 disabled:opacity-60"
             >
               <Plus className="h-4 w-4" />
-              إضافة بطاقة
+              إضافة صفقة
             </button>
           </div>
         }

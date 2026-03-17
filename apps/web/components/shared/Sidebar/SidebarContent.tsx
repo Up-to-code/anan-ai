@@ -26,24 +26,22 @@ function formatThreadDate(timestamp: number) {
 
 /**
  * WHY:   Desktop and mobile workspace navigation must stay in sync to avoid role drift across shells.
- * WHAT:  Renders the shared role-aware navigation items and current-user identity block.
- * HOW:   Reads the current pathname to mark active zones and calls `onNavigate` when a link is selected.
+ * WHAT:  Renders the brand header, grouped navigation, and assistant threads panel.
+ * HOW:   Reads the current pathname to mark active zones. Identity moved to the top navbar per redesign.
  */
 export default function SidebarContent({
-  user,
-  organization,
   visibleZoneKeys,
   recentAssistantThreads = [],
   allAssistantThreads = [],
   mode = "desktop",
   onNavigate,
   titleId,
-}: Pick<SidebarProps, "user" | "organization" | "visibleZoneKeys" | "recentAssistantThreads" | "allAssistantThreads" | "mode" | "onNavigate" | "titleId">) {
+}: Pick<SidebarProps, "visibleZoneKeys" | "recentAssistantThreads" | "allAssistantThreads" | "mode" | "onNavigate" | "titleId">) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const navItems = getWorkspaceZonesForKeys(visibleZoneKeys ?? ["overview"]).filter(
-    (item) => item.href !== "/ws/settings",
-  );
+  const allItems = getWorkspaceZonesForKeys(visibleZoneKeys ?? ["overview"]);
+  const mainItems = allItems.filter((item) => item.href !== "/ws/settings");
+  const settingsItems = allItems.filter((item) => item.href === "/ws/settings");
   const activeAssistantThreadId = pathname === "/ws" ? searchParams.get("threadId") : null;
   const { threads: assistantThreads } = useAssistantThreads({
     serverThreads: allAssistantThreads,
@@ -59,51 +57,86 @@ export default function SidebarContent({
         mode === "desktop" ? "h-full border-e border-white/5" : "w-full shadow-none",
       )}
     >
-      <div className="border-b border-white/5 px-4 py-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-white/10 bg-white/5 text-sm font-black uppercase text-white">
-            {(user.name || user.email || "A").slice(0, 1).toUpperCase()}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div
-              id={titleId}
-              className="truncate text-sm font-black text-white"
-            >
-              {user.name || "مستخدم عنان"}
-            </div>
-            <div className="truncate text-[10px] font-bold tracking-widest text-slate-400 uppercase mt-0.5">
-              {organization?.name || "مساحة العمل"}
-            </div>
-          </div>
-        </div>
+      {/* Brand Header */}
+      <div className="flex h-16 shrink-0 items-center border-b border-white/5 px-6">
+        <span id={titleId} className="text-xl font-black tracking-tight text-blue-400">
+          عنان <span className="text-white">Anan</span>
+        </span>
       </div>
 
-      <nav aria-label="Workspace navigation" className="flex-1 space-y-1 px-3 py-4">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/ws" && pathname.startsWith(`${item.href}/`));
+      {/* Grouped Navigation */}
+      <nav aria-label="Workspace navigation" className="flex-1 space-y-8 overflow-y-auto px-4 py-6">
+        {/* Group: الرئيسية (Main) */}
+        {mainItems.length > 0 && (
+          <div>
+            <h3 className="mb-3 px-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+              الرئيسية
+            </h3>
+            <ul className="space-y-1">
+              {mainItems.map((item) => {
+                const Icon = item.icon;
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/ws" && pathname.startsWith(`${item.href}/`));
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavigate}
-              className={cn(
-                "flex items-center gap-3 border px-4 py-3 text-[11px] font-black tracking-[0.18em] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
-                isActive
-                  ? "border-blue-600 bg-blue-600 text-white shadow-none"
-                  : "border-transparent text-slate-400 hover:border-white/5 hover:bg-white/5 hover:text-white",
-              )}
-            >
-              <Icon className={cn("h-4 w-4", isActive ? "text-white" : "text-slate-500")} />
-              {item.label}
-            </Link>
-          );
-        })}
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={onNavigate}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[11px] font-black tracking-[0.18em] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
+                        isActive
+                          ? "bg-blue-600/15 text-blue-400"
+                          : "text-slate-400 hover:bg-white/5 hover:text-white",
+                      )}
+                    >
+                      <Icon className={cn("h-4 w-4", isActive ? "text-blue-400" : "text-slate-500")} />
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        {/* Group: الإعدادات (Settings) */}
+        {settingsItems.length > 0 && (
+          <div>
+            <h3 className="mb-3 px-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+              الإعدادات
+            </h3>
+            <ul className="space-y-1">
+              {settingsItems.map((item) => {
+                const Icon = item.icon;
+                const isActive =
+                  pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={onNavigate}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[11px] font-black tracking-[0.18em] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
+                        isActive
+                          ? "bg-blue-600/15 text-blue-400"
+                          : "text-slate-400 hover:bg-white/5 hover:text-white",
+                      )}
+                    >
+                      <Icon className={cn("h-4 w-4", isActive ? "text-blue-400" : "text-slate-500")} />
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
       </nav>
 
+      {/* Assistant Threads */}
       <div className="border-t border-white/5 px-3 py-4">
         <div className="mb-3 flex items-center justify-between px-3">
           <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">مساعد Anan Workspace</span>
@@ -180,26 +213,6 @@ export default function SidebarContent({
             </Dialog.Portal>
           </Dialog.Root>
         ) : null}
-      </div>
-
-      <div className="border-t border-white/5 p-4">
-        <Link
-          href="/ws/me"
-          onClick={onNavigate}
-          className="group flex items-center gap-3 border border-transparent p-2 transition hover:border-white/5 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-        >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-blue-400/30 bg-blue-500/15 text-xs font-black uppercase text-blue-100">
-            {(user.name || user.email || "A").slice(0, 1).toUpperCase()}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[10px] font-black uppercase tracking-widest text-white">
-              {user.name || "مستخدم عنان"}
-            </div>
-            <div className="truncate text-[9px] font-bold text-slate-500">
-              {user.email || "حساب google"}
-            </div>
-          </div>
-        </Link>
       </div>
     </div>
   );

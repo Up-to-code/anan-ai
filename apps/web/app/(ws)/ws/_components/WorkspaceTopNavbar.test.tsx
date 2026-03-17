@@ -17,13 +17,14 @@ vi.mock("../(zones)/inbox/InboxPage/useRealtimeInbox", () => ({
 import WorkspaceTopNavbar from "./WorkspaceTopNavbar";
 
 describe("WorkspaceTopNavbar", () => {
-  it("renders links to the account and organization settings", () => {
+  it("renders the unified account button with user and organization info", () => {
     const html = renderToStaticMarkup(
       <WorkspaceTopNavbar
         user={{ name: "Ahmed", email: "ahmed@example.com" }}
         organization={{
           name: "شركة الواحة",
           navbarSubtitle: "مساحة المطور",
+          sidebarSubtitle: "لوحة العمل",
         }}
         visibleZoneKeys={["inbox", "projects", "settings"]}
         initialSignalCounts={{ notificationCount: 0, inboxCount: 0 }}
@@ -31,10 +32,9 @@ describe("WorkspaceTopNavbar", () => {
     );
 
     expect(html).toContain("شركة الواحة");
-    expect(html).toContain("مساحة المطور");
     expect(html).toContain("Ahmed");
-    expect(html).toContain("ahmed@example.com");
     expect(html).toContain("href=\"/ws/me\"");
-    expect(html).toContain("href=\"/ws/settings\"");
+    expect(html).toContain("href=\"/ws/notifications\"");
+    expect(html).toContain("href=\"/ws/inbox\"");
   });
 });
