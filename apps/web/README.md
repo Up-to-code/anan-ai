@@ -56,6 +56,24 @@ pnpm dev:web
 pnpm build:web
 ```
 
+## Project Uploads Setup
+
+To make `/ws/projects/create` uploads work end-to-end in dev:
+
+1. Set web env vars (`apps/web/.env.local`):
+   - `NEXT_PUBLIC_CONVEX_URL=https://<deployment>.convex.cloud`
+   - `UPLOADTHING_TOKEN=<your-uploadthing-token>`
+2. Set Convex deployment env var (active `dev:*` deployment):
+   - `npx convex env set UPLOADTHING_API_KEY <your-uploadthing-api-key> --deployment dev:<name>`
+3. Quick verification:
+   - Start web + Convex dev.
+   - Open `/ws/projects/create`.
+   - Upload an image in "المعرض المرئي", fill required fields, and save.
+   - Confirm redirect to `/ws/projects/<id>` and that uploaded media renders.
+
+E2E note:
+- `PLAYWRIGHT_WS_STORAGE_STATE` (optional, test-only): absolute path to a pre-authenticated Playwright storage state file used by `tests/projects-upload.spec.ts`.
+
 ---
 
 ## References
@@ -63,4 +81,3 @@ pnpm build:web
 - Deep handbook: `docs/handbook/web/README.md`
 - Web server gateway overview: `apps/web/server/README.md`
 - Repo rules: `ARCHITECTURE.md`
-

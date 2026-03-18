@@ -1,8 +1,19 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 
-const { requireSessionContext } = vi.hoisted(() => ({
-  requireSessionContext: vi.fn(),
-}));
+const { requireSessionContext, resetUploadthingToken } = vi.hoisted(() => {
+  const previousUploadthingToken = process.env.UPLOADTHING_TOKEN;
+  process.env.UPLOADTHING_TOKEN = "ut-test-token";
+  return {
+    requireSessionContext: vi.fn(),
+    resetUploadthingToken: () => {
+      if (previousUploadthingToken === undefined) {
+        delete process.env.UPLOADTHING_TOKEN;
+        return;
+      }
+      process.env.UPLOADTHING_TOKEN = previousUploadthingToken;
+    },
+  };
+});
 
 vi.mock("@/server/auth/session", () => ({
   requireSessionContext,
@@ -12,6 +23,10 @@ import { uploadRouter } from "./core";
 import { GET, POST } from "./route";
 
 describe("uploadthing route", () => {
+  afterAll(() => {
+    resetUploadthingToken();
+  });
+
   it("exposes property, offer, crm, and verification upload endpoints", () => {
     expect(Object.keys(uploadRouter).sort()).toEqual([
       "crmDocuments",
@@ -31,5 +46,21 @@ describe("uploadthing route", () => {
     expect(uploadRouter.offerAttachments).toBeTruthy();
     expect(uploadRouter.crmDocuments).toBeTruthy();
     expect(uploadRouter.verificationDocuments).toBeTruthy();
+  });
+
+  it("fails fast when UploadThing token is missing", async () => {
+    const previous = process.env.UPLOADTHING_TOKEN;
+    delete process.env.UPLOADTHING_TOKEN;
+    vi.resetModules();
+    try {
+      await expect(import("./route")).rejects.toThrow("UPLOADTHING_TOKEN");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.UPLOADTHING_TOKEN;
+      } else {
+        process.env.UPLOADTHING_TOKEN = previous;
+      }
+      vi.resetModules();
+    }
   });
 });
