@@ -8,8 +8,6 @@ import type { SidebarProps } from "./types";
  * HOW:   Delegates the actual navigation markup to `SidebarContent` and only varies the outer container per mode.
  */
 export default function Sidebar({
-  user,
-  organization,
   visibleZoneKeys,
   recentAssistantThreads,
   allAssistantThreads,

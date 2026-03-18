@@ -1,15 +1,24 @@
 import { requireAdminSession } from "@/server/auth/guards";
 import { requireAdminPageSession } from "@/lib/serverSession";
-import { convexAdminOrdersRepository, type OrderStatus } from "@/server/infrastructure/convex/adminOrdersRepository";
+import {
+  convexAdminOrdersRepository,
+  type OrderAssignmentFilter,
+  type OrderChannel,
+  type OrderStatus,
+} from "@/server/infrastructure/convex/adminOrdersRepository";
 
 /**
  * WHY:   The orders page needs one admin-scoped loader for filtered operational order data.
  * WHAT:  Returns the current list of orders for the chosen status filter.
  * HOW:   Requires an admin session and delegates to the orders repository.
  */
-export async function getAdminOrdersPageData(status?: OrderStatus) {
+export async function getAdminOrdersPageData(filters?: {
+  status?: OrderStatus;
+  sourceChannel?: OrderChannel;
+  assignment?: OrderAssignmentFilter;
+}) {
   const session = await requireAdminPageSession("/orders");
-  const orders = await convexAdminOrdersRepository.list(session.token, status);
+  const orders = await convexAdminOrdersRepository.list(session.token, filters);
   return { session, orders };
 }
 

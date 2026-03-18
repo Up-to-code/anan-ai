@@ -2,7 +2,7 @@ import type { PersonBadge } from "../../_lib/entities";
 import type { BrokerPresence } from "../../_components/Visuals/BrokerPresenceChip";
 import type { UnitReference } from "../../_lib/entities";
 
-export type PipelineStage = "new" | "qualified" | "proposal" | "won";
+export type PipelineStage = "new" | "qualified" | "proposal" | "won" | "lost";
 
 export type CrmProjectReference = {
   id: string;
@@ -20,6 +20,7 @@ export type CrmClientRecord = {
   stage: PipelineStage;
   budgetLabel: string;
   preference: string;
+  nextFollowUpAt?: number;
   project: CrmProjectReference | null;
   unit: UnitReference | null;
   broker: BrokerPresence | null;

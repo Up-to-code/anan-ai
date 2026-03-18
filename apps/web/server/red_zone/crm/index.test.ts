@@ -8,6 +8,7 @@ vi.mock("@/server/auth/session", () => ({
 import {
   createRedDeal,
   listRedDealsByProperty,
+  updateRedDealFollowUp,
   updateRedDealNotes,
 } from "./index";
 
@@ -73,13 +74,19 @@ describe("red crm server functions", () => {
     const crmRepository = {
       getById: vi.fn(async () => ({ id: "deal-1", redId: "red-1", stage: "new", title: "Deal" })),
       updateNotes: vi.fn(async () => undefined),
+      updateFollowUp: vi.fn(async () => undefined),
     };
 
     await updateRedDealNotes(
       { dealId: "deal-1", notes: "Follow up" },
       { requireDeveloper: requireDeveloper(), crmRepository: crmRepository as never, propertiesRepository: {} as never },
     );
+    await updateRedDealFollowUp(
+      { dealId: "deal-1", nextFollowUpAt: Date.now() + 3600000 },
+      { requireDeveloper: requireDeveloper(), crmRepository: crmRepository as never, propertiesRepository: {} as never },
+    );
 
     expect(crmRepository.updateNotes).toHaveBeenCalled();
+    expect(crmRepository.updateFollowUp).toHaveBeenCalled();
   });
 });

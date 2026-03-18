@@ -12,17 +12,50 @@ const orderStatusValidator = v.union(
   v.literal("closed_lost"),
 );
 
+const orderChannelValidator = v.union(
+  v.literal("whatsapp"),
+  v.literal("app"),
+  v.literal("web"),
+);
+
+const assignmentFilterValidator = v.union(
+  v.literal("all"),
+  v.literal("assigned"),
+  v.literal("unassigned"),
+);
+
 export const listOrders = query({
-  args: { status: v.optional(orderStatusValidator) },
-  handler: async (ctx, { status }) => {
+  args: {
+    status: v.optional(orderStatusValidator),
+    sourceChannel: v.optional(orderChannelValidator),
+    assignment: v.optional(assignmentFilterValidator),
+  },
+  handler: async (ctx, { status, sourceChannel, assignment }) => {
     await requireRole(ctx, ["admin"]);
-    if (status) {
-      return ctx.db
-        .query("orders")
-        .withIndex("status", (q) => q.eq("status", status))
-        .collect();
-    }
-    return ctx.db.query("orders").collect();
+    const assignmentMode = assignment ?? "all";
+    const baseOrders = status
+      ? await ctx.db
+          .query("orders")
+          .withIndex("status", (q) => q.eq("status", status))
+          .collect()
+      : await ctx.db.query("orders").collect();
+
+    const filtered = baseOrders.filter((order) => {
+      if (sourceChannel && order.sourceChannel !== sourceChannel) {
+        return false;
+      }
+      if (assignmentMode === "assigned" && !order.assignedTo) {
+        return false;
+      }
+      if (assignmentMode === "unassigned" && order.assignedTo) {
+        return false;
+      }
+      return true;
+    });
+
+    filtered.sort((a, b) => b._creationTime - a._creationTime);
+
+    return filtered;
   },
 });
 

@@ -2,6 +2,7 @@ import {
   addBrokerDealDocument,
   createBrokerDeal,
   listBrokerDeals,
+  updateBrokerDealFollowUp,
   updateBrokerDealNotes,
   updateBrokerDealStage,
 } from "@/server/broker_zone/crm";
@@ -13,6 +14,7 @@ import {
   addRedDealDocument,
   createRedDeal,
   listRedDeals,
+  updateRedDealFollowUp,
   updateRedDealNotes,
   updateRedDealStage,
 } from "@/server/red_zone/crm";
@@ -56,6 +58,12 @@ export function getWorkspaceCrmZone(
           crmRepository: convexCrmRepository,
           propertiesRepository: convexBrokerZoneRepository,
         }),
+      updateDealFollowUp: (input: Parameters<typeof updateBrokerDealFollowUp>[0]) =>
+        updateBrokerDealFollowUp(input, {
+          requireBroker: requireSession,
+          crmRepository: convexCrmRepository,
+          propertiesRepository: convexBrokerZoneRepository,
+        }),
       addDealDocument: (input: Parameters<typeof addBrokerDealDocument>[0]) =>
         addBrokerDealDocument(input, {
           requireBroker: requireSession,
@@ -87,6 +95,12 @@ export function getWorkspaceCrmZone(
         }),
       updateDealNotes: (input: Parameters<typeof updateRedDealNotes>[0]) =>
         updateRedDealNotes(input, {
+          requireDeveloper: requireSession,
+          crmRepository: convexCrmRepository,
+          propertiesRepository: convexRedZoneRepository,
+        }),
+      updateDealFollowUp: (input: Parameters<typeof updateRedDealFollowUp>[0]) =>
+        updateRedDealFollowUp(input, {
           requireDeveloper: requireSession,
           crmRepository: convexCrmRepository,
           propertiesRepository: convexRedZoneRepository,

@@ -369,6 +369,7 @@ export default function AgPropertyForm({
                                     <div className="flex items-center gap-4 flex-row-reverse">
                                         <div className="h-12 w-12 overflow-hidden bg-white border border-slate-100">
                                             {selectedBroker.avatarImage ? (
+                                                /* eslint-disable-next-line @next/next/no-img-element */
                                                 <img src={selectedBroker.avatarImage} alt="" className="h-full w-full object-cover" />
                                             ) : (
                                                 <div className="flex h-full w-full items-center justify-center font-black text-slate-400">{selectedBroker.avatarLabel}</div>
@@ -420,6 +421,7 @@ export default function AgPropertyForm({
                                                             >
                                                                 <div className="h-10 w-10 overflow-hidden bg-slate-100">
                                                                     {broker.avatarImage ? (
+                                                                        /* eslint-disable-next-line @next/next/no-img-element */
                                                                         <img src={broker.avatarImage} alt="" className="h-full w-full object-cover" />
                                                                     ) : (
                                                                         <div className="flex h-full w-full items-center justify-center text-[10px] font-black text-slate-400">{broker.avatarLabel}</div>
@@ -488,6 +490,7 @@ export default function AgPropertyForm({
                             {/* Image Grid */}
                             {formState.images.map((img, idx) => (
                                 <div key={idx} className="relative aspect-square border-2 border-slate-100 bg-white overflow-hidden group">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={img.url} alt={img.name} className="h-full w-full object-cover transition duration-700 hover:scale-105" />
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); removeImage(idx); }}

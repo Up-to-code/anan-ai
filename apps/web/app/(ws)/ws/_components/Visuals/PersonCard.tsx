@@ -34,6 +34,7 @@ export default function PersonCard({
         <div className="flex items-start gap-3">
           <div className="relative shrink-0">
             {person.avatarImage ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
               <img src={person.avatarImage} alt={person.name} className="h-14 w-14 rounded-none object-cover" />
             ) : (
               <div className="flex h-14 w-14 items-center justify-center rounded-none bg-slate-100 text-lg font-black text-slate-500">

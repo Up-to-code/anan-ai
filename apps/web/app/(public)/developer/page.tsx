@@ -18,6 +18,7 @@ export default function DeveloperPage() {
             <Section bg="slate" className="pt-40 relative overflow-hidden">
                 {/* Background SVG Grid */}
                 <div className="absolute inset-0 opacity-10 pointer-events-none">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/vectors/landing/hero_grid.svg" className="w-full h-full object-cover" alt="" />
                 </div>
                 <PageHero

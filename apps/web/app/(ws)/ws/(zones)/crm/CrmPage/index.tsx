@@ -9,16 +9,19 @@ import PipelineWorkspace from "../PipelinePage/PipelineWorkspace";
 export default function CrmPage({
   clients,
   onStageChange,
+  onFollowUpChange,
   onCreateClient,
 }: {
   clients: CrmClientRecord[];
-  onStageChange?: (input: { dealId: string; stage: "new" | "contacted" | "negotiation" | "won" }) => Promise<void>;
+  onStageChange?: (input: { dealId: string; stage: "new" | "contacted" | "negotiation" | "won" | "lost" }) => Promise<void>;
+  onFollowUpChange?: (input: { dealId: string; nextFollowUpAt: number }) => Promise<void>;
   onCreateClient?: (input: { name: string }) => Promise<void>;
 }) {
   return (
     <PipelineWorkspace
       initialClients={clients}
       onStageChange={onStageChange}
+      onFollowUpChange={onFollowUpChange}
       onCreateClient={onCreateClient}
     />
   );

@@ -2,6 +2,7 @@ import type { DealSummary } from "@/server/contracts/deals";
 import type { CrmClientRecord, CrmProjectReference, PipelineStage } from "./crmTypes";
 
 function mapDealStage(stage: DealSummary["stage"]): PipelineStage {
+  if (stage === "lost") return "lost";
   if (stage === "won") return "won";
   if (stage === "negotiation") return "proposal";
   if (stage === "contacted") return "qualified";
@@ -18,6 +19,7 @@ export function mapDealToCrmClientRecord(deal: DealSummary): CrmClientRecord {
     stage: mapDealStage(deal.stage),
     budgetLabel: deal.value ? `${new Intl.NumberFormat("en-US").format(deal.value)} ر.س` : "غير محدد",
     preference: deal.description ?? "فرصة CRM مرتبطة بالعقار",
+    nextFollowUpAt: deal.nextFollowUpAt,
     project: deal.propertyId
       ? {
           id: deal.propertyId,

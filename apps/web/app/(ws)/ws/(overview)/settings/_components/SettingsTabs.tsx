@@ -11,7 +11,7 @@ type SettingsTabItem = {
 };
 
 interface SettingsTabsProps {
-  tabs: SettingsTabItem[];
+  tabs: readonly SettingsTabItem[];
   defaultTab?: string;
 }
 

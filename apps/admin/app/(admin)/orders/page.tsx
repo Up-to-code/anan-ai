@@ -10,6 +10,8 @@ type OrdersRouteProps = {
       | "under_contract"
       | "closed_won"
       | "closed_lost";
+    sourceChannel?: "whatsapp" | "app" | "web";
+    assignment?: "all" | "assigned" | "unassigned";
   }>;
 };
 

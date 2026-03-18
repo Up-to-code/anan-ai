@@ -11,6 +11,7 @@ function mapDeal(deal: DealRecord) {
     title: deal.title,
     description: deal.description,
     value: deal.value,
+    nextFollowUpAt: deal.nextFollowUpAt,
     stage: deal.stage,
     brokerId: deal.brokerId,
     REDId: deal.REDId,
@@ -92,6 +93,7 @@ export const createDeal = mutation({
     title: v.string(),
     description: v.optional(v.string()),
     value: v.optional(v.number()),
+    nextFollowUpAt: v.optional(v.number()),
     stage: v.union(
       v.literal("new"),
       v.literal("contacted"),
@@ -111,6 +113,7 @@ export const createDeal = mutation({
       title: args.title,
       description: args.description,
       value: args.value,
+      nextFollowUpAt: args.nextFollowUpAt,
       stage: args.stage,
       contactName: args.contactName,
       contactPhone: args.contactPhone,
@@ -141,6 +144,25 @@ export const updateDealStage = mutation({
     }
     await ctx.db.patch(args.dealId, {
       stage: args.stage,
+      lastUpdatedBy: args.lastUpdatedBy,
+    });
+    return { ok: true } as const;
+  },
+});
+
+export const updateDealFollowUp = mutation({
+  args: {
+    dealId: v.id("deals"),
+    nextFollowUpAt: v.number(),
+    lastUpdatedBy: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const deal = await ctx.db.get(args.dealId);
+    if (!deal) {
+      throw new ConvexError({ code: "NOT_FOUND", message: "Deal not found" });
+    }
+    await ctx.db.patch(args.dealId, {
+      nextFollowUpAt: args.nextFollowUpAt,
       lastUpdatedBy: args.lastUpdatedBy,
     });
     return { ok: true } as const;

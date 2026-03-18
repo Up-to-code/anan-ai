@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import BrandEmptyState from "../../../_components/WorkspaceBrand/BrandEmptyState";
 import FilterChipBar from "../../../_components/Visuals/FilterChipBar";
@@ -12,7 +12,8 @@ import ZonePageIntro from "../../../_components/ZoneShell/ZonePageIntro";
 
 type PipelineWorkspaceProps = {
   initialClients: CrmClientRecord[];
-  onStageChange?: (input: { dealId: string; stage: "new" | "contacted" | "negotiation" | "won" }) => Promise<void>;
+  onStageChange?: (input: { dealId: string; stage: "new" | "contacted" | "negotiation" | "won" | "lost" }) => Promise<void>;
+  onFollowUpChange?: (input: { dealId: string; nextFollowUpAt: number }) => Promise<void>;
   onCreateClient?: (input: { name: string }) => Promise<void>;
 };
 
@@ -21,7 +22,40 @@ const STAGE_LABELS: Record<PipelineStage, string> = {
   qualified: "مؤهل",
   proposal: "عرض",
   won: "مغلق",
+  lost: "خسارة",
 };
+const STAGE_ORDER = Object.keys(STAGE_LABELS) as PipelineStage[];
+const FOLLOW_UP_FORMATTER = new Intl.DateTimeFormat("ar-SA", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+function toDateTimeLocalValue(timestamp?: number): string {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function formatFollowUpLabel(timestamp?: number): string {
+  if (!timestamp) return "بدون متابعة محددة";
+  return FOLLOW_UP_FORMATTER.format(new Date(timestamp));
+}
+
+function getFollowUpStatus(timestamp?: number): "overdue" | "soon" | "scheduled" | "none" {
+  if (!timestamp) return "none";
+  const now = Date.now();
+  if (timestamp < now) return "overdue";
+  if (timestamp <= now + DAY_IN_MS) return "soon";
+  return "scheduled";
+}
 
 /**
  * WHY:   CRM needs a real pipeline board that reflects persisted deals instead of route-local mutations.
@@ -31,24 +65,44 @@ const STAGE_LABELS: Record<PipelineStage, string> = {
 export default function PipelineWorkspace({
   initialClients,
   onStageChange,
+  onFollowUpChange,
   onCreateClient,
 }: PipelineWorkspaceProps) {
   const [clients, setClients] = useState(initialClients);
   const [activeFilter, setActiveFilter] = useState("all");
   const [draftName, setDraftName] = useState("");
+  const [followUpDraftById, setFollowUpDraftById] = useState<Record<string, string>>(
+    () =>
+      initialClients.reduce<Record<string, string>>((acc, client) => {
+        acc[client.id] = toDateTimeLocalValue(client.nextFollowUpAt);
+        return acc;
+      }, {}),
+  );
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<PipelineStage | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const visibleClients = clients.filter((client) => {
-    if (activeFilter === "all") return true;
-    if (activeFilter === "unlinked") return !client.project && !client.broker;
-    if (activeFilter === "project-only") return Boolean(client.project) && !client.broker;
-    if (activeFilter === "fully-linked") return Boolean(client.project) && Boolean(client.broker);
-    if (activeFilter === "vip") return client.badges?.includes("vip");
-    return true;
-  });
+  const visibleClients = useMemo(
+    () =>
+      clients.filter((client) => {
+        if (activeFilter === "all") return true;
+        if (activeFilter === "unlinked") return !client.project && !client.broker;
+        if (activeFilter === "project-only") return Boolean(client.project) && !client.broker;
+        if (activeFilter === "fully-linked") return Boolean(client.project) && Boolean(client.broker);
+        if (activeFilter === "vip") return client.badges?.includes("vip");
+        return true;
+      }),
+    [clients, activeFilter],
+  );
+  const clientsByStage = useMemo(() => {
+    const grouped = STAGE_ORDER.reduce<Record<PipelineStage, CrmClientRecord[]>>(
+      (acc, stage) => ({ ...acc, [stage]: [] }),
+      {} as Record<PipelineStage, CrmClientRecord[]>,
+    );
+    for (const client of visibleClients) grouped[client.stage].push(client);
+    return grouped;
+  }, [visibleClients]);
 
   return (
     <div className="flex min-h-full flex-col">
@@ -99,8 +153,8 @@ export default function PipelineWorkspace({
           onChange={setActiveFilter}
         />
 
-        <div className="grid gap-4 lg:grid-cols-4">
-          {(Object.keys(STAGE_LABELS) as PipelineStage[]).map((stage) => (
+        <div className="grid gap-4 lg:grid-cols-5">
+          {STAGE_ORDER.map((stage) => (
             <section
               key={stage}
               className={`space-y-3 border p-4 transition duration-200 ${
@@ -123,11 +177,12 @@ export default function PipelineWorkspace({
               onDrop={() => {
                 setDragOverStage(null);
                 if (!draggedId || !onStageChange) return;
-                const stageMap: Record<PipelineStage, "new" | "contacted" | "negotiation" | "won"> = {
+                const stageMap: Record<PipelineStage, "new" | "contacted" | "negotiation" | "won" | "lost"> = {
                   new: "new",
                   qualified: "contacted",
                   proposal: "negotiation",
                   won: "won",
+                  lost: "lost",
                 };
 
                 setClients((current) =>
@@ -143,20 +198,37 @@ export default function PipelineWorkspace({
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-black text-slate-950">{STAGE_LABELS[stage]}</h2>
                 <span className="text-xs font-black text-slate-400">
-                  {visibleClients.filter((client) => client.stage === stage).length}
+                  {clientsByStage[stage].length}
                 </span>
               </div>
 
               <div className="flex flex-col gap-3">
-                {visibleClients
-                  .filter((client) => client.stage === stage)
-                  .map((client) => (
-                    <div
-                      key={client.id}
-                      draggable
-                      onDragStart={() => setDraggedId(client.id)}
-                      className="cursor-grab active:cursor-grabbing"
-                    >
+                {clientsByStage[stage].map((client) => {
+                    const followUpStatus = getFollowUpStatus(client.nextFollowUpAt);
+                    const followUpLabel =
+                      followUpStatus === "overdue"
+                        ? "متأخرة"
+                        : followUpStatus === "soon"
+                          ? "خلال 24 ساعة"
+                          : followUpStatus === "scheduled"
+                            ? "مجدولة"
+                            : "بدون موعد";
+                    const followUpTone =
+                      followUpStatus === "overdue"
+                        ? "border-rose-200 bg-rose-50 text-rose-700"
+                        : followUpStatus === "soon"
+                          ? "border-amber-200 bg-amber-50 text-amber-700"
+                          : followUpStatus === "scheduled"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-slate-200 bg-slate-50 text-slate-500";
+
+                    return (
+                      <div
+                        key={client.id}
+                        draggable
+                        onDragStart={() => setDraggedId(client.id)}
+                        className="cursor-grab active:cursor-grabbing"
+                      >
                       <PersonCard
                         person={{
                           id: client.id,
@@ -184,6 +256,50 @@ export default function PipelineWorkspace({
                         footer={
                           <div className="space-y-3 border-t border-slate-200 pt-3">
                             <div className="text-xs font-medium text-slate-500">{client.budgetLabel}</div>
+                            <div className={`inline-flex border px-2 py-1 text-[10px] font-black tracking-[0.14em] ${followUpTone}`}>
+                              متابعة: {followUpLabel}
+                            </div>
+                            <div className="space-y-2">
+                              <label className="block text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                                المتابعة القادمة
+                              </label>
+                              <input
+                                type="datetime-local"
+                                value={followUpDraftById[client.id] ?? ""}
+                                onChange={(event) =>
+                                  setFollowUpDraftById((current) => ({
+                                    ...current,
+                                    [client.id]: event.currentTarget.value,
+                                  }))
+                                }
+                                className="w-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
+                              />
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="text-[11px] font-medium text-slate-500">{formatFollowUpLabel(client.nextFollowUpAt)}</div>
+                                <button
+                                  type="button"
+                                  disabled={!onFollowUpChange || isPending || !followUpDraftById[client.id]}
+                                  onClick={() => {
+                                    const draftValue = followUpDraftById[client.id];
+                                    const nextFollowUpAt = Date.parse(draftValue ?? "");
+                                    if (!draftValue || Number.isNaN(nextFollowUpAt) || !onFollowUpChange) return;
+                                    setClients((current) =>
+                                      current.map((entry) =>
+                                        entry.id === client.id
+                                          ? { ...entry, nextFollowUpAt }
+                                          : entry,
+                                      ),
+                                    );
+                                    startTransition(() => {
+                                      void onFollowUpChange({ dealId: client.id, nextFollowUpAt }).then(() => router.refresh());
+                                    });
+                                  }}
+                                  className="border border-slate-300 bg-white px-3 py-2 text-[10px] font-black tracking-[0.16em] text-slate-700 transition hover:border-blue-600 hover:text-blue-700 disabled:opacity-50"
+                                >
+                                  حفظ المتابعة
+                                </button>
+                              </div>
+                            </div>
                             <div className="flex flex-wrap gap-2">
                               <Link
                                 href={`/ws/crm/clients/${client.id}`}
@@ -198,10 +314,11 @@ export default function PipelineWorkspace({
                           </div>
                         }
                       />
-                    </div>
-                  ))}
+                      </div>
+                    );
+                })}
 
-                {visibleClients.filter((client) => client.stage === stage).length === 0 ? (
+                {clientsByStage[stage].length === 0 ? (
                   <BrandEmptyState title="لا توجد بطاقات" description="اسحب بطاقة إلى هذا العمود أو أنشئ بطاقة جديدة." />
                 ) : null}
               </div>

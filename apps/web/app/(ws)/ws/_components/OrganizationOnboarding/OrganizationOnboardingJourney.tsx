@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { SessionUser } from "@/lib/serverSession";
 import type { WorkspaceAudience } from "@/server/contracts/workspace";
@@ -50,15 +50,12 @@ export default function OrganizationOnboardingJourney({
   redRuleset,
 }: OrganizationOnboardingJourneyProps) {
   const router = useRouter();
-  const [step, setStep] = useState<1 | 2 | 3>(initialStep);
+  const [step, setStep] = useState<1 | 2 | 3>(
+    !canCreateOrganization && initialStep === 2 ? 1 : initialStep,
+  );
   const [organization, setOrganization] = useState<OrganizationSnapshot | null>(initialOrganization);
   const [pending, startTransition] = useTransition();
-
-  useEffect(() => {
-    if (!canCreateOrganization && step === 2) {
-      setStep(1);
-    }
-  }, [canCreateOrganization, step]);
+  const activeStep = !canCreateOrganization && step === 2 ? 1 : step;
 
   const steps = useMemo(
     () => [
@@ -81,7 +78,14 @@ export default function OrganizationOnboardingJourney({
     [],
   );
 
-  const handleAdvance = (nextStep: 1 | 2 | 3) => setStep(nextStep);
+  const handleAdvance = (nextStep: 1 | 2 | 3) => {
+    if (!canCreateOrganization && nextStep === 2) {
+      setStep(1);
+      return;
+    }
+
+    setStep(nextStep);
+  };
 
   const handleOrganizationCreated = (snapshot: OrganizationSnapshot) => {
     setOrganization(snapshot);
@@ -125,7 +129,7 @@ export default function OrganizationOnboardingJourney({
           <div className="border-2 border-slate-100 bg-white">
             <div className="divide-y-2 divide-slate-100">
               {steps.map((item) => {
-                const isActive = item.id === step;
+                const isActive = item.id === activeStep;
                 const isLocked =
                   (item.id === 2 && !canCreateOrganization) || (item.id === 3 && !organization);
                 return (
@@ -167,7 +171,7 @@ export default function OrganizationOnboardingJourney({
           ) : null}
 
           <div className="px-6 py-6">
-            {step === 1 ? (
+            {activeStep === 1 ? (
               <OrganizationInvitesStep
                 invites={incomingInvites}
                 canCreateOrganization={canCreateOrganization}
@@ -176,7 +180,7 @@ export default function OrganizationOnboardingJourney({
               />
             ) : null}
 
-            {step === 2 ? (
+            {activeStep === 2 ? (
               <OrganizationDetailsStep
                 suggestedOrganizationType={suggestedOrganizationType}
                 audience={audience}
@@ -186,13 +190,13 @@ export default function OrganizationOnboardingJourney({
               />
             ) : null}
 
-            {step === 3 ? (
+            {activeStep === 3 ? (
               <VerificationDocsStep
                 organizationType={organization?.type ?? suggestedOrganizationType}
                 requirements={currentRequirements}
                 sources={currentSources}
                 countryLabel={countryLabel}
-                onBack={() => handleAdvance(2)}
+                onBack={() => handleAdvance(canCreateOrganization ? 2 : 1)}
                 onSkip={() => router.replace("/ws")}
               />
             ) : null}

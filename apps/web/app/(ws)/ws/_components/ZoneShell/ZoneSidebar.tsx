@@ -15,7 +15,6 @@ import type { ZoneShellData } from "../../_lib/zones";
  */
 export default function ZoneSidebar({
   zone,
-  user,
   organization,
 }: {
   zone: ZoneShellData;

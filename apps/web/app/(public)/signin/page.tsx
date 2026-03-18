@@ -19,7 +19,21 @@ type SigninPageProps = {
 export default async function SigninPage({ searchParams }: SigninPageProps) {
   const [{ returnTo }, session] = await Promise.all([
     searchParams,
-    getAuthenticatedSession(),
+    (async () => {
+      try {
+        return await getAuthenticatedSession();
+      } catch (error) {
+        if (
+          error
+          && typeof error === "object"
+          && "code" in error
+          && error.code === "AUTH_CONFIGURATION_ERROR"
+        ) {
+          return { token: null, user: null, role: null };
+        }
+        throw error;
+      }
+    })(),
   ]);
   const redirectTo = sanitizeInternalReturnTo(returnTo, "/ws");
 

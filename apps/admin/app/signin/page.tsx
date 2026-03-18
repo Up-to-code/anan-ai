@@ -18,7 +18,24 @@ type SigninPageProps = {
  * HOW:   Resolves the current session on the server, redirects confirmed admins, and preserves safe return targets.
  */
 export default async function SigninPage({ searchParams }: SigninPageProps) {
-  const [{ returnTo }, session] = await Promise.all([searchParams, getAuthenticatedSession()]);
+  const [{ returnTo }, session] = await Promise.all([
+    searchParams,
+    (async () => {
+      try {
+        return await getAuthenticatedSession();
+      } catch (error) {
+        if (
+          error
+          && typeof error === "object"
+          && "code" in error
+          && error.code === "AUTH_CONFIGURATION_ERROR"
+        ) {
+          return { token: null, user: null, role: null };
+        }
+        throw error;
+      }
+    })(),
+  ]);
   const redirectTo = sanitizeInternalReturnTo(returnTo, "/dashboard");
 
   if (session.token && session.role === "admin") {

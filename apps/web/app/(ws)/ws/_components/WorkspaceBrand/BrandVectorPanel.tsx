@@ -61,6 +61,7 @@ export default function BrandVectorPanel({
     >
       {imageMode === "photo" && imageSrc ? (
         <div className={cn("relative h-full overflow-hidden bg-slate-200", heightClass)}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={imageSrc} alt={imageAlt ?? title} className="h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-tr from-slate-950/40 via-transparent to-white/10" />
         </div>

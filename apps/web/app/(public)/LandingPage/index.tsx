@@ -26,6 +26,7 @@ export default function LandingPage() {
     <main>
       <Section bg="slate" className="relative overflow-hidden pt-40 text-center">
         <div className="pointer-events-none absolute inset-0 opacity-15">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/vectors/landing/hero_grid.svg" className="h-full w-full object-cover" alt="" />
         </div>
 
@@ -253,6 +254,7 @@ export default function LandingPage() {
 
       <Section bg="primary" className="relative overflow-hidden border-none py-48 text-center">
         <div className="pointer-events-none absolute inset-0 opacity-10">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/vectors/landing/anan_landing_cta_texture_v3.svg" className="h-full w-full object-cover" alt="" />
         </div>
         <div className="relative z-10 mx-auto max-w-4xl space-y-12">

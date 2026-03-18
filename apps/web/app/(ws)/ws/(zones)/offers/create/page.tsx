@@ -14,7 +14,6 @@ export default async function CreateOfferPage() {
   const workspace = await requireWorkspaceData("/ws/offers/create");
   const audience = workspace.audience;
   const ownerContext = workspace.ownerContext ?? null;
-  const offersZone = getWorkspaceOffersZone(audience, ownerContext);
   const properties = await getWorkspacePropertyZone(audience, ownerContext).listProperties({
     paginationOpts: { cursor: null, numItems: 100 },
   });

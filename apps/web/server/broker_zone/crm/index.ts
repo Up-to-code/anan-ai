@@ -5,6 +5,7 @@ import {
   createDealInputSchema,
   type DealSummary,
   propertyDealsInputSchema,
+  updateDealFollowUpInputSchema,
   updateDealNotesInputSchema,
   updateDealStageInputSchema,
 } from "@/server/contracts/deals";
@@ -125,6 +126,19 @@ export async function updateBrokerDealNotes(
   await requireOwnedDeal(parsed.data.dealId, dependencies);
   const { authUserId } = await requireBrokerOwner(dependencies);
   await dependencies.crmRepository.updateNotes({ ...parsed.data, lastUpdatedBy: authUserId });
+}
+
+export async function updateBrokerDealFollowUp(
+  input: unknown,
+  dependencies: BrokerCrmDependencies = defaultDependencies,
+): Promise<void> {
+  const parsed = updateDealFollowUpInputSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError({ code: "INVALID_ARGUMENT", message: parsed.error.issues[0]?.message ?? "Invalid follow-up payload", status: 400 });
+  }
+  await requireOwnedDeal(parsed.data.dealId, dependencies);
+  const { authUserId } = await requireBrokerOwner(dependencies);
+  await dependencies.crmRepository.updateFollowUp({ ...parsed.data, lastUpdatedBy: authUserId });
 }
 
 export async function addBrokerDealDocument(

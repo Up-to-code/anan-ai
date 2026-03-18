@@ -2,7 +2,10 @@
  * Voice pipeline – transcribe audio before agent.
  * Plan: processVoiceNote → transcription → ProcessedInput.text or VOICE_FALLBACK_MESSAGE.
  */
-import { VOICE_FALLBACK_MESSAGE_AR } from "../../rules/whatsapp.rules";
+import {
+  VOICE_FALLBACK_MESSAGE_AR,
+  VOICE_FALLBACK_MESSAGE_EN,
+} from "../../rules/whatsapp.rules";
 
 export type VoicePipelineInput = {
   mediaId: string;
@@ -12,7 +15,7 @@ export type VoicePipelineInput = {
 
 export type VoicePipelineResult =
   | { success: true; text: string }
-  | { success: false; fallbackMessage: string };
+  | { success: false; fallbackMessage: string; assistantContextText: string };
 
 /**
  * Placeholder: integrate with transcription service (AssemblyAI or similar).
@@ -23,9 +26,14 @@ export async function processVoicePipeline(
 ): Promise<VoicePipelineResult> {
   // TODO: Call transformVoiceToText(mediaId) when services/transcription exists.
   // For now, return fallback so structure is in place.
-  const fallback =
-    input.preferredLanguage === "en"
-      ? "Sorry, we couldn't transcribe your voice. Please type your message."
-      : VOICE_FALLBACK_MESSAGE_AR;
-  return { success: false, fallbackMessage: fallback };
+  const isEnglish = input.preferredLanguage === "en";
+  const fallback = isEnglish ? VOICE_FALLBACK_MESSAGE_EN : VOICE_FALLBACK_MESSAGE_AR;
+  const assistantContextText = isEnglish
+    ? "[System] The user sent a voice note but transcription is unavailable. Ask for a short typed summary and continue helping."
+    : "[System] أرسل المستخدم ملاحظة صوتية لكن خدمة التفريغ غير متاحة. اطلب منه كتابة ملخص قصير ثم واصل المساعدة.";
+  return {
+    success: false,
+    fallbackMessage: fallback,
+    assistantContextText,
+  };
 }

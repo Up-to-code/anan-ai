@@ -42,7 +42,7 @@ describe("ZoneSidebar", () => {
       />,
     );
 
-    expect(markup).toContain("العودة إلى لوحة العمل");
+    expect(markup).toContain("العودة للرئيسية");
     expect(markup).toContain("خط الأنابيب");
     expect(markup).toContain("العملاء");
     expect(markup).toContain("Alpha Dev");

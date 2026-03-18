@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DomainError } from "@/server/contracts/errors";
 
 const { acceptCurrentOrganizationInvite } = vi.hoisted(() => ({
   acceptCurrentOrganizationInvite: vi.fn(),

@@ -1,6 +1,18 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
+const { useRouter } = vi.hoisted(() => ({
+  useRouter: vi.fn(() => ({
+    refresh: vi.fn(),
+    replace: vi.fn(),
+    push: vi.fn(),
+  })),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter,
+}));
+
 vi.mock("../../_lib/workspaceData", () => ({
   requireWorkspaceData: vi.fn(async () => ({ audience: "broker" })),
 }));

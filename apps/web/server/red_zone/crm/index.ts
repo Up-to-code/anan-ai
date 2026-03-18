@@ -5,6 +5,7 @@ import {
   createDealInputSchema,
   type DealSummary,
   propertyDealsInputSchema,
+  updateDealFollowUpInputSchema,
   updateDealNotesInputSchema,
   updateDealStageInputSchema,
 } from "@/server/contracts/deals";
@@ -119,6 +120,19 @@ export async function updateRedDealNotes(
   await requireOwnedDeal(parsed.data.dealId, dependencies);
   const { authUserId } = await requireRedOwner(dependencies);
   await dependencies.crmRepository.updateNotes({ ...parsed.data, lastUpdatedBy: authUserId });
+}
+
+export async function updateRedDealFollowUp(
+  input: unknown,
+  dependencies: RedCrmDependencies = defaultDependencies,
+): Promise<void> {
+  const parsed = updateDealFollowUpInputSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError({ code: "INVALID_ARGUMENT", message: parsed.error.issues[0]?.message ?? "Invalid follow-up payload", status: 400 });
+  }
+  await requireOwnedDeal(parsed.data.dealId, dependencies);
+  const { authUserId } = await requireRedOwner(dependencies);
+  await dependencies.crmRepository.updateFollowUp({ ...parsed.data, lastUpdatedBy: authUserId });
 }
 
 export async function addRedDealDocument(

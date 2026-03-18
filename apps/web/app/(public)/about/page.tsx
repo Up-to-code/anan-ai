@@ -5,7 +5,6 @@ import { Target, Shield, Users, ArrowRight } from "lucide-react";
 import ButtonLink from "@/components/shared/ButtonLink";
 import FeatureCardGrid from "@/components/shared/FeatureCardGrid";
 import MetricGrid from "@/components/shared/MetricGrid";
-import PageHero from "@/components/shared/PageHero";
 import Section from "@/components/shared/Section";
 
 const containerVariants = {
@@ -44,6 +43,7 @@ export default function AboutPage() {
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
                     <div className="absolute -top-[10%] -left-[10%] h-[50%] w-[50%] bg-blue-50/50 blur-[120px]" />
                     <div className="absolute -bottom-[10%] -right-[10%] h-[50%] w-[50%] bg-blue-50/50 blur-[120px]" />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                         src="/vectors/landing/ecosystem_hub.svg" 
                         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] opacity-[0.03] animate-pulse" 

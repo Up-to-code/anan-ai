@@ -8,9 +8,18 @@ const { useRouter } = vi.hoisted(() => ({
     replace: vi.fn(),
   })),
 }));
+const { useAuthActions } = vi.hoisted(() => ({
+  useAuthActions: vi.fn(() => ({
+    signOut: vi.fn(),
+  })),
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter,
+}));
+
+vi.mock("@convex-dev/auth/react", () => ({
+  useAuthActions,
 }));
 
 describe("OrganizationOnboardingJourney", () => {
@@ -53,5 +62,24 @@ describe("OrganizationOnboardingJourney", () => {
 
     expect(markup).toContain("لا يمكن إنشاء جهة جديدة");
     expect(markup).toContain("تسجيل الخروج");
+  });
+
+  it("renders the first step when initial step is details but creation is disabled", () => {
+    const markup = renderToStaticMarkup(
+      <OrganizationOnboardingJourney
+        user={{ name: "Ahmed", email: "ahmed@example.com" }}
+        suggestedOrganizationType="broker"
+        audience="broker"
+        incomingInvites={[]}
+        canCreateOrganization={false}
+        initialStep={2}
+        brokerRuleset={null}
+        redRuleset={null}
+      />,
+    );
+
+    expect(markup).toContain("الدعوات والمسار");
+    expect(markup).not.toContain("مثال: مؤسسة عنان العقارية");
+    expect(markup).toContain("لا يمكن إنشاء جهة جديدة");
   });
 });

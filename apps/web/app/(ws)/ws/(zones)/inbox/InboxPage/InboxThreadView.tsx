@@ -64,7 +64,7 @@ export default function InboxThreadView({
   showBackButton?: boolean;
 }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [activeAction, setActiveAction] = useState<string | null>(null);
+  const [, setActiveAction] = useState<string | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

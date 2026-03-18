@@ -47,7 +47,7 @@ function buildOptimisticMessage(args: {
   recipientUserId: string;
 }): ConversationMessage {
   return {
-    id: `optimistic-${args.clientRequestId}` as any,
+    id: `optimistic-${args.clientRequestId}` as unknown as Id<"inboxMessages">,
     senderUserId: args.currentUserId,
     recipientUserId: args.recipientUserId,
     type: "text",
@@ -60,7 +60,14 @@ function buildOptimisticMessage(args: {
   };
 }
 
-function buildSummaryPreview(message: ConversationMessage) {
+function buildSummaryPreview<TMessageId extends string>(
+  message: {
+    id: TMessageId;
+    senderUserId: string;
+    body: string;
+    type: ConversationMessage["type"];
+    createdAt: number;
+  }) {
   return {
     id: message.id,
     senderUserId: message.senderUserId,
@@ -70,9 +77,9 @@ function buildSummaryPreview(message: ConversationMessage) {
   };
 }
 
-function upsertConversationSummary(
-  conversations: ConversationSummary[],
-  nextConversation: ConversationSummary,
+function upsertConversationSummary<T extends { id: string; updatedAt: number }>(
+  conversations: T[],
+  nextConversation: T,
 ) {
   const withoutCurrent = conversations.filter((item) => item.id !== nextConversation.id);
   return [nextConversation, ...withoutCurrent].sort((a, b) => b.updatedAt - a.updatedAt);
@@ -136,21 +143,22 @@ export function useRealtimeInbox({
           currentUserId,
           recipientUserId: conversation.otherUser.id,
         });
-        const updatedAt = optimisticMessage.createdAt;
-        const messageSummary = buildSummaryPreview(optimisticMessage) as any;
+        const optimisticStoreMessage = optimisticMessage as unknown as (typeof conversation.messages)[number];
+        const updatedAt = optimisticStoreMessage.createdAt;
+        const messageSummary = buildSummaryPreview(optimisticStoreMessage);
         const optimisticConversation = {
           ...conversation,
           updatedAt,
           unreadCount: 0,
           lastMessage: messageSummary,
-          lastMessagePreview: optimisticMessage.body,
-          messages: [...(conversation.messages || []), optimisticMessage] as any,
-        } as any;
+          lastMessagePreview: optimisticStoreMessage.body,
+          messages: [...(conversation.messages || []), optimisticStoreMessage],
+        };
 
         localStore.setQuery(
           inboxApi.getConversation,
           { conversationId: args.conversationId },
-          optimisticConversation as any,
+          optimisticConversation,
         );
 
         const conversations = localStore.getQuery(inboxApi.listConversations, {});
@@ -158,20 +166,20 @@ export function useRealtimeInbox({
           return;
         }
 
-        const summary: ConversationSummary = {
-          id: optimisticConversation.id as any,
+        const summary = {
+          id: optimisticConversation.id,
           directKey: optimisticConversation.directKey || "",
-          otherUser: optimisticConversation.otherUser as any,
+          otherUser: optimisticConversation.otherUser,
           unreadCount: 0,
           updatedAt,
-          lastMessage: buildSummaryPreview(optimisticMessage) as any,
-          lastMessagePreview: optimisticMessage.body,
-        };
+          lastMessage: buildSummaryPreview(optimisticStoreMessage),
+          lastMessagePreview: optimisticStoreMessage.body,
+        } as (typeof conversations)[number];
 
         localStore.setQuery(
           inboxApi.listConversations,
           {},
-          upsertConversationSummary(conversations as any, summary as any) as any,
+          upsertConversationSummary(conversations, summary),
         );
       }),
     [baseSendConversationMessage, currentUserId],
@@ -215,7 +223,10 @@ export function useRealtimeInbox({
 
   useEffect(() => {
     if (!hasConversationRoute && conversation && !activeConversationId) {
-      setActiveConversationId(conversation.id as any);
+      const conversationId = conversation.id ? String(conversation.id) : null;
+      if (conversationId) {
+        setActiveConversationId(conversationId);
+      }
     }
   }, [activeConversationId, conversation, hasConversationRoute]);
 
@@ -250,7 +261,9 @@ export function useRealtimeInbox({
         return;
       }
 
-      void markConversationRead({ conversationId: activeConversationId as any });
+      void markConversationRead({
+        conversationId: activeConversationId as Id<"inboxConversations">,
+      });
     };
 
     markActiveConversationRead();
@@ -268,7 +281,7 @@ export function useRealtimeInbox({
   );
 
   const handleSelectConversation = (conversationId: string) => {
-    setActiveConversationId(conversationId as any);
+    setActiveConversationId(conversationId);
     router.push(`/ws/inbox/${conversationId}`);
   };
 
@@ -276,7 +289,7 @@ export function useRealtimeInbox({
     setSendError(null);
     const conversationId = await resolveConversation({ targetUserId });
     setSearch("");
-    setActiveConversationId(conversationId as any);
+    setActiveConversationId(conversationId);
     router.push(`/ws/inbox/${conversationId}`);
   };
 
@@ -294,7 +307,7 @@ export function useRealtimeInbox({
     try {
       setIsSending(true);
       await sendConversationMessage({
-        conversationId: activeConversationId as any,
+        conversationId: activeConversationId as Id<"inboxConversations">,
         body,
         clientRequestId,
       });
@@ -306,15 +319,19 @@ export function useRealtimeInbox({
     }
   };
 
+  const normalizedConversation = conversation as unknown as ConversationDetail | null;
+  const normalizedConversations = conversations as unknown as ConversationSummary[];
+  const normalizedSearchResults = filteredSearchResults as unknown as UserConversationTarget[];
+
   return {
     activeConversationId,
-    conversation: conversation as any,
-    conversations: conversations as any,
+    conversation: normalizedConversation,
+    conversations: normalizedConversations,
     isLiveConversationLoading: Boolean(activeConversationId) && liveConversation === undefined && !conversation,
     isSending,
     isSearching: deferredSearch.length > 0 && liveSearchResults === undefined,
     search,
-    searchResults: filteredSearchResults as any,
+    searchResults: normalizedSearchResults,
     sendError,
     setSearch,
     handleSelectConversation,

@@ -96,6 +96,7 @@ export default function ProjectsWorkspace({
             >
               <div className="h-52 overflow-hidden">
                 <div className="h-full transition-transform duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-105">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={project.image} alt={project.title} className="h-full w-full object-cover" />
                 </div>
               </div>

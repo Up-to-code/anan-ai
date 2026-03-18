@@ -13,7 +13,6 @@ export default async function AddClientPage() {
   const workspace = await requireWorkspaceData("/ws/crm/clients/add");
   const audience = workspace.audience;
   const ownerContext = workspace.ownerContext ?? null;
-  const crmZone = getWorkspaceCrmZone(audience, ownerContext);
   const properties = await getWorkspacePropertyZone(audience, ownerContext).listProperties({
     paginationOpts: { cursor: null, numItems: 100 },
   });
@@ -26,6 +25,8 @@ export default async function AddClientPage() {
     const budget = Number(String(formData.get("budget") ?? "").replace(/[^\d.]/g, "")) || undefined;
     const preference = String(formData.get("preference") ?? "").trim();
     const propertyId = String(formData.get("propertyId") ?? "").trim() || undefined;
+    const nextFollowUpRaw = String(formData.get("nextFollowUpAt") ?? "").trim();
+    const nextFollowUpAt = nextFollowUpRaw ? Date.parse(nextFollowUpRaw) : undefined;
 
     await getWorkspaceCrmZone(audience, ownerContext).createDeal({
       title: name,
@@ -34,6 +35,7 @@ export default async function AddClientPage() {
       value: budget,
       description: preference || undefined,
       propertyId,
+      nextFollowUpAt: typeof nextFollowUpAt === "number" && !Number.isNaN(nextFollowUpAt) ? nextFollowUpAt : undefined,
       stage: "new",
     });
 
@@ -61,6 +63,14 @@ export default async function AddClientPage() {
           <div>
             <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">الوصف / الاهتمام</label>
             <textarea name="preference" rows={4} className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700" />
+          </div>
+          <div>
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">موعد المتابعة</label>
+            <input
+              type="datetime-local"
+              name="nextFollowUpAt"
+              className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900"
+            />
           </div>
           <div>
             <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">العقار المرتبط</label>

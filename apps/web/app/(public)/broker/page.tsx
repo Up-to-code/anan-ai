@@ -138,6 +138,7 @@ export default function BrokerPage() {
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
                 {/* Gateway SVG background */}
                 <div className="absolute -right-20 bottom-0 opacity-10 pointer-events-none">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/vectors/landing/portal_gateway.svg" className="w-[400px] h-[400px]" alt="" />
                 </div>
 

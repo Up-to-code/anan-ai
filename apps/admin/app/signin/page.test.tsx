@@ -80,4 +80,20 @@ describe("/signin page", () => {
     expect(html).toContain("data-testid=\"logout-button\"");
     expect(html).toContain("الحساب الحالي مسجل");
   });
+
+  it("renders the google sign-in button when session lookup fails with auth configuration mismatch", async () => {
+    getAuthenticatedSession.mockRejectedValue({
+      code: "AUTH_CONFIGURATION_ERROR",
+      message: "issuer mismatch",
+      status: 503,
+    });
+
+    const element = await SigninPage({
+      searchParams: Promise.resolve({ returnTo: "/dashboard" }),
+    });
+    const html = renderToStaticMarkup(element);
+
+    expect(html).toContain("data-testid=\"google-signin\"");
+    expect(html).not.toContain("data-testid=\"logout-button\"");
+  });
 });

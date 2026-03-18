@@ -65,7 +65,7 @@ describe("Sidebar", () => {
     expect(markup).not.toContain("Broker Org");
   });
 
-  it("falls back to overview and AI when the role has no business zones", () => {
+  it("falls back to overview/settings and AI when the role has no business zones", () => {
     const markup = renderToStaticMarkup(
       <Sidebar
         user={{ name: "Ahmed", email: "ahmed@example.com" }}
@@ -75,7 +75,7 @@ describe("Sidebar", () => {
     );
 
     expect(markup).toContain("/ws");
-    expect(markup).not.toContain("/ws/settings");
+    expect(markup).toContain("/ws/settings");
     expect(markup).not.toContain("/ws/projects");
     expect(markup).not.toContain("/ws/offers");
     expect(markup).not.toContain("/ws/crm");

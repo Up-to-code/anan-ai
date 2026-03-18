@@ -30,6 +30,7 @@ const crmTables = {
         title: v.string(),
         description: v.optional(v.string()),
         value: v.optional(v.number()),
+        nextFollowUpAt: v.optional(v.number()),
         stage: v.union(
             v.literal("new"),        // فرصة جديدة
             v.literal("contacted"),  // تواصل أولي

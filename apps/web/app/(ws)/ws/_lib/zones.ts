@@ -5,7 +5,6 @@ import {
   LayoutGrid,
   MessageSquareQuote,
   Settings2,
-  Sparkles,
   Mail,
 } from "lucide-react";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";

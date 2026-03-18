@@ -28,6 +28,8 @@ import type * as _core_schema_users from "../_core/schema/users.js";
 import type * as _core_schema_workspace from "../_core/schema/workspace.js";
 import type * as _core_security_accessPolicy from "../_core/security/accessPolicy.js";
 import type * as _core_security_authConfig from "../_core/security/authConfig.js";
+import type * as _core_security_authIssuer from "../_core/security/authIssuer.js";
+import type * as _core_security_authProviderErrors from "../_core/security/authProviderErrors.js";
 import type * as _core_security_authRedirects from "../_core/security/authRedirects.js";
 import type * as _core_security_channelAuth from "../_core/security/channelAuth.js";
 import type * as _core_security_delegatedAccess from "../_core/security/delegatedAccess.js";
@@ -142,7 +144,6 @@ import type * as broker_zone_repositories_overviewRepository from "../broker_zon
 import type * as broker_zone_repositories_propertiesRepository from "../broker_zone/repositories/propertiesRepository.js";
 import type * as cascading from "../cascading.js";
 import type * as http from "../http.js";
-import type * as properties from "../properties.js";
 import type * as public_zone_contact from "../public_zone/contact.js";
 import type * as red_zone_overview from "../red_zone/overview.js";
 import type * as red_zone_properties from "../red_zone/properties.js";
@@ -257,6 +258,8 @@ declare const fullApi: ApiFromModules<{
   "_core/schema/workspace": typeof _core_schema_workspace;
   "_core/security/accessPolicy": typeof _core_security_accessPolicy;
   "_core/security/authConfig": typeof _core_security_authConfig;
+  "_core/security/authIssuer": typeof _core_security_authIssuer;
+  "_core/security/authProviderErrors": typeof _core_security_authProviderErrors;
   "_core/security/authRedirects": typeof _core_security_authRedirects;
   "_core/security/channelAuth": typeof _core_security_channelAuth;
   "_core/security/delegatedAccess": typeof _core_security_delegatedAccess;
@@ -371,7 +374,6 @@ declare const fullApi: ApiFromModules<{
   "broker_zone/repositories/propertiesRepository": typeof broker_zone_repositories_propertiesRepository;
   cascading: typeof cascading;
   http: typeof http;
-  properties: typeof properties;
   "public_zone/contact": typeof public_zone_contact;
   "red_zone/overview": typeof red_zone_overview;
   "red_zone/properties": typeof red_zone_properties;

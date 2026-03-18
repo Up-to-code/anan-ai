@@ -5,6 +5,7 @@ import type {
   CreateDealInput,
   DealDetail,
   DealSummary,
+  UpdateDealFollowUpInput,
   UpdateDealNotesInput,
   UpdateDealStageInput,
 } from "@/server/contracts/deals";
@@ -16,6 +17,7 @@ type CrmApiRefs = {
   getDealById: unknown;
   createDeal: unknown;
   updateDealStage: unknown;
+  updateDealFollowUp: unknown;
   updateDealNotes: unknown;
   addDealDocument: unknown;
 };
@@ -36,6 +38,7 @@ export type CrmRepository = {
     input: CreateDealInput;
   }): Promise<string>;
   updateStage(args: { lastUpdatedBy: string } & UpdateDealStageInput): Promise<void>;
+  updateFollowUp(args: { lastUpdatedBy: string } & UpdateDealFollowUpInput): Promise<void>;
   updateNotes(args: { lastUpdatedBy: string } & UpdateDealNotesInput): Promise<void>;
   addDocument(args: { lastUpdatedBy: string } & AddDealDocumentInput): Promise<void>;
 };
@@ -97,6 +100,14 @@ export const convexCrmRepository: CrmRepository = {
     await fetchMutation(crmApi.updateDealStage as never, {
       dealId: dealId as never,
       stage,
+      lastUpdatedBy,
+    } as never);
+  },
+
+  async updateFollowUp({ lastUpdatedBy, dealId, nextFollowUpAt }) {
+    await fetchMutation(crmApi.updateDealFollowUp as never, {
+      dealId: dealId as never,
+      nextFollowUpAt,
       lastUpdatedBy,
     } as never);
   },

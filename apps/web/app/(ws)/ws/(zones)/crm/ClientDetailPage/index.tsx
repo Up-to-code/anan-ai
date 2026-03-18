@@ -18,6 +18,34 @@ const STAGE_LABELS: Record<string, string> = {
   lost: "خسارة",
 };
 
+function toDateTimeLocalValue(timestamp?: number): string {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function formatFollowUpLabel(timestamp?: number): string {
+  if (!timestamp) return "لا يوجد موعد متابعة";
+  return new Intl.DateTimeFormat("ar-SA", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(timestamp));
+}
+
+function getFollowUpStatus(
+  nextFollowUpAt: number | undefined,
+  nowTimestamp: number,
+): "none" | "overdue" | "scheduled" {
+  if (!nextFollowUpAt) return "none";
+  return nextFollowUpAt < nowTimestamp ? "overdue" : "scheduled";
+}
+
 /**
  * WHY:   CRM client detail should make the relationship picture immediately visible.
  * WHAT:  Renders the client stage plus linked project and broker visuals in one screen.
@@ -25,10 +53,15 @@ const STAGE_LABELS: Record<string, string> = {
  */
 export default function ClientDetailPage({
   client,
+  nowTimestamp,
+  onFollowUpSubmit,
 }: {
   client: CrmClientRecord;
+  nowTimestamp: number;
+  onFollowUpSubmit?: (formData: FormData) => Promise<void>;
 }) {
   const stageLabel = STAGE_LABELS[client.stage] ?? client.stage;
+  const followUpStatus = getFollowUpStatus(client.nextFollowUpAt, nowTimestamp);
 
   return (
     <div className="flex min-h-full flex-col">
@@ -122,6 +155,41 @@ export default function ClientDetailPage({
               <div className="mt-3 text-xl font-black text-slate-950">{client.budgetLabel}</div>
             </section>
           ) : null}
+
+          {/* Follow-up panel */}
+          <section className="border-2 border-slate-100 bg-white p-5">
+            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-700">
+              المتابعة القادمة
+            </div>
+            <div className="mt-3 text-sm font-black text-slate-900">{formatFollowUpLabel(client.nextFollowUpAt)}</div>
+            <div
+              className={`mt-2 inline-flex border px-2 py-1 text-[10px] font-black tracking-[0.18em] ${
+                followUpStatus === "overdue"
+                  ? "border-rose-200 bg-rose-50 text-rose-700"
+                  : followUpStatus === "scheduled"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : "border-slate-200 bg-slate-50 text-slate-500"
+              }`}
+            >
+              {followUpStatus === "overdue" ? "متابعة متأخرة" : followUpStatus === "scheduled" ? "موعد مجدول" : "بدون متابعة"}
+            </div>
+            <form action={onFollowUpSubmit} className="mt-4 space-y-3">
+              <input
+                type="datetime-local"
+                name="nextFollowUpAt"
+                required
+                defaultValue={toDateTimeLocalValue(client.nextFollowUpAt)}
+                className="w-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
+              />
+              <button
+                type="submit"
+                disabled={!onFollowUpSubmit}
+                className="w-full border border-slate-300 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-700 transition hover:border-blue-600 hover:text-blue-700 disabled:opacity-60"
+              >
+                حفظ المتابعة
+              </button>
+            </form>
+          </section>
 
           {/* Broker panel */}
           <section className="border-2 border-slate-100 bg-white p-5">

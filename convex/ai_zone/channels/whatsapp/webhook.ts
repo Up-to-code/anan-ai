@@ -61,10 +61,10 @@ export const handleWhatsAppWebhookPost = httpAction(async (ctx, request) => {
         userId,
       });
       if (!voiceResult.success) {
-        await waService.sendText(userId, voiceResult.fallbackMessage, event.messageId);
-        continue;
+        textToProcess = `${voiceResult.assistantContextText}\n${voiceResult.fallbackMessage}`;
+      } else {
+        textToProcess = voiceResult.text;
       }
-      textToProcess = voiceResult.text;
     }
 
     const processed = processTextPipeline({

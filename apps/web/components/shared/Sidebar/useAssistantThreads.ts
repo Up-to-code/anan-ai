@@ -60,9 +60,7 @@ export function useAssistantThreads({
     // Only perform an initial refresh if the server snapshot is empty (avoid extra work on every mount).
     if (serverThreads.length === 0) {
       const run = () => void refresh();
-      const requestIdleCallback = (globalThis as any).requestIdleCallback as
-        | ((cb: () => void, options?: { timeout?: number }) => number)
-        | undefined;
+      const requestIdleCallback = window.requestIdleCallback;
 
       if (requestIdleCallback) {
         requestIdleCallback(run, { timeout: 1200 });

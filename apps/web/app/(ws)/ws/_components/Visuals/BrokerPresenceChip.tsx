@@ -56,6 +56,7 @@ export default function BrokerPresenceChip({
         )}
       >
         <div className="relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={broker.avatarImage}
             alt={broker.name}
@@ -87,6 +88,7 @@ export default function BrokerPresenceChip({
         )}
       >
         <div className="flex items-start gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={broker.avatarImage}
             alt={broker.name}

@@ -291,7 +291,7 @@ describe("admin API loaders and actions", () => {
   it("loads orders and forwards updates", async () => {
     convexAdminOrdersRepository.list.mockResolvedValue([{ id: "order-1" }]);
 
-    const result = await getAdminOrdersPageData("new_lead");
+    const result = await getAdminOrdersPageData({ status: "new_lead" });
     await updateAdminOrder({ id: "order-1", notes: "Assigned" });
 
     expect(result.orders).toEqual([{ id: "order-1" }]);

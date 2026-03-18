@@ -80,6 +80,6 @@ describe("/ws/market layout", () => {
     expect(markup).toContain("الأحياء");
     expect(markup).toContain("الفرص");
     expect(markup).toContain("البحث والكلمات");
-    expect(markup).not.toContain("نظرة عامة");
+    expect(markup).toContain("نظرة عامة");
   });
 });

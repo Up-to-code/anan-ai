@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import ClientDetailPage from "../../ClientDetailPage";
 import { requireWorkspaceData } from "../../../../_lib/workspaceData";
 import { getWorkspaceCrmZone } from "@/server/ws/zones";
@@ -7,6 +7,10 @@ import { mapDealToCrmClientRecord } from "../../crmViewModel";
 type WorkspaceCrmClientDetailRouteProps = {
   params: Promise<{ clientId: string }>;
 };
+
+function getCurrentTimestamp() {
+  return Number(new Date());
+}
 
 /**
  * WHY:   CRM client rows should open into a dedicated client detail page inside the same zone shell.
@@ -18,7 +22,10 @@ export default async function WorkspaceCrmClientDetailRoute({
 }: WorkspaceCrmClientDetailRouteProps) {
   const { clientId } = await params;
   const workspace = await requireWorkspaceData(`/ws/crm/clients/${clientId}`);
-  const deals = await getWorkspaceCrmZone(workspace.audience, workspace.ownerContext).listDeals();
+  const audience = workspace.audience;
+  const ownerContext = workspace.ownerContext ?? null;
+  const crmZone = getWorkspaceCrmZone(audience, ownerContext);
+  const deals = await crmZone.listDeals();
   const deal = deals.find((entry) => entry.id === clientId) ?? null;
   const client = deal ? mapDealToCrmClientRecord(deal) : null;
 
@@ -26,5 +33,20 @@ export default async function WorkspaceCrmClientDetailRoute({
     notFound();
   }
 
-  return <ClientDetailPage client={client} />;
+  async function updateFollowUp(formData: FormData) {
+    "use server";
+
+    const nextFollowUpRaw = String(formData.get("nextFollowUpAt") ?? "").trim();
+    const nextFollowUpAt = Date.parse(nextFollowUpRaw);
+    if (!nextFollowUpRaw || Number.isNaN(nextFollowUpAt)) return;
+
+    await getWorkspaceCrmZone(audience, ownerContext).updateDealFollowUp({
+      dealId: clientId,
+      nextFollowUpAt,
+    });
+
+    redirect(`/ws/crm/clients/${clientId}`);
+  }
+
+  return <ClientDetailPage client={client} nowTimestamp={getCurrentTimestamp()} onFollowUpSubmit={updateFollowUp} />;
 }

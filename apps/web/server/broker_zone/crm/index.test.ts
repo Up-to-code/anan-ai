@@ -9,6 +9,7 @@ import {
   addBrokerDealDocument,
   createBrokerDeal,
   listBrokerDealsByProperty,
+  updateBrokerDealFollowUp,
   updateBrokerDealStage,
 } from "./index";
 
@@ -74,6 +75,7 @@ describe("broker crm server functions", () => {
     const crmRepository = {
       getById: vi.fn(async () => ({ id: "deal-1", brokerId: "broker-1", stage: "new", title: "Deal" })),
       updateStage: vi.fn(async () => undefined),
+      updateFollowUp: vi.fn(async () => undefined),
       addDocument: vi.fn(async () => undefined),
     };
 
@@ -85,7 +87,12 @@ describe("broker crm server functions", () => {
       { dealId: "deal-1", document: { key: "file-1", url: "https://files.test/file-1", name: "file-1.pdf" } },
       { requireBroker: requireBroker(), crmRepository: crmRepository as never, propertiesRepository: {} as never },
     );
+    await updateBrokerDealFollowUp(
+      { dealId: "deal-1", nextFollowUpAt: Date.now() + 3600000 },
+      { requireBroker: requireBroker(), crmRepository: crmRepository as never, propertiesRepository: {} as never },
+    );
     expect(crmRepository.updateStage).toHaveBeenCalled();
+    expect(crmRepository.updateFollowUp).toHaveBeenCalled();
     expect(crmRepository.addDocument).toHaveBeenCalled();
   });
 });

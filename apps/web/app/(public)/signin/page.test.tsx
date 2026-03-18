@@ -84,4 +84,20 @@ describe("/signin page", () => {
     expect(markup).toContain("دخول النظام المؤسسي");
     expect(markup).toContain("Google:/ws");
   });
+
+  it("renders the sign-in screen when session lookup fails with auth configuration mismatch", async () => {
+    getAuthenticatedSession.mockRejectedValue({
+      code: "AUTH_CONFIGURATION_ERROR",
+      message: "issuer mismatch",
+      status: 503,
+    });
+
+    const element = await SigninPage({
+      searchParams: Promise.resolve({ returnTo: "/ws" }),
+    });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("دخول النظام المؤسسي");
+    expect(markup).toContain("Google:/ws");
+  });
 });

@@ -3,12 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import BrandEmptyState from "../../../_components/WorkspaceBrand/BrandEmptyState";
 import FilterChipBar from "../../../_components/Visuals/FilterChipBar";
-import PersonCard, {
-  brokerPresenceToPersonCard,
-} from "../../../_components/Visuals/PersonCard";
-import PropertyCard from "../../../_components/Visuals/PropertyCard";
 import type { CrmClientRecord } from "../crmTypes";
 import ZonePageIntro from "../../../_components/ZoneShell/ZonePageIntro";
 
