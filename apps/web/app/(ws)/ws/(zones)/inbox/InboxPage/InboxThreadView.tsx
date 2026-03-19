@@ -67,39 +67,43 @@ export default function InboxThreadView({
   const [, setActiveAction] = useState<string | null>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conversation.messages]);
+    const timerId = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 50);
+
+    return () => clearTimeout(timerId);
+  }, [conversation.messages.length]);
 
   const businessActions = canUseBusinessActions
     ? [
-        {
-          key: "file",
-          icon: FileUp,
-          label: "ملف",
-          onClick: () => setActiveAction((prev) => (prev === "file" ? null : "file")),
-        },
-        {
-          key: "project",
-          icon: Building2,
-          label: "مشروع",
-          disabled: projectOptions.length === 0,
-          onClick: () => setActiveAction((prev) => (prev === "project" ? null : "project")),
-        },
-        {
-          key: "deal",
-          icon: Handshake,
-          label: "صفقة",
-          disabled: dealOptions.length === 0,
-          onClick: () => setActiveAction((prev) => (prev === "deal" ? null : "deal")),
-        },
-        {
-          key: "offer",
-          icon: Tag,
-          label: "عرض خاص",
-          disabled: projectOptions.length === 0,
-          onClick: () => setActiveAction((prev) => (prev === "offer" ? null : "offer")),
-        },
-      ]
+      {
+        key: "file",
+        icon: FileUp,
+        label: "ملف",
+        onClick: () => setActiveAction((prev) => (prev === "file" ? null : "file")),
+      },
+      {
+        key: "project",
+        icon: Building2,
+        label: "مشروع",
+        disabled: projectOptions.length === 0,
+        onClick: () => setActiveAction((prev) => (prev === "project" ? null : "project")),
+      },
+      {
+        key: "deal",
+        icon: Handshake,
+        label: "صفقة",
+        disabled: dealOptions.length === 0,
+        onClick: () => setActiveAction((prev) => (prev === "deal" ? null : "deal")),
+      },
+      {
+        key: "offer",
+        icon: Tag,
+        label: "عرض خاص",
+        disabled: projectOptions.length === 0,
+        onClick: () => setActiveAction((prev) => (prev === "offer" ? null : "offer")),
+      },
+    ]
     : [];
 
   return (

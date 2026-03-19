@@ -467,7 +467,11 @@ export const getCurrentOrganization = query({
         message.includes("Broker organization link required") ||
         message.includes("Developer organization link required")
       ) {
-        throw new ConvexError({ code: "FORBIDDEN", message: "Organization membership required" });
+        return {
+          organization: null,
+          membership: null,
+          accessError: true as const,
+        };
       }
       throw error;
     }

@@ -97,4 +97,63 @@ describe("Sidebar", () => {
     expect(markup).toContain("mobile-sidebar-title");
     expect(markup).toContain("/ws/projects");
   });
+
+  it("keeps the new-thread entry as a URL-only draft action", () => {
+    const markup = renderToStaticMarkup(
+      <Sidebar
+        user={{ name: "Ahmed", email: "ahmed@example.com" }}
+        organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
+        visibleZoneKeys={["overview", "settings"]}
+        allAssistantThreads={[
+          { id: "thread-1", title: "A", updatedAt: 10 },
+        ]}
+      />,
+    );
+
+    expect(markup).toContain("/ws?newThread=1");
+    expect(markup).toContain("h-4 w-4");
+  });
+
+  it("highlights an assistant thread only when the URL threadId is valid", () => {
+    usePathname.mockReturnValue("/ws");
+    useSearchParams.mockReturnValue(new URLSearchParams("threadId=thread-2"));
+
+    const markup = renderToStaticMarkup(
+      <Sidebar
+        user={{ name: "Ahmed", email: "ahmed@example.com" }}
+        organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
+        visibleZoneKeys={["overview", "settings"]}
+        recentAssistantThreads={[
+          { id: "thread-1", title: "A", updatedAt: 11 },
+          { id: "thread-2", title: "B", updatedAt: 12 },
+        ]}
+        allAssistantThreads={[
+          { id: "thread-1", title: "A", updatedAt: 11 },
+          { id: "thread-2", title: "B", updatedAt: 12 },
+        ]}
+      />,
+    );
+
+    expect(markup).toContain("/ws?threadId=thread-2");
+    expect(markup).toContain("border-white/10 bg-white/5");
+  });
+
+  it("does not highlight any thread when threadId is missing or invalid", () => {
+    usePathname.mockReturnValue("/ws");
+    useSearchParams.mockReturnValue(new URLSearchParams("threadId=missing"));
+
+    const markup = renderToStaticMarkup(
+      <Sidebar
+        user={{ name: "Ahmed", email: "ahmed@example.com" }}
+        organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
+        visibleZoneKeys={["overview", "settings"]}
+        allAssistantThreads={[
+          { id: "thread-1", title: "A", updatedAt: 11 },
+          { id: "thread-2", title: "B", updatedAt: 12 },
+        ]}
+      />,
+    );
+
+    expect(markup).not.toContain("border-white/10 bg-white/5");
+  });
 });

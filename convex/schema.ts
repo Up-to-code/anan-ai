@@ -13,6 +13,7 @@ import aiTables from "./_core/schema/ai";
 import workspaceTables from "./_core/schema/workspace";
 import adminTables from "./_core/schema/admin";
 import contactTables from "./_core/schema/contact";
+import formsTables from "./_core/schema/forms";
 
 /**
  * anan-ai schema
@@ -36,4 +37,5 @@ export default defineSchema({
   ...workspaceTables,
   ...adminTables,
   ...contactTables,
+  ...formsTables,
 });

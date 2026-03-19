@@ -48,12 +48,18 @@ describe("uploadthing route", () => {
     expect(uploadRouter.verificationDocuments).toBeTruthy();
   });
 
-  it("fails fast when UploadThing token is missing", async () => {
+  it("returns a stable 503 payload when UploadThing token is missing", async () => {
     const previous = process.env.UPLOADTHING_TOKEN;
     delete process.env.UPLOADTHING_TOKEN;
     vi.resetModules();
     try {
-      await expect(import("./route")).rejects.toThrow("UPLOADTHING_TOKEN");
+      const route = await import("./route");
+      const response = await route.GET(new Request("http://localhost/api/uploadthing"), {});
+      expect(response.status).toBe(503);
+      await expect(response.json()).resolves.toMatchObject({
+        code: "UPLOADTHING_NOT_CONFIGURED",
+        status: 503,
+      });
     } finally {
       if (previous === undefined) {
         delete process.env.UPLOADTHING_TOKEN;

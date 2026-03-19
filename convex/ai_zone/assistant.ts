@@ -23,7 +23,7 @@ export const getThread = query({
   args: {},
   handler: async (ctx) => {
     const owner = await resolveAssistantOwner(ctx);
-    const thread = await getLatestThread(ctx, owner.userId);
+    const thread = await getLatestThread(ctx, owner);
     return { thread, owner };
   },
 });
@@ -33,7 +33,7 @@ export const getThreadSafe = query({
   handler: async (ctx) => {
     const owner = await resolveAssistantOwnerSafe(ctx);
     if (!owner) return { thread: null, owner: null };
-    const thread = await getLatestThread(ctx, owner.userId);
+    const thread = await getLatestThread(ctx, owner);
     return { thread, owner };
   },
 });
@@ -65,7 +65,7 @@ export const listThreads = query({
   },
   handler: async (ctx, args) => {
     const owner = await resolveAssistantOwner(ctx);
-    return listRecentThreads(ctx, owner.userId, "default", args.limit ?? 6);
+    return listRecentThreads(ctx, owner, "default", args.limit ?? 6);
   },
 });
 
@@ -75,6 +75,9 @@ export const sendMessage = action({
   args: {
     message: v.string(),
     threadId: v.optional(v.id("assistantThreads")),
+    inputMode: v.optional(v.union(v.literal("text"), v.literal("voice"))),
+    regenerate: v.optional(v.boolean()),
+    regenerateMessageId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     return handleAssistantMessage(ctx, args);
@@ -85,6 +88,9 @@ export const streamMessage = action({
   args: {
     message: v.string(),
     threadId: v.optional(v.id("assistantThreads")),
+    inputMode: v.optional(v.union(v.literal("text"), v.literal("voice"))),
+    regenerate: v.optional(v.boolean()),
+    regenerateMessageId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // For now uses the same orchestration; frontend handles token-by-token playback.
@@ -102,6 +108,8 @@ export const _saveConversationStep = internalMutation({
     ownerBrokerId: v.optional(v.id("brokers")),
     ownerREDId: v.optional(v.id("RED")),
     userMessage: v.string(),
+    userMessageMetadata: v.optional(v.any()),
+    persistUserMessage: v.optional(v.boolean()),
     assistantMessage: v.string(),
     assistantMetadata: v.optional(v.any()),
     mode: v.union(v.literal("qa"), v.literal("action")),

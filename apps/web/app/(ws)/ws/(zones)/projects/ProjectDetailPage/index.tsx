@@ -3,6 +3,12 @@ import PropertyCard from "../../../_components/Visuals/PropertyCard";
 import type { WorkspaceProject } from "../projectTypes";
 import ZonePageIntro from "../../../_components/ZoneShell/ZonePageIntro";
 
+const publicationLabels: Record<WorkspaceProject["publicationState"], string> = {
+  draft: "مسودة",
+  published: "منشور",
+  archived: "مؤرشف",
+};
+
 /**
  * WHY:   Project detail should reflect the real persisted property without promising unsupported local broker controls.
  * WHAT:  Renders the project card, units, publication status, and links into the real collaboration surfaces.
@@ -66,11 +72,7 @@ export default function ProjectDetailPage({ project }: { project: WorkspaceProje
           <section className="border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-6">
             <div className="text-xs font-black tracking-[0.22em] text-blue-700">حالة النشر</div>
             <div className="mt-2 text-2xl font-black text-slate-950">
-              {project.publicationState === "published"
-                ? "منشور"
-                : project.publicationState === "draft"
-                  ? "مسودة"
-                  : "مؤرشف"}
+              {publicationLabels[project.publicationState]}
             </div>
           </section>
 
@@ -111,3 +113,4 @@ export default function ProjectDetailPage({ project }: { project: WorkspaceProje
     </div>
   );
 }
+

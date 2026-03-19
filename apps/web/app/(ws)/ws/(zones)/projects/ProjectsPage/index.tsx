@@ -1,20 +1,22 @@
 import type { WorkspaceProject } from "../projectTypes";
 import ProjectsWorkspace from "./ProjectsWorkspace";
 
+type ProjectsPageProps = {
+  projects: WorkspaceProject[];
+  onDeleteProject?: (projectId: string) => Promise<void>;
+  onPublishProject?: (projectId: string) => Promise<void>;
+};
+
 /**
- * WHY:   The projects route needs one thin page-level orchestrator that assembles the workspace view from local parts.
- * WHAT:  Renders the developer projects header, summary strip, empty state, and inventory list.
- * HOW:   Computes the publication summary from the loaded properties and keeps all route-specific UI inside this folder.
+ * WHY:   Keep the route file focused on data loading while the page folder owns UI composition.
+ * WHAT:  Bridges the route-level props into the client workspace component.
+ * HOW:   Passes server-loaded projects and supported server actions to `ProjectsWorkspace`.
  */
 export default function ProjectsPage({
   projects,
   onDeleteProject,
   onPublishProject,
-}: {
-  projects: WorkspaceProject[];
-  onDeleteProject?: (projectId: string) => Promise<void>;
-  onPublishProject?: (projectId: string) => Promise<void>;
-}) {
+}: ProjectsPageProps) {
   return (
     <ProjectsWorkspace
       initialProjects={projects}

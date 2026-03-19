@@ -16,12 +16,14 @@ export default function MessageRow({
   content,
   isInfo = false,
   avatarState = "idle",
+  isStreaming = false,
   children,
 }: {
   isUser: boolean;
   content?: string;
   isInfo?: boolean;
   avatarState?: AIMotionState;
+  isStreaming?: boolean;
   children?: React.ReactNode;
 }) {
   return (
@@ -41,7 +43,7 @@ export default function MessageRow({
       </div>
 
       <div className={cn("flex min-w-0 flex-1 flex-col gap-4", isUser ? "items-end" : "items-start")}>
-        <MessageBubble content={content} isUser={isUser} isInfo={isInfo} />
+        <MessageBubble content={content} isUser={isUser} isInfo={isInfo} isStreaming={isStreaming} />
         {children}
       </div>
     </div>

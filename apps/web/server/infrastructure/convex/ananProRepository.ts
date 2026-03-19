@@ -1,12 +1,24 @@
-import { fetchAction, fetchQuery } from "convex/nextjs";
+import { fetchAction, fetchMutation, fetchQuery } from "convex/nextjs";
 import { apiUnsafe } from "@/lib/convexApi";
-import type { AnanProThread, AnanProThreadSummary, SendAnanProMessageInput } from "@/server/contracts/ananPro";
+import type {
+  AnanProThread,
+  AnanProThreadSummary,
+  SendAnanProMessageInput,
+  AnanProStreamEvent,
+  TranscribeVoiceFromStorageInput,
+  TranscribeVoiceFromStorageResult,
+} from "@/server/contracts/ananPro";
 
 type AnanProApiRefs = {
   getThreadSafe: unknown;
   listMessages: unknown;
   listThreads: unknown;
+  listStreamEvents: unknown;
+  cancelStreamSession: unknown;
   sendMessage: unknown;
+  createThread: unknown;
+  generateVoiceUploadUrl: unknown;
+  transcribeVoiceFromStorage: unknown;
 };
 
 const ananProApi = apiUnsafe["ai_zone/assistantWorkspace"] as AnanProApiRefs;
@@ -23,6 +35,8 @@ type RawAssistantMessage = {
   content: string;
   metadata?: {
     uiTurn?: unknown;
+    meta?: unknown;
+    inputMode?: "text" | "voice";
   };
   createdAt: number;
 };
@@ -31,6 +45,17 @@ export type AnanProRepository = {
   getThread(token: string, threadId?: string): Promise<AnanProThread | null>;
   listThreads(token: string, limit?: number): Promise<AnanProThreadSummary[]>;
   sendMessage(token: string, input: SendAnanProMessageInput): Promise<AnanProThread>;
+  createThread(token: string): Promise<{ threadId: string }>;
+  listStreamEvents(
+    token: string,
+    input: { sessionId: string; afterSeq?: number; limit?: number },
+  ): Promise<AnanProStreamEvent[]>;
+  cancelStreamSession(token: string, sessionId: string): Promise<{ ok: true; sessionId: string }>;
+  getVoiceUploadUrl(token: string): Promise<string>;
+  transcribeVoiceFromStorage(
+    token: string,
+    input: TranscribeVoiceFromStorageInput,
+  ): Promise<TranscribeVoiceFromStorageResult>;
 };
 
 export const convexAnanProRepository: AnanProRepository = {
@@ -54,6 +79,8 @@ export const convexAnanProRepository: AnanProRepository = {
           role: message.role,
           content: message.content,
           uiTurn: message.metadata?.uiTurn,
+          meta: message.metadata?.meta,
+          inputMode: message.metadata?.inputMode,
           createdAt: message.createdAt,
         })),
       };
@@ -79,6 +106,8 @@ export const convexAnanProRepository: AnanProRepository = {
         role: message.role,
         content: message.content,
         uiTurn: message.metadata?.uiTurn,
+        meta: message.metadata?.meta,
+        inputMode: message.metadata?.inputMode,
         createdAt: message.createdAt,
       })),
     };
@@ -113,8 +142,41 @@ export const convexAnanProRepository: AnanProRepository = {
         role: message.role,
         content: message.content,
         uiTurn: message.metadata?.uiTurn,
+        meta: message.metadata?.meta,
+        inputMode: message.metadata?.inputMode,
         createdAt: message.createdAt,
       })),
     };
+  },
+
+  async createThread(token) {
+    const response = (await fetchMutation(ananProApi.createThread as never, {} as never, {
+      token,
+    })) as { threadId: string };
+    return { threadId: response.threadId };
+  },
+
+  async listStreamEvents(token, input) {
+    return fetchQuery(ananProApi.listStreamEvents as never, input as never, {
+      token,
+    }) as Promise<AnanProStreamEvent[]>;
+  },
+
+  async cancelStreamSession(token, sessionId) {
+    return fetchMutation(ananProApi.cancelStreamSession as never, { sessionId } as never, {
+      token,
+    }) as Promise<{ ok: true; sessionId: string }>;
+  },
+
+  async getVoiceUploadUrl(token) {
+    return fetchMutation(ananProApi.generateVoiceUploadUrl as never, {} as never, {
+      token,
+    }) as Promise<string>;
+  },
+
+  async transcribeVoiceFromStorage(token, input) {
+    return fetchAction(ananProApi.transcribeVoiceFromStorage as never, input as never, {
+      token,
+    }) as Promise<TranscribeVoiceFromStorageResult>;
   },
 };

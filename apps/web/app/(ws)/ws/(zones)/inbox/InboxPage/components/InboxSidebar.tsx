@@ -104,7 +104,7 @@ export default function InboxSidebar({
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
               placeholder="ابحث عن مستخدم أو دور..."
-              className="w-full border border-slate-200 bg-white py-2.5 pl-4 pr-10 text-sm font-medium text-slate-900 outline-none transition focus:border-blue-600"
+              className="w-full rounded-full border-2 border-transparent bg-slate-100 py-2.5 pl-4 pr-10 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
             />
           </div>
         </label>
@@ -192,19 +192,19 @@ export default function InboxSidebar({
                   type="button"
                   onClick={() => onSelect(conversation.id)}
                   className={cn(
-                    "flex w-full items-start gap-3 border-l-4 px-5 py-4 text-right transition",
+                    "flex w-full items-start gap-3 px-3 py-3 mx-2 w-[cf(100%-16px)] rounded-2xl text-right transition-all duration-200",
                     isActive
-                      ? "border-l-blue-600 bg-blue-50/60"
-                      : "border-l-transparent bg-white hover:bg-slate-50",
+                      ? "bg-blue-50"
+                      : "bg-transparent hover:bg-slate-50",
                   )}
                 >
                   {/* Avatar */}
                   <div
                     className={cn(
-                      "flex h-11 w-11 shrink-0 items-center justify-center text-sm font-black",
+                      "flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-black shadow-sm",
                       isActive
-                        ? "bg-blue-600 text-white"
-                        : "border border-slate-200 bg-slate-950 text-white",
+                        ? "bg-blue-600 text-white shadow-blue-500/20"
+                        : "border border-slate-200 bg-white text-slate-700",
                     )}
                   >
                     {avatarLabel}
@@ -232,11 +232,11 @@ export default function InboxSidebar({
                     </div>
 
                     <div className="mt-2 flex items-center gap-2">
-                      <p className="min-w-0 flex-1 truncate text-xs font-medium text-slate-500">
+                      <p className="min-w-0 flex-1 truncate text-xs font-bold text-slate-500">
                         {conversation.lastMessagePreview || "ابدأ المحادثة"}
                       </p>
                       {conversation.unreadCount > 0 && !isActive ? (
-                        <span className="inline-flex min-w-5 items-center justify-center border border-blue-600 bg-blue-600 px-1.5 py-0.5 text-[10px] font-black text-white">
+                        <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-black text-white shadow-sm shadow-blue-500/20">
                           {conversation.unreadCount}
                         </span>
                       ) : null}

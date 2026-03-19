@@ -3,7 +3,11 @@ import {
   convexAnanProRepository,
   type AnanProRepository,
 } from "@/server/infrastructure/convex/ananProRepository";
-import type { SendAnanProMessageInput } from "@/server/contracts/ananPro";
+import type {
+  AnanProStreamEvent,
+  SendAnanProMessageInput,
+  TranscribeVoiceFromStorageInput,
+} from "@/server/contracts/ananPro";
 
 type AnanProServiceDependencies = {
   requireSession: typeof requireSessionContext;
@@ -37,4 +41,42 @@ export async function sendAnanProMessage(
 ) {
   const session = await dependencies.requireSession();
   return dependencies.repository.sendMessage(session.token, input);
+}
+
+export async function createAnanProThread(
+  dependencies: AnanProServiceDependencies = defaultDependencies,
+) {
+  const session = await dependencies.requireSession();
+  return dependencies.repository.createThread(session.token);
+}
+
+export async function listAnanProStreamEvents(
+  input: { sessionId: string; afterSeq?: number; limit?: number },
+  dependencies: AnanProServiceDependencies = defaultDependencies,
+): Promise<AnanProStreamEvent[]> {
+  const session = await dependencies.requireSession();
+  return dependencies.repository.listStreamEvents(session.token, input);
+}
+
+export async function cancelAnanProStreamSession(
+  sessionId: string,
+  dependencies: AnanProServiceDependencies = defaultDependencies,
+) {
+  const session = await dependencies.requireSession();
+  return dependencies.repository.cancelStreamSession(session.token, sessionId);
+}
+
+export async function getAnanProVoiceUploadUrl(
+  dependencies: AnanProServiceDependencies = defaultDependencies,
+) {
+  const session = await dependencies.requireSession();
+  return dependencies.repository.getVoiceUploadUrl(session.token);
+}
+
+export async function transcribeAnanProVoiceFromStorage(
+  input: TranscribeVoiceFromStorageInput,
+  dependencies: AnanProServiceDependencies = defaultDependencies,
+) {
+  const session = await dependencies.requireSession();
+  return dependencies.repository.transcribeVoiceFromStorage(session.token, input);
 }

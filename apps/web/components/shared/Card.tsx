@@ -37,7 +37,7 @@ export default function Card({
                 </div>
             )}
             <div className="space-y-3">
-                <h3 className={`text-xl font-black uppercase tracking-tight ${variant === "dark" ? "text-white" : "text-slate-900"}`}>
+                <h3 className={`text-xl font-black uppercase leading-[1.1] tracking-normal ${variant === "dark" ? "text-white" : "text-slate-900"}`}>
                     {title}
                 </h3>
                 <p className={`text-sm font-bold leading-relaxed ${variant === "dark" ? "text-slate-400" : "text-slate-500"}`}>

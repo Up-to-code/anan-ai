@@ -8,4 +8,4 @@ import type { UploadRouter } from "@/app/api/uploadthing/core";
  * WHAT:  Exports the generated upload button/hook helpers for this app's router.
  * HOW:   Binds the helpers once to the shared UploadThing router type.
  */
-export const { useUploadThing, uploadFiles } = generateReactHelpers<UploadRouter>();
+export const { useUploadThing } = generateReactHelpers<UploadRouter>();

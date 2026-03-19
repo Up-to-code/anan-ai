@@ -7,11 +7,13 @@
  */
 
 import type { ActionCtx } from "../../../_generated/server";
+import { streamText } from "ai";
 import { getChatModel } from "../../../shared_logic/lib/providers";
 import { cachedGenerateText } from "../../../shared_logic/llmCache";
 import { FALLBACK_MESSAGES } from "../shared/errorHandler";
 import type { AnanAgentResult } from "../AnanAgent";
 import { getAgentLLMConfigSafe } from "../config";
+import type { WorkspaceProjectFieldKey, WorkspaceStructuredOutput } from "./types";
 
 export interface MergeInput {
   ctx: ActionCtx;
@@ -19,27 +21,117 @@ export interface MergeInput {
   successOutputs: string[];
   hasFailures: boolean;
   modelOverride?: string;
+  onTextDelta?: (delta: string) => void | Promise<void>;
+  onStreamCancelledCheck?: () => boolean | Promise<boolean>;
 }
 
 export interface MergeResult {
   text: string;
+  cancelled?: boolean;
   mergeTokens: { inputTokens: number; outputTokens: number };
+  structured: WorkspaceStructuredOutput;
+}
+
+const PROJECT_FIELD_QUESTIONS: Record<WorkspaceProjectFieldKey, string> = {
+  name: "ما اسم المشروع؟",
+  city: "ما المدينة؟",
+  district: "ما الحي أو المنطقة؟",
+  price: "ما السعر المستهدف للمشروع؟",
+  rooms: "كم عدد الغرف؟",
+  bathrooms: "كم عدد الحمامات؟",
+  description: "اكتب وصفاً مختصراً للمشروع.",
+};
+
+function extractQuestionsFromText(text: string): string[] {
+  const lines = text
+    .split(/\n+/)
+    .map((line) => line.trim().replace(/^\d+[.)-]\s*/, ""))
+    .filter(Boolean);
+
+  const normalized = lines
+    .filter((line) => line.includes("?") || line.includes("؟"))
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .map((line) => (line.endsWith("?") || line.endsWith("؟") ? line : `${line}؟`));
+
+  const deduped: string[] = [];
+  const seen = new Set<string>();
+  for (const question of normalized) {
+    const key = question
+      .replace(/[؟?]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(question);
+    if (deduped.length >= 6) break;
+  }
+
+  return deduped;
+}
+
+function buildStructuredOutput(prompt: string, mergedText: string): WorkspaceStructuredOutput {
+  const lowerPrompt = prompt.toLowerCase();
+  const projectIntent =
+    /(?:إنشاء|اضف|أضف|ابدأ|بناء).{0,12}(?:مشروع|عقار)/.test(prompt) ||
+    lowerPrompt.includes("create project");
+
+  const extractedQuestions = extractQuestionsFromText(mergedText);
+  if (!projectIntent) {
+    return { questions: extractedQuestions };
+  }
+
+  const requiredFields: WorkspaceProjectFieldKey[] = [
+    "name",
+    "city",
+    "district",
+    "price",
+    "rooms",
+    "bathrooms",
+    "description",
+  ];
+
+  return {
+    questions: extractedQuestions.length > 0
+      ? extractedQuestions
+      : requiredFields.slice(0, 3).map((field) => PROJECT_FIELD_QUESTIONS[field]),
+    actionCandidate: {
+      type: "create_project",
+      fields: {},
+      missingFields: requiredFields,
+      state: "collecting",
+    },
+  };
 }
 
 export async function mergeResults(input: MergeInput): Promise<MergeResult> {
-  const { ctx, prompt, successOutputs, hasFailures, modelOverride } = input;
+  const {
+    ctx,
+    prompt,
+    successOutputs,
+    hasFailures,
+    modelOverride,
+    onTextDelta,
+    onStreamCancelledCheck,
+  } = input;
 
   if (successOutputs.length === 0) {
     return {
       text: FALLBACK_MESSAGES.totalFailure,
       mergeTokens: { inputTokens: 0, outputTokens: 0 },
+      structured: { questions: [] },
     };
   }
 
   if (successOutputs.length === 1) {
+    const text = successOutputs[0].replace(/^\[anan_\w+\]\n/, "");
+    if (onTextDelta && text) {
+      await onTextDelta(text);
+    }
     return {
-      text: successOutputs[0].replace(/^\[anan_\w+\]\n/, ""),
+      text,
       mergeTokens: { inputTokens: 0, outputTokens: 0 },
+      structured: buildStructuredOutput(prompt, text),
     };
   }
 
@@ -47,19 +139,57 @@ export async function mergeResults(input: MergeInput): Promise<MergeResult> {
     const model = getChatModel(modelOverride, "anan_workspace");
     const modelName =
       modelOverride ?? getAgentLLMConfigSafe("anan_workspace")?.model ?? "unknown";
-
-    const mergeResult = await cachedGenerateText(
-      ctx,
-      {
-        model: model as any,
-        prompt: `You are merging results from multiple AI agents into one coherent Arabic response.
+    const mergePrompt = `You are merging results from multiple AI agents into one coherent Arabic response.
 User's original question: "${prompt}"
 
 Agent outputs:
 ${successOutputs.join("\n\n---\n\n")}
 
 Merge these into a single, natural Arabic response. Do not mention the agents.
-${hasFailures ? `Note: ${FALLBACK_MESSAGES.partialFailure}` : ""}`,
+If the user is missing actionable information, ask concrete, short, non-redundant follow-up questions in Arabic.
+Do not ask for data already provided by the user in the current turn.
+${hasFailures ? `Note: ${FALLBACK_MESSAGES.partialFailure}` : ""}`;
+
+    if (onTextDelta) {
+      const streamed = streamText({
+        model: model as any,
+        prompt: mergePrompt,
+        temperature: 0.3,
+      });
+
+      let text = "";
+      for await (const delta of streamed.textStream) {
+        if (!delta) continue;
+
+        if (onStreamCancelledCheck && await onStreamCancelledCheck()) {
+          return {
+            text,
+            cancelled: true,
+            mergeTokens: { inputTokens: 0, outputTokens: 0 },
+            structured: buildStructuredOutput(prompt, text),
+          };
+        }
+
+        text += delta;
+        await onTextDelta(delta);
+      }
+
+      const usage = await Promise.resolve((streamed as any).usage).catch(() => null);
+      return {
+        text,
+        mergeTokens: {
+          inputTokens: usage?.promptTokens ?? usage?.inputTokens ?? 0,
+          outputTokens: usage?.completionTokens ?? usage?.outputTokens ?? 0,
+        },
+        structured: buildStructuredOutput(prompt, text),
+      };
+    }
+
+    const mergeResult = await cachedGenerateText(
+      ctx,
+      {
+        model: model as any,
+        prompt: mergePrompt,
         temperature: 0.3,
       },
       {
@@ -73,12 +203,14 @@ ${hasFailures ? `Note: ${FALLBACK_MESSAGES.partialFailure}` : ""}`,
     );
 
     const usage = mergeResult.usage as any;
+    const text = mergeResult.text;
     return {
-      text: mergeResult.text,
+      text,
       mergeTokens: {
         inputTokens: usage?.promptTokens ?? usage?.inputTokens ?? 0,
         outputTokens: usage?.completionTokens ?? usage?.outputTokens ?? 0,
       },
+      structured: buildStructuredOutput(prompt, text),
     };
   } catch {
     let text = successOutputs
@@ -88,6 +220,7 @@ ${hasFailures ? `Note: ${FALLBACK_MESSAGES.partialFailure}` : ""}`,
     return {
       text,
       mergeTokens: { inputTokens: 0, outputTokens: 0 },
+      structured: buildStructuredOutput(prompt, text),
     };
   }
 }

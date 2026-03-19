@@ -19,6 +19,7 @@ import type * as _core_schema_ai from "../_core/schema/ai.js";
 import type * as _core_schema_auth from "../_core/schema/auth.js";
 import type * as _core_schema_contact from "../_core/schema/contact.js";
 import type * as _core_schema_crm from "../_core/schema/crm.js";
+import type * as _core_schema_forms from "../_core/schema/forms.js";
 import type * as _core_schema_knowledge from "../_core/schema/knowledge.js";
 import type * as _core_schema_offers from "../_core/schema/offers.js";
 import type * as _core_schema_properties from "../_core/schema/properties.js";
@@ -134,6 +135,7 @@ import type * as ai_zone_channels_whatsapp_service from "../ai_zone/channels/wha
 import type * as ai_zone_channels_whatsapp_webhook from "../ai_zone/channels/whatsapp/webhook.js";
 import type * as ai_zone_services_agUi from "../ai_zone/services/agUi.js";
 import type * as ai_zone_services_assistantService from "../ai_zone/services/assistantService.js";
+import type * as ai_zone_services_voiceTranscriptionService from "../ai_zone/services/voiceTranscriptionService.js";
 import type * as ai_zone_workflows_index from "../ai_zone/workflows/index.js";
 import type * as auditLog from "../auditLog.js";
 import type * as auth from "../auth.js";
@@ -145,6 +147,7 @@ import type * as broker_zone_repositories_propertiesRepository from "../broker_z
 import type * as cascading from "../cascading.js";
 import type * as http from "../http.js";
 import type * as public_zone_contact from "../public_zone/contact.js";
+import type * as public_zone_forms from "../public_zone/forms.js";
 import type * as red_zone_overview from "../red_zone/overview.js";
 import type * as red_zone_properties from "../red_zone/properties.js";
 import type * as red_zone_repositories_overviewRepository from "../red_zone/repositories/overviewRepository.js";
@@ -249,6 +252,7 @@ declare const fullApi: ApiFromModules<{
   "_core/schema/auth": typeof _core_schema_auth;
   "_core/schema/contact": typeof _core_schema_contact;
   "_core/schema/crm": typeof _core_schema_crm;
+  "_core/schema/forms": typeof _core_schema_forms;
   "_core/schema/knowledge": typeof _core_schema_knowledge;
   "_core/schema/offers": typeof _core_schema_offers;
   "_core/schema/properties": typeof _core_schema_properties;
@@ -364,6 +368,7 @@ declare const fullApi: ApiFromModules<{
   "ai_zone/channels/whatsapp/webhook": typeof ai_zone_channels_whatsapp_webhook;
   "ai_zone/services/agUi": typeof ai_zone_services_agUi;
   "ai_zone/services/assistantService": typeof ai_zone_services_assistantService;
+  "ai_zone/services/voiceTranscriptionService": typeof ai_zone_services_voiceTranscriptionService;
   "ai_zone/workflows/index": typeof ai_zone_workflows_index;
   auditLog: typeof auditLog;
   auth: typeof auth;
@@ -375,6 +380,7 @@ declare const fullApi: ApiFromModules<{
   cascading: typeof cascading;
   http: typeof http;
   "public_zone/contact": typeof public_zone_contact;
+  "public_zone/forms": typeof public_zone_forms;
   "red_zone/overview": typeof red_zone_overview;
   "red_zone/properties": typeof red_zone_properties;
   "red_zone/repositories/overviewRepository": typeof red_zone_repositories_overviewRepository;

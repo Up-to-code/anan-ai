@@ -32,9 +32,24 @@ export const getComplianceRulesetByCountry = query({
 export const getComplianceRulesetForCurrentOrg = query({
   args: {},
   handler: async (ctx) => {
-    const { owner } = await requireOrganizationMembership(ctx);
-    const { ruleset } = await resolveComplianceRulesetForOwner(ctx, owner);
-    return ruleset ?? null;
+    try {
+      const { owner } = await requireOrganizationMembership(ctx);
+      const { ruleset } = await resolveComplianceRulesetForOwner(ctx, owner);
+      return ruleset ?? null;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (
+        message.includes("Organization owner profile required") ||
+        message.includes("Organization membership required") ||
+        message.includes("Tenant organization required") ||
+        message.includes("Tenant organization link required") ||
+        message.includes("Broker organization link required") ||
+        message.includes("Developer organization link required")
+      ) {
+        return null;
+      }
+      throw error;
+    }
   },
 });
 

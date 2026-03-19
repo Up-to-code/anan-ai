@@ -19,7 +19,7 @@ export default function InboxMessageList({
   endRef: RefObject<HTMLDivElement | null>;
 }) {
   return (
-    <div className="flex-1 overflow-y-auto bg-white px-4 py-5 sm:px-6">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-white px-4 py-5 sm:px-6">
       <div className="mx-auto flex max-w-4xl flex-col gap-4">
         {conversation.messages.map((message) => (
           <InboxMessageItem key={message.id} currentUserId={currentUserId} message={message} />

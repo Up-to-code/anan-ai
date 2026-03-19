@@ -73,24 +73,24 @@ export default function InboxMessageItem({
   return (
     <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[88%] border px-4 py-3 sm:max-w-[75%] ${
-          isMe ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-900"
-        } ${isOptimistic ? "opacity-80" : ""}`}
+        className={`max-w-[88%] px-4 py-2.5 sm:max-w-[75%] ${isMe
+            ? "rounded-2xl rounded-tl-sm bg-blue-600 text-white shadow-sm"
+            : "rounded-2xl rounded-tr-sm bg-slate-100 text-slate-900"
+          } ${isOptimistic ? "opacity-80" : ""}`}
       >
         {offerCardMetadata ? (
           <InboxOfferEventCard body={message.body} isMe={isMe} metadata={offerCardMetadata} />
         ) : collaborationMetadata ? (
           <InboxCollaborationCard isMe={isMe} metadata={collaborationMetadata} />
         ) : (
-          <div className="text-sm font-medium leading-7">{message.body}</div>
+          <div className="text-sm font-medium leading-relaxed">{message.body}</div>
         )}
 
         <div
-          className={`mt-3 flex items-center gap-2 text-[11px] font-medium ${
-            isMe ? "text-slate-300" : "text-slate-400"
-          }`}
+          className={`mt-1.5 flex items-center gap-1.5 text-[10px] font-bold ${isMe ? "text-blue-200" : "text-slate-400"
+            }`}
         >
-          <Clock3 className="h-3 w-3" />
+          <Clock3 className="h-2.5 w-2.5" />
           <span>{timeLabel}</span>
           {isOptimistic ? <span>• جاري الإرسال</span> : null}
         </div>

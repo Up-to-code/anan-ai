@@ -275,7 +275,7 @@ export default function InboxWorkspaceClient({
   };
 
   return (
-    <div className="flex h-full overflow-hidden bg-white">
+    <div className="flex h-[calc(100svh-65px)] lg:h-[calc(100svh-73px)] w-full overflow-hidden bg-white">
       <div
         className={cn(
           "min-w-0 border-l border-slate-200 bg-white md:flex md:w-[310px] md:shrink-0 lg:w-[340px]",

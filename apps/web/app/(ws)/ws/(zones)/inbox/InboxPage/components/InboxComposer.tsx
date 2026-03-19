@@ -261,11 +261,10 @@ export default function InboxComposer({
                   key={action.id}
                   type="button"
                   onClick={() => setActiveAction((current) => current === action.id ? null : action.id)}
-                  className={`border px-3 py-2 text-xs font-bold transition ${
-                    activeAction === action.id
+                  className={`border px-3 py-2 text-xs font-bold transition ${activeAction === action.id
                       ? "border-slate-900 bg-slate-900 text-white"
                       : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-blue-700"
-                  }`}
+                    }`}
                 >
                   {action.label}
                 </button>

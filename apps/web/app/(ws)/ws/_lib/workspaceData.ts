@@ -17,6 +17,11 @@ function isNextRedirectError(error: unknown) {
   return message.includes("NEXT_REDIRECT");
 }
 
+function isRetryableUpstreamFailure(message: string) {
+  const normalized = message.toLowerCase();
+  return normalized.includes("fetch failed") || normalized.includes("upstream") || normalized.includes("network");
+}
+
 /**
  * WHY: Layout needs user + organizations for sidebar (org name, user/org block).
  * WHAT: Returns { user, organizations } without full profile. Redirects if unauthenticated.
@@ -24,8 +29,9 @@ function isNextRedirectError(error: unknown) {
  */
 export async function getLayoutSidebarData(returnTo: string) {
   try {
-    const [sidebar, notifications, inboxSummary, assistantThreads] = await Promise.all([
-      getWorkspaceSidebarDataForCurrentUser(),
+    // Resolve session/sidebar first so auth failures short-circuit before extra protected queries.
+    const sidebar = await getWorkspaceSidebarDataForCurrentUser();
+    const [notifications, inboxSummary, assistantThreads] = await Promise.all([
       getWorkspaceNotificationSummary(),
       getInboxUnreadSummaryForCurrentUser(),
       listAnanProThreads(12),
@@ -66,6 +72,13 @@ export async function requireWorkspaceData(returnTo: string) {
     const domainError = normalizeDomainError(error);
     if (domainError.code === "UNAUTHORIZED") {
       redirect(`/signin?returnTo=${encodeURIComponent(returnTo)}`);
+    }
+    if (domainError.code === "INTERNAL_ERROR" && isRetryableUpstreamFailure(domainError.message)) {
+      throw new DomainError({
+        code: "UPSTREAM_UNAVAILABLE",
+        message: "تعذر الاتصال بخدمات مساحة العمل حالياً. أعد المحاولة بعد لحظات.",
+        status: 503,
+      });
     }
     throw new DomainError({
       code: domainError.code,

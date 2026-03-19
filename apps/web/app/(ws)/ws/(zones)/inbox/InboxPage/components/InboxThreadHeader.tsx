@@ -18,20 +18,20 @@ export default function InboxThreadHeader({
   showBackButton?: boolean;
 }) {
   return (
-    <header className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
+    <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 px-4 py-4 backdrop-blur-xl sm:px-6">
       <div className="flex items-center gap-3">
         {showBackButton ? (
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex h-10 w-10 items-center justify-center border border-slate-200 bg-white text-slate-700 transition hover:border-blue-200 hover:text-blue-700 md:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-blue-200 hover:text-blue-700 md:hidden"
             aria-label="العودة إلى قائمة المحادثات"
           >
             <ArrowRight className="h-4 w-4" />
           </button>
         ) : null}
 
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center border border-slate-200 bg-slate-950 text-sm font-black text-white">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-sm font-black text-slate-700 shadow-sm">
           {conversation.otherUser.name.slice(0, 1) || "؟"}
         </div>
 

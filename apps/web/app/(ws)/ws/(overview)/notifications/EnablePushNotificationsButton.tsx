@@ -29,7 +29,7 @@ export default function EnablePushNotificationsButton({
     try {
       const configResponse = await fetch("/api/workspace/notifications/push", { cache: "no-store" });
       if (!configResponse.ok) throw new Error("Failed to load push config");
-      const config = (await configResponse.json()) as { publicKey: string | null; browserPushEnabled: boolean };
+      const config = (await configResponse.json()) as { publicKey: string | null };
 
       if (!config.publicKey) {
         setStatus("error");
@@ -43,13 +43,16 @@ export default function EnablePushNotificationsButton({
       }
 
       const registration = await navigator.serviceWorker.register("/workspace-push-sw.js");
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(config.publicKey),
-      });
+      const existingSubscription = await registration.pushManager.getSubscription();
+      const subscription =
+        existingSubscription ??
+        (await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(config.publicKey),
+        }));
 
       const subscriptionJson = subscription.toJSON();
-      await fetch("/api/workspace/notifications/push", {
+      const registrationResponse = await fetch("/api/workspace/notifications/push", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -59,6 +62,7 @@ export default function EnablePushNotificationsButton({
           userAgent: navigator.userAgent,
         }),
       });
+      if (!registrationResponse.ok) throw new Error("Failed to register push subscription");
 
       setStatus("enabled");
     } catch {

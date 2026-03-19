@@ -105,9 +105,10 @@ export const convexOrganizationsRepository: OrganizationsRepository = {
   async getCurrentOrganization(token) {
     try {
       return (await fetchQuery(agenciesApi.getCurrentOrganization as never, {} as never, { token })) as {
-        organization: OrganizationSummary;
-        membership: OrganizationMembershipSummary;
-      };
+        organization: OrganizationSummary | null;
+        membership: OrganizationMembershipSummary | null;
+        accessError?: true;
+      } | null;
     } catch (error) {
       if (isOrganizationAccessError(error)) {
         return { organization: null, membership: null, accessError: true };

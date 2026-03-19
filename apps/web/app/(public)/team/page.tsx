@@ -33,15 +33,15 @@ export default function TeamPage() {
             </Section>
 
             <Section className="py-32">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-16 max-w-4xl mx-auto">
                     <div className="p-12 border-2 border-slate-100 space-y-8 bg-white hover:border-blue-600 transition-all group">
                         <div className="h-20 w-20 bg-slate-50 flex items-center justify-center group-hover:bg-blue-600 transition-colors">
                             <User className="h-10 w-10 text-slate-300 group-hover:text-white" />
                         </div>
                         <div className="space-y-4">
-                            <h3 className="text-2xl font-black text-slate-900 uppercase">أحمد منصور</h3>
-                            <span className="block text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">المدير التنفيذي للتقنية</span>
-                            <p className="text-slate-500 font-bold leading-relaxed">خبرة تزيد عن ١٠ سنوات في بناء الأنظمة الموزعة والذكاء الاصطناعي المؤسسي.</p>
+                            <h3 className="text-2xl font-black text-slate-900 uppercase">الرئيس التنفيذي</h3>
+                            <span className="block text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">المدير التنفيذي (CEO)</span>
+                            <p className="text-slate-500 font-bold leading-relaxed">قيادة الرؤية الاستراتيجية وتوجيه فريق العمل نحو بناء مستقبل العقار في المملكة.</p>
                         </div>
                     </div>
 
@@ -50,20 +50,9 @@ export default function TeamPage() {
                             <Code2 className="h-10 w-10 text-slate-300 group-hover:text-white" />
                         </div>
                         <div className="space-y-4">
-                            <h3 className="text-2xl font-black text-slate-900 uppercase">فريق الهندسة</h3>
-                            <span className="block text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">تطوير البروتوكول</span>
-                            <p className="text-slate-500 font-bold leading-relaxed">نخبة من المطورين السعوديين المتخصصين في بناء تجارب المستخدم السلسة والربط البرمجي.</p>
-                        </div>
-                    </div>
-
-                    <div className="p-12 border-2 border-slate-100 space-y-8 bg-white hover:border-blue-600 transition-all group">
-                        <div className="h-20 w-20 bg-slate-50 flex items-center justify-center group-hover:bg-blue-600 transition-colors">
-                            <Globe className="h-10 w-10 text-slate-300 group-hover:text-white" />
-                        </div>
-                        <div className="space-y-4">
-                            <h3 className="text-2xl font-black text-slate-900 uppercase">المستشارون</h3>
-                            <span className="block text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">خبراء السوق السعودي</span>
-                            <p className="text-slate-500 font-bold leading-relaxed">تعاون وثيق مع خبراء الهيئة العامة للعقار لضمان الامتثال والريادة التشريعية.</p>
+                            <h3 className="text-2xl font-black text-slate-900 uppercase">أحمد منصور</h3>
+                            <span className="block text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">المدير التقني (CTO)</span>
+                            <p className="text-slate-500 font-bold leading-relaxed">خبرة تزيد عن ١٠ سنوات في بناء الأنظمة الموزعة والذكاء الاصطناعي المؤسسي.</p>
                         </div>
                     </div>
                 </div>

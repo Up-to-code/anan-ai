@@ -32,6 +32,21 @@ export default function WorkspaceDashboard({
           sendError={assistant.sendError}
           isLoadingThread={assistant.isLoadingThread}
           isSending={assistant.isSending}
+          isVoiceRecording={assistant.isVoiceRecording}
+          isVoiceTranscribing={assistant.isVoiceTranscribing}
+          voiceProcessingPhase={assistant.voiceProcessingPhase}
+          canRegenerate={assistant.canRegenerate}
+          activeTeamLabel={assistant.activeTeamLabel}
+          completedTeamLabels={assistant.completedTeamLabels}
+          stageHistory={assistant.stageHistory}
+          streamLifecycleStatus={assistant.streamLifecycleStatus}
+          liveAssistantMotionState={assistant.liveAssistantMotionState}
+          liveStageLabel={assistant.liveStageLabel}
+          voiceElapsedMs={assistant.voiceElapsedMs}
+          voiceLevels={assistant.voiceLevels}
+          onToggleVoiceRecording={assistant.toggleVoiceRecording}
+          onStopStreaming={assistant.handleStopStreaming}
+          onRegenerate={assistant.handleRegenerate}
           onChange={assistant.setValue}
           onSend={assistant.handleSend}
         />

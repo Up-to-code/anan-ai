@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { convexTest } from "convex-test";
 import schema from "../schema";
 import { apiRefs } from "./lib/generatedApiRefs";
@@ -42,6 +42,12 @@ vi.mock("../_core/security/accessPolicy", () => ({
 }));
 
 describe("llm cache", () => {
+  const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+  afterAll(() => {
+    warnSpy.mockRestore();
+  });
+
   beforeEach(() => {
     mockLookup.mockReset();
     mockStore.mockReset();
@@ -50,6 +56,7 @@ describe("llm cache", () => {
     mockGetStats.mockReset();
     mockGenerateText.mockReset();
     mockRequireRole.mockReset();
+    warnSpy.mockClear();
   });
 
   it("returns cached response without calling generateText", async () => {
@@ -81,7 +88,7 @@ describe("llm cache", () => {
     expect(mockStore).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        response: { text: "fresh" },
+        response: expect.objectContaining({ text: "fresh" }),
         tags: ["intent"],
       }),
     );
@@ -99,6 +106,80 @@ describe("llm cache", () => {
     expect(result).toEqual({ text: "bypass" });
     expect(mockLookup).not.toHaveBeenCalled();
     expect(mockStore).toHaveBeenCalled();
+  });
+
+  it("stores a Convex-safe response shape from rich SDK results", async () => {
+    mockLookup.mockResolvedValueOnce(null);
+    mockGenerateText.mockResolvedValueOnce({
+      text: "[\"team_workspace_projects\"]",
+      usage: { inputTokens: 263, outputTokens: 7, totalTokens: 270, reasoningTokens: 0 },
+      response: {
+        id: "gen-id",
+        headers: { "content-type": "application/json" },
+      },
+      steps: [
+        {
+          content: [{ type: "text", text: "[\"team_workspace_projects\"]" }],
+        },
+      ],
+    } as any);
+
+    await cachedGenerateText(
+      {} as any,
+      { model: "google/gemini-2.5-flash", prompt: "classify" } as any,
+      { modelName: "google/gemini-2.5-flash" },
+    );
+
+    const storedResponse = (mockStore as any).mock.calls[0]?.[1]?.response;
+    expect(storedResponse).toEqual(
+      expect.objectContaining({
+        text: "[\"team_workspace_projects\"]",
+        usage: expect.objectContaining({
+          inputTokens: 263,
+          outputTokens: 7,
+          totalTokens: 270,
+          promptTokens: 263,
+          completionTokens: 7,
+        }),
+      }),
+    );
+    expect(storedResponse).not.toHaveProperty("response");
+    expect(storedResponse).not.toHaveProperty("steps");
+  });
+
+  it("ignores malformed cached payloads and regenerates", async () => {
+    mockLookup.mockResolvedValueOnce({ response: { bad: true } } as any);
+    mockGenerateText.mockResolvedValueOnce({ text: "regenerated" });
+
+    const result = await cachedGenerateText(
+      {} as any,
+      { model: "gpt-4o-mini", prompt: "hello" } as any,
+      { modelName: "gpt-4o-mini" },
+    );
+
+    expect(result).toEqual({ text: "regenerated" });
+    expect(mockGenerateText).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[llmCache] Ignoring malformed cached response and regenerating",
+    );
+  });
+
+  it("returns live output when cache store fails", async () => {
+    mockLookup.mockResolvedValueOnce(null);
+    mockGenerateText.mockResolvedValueOnce({ text: "live" });
+    mockStore.mockRejectedValueOnce(new Error("store failed"));
+
+    const result = await cachedGenerateText(
+      {} as any,
+      { model: "gpt-4o-mini", prompt: "hello" } as any,
+      { modelName: "gpt-4o-mini" },
+    );
+
+    expect(result).toEqual({ text: "live" });
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[llmCache] Cache store failed (non-critical):",
+      expect.any(Error),
+    );
   });
 
   it("guards admin cache config queries", async () => {

@@ -1,8 +1,10 @@
+import { redirect } from "next/navigation";
 import OrganizationOnboarding from "../_components/OrganizationOnboarding";
 import WorkspaceDashboard from "./_components/WorkspaceDashboard";
 import { requireWorkspaceData } from "../_lib/workspaceData";
 import { getAnanProThread } from "@/server/domains/ananPro/service";
 import { listIncomingOrganizationInvitesForCurrentUser } from "@/server/domains/organizations/service";
+import { normalizeDomainError } from "@/server/contracts/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +12,7 @@ type WorkspacePageProps = {
   searchParams: Promise<{
     orgError?: string;
     threadId?: string;
+    newThread?: string;
     onboarding?: string;
   }>;
 };
@@ -20,9 +23,32 @@ type WorkspacePageProps = {
  * HOW:   Forces dynamic rendering (session/headers), requires auth before loading optional thread state, and avoids noisy unauthorized errors.
  */
 export default async function WorkspacePage({ searchParams }: WorkspacePageProps) {
-  const { orgError, threadId, onboarding } = await searchParams;
-  const workspace = await requireWorkspaceData("/ws");
-  const ananProThread = await getAnanProThread(threadId);
+  const { orgError, threadId, newThread, onboarding } = await searchParams;
+  let workspace: Awaited<ReturnType<typeof requireWorkspaceData>>;
+  try {
+    workspace = await requireWorkspaceData("/ws");
+  } catch (error) {
+    const domainError = normalizeDomainError(error);
+    if (domainError.code === "UPSTREAM_UNAVAILABLE") {
+      return (
+        <section className="px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-3xl border border-amber-200 bg-amber-50 p-5 text-right">
+            <h1 className="text-base font-black text-amber-900">تعذر تحميل مساحة العمل الآن</h1>
+            <p className="mt-2 text-sm font-semibold text-amber-800">{domainError.message}</p>
+            <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+              <a
+                href="/ws"
+                className="border border-amber-300 bg-white px-4 py-2 text-[10px] font-black tracking-[0.16em] text-amber-900"
+              >
+                إعادة المحاولة
+              </a>
+            </div>
+          </div>
+        </section>
+      );
+    }
+    throw error;
+  }
 
   const shouldRenderOnboarding =
     workspace.onboarding.needsOrganization || onboarding === "verification";
@@ -52,10 +78,22 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
     );
   }
 
+  const shouldStartDraft = newThread === "1" || !threadId;
+  let selectedThreadId: string | null = null;
+  let ananProThread = null;
+
+  if (!shouldStartDraft) {
+    ananProThread = await getAnanProThread(threadId);
+    if (!ananProThread) {
+      redirect("/ws");
+    }
+    selectedThreadId = threadId ?? null;
+  }
+
   return (
     <WorkspaceDashboard
       initialThread={ananProThread}
-      initialSelectedThreadId={threadId ?? null}
+      initialSelectedThreadId={selectedThreadId}
     />
   );
 }

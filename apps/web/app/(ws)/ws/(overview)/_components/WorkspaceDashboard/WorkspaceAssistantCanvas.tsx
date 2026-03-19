@@ -6,7 +6,8 @@ import MessageRow from "../../../_components/Chat/MessageRow";
 import TypingIndicator from "../../../_components/Chat/TypingIndicator";
 import AgUiTurnRenderer from "../../../_components/Chat/AgUiTurnRenderer";
 import { AIMotionLogo } from "../../../_components/AIMotion";
-import type { AnanProThread } from "@/server/contracts/ananPro";
+import type { AnanProStreamStageEvent, AnanProThread } from "@/server/contracts/ananPro";
+import type { AIMotionState } from "@/app/(ws)/ws/_components/AIMotion";
 
 type WorkspaceAssistantCanvasProps = {
   thread: AnanProThread | null;
@@ -14,9 +15,58 @@ type WorkspaceAssistantCanvasProps = {
   sendError: string | null;
   isLoadingThread: boolean;
   isSending: boolean;
+  isVoiceRecording: boolean;
+  isVoiceTranscribing: boolean;
+  voiceProcessingPhase: "idle" | "recording" | "uploading" | "transcribing" | "sending" | "error";
+  canRegenerate: boolean;
+  activeTeamLabel: string | null;
+  completedTeamLabels: string[];
+  stageHistory: AnanProStreamStageEvent[];
+  streamLifecycleStatus: "running" | "completed" | "failed" | "cancelled" | null;
+  liveAssistantMotionState: AIMotionState;
+  liveStageLabel: string;
+  voiceElapsedMs: number;
+  voiceLevels: number[];
+  onToggleVoiceRecording: () => void;
+  onStopStreaming: () => void;
+  onRegenerate: () => void;
   onChange: (value: string) => void;
   onSend: (message?: string) => void;
 };
+
+function formatVoiceElapsed(ms: number) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function stagePhaseLabel(phase: AnanProStreamStageEvent["phase"]) {
+  switch (phase) {
+    case "intent_started":
+      return "تحليل النية";
+    case "intent_done":
+      return "تحديد المسارات";
+    case "team_started":
+      return "تشغيل الفرق";
+    case "team_done":
+      return "إنهاء الفرق";
+    case "merge_started":
+      return "دمج النتائج";
+    case "merge_done":
+      return "اكتمال الدمج";
+    case "action_started":
+      return "تنفيذ الإجراء";
+    case "action_done":
+      return "نتيجة الإجراء";
+    case "persist_started":
+      return "حفظ المحادثة";
+    case "persist_done":
+      return "تم الحفظ";
+    default:
+      return phase;
+  }
+}
 
 /**
  * WHY:   The workspace assistant needs one canvas that can gracefully switch between first-run prompting and normal thread playback.
@@ -29,11 +79,29 @@ export default function WorkspaceAssistantCanvas({
   sendError,
   isLoadingThread,
   isSending,
+  isVoiceRecording,
+  isVoiceTranscribing,
+  voiceProcessingPhase,
+  canRegenerate,
+  activeTeamLabel,
+  completedTeamLabels,
+  stageHistory,
+  streamLifecycleStatus,
+  liveAssistantMotionState,
+  liveStageLabel,
+  voiceElapsedMs,
+  voiceLevels,
+  onToggleVoiceRecording,
+  onStopStreaming,
+  onRegenerate,
   onChange,
   onSend,
 }: WorkspaceAssistantCanvasProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasMessages = Boolean(thread?.messages.length);
+  const lastAssistantMessageId = [...(thread?.messages ?? [])]
+    .reverse()
+    .find((message) => message.role === "assistant")?.id;
 
   useEffect(() => {
     if (!scrollRef.current || !hasMessages) return;
@@ -70,23 +138,83 @@ export default function WorkspaceAssistantCanvas({
                   key={message.id}
                   isUser={message.role === "user"}
                   content={message.content}
-                  avatarState={message.role === "assistant" ? "tool" : undefined}
+                  isStreaming={message.role === "assistant" && isSending && message.id === lastAssistantMessageId}
+                  avatarState={
+                    message.role === "assistant"
+                      ? isSending && message.id === lastAssistantMessageId
+                        ? liveAssistantMotionState
+                        : "idle"
+                      : undefined
+                  }
                 >
                   {message.role === "assistant" && message.uiTurn ? <AgUiTurnRenderer turn={message.uiTurn} /> : null}
                 </MessageRow>
               ))}
-              {isSending ? <TypingIndicator state="thinking" text="anan workspace يجهز الخطوة التالية..." /> : null}
+              {isSending && (activeTeamLabel || completedTeamLabels.length > 0) ? (
+                <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium text-slate-600">
+                  {activeTeamLabel ? (
+                    <span className="border border-slate-300 bg-white px-2 py-1 text-slate-900">
+                      يعمل الآن: {activeTeamLabel}
+                    </span>
+                  ) : null}
+                  {completedTeamLabels.map((team) => (
+                    <span key={team} className="border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">
+                      اكتمل: {team}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              {isSending || stageHistory.length > 0 ? (
+                <div className="border border-slate-200 bg-slate-50 p-4">
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-black tracking-[0.16em] text-slate-700">حالة التنفيذ المباشرة</span>
+                    <span className="text-[10px] font-semibold text-slate-500">{streamLifecycleStatus ?? "running"}</span>
+                  </div>
+                  <div className="space-y-2">
+                    {stageHistory.slice(-5).map((stage) => (
+                      <div key={stage.seq} className="flex items-center justify-between gap-2 text-xs">
+                        <span className="text-slate-800">{stagePhaseLabel(stage.phase)}</span>
+                        <span className="text-slate-500">{stage.status ?? "running"}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {isSending ? <TypingIndicator state={liveAssistantMotionState} text={liveStageLabel} /> : null}
             </div>
           </div>
 
           <div className="border-t border-slate-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
             <div className="mx-auto w-full max-w-4xl">
-              {sendError ? <div className="mb-3 text-sm text-red-600">{sendError}</div> : null}
+              {sendError ? (
+                <div className="mb-3 border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {sendError}
+                </div>
+              ) : null}
+              {isVoiceRecording ? (
+                <div className="mb-3 text-xs font-bold text-red-600">جاري التسجيل الصوتي... {formatVoiceElapsed(voiceElapsedMs)}</div>
+              ) : null}
+              {voiceProcessingPhase === "uploading" ? (
+                <div className="mb-3 text-xs font-bold text-slate-500">جاري رفع التسجيل الصوتي...</div>
+              ) : null}
+              {voiceProcessingPhase === "transcribing" || isVoiceTranscribing ? (
+                <div className="mb-3 text-xs font-bold text-slate-500">جاري تفريغ الرسالة الصوتية...</div>
+              ) : null}
+              {voiceProcessingPhase === "sending" ? (
+                <div className="mb-3 text-xs font-bold text-slate-500">جاري إرسال النص إلى المساعد...</div>
+              ) : null}
               <InstitutionalChatInput
                 value={value}
                 onChange={onChange}
                 onSend={() => onSend()}
                 isSending={isSending}
+                onStopGenerating={onStopStreaming}
+                onRegenerate={onRegenerate}
+                canRegenerate={canRegenerate}
+                onMicToggle={onToggleVoiceRecording}
+                isMicRecording={isVoiceRecording}
+                isMicProcessing={isVoiceTranscribing}
+                micLevels={voiceLevels}
                 layout="thread"
               />
             </div>
@@ -106,12 +234,35 @@ export default function WorkspaceAssistantCanvas({
             </div>
 
             <div className="mx-auto mt-8 max-w-2xl">
-              {sendError ? <div className="mb-3 text-sm text-red-600">{sendError}</div> : null}
+              {sendError ? (
+                <div className="mb-3 border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {sendError}
+                </div>
+              ) : null}
+              {isVoiceRecording ? (
+                <div className="mb-3 text-xs font-bold text-red-600">جاري التسجيل الصوتي... {formatVoiceElapsed(voiceElapsedMs)}</div>
+              ) : null}
+              {voiceProcessingPhase === "uploading" ? (
+                <div className="mb-3 text-xs font-bold text-slate-500">جاري رفع التسجيل الصوتي...</div>
+              ) : null}
+              {voiceProcessingPhase === "transcribing" || isVoiceTranscribing ? (
+                <div className="mb-3 text-xs font-bold text-slate-500">جاري تفريغ الرسالة الصوتية...</div>
+              ) : null}
+              {voiceProcessingPhase === "sending" ? (
+                <div className="mb-3 text-xs font-bold text-slate-500">جاري إرسال النص إلى المساعد...</div>
+              ) : null}
               <InstitutionalChatInput
                 value={value}
                 onChange={onChange}
                 onSend={() => onSend()}
                 isSending={isSending}
+                onStopGenerating={onStopStreaming}
+                onRegenerate={onRegenerate}
+                canRegenerate={canRegenerate}
+                onMicToggle={onToggleVoiceRecording}
+                isMicRecording={isVoiceRecording}
+                isMicProcessing={isVoiceTranscribing}
+                micLevels={voiceLevels}
                 layout="landing"
               />
             </div>

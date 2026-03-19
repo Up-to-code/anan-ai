@@ -86,6 +86,7 @@ const knowledgeTables = {
 
     assistantThreads: defineTable({
         userId: v.string(),
+        scope: v.optional(v.union(v.literal("user"), v.literal("organization"))),
         ownerType: v.union(v.literal("broker"), v.literal("RED"), v.literal("user")),
         ownerBrokerId: v.optional(v.id("brokers")),
         ownerREDId: v.optional(v.id("RED")),
@@ -114,6 +115,48 @@ const knowledgeTables = {
         metadata: v.optional(v.any()),
         createdAt: v.number(),
     }).index("threadId", ["threadId"]),
+
+    assistantStreamEvents: defineTable({
+        sessionId: v.string(),
+        seq: v.number(),
+        eventType: v.union(
+            v.literal("stage"),
+            v.literal("delta"),
+            v.literal("assistant_meta"),
+            v.literal("thread"),
+            v.literal("lifecycle"),
+            v.literal("error"),
+        ),
+        phase: v.optional(v.union(
+            v.literal("intent_started"),
+            v.literal("intent_done"),
+            v.literal("team_started"),
+            v.literal("team_done"),
+            v.literal("merge_started"),
+            v.literal("merge_done"),
+            v.literal("action_started"),
+            v.literal("action_done"),
+            v.literal("persist_started"),
+            v.literal("persist_done"),
+        )),
+        status: v.optional(v.union(v.literal("running"), v.literal("completed"), v.literal("failed"), v.literal("cancelled"))),
+        teamId: v.optional(v.string()),
+        agentName: v.optional(v.string()),
+        delta: v.optional(v.string()),
+        threadId: v.optional(v.id("assistantThreads")),
+        title: v.optional(v.string()),
+        meta: v.optional(v.any()),
+        message: v.optional(v.string()),
+        code: v.optional(v.string()),
+        details: v.optional(v.any()),
+        userId: v.string(),
+        ownerType: v.union(v.literal("broker"), v.literal("RED"), v.literal("user")),
+        ownerBrokerId: v.optional(v.id("brokers")),
+        ownerREDId: v.optional(v.id("RED")),
+        createdAt: v.number(),
+    })
+        .index("sessionId", ["sessionId"])
+        .index("sessionId_seq", ["sessionId", "seq"]),
 };
 
 export default knowledgeTables;

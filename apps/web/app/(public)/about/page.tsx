@@ -44,10 +44,10 @@ export default function AboutPage() {
                     <div className="absolute -top-[10%] -left-[10%] h-[50%] w-[50%] bg-blue-50/50 blur-[120px]" />
                     <div className="absolute -bottom-[10%] -right-[10%] h-[50%] w-[50%] bg-blue-50/50 blur-[120px]" />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img 
-                        src="/vectors/landing/ecosystem_hub.svg" 
-                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] opacity-[0.03] animate-pulse" 
-                        alt="" 
+                    <img
+                        src="/vectors/landing/ecosystem_hub.svg"
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] opacity-[0.03] animate-pulse"
+                        alt=""
                     />
                 </div>
 
@@ -64,7 +64,7 @@ export default function AboutPage() {
                             </span>
                         </motion.div>
 
-                        <motion.h1 
+                        <motion.h1
                             variants={itemVariants}
                             className="text-6xl md:text-8xl font-black text-slate-900 tracking-tight"
                         >
@@ -74,7 +74,7 @@ export default function AboutPage() {
                             </span>
                         </motion.h1>
 
-                        <motion.div 
+                        <motion.div
                             variants={itemVariants}
                             className="space-y-8 text-xl md:text-2xl text-slate-500 font-bold leading-relaxed max-w-3xl mx-auto"
                         >
@@ -127,7 +127,7 @@ export default function AboutPage() {
 
             <Section className="py-32 bg-white relative">
                 <div className="absolute top-0 right-0 w-32 h-full bg-slate-50/50 -skew-x-12 translate-x-16" />
-                
+
                 <motion.div
                     initial={{ opacity: 0, x: 50 }}
                     whileInView={{ opacity: 1, x: 0 }}
@@ -178,9 +178,9 @@ export default function AboutPage() {
             <Section bg="dark" className="py-48 relative overflow-hidden">
                 <div className="absolute inset-0 bg-blue-600/5 mix-blend-overlay" />
                 <div className="absolute top-0 right-1/4 h-[500px] w-[500px] bg-blue-600/10 blur-[100px]" />
-                
+
                 <div className="max-w-5xl mx-auto space-y-20 text-right relative z-10">
-                    <motion.h2 
+                    <motion.h2
                         initial={{ opacity: 0, scale: 0.95 }}
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
@@ -189,7 +189,7 @@ export default function AboutPage() {
                         الالتزام <br />
                         <span className="text-blue-500">بالرؤية الوطنية</span>
                     </motion.h2>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-16 text-slate-400 font-bold leading-relaxed text-xl">
                         <motion.p
                             initial={{ opacity: 0, y: 20 }}
@@ -209,7 +209,7 @@ export default function AboutPage() {
                         </motion.p>
                     </div>
 
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         whileInView={{ opacity: 1 }}
                         viewport={{ once: true }}

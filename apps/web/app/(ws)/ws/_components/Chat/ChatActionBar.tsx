@@ -1,36 +1,25 @@
 "use client";
 
-import { FileUp, Building2, Handshake, Tag } from "lucide-react";
-import { cn } from "@/lib/utils";
+import type { LucideIcon } from "lucide-react";
 
-type ChatAction = {
+interface ChatAction {
   key: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   label: string;
   disabled?: boolean;
   onClick: () => void;
-};
+}
 
 /**
- * WHY:   The inbox thread view needs a compact bar of icon+label actions above the composer for business workflows.
- * WHAT:  Renders a row of icon+label action buttons (Share File, Share Project, Share Deal, Private Offer).
- * HOW:   Receives pre-bound action handlers from the parent thread view and renders each as a flat icon+label button.
+ * WHY:   Thread views need a compact row of contextual actions (share file, project, deal, etc.) above the composer.
+ * WHAT:  Renders a horizontal bar of icon+label buttons for chat-level actions.
+ * HOW:   Maps over action descriptors and renders accessible buttons with consistent styling.
  */
-export default function ChatActionBar({
-  actions,
-  className,
-}: {
-  actions: ChatAction[];
-  className?: string;
-}) {
+export default function ChatActionBar({ actions }: { actions: ChatAction[] }) {
+  if (actions.length === 0) return null;
+
   return (
-    <div
-      data-slot="chat-action-bar"
-      className={cn(
-        "flex items-center gap-1 border-b border-slate-100 bg-slate-50 px-4 py-2 overflow-x-auto",
-        className,
-      )}
-    >
+    <div className="flex items-center gap-1 border-t border-gray-100 px-3 py-1.5">
       {actions.map((action) => {
         const Icon = action.icon;
         return (
@@ -39,21 +28,13 @@ export default function ChatActionBar({
             type="button"
             disabled={action.disabled}
             onClick={action.onClick}
-            className={cn(
-              "flex shrink-0 items-center gap-2 border border-transparent px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] transition-all",
-              action.disabled
-                ? "cursor-not-allowed text-slate-300"
-                : "text-slate-500 hover:border-slate-200 hover:bg-white hover:text-slate-900",
-            )}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:pointer-events-none disabled:opacity-40"
           >
-            <Icon className="h-3.5 w-3.5 shrink-0" />
-            <span>{action.label}</span>
+            <Icon className="h-4 w-4" />
+            {action.label}
           </button>
         );
       })}
     </div>
   );
 }
-
-export { type ChatAction };
-export { FileUp, Building2, Handshake, Tag };

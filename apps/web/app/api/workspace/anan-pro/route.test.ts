@@ -2,24 +2,30 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { DomainError } from "@/server/contracts/errors";
 
-const { getAnanProThread, listAnanProThreads, sendAnanProMessage } = vi.hoisted(() => ({
+const { cancelAnanProStreamSession, getAnanProThread, listAnanProThreads, listAnanProStreamEvents, sendAnanProMessage } = vi.hoisted(() => ({
+  cancelAnanProStreamSession: vi.fn(),
   getAnanProThread: vi.fn(),
   listAnanProThreads: vi.fn(),
+  listAnanProStreamEvents: vi.fn(),
   sendAnanProMessage: vi.fn(),
 }));
 
 vi.mock("@/server/domains/ananPro/service", () => ({
+  cancelAnanProStreamSession,
   getAnanProThread,
   listAnanProThreads,
+  listAnanProStreamEvents,
   sendAnanProMessage,
 }));
 
-import { GET, POST } from "./route";
+import { DELETE, GET, POST } from "./route";
 
 describe("/api/workspace/anan-pro", () => {
   beforeEach(() => {
+    cancelAnanProStreamSession.mockReset();
     getAnanProThread.mockReset();
     listAnanProThreads.mockReset();
+    listAnanProStreamEvents.mockReset();
     sendAnanProMessage.mockReset();
   });
 
@@ -44,7 +50,7 @@ describe("/api/workspace/anan-pro", () => {
 
   it("returns a stable invalid-argument error for invalid message payloads", async () => {
     const response = await POST(
-      new Request("http://localhost/api/workspace/anan-pro", {
+      new NextRequest("http://localhost/api/workspace/anan-pro", {
         method: "POST",
         body: JSON.stringify({ message: " " }),
         headers: { "Content-Type": "application/json" },
@@ -68,7 +74,7 @@ describe("/api/workspace/anan-pro", () => {
     );
 
     const response = await POST(
-      new Request("http://localhost/api/workspace/anan-pro", {
+      new NextRequest("http://localhost/api/workspace/anan-pro", {
         method: "POST",
         body: JSON.stringify({ message: "Plan the next step" }),
         headers: { "Content-Type": "application/json" },
@@ -81,5 +87,84 @@ describe("/api/workspace/anan-pro", () => {
       message: "Authentication required",
       status: 401,
     });
+  });
+
+  it("streams ordered SSE events when stream mode is enabled", async () => {
+    listAnanProStreamEvents
+      .mockResolvedValueOnce([
+        {
+          seq: 1,
+          eventType: "stage",
+          phase: "intent_started",
+          status: "running",
+          timestamp: 10,
+        },
+        {
+          seq: 2,
+          eventType: "thread",
+          threadId: "thread-11",
+          title: "Workstream",
+          timestamp: 10,
+        },
+        {
+          seq: 3,
+          eventType: "delta",
+          delta: "1. ما المدينة؟",
+          timestamp: 11,
+        },
+      ])
+      .mockResolvedValueOnce([]);
+
+    sendAnanProMessage.mockResolvedValue({
+      id: "thread-11",
+      title: "Workstream",
+      messages: [
+        { id: "m1", role: "user", content: "ابدأ مشروع", createdAt: 1 },
+        {
+          id: "m2",
+          role: "assistant",
+          content: "1. ما المدينة؟",
+          meta: { questions: ["ما المدينة؟"] },
+          createdAt: 2,
+        },
+      ],
+    });
+
+    const response = await POST(
+      new NextRequest("http://localhost/api/workspace/anan-pro?stream=1", {
+        method: "POST",
+        body: JSON.stringify({ message: "ابدأ مشروع" }),
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/event-stream");
+    expect(sendAnanProMessage).toHaveBeenCalled();
+    const firstCall = sendAnanProMessage.mock.calls[0]?.[0];
+    expect(firstCall?.message).toBe("ابدأ مشروع");
+    expect(firstCall?.threadId).toBeUndefined();
+
+    const payload = await response.text();
+    expect(payload).toContain("\"type\":\"stage\"");
+    expect(payload).toContain("\"phase\":\"intent_started\"");
+    expect(payload.indexOf("event: thread")).toBeLessThan(payload.indexOf("event: delta"));
+    expect(payload).toContain("\"1. ما المدينة؟\"");
+    expect(payload).toContain("\"type\":\"assistant_meta\"");
+    expect(payload.lastIndexOf("event: done")).toBeGreaterThan(payload.indexOf("event: delta"));
+  });
+
+  it("cancels an active stream session", async () => {
+    cancelAnanProStreamSession.mockResolvedValue({ ok: true, sessionId: "session-1" });
+
+    const response = await DELETE(
+      new NextRequest("http://localhost/api/workspace/anan-pro?sessionId=session-1", {
+        method: "DELETE",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(cancelAnanProStreamSession).toHaveBeenCalledWith("session-1");
+    await expect(response.json()).resolves.toEqual({ ok: true, sessionId: "session-1" });
   });
 });

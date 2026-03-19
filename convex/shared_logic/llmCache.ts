@@ -8,6 +8,20 @@ import { requireRole } from "../_core/security/accessPolicy";
 
 type GenerateTextOptions = Parameters<typeof generateText>[0];
 type GenerateTextResult = Awaited<ReturnType<typeof generateText>>;
+type GenerateTextUsage = GenerateTextResult["usage"];
+
+type CachedGenerateTextResponse = {
+  text: string;
+  usage?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+    inputTokens?: number;
+    outputTokens?: number;
+    reasoningTokens?: number;
+    cachedInputTokens?: number;
+  };
+};
 
 const llmCache = new LLMCache(components.llmCache);
 
@@ -30,6 +44,55 @@ function buildCacheRequest(options: GenerateTextOptions, modelName: string) {
   };
 }
 
+function toFiniteNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function normalizeUsage(usage: unknown): CachedGenerateTextResponse["usage"] | undefined {
+  if (!usage || typeof usage !== "object") return undefined;
+
+  const record = usage as Record<string, unknown>;
+  const promptTokens = toFiniteNumber(record.promptTokens) ?? toFiniteNumber(record.inputTokens);
+  const completionTokens =
+    toFiniteNumber(record.completionTokens) ?? toFiniteNumber(record.outputTokens);
+  const totalTokens = toFiniteNumber(record.totalTokens);
+  const reasoningTokens = toFiniteNumber(record.reasoningTokens);
+  const cachedInputTokens = toFiniteNumber(record.cachedInputTokens);
+
+  const normalized: CachedGenerateTextResponse["usage"] = {
+    promptTokens,
+    completionTokens,
+    totalTokens,
+    inputTokens: promptTokens,
+    outputTokens: completionTokens,
+    reasoningTokens,
+    cachedInputTokens,
+  };
+
+  const hasValue = Object.values(normalized).some((value) => value !== undefined);
+  return hasValue ? normalized : undefined;
+}
+
+function toCachedResponse(value: unknown): CachedGenerateTextResponse | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  if (typeof record.text !== "string") return null;
+
+  const usage = normalizeUsage(record.usage);
+  return usage ? { text: record.text, usage } : { text: record.text };
+}
+
+function toGenerateTextResultFromCache(
+  cachedResponse: unknown,
+): GenerateTextResult | null {
+  const normalized = toCachedResponse(cachedResponse);
+  if (!normalized) return null;
+  return {
+    text: normalized.text,
+    usage: normalized.usage as GenerateTextUsage,
+  } as GenerateTextResult;
+}
+
 /**
  * WHY:   LLM calls are expensive and repeated prompts should be cached automatically.
  * WHAT:  Runs `generateText` with an LLM cache lookup/store around it.
@@ -50,21 +113,38 @@ export async function cachedGenerateText(
   const request = buildCacheRequest(options, cache.modelName);
 
   if (!cache.bypass) {
-    const cached = await llmCache.lookup(ctx, { request, modelVersion: cache.modelVersion });
-    if (cached?.response) {
-      return cached.response as GenerateTextResult;
+    try {
+      const cached = await llmCache.lookup(ctx, { request, modelVersion: cache.modelVersion });
+      if (cached?.response) {
+        const parsed = toGenerateTextResultFromCache(cached.response);
+        if (parsed) {
+          return parsed;
+        }
+        console.warn("[llmCache] Ignoring malformed cached response and regenerating");
+      }
+    } catch (error) {
+      console.warn("[llmCache] Cache lookup failed, regenerating:", error);
     }
   }
 
   const response = await generateText(options);
-  await llmCache.store(ctx, {
-    request,
-    response,
-    tags: cache.tags,
-    metadata: cache.metadata,
-    pin: cache.pin,
-    modelVersion: cache.modelVersion,
-  });
+  const safeResponse = toCachedResponse(response);
+  if (safeResponse) {
+    try {
+      await llmCache.store(ctx, {
+        request,
+        response: safeResponse,
+        tags: cache.tags,
+        metadata: cache.metadata,
+        pin: cache.pin,
+        modelVersion: cache.modelVersion,
+      });
+    } catch (error) {
+      console.warn("[llmCache] Cache store failed (non-critical):", error);
+    }
+  } else {
+    console.warn("[llmCache] Skipping cache store due to unsupported response shape");
+  }
 
   return response;
 }

@@ -106,13 +106,12 @@ export default function ProjectsWorkspace({
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
-                        className={`border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${
-                          project.publicationState === "published"
+                        className={`border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${project.publicationState === "published"
                             ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                             : project.publicationState === "draft"
                               ? "border-amber-200 bg-amber-50 text-amber-700"
                               : "border-slate-200 bg-slate-50 text-slate-500"
-                        }`}
+                          }`}
                       >
                         {publicationLabels[project.publicationState]}
                       </span>
