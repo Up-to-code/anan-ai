@@ -136,7 +136,7 @@ function now() {
 }
 
 async function runWithKey<T>(
-  rawApiKey: string,
+  rawApiKey: string | null | undefined,
   operation: (secretHash: string, issuedAt: number) => Promise<T>,
 ): Promise<T> {
   try {
