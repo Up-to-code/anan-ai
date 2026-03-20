@@ -19,7 +19,7 @@ export async function PATCH(request: Request, { params }: OrganizationPropertyRo
   try {
     const body = await request.json();
     const { propertyId } = await params;
-    return Response.json({ property: await updateOrganizationPropertyByApiKey(getOrganizationApiKeyHeader(request) ?? undefined, propertyId, body) });
+    return Response.json({ property: await updateOrganizationPropertyByApiKey(getOrganizationApiKeyHeader(request), propertyId, body) });
   } catch (error) {
     if (error instanceof SyntaxError) {
       return toInvalidJsonResponse();
@@ -31,7 +31,7 @@ export async function PATCH(request: Request, { params }: OrganizationPropertyRo
 export async function DELETE(request: Request, { params }: OrganizationPropertyRouteProps) {
   try {
     const { propertyId } = await params;
-    await deleteOrganizationPropertyByApiKey(getOrganizationApiKeyHeader(request) ?? undefined, propertyId);
+    await deleteOrganizationPropertyByApiKey(getOrganizationApiKeyHeader(request), propertyId);
     return Response.json({ deleted: true });
   } catch (error) {
     return toErrorResponse(error);
