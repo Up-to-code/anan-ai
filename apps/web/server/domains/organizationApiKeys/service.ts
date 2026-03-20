@@ -192,14 +192,14 @@ export async function revokeCurrentOrganizationApiKeyForCurrentUser(
 }
 
 export async function listOrganizationClientsByApiKey(
-  rawApiKey: string,
+  rawApiKey: string | null | undefined,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<OrgApiClientRecord[]> {
   return runWithKey(rawApiKey, (secretHash, issuedAt) => dependencies.repository.listClientsByApiKey(secretHash, issuedAt));
 }
 
 export async function createOrganizationClientByApiKey(
-  rawApiKey: string,
+  rawApiKey: string | null | undefined,
   input: unknown,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<OrgApiClientRecord> {
@@ -208,7 +208,7 @@ export async function createOrganizationClientByApiKey(
 }
 
 export async function updateOrganizationClientByApiKey(
-  rawApiKey: string,
+  rawApiKey: string | null | undefined,
   clientId: string,
   input: unknown,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
@@ -218,7 +218,7 @@ export async function updateOrganizationClientByApiKey(
 }
 
 export async function deleteOrganizationClientByApiKey(
-  rawApiKey: string,
+  rawApiKey: string | null | undefined,
   clientId: string,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<void> {
@@ -226,14 +226,14 @@ export async function deleteOrganizationClientByApiKey(
 }
 
 export async function listOrganizationPropertiesByApiKey(
-  rawApiKey: string,
+  rawApiKey: string | null | undefined,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<OrgApiPropertyRecord[]> {
   return runWithKey(rawApiKey, (secretHash, issuedAt) => dependencies.repository.listPropertiesByApiKey(secretHash, issuedAt));
 }
 
 export async function createOrganizationPropertyByApiKey(
-  rawApiKey: string,
+  rawApiKey: string | null | undefined,
   input: unknown,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<OrgApiPropertyRecord> {
@@ -242,7 +242,7 @@ export async function createOrganizationPropertyByApiKey(
 }
 
 export async function updateOrganizationPropertyByApiKey(
-  rawApiKey: string,
+  rawApiKey: string | null | undefined,
   propertyId: string,
   input: unknown,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
@@ -252,7 +252,7 @@ export async function updateOrganizationPropertyByApiKey(
 }
 
 export async function deleteOrganizationPropertyByApiKey(
-  rawApiKey: string,
+  rawApiKey: string | null | undefined,
   propertyId: string,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<void> {
