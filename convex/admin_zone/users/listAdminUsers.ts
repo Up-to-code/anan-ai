@@ -22,12 +22,7 @@ export const listAdminUsersArgs = {
   ),
 };
 
-export async function listAdminUsersHandler(
-  ctx: any,
-  { paginationOpts, role }: { paginationOpts: { cursor: string | null; numItems: number }; role?: string | null }
-) {
-  await requireRole(ctx, ["admin"]);
-
+async function loadAdminUsersData(ctx: any) {
   const [profiles, users, brokers, developers, tenantLinks, verificationRequests] = await Promise.all([
     ctx.db.query("userProfiles").collect(),
     ctx.db.query("users").collect(),
@@ -36,8 +31,11 @@ export async function listAdminUsersHandler(
     ctx.db.query("tenantOrgLinks").collect(),
     ctx.db.query("verificationRequests").collect(),
   ]);
-
   const tenantMemberships = await buildTenantMembershipRows(ctx, tenantLinks);
+  return { profiles, users, brokers, developers, verificationRequests, tenantMemberships };
+}
+
+function buildMembershipCountByAuthUserId(tenantMemberships: Array<{ member: { userId: string } }>) {
   const membershipCountByAuthUserId = new Map<string, number>();
   for (const row of tenantMemberships) {
     membershipCountByAuthUserId.set(
@@ -45,19 +43,26 @@ export async function listAdminUsersHandler(
       (membershipCountByAuthUserId.get(row.member.userId) ?? 0) + 1
     );
   }
+  return membershipCountByAuthUserId;
+}
 
-  const profileRows = profiles.map((profile: any) => {
-    const latestRequest = verificationRequests
+function buildProfileRows(args: {
+  profiles: any[];
+  verificationRequests: any[];
+  brokers: any[];
+  developers: any[];
+  membershipCountByAuthUserId: Map<string, number>;
+}) {
+  return args.profiles.map((profile: any) => {
+    const latestRequest = args.verificationRequests
       .filter((request: any) => request.subjectProfileId === profile._id)
       .sort((left: any, right: any) => right.submittedAt - left.submittedAt)[0];
     const linkedBroker = profile.brokerId
-      ? brokers.find((item: any) => item._id === profile.brokerId)
+      ? args.brokers.find((item: any) => item._id === profile.brokerId)
       : null;
     const linkedDeveloper = profile.REDId
-      ? developers.find((item: any) => item._id === profile.REDId)
+      ? args.developers.find((item: any) => item._id === profile.REDId)
       : null;
-    const membershipsCount = membershipCountByAuthUserId.get(profile.authUserId) ?? 0;
-
     return {
       userKey: buildUserKey({
         authUserId: profile.authUserId,
@@ -75,13 +80,14 @@ export async function listAdminUsersHandler(
       isActive: profile.isActive ?? true,
       organizationName: linkedBroker?.name ?? linkedDeveloper?.name ?? null,
       organizationType: linkedBroker ? "broker" : linkedDeveloper ? "red" : null,
-      membershipsCount,
+      membershipsCount: args.membershipCountByAuthUserId.get(profile.authUserId) ?? 0,
       verificationStatus: resolveVerificationStatus(latestRequest?.currentStatus, profile.roleStatus),
     };
   });
+}
 
-  const matchedEmails = new Set(profileRows.map((item: any) => item.email).filter(Boolean));
-  const channelRows = users
+function buildChannelRows(users: any[], matchedEmails: Set<string>) {
+  return users
     .filter((user: any) => !user.email || !matchedEmails.has(user.email))
     .map((user: any) => ({
       userKey: buildUserKey({
@@ -103,7 +109,24 @@ export async function listAdminUsersHandler(
       membershipsCount: 0,
       verificationStatus: "none",
     }));
+}
 
+export async function listAdminUsersHandler(
+  ctx: any,
+  { paginationOpts, role }: { paginationOpts: { cursor: string | null; numItems: number }; role?: string | null }
+) {
+  await requireRole(ctx, ["admin"]);
+  const data = await loadAdminUsersData(ctx);
+  const membershipCountByAuthUserId = buildMembershipCountByAuthUserId(data.tenantMemberships);
+  const profileRows = buildProfileRows({
+    profiles: data.profiles,
+    verificationRequests: data.verificationRequests,
+    brokers: data.brokers,
+    developers: data.developers,
+    membershipCountByAuthUserId,
+  });
+  const matchedEmails = new Set(profileRows.map((item: any) => item.email).filter(Boolean));
+  const channelRows = buildChannelRows(data.users, matchedEmails);
   const rows = [...profileRows, ...channelRows]
     .filter((item) => !role || item.role === role)
     .sort((left, right) => left.name.localeCompare(right.name, "ar"));

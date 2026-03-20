@@ -40,6 +40,11 @@ function shouldRetryAttempt(error: unknown, attempt: number, policy: RetryPolicy
   return hasMoreAttempts && isRetryableError(error);
 }
 
+function getRetryDelayOrThrow(error: unknown, attempt: number, policy: RetryPolicy) {
+  if (!shouldRetryAttempt(error, attempt, policy)) throw error;
+  return getBackoffWithJitter(attempt, policy);
+}
+
 export async function withRetry<T>(
   fn: (attempt: number) => Promise<T>,
   policy: RetryPolicy = HTTP_RETRY_POLICY,
@@ -51,8 +56,7 @@ export async function withRetry<T>(
       return await fn(attempt);
     } catch (error) {
       lastError = error;
-      if (!shouldRetryAttempt(error, attempt, policy)) throw error;
-      const delay = getBackoffWithJitter(attempt, policy);
+      const delay = getRetryDelayOrThrow(error, attempt, policy);
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }

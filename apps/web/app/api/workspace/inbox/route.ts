@@ -21,6 +21,63 @@ import {
 } from "@/server/contracts/inbox";
 import { DomainError, toErrorResponse } from "@/server/contracts/errors";
 import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
+import type { ZodType } from "zod";
+
+function parsePayloadOrThrow<T>(schema: ZodType<T>, body: unknown, fallbackMessage: string) {
+  const parsed = schema.safeParse(body);
+  if (parsed.success) return parsed.data;
+  throw new DomainError({
+    code: "INVALID_ARGUMENT",
+    message: parsed.error.issues[0]?.message ?? fallbackMessage,
+    status: 400,
+  });
+}
+
+async function handleResolveIntent(body: unknown) {
+  const payload = parsePayloadOrThrow(resolveDirectConversationInputSchema, body, "Invalid conversation target");
+  return Response.json({ conversationId: await resolveInboxConversation(payload) }, { status: 201 });
+}
+
+async function handleOfferBootstrapIntent(body: unknown) {
+  const payload = parsePayloadOrThrow(bootstrapOfferConversationInputSchema, body, "Invalid offer conversation payload");
+  return Response.json(await bootstrapInboxOfferConversation(payload), { status: 201 });
+}
+
+async function handleShareFileIntent(body: unknown) {
+  const payload = parsePayloadOrThrow(shareFileInConversationInputSchema, body, "Invalid file share payload");
+  return Response.json(await shareInboxFileInConversation(payload), { status: 201 });
+}
+
+async function handleShareProjectIntent(body: unknown) {
+  const payload = parsePayloadOrThrow(shareProjectInConversationInputSchema, body, "Invalid project share payload");
+  return Response.json(await shareInboxProjectInConversation(payload), { status: 201 });
+}
+
+async function handleShareDealIntent(body: unknown) {
+  const payload = parsePayloadOrThrow(shareDealInConversationInputSchema, body, "Invalid deal share payload");
+  return Response.json(await shareInboxDealInConversation(payload), { status: 201 });
+}
+
+async function handleCreatePrivateOfferIntent(body: unknown) {
+  const payload = parsePayloadOrThrow(createPrivateOfferInConversationInputSchema, body, "Invalid private offer payload");
+  return Response.json(await createInboxPrivateOfferInConversation(payload), { status: 201 });
+}
+
+async function handleSendMessageIntent(body: unknown) {
+  const payload = parsePayloadOrThrow(sendConversationMessageInputSchema, body, "Invalid message payload");
+  return Response.json(await sendInboxMessage(payload), { status: 201 });
+}
+
+async function handlePostByIntent(body: unknown) {
+  const intent = typeof body === "object" && body !== null ? (body as { intent?: string }).intent : undefined;
+  if (intent === "resolve") return handleResolveIntent(body);
+  if (intent === "offerBootstrap") return handleOfferBootstrapIntent(body);
+  if (intent === "shareFile") return handleShareFileIntent(body);
+  if (intent === "shareProject") return handleShareProjectIntent(body);
+  if (intent === "shareDeal") return handleShareDealIntent(body);
+  if (intent === "createPrivateOffer") return handleCreatePrivateOfferIntent(body);
+  return handleSendMessageIntent(body);
+}
 
 /**
  * WHY:   The workspace inbox needs one gateway entrypoint for list and detail reads.
@@ -47,89 +104,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    if (body.intent === "resolve") {
-      const parsed = resolveDirectConversationInputSchema.safeParse(body);
-      if (!parsed.success) {
-        throw new DomainError({
-          code: "INVALID_ARGUMENT",
-          message: parsed.error.issues[0]?.message ?? "Invalid conversation target",
-          status: 400,
-        });
-      }
-      return Response.json({ conversationId: await resolveInboxConversation(parsed.data) }, { status: 201 });
-    }
-
-    if (body.intent === "offerBootstrap") {
-      const parsed = bootstrapOfferConversationInputSchema.safeParse(body);
-      if (!parsed.success) {
-        throw new DomainError({
-          code: "INVALID_ARGUMENT",
-          message: parsed.error.issues[0]?.message ?? "Invalid offer conversation payload",
-          status: 400,
-        });
-      }
-      return Response.json(await bootstrapInboxOfferConversation(parsed.data), { status: 201 });
-    }
-
-    if (body.intent === "shareFile") {
-      const parsed = shareFileInConversationInputSchema.safeParse(body);
-      if (!parsed.success) {
-        throw new DomainError({
-          code: "INVALID_ARGUMENT",
-          message: parsed.error.issues[0]?.message ?? "Invalid file share payload",
-          status: 400,
-        });
-      }
-      return Response.json(await shareInboxFileInConversation(parsed.data), { status: 201 });
-    }
-
-    if (body.intent === "shareProject") {
-      const parsed = shareProjectInConversationInputSchema.safeParse(body);
-      if (!parsed.success) {
-        throw new DomainError({
-          code: "INVALID_ARGUMENT",
-          message: parsed.error.issues[0]?.message ?? "Invalid project share payload",
-          status: 400,
-        });
-      }
-      return Response.json(await shareInboxProjectInConversation(parsed.data), { status: 201 });
-    }
-
-    if (body.intent === "shareDeal") {
-      const parsed = shareDealInConversationInputSchema.safeParse(body);
-      if (!parsed.success) {
-        throw new DomainError({
-          code: "INVALID_ARGUMENT",
-          message: parsed.error.issues[0]?.message ?? "Invalid deal share payload",
-          status: 400,
-        });
-      }
-      return Response.json(await shareInboxDealInConversation(parsed.data), { status: 201 });
-    }
-
-    if (body.intent === "createPrivateOffer") {
-      const parsed = createPrivateOfferInConversationInputSchema.safeParse(body);
-      if (!parsed.success) {
-        throw new DomainError({
-          code: "INVALID_ARGUMENT",
-          message: parsed.error.issues[0]?.message ?? "Invalid private offer payload",
-          status: 400,
-        });
-      }
-      return Response.json(await createInboxPrivateOfferInConversation(parsed.data), { status: 201 });
-    }
-
-    const parsed = sendConversationMessageInputSchema.safeParse(body);
-    if (!parsed.success) {
-      throw new DomainError({
-        code: "INVALID_ARGUMENT",
-        message: parsed.error.issues[0]?.message ?? "Invalid message payload",
-        status: 400,
-      });
-    }
-
-    return Response.json(await sendInboxMessage(parsed.data), { status: 201 });
+    return await handlePostByIntent(await request.json());
   } catch (error) {
     if (error instanceof SyntaxError) {
       return toInvalidJsonResponse();

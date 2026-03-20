@@ -13,7 +13,7 @@ type InboxIndexPageProps = {
 function mapDealOption(deal: {
   id: string;
   title: string;
-  stage: string;
+  stage: Awaited<ReturnType<ReturnType<typeof getWorkspaceCrmZone>["listDeals"]>>[number]["stage"];
   value?: number | null;
   contactName?: string | null;
 }) {
@@ -21,7 +21,7 @@ function mapDealOption(deal: {
     id: deal.id,
     title: deal.title,
     stage: deal.stage,
-    value: deal.value,
+    value: deal.value ?? undefined,
     contactName: deal.contactName ?? null,
   };
 }
@@ -40,7 +40,7 @@ function mapProjectOption(property: {
     title: property.title,
     location: property.location ?? property.address ?? "",
     imageUrl: property.heroImage?.url ?? property.media?.[0]?.url ?? null,
-    price: property.price,
+    price: property.price ?? undefined,
   };
 }
 

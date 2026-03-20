@@ -63,6 +63,79 @@ function buildOrganizationOfferEntry(args: BuildOrganizationOfferEntryArgs) {
   };
 }
 
+function buildOfferConversationIds(messages: any[]) {
+  const offerConversationIds = new Map<string, Set<string>>();
+  for (const message of messages) {
+    const offerId = extractOfferIdFromMetadata(message.metadata);
+    if (!offerId) continue;
+    const current = offerConversationIds.get(offerId) ?? new Set<string>();
+    current.add(String(message.conversationId));
+    offerConversationIds.set(offerId, current);
+  }
+  return offerConversationIds;
+}
+
+function buildDealCountByOfferId(deals: any[]) {
+  const dealCountByOfferId = new Map<string, number>();
+  for (const deal of deals) {
+    const key = String(deal.offerId ?? "");
+    if (key) incrementCount(dealCountByOfferId, key);
+  }
+  return dealCountByOfferId;
+}
+
+function buildOrderCountByConversationId(orders: any[]) {
+  const orderCountByConversationId = new Map<string, number>();
+  for (const order of orders) {
+    const threadKey = order.threadId ? String(order.threadId) : "";
+    if (threadKey) incrementCount(orderCountByConversationId, threadKey);
+  }
+  return orderCountByConversationId;
+}
+
+function isOrganizationOffer(offer: any, isBroker: boolean, parsedId: string) {
+  return isBroker
+    ? String(offer.fromBrokerId ?? "") === parsedId || String(offer.toBrokerId ?? "") === parsedId
+    : String(offer.fromREDId ?? "") === parsedId || String(offer.toREDId ?? "") === parsedId;
+}
+
+function collectCounterpartStats(organizationOffers: ReturnType<typeof buildOrganizationOfferEntry>[]) {
+  const counterpartStats = new Map<
+    string,
+    {
+      organizationKey: string;
+      organizationName: string;
+      ownerType: string;
+      offersCount: number;
+      acceptedOffersCount: number;
+      conversationsCount: number;
+      dealsCount: number;
+      ordersCount: number;
+    }
+  >();
+  for (const offer of organizationOffers) {
+    if (!offer.counterpart) continue;
+    const key = offer.counterpart.organizationKey;
+    const current = counterpartStats.get(key) ?? {
+      organizationKey: key,
+      organizationName: offer.counterpart.name,
+      ownerType: offer.counterpart.ownerType,
+      offersCount: 0,
+      acceptedOffersCount: 0,
+      conversationsCount: 0,
+      dealsCount: 0,
+      ordersCount: 0,
+    };
+    current.offersCount += 1;
+    if (offer.status === "accepted") current.acceptedOffersCount += 1;
+    current.conversationsCount += offer.conversationCount;
+    current.dealsCount += offer.dealCount;
+    current.ordersCount += offer.orderCount;
+    counterpartStats.set(key, current);
+  }
+  return counterpartStats;
+}
+
 export function buildOrganizationOffers(args: {
   isBroker: boolean;
   parsedId: string;
@@ -74,40 +147,13 @@ export function buildOrganizationOffers(args: {
   organizationDeals: any[];
   organizationOrders: any[];
 }) {
-  const offerConversationIds = new Map<string, Set<string>>();
-  for (const message of args.organizationInboxMessages) {
-    const offerId = extractOfferIdFromMetadata(message.metadata);
-    if (!offerId) {
-      continue;
-    }
-
-    const current = offerConversationIds.get(offerId) ?? new Set<string>();
-    current.add(String(message.conversationId));
-    offerConversationIds.set(offerId, current);
-  }
-
+  const offerConversationIds = buildOfferConversationIds(args.organizationInboxMessages);
   const propertyTitleById = new Map(args.properties.map((item) => [String(item._id), item.title ?? "عقار"]));
-  const dealCountByOfferId = new Map<string, number>();
-  for (const deal of args.organizationDeals) {
-    const key = String(deal.offerId ?? "");
-    if (key) {
-      incrementCount(dealCountByOfferId, key);
-    }
-  }
-  const orderCountByConversationId = new Map<string, number>();
-  for (const order of args.organizationOrders) {
-    const threadKey = order.threadId ? String(order.threadId) : "";
-    if (threadKey) {
-      incrementCount(orderCountByConversationId, threadKey);
-    }
-  }
+  const dealCountByOfferId = buildDealCountByOfferId(args.organizationDeals);
+  const orderCountByConversationId = buildOrderCountByConversationId(args.organizationOrders);
 
   const organizationOffers = args.offers
-    .filter((offer) =>
-      args.isBroker
-        ? String(offer.fromBrokerId ?? "") === args.parsedId || String(offer.toBrokerId ?? "") === args.parsedId
-        : String(offer.fromREDId ?? "") === args.parsedId || String(offer.toREDId ?? "") === args.parsedId
-    )
+    .filter((offer) => isOrganizationOffer(offer, args.isBroker, args.parsedId))
     .map((offer) =>
       buildOrganizationOfferEntry({
         offer,
@@ -122,46 +168,6 @@ export function buildOrganizationOffers(args: {
       }),
     )
     .sort((left, right) => right.createdAt - left.createdAt);
-
-  const counterpartStats = new Map<
-    string,
-    {
-      organizationKey: string;
-      organizationName: string;
-      ownerType: string;
-      offersCount: number;
-      acceptedOffersCount: number;
-      conversationsCount: number;
-      dealsCount: number;
-      ordersCount: number;
-    }
-  >();
-
-  for (const offer of organizationOffers) {
-    if (!offer.counterpart) {
-      continue;
-    }
-
-    const key = offer.counterpart.organizationKey;
-    const current = counterpartStats.get(key) ?? {
-      organizationKey: key,
-      organizationName: offer.counterpart.name,
-      ownerType: offer.counterpart.ownerType,
-      offersCount: 0,
-      acceptedOffersCount: 0,
-      conversationsCount: 0,
-      dealsCount: 0,
-      ordersCount: 0,
-    };
-    current.offersCount += 1;
-    if (offer.status === "accepted") {
-      current.acceptedOffersCount += 1;
-    }
-    current.conversationsCount += offer.conversationCount;
-    current.dealsCount += offer.dealCount;
-    current.ordersCount += offer.orderCount;
-    counterpartStats.set(key, current);
-  }
-
+  const counterpartStats = collectCounterpartStats(organizationOffers);
   return { counterpartStats, organizationOffers };
 }

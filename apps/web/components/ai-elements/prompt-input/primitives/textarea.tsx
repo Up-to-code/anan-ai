@@ -15,6 +15,18 @@ import { usePromptInputAttachments } from "../attachments";
 
 export type PromptInputTextareaProps = ComponentProps<typeof InputGroupTextarea>;
 
+function collectClipboardFiles(items: DataTransferItemList | undefined | null) {
+  if (!items) return [];
+  const files: File[] = [];
+  for (const item of items) {
+    if (item.kind !== "file") continue;
+    const file = item.getAsFile();
+    if (!file) continue;
+    files.push(file);
+  }
+  return files;
+}
+
 export const PromptInputTextarea = ({
   onChange,
   onKeyDown,
@@ -70,21 +82,7 @@ export const PromptInputTextarea = ({
 
   const handlePaste: ClipboardEventHandler<HTMLTextAreaElement> = useCallback(
     (event) => {
-      const items = event.clipboardData?.items;
-      if (!items) {
-        return;
-      }
-
-      const files: File[] = [];
-      for (const item of items) {
-        if (item.kind === "file") {
-          const file = item.getAsFile();
-          if (file) {
-            files.push(file);
-          }
-        }
-      }
-
+      const files = collectClipboardFiles(event.clipboardData?.items);
       if (files.length > 0) {
         event.preventDefault();
         attachments.add(files);
@@ -120,4 +118,3 @@ export const PromptInputTextarea = ({
     />
   );
 };
-

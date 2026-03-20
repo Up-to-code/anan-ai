@@ -71,6 +71,8 @@ import type * as admin_zone_services_propertiesService from "../admin_zone/servi
 import type * as admin_zone_services_usersService from "../admin_zone/services/usersService.js";
 import type * as admin_zone_tenantsMigration from "../admin_zone/tenantsMigration.js";
 import type * as admin_zone_tenantsMigration_helpers from "../admin_zone/tenantsMigration/helpers.js";
+import type * as admin_zone_tenantsMigration_memberInviteProfileSteps from "../admin_zone/tenantsMigration/memberInviteProfileSteps.js";
+import type * as admin_zone_tenantsMigration_migrateFromLegacy from "../admin_zone/tenantsMigration/migrateFromLegacy.js";
 import type * as admin_zone_threads from "../admin_zone/threads.js";
 import type * as admin_zone_users from "../admin_zone/users.js";
 import type * as admin_zone_users_detail_activity from "../admin_zone/users/detail/activity.js";
@@ -174,6 +176,7 @@ import type * as ai_zone_services_assistantService_handleAssistantMessage from "
 import type * as ai_zone_services_assistantService_owner from "../ai_zone/services/assistantService/owner.js";
 import type * as ai_zone_services_assistantService_persistence from "../ai_zone/services/assistantService/persistence.js";
 import type * as ai_zone_services_assistantService_promptComposer from "../ai_zone/services/assistantService/promptComposer.js";
+import type * as ai_zone_services_assistantService_streamSync from "../ai_zone/services/assistantService/streamSync.js";
 import type * as ai_zone_services_assistantService_threads from "../ai_zone/services/assistantService/threads.js";
 import type * as ai_zone_services_assistantService_types from "../ai_zone/services/assistantService/types.js";
 import type * as ai_zone_services_assistantService_utils from "../ai_zone/services/assistantService/utils.js";
@@ -376,6 +379,8 @@ declare const fullApi: ApiFromModules<{
   "admin_zone/services/usersService": typeof admin_zone_services_usersService;
   "admin_zone/tenantsMigration": typeof admin_zone_tenantsMigration;
   "admin_zone/tenantsMigration/helpers": typeof admin_zone_tenantsMigration_helpers;
+  "admin_zone/tenantsMigration/memberInviteProfileSteps": typeof admin_zone_tenantsMigration_memberInviteProfileSteps;
+  "admin_zone/tenantsMigration/migrateFromLegacy": typeof admin_zone_tenantsMigration_migrateFromLegacy;
   "admin_zone/threads": typeof admin_zone_threads;
   "admin_zone/users": typeof admin_zone_users;
   "admin_zone/users/detail/activity": typeof admin_zone_users_detail_activity;
@@ -479,6 +484,7 @@ declare const fullApi: ApiFromModules<{
   "ai_zone/services/assistantService/owner": typeof ai_zone_services_assistantService_owner;
   "ai_zone/services/assistantService/persistence": typeof ai_zone_services_assistantService_persistence;
   "ai_zone/services/assistantService/promptComposer": typeof ai_zone_services_assistantService_promptComposer;
+  "ai_zone/services/assistantService/streamSync": typeof ai_zone_services_assistantService_streamSync;
   "ai_zone/services/assistantService/threads": typeof ai_zone_services_assistantService_threads;
   "ai_zone/services/assistantService/types": typeof ai_zone_services_assistantService_types;
   "ai_zone/services/assistantService/utils": typeof ai_zone_services_assistantService_utils;

@@ -72,20 +72,38 @@ function ClientRow({ client }: { client: CrmClientRecord }) {
   );
 }
 
-/**
- * WHY:   The CRM client index should be segmented visually instead of reading like a flat text list.
- * WHAT:  Renders client cards with chip-based filtering by relationship completeness.
- * HOW:   Keeps the selected segment in local state while the route stays SSR-backed.
- */
-export default function ClientsPage({
-  clients,
-}: {
-  clients: CrmClientRecord[];
-}) {
+const FILTER_CHIPS = [
+  { key: "all", label: "الكل" },
+  { key: "unlinked", label: "بدون روابط" },
+  { key: "project", label: "مشروع فقط" },
+  { key: "full", label: "مشروع + وسيط" },
+] as const;
+
+function ClientsTable({ visibleClients }: { visibleClients: CrmClientRecord[] }) {
+  return (
+    <div className="w-full max-w-6xl overflow-x-auto border border-slate-200 bg-white">
+      <table className="w-full text-right text-sm">
+        <thead className="bg-slate-50 border-b border-slate-200">
+          <tr>
+            <th className="px-6 py-4 font-black text-slate-900 tracking-widest text-[11px] uppercase">العميل</th>
+            <th className="px-6 py-4 font-black text-slate-900 tracking-widest text-[11px] uppercase">المرحلة</th>
+            <th className="px-6 py-4 font-black text-slate-900 tracking-widest text-[11px] uppercase">الاهتمام</th>
+            <th className="px-6 py-4 font-black text-slate-900 tracking-widest text-[11px] uppercase">الميزانية</th>
+            <th className="px-6 py-4 font-black text-slate-900 tracking-widest text-[11px] uppercase">التكليفات</th>
+            <th className="px-6 py-4 font-black text-slate-900 tracking-widest text-[11px] uppercase text-left">إجراء</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {visibleClients.map((client) => <ClientRow key={client.id} client={client} />)}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default function ClientsPage({ clients }: { clients: CrmClientRecord[] }) {
   const [filterKey, setFilterKey] = useState("all");
-
   const visibleClients = clients.filter((client) => matchesClientFilter(client, filterKey));
-
   return (
     <div className="flex min-h-full flex-col">
       <ZonePageIntro
@@ -104,34 +122,8 @@ export default function ClientsPage({
       />
 
       <div className="space-y-6 px-6 py-6 lg:px-8 lg:py-8">
-        <FilterChipBar
-          chips={[
-            { key: "all", label: "الكل" },
-            { key: "unlinked", label: "بدون روابط" },
-            { key: "project", label: "مشروع فقط" },
-            { key: "full", label: "مشروع + وسيط" },
-          ]}
-          activeKey={filterKey}
-          onChange={setFilterKey}
-        />
-
-        <div className="w-full max-w-6xl overflow-x-auto border border-slate-200 bg-white">
-          <table className="w-full text-right text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-4 font-black text-slate-900 tracking-widest text-[11px] uppercase">العميل</th>
-                <th className="px-6 py-4 font-black text-slate-900 tracking-widest text-[11px] uppercase">المرحلة</th>
-                <th className="px-6 py-4 font-black text-slate-900 tracking-widest text-[11px] uppercase">الاهتمام</th>
-                <th className="px-6 py-4 font-black text-slate-900 tracking-widest text-[11px] uppercase">الميزانية</th>
-                <th className="px-6 py-4 font-black text-slate-900 tracking-widest text-[11px] uppercase">التكليفات</th>
-                <th className="px-6 py-4 font-black text-slate-900 tracking-widest text-[11px] uppercase text-left">إجراء</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {visibleClients.map((client) => <ClientRow key={client.id} client={client} />)}
-            </tbody>
-          </table>
-        </div>
+        <FilterChipBar chips={[...FILTER_CHIPS]} activeKey={filterKey} onChange={setFilterKey} />
+        <ClientsTable visibleClients={visibleClients} />
       </div>
     </div>
   );

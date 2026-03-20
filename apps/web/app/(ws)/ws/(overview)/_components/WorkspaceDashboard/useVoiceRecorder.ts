@@ -10,7 +10,7 @@ import {
 } from "./useVoiceRecorder.shared";
 export { buildBarsFromFrequencyData };
 type ProcessingPhase = "idle" | "recording" | "uploading" | "transcribing" | "sending" | "error";
-type RecorderRefs = { streamRef: React.MutableRefObject<MediaStream | null>; mediaRecorderRef: React.MutableRefObject<MediaRecorder | null>; recordedChunksRef: React.MutableRefObject<BlobPart[]>; recordStartedAtRef: React.MutableRefObject<number>; durationIntervalRef: React.MutableRefObject<number | null>; stopTimeoutRef: React.MutableRefObject<number | null>; stopPromiseRef: React.MutableRefObject<Promise<Blob> | null>; animationFrameRef: React.MutableRefObject<number | null>; audioContextRef: React.MutableRefObject<AudioContext | null>; analyserRef: React.MutableRefObject<AnalyserNode | null>; analyserDataRef: React.MutableRefObject<Uint8Array | null> };
+type RecorderRefs = { streamRef: React.MutableRefObject<MediaStream | null>; mediaRecorderRef: React.MutableRefObject<MediaRecorder | null>; recordedChunksRef: React.MutableRefObject<BlobPart[]>; recordStartedAtRef: React.MutableRefObject<number>; durationIntervalRef: React.MutableRefObject<number | null>; stopTimeoutRef: React.MutableRefObject<number | null>; stopPromiseRef: React.MutableRefObject<Promise<Blob> | null>; animationFrameRef: React.MutableRefObject<number | null>; audioContextRef: React.MutableRefObject<AudioContext | null>; analyserRef: React.MutableRefObject<AnalyserNode | null>; analyserDataRef: React.MutableRefObject<Uint8Array<ArrayBuffer> | null> };
 function createEmptyLevels() {
   return Array.from({ length: METER_BARS }, () => 0);
 }
@@ -26,7 +26,7 @@ function useRecorderRefs(): RecorderRefs {
     animationFrameRef: useRef<number | null>(null),
     audioContextRef: useRef<AudioContext | null>(null),
     analyserRef: useRef<AnalyserNode | null>(null),
-    analyserDataRef: useRef<Uint8Array | null>(null),
+    analyserDataRef: useRef<Uint8Array<ArrayBuffer> | null>(null),
   };
 }
 function stopTracks(stream: MediaStream | null) {

@@ -39,6 +39,18 @@ type AgPropertyFormProps = {
   onDelete?: () => void;
 };
 
+const LICENSE_STATUS_UI = {
+  approved: { label: "معتمد", tone: "text-emerald-700 bg-emerald-50 border-emerald-200" },
+  rejected: { label: "مرفوض", tone: "text-rose-700 bg-rose-50 border-rose-200" },
+  pending: { label: "قيد المراجعة", tone: "text-amber-700 bg-amber-50 border-amber-200" },
+  default: { label: "غير مكتمل", tone: "text-slate-600 bg-slate-50 border-slate-200" },
+} as const;
+
+function resolveLicenseStatusUi(status: "pending" | "approved" | "rejected" | null) {
+  if (!status) return LICENSE_STATUS_UI.default;
+  return LICENSE_STATUS_UI[status];
+}
+
 /**
  * WHY:   Institutional real-estate interfaces require structured, non-flex grid layouts for perfect alignment.
  * WHAT:  Evolved property engine with multi-image/video support and UX safety logic. Supports create & edit.
@@ -86,22 +98,9 @@ export default function AgPropertyForm({
     const licenseInputRef = useRef<HTMLInputElement | null>(null);
 
     const isEditMode = Boolean(initialData);
-    const adLicenseLabel =
-      adLicenseStatus === "approved"
-        ? "معتمد"
-        : adLicenseStatus === "rejected"
-          ? "مرفوض"
-          : adLicenseStatus === "pending"
-            ? "قيد المراجعة"
-            : "غير مكتمل";
-    const adLicenseTone =
-      adLicenseStatus === "approved"
-        ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-        : adLicenseStatus === "rejected"
-          ? "text-rose-700 bg-rose-50 border-rose-200"
-          : adLicenseStatus === "pending"
-            ? "text-amber-700 bg-amber-50 border-amber-200"
-            : "text-slate-600 bg-slate-50 border-slate-200";
+    const adLicenseUi = resolveLicenseStatusUi(adLicenseStatus);
+    const adLicenseLabel = adLicenseUi.label;
+    const adLicenseTone = adLicenseUi.tone;
 
     const filteredBrokers = useMemo(() => {
         return brokers.filter(b => 

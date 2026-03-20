@@ -1,7 +1,7 @@
 {
   "meta": {
     "repoRoot": "/Users/ahmedmansour/anan-lit",
-    "scannedTrackedSourceFiles": 1109,
+    "scannedTrackedSourceFiles": 1111,
     "ignorePrefixes": [
       "node_modules/",
       ".git/",
@@ -23,9 +23,9 @@
       "file": "convex/ai_zone/services/assistantService/handleAssistantMessage.ts",
       "name": "handleAssistantMessage",
       "owner": null,
-      "startLine": 17,
-      "endLine": 296,
-      "lines": 280
+      "startLine": 18,
+      "endLine": 290,
+      "lines": 273
     },
     {
       "file": "apps/admin/admin_zone/pages/OrganizationDetailPage/index.tsx",
@@ -68,14 +68,6 @@
       "lines": 261
     },
     {
-      "file": "convex/admin_zone/tenantsMigration.ts",
-      "name": "handler",
-      "owner": null,
-      "startLine": 29,
-      "endLine": 289,
-      "lines": 261
-    },
-    {
       "file": "apps/admin/admin_zone/pages/UserDetailPage/index.tsx",
       "name": "UserDetailPage",
       "owner": null,
@@ -98,14 +90,6 @@
       "startLine": 39,
       "endLine": 277,
       "lines": 239
-    },
-    {
-      "file": "apps/web/components/shared/ag-aui/AgPropertyForm.tsx",
-      "name": "AgPropertyForm",
-      "owner": null,
-      "startLine": 42,
-      "endLine": 273,
-      "lines": 232
     },
     {
       "file": "apps/web/components/ai-elements/prompt-input/promptInput.tsx",
@@ -132,6 +116,14 @@
       "lines": 223
     },
     {
+      "file": "apps/web/components/shared/ag-aui/AgPropertyForm.tsx",
+      "name": "AgPropertyForm",
+      "owner": null,
+      "startLine": 54,
+      "endLine": 272,
+      "lines": 219
+    },
+    {
       "file": "apps/web/app/(ws)/ws/(zones)/inbox/InboxPage/useRealtimeInbox.ts",
       "name": "useRealtimeInbox",
       "owner": null,
@@ -154,14 +146,6 @@
       "startLine": 9,
       "endLine": 217,
       "lines": 209
-    },
-    {
-      "file": "apps/web/app/(ws)/ws/(overview)/_components/WorkspaceDashboard/WorkspaceAssistantCanvas.tsx",
-      "name": "WorkspaceAssistantCanvas",
-      "owner": null,
-      "startLine": 71,
-      "endLine": 274,
-      "lines": 204
     },
     {
       "file": "apps/web/app/(ws)/ws/(overview)/_components/WorkspaceDashboard/useWorkspaceAssistant.ts",
@@ -247,17 +231,9 @@
       "file": "apps/web/app/(ws)/ws/(zones)/crm/ClientDetailPage/index.tsx",
       "name": "ClientDetailPage",
       "owner": null,
-      "startLine": 49,
-      "endLine": 214,
-      "lines": 166
-    },
-    {
-      "file": "apps/web/components/shared/ag-aui/AgPropertyFormPrimaryColumn.tsx",
-      "name": "AgPropertyFormPrimaryColumn",
-      "owner": null,
-      "startLine": 18,
-      "endLine": 181,
-      "lines": 164
+      "startLine": 65,
+      "endLine": 220,
+      "lines": 156
     },
     {
       "file": "apps/web/app/(ws)/ws/(overview)/settings/_components/OrganizationSettingsWorkspace.tsx",
@@ -298,14 +274,6 @@
       "startLine": 10,
       "endLine": 158,
       "lines": 149
-    },
-    {
-      "file": "apps/web/app/(ws)/ws/(zones)/inbox/InboxPage/components/InboxSidebar.tsx",
-      "name": "InboxSidebar",
-      "owner": null,
-      "startLine": 150,
-      "endLine": 297,
-      "lines": 148
     },
     {
       "file": "convex/ai_zone/agents/core/BaseConfiguredAgent.ts",
@@ -402,14 +370,6 @@
       "startLine": 16,
       "endLine": 142,
       "lines": 127
-    },
-    {
-      "file": "apps/mobile/src/components/features/AIPanelResultCard.tsx",
-      "name": "AIPanelResultCard",
-      "owner": null,
-      "startLine": 22,
-      "endLine": 147,
-      "lines": 126
     },
     {
       "file": "apps/mobile/app/property/finance/[id].tsx",
@@ -524,14 +484,6 @@
       "lines": 105
     },
     {
-      "file": "apps/web/components/ai-elements/prompt-input/primitives/textarea.tsx",
-      "name": "PromptInputTextarea",
-      "owner": null,
-      "startLine": 18,
-      "endLine": 122,
-      "lines": 105
-    },
-    {
       "file": "apps/web/app/(ws)/ws/(zones)/projects/ProjectDetailPage/index.tsx",
       "name": "ProjectDetailPage",
       "owner": null,
@@ -564,30 +516,6 @@
       "lines": 103
     },
     {
-      "file": "convex/admin_zone/organizations/detail/offers.ts",
-      "name": "buildOrganizationOffers",
-      "owner": null,
-      "startLine": 66,
-      "endLine": 167,
-      "lines": 102
-    },
-    {
-      "file": "convex/shared_logic/agencies/repositories/invites.helpers.ts",
-      "name": "createTeamInviteForOwnerRecord",
-      "owner": null,
-      "startLine": 54,
-      "endLine": 155,
-      "lines": 102
-    },
-    {
-      "file": "convex/shared_logic/offers/mutations/sideEffects.ts",
-      "name": "notifyOfferRecipient",
-      "owner": null,
-      "startLine": 52,
-      "endLine": 152,
-      "lines": 101
-    },
-    {
       "file": "apps/admin/admin_zone/pages/UsersPage/index.tsx",
       "name": "UsersPage",
       "owner": null,
@@ -617,14 +545,6 @@
       "owner": null,
       "startLine": 26,
       "endLine": 122,
-      "lines": 97
-    },
-    {
-      "file": "apps/web/app/api/workspace/inbox/route.ts",
-      "name": "POST",
-      "owner": null,
-      "startLine": 43,
-      "endLine": 139,
       "lines": 97
     },
     {
@@ -684,12 +604,12 @@
       "lines": 92
     },
     {
-      "file": "convex/admin_zone/analytics.message.ts",
-      "name": "handler",
+      "file": "apps/web/components/ai-elements/prompt-input/primitives/textarea.tsx",
+      "name": "PromptInputTextarea",
       "owner": null,
-      "startLine": 46,
-      "endLine": 137,
-      "lines": 92
+      "startLine": 30,
+      "endLine": 120,
+      "lines": 91
     },
     {
       "file": "apps/web/app/(ws)/ws/_components/Visuals/PropertyCard.tsx",
@@ -700,35 +620,11 @@
       "lines": 90
     },
     {
-      "file": "convex/ai_zone/services/assistantService/workspaceStream.ts",
-      "name": "createWorkspaceStreamControls",
-      "owner": null,
-      "startLine": 40,
-      "endLine": 128,
-      "lines": 89
-    },
-    {
       "file": "apps/web/app/(public)/signin/page.tsx",
       "name": "SigninPage",
       "owner": null,
       "startLine": 14,
       "endLine": 101,
-      "lines": 88
-    },
-    {
-      "file": "convex/admin_zone/users/listAdminUsers.ts",
-      "name": "listAdminUsersHandler",
-      "owner": null,
-      "startLine": 25,
-      "endLine": 112,
-      "lines": 88
-    },
-    {
-      "file": "convex/ai_zone/agents/anan/resultMerger.ts",
-      "name": "mergeResults",
-      "owner": null,
-      "startLine": 52,
-      "endLine": 139,
       "lines": 88
     },
     {
@@ -868,22 +764,6 @@
       "lines": 74
     },
     {
-      "file": "apps/web/app/(public)/terms/page.tsx",
-      "name": "TermsPage",
-      "owner": null,
-      "startLine": 6,
-      "endLine": 79,
-      "lines": 74
-    },
-    {
-      "file": "apps/web/components/shared/Sidebar/useAssistantThreads.ts",
-      "name": "useAssistantThreads",
-      "owner": null,
-      "startLine": 6,
-      "endLine": 79,
-      "lines": 74
-    },
-    {
       "file": "apps/mobile/app/auth/login.tsx",
       "name": "LoginScreen",
       "owner": null,
@@ -932,208 +812,15 @@
       "lines": 71
     },
     {
-      "file": "apps/web/app/(ws)/ws/(overview)/me/security/apps/[clientId]/page.tsx",
-      "name": "WorkspaceSecurityDetailPage",
-      "owner": null,
-      "startLine": 15,
-      "endLine": 85,
-      "lines": 71
-    },
-    {
-      "file": "apps/web/app/(ws)/ws/(zones)/projects/[projectId]/edit/page.tsx",
-      "name": "EditProjectRoute",
-      "owner": null,
-      "startLine": 11,
-      "endLine": 81,
-      "lines": 71
-    },
-    {
       "file": "apps/web/app/(ws)/ws/(zones)/projects/ProjectsPage/ProjectsWorkspace.tsx",
       "name": "<anonymous>",
       "owner": null,
       "startLine": 106,
       "endLine": 176,
       "lines": 71
-    },
-    {
-      "file": "apps/web/app/(ws)/ws/(zones)/crm/ClientsPage/index.tsx",
-      "name": "ClientsPage",
-      "owner": null,
-      "startLine": 75,
-      "endLine": 138,
-      "lines": 64
-    },
-    {
-      "file": "apps/web/app/(ws)/ws/(zones)/market/MarketPage/index.tsx",
-      "name": "MarketPage",
-      "owner": null,
-      "startLine": 30,
-      "endLine": 93,
-      "lines": 64
-    },
-    {
-      "file": "apps/web/components/shared/ag-aui/AgRichTextEditor.tsx",
-      "name": "AgRichTextEditor",
-      "owner": null,
-      "startLine": 27,
-      "endLine": 90,
-      "lines": 64
     }
   ],
-  "deepNesting": [
-    {
-      "file": "apps/web/app/(ws)/ws/(zones)/crm/ClientDetailPage/index.tsx",
-      "name": "ClientDetailPage",
-      "owner": null,
-      "startLine": 49,
-      "endLine": 214,
-      "maxNesting": 4
-    },
-    {
-      "file": "convex/admin_zone/tenantsMigration.ts",
-      "name": "handler",
-      "owner": null,
-      "startLine": 29,
-      "endLine": 289,
-      "maxNesting": 4
-    },
-    {
-      "file": "convex/ai_zone/services/assistantService/handleAssistantMessage.ts",
-      "name": "handleAssistantMessage",
-      "owner": null,
-      "startLine": 17,
-      "endLine": 296,
-      "maxNesting": 4
-    },
-    {
-      "file": "apps/admin/admin_zone/api/users.ts",
-      "name": "getAdminUsersPageData",
-      "owner": null,
-      "startLine": 5,
-      "endLine": 35,
-      "maxNesting": 3
-    },
-    {
-      "file": "apps/mobile/src/components/features/AIPanelResultCard.tsx",
-      "name": "AIPanelResultCard",
-      "owner": null,
-      "startLine": 22,
-      "endLine": 147,
-      "maxNesting": 3
-    },
-    {
-      "file": "apps/web/app/(ws)/ws/(overview)/_components/WorkspaceDashboard/WorkspaceAssistantCanvas.tsx",
-      "name": "WorkspaceAssistantCanvas",
-      "owner": null,
-      "startLine": 71,
-      "endLine": 274,
-      "maxNesting": 3
-    },
-    {
-      "file": "apps/web/app/(ws)/ws/(zones)/inbox/InboxPage/components/InboxSidebar.tsx",
-      "name": "InboxSidebar",
-      "owner": null,
-      "startLine": 150,
-      "endLine": 297,
-      "maxNesting": 3
-    },
-    {
-      "file": "apps/web/app/api/workspace/inbox/route.ts",
-      "name": "POST",
-      "owner": null,
-      "startLine": 43,
-      "endLine": 139,
-      "maxNesting": 3
-    },
-    {
-      "file": "apps/web/components/ai-elements/prompt-input/primitives/textarea.tsx",
-      "name": "<anonymous>",
-      "owner": null,
-      "startLine": 72,
-      "endLine": 92,
-      "maxNesting": 3
-    },
-    {
-      "file": "apps/web/components/shared/ag-aui/AgPropertyForm.tsx",
-      "name": "AgPropertyForm",
-      "owner": null,
-      "startLine": 42,
-      "endLine": 273,
-      "maxNesting": 3
-    },
-    {
-      "file": "apps/web/components/shared/ag-aui/AgPropertyFormPrimaryColumn.tsx",
-      "name": "AgPropertyFormPrimaryColumn",
-      "owner": null,
-      "startLine": 18,
-      "endLine": 181,
-      "maxNesting": 3
-    },
-    {
-      "file": "convex/_core/oauth/httpDelegatedHandlers.ts",
-      "name": "<anonymous>",
-      "owner": null,
-      "startLine": 29,
-      "endLine": 66,
-      "maxNesting": 3
-    },
-    {
-      "file": "convex/_core/oauth/httpDelegatedHandlers.ts",
-      "name": "<anonymous>",
-      "owner": null,
-      "startLine": 68,
-      "endLine": 107,
-      "maxNesting": 3
-    },
-    {
-      "file": "convex/_core/security/migrations.ts",
-      "name": "handler",
-      "owner": null,
-      "startLine": 59,
-      "endLine": 86,
-      "maxNesting": 3
-    },
-    {
-      "file": "convex/ai_zone/agents/anan/resultMerger.ts",
-      "name": "collectResults",
-      "owner": null,
-      "startLine": 141,
-      "endLine": 176,
-      "maxNesting": 3
-    },
-    {
-      "file": "convex/shared_logic/agencies/repositories/core.ts",
-      "name": "resolveTenantOrgIdForProfile",
-      "owner": null,
-      "startLine": 181,
-      "endLine": 202,
-      "maxNesting": 3
-    },
-    {
-      "file": "convex/shared_logic/lib/retry.ts",
-      "name": "withRetry",
-      "owner": null,
-      "startLine": 43,
-      "endLine": 61,
-      "maxNesting": 3
-    },
-    {
-      "file": "convex/shared_logic/market/analytics/sellingPoints.ts",
-      "name": "buildSellingPoints",
-      "owner": null,
-      "startLine": 11,
-      "endLine": 47,
-      "maxNesting": 3
-    },
-    {
-      "file": "convex/test.setup.ts",
-      "name": "walk",
-      "owner": null,
-      "startLine": 13,
-      "endLine": 31,
-      "maxNesting": 3
-    }
-  ],
+  "deepNesting": [],
   "todoFixme": [
     {
       "file": "apps/web/app/(public)/early-access/page.tsx",
@@ -1195,12 +882,12 @@
     "convexCollectCalls": [
       {
         "file": "convex/_core/security/migrations.ts",
-        "line": 12,
+        "line": 27,
         "text": "const profiles = await ctx.db.query(\"userProfiles\").collect();"
       },
       {
         "file": "convex/_core/security/migrations.ts",
-        "line": 60,
+        "line": 75,
         "text": "const profiles = await ctx.db.query(\"userProfiles\").collect();"
       },
       {
@@ -1290,52 +977,52 @@
       },
       {
         "file": "convex/admin_zone/analytics.message.ts",
-        "line": 50,
-        "text": "ctx.db.query(\"assistantThreads\").collect(),"
-      },
-      {
-        "file": "convex/admin_zone/analytics.message.ts",
-        "line": 51,
-        "text": "ctx.db.query(\"assistantMessages\").collect(),"
-      },
-      {
-        "file": "convex/admin_zone/analytics.message.ts",
-        "line": 52,
-        "text": "ctx.db.query(\"inboxMessages\").collect(),"
-      },
-      {
-        "file": "convex/admin_zone/analytics.message.ts",
         "line": 53,
-        "text": "ctx.db.query(\"userProfiles\").collect(),"
+        "text": "ctx.db.query(\"assistantThreads\").collect(),"
       },
       {
         "file": "convex/admin_zone/analytics.message.ts",
         "line": 54,
-        "text": "ctx.db.query(\"users\").collect(),"
-      },
-      {
-        "file": "convex/admin_zone/analytics.message.ts",
-        "line": 153,
-        "text": "ctx.db.query(\"assistantThreads\").collect(),"
-      },
-      {
-        "file": "convex/admin_zone/analytics.message.ts",
-        "line": 154,
         "text": "ctx.db.query(\"assistantMessages\").collect(),"
       },
       {
         "file": "convex/admin_zone/analytics.message.ts",
-        "line": 155,
+        "line": 55,
         "text": "ctx.db.query(\"inboxMessages\").collect(),"
       },
       {
         "file": "convex/admin_zone/analytics.message.ts",
-        "line": 156,
+        "line": 56,
+        "text": "ctx.db.query(\"userProfiles\").collect(),"
+      },
+      {
+        "file": "convex/admin_zone/analytics.message.ts",
+        "line": 57,
+        "text": "ctx.db.query(\"users\").collect(),"
+      },
+      {
+        "file": "convex/admin_zone/analytics.message.ts",
+        "line": 209,
+        "text": "ctx.db.query(\"assistantThreads\").collect(),"
+      },
+      {
+        "file": "convex/admin_zone/analytics.message.ts",
+        "line": 210,
+        "text": "ctx.db.query(\"assistantMessages\").collect(),"
+      },
+      {
+        "file": "convex/admin_zone/analytics.message.ts",
+        "line": 211,
+        "text": "ctx.db.query(\"inboxMessages\").collect(),"
+      },
+      {
+        "file": "convex/admin_zone/analytics.message.ts",
+        "line": 212,
         "text": "ctx.db.query(\"knowledgeResearch\").collect(),"
       },
       {
         "file": "convex/admin_zone/analytics.message.ts",
-        "line": 157,
+        "line": 213,
         "text": "ctx.db.query(\"searchLogs\").collect(),"
       },
       {
@@ -1670,33 +1357,33 @@
       },
       {
         "file": "convex/admin_zone/tenantsMigration.ts",
-        "line": 34,
+        "line": 21,
+        "text": "const tenantOrgLinks = await ctx.db.query(\"tenantOrgLinks\").collect();"
+      },
+      {
+        "file": "convex/admin_zone/tenantsMigration/migrateFromLegacy.ts",
+        "line": 29,
         "text": "ctx.db.query(\"brokers\").collect(),"
       },
       {
-        "file": "convex/admin_zone/tenantsMigration.ts",
-        "line": 35,
+        "file": "convex/admin_zone/tenantsMigration/migrateFromLegacy.ts",
+        "line": 30,
         "text": "ctx.db.query(\"RED\").collect(),"
       },
       {
-        "file": "convex/admin_zone/tenantsMigration.ts",
-        "line": 36,
+        "file": "convex/admin_zone/tenantsMigration/migrateFromLegacy.ts",
+        "line": 31,
         "text": "ctx.db.query(\"userProfiles\").collect(),"
       },
       {
-        "file": "convex/admin_zone/tenantsMigration.ts",
-        "line": 37,
+        "file": "convex/admin_zone/tenantsMigration/migrateFromLegacy.ts",
+        "line": 32,
         "text": "ctx.db.query(\"organizationMemberships\").collect(),"
       },
       {
-        "file": "convex/admin_zone/tenantsMigration.ts",
-        "line": 38,
+        "file": "convex/admin_zone/tenantsMigration/migrateFromLegacy.ts",
+        "line": 33,
         "text": "ctx.db.query(\"teamInvites\").collect(),"
-      },
-      {
-        "file": "convex/admin_zone/tenantsMigration.ts",
-        "line": 39,
-        "text": "ctx.db.query(\"tenantOrgLinks\").collect(),"
       },
       {
         "file": "convex/admin_zone/users/detail/sources.ts",
@@ -1835,32 +1522,32 @@
       },
       {
         "file": "convex/admin_zone/users/listAdminUsers.ts",
-        "line": 32,
+        "line": 27,
         "text": "ctx.db.query(\"userProfiles\").collect(),"
       },
       {
         "file": "convex/admin_zone/users/listAdminUsers.ts",
-        "line": 33,
+        "line": 28,
         "text": "ctx.db.query(\"users\").collect(),"
       },
       {
         "file": "convex/admin_zone/users/listAdminUsers.ts",
-        "line": 34,
+        "line": 29,
         "text": "ctx.db.query(\"brokers\").collect(),"
       },
       {
         "file": "convex/admin_zone/users/listAdminUsers.ts",
-        "line": 35,
+        "line": 30,
         "text": "ctx.db.query(\"RED\").collect(),"
       },
       {
         "file": "convex/admin_zone/users/listAdminUsers.ts",
-        "line": 36,
+        "line": 31,
         "text": "ctx.db.query(\"tenantOrgLinks\").collect(),"
       },
       {
         "file": "convex/admin_zone/users/listAdminUsers.ts",
-        "line": 37,
+        "line": 32,
         "text": "ctx.db.query(\"verificationRequests\").collect(),"
       },
       {
@@ -1980,8 +1667,8 @@
       },
       {
         "file": "convex/shared_logic/agencies/repositories/invites.helpers.ts",
-        "line": 76,
-        "text": "const invitedProfile = (await ctx.db.query(\"userProfiles\").collect()).find("
+        "line": 60,
+        "text": "return (await ctx.db.query(\"userProfiles\").collect()).find("
       },
       {
         "file": "convex/shared_logic/content/queries.ts",

@@ -17,7 +17,6 @@ async function findWorkspaceProfileByAuthUserId(ctx: MutationCtx, authUserId?: s
   if (!authUserId) {
     return null;
   }
-
   return ctx.db
     .query("userProfiles")
     .withIndex("authUserId", (q: any) => q.eq("authUserId", authUserId))
@@ -28,11 +27,9 @@ async function getOrganizationNameByParty(ctx: MutationCtx, args: OfferPartyArgs
   if (args.brokerId) {
     return (await ctx.db.get(args.brokerId))?.name ?? null;
   }
-
   if (args.redId) {
     return (await ctx.db.get(args.redId))?.name ?? null;
   }
-
   return null;
 }
 
@@ -49,33 +46,46 @@ export type OfferDeliveryResult = {
   };
 };
 
-/**
- * WHY:   New offers should generate one consistent recipient inbox event and optional workspace notification.
- * WHAT:  Creates the recipient-side offer event side effects for a newly created offer.
- * HOW:   Appends the inbox event first, then looks up the recipient profile and sends a workspace notification when possible.
- */
-export async function notifyOfferRecipient(
-  ctx: MutationCtx,
-  args: {
-    senderUserId: string;
-    offerId: Id<"offers">;
-    propertyId: Id<"properties">;
-    propertyTitle: string;
-    price: number;
-    visibility: "public" | "private";
-    toBrokerId?: Id<"brokers">;
-    toREDId?: Id<"RED">;
-    recipientAuthUserId?: string;
-    message?: string;
-    notificationType?: "offer_sent" | "offer_approved";
-    notificationTitle?: string;
-    notificationSummary?: string;
-    notificationSeverity?: "info" | "warning" | "success";
-    starterBody?: string;
-    bootstrapSource?: "offer_send" | "offer_apply" | "offer_detail";
-  },
-): Promise<OfferDeliveryResult> {
-  const recipientConversation = await appendInboxOfferEvent(ctx, {
+type NotifyOfferRecipientArgs = {
+  senderUserId: string;
+  offerId: Id<"offers">;
+  propertyId: Id<"properties">;
+  propertyTitle: string;
+  price: number;
+  visibility: "public" | "private";
+  toBrokerId?: Id<"brokers">;
+  toREDId?: Id<"RED">;
+  recipientAuthUserId?: string;
+  message?: string;
+  notificationType?: "offer_sent" | "offer_approved";
+  notificationTitle?: string;
+  notificationSummary?: string;
+  notificationSeverity?: "info" | "warning" | "success";
+  starterBody?: string;
+  bootstrapSource?: "offer_send" | "offer_apply" | "offer_detail";
+};
+
+function toConversationSummary(recipientConversation: Awaited<ReturnType<typeof appendInboxOfferEvent>>) {
+  return {
+    conversationId: recipientConversation?.conversationId ?? null,
+    starterMessageCreated: recipientConversation?.starterMessageCreated ?? false,
+  };
+}
+
+function buildRecipientOfferEventPayload(args: {
+  senderUserId: string;
+  recipientAuthUserId?: string;
+  toBrokerId?: Id<"brokers">;
+  toREDId?: Id<"RED">;
+  offerId: Id<"offers">;
+  propertyId: Id<"properties">;
+  propertyTitle: string;
+  price: number;
+  visibility: "public" | "private";
+  starterBody?: string;
+  bootstrapSource?: "offer_send" | "offer_apply" | "offer_detail";
+}) {
+  return {
     senderUserId: args.senderUserId,
     targetUserId: args.recipientAuthUserId,
     recipientBrokerId: args.toBrokerId,
@@ -93,8 +103,17 @@ export async function notifyOfferRecipient(
       price: args.price,
       visibility: args.visibility,
     },
-  });
+  };
+}
 
+async function resolveOfferRecipientContext(
+  ctx: MutationCtx,
+  args: {
+    toBrokerId?: Id<"brokers">;
+    toREDId?: Id<"RED">;
+    recipientAuthUserId?: string;
+  }
+) {
   const recipientProfile = await findWorkspaceProfileByParty(ctx, {
     brokerId: args.toBrokerId,
     redId: args.toREDId,
@@ -104,21 +123,34 @@ export async function notifyOfferRecipient(
     brokerId: args.toBrokerId,
     redId: args.toREDId,
   })) ?? targetedRecipientProfile?.name ?? recipientProfile?.name ?? "مستخدم عنان";
-
   const notificationTargetUserId = args.recipientAuthUserId ?? recipientProfile?.authUserId;
-  if (!notificationTargetUserId) {
-    return {
-      conversationId: recipientConversation?.conversationId ?? null,
-      starterMessageCreated: recipientConversation?.starterMessageCreated ?? false,
-      notification: null,
-    };
-  }
+  const targetName =
+    targetedRecipientProfile?.name ??
+    recipientProfile?.name ??
+    targetedRecipientProfile?.email ??
+    recipientProfile?.email ??
+    "مستخدم عنان";
+  return { organizationName, notificationTargetUserId, targetName };
+}
 
-  const href = recipientConversation
-    ? `/ws/inbox/${recipientConversation.conversationId}`
+async function createOfferRecipientNotification(ctx: MutationCtx, args: {
+  recipientConversation: Awaited<ReturnType<typeof appendInboxOfferEvent>>;
+  notificationTargetUserId: string;
+  offerId: Id<"offers">;
+  propertyId: Id<"properties">;
+  propertyTitle: string;
+  price: number;
+  message?: string;
+  notificationType?: "offer_sent" | "offer_approved";
+  notificationTitle?: string;
+  notificationSummary?: string;
+  notificationSeverity?: "info" | "warning" | "success";
+}) {
+  const href = args.recipientConversation
+    ? `/ws/inbox/${args.recipientConversation.conversationId}`
     : `/ws/offers/${args.offerId}`;
   const notificationId = await createWorkspaceNotification(ctx, {
-    userId: notificationTargetUserId,
+    userId: args.notificationTargetUserId,
     type: args.notificationType ?? "offer_sent",
     title: args.notificationTitle ?? `عرض جديد: ${args.propertyTitle}`,
     summary: args.notificationSummary ?? args.message ?? `تم إرسال عرض بقيمة ${args.price}`,
@@ -127,28 +159,71 @@ export async function notifyOfferRecipient(
     severity: args.notificationSeverity ?? "info",
     entityType: "offer",
     entityId: args.offerId,
-    metadata: {
-      propertyId: args.propertyId,
-    },
+    metadata: { propertyId: args.propertyId },
   });
+  return { notificationId, href };
+}
 
+function buildOfferRecipientDeliveryResult(args: {
+  deliverySummary: ReturnType<typeof toConversationSummary>;
+  notificationId: Id<"workspaceNotifications">;
+  notificationTargetUserId: string;
+  targetName: string;
+  organizationName: string;
+  href: string;
+}): OfferDeliveryResult {
   return {
-    conversationId: recipientConversation?.conversationId ?? null,
-    starterMessageCreated: recipientConversation?.starterMessageCreated ?? false,
+    ...args.deliverySummary,
     notification: {
-      notificationId,
-      targetUserId: notificationTargetUserId,
-      targetName:
-        targetedRecipientProfile?.name ??
-        recipientProfile?.name ??
-        targetedRecipientProfile?.email ??
-        recipientProfile?.email ??
-        "مستخدم عنان",
-      organizationName,
-      href,
+      notificationId: args.notificationId,
+      targetUserId: args.notificationTargetUserId,
+      targetName: args.targetName,
+      organizationName: args.organizationName,
+      href: args.href,
       pushStatus: "pending",
     },
   };
+}
+
+/** Creates recipient-side inbox + notification side effects for newly created offers. */
+export async function notifyOfferRecipient(
+  ctx: MutationCtx,
+  args: NotifyOfferRecipientArgs,
+): Promise<OfferDeliveryResult> {
+  const recipientConversation = await appendInboxOfferEvent(ctx, buildRecipientOfferEventPayload(args));
+  const deliverySummary = toConversationSummary(recipientConversation);
+  const { organizationName, notificationTargetUserId, targetName } = await resolveOfferRecipientContext(ctx, {
+    toBrokerId: args.toBrokerId,
+    toREDId: args.toREDId,
+    recipientAuthUserId: args.recipientAuthUserId,
+  });
+  if (!notificationTargetUserId) {
+    return {
+      ...deliverySummary,
+      notification: null,
+    };
+  }
+  const { notificationId, href } = await createOfferRecipientNotification(ctx, {
+    recipientConversation,
+    notificationTargetUserId,
+    offerId: args.offerId,
+    propertyId: args.propertyId,
+    propertyTitle: args.propertyTitle,
+    price: args.price,
+    message: args.message,
+    notificationType: args.notificationType,
+    notificationTitle: args.notificationTitle,
+    notificationSummary: args.notificationSummary,
+    notificationSeverity: args.notificationSeverity,
+  });
+  return buildOfferRecipientDeliveryResult({
+    deliverySummary,
+    notificationId,
+    notificationTargetUserId,
+    targetName,
+    organizationName,
+    href,
+  });
 }
 
 /**

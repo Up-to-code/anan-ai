@@ -1,6 +1,21 @@
 import { mutation } from "../../_generated/server";
 import { v } from "convex/values";
 
+function resolveWorkspaceSecurityUsernameUpdate(profile: {
+  email?: string;
+  username?: string;
+  usernameLower?: string;
+}) {
+  const emailLocalPart = profile.email?.split("@")[0]?.trim();
+  const username = profile.username ?? emailLocalPart ?? undefined;
+  const usernameLower = username?.toLowerCase();
+  const changed =
+    (username && profile.username !== username) ||
+    (usernameLower && profile.usernameLower !== usernameLower);
+  if (!changed) return null;
+  return { username, usernameLower, updatedAt: Date.now() };
+}
+
 /**
  * WHY:   One-off migration to normalize legacy roles into the new RBAC model.
  * WHAT:  Maps RED→developer, defaults missing roles to user, and sets roleStatus to approved.
@@ -61,21 +76,11 @@ export const backfillWorkspaceSecurityV4 = mutation({
     let updatedProfiles = 0;
 
     for (const profile of profiles) {
-      const emailLocalPart = profile.email?.split("@")[0]?.trim();
-      const username = profile.username ?? emailLocalPart ?? undefined;
-      const usernameLower = username?.toLowerCase();
-
-      if ((username && profile.username !== username) || (usernameLower && profile.usernameLower !== usernameLower)) {
-        updatedProfiles += 1;
-        if (!args.dryRun) {
-          await ctx.db.patch(profile._id, {
-            username,
-            usernameLower,
-            updatedAt: Date.now(),
-          });
-        }
-      }
-
+      const update = resolveWorkspaceSecurityUsernameUpdate(profile);
+      if (!update) continue;
+      updatedProfiles += 1;
+      if (args.dryRun) continue;
+      await ctx.db.patch(profile._id, update);
     }
 
     return {

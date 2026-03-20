@@ -14,11 +14,9 @@ import {
 } from "./core";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
 function getOrganizationType(owner: OwnerContext) {
   return owner.ownerType === "broker" ? ("broker" as const) : ("developer" as const);
 }
-
 export function normalizeTenantRole(role?: string): "manager" | "member" | "viewer" {
   if (role === "owner" || role === "admin" || role === "manager") return "manager";
   if (role === "viewer") return "viewer";
@@ -33,7 +31,6 @@ async function getOwnerDisplay(ctx: AgenciesRepositoryCtx, owner: OwnerContext) 
     organizationType: getOrganizationType(owner),
   };
 }
-
 export async function listTeamInvitesForOwnerInternal(ctx: AgenciesRepositoryCtx, owner: OwnerContext) {
   const tenantOrgId = await resolveTenantOrgIdForOwner(ctx, owner);
   const invitations = await tenants.listInvitations(ctx as never, tenantOrgId);
@@ -50,21 +47,7 @@ export async function listTeamInvitesForOwnerInternal(ctx: AgenciesRepositoryCtx
       acceptedAt: invite.status === "accepted" ? invite._creationTime : undefined,
     }));
 }
-
-export async function createTeamInviteForOwnerRecord(
-  ctx: MutationCtx,
-  args: {
-    owner: OwnerContext;
-    email: string;
-    role: "manager" | "member" | "viewer";
-  },
-) {
-  const normalizedEmail = normalizeEmail(args.email);
-  if (!normalizedEmail) {
-    throw new ConvexError({ code: "INVALID_ARGUMENT", message: "Email is required" });
-  }
-
-  const tenantOrgId = await resolveTenantOrgIdForOwner(ctx, args.owner);
+async function ensureNoDuplicateInvite(ctx: MutationCtx, tenantOrgId: string, normalizedEmail: string) {
   const existingInvites = await tenants.listInvitations(ctx as never, tenantOrgId);
   const duplicate = existingInvites.find(
     (invite) => invite.status === "pending" && normalizeEmail(invite.inviteeIdentifier) === normalizedEmail,
@@ -72,85 +55,146 @@ export async function createTeamInviteForOwnerRecord(
   if (duplicate) {
     throw new ConvexError({ code: "INVITE_EXISTS", message: "Pending invite already exists for this email" });
   }
-
-  const invitedProfile = (await ctx.db.query("userProfiles").collect()).find(
+}
+async function findInvitedProfileByEmail(ctx: MutationCtx, normalizedEmail: string) {
+  return (await ctx.db.query("userProfiles").collect()).find(
     (profile) => normalizeEmail(profile.email ?? "") === normalizedEmail,
   );
-  if (invitedProfile?.authUserId) {
-    const existingMember = await tenants.getMember(ctx as never, tenantOrgId, invitedProfile.authUserId);
-    if (existingMember && (existingMember.status ?? "active") === "active") {
-      throw new ConvexError({ code: "MEMBER_EXISTS", message: "User is already a member of this organization" });
-    }
+}
+async function ensureInviteeIsNotActiveMember(
+  ctx: MutationCtx,
+  tenantOrgId: string,
+  invitedProfile: Awaited<ReturnType<typeof findInvitedProfileByEmail>>,
+) {
+  if (!invitedProfile?.authUserId) return;
+  const existingMember = await tenants.getMember(ctx as never, tenantOrgId, invitedProfile.authUserId);
+  if (existingMember && (existingMember.status ?? "active") === "active") {
+    throw new ConvexError({ code: "MEMBER_EXISTS", message: "User is already a member of this organization" });
   }
-
-  const inviteResult = await tenants.inviteMember(
-    ctx as never,
-    args.owner.authUserId,
-    tenantOrgId,
-    normalizedEmail,
-    args.role,
-    {
-      expiresAt: Date.now() + INVITE_TTL_MS,
+}
+function buildInviteEventMetadata(args: {
+  inviterProfile: NonNullable<Awaited<ReturnType<typeof findProfileByAuthUserId>>>;
+  invitedProfile: NonNullable<Awaited<ReturnType<typeof findInvitedProfileByEmail>>>;
+  ownerDisplay: Awaited<ReturnType<typeof getOwnerDisplay>>;
+  role: "manager" | "member" | "viewer";
+  invitationId: string;
+}) {
+  return {
+    contextType: "invite_event" as const,
+    actor: {
+      authUserId: args.inviterProfile.authUserId,
+      name: args.inviterProfile.name ?? args.inviterProfile.email ?? "عضو الفريق",
+      role: args.inviterProfile.role === "RED" ? "developer" : args.inviterProfile.role ?? "user",
+      organizationId: args.ownerDisplay.organizationId,
+      organizationType: args.ownerDisplay.organizationType,
+      organizationName: args.ownerDisplay.organizationName,
     },
-  );
+    recipient: {
+      recipientAuthUserId: args.invitedProfile.authUserId,
+      organizationId: args.ownerDisplay.organizationId,
+      organizationType: args.ownerDisplay.organizationType,
+      organizationName: args.ownerDisplay.organizationName,
+    },
+    title: args.ownerDisplay.organizationName,
+    summary: `دعوة جديدة بدور ${args.role}`,
+    href: "/ws/inbox",
+    action: {
+      type: "open_invite" as const,
+      label: "افتح الدعوة",
+      href: "/ws/inbox",
+    },
+    inviteId: args.invitationId,
+    inviteRole: args.role,
+    inviteStatus: "pending" as const,
+    organizationName: args.ownerDisplay.organizationName,
+    organizationType: args.ownerDisplay.organizationType,
+  };
+}
 
-  const inviterProfile = await findProfileByAuthUserId(ctx, args.owner.authUserId);
-  const ownerDisplay = await getOwnerDisplay(ctx, args.owner);
-
-  if (invitedProfile?.authUserId && inviterProfile?.authUserId && invitedProfile.authUserId !== inviterProfile.authUserId) {
-    await appendInboxCollaborationEvent(ctx, {
-      senderUserId: inviterProfile.authUserId,
-      recipientUserId: invitedProfile.authUserId,
-      type: "invite_event",
-      body: `تم إرسال دعوة للانضمام إلى ${ownerDisplay.organizationName}`,
-      metadata: {
-        contextType: "invite_event",
-        actor: {
-          authUserId: inviterProfile.authUserId,
-          name: inviterProfile.name ?? inviterProfile.email ?? "عضو الفريق",
-          role: inviterProfile.role === "RED" ? "developer" : inviterProfile.role ?? "user",
-          organizationId: ownerDisplay.organizationId,
-          organizationType: ownerDisplay.organizationType,
-          organizationName: ownerDisplay.organizationName,
-        },
-        recipient: {
-          recipientAuthUserId: invitedProfile.authUserId,
-          organizationId: ownerDisplay.organizationId,
-          organizationType: ownerDisplay.organizationType,
-          organizationName: ownerDisplay.organizationName,
-        },
-        title: ownerDisplay.organizationName,
-        summary: `دعوة جديدة بدور ${args.role}`,
-        href: "/ws/inbox",
-        action: {
-          type: "open_invite",
-          label: "افتح الدعوة",
-          href: "/ws/inbox",
-        },
-        inviteId: inviteResult.invitationId,
-        inviteRole: args.role,
-        inviteStatus: "pending",
-        organizationName: ownerDisplay.organizationName,
-        organizationType: ownerDisplay.organizationType,
-      },
-    });
+async function maybeSendInviteEvent(args: {
+  ctx: MutationCtx;
+  inviterProfile: Awaited<ReturnType<typeof findProfileByAuthUserId>>;
+  invitedProfile: Awaited<ReturnType<typeof findInvitedProfileByEmail>>;
+  ownerDisplay: Awaited<ReturnType<typeof getOwnerDisplay>>;
+  role: "manager" | "member" | "viewer";
+  invitationId: string;
+}) {
+  if (
+    !args.invitedProfile?.authUserId ||
+    !args.inviterProfile?.authUserId ||
+    args.invitedProfile.authUserId === args.inviterProfile.authUserId
+  ) {
+    return;
   }
+  await appendInboxCollaborationEvent(args.ctx, {
+    senderUserId: args.inviterProfile.authUserId,
+    recipientUserId: args.invitedProfile.authUserId,
+    type: "invite_event",
+    body: `تم إرسال دعوة للانضمام إلى ${args.ownerDisplay.organizationName}`,
+    metadata: buildInviteEventMetadata({
+      inviterProfile: args.inviterProfile,
+      invitedProfile: args.invitedProfile,
+      ownerDisplay: args.ownerDisplay,
+      role: args.role,
+      invitationId: args.invitationId,
+    }),
+  });
+}
 
-  await auditLog.log(ctx, {
+async function logInviteCreated(args: {
+  ctx: MutationCtx;
+  owner: OwnerContext;
+  tenantOrgId: string;
+  invitationId: string;
+  normalizedEmail: string;
+  role: "manager" | "member" | "viewer";
+}) {
+  await auditLog.log(args.ctx, {
     action: "invitation.created",
     actorId: args.owner.authUserId,
     resourceType: "tenantInvitations",
-    resourceId: inviteResult.invitationId,
+    resourceId: args.invitationId,
     severity: "info",
     metadata: {
-      tenantOrgId,
-      inviteeEmail: normalizedEmail,
+      tenantOrgId: args.tenantOrgId,
+      inviteeEmail: args.normalizedEmail,
       role: args.role,
       ownerType: args.owner.ownerType,
     },
     tags: ["organizations", "invites"],
   });
+}
 
+type CreateTeamInviteArgs = {
+  owner: OwnerContext;
+  email: string;
+  role: "manager" | "member" | "viewer";
+};
+
+async function createTenantInvite(ctx: MutationCtx, args: {
+  owner: OwnerContext;
+  tenantOrgId: string;
+  normalizedEmail: string;
+  role: "manager" | "member" | "viewer";
+}) {
+  return tenants.inviteMember(ctx as never, args.owner.authUserId, args.tenantOrgId, args.normalizedEmail, args.role, { expiresAt: Date.now() + INVITE_TTL_MS });
+}
+
+export async function createTeamInviteForOwnerRecord(ctx: MutationCtx, args: CreateTeamInviteArgs) {
+  const normalizedEmail = normalizeEmail(args.email);
+  if (!normalizedEmail) {
+    throw new ConvexError({ code: "INVALID_ARGUMENT", message: "Email is required" });
+  }
+
+  const tenantOrgId = await resolveTenantOrgIdForOwner(ctx, args.owner);
+  await ensureNoDuplicateInvite(ctx, tenantOrgId, normalizedEmail);
+  const invitedProfile = await findInvitedProfileByEmail(ctx, normalizedEmail);
+  await ensureInviteeIsNotActiveMember(ctx, tenantOrgId, invitedProfile);
+  const inviteResult = await createTenantInvite(ctx, { owner: args.owner, tenantOrgId, normalizedEmail, role: args.role });
+  const inviterProfile = await findProfileByAuthUserId(ctx, args.owner.authUserId);
+  const ownerDisplay = await getOwnerDisplay(ctx, args.owner);
+  await maybeSendInviteEvent({ ctx, inviterProfile, invitedProfile, ownerDisplay, role: args.role, invitationId: inviteResult.invitationId });
+  await logInviteCreated({ ctx, owner: args.owner, tenantOrgId, invitationId: inviteResult.invitationId, normalizedEmail, role: args.role });
   return inviteResult.invitationId;
 }
 

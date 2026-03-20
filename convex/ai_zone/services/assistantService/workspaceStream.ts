@@ -37,48 +37,80 @@ export type WorkspaceStreamControls = {
   didEmitAnyDelta: () => boolean;
 };
 
-export function createWorkspaceStreamControls(options: {
-  ctx: ActionCtx;
-  owner: AssistantOwner;
-  streamSessionId?: string;
-  enabled: boolean;
-}): WorkspaceStreamControls {
-  const { ctx, owner, streamSessionId, enabled } = options;
+type WorkspaceStreamState = {
+  streamSeq: number;
+  streamedAssistantText: string;
+  emittedAnyDelta: boolean;
+};
 
-  let streamSeq = 0;
-  let streamedAssistantText = "";
-  let emittedAnyDelta = false;
+function assertValidStreamEvent(event: StreamEvent) {
+  if (event.eventType === "stage" && !event.phase) {
+    throw new ConvexError({
+      code: "INVALID_ARGUMENT",
+      message: "Stage stream event is missing phase.",
+    });
+  }
+  if (event.eventType === "delta" && typeof event.delta !== "string") {
+    throw new ConvexError({
+      code: "INVALID_ARGUMENT",
+      message: "Delta stream event is missing delta.",
+    });
+  }
+}
 
-  const appendEvent = async (event: StreamEvent) => {
-    if (!enabled || !streamSessionId) return;
-
-    if (event.eventType === "stage" && !event.phase) {
-      throw new ConvexError({
-        code: "INVALID_ARGUMENT",
-        message: "Stage stream event is missing phase.",
-      });
-    }
-    if (event.eventType === "delta" && typeof event.delta !== "string") {
-      throw new ConvexError({
-        code: "INVALID_ARGUMENT",
-        message: "Delta stream event is missing delta.",
-      });
-    }
-
-    streamSeq += 1;
-    await ctx.runMutation(internal.ai_zone.assistantWorkspace._appendStreamEvent, {
-      sessionId: streamSessionId,
-      seq: streamSeq,
+function createAppendEvent(
+  options: { ctx: ActionCtx; owner: AssistantOwner; streamSessionId?: string; enabled: boolean },
+  state: WorkspaceStreamState
+) {
+  return async (event: StreamEvent) => {
+    if (!options.enabled || !options.streamSessionId) return;
+    assertValidStreamEvent(event);
+    state.streamSeq += 1;
+    await options.ctx.runMutation(internal.ai_zone.assistantWorkspace._appendStreamEvent, {
+      sessionId: options.streamSessionId,
+      seq: state.streamSeq,
       event: { ...event, timestamp: Date.now() },
-      userId: owner.userId,
-      ownerType: owner.ownerType,
-      ownerBrokerId: owner.ownerBrokerId,
-      ownerREDId: owner.ownerREDId,
+      userId: options.owner.userId,
+      ownerType: options.owner.ownerType,
+      ownerBrokerId: options.owner.ownerBrokerId,
+      ownerREDId: options.owner.ownerREDId,
     });
   };
+}
 
+function createEmitDelta(
+  appendEvent: (event: StreamEvent) => Promise<void>,
+  state: WorkspaceStreamState,
+  options: { streamSessionId?: string; enabled: boolean }
+): WorkspaceStreamControls["emitDelta"] {
+  return async (delta) => {
+    if (!options.enabled || !options.streamSessionId || !delta) return;
+    state.streamedAssistantText += delta;
+    state.emittedAnyDelta = true;
+    await appendEvent({ eventType: "delta", delta });
+  };
+}
+
+function createIsCancelled(
+  ctx: ActionCtx,
+  options: { streamSessionId?: string; enabled: boolean }
+): WorkspaceStreamControls["isCancelled"] {
+  return async () => {
+    if (!options.enabled || !options.streamSessionId) return false;
+    const state = (await ctx.runQuery(api.ai_zone.assistantWorkspace.isStreamCancelled, {
+      sessionId: options.streamSessionId,
+    })) as { cancelled?: boolean } | null;
+    return Boolean(state?.cancelled);
+  };
+}
+
+function createStreamEmitters(args: {
+  appendEvent: (event: StreamEvent) => Promise<void>;
+  options: { ctx: ActionCtx; streamSessionId?: string; enabled: boolean };
+  state: WorkspaceStreamState;
+}): Omit<WorkspaceStreamControls, "didEmitAnyDelta" | "getStreamedText"> {
   const emitStage: WorkspaceStreamControls["emitStage"] = async (phase, extra = {}) => {
-    await appendEvent({
+    await args.appendEvent({
       eventType: "stage",
       phase,
       status: extra.status,
@@ -87,43 +119,42 @@ export function createWorkspaceStreamControls(options: {
       details: extra.details,
     });
   };
-
-  const emitDelta: WorkspaceStreamControls["emitDelta"] = async (delta) => {
-    if (!enabled || !streamSessionId || !delta) return;
-    streamedAssistantText += delta;
-    emittedAnyDelta = true;
-    await appendEvent({ eventType: "delta", delta });
-  };
-
-  const emitLifecycle: WorkspaceStreamControls["emitLifecycle"] = async (status, details) => {
-    await appendEvent({ eventType: "lifecycle", status, details });
-  };
-
-  const emitThread: WorkspaceStreamControls["emitThread"] = async (threadId) => {
-    await appendEvent({ eventType: "thread", threadId });
-  };
-
-  const emitAssistantMeta: WorkspaceStreamControls["emitAssistantMeta"] = async (meta) => {
-    await appendEvent({ eventType: "assistant_meta", meta });
-  };
-
-  const isCancelled = async () => {
-    if (!enabled || !streamSessionId) return false;
-    const state = (await ctx.runQuery(api.ai_zone.assistantWorkspace.isStreamCancelled, {
-      sessionId: streamSessionId,
-    })) as { cancelled?: boolean } | null;
-    return Boolean(state?.cancelled);
-  };
-
   return {
-    didEmitAnyDelta: () => emittedAnyDelta,
-    emitAssistantMeta,
-    emitDelta,
-    emitLifecycle,
     emitStage,
-    emitThread,
-    getStreamedText: () => streamedAssistantText,
-    isCancelled,
+    emitDelta: createEmitDelta(args.appendEvent, args.state, args.options),
+    emitLifecycle: async (status, details) => {
+      await args.appendEvent({ eventType: "lifecycle", status, details });
+    },
+    emitThread: async (threadId) => {
+      await args.appendEvent({ eventType: "thread", threadId });
+    },
+    emitAssistantMeta: async (meta) => {
+      await args.appendEvent({ eventType: "assistant_meta", meta });
+    },
+    isCancelled: createIsCancelled(args.options.ctx, args.options),
   };
 }
 
+export function createWorkspaceStreamControls(options: {
+  ctx: ActionCtx;
+  owner: AssistantOwner;
+  streamSessionId?: string;
+  enabled: boolean;
+}): WorkspaceStreamControls {
+  const state: WorkspaceStreamState = {
+    streamSeq: 0,
+    streamedAssistantText: "",
+    emittedAnyDelta: false,
+  };
+  const appendEvent = createAppendEvent(options, state);
+  const emitters = createStreamEmitters({
+    appendEvent,
+    options,
+    state,
+  });
+  return {
+    didEmitAnyDelta: () => state.emittedAnyDelta,
+    ...emitters,
+    getStreamedText: () => state.streamedAssistantText,
+  };
+}

@@ -79,10 +79,11 @@ function updateStageMeta(
   if (stage.phase !== "team_done" || !stage.teamId) {
     return;
   }
+  const teamId = stage.teamId;
   setters.setCompletedTeamIds((current) =>
-    current.includes(stage.teamId) ? current : [...current, stage.teamId],
+    current.includes(teamId) ? current : [...current, teamId],
   );
-  setters.setActiveTeamId((current) => (current === stage.teamId ? null : current));
+  setters.setActiveTeamId((current) => (current === teamId ? null : current));
 }
 
 function handleMetaEvent(

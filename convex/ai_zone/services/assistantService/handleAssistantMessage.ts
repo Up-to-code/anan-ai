@@ -12,6 +12,7 @@ import { normalizeWorkspaceStructuredOutput, buildProjectQuestions } from "./wor
 import { maybeAutoCreateDraftAndAnnotate, resolveWorkspaceProjectActionState } from "./workspaceProjectAction";
 import { appendQuestionsToAssistantText, enrichUiTurnWithWorkspaceState } from "./workspaceUi";
 import { createWorkspaceStreamControls } from "./workspaceStream";
+import { syncWorkspaceAssistantStream } from "./streamSync";
 import { buildBasePrompt, buildKnowledgeContext, buildWorkspaceContextBlock, selectRegenerateSource } from "./promptComposer";
 
 /**
@@ -206,19 +207,12 @@ export async function handleAssistantMessage(
       : "تم إيقاف التوليد بناءً على طلبك.";
   }
 
-  if (isWorkspaceAssistant && args.streamSessionId) {
-    const streamed = workspaceStream.getStreamedText();
-    if (!workspaceStream.didEmitAnyDelta() && assistantText) {
-      await workspaceStream.emitDelta(assistantText);
-    } else if (assistantText.startsWith(streamed)) {
-      const suffix = assistantText.slice(streamed.length);
-      if (suffix) {
-        await workspaceStream.emitDelta(suffix);
-      }
-    } else if (assistantText !== streamed) {
-      await workspaceStream.emitDelta(assistantText);
-    }
-  }
+  await syncWorkspaceAssistantStream({
+    assistantText,
+    isWorkspaceAssistant,
+    streamSessionId: args.streamSessionId,
+    workspaceStream,
+  });
 
   let assistantUiTurn = isWorkspaceAssistant
     ? resolveWorkspaceAgUiTurn(effectiveUserMessage, assistantText)
