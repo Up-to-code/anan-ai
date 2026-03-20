@@ -33,6 +33,10 @@ vi.mock("../(zones)/inbox/InboxPage/useRealtimeInbox", () => ({
   useWorkspaceSignalCounts: () => ({ notificationCount: 0, inboxCount: 0 }),
 }));
 
+vi.mock("@/app/ConvexClientProvider", () => ({
+  default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 import WorkspaceShell from "./WorkspaceShell";
 
 describe("WorkspaceShell", () => {

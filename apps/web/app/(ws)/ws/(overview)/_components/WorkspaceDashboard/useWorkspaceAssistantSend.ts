@@ -6,6 +6,7 @@ import { runSendFlow, type SendOptions } from "./useWorkspaceAssistantSend.flow"
 
 type UseWorkspaceAssistantSendParams = {
   thread: AnanProThread | null;
+  shouldStartNewThread: boolean;
   startTransition: React.TransitionStartFunction;
   setThread: React.Dispatch<React.SetStateAction<AnanProThread | null>>;
   setSelectedThreadId: React.Dispatch<React.SetStateAction<string | null>>;
@@ -17,6 +18,7 @@ type UseWorkspaceAssistantSendParams = {
   setCompletedTeamIds: React.Dispatch<React.SetStateAction<string[]>>;
   setActiveStreamSessionId: React.Dispatch<React.SetStateAction<string | null>>;
   setIsStoppingStream: React.Dispatch<React.SetStateAction<boolean>>;
+  replaceThreadRoute: (threadId: string | null) => void;
   stopRequestedRef: React.MutableRefObject<boolean>;
 };
 
@@ -38,20 +40,28 @@ function toSendFlowParams(params: UseWorkspaceAssistantSendParams) {
     setCompletedTeamIds: params.setCompletedTeamIds,
     setActiveStreamSessionId: params.setActiveStreamSessionId,
     setIsStoppingStream: params.setIsStoppingStream,
+    replaceThreadRoute: params.replaceThreadRoute,
     stopRequestedRef: params.stopRequestedRef,
   };
 }
 
+/**
+ * WHY:   Sending a workspace assistant message needs one stable entry point that preserves optimistic UI and stream wiring.
+ * WHAT:  Returns a callback that starts the send flow with the current thread context and stream session identifiers.
+ * HOW:   Captures the latest active thread, then forwards all setters and router-sync callbacks into `runSendFlow`.
+ */
 export function useWorkspaceAssistantSend(params: UseWorkspaceAssistantSendParams) {
   return useCallback(
     (nextMessage: string, inputMode?: AnanProInputMode, options?: SendOptions) => {
       const previousThread = params.thread;
+      const startNewThread = params.shouldStartNewThread && !options?.regenerate;
       const { assistantMessageId, streamSessionId } = createStreamIdentifiers();
 
       params.startTransition(() => {
         void runSendFlow({
           params: toSendFlowParams(params),
           previousThread,
+          startNewThread,
           nextMessage,
           inputMode,
           options,

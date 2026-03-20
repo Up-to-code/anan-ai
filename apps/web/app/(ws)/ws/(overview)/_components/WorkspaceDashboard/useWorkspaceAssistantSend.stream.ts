@@ -4,7 +4,6 @@ import type { AnanProStreamStageEvent, AnanProThread } from "@/server/contracts/
 import {
   notifyAssistantThreadsChanged,
   parseSseChunk,
-  updateThreadUrl,
   type AssistantStreamEvent,
 } from "./useWorkspaceAssistant.shared";
 
@@ -16,6 +15,7 @@ export type StreamSetters = {
   setStreamLifecycleStatus: React.Dispatch<React.SetStateAction<"running" | "completed" | "failed" | "cancelled" | null>>;
   setActiveTeamId: React.Dispatch<React.SetStateAction<string | null>>;
   setCompletedTeamIds: React.Dispatch<React.SetStateAction<string[]>>;
+  replaceThreadRoute: (threadId: string | null) => void;
 };
 
 export type StreamRunState = {
@@ -48,7 +48,8 @@ function handleThreadEvent(
   setters: StreamSetters,
 ) {
   setters.setSelectedThreadId(event.data.threadId);
-  updateThreadUrl(event.data.threadId);
+  setters.replaceThreadRoute(event.data.threadId);
+  notifyAssistantThreadsChanged();
 }
 
 function handleDeltaEvent(
@@ -120,7 +121,7 @@ function handleDoneEvent(
   setters.setStreamLifecycleStatus("completed");
   setters.setThread(event.data.thread);
   setters.setSelectedThreadId(event.data.thread.id);
-  updateThreadUrl(event.data.thread.id);
+  setters.replaceThreadRoute(event.data.thread.id);
   notifyAssistantThreadsChanged();
 }
 
@@ -181,6 +182,11 @@ function consumeSseBuffer(args: {
   }
 }
 
+/**
+ * WHY:   Workspace assistant sends stream back partial results that must update the optimistic thread as bytes arrive.
+ * WHAT:  Reads the SSE response body, parses each event, and applies it to the supplied thread/stream setters.
+ * HOW:   Buffers chunks until full SSE frames are available, then dispatches the parsed events sequentially.
+ */
 export async function streamAssistantResponse(args: {
   response: Response;
   state: StreamRunState;
@@ -202,6 +208,11 @@ export async function streamAssistantResponse(args: {
   }
 }
 
+/**
+ * WHY:   The stream parser needs one mutable accumulator for assistant text while SSE chunks arrive incrementally.
+ * WHAT:  Creates the initial per-send stream state used by the response consumer.
+ * HOW:   Seeds the optimistic thread snapshot and empty assistant output so later events can mutate it safely.
+ */
 export function buildStreamState(assistantMessageId: string, optimisticThread: AnanProThread): StreamRunState {
   return {
     assistantMessageId,

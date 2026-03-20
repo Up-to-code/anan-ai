@@ -1,5 +1,6 @@
 "use client";
 
+import ConvexClientProvider from "@/app/ConvexClientProvider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, ChevronDown, Mail } from "lucide-react";
@@ -15,6 +16,22 @@ import type { SidebarUser } from "@/components/shared/Sidebar/types";
  * HOW:   Follows the dashboard redesign: unified profile on the end side, page context on the start side.
  */
 export default function WorkspaceTopNavbar({
+  ...props
+}: {
+  user: SidebarUser;
+  organization: WorkspaceOrganizationDisplay;
+  visibleZoneKeys?: WorkspaceZoneKey[];
+  initialSignalCounts?: { notificationCount: number; inboxCount: number };
+  mobileNavigation?: React.ReactNode;
+}) {
+  return (
+    <ConvexClientProvider>
+      <WorkspaceTopNavbarInner {...props} />
+    </ConvexClientProvider>
+  );
+}
+
+function WorkspaceTopNavbarInner({
   user,
   organization,
   visibleZoneKeys,

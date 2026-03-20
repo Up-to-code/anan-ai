@@ -16,7 +16,6 @@ type AnanProApiRefs = {
   listStreamEvents: unknown;
   cancelStreamSession: unknown;
   sendMessage: unknown;
-  createThread: unknown;
   generateVoiceUploadUrl: unknown;
   transcribeVoiceFromStorage: unknown;
 };
@@ -67,7 +66,6 @@ export type AnanProRepository = {
   getThread(token: string, threadId?: string): Promise<AnanProThread | null>;
   listThreads(token: string, limit?: number): Promise<AnanProThreadSummary[]>;
   sendMessage(token: string, input: SendAnanProMessageInput): Promise<AnanProThread>;
-  createThread(token: string): Promise<{ threadId: string }>;
   listStreamEvents(
     token: string,
     input: { sessionId: string; afterSeq?: number; limit?: number },
@@ -137,13 +135,6 @@ export const convexAnanProRepository: AnanProRepository = {
       title: messages[0]?.content.slice(0, 80) ?? "anan workspace",
       messages: mapThreadMessages(messages),
     };
-  },
-
-  async createThread(token) {
-    const response = (await fetchMutation(ananProApi.createThread as never, {} as never, {
-      token,
-    })) as { threadId: string };
-    return { threadId: response.threadId };
   },
 
   async listStreamEvents(token, input) {

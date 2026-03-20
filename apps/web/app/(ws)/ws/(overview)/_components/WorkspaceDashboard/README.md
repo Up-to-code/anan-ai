@@ -2,7 +2,7 @@
 
 Workspace assistant surface for `/ws`.
 
-- `index.tsx`: thin page orchestrator that composes the assistant rail and canvas.
-- `WorkspaceAssistantRail.tsx`: renders recent assistant threads and the new-thread action.
+- `index.tsx`: thin page orchestrator that composes the canvas with the workspace assistant hook.
 - `WorkspaceAssistantCanvas.tsx`: renders the landing state, active conversation, and composer.
-- `useWorkspaceAssistant.ts`: manages thread selection, URL sync, optimistic sending, and thread-list refresh.
+- `useWorkspaceAssistant.ts`: manages draft/thread routing, optimistic sends, and stream lifecycle state.
+- Thread history now lives in the shared workspace sidebar rather than a local dashboard rail.

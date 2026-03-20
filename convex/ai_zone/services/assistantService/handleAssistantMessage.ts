@@ -24,6 +24,7 @@ export async function handleAssistantMessage(
   args: {
     message: string;
     threadId?: Id<"assistantThreads">;
+    startNewThread?: boolean;
     inputMode?: "text" | "voice";
     regenerate?: boolean;
     regenerateMessageId?: string;
@@ -57,7 +58,13 @@ export async function handleAssistantMessage(
     streamSessionId: args.streamSessionId,
   });
 
-  let activeThreadId = (args.threadId ?? thread?._id) as
+  const shouldStartFreshWorkspaceThread = Boolean(
+    isWorkspaceAssistant && args.startNewThread && !args.threadId,
+  );
+
+  let activeThreadId = (shouldStartFreshWorkspaceThread
+    ? undefined
+    : (args.threadId ?? thread?._id)) as
     | Id<"assistantThreads">
     | undefined;
 

@@ -74,8 +74,8 @@ export default function InboxMessageItem({
     <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
       <div
         className={`max-w-[88%] px-4 py-2.5 sm:max-w-[75%] ${isMe
-            ? "rounded-2xl rounded-tl-sm bg-blue-600 text-white shadow-sm"
-            : "rounded-2xl rounded-tr-sm bg-slate-100 text-slate-900"
+          ? "rounded-2xl rounded-tl-sm bg-blue-600 text-white shadow-sm"
+          : "rounded-2xl rounded-tr-sm bg-slate-100 text-slate-900"
           } ${isOptimistic ? "opacity-80" : ""}`}
       >
         {offerCardMetadata ? (

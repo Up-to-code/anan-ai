@@ -14,6 +14,10 @@ vi.mock("../(zones)/inbox/InboxPage/useRealtimeInbox", () => ({
   useWorkspaceSignalCounts,
 }));
 
+vi.mock("@/app/ConvexClientProvider", () => ({
+  default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 import WorkspaceTopNavbar from "./WorkspaceTopNavbar";
 
 describe("WorkspaceTopNavbar", () => {

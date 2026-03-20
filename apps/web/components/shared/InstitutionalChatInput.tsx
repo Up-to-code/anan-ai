@@ -81,9 +81,16 @@ export default function InstitutionalChatInput({
           if (!sendDisabled) onSend();
         }}
         className={cn(
-          "w-full overflow-hidden border border-slate-200 bg-white transition-colors duration-150 focus-within:border-slate-900",
+          "w-full overflow-hidden rounded-xl border border-slate-300 bg-white transition-colors duration-150 focus-within:border-slate-950 focus-within:ring-1 focus-within:ring-slate-950/10",
         )}
       >
+        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5 text-xs">
+          <span className="font-medium text-slate-500">
+            {isLanding ? "ابدأ محادثة جديدة" : "تابع من نفس المحادثة"}
+          </span>
+          <span className="text-slate-400">Enter للإرسال</span>
+        </div>
+
         <PromptInputBody>
           <PromptInputTextarea
             value={value}
@@ -92,28 +99,28 @@ export default function InstitutionalChatInput({
             placeholder={placeholder}
             className={cn(
               "w-full text-slate-900 placeholder:text-slate-400",
-              isLanding ? "px-8 py-8 text-lg font-semibold" : "px-5 py-4 text-base font-medium",
+              isLanding ? "px-5 py-5 text-base font-medium" : "px-4 py-4 text-[15px] font-medium",
             )}
             rows={1}
-            style={{ minHeight: isLanding ? "132px" : "64px" }}
+            style={{ minHeight: isLanding ? "110px" : "72px" }}
             dir="rtl"
           />
         </PromptInputBody>
 
         <PromptInputFooter
           className={cn(
-            "border-t border-slate-100",
-            isLanding ? "bg-slate-50" : "bg-white",
+            "border-t border-slate-100 px-3 py-3",
+            isLanding ? "bg-slate-50/60" : "bg-slate-50/40",
           )}
         >
-          <div className="text-xs text-slate-500">اضغط Enter للإرسال و Shift + Enter لسطر جديد</div>
+          <div className="text-xs text-slate-500">Shift + Enter لسطر جديد</div>
 
           <PromptInputTools className="gap-2">
             {canRegenerate && !isSending ? (
               <PromptInputButton
                 type="button"
                 onClick={onRegenerate}
-                className="border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:text-slate-800"
+                className="rounded-lg border border-slate-300 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
               >
                 <RotateCcw className="h-4 w-4" />
               </PromptInputButton>
@@ -126,10 +133,10 @@ export default function InstitutionalChatInput({
                 onClick={onMicToggle}
                 disabled={!onMicToggle || (isMicProcessing && !isMicRecording)}
                 className={cn(
-                  "relative border transition-colors",
+                  "relative rounded-lg border transition-colors",
                   isMicRecording
                     ? "border-red-300 bg-red-50 text-red-600 hover:bg-red-100"
-                    : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700",
+                    : "border-slate-300 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-800",
                 )}
               >
                 {isMicRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
@@ -140,7 +147,7 @@ export default function InstitutionalChatInput({
               <PromptInputButton
                 type="button"
                 onClick={onStopGenerating}
-                className="bg-red-600 text-white hover:bg-red-500"
+                className="rounded-lg bg-red-600 text-white hover:bg-red-500"
               >
                 <Square className="h-4 w-4" />
               </PromptInputButton>
@@ -150,8 +157,8 @@ export default function InstitutionalChatInput({
                 disabled={sendDisabled}
                 className={cn(
                   sendDisabled
-                    ? "cursor-not-allowed bg-slate-100 text-slate-400 hover:bg-slate-100"
-                    : "bg-slate-950 text-white hover:bg-slate-800",
+                    ? "cursor-not-allowed rounded-lg bg-slate-200 text-slate-400 hover:bg-slate-200"
+                    : "rounded-lg bg-slate-950 text-white hover:bg-slate-800",
                 )}
               >
                 <ArrowUp className="h-4 w-4" />
@@ -163,7 +170,7 @@ export default function InstitutionalChatInput({
 
       {isMicRecording && micLevels.length > 0 ? (
         <div className="mt-2 flex items-center justify-end">
-          <div className="pointer-events-none flex items-end gap-0.5 border border-red-200 bg-white px-2 py-1">
+          <div className="pointer-events-none flex items-end gap-0.5 rounded-md border border-red-200 bg-white px-2 py-1">
             {micLevels.map((level, index) => (
               <motion.span
                 key={index}

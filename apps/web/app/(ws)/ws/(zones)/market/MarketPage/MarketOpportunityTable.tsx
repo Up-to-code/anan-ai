@@ -36,24 +36,28 @@ function OpportunityTooltip({ active, payload, label, priorityLabels }: any) {
   if (active && payload && payload.length) {
     const data = payload[0].payload as OpportunityRow;
     return (
-      <div className="border-2 border-slate-900 bg-white p-4 text-right shadow-none max-w-sm">
-        <div className="mb-3 flex items-center justify-between border-b-2 border-slate-900 pb-2">
-          <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 px-2 py-1 border-2 border-blue-200">
+      <div className="bg-white/95 backdrop-blur-md border border-slate-200 p-5 rounded-xl shadow-xl text-right max-w-sm">
+        <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
+          <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+            data.priority === 'high' ? 'bg-red-50 text-red-600 border border-red-200' :
+            data.priority === 'medium' ? 'bg-orange-50 text-orange-600 border border-orange-200' :
+            'bg-blue-50 text-blue-600 border border-blue-200'
+          }`}>
             {priorityLabels[data.priority]}
           </span>
-          <p className="text-xs font-black uppercase tracking-widest text-slate-900">
-            {data.area} ({data.city})
+          <p className="text-sm font-bold text-slate-900">
+            {data.area} <span className="text-slate-400 text-xs">({data.city})</span>
           </p>
         </div>
-        <div className="space-y-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-600">
-          <p className="border-l-2 border-slate-200 pl-2 leading-relaxed text-slate-900 mb-2">
+        <div className="space-y-3 text-xs font-semibold text-slate-600">
+          <p className="border-r-2 border-blue-500 pr-3 leading-relaxed text-slate-700 mb-3 bg-slate-50 p-2 rounded-l-md">
             {data.reason}
           </p>
-          <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t-2 border-slate-100">
-            <p><span className="text-blue-600 block mb-0.5">الطلب والأبحاث</span> {data.demandSignals.toLocaleString("en-US")} / {data.researchRuns.toLocaleString("en-US")}</p>
-            <p><span className="text-slate-900 block mb-0.5">المخزون</span> {data.inventoryCount.toLocaleString("en-US")}</p>
-            <p><span className="text-slate-900 block mb-0.5">المنتج</span> {data.dominantProductType ?? "غير واضح"}</p>
-            <p><span className="text-slate-900 block mb-0.5">أفضل ميزة</span> {data.strongestSellingPoint ?? "غير واضح"}</p>
+          <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-100">
+            <div><span className="text-slate-400 block mb-1 text-[10px]">الطلب والأبحاث</span> <span className="text-blue-600">{data.demandSignals.toLocaleString("en-US")}</span> / {data.researchRuns.toLocaleString("en-US")}</div>
+            <div><span className="text-slate-400 block mb-1 text-[10px]">المخزون</span> <span className="text-slate-900">{data.inventoryCount.toLocaleString("en-US")}</span></div>
+            <div><span className="text-slate-400 block mb-1 text-[10px]">المنتج الغالب</span> <span className="text-slate-800 leading-snug break-words">{data.dominantProductType ?? "غير واضح"}</span></div>
+            <div><span className="text-slate-400 block mb-1 text-[10px]">أفضل ميزة</span> <span className="text-slate-800 leading-snug break-words">{data.strongestSellingPoint ?? "غير واضح"}</span></div>
           </div>
         </div>
       </div>
@@ -74,12 +78,12 @@ export default function MarketOpportunityTable({
 }: MarketOpportunityTableProps) {
   if (rows.length === 0) {
     return (
-      <section className="border-2 border-slate-900 bg-white">
-        <div className="border-b-2 border-slate-900 p-4 text-right">
-          <h2 className="text-base font-black uppercase tracking-widest text-slate-900">{title}</h2>
+      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+        <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
+          <h2 className="text-base font-bold text-slate-900">{title}</h2>
         </div>
-        <div className="p-8 text-center text-xs font-black uppercase tracking-widest text-slate-500">
-          لا توجد فرص واضحة ضمن هذا النطاق حالياً.
+        <div className="p-12 text-center flex flex-col items-center justify-center">
+          <div className="text-sm font-bold text-slate-400">لا توجد فرص واضحة ضمن هذا النطاق حالياً.</div>
         </div>
       </section>
     );
@@ -91,33 +95,36 @@ export default function MarketOpportunityTable({
   }));
 
   return (
-    <section className="border-2 border-slate-900 bg-white">
-      <div className="border-b-2 border-slate-900 p-4 text-right">
-        <h2 className="text-base font-black uppercase tracking-widest text-slate-900">{title}</h2>
+    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+      <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
+        <h2 className="text-base font-bold text-slate-900">{title}</h2>
       </div>
-      <div className="overflow-x-auto">
-        <div className="h-[400px] min-w-[980px] p-4 pt-8 pb-8" dir="rtl">
+      <div className="overflow-x-auto overflow-y-hidden custom-scrollbar">
+        <div className="h-[400px] min-w-[900px] p-6 pt-8 pb-8" dir="rtl">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
               margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              barGap={2}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
               <XAxis
                 dataKey="displayName"
-                axisLine={{ stroke: "#0f172a", strokeWidth: 2 }}
-                tickLine={{ stroke: "#0f172a", strokeWidth: 2 }}
-                tick={{ fill: "#0f172a", fontSize: 10, fontWeight: 900 }}
+                axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                tickLine={false}
+                tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
+                dy={10}
               />
               <YAxis
-                axisLine={{ stroke: "#0f172a", strokeWidth: 2 }}
-                tickLine={{ stroke: "#0f172a", strokeWidth: 2 }}
-                tick={{ fill: "#0f172a", fontSize: 10, fontWeight: 900 }}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
+                dx={-10}
               />
-              <Tooltip content={<OpportunityTooltip priorityLabels={priorityLabels} />} cursor={{ fill: "#f1f5f9" }} />
-              <Legend wrapperStyle={{ fontSize: "10px", fontWeight: 900, textTransform: "uppercase" }} />
-              <Bar dataKey="demandSignals" name="إشارات الطلب" fill="#2563eb" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="inventoryCount" name="المخزون" fill="#0f172a" radius={[0, 0, 0, 0]} />
+              <Tooltip content={<OpportunityTooltip priorityLabels={priorityLabels} />} cursor={{ fill: "#f8fafc" }} />
+              <Legend wrapperStyle={{ fontSize: "11px", fontWeight: 600, color: "#64748b", paddingTop: "20px" }} />
+              <Bar dataKey="demandSignals" name="إشارات الطلب" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={40} />
+              <Bar dataKey="inventoryCount" name="المخزون" fill="#0f172a" radius={[4, 4, 0, 0]} maxBarSize={40} />
             </BarChart>
           </ResponsiveContainer>
         </div>

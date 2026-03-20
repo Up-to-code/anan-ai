@@ -6,31 +6,49 @@ import type {
 } from "@/server/contracts/ananPro";
 import type { AIMotionState } from "@/app/(ws)/ws/_components/AIMotion";
 
-function applyNewThreadSearchParam(url: URL, newThread: boolean | undefined) {
+function applyNewThreadSearchParam(searchParams: URLSearchParams, newThread: boolean | undefined) {
   if (newThread === true) {
-    url.searchParams.set("newThread", "1");
+    searchParams.set("newThread", "1");
     return;
   }
   if (newThread === false) {
-    url.searchParams.delete("newThread");
+    searchParams.delete("newThread");
   }
 }
 
-export function updateThreadUrl(threadId: string | null, options?: { newThread?: boolean }) {
-  if (typeof window === "undefined") return;
-
-  const url = new URL(window.location.href);
-  if (threadId) {
-    url.searchParams.set("threadId", threadId);
-    url.searchParams.delete("newThread");
+/**
+ * WHY:   Workspace assistant route changes must stay aligned with the App Router rather than mutating browser history directly.
+ * WHAT:  Builds the next `/ws` href for either a concrete thread selection or a draft/new-thread state.
+ * HOW:   Preserves unrelated query params and hash fragments while normalizing `threadId` and `newThread`.
+ */
+export function buildWorkspaceAssistantHref(args: {
+  pathname: string;
+  search?: string;
+  hash?: string;
+  threadId: string | null;
+  newThread?: boolean;
+}) {
+  const normalizedSearch = args.search?.startsWith("?")
+    ? args.search.slice(1)
+    : (args.search ?? "");
+  const searchParams = new URLSearchParams(normalizedSearch);
+  if (args.threadId) {
+    searchParams.set("threadId", args.threadId);
+    searchParams.delete("newThread");
   } else {
-    url.searchParams.delete("threadId");
-    applyNewThreadSearchParam(url, options?.newThread);
+    searchParams.delete("threadId");
+    applyNewThreadSearchParam(searchParams, args.newThread);
   }
 
-  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  const nextSearch = searchParams.toString();
+  return `${args.pathname}${nextSearch ? `?${nextSearch}` : ""}${args.hash ?? ""}`;
 }
 
+/**
+ * WHY:   The workspace shell sidebar needs a lightweight client signal when thread ordering changes after sends complete.
+ * WHAT:  Dispatches a browser event telling thread-list consumers to re-fetch summaries.
+ * HOW:   Uses one custom event so multiple shells can refresh without wiring global state into the layout.
+ */
 export function notifyAssistantThreadsChanged() {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent("workspace-assistant-threads:changed"));
@@ -56,6 +74,11 @@ export type AssistantStreamEvent =
   | { event: "done"; data: { thread: AnanProThread } }
   | { event: "error"; data: { message?: string; code?: string; status?: number } };
 
+/**
+ * WHY:   Workspace assistant streaming arrives as raw SSE text that needs one tolerant parser before state updates can happen.
+ * WHAT:  Converts one SSE chunk into a typed assistant stream event, or `null` when the payload is incomplete/invalid.
+ * HOW:   Reads the `event:` and `data:` lines, JSON-decodes the payload, and narrows it into the supported event union.
+ */
 export function parseSseChunk(rawChunk: string): AssistantStreamEvent | null {
   const lines = rawChunk
     .split("\n")
@@ -94,6 +117,11 @@ export function parseSseChunk(rawChunk: string): AssistantStreamEvent | null {
   return null;
 }
 
+/**
+ * WHY:   The assistant canvas needs one visual motion state that matches the current streamed execution phase.
+ * WHAT:  Maps pending stream stages to the small finite set of UI motion states used by the avatar/typing indicator.
+ * HOW:   Collapses multiple backend phases into user-facing buckets like thinking, agent, tool, and syncing.
+ */
 export function getAssistantMotionState(
   isPending: boolean,
   streamStage: AnanProStreamStageEvent | null,
@@ -119,6 +147,11 @@ export function getAssistantMotionState(
   }
 }
 
+/**
+ * WHY:   Operators need a short human-readable label explaining what the assistant is currently doing.
+ * WHAT:  Resolves the current streamed phase into the Arabic status copy shown beside the live typing state.
+ * HOW:   Special-cases cancellation first, then maps each known workspace stage to a concise label.
+ */
 export function getAssistantStageLabel(
   isPending: boolean,
   streamStage: AnanProStreamStageEvent | null,
@@ -157,6 +190,11 @@ export function getAssistantStageLabel(
   }
 }
 
+/**
+ * WHY:   Stream stage metadata uses internal team ids that are too technical for the UI.
+ * WHAT:  Converts a workspace team identifier into a compact display label.
+ * HOW:   Strips the known prefix and replaces underscores with spaces.
+ */
 export function normalizeAssistantTeamLabel(teamId: string) {
   return teamId.replace("team_workspace_", "").replaceAll("_", " ");
 }

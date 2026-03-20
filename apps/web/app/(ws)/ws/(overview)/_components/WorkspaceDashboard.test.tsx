@@ -1,5 +1,17 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { expect, it, vi } from "vitest";
+import { beforeEach, expect, it, vi } from "vitest";
+
+const { usePathname, useRouter, useSearchParams } = vi.hoisted(() => ({
+  usePathname: vi.fn(),
+  useRouter: vi.fn(),
+  useSearchParams: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  usePathname,
+  useRouter,
+  useSearchParams,
+}));
 
 vi.mock("@/components/shared/InstitutionalChatInput", () => ({
   default: ({
@@ -46,6 +58,12 @@ vi.mock("../../_components/AIMotion", () => ({
 
 import WorkspaceDashboard from "./WorkspaceDashboard";
 
+beforeEach(() => {
+  usePathname.mockReturnValue("/ws");
+  useRouter.mockReturnValue({ replace: vi.fn() });
+  useSearchParams.mockReturnValue(new URLSearchParams());
+});
+
 it("renders a centered landing state before the first message", () => {
   const markup = renderToStaticMarkup(<WorkspaceDashboard initialThread={null} />);
 
@@ -53,6 +71,8 @@ it("renders a centered landing state before the first message", () => {
   expect(markup).toContain("data-slot=\"ai-motion-logo\"");
   expect(markup).toContain("data-slot=\"chat-input\"");
   expect(markup).toContain("data-layout=\"landing\"");
+  expect(markup).toContain("data-slot=\"landing-composer-dock\"");
+  expect(markup).toContain("ما هي أكثر المناطق طلبًا هذا الشهر؟");
   expect(markup).not.toContain("السياق");
   expect(markup).not.toContain("الإشعارات");
   expect(markup).not.toContain("التحكم");
@@ -90,8 +110,9 @@ it("renders the conversation stream inline when messages exist", () => {
 
   expect(markup).toContain("hello");
   expect(markup).toContain("world");
-  expect(markup).toContain("استكمل العمل من آخر نقطة وصلت إليها داخل هذه المحادثة.");
+  expect(markup).toContain("جاهز للمتابعة");
   expect(markup).toContain("data-slot=\"ag-ui-turn\"");
   expect(markup).toContain("data-layout=\"thread\"");
+  expect(markup).toContain("data-slot=\"thread-composer-dock\"");
   expect(markup).not.toContain("كيف يمكنني مساعدتك؟");
 });

@@ -60,6 +60,7 @@ export const sendMessage = action({
   args: {
     message: v.string(),
     threadId: v.optional(v.id("assistantThreads")),
+    startNewThread: v.optional(v.boolean()),
     inputMode: v.optional(v.union(v.literal("text"), v.literal("voice"))),
     streamSessionId: v.optional(v.string()),
     regenerate: v.optional(v.boolean()),

@@ -31,6 +31,34 @@ function createHandleMessageCtx() {
   return { runQuery, runMutation };
 }
 
+function createFreshThreadHandleMessageCtx() {
+  let call = 0;
+  let mutationCall = 0;
+  const runQuery = vi.fn(async (...args: unknown[]) => {
+    call += 1;
+    if (call === 1) {
+      return { thread: { _id: "legacy_thread" }, owner: { userId: "user_1", ownerType: "broker", ownerBrokerId: "broker_1" } };
+    }
+    if (call === 2) return { mode: "qa" };
+    if (call === 3) {
+      const payload = args[1] as { threadId?: string } | undefined;
+      expect(payload?.threadId).toBe("fresh_thread");
+      return [];
+    }
+    return [];
+  });
+  const runMutation = vi.fn(async (...args: unknown[]) => {
+    mutationCall += 1;
+    if (mutationCall === 1) {
+      const payload = args[1] as { title?: string } | undefined;
+      expect(payload?.title).toBe("ابدأ محادثة جديدة");
+      return { threadId: "fresh_thread" };
+    }
+    return { threadId: "fresh_thread", assistantMessageId: "assistant_message_1" };
+  });
+  return { runQuery, runMutation };
+}
+
 function registerWorkspaceAssistantTest() {
   it("uses workspace save mutation and sanitized payload for workspace assistant", async () => {
     const ctx = createHandleMessageCtx();
@@ -80,11 +108,40 @@ function registerVoiceMetadataTest() {
   });
 }
 
+function registerFreshWorkspaceThreadTest() {
+  it("creates a fresh workspace thread when requested instead of reusing the latest one", async () => {
+    const ctx = createFreshThreadHandleMessageCtx();
+    const result = await handleAssistantMessage(ctx as any, {
+      message: "ابدأ محادثة جديدة",
+      startNewThread: true,
+      assistantKind: "anan_workspace",
+      orchestratorName: "anan_workspace_orchestrator",
+      promptPrefix: "[Anan Workspace Operator]",
+    });
+
+    expect(mockOrchestrateWorkspace).toHaveBeenCalledTimes(1);
+    expect(ctx.runQuery).toHaveBeenCalledTimes(4);
+    expect(ctx.runMutation).toHaveBeenCalledTimes(2);
+
+    const [, createThreadPayload] = (ctx.runMutation as any).mock.calls[0] as [unknown, Record<string, unknown>];
+    expect(createThreadPayload).toEqual({ title: "ابدأ محادثة جديدة" });
+
+    const [, savePayload] = (ctx.runMutation as any).mock.calls[1] as [unknown, Record<string, unknown>];
+    expect(savePayload).toEqual(expect.objectContaining({
+      threadId: "fresh_thread",
+      userMessage: "ابدأ محادثة جديدة",
+      assistantMessage: expect.stringContaining("workspace orchestrator output"),
+    }));
+    expect(result).toEqual(expect.objectContaining({ threadId: "fresh_thread" }));
+  });
+}
+
 function registerHandleAssistantMessageSuite() {
   beforeEach(resetAssistantMocks);
   registerWorkspaceAssistantTest();
   registerDefaultAssistantTest();
   registerVoiceMetadataTest();
+  registerFreshWorkspaceThreadTest();
 }
 
 type ThreadRow = { _id: string; userId: string; scope?: string; ownerType: string; ownerBrokerId: string; assistantKind: string; updatedAt: number };

@@ -35,16 +35,23 @@ function AreaTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
     const data = payload[0].payload as MarketAreaRow;
     return (
-      <div className="border-2 border-slate-900 bg-white p-3 text-right shadow-none">
-        <p className="mb-2 text-xs font-black uppercase tracking-widest text-slate-900 border-b-2 border-slate-900 pb-2">
+      <div className="bg-white/95 backdrop-blur-md border border-slate-200 p-4 rounded-xl shadow-xl text-right max-w-xs">
+        <p className="mb-3 text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">
           {data.city ? `${data.city} - ` : ""}{label}
         </p>
-        <div className="space-y-1 text-[10px] font-bold uppercase tracking-widest text-slate-600">
-          <p><span className="text-blue-600">إشارات الطلب:</span> {data.demandSignals.toLocaleString("en-US")}</p>
-          <p><span className="text-slate-900">المخزون:</span> {data.inventoryCount.toLocaleString("en-US")}</p>
-          <p className="pt-2"><span className="text-slate-900 font-black">متوسط السعر:</span> {data.averagePriceLabel ?? "غير كافٍ"}</p>
-          <p><span className="text-slate-900 font-black">المنتج الغالب:</span> {data.topProductType ?? "غير واضح"}</p>
-          <p><span className="text-slate-900 font-black">الإشارة الأوضح:</span> {data.topSignalLabel ?? "غير واضح"}</p>
+        <div className="space-y-2 text-xs font-semibold text-slate-600">
+          <p className="flex justify-between items-center"><span className="text-slate-400">إشارات الطلب:</span> <span className="text-blue-600">{data.demandSignals.toLocaleString("en-US")}</span></p>
+          <p className="flex justify-between items-center"><span className="text-slate-400">المخزون:</span> <span className="text-slate-900">{data.inventoryCount.toLocaleString("en-US")}</span></p>
+          <div className="h-px bg-slate-100 my-2"></div>
+          <p className="flex justify-between items-center"><span className="text-slate-400">متوسط السعر:</span> <span className="text-slate-900">{data.averagePriceLabel ?? "غير كافٍ"}</span></p>
+          <p className="flex flex-col gap-1 mt-2">
+            <span className="text-[10px] text-slate-400">المنتج الغالب:</span>
+            <span className="text-slate-800 leading-snug">{data.topProductType ?? "غير واضح"}</span>
+          </p>
+          <p className="flex flex-col gap-1 mt-1">
+            <span className="text-[10px] text-slate-400">الإشارة الأوضح:</span>
+            <span className="text-slate-800 leading-snug">{data.topSignalLabel ?? "غير واضح"}</span>
+          </p>
         </div>
       </div>
     );
@@ -65,13 +72,13 @@ export default function MarketAreasTable({
 }: MarketAreasTableProps) {
   if (rows.length === 0) {
     return (
-      <section className="border-2 border-slate-900 bg-white">
-        <div className="border-b-2 border-slate-900 p-4 text-right">
-          <h2 className="text-base font-black uppercase tracking-widest text-slate-900">{title}</h2>
-          {description ? <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-600">{description}</p> : null}
+      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
+          <h2 className="text-base font-bold text-slate-900">{title}</h2>
+          {description ? <p className="mt-1 text-xs font-medium text-slate-500">{description}</p> : null}
         </div>
-        <div className="p-8 text-center text-xs font-black uppercase tracking-widest text-slate-500">
-          لا توجد أحياء مطابقة لهذا النطاق.
+        <div className="p-12 text-center flex flex-col items-center justify-center">
+          <div className="text-sm font-bold text-slate-400">لا توجد أحياء مطابقة لهذا النطاق.</div>
         </div>
       </section>
     );
@@ -84,34 +91,37 @@ export default function MarketAreasTable({
   }));
 
   return (
-    <section className="border-2 border-slate-900 bg-white">
-      <div className="border-b-2 border-slate-900 p-4 text-right">
-        <h2 className="text-base font-black uppercase tracking-widest text-slate-900">{title}</h2>
-        {description ? <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-600">{description}</p> : null}
+    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
+        <h2 className="text-base font-bold text-slate-900">{title}</h2>
+        {description ? <p className="mt-1 text-xs font-medium text-slate-500">{description}</p> : null}
       </div>
-      <div className="overflow-x-auto">
-        <div className="h-[400px] min-w-[980px] p-4 pt-8 pb-8" dir="rtl">
+      <div className="overflow-x-auto overflow-y-hidden custom-scrollbar">
+        <div className="h-[400px] min-w-[900px] p-6 pt-8 pb-8" dir="rtl">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
               margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              barGap={2}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
               <XAxis
                 dataKey="displayName"
-                axisLine={{ stroke: "#0f172a", strokeWidth: 2 }}
-                tickLine={{ stroke: "#0f172a", strokeWidth: 2 }}
-                tick={{ fill: "#0f172a", fontSize: 10, fontWeight: 900 }}
+                axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                tickLine={false}
+                tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
+                dy={10}
               />
               <YAxis
-                axisLine={{ stroke: "#0f172a", strokeWidth: 2 }}
-                tickLine={{ stroke: "#0f172a", strokeWidth: 2 }}
-                tick={{ fill: "#0f172a", fontSize: 10, fontWeight: 900 }}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
+                dx={-10}
               />
-              <Tooltip content={<AreaTooltip />} cursor={{ fill: "#f1f5f9" }} />
-              <Legend wrapperStyle={{ fontSize: "10px", fontWeight: 900, textTransform: "uppercase" }} />
-              <Bar dataKey="demandSignals" name="إشارات الطلب" fill="#2563eb" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="inventoryCount" name="المخزون" fill="#0f172a" radius={[0, 0, 0, 0]} />
+              <Tooltip content={<AreaTooltip />} cursor={{ fill: "#f8fafc" }} />
+              <Legend wrapperStyle={{ fontSize: "11px", fontWeight: 600, color: "#64748b", paddingTop: "20px" }} />
+              <Bar dataKey="demandSignals" name="إشارات الطلب" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={40} />
+              <Bar dataKey="inventoryCount" name="المخزون" fill="#0f172a" radius={[4, 4, 0, 0]} maxBarSize={40} />
             </BarChart>
           </ResponsiveContainer>
         </div>

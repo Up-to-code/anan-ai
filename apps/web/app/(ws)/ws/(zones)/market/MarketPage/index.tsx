@@ -1,6 +1,5 @@
 import MarketEmptyState from "./MarketEmptyState";
 import MarketFilters from "./MarketFilters";
-import MarketUnderDevelopmentOverlay from "./MarketUnderDevelopmentOverlay";
 import type { WorkspaceMarketPageModel } from "../marketTypes";
 import BrandSectionFrame from "../../../_components/WorkspaceBrand/BrandSectionFrame";
 import BrandStatStrip from "../../../_components/WorkspaceBrand/BrandStatStrip";
@@ -11,13 +10,7 @@ type MarketPageIntro = {
   description: string;
 };
 
-function getMarketUnderDevelopmentFlag() {
-  const envValue =
-    (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env
-      ?.NEXT_PUBLIC_MARKET_UNDER_DEVELOPMENT;
 
-  return String(envValue ?? "").toLowerCase() === "true";
-}
 
 function buildScopeLabel(model: WorkspaceMarketPageModel) {
   if (model.headline.selectedAreaLabel && model.headline.selectedAreaLabel !== "كل الأحياء") {
@@ -57,8 +50,6 @@ type MarketPageProps = {
 };
 
 export default function MarketPage({ model, actionPath, intro, children }: MarketPageProps) {
-  const isUnderDevelopment = getMarketUnderDevelopmentFlag();
-
   return (
     <div className="flex min-h-full flex-col pb-24">
       <BrandSectionFrame
@@ -67,16 +58,7 @@ export default function MarketPage({ model, actionPath, intro, children }: Marke
         description={intro.description}
       />
       <div className="grid gap-6 px-6 py-6 lg:px-8 lg:py-8">
-        {isUnderDevelopment ? (
-          <div className="relative overflow-hidden border border-slate-200 bg-slate-100">
-            <div className="pointer-events-none select-none space-y-6 p-6 blur-[10px] opacity-45 lg:p-8">
-              <MarketPageContent model={model} actionPath={actionPath} children={children} />
-            </div>
-            <MarketUnderDevelopmentOverlay />
-          </div>
-        ) : (
-          <MarketPageContent model={model} actionPath={actionPath} children={children} />
-        )}
+        <MarketPageContent model={model} actionPath={actionPath} children={children} />
       </div>
     </div>
   );

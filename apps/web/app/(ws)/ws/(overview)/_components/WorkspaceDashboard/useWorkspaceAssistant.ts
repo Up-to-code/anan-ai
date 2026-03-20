@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { AnanProInputMode, AnanProStreamStageEvent, AnanProThread } from "@/server/contracts/ananPro";
 import {
   getAssistantThread,
@@ -8,10 +9,10 @@ import {
   transcribeVoiceFromStorage,
 } from "./actions";
 import {
+  buildWorkspaceAssistantHref,
   getAssistantMotionState,
   getAssistantStageLabel,
   normalizeAssistantTeamLabel,
-  updateThreadUrl,
 } from "./useWorkspaceAssistant.shared";
 import { useWorkspaceAssistantSend } from "./useWorkspaceAssistantSend";
 import { useVoiceRecorder } from "./useVoiceRecorder";
@@ -30,6 +31,9 @@ export function useWorkspaceAssistant({
   initialThread,
   initialSelectedThreadId,
 }: UseWorkspaceAssistantParams) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [thread, setThread] = useState<AnanProThread | null>(initialThread);
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(initialSelectedThreadId ?? initialThread?.id ?? null);
   const [value, setValue] = useState("");
@@ -44,11 +48,11 @@ export function useWorkspaceAssistant({
   const [isLoadingThread, setIsLoadingThread] = useState(false);
   const [isPending, startTransition] = useTransition();
   const stopRequestedRef = useRef(false);
+  const routeThreadId = pathname === "/ws" ? searchParams.get("threadId") : null;
+  const isDraftRoute = pathname === "/ws" && searchParams.get("newThread") === "1";
+  const shouldStartNewThread = !thread && pathname === "/ws" && (isDraftRoute || !routeThreadId);
 
-  useEffect(() => {
-    const nextSelectedThreadId = initialSelectedThreadId ?? initialThread?.id ?? null;
-    setThread(initialThread);
-    setSelectedThreadId(nextSelectedThreadId);
+  const resetEphemeralAssistantState = useCallback(() => {
     setStreamStage(null);
     setStageHistory([]);
     setStreamLifecycleStatus(null);
@@ -59,16 +63,72 @@ export function useWorkspaceAssistant({
     stopRequestedRef.current = false;
     setSendError(null);
     setValue("");
-  }, [initialSelectedThreadId, initialThread]);
+  }, []);
+
+  const replaceAssistantRoute = useCallback((threadId: string | null, options?: { newThread?: boolean }) => {
+    if (pathname !== "/ws") return;
+
+    const hash = typeof window === "undefined" ? "" : window.location.hash;
+    const currentHref = buildWorkspaceAssistantHref({
+      pathname,
+      search: searchParams.toString(),
+      hash,
+      threadId: routeThreadId,
+      newThread: isDraftRoute ? true : false,
+    });
+    const nextHref = buildWorkspaceAssistantHref({
+      pathname,
+      search: searchParams.toString(),
+      hash,
+      threadId,
+      newThread: options?.newThread,
+    });
+
+    if (nextHref === currentHref) return;
+    router.replace(nextHref, { scroll: false });
+  }, [isDraftRoute, pathname, routeThreadId, router, searchParams]);
 
   useEffect(() => {
-    if (initialThread?.id && !initialSelectedThreadId) {
-      updateThreadUrl(initialThread.id);
+    const nextSelectedThreadId = initialSelectedThreadId ?? initialThread?.id ?? null;
+
+    if (isDraftRoute) {
+      setThread(null);
+      setSelectedThreadId(null);
+      setIsLoadingThread(false);
+      resetEphemeralAssistantState();
+      return;
     }
-  }, [initialSelectedThreadId, initialThread?.id]);
+
+    if (!routeThreadId) {
+      if (nextSelectedThreadId) {
+        return;
+      }
+      setThread(null);
+      setSelectedThreadId(null);
+      setIsLoadingThread(false);
+      resetEphemeralAssistantState();
+      return;
+    }
+
+    if (nextSelectedThreadId !== routeThreadId) {
+      return;
+    }
+
+    setThread(initialThread);
+    setSelectedThreadId(nextSelectedThreadId);
+    setIsLoadingThread(false);
+    resetEphemeralAssistantState();
+  }, [
+    initialSelectedThreadId,
+    initialThread,
+    isDraftRoute,
+    resetEphemeralAssistantState,
+    routeThreadId,
+  ]);
 
   const sendWithOptimisticUpdate = useWorkspaceAssistantSend({
     thread,
+    shouldStartNewThread,
     startTransition,
     setThread,
     setSelectedThreadId,
@@ -80,6 +140,7 @@ export function useWorkspaceAssistant({
     setCompletedTeamIds,
     setActiveStreamSessionId,
     setIsStoppingStream,
+    replaceThreadRoute: replaceAssistantRoute,
     stopRequestedRef,
   });
 
@@ -118,14 +179,14 @@ export function useWorkspaceAssistant({
         setSelectedThreadId(nextThread?.id ?? null);
         setStageHistory([]);
         setStreamLifecycleStatus(null);
-        updateThreadUrl(nextThread?.id ?? null);
+        replaceAssistantRoute(nextThread?.id ?? null);
       } catch (error) {
         setThread(null);
         setSelectedThreadId(null);
         setStageHistory([]);
         setStreamLifecycleStatus(null);
         setSendError(error instanceof Error ? error.message : "تعذر تحميل المحادثة.");
-        updateThreadUrl(null, { newThread: false });
+        replaceAssistantRoute(null, { newThread: false });
       } finally {
         setIsLoadingThread(false);
       }
@@ -139,7 +200,7 @@ export function useWorkspaceAssistant({
     setStreamLifecycleStatus(null);
     setValue("");
     setSendError(null);
-    updateThreadUrl(null, { newThread: true });
+    replaceAssistantRoute(null, { newThread: true });
   };
 
   const handleStopStreaming = useCallback(async () => {

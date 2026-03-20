@@ -65,7 +65,8 @@ export default function WorkspaceShell({
             <PanelLeftClose className="h-3 w-3" />
           </button>
         </div>
-      ) : (
+      ) : null}
+      {sidebarCollapsed ? (
         <div className="hidden shrink-0 lg:flex lg:h-svh lg:w-16 flex-col items-center border-e border-slate-200 bg-white py-6">
           <button
             onClick={() => setSidebarCollapsed(false)}
@@ -75,7 +76,7 @@ export default function WorkspaceShell({
             <PanelLeft className="h-5 w-5" />
           </button>
         </div>
-      )}
+      ) : null}
 
       <div className="relative flex min-w-0 flex-1 flex-col bg-transparent lg:max-h-svh lg:overflow-hidden">
         <WorkspaceTopNavbar

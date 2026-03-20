@@ -45,6 +45,7 @@ function createOptimisticThread(args: {
 
 function buildSendBody(args: {
   previousThread: AnanProThread | null;
+  startNewThread?: boolean;
   nextMessage: string;
   inputMode?: AnanProInputMode;
   streamSessionId: string;
@@ -53,6 +54,7 @@ function buildSendBody(args: {
   return {
     message: args.nextMessage,
     threadId: args.previousThread?.id,
+    startNewThread: args.startNewThread || undefined,
     inputMode: args.inputMode,
     streamSessionId: args.streamSessionId,
     regenerate: args.options?.regenerate,
@@ -84,6 +86,7 @@ function finalizeStreamRun(params: SendFlowParams) {
 
 async function requestAssistantStream(args: {
   previousThread: AnanProThread | null;
+  startNewThread?: boolean;
   nextMessage: string;
   inputMode?: AnanProInputMode;
   options?: SendOptions;
@@ -93,11 +96,12 @@ async function requestAssistantStream(args: {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(
-      buildSendBody({
-        previousThread: args.previousThread,
-        nextMessage: args.nextMessage,
-        inputMode: args.inputMode,
-        streamSessionId: args.streamSessionId,
+        buildSendBody({
+          previousThread: args.previousThread,
+          startNewThread: args.startNewThread,
+          nextMessage: args.nextMessage,
+          inputMode: args.inputMode,
+          streamSessionId: args.streamSessionId,
         options: args.options,
       }),
     ),
@@ -127,6 +131,7 @@ function handleSendFlowError(args: {
 export async function runSendFlow(args: {
   params: SendFlowParams;
   previousThread: AnanProThread | null;
+  startNewThread?: boolean;
   nextMessage: string;
   inputMode?: AnanProInputMode;
   options?: SendOptions;

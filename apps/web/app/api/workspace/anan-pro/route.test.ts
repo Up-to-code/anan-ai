@@ -117,7 +117,10 @@ it("streams ordered SSE events when stream mode is enabled", async () => {
   listAnanProStreamEvents.mockResolvedValueOnce(streamEventsFixture).mockResolvedValueOnce([]);
   sendAnanProMessage.mockResolvedValue(threadResultFixture);
 
-  const response = await POST(jsonRequest("http://localhost/api/workspace/anan-pro?stream=1", "POST", { message: "ابدأ مشروع" }));
+  const response = await POST(jsonRequest("http://localhost/api/workspace/anan-pro?stream=1", "POST", {
+    message: "ابدأ مشروع",
+    startNewThread: true,
+  }));
 
   expect(response.status).toBe(200);
   expect(response.headers.get("content-type")).toContain("text/event-stream");
@@ -125,6 +128,7 @@ it("streams ordered SSE events when stream mode is enabled", async () => {
   const firstCall = sendAnanProMessage.mock.calls[0]?.[0];
   expect(firstCall?.message).toBe("ابدأ مشروع");
   expect(firstCall?.threadId).toBeUndefined();
+  expect(firstCall?.startNewThread).toBe(true);
 
   const payload = await response.text();
   expect(payload).toContain("\"type\":\"stage\"");

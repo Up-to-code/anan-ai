@@ -1,6 +1,7 @@
 "use client";
 
 import { MessageSquareText, PenSquare } from "lucide-react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { AnanProThreadSummary } from "@/server/contracts/ananPro";
 
@@ -39,57 +40,76 @@ export default function WorkspaceAssistantRail({
   onSelectThread,
 }: WorkspaceAssistantRailProps) {
   return (
-    <aside className="border-b border-stone-200 bg-white lg:flex lg:w-80 lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-s lg:min-h-[calc(100svh-7rem)]">
-      <div className="flex items-center justify-between border-b border-stone-200 px-4 py-4 sm:px-6 lg:px-5">
+    <aside className="border-b border-slate-100 bg-white lg:flex lg:w-72 lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-s lg:border-slate-100 lg:min-h-[calc(100svh-7rem)]">
+      {/* Rail header */}
+      <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3.5 sm:px-5">
         <div>
-          <div className="text-sm font-bold text-slate-950">سجل المساعد</div>
-          <div className="mt-1 text-xs text-slate-500">أكمل المحادثات السابقة أو ابدأ محادثة جديدة.</div>
+          <div className="text-sm font-semibold text-slate-900">سجل المساعد</div>
+          <div className="mt-0.5 text-[11px] text-slate-400">المحادثات السابقة</div>
         </div>
         <button
           type="button"
           onClick={onCreateThread}
-          className="inline-flex h-10 items-center gap-2 border border-stone-300 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:border-stone-400 hover:text-slate-950"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900"
+          title="محادثة جديدة"
         >
-          <PenSquare className="h-4 w-4" />
-          محادثة جديدة
+          <PenSquare className="h-3.5 w-3.5" />
         </button>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto px-4 py-4 sm:px-6 lg:flex-1 lg:flex-col lg:overflow-y-auto lg:px-5">
+      {/* Thread list */}
+      <div className="flex gap-2 overflow-x-auto px-3 py-3 sm:px-4 lg:flex-1 lg:flex-col lg:overflow-y-auto lg:px-3">
         {threads.length === 0 ? (
-          <div className="flex min-h-28 min-w-64 items-center justify-center border border-dashed border-stone-300 bg-stone-50 px-4 text-sm text-slate-500 lg:min-w-0">
-            ستظهر هنا المحادثات بعد أول رسالة ترسلها إلى Anan Workspace.
+          <div className="flex min-h-28 min-w-64 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 text-xs text-slate-400 lg:min-w-0">
+            ستظهر المحادثات هنا بعد أول رسالة.
           </div>
         ) : (
-          threads.map((thread) => {
+          threads.map((thread, index) => {
             const isActive = thread.id === activeThreadId;
-
             return (
-              <button
+              <motion.button
                 key={thread.id}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: index * 0.04 }}
                 type="button"
                 onClick={() => onSelectThread(thread.id)}
                 disabled={isLoadingThread && !isActive}
                 className={cn(
-                  "min-w-72 border p-4 text-right transition-colors lg:min-w-0",
+                  "min-w-60 rounded-xl px-3.5 py-3 text-right transition-all lg:min-w-0",
                   isActive
-                    ? "border-slate-900 bg-slate-900 text-white"
-                    : "border-stone-200 bg-white text-slate-900 hover:border-stone-300 hover:bg-stone-50",
-                  isLoadingThread && !isActive && "cursor-wait opacity-70",
+                    ? "bg-slate-950 shadow-sm"
+                    : "border border-slate-100 bg-slate-50/50 hover:bg-slate-100",
+                  isLoadingThread && !isActive && "cursor-wait opacity-60",
                 )}
               >
-                <div className="flex items-start gap-3">
-                  <MessageSquareText className={cn("mt-0.5 h-4 w-4 shrink-0", isActive ? "text-white" : "text-slate-400")} />
+                <div className="flex items-start gap-2.5">
+                  <MessageSquareText
+                    className={cn(
+                      "mt-0.5 h-3.5 w-3.5 shrink-0",
+                      isActive ? "text-slate-300" : "text-slate-400",
+                    )}
+                  />
                   <div className="min-w-0 flex-1">
-                    <div className={cn("truncate text-sm font-semibold", isActive ? "text-white" : "text-slate-950")}>
+                    <div
+                      className={cn(
+                        "truncate text-xs font-semibold leading-snug",
+                        isActive ? "text-white" : "text-slate-800",
+                      )}
+                    >
                       {getThreadLabel(thread)}
                     </div>
-                    <div className={cn("mt-2 text-xs", isActive ? "text-slate-300" : "text-slate-500")}>
+                    <div
+                      className={cn(
+                        "mt-1.5 text-[10px]",
+                        isActive ? "text-slate-400" : "text-slate-400",
+                      )}
+                    >
                       {formatThreadDate(thread.updatedAt)}
                     </div>
                   </div>
                 </div>
-              </button>
+              </motion.button>
             );
           })
         )}

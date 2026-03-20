@@ -43,13 +43,6 @@ export async function sendAnanProMessage(
   return dependencies.repository.sendMessage(session.token, input);
 }
 
-export async function createAnanProThread(
-  dependencies: AnanProServiceDependencies = defaultDependencies,
-) {
-  const session = await dependencies.requireSession();
-  return dependencies.repository.createThread(session.token);
-}
-
 export async function listAnanProStreamEvents(
   input: { sessionId: string; afterSeq?: number; limit?: number },
   dependencies: AnanProServiceDependencies = defaultDependencies,
