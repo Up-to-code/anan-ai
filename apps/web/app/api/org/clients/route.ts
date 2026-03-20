@@ -13,7 +13,7 @@ import {
  */
 export async function GET(request: Request) {
   try {
-    return Response.json({ clients: await listOrganizationClientsByApiKey(getOrganizationApiKeyHeader(request) ?? undefined) });
+    return Response.json({ clients: await listOrganizationClientsByApiKey(getOrganizationApiKeyHeader(request)) });
   } catch (error) {
     return toErrorResponse(error);
   }
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     return Response.json(
-      { client: await createOrganizationClientByApiKey(getOrganizationApiKeyHeader(request) ?? undefined, body) },
+      { client: await createOrganizationClientByApiKey(getOrganizationApiKeyHeader(request), body) },
       { status: 201 },
     );
   } catch (error) {
