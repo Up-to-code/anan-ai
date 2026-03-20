@@ -1,16 +1,20 @@
 import { getWorkspaceOrganizationTeam } from "../../_lib/organizationTeam";
+import { listCurrentOrganizationApiKeysForCurrentUser } from "@/server/domains/organizationApiKeys/service";
+import type { OrganizationApiKeySummary } from "@/server/contracts/organizationApiKeys";
 import SettingsHeader from "./_components/SettingsHeader";
+import ApiKeysWorkspace from "./_components/ApiKeysWorkspace";
 import InviteMemberForm from "./_components/InviteMemberForm";
 import OrganizationSettingsWorkspace from "./_components/OrganizationSettingsWorkspace";
 import SettingsSummary from "./_components/SettingsSummary";
 import SettingsTabs from "./_components/SettingsTabs";
 import MembersWorkspace from "./_components/MembersWorkspace";
 
-type SettingsTabKey = "org" | "members";
+type SettingsTabKey = "org" | "members" | "api-keys";
 
 const settingsTabs = [
   { key: "org", label: "المنظمة" },
   { key: "members", label: "الأعضاء والدعوات" },
+  { key: "api-keys", label: "مفاتيح API" },
 ] as const;
 
 function roleLabelForMembership(role: string | null) {
@@ -65,6 +69,30 @@ function MembersTabSection(args: {
   );
 }
 
+function ApiKeysTabSection(args: {
+  initialKeys: OrganizationApiKeySummary[];
+  canManage: boolean;
+  hasOrganization: boolean;
+}) {
+  const activeKeyCount = args.initialKeys.filter((key) => key.status === "active").length;
+  return (
+    <div className="space-y-6 animate-in fade-in-50 duration-300">
+      <SettingsSummary
+        items={[
+          { label: "المفاتيح النشطة", value: activeKeyCount },
+          { label: "إجمالي المفاتيح", value: args.initialKeys.length },
+          { label: "صلاحية الإدارة", value: args.canManage ? "متاحة" : "مطلوبة" },
+        ]}
+      />
+      <ApiKeysWorkspace
+        initialKeys={args.initialKeys}
+        canManage={args.canManage}
+        hasOrganization={args.hasOrganization}
+      />
+    </div>
+  );
+}
+
 /**
  * WHY:   Organization settings need a top-level summary page under the overview shell.
  * WHAT:  Renders a tabbed interface separating Organization and Member management.
@@ -74,12 +102,19 @@ export default async function WorkspaceSettingsPage(props: {
   searchParams: Promise<{ tab?: string }>;
 }) {
   const searchParams = await props.searchParams;
-  const currentTab: SettingsTabKey = searchParams.tab === "members" ? "members" : "org";
+  const currentTab: SettingsTabKey =
+    searchParams.tab === "members" || searchParams.tab === "api-keys"
+      ? searchParams.tab
+      : "org";
 
   const { organization, members, invites, currentMembershipRole } = await getWorkspaceOrganizationTeam();
   const canManage = currentMembershipRole === "manager";
   const roleLabel = roleLabelForMembership(currentMembershipRole);
   const hasOrganization = Boolean(organization && currentMembershipRole);
+  const initialApiKeys =
+    canManage && hasOrganization
+      ? await listCurrentOrganizationApiKeysForCurrentUser()
+      : [];
 
   return (
     <div className="space-y-8 p-6 lg:p-10">
@@ -92,6 +127,12 @@ export default async function WorkspaceSettingsPage(props: {
 
       {currentTab === "org" ? (
         <OrganizationTabSection organization={organization} canManage={canManage} />
+      ) : currentTab === "api-keys" ? (
+        <ApiKeysTabSection
+          initialKeys={initialApiKeys}
+          canManage={canManage}
+          hasOrganization={hasOrganization}
+        />
       ) : (
         <MembersTabSection
           members={members}

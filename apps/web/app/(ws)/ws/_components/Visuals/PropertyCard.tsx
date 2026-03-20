@@ -50,12 +50,12 @@ export default function PropertyCard({
           className="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60" />
-        
+
         {/* Price pill - floating slightly */}
         <div className="absolute bottom-3 right-3 rounded-lg bg-white/95 px-3 py-1.5 text-xs font-bold text-slate-900 shadow-sm backdrop-blur-sm">
           {priceLabel}
         </div>
-        
+
         {/* Publication badge */}
         {publicationBadge ? (
           <div className="absolute top-3 right-3">{publicationBadge}</div>

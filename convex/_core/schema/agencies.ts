@@ -71,6 +71,33 @@ const agenciesTables = {
         .index("ownerREDId", ["ownerREDId"])
         .index("ownerType", ["ownerType"]),
 
+    organizationApiKeys: defineTable({
+        keyId: v.string(),
+        prefix: v.string(),
+        secretHash: v.string(),
+        name: v.string(),
+        permissions: v.array(
+            v.object({
+                resource: v.union(v.literal("clients"), v.literal("properties")),
+                action: v.union(v.literal("read"), v.literal("create"), v.literal("update"), v.literal("delete")),
+            }),
+        ),
+        status: v.union(v.literal("active"), v.literal("revoked")),
+        ownerType: v.union(v.literal("broker"), v.literal("RED")),
+        ownerBrokerId: v.optional(v.id("brokers")),
+        ownerREDId: v.optional(v.id("RED")),
+        tenantOrgId: v.optional(v.string()),
+        createdBy: v.string(),
+        createdAt: v.number(),
+        revokedAt: v.optional(v.number()),
+        lastUsedAt: v.optional(v.number()),
+    })
+        .index("keyId", ["keyId"])
+        .index("secretHash", ["secretHash"])
+        .index("ownerBrokerId", ["ownerBrokerId"])
+        .index("ownerREDId", ["ownerREDId"])
+        .index("status", ["status"]),
+
     /**
      * Legacy org membership system. Deprecated after convex-tenants migration.
      * Keep until data migration is completed and verified.

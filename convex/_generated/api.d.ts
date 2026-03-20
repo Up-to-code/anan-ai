@@ -204,6 +204,7 @@ import type * as red_zone_repositories_overviewRepository from "../red_zone/repo
 import type * as red_zone_repositories_propertiesRepository from "../red_zone/repositories/propertiesRepository.js";
 import type * as seed from "../seed.js";
 import type * as shared_logic_agencies_repositories from "../shared_logic/agencies/repositories.js";
+import type * as shared_logic_agencies_repositories_apiKeys from "../shared_logic/agencies/repositories/apiKeys.js";
 import type * as shared_logic_agencies_repositories_core from "../shared_logic/agencies/repositories/core.js";
 import type * as shared_logic_agencies_repositories_directory from "../shared_logic/agencies/repositories/directory.js";
 import type * as shared_logic_agencies_repositories_index from "../shared_logic/agencies/repositories/index.js";
@@ -512,6 +513,7 @@ declare const fullApi: ApiFromModules<{
   "red_zone/repositories/propertiesRepository": typeof red_zone_repositories_propertiesRepository;
   seed: typeof seed;
   "shared_logic/agencies/repositories": typeof shared_logic_agencies_repositories;
+  "shared_logic/agencies/repositories/apiKeys": typeof shared_logic_agencies_repositories_apiKeys;
   "shared_logic/agencies/repositories/core": typeof shared_logic_agencies_repositories_core;
   "shared_logic/agencies/repositories/directory": typeof shared_logic_agencies_repositories_directory;
   "shared_logic/agencies/repositories/index": typeof shared_logic_agencies_repositories_index;

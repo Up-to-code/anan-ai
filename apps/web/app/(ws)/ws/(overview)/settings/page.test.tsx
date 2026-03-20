@@ -4,9 +4,15 @@ import { beforeEach, expect, it, vi } from "vitest";
 const { getWorkspaceOrganizationTeam } = vi.hoisted(() => ({
   getWorkspaceOrganizationTeam: vi.fn(),
 }));
+const { listCurrentOrganizationApiKeysForCurrentUser } = vi.hoisted(() => ({
+  listCurrentOrganizationApiKeysForCurrentUser: vi.fn(),
+}));
 
 vi.mock("../../_lib/organizationTeam", () => ({
   getWorkspaceOrganizationTeam,
+}));
+vi.mock("@/server/domains/organizationApiKeys/service", () => ({
+  listCurrentOrganizationApiKeysForCurrentUser,
 }));
 
 vi.mock("./_components/SettingsHeader", () => ({
@@ -37,6 +43,9 @@ vi.mock("./_components/OrganizationSettingsWorkspace", () => ({
 vi.mock("./_components/MembersWorkspace", () => ({
   default: () => <div>MEMBERS-WORKSPACE</div>,
 }));
+vi.mock("./_components/ApiKeysWorkspace", () => ({
+  default: () => <div>API-KEYS-WORKSPACE</div>,
+}));
 
 vi.mock("./_components/InviteMemberForm", () => ({
   default: () => <div>INVITE-MEMBER-FORM</div>,
@@ -46,6 +55,7 @@ import WorkspaceSettingsPage from "./page";
 
 beforeEach(() => {
   getWorkspaceOrganizationTeam.mockReset();
+  listCurrentOrganizationApiKeysForCurrentUser.mockReset();
   getWorkspaceOrganizationTeam.mockResolvedValue({
     organization: { name: "منظمة ألف", slug: "alpha", status: "active" },
     members: [
@@ -70,6 +80,7 @@ beforeEach(() => {
     ],
     currentMembershipRole: "manager",
   });
+  listCurrentOrganizationApiKeysForCurrentUser.mockResolvedValue([]);
 });
 
 it("defaults to the organization tab when tab is missing", async () => {
@@ -95,4 +106,14 @@ it("renders members tab content when tab is members", async () => {
   expect(markup).toContain("MEMBERS-WORKSPACE");
   expect(markup).toContain("INVITE-MEMBER-FORM");
   expect(markup).not.toContain("ORG-WORKSPACE");
+});
+
+it("renders api keys tab content when tab is api-keys", async () => {
+  const element = await WorkspaceSettingsPage({ searchParams: Promise.resolve({ tab: "api-keys" }) });
+  const markup = renderToStaticMarkup(element);
+
+  expect(markup).toContain("API-KEYS-WORKSPACE");
+  expect(markup).not.toContain("ORG-WORKSPACE");
+  expect(markup).not.toContain("MEMBERS-WORKSPACE");
+  expect(listCurrentOrganizationApiKeysForCurrentUser).toHaveBeenCalledTimes(1);
 });
