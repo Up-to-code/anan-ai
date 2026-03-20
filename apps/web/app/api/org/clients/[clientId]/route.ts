@@ -19,7 +19,7 @@ export async function PATCH(request: Request, { params }: OrganizationClientRout
   try {
     const body = await request.json();
     const { clientId } = await params;
-    return Response.json({ client: await updateOrganizationClientByApiKey(getOrganizationApiKeyHeader(request) ?? undefined, clientId, body) });
+    return Response.json({ client: await updateOrganizationClientByApiKey(getOrganizationApiKeyHeader(request), clientId, body) });
   } catch (error) {
     if (error instanceof SyntaxError) {
       return toInvalidJsonResponse();
@@ -31,7 +31,7 @@ export async function PATCH(request: Request, { params }: OrganizationClientRout
 export async function DELETE(request: Request, { params }: OrganizationClientRouteProps) {
   try {
     const { clientId } = await params;
-    await deleteOrganizationClientByApiKey(getOrganizationApiKeyHeader(request) ?? undefined, clientId);
+    await deleteOrganizationClientByApiKey(getOrganizationApiKeyHeader(request), clientId);
     return Response.json({ deleted: true });
   } catch (error) {
     return toErrorResponse(error);
