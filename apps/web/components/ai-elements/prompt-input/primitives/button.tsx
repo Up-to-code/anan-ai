@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChatStatus } from "ai";
-import type { ComponentProps, MouseEvent, ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { Children, useCallback } from "react";
 import { CornerDownLeftIcon, SquareIcon, XIcon } from "lucide-react";
 import { InputGroupButton } from "@/components/ui/input-group";
@@ -68,6 +68,10 @@ export type PromptInputSubmitProps = ComponentProps<typeof InputGroupButton> & {
   onStop?: () => void;
 };
 
+type InputGroupButtonClickEvent = Parameters<
+  NonNullable<ComponentProps<typeof InputGroupButton>["onClick"]>
+>[0];
+
 function resolveSubmitIcon(status: ChatStatus | undefined) {
   if (status === "submitted") return <Spinner />;
   if (status === "streaming") return <SquareIcon className="size-4" />;
@@ -88,7 +92,7 @@ export const PromptInputSubmit = ({
   const isGenerating = status === "submitted" || status === "streaming";
   const icon = resolveSubmitIcon(status);
   const handleClick = useCallback(
-    (event: MouseEvent<HTMLButtonElement>) => {
+    (event: InputGroupButtonClickEvent) => {
       if (isGenerating && onStop) {
         event.preventDefault();
         onStop();

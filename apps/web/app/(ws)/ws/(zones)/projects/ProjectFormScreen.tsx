@@ -50,7 +50,8 @@ function useProjectFormActions(args: {
   };
   const handleDeleteConfirm = () => {
     if (!args.onDelete) return;
-    startTransition(async () => router.push((await args.onDelete()).redirectTo));
+    const onDelete = args.onDelete;
+    startTransition(async () => router.push((await onDelete()).redirectTo));
   };
   const handleCancel = () => router.push(cancelHref);
   return {

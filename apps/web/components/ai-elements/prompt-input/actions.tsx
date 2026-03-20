@@ -7,6 +7,10 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { usePromptInputAttachments } from "./attachments";
 import { captureScreenshot } from "./screenshot";
 
+type DropdownMenuSelectEvent = Parameters<
+  NonNullable<ComponentProps<typeof DropdownMenuItem>["onSelect"]>
+>[0];
+
 export type PromptInputActionAddAttachmentsProps = ComponentProps<
   typeof DropdownMenuItem
 > & {
@@ -20,7 +24,7 @@ export const PromptInputActionAddAttachments = ({
   const attachments = usePromptInputAttachments();
 
   const handleSelect = useCallback(
-    (event: Event) => {
+    (event: DropdownMenuSelectEvent) => {
       event.preventDefault();
       attachments.openFileDialog();
     },
@@ -48,7 +52,7 @@ export const PromptInputActionAddScreenshot = ({
   const attachments = usePromptInputAttachments();
 
   const handleSelect = useCallback(
-    async (event: Event) => {
+    async (event: DropdownMenuSelectEvent) => {
       onSelect?.(event);
       if (event.defaultPrevented) {
         return;
@@ -79,4 +83,3 @@ export const PromptInputActionAddScreenshot = ({
     </DropdownMenuItem>
   );
 };
-
