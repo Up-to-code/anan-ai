@@ -6,11 +6,6 @@ import { AIMotionLogo, type AIMotionState } from "@/app/(ws)/ws/_components/AIMo
 import { cn } from "@/lib/utils";
 import MessageBubble from "./MessageBubble";
 
-/**
- * WHY:   The AI conversation thread needs one row primitive that can handle text, UI cards, and branded avatars together.
- * WHAT:  Renders one conversation row for either a user message or an assistant message.
- * HOW:   Uses the animated Anan logo for assistant rows and a distinct user avatar for user rows.
- */
 export default function MessageRow({
   isUser,
   content,
@@ -41,7 +36,6 @@ export default function MessageRow({
           <AIMotionLogo state={avatarState} size="compact" />
         )}
       </div>
-
       <div className={cn("flex min-w-0 flex-1 flex-col gap-4", isUser ? "items-end" : "items-start")}>
         <MessageBubble content={content} isUser={isUser} isInfo={isInfo} isStreaming={isStreaming} />
         {children}

@@ -1,89 +1,20 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/lib/convexApi";
-import type {
-  ConversationDetail,
-  ConversationMessage,
-  ConversationSummary,
-  UserConversationTarget,
-} from "@/server/contracts/inbox";
+import type { ConversationDetail, ConversationSummary, UserConversationTarget } from "@/server/contracts/inbox";
 
 import { Id } from "@convex/dataModel";
+import {
+  createOptimisticSendConversationUpdate,
+  type UseRealtimeInboxArgs,
+  type UseRealtimeInboxResult,
+} from "./useRealtimeInbox.shared";
+export { useWorkspaceSignalCounts } from "./useWorkspaceSignalCounts";
 
 const inboxApi = api.shared_logic.inbox;
-const notificationsApi = api.shared_logic.notifications;
-
-type UseRealtimeInboxArgs = {
-  currentUserId: string;
-  initialConversations: ConversationSummary[];
-  initialConversation: ConversationDetail | null;
-  initialSelectedConversationId: string | null;
-  hasConversationRoute: boolean;
-};
-
-type UseRealtimeInboxResult = {
-  activeConversationId: string | null;
-  conversation: ConversationDetail | null;
-  conversations: ConversationSummary[];
-  isLiveConversationLoading: boolean;
-  isSending: boolean;
-  isSearching: boolean;
-  search: string;
-  searchResults: UserConversationTarget[];
-  sendError: string | null;
-  setSearch: (value: string) => void;
-  handleSelectConversation: (conversationId: string) => void;
-  handleStartConversation: (targetUserId: string) => Promise<void>;
-  handleSendMessage: (body: string) => Promise<void>;
-};
-
-function buildOptimisticMessage(args: {
-  body: string;
-  clientRequestId: string;
-  currentUserId: string;
-  recipientUserId: string;
-}): ConversationMessage {
-  return {
-    id: `optimistic-${args.clientRequestId}` as unknown as Id<"inboxMessages">,
-    senderUserId: args.currentUserId,
-    recipientUserId: args.recipientUserId,
-    type: "text",
-    body: args.body.trim(),
-    createdAt: Date.now(),
-    metadata: {
-      clientRequestId: args.clientRequestId,
-      optimistic: true,
-    },
-  };
-}
-
-function buildSummaryPreview<TMessageId extends string>(
-  message: {
-    id: TMessageId;
-    senderUserId: string;
-    body: string;
-    type: ConversationMessage["type"];
-    createdAt: number;
-  }) {
-  return {
-    id: message.id,
-    senderUserId: message.senderUserId,
-    body: message.body,
-    type: message.type,
-    createdAt: message.createdAt,
-  };
-}
-
-function upsertConversationSummary<T extends { id: string; updatedAt: number }>(
-  conversations: T[],
-  nextConversation: T,
-) {
-  const withoutCurrent = conversations.filter((item) => item.id !== nextConversation.id);
-  return [nextConversation, ...withoutCurrent].sort((a, b) => b.updatedAt - a.updatedAt);
-}
 
 /**
  * WHY:   The inbox workspace needs one live coordinator for subscriptions, route sync, read state, and optimistic sends.
@@ -105,6 +36,9 @@ export function useRealtimeInbox({
   const [sendError, setSendError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const deferredSearch = useDeferredValue(search.trim());
+  // Track the last conversation ID for which we successfully received live data
+  // to avoid showing the loading spinner on every conversation switch.
+  const lastResolvedLiveIdRef = useRef<string | null>(null);
 
   const liveConversations = useQuery(inboxApi.listConversations, {});
   const liveConversation = useQuery(
@@ -121,67 +55,9 @@ export function useRealtimeInbox({
   const baseSendConversationMessage = useMutation(inboxApi.sendConversationMessage);
   const sendConversationMessage = useMemo(
     () =>
-      baseSendConversationMessage.withOptimisticUpdate((localStore, args) => {
-        if (!args.conversationId) {
-          return;
-        }
-
-        const conversation = localStore.getQuery(inboxApi.getConversation, {
-          conversationId: args.conversationId,
-        });
-        if (!conversation) {
-          return;
-        }
-
-        if (!conversation.otherUser) {
-          return;
-        }
-
-        const optimisticMessage = buildOptimisticMessage({
-          body: args.body,
-          clientRequestId: args.clientRequestId ?? `client-${Date.now()}`,
-          currentUserId,
-          recipientUserId: conversation.otherUser.id,
-        });
-        const optimisticStoreMessage = optimisticMessage as unknown as (typeof conversation.messages)[number];
-        const updatedAt = optimisticStoreMessage.createdAt;
-        const messageSummary = buildSummaryPreview(optimisticStoreMessage);
-        const optimisticConversation = {
-          ...conversation,
-          updatedAt,
-          unreadCount: 0,
-          lastMessage: messageSummary,
-          lastMessagePreview: optimisticStoreMessage.body,
-          messages: [...(conversation.messages || []), optimisticStoreMessage],
-        };
-
-        localStore.setQuery(
-          inboxApi.getConversation,
-          { conversationId: args.conversationId },
-          optimisticConversation,
-        );
-
-        const conversations = localStore.getQuery(inboxApi.listConversations, {});
-        if (!conversations) {
-          return;
-        }
-
-        const summary = {
-          id: optimisticConversation.id,
-          directKey: optimisticConversation.directKey || "",
-          otherUser: optimisticConversation.otherUser,
-          unreadCount: 0,
-          updatedAt,
-          lastMessage: buildSummaryPreview(optimisticStoreMessage),
-          lastMessagePreview: optimisticStoreMessage.body,
-        } as (typeof conversations)[number];
-
-        localStore.setQuery(
-          inboxApi.listConversations,
-          {},
-          upsertConversationSummary(conversations, summary),
-        );
-      }),
+      baseSendConversationMessage.withOptimisticUpdate(
+        createOptimisticSendConversationUpdate({ currentUserId, inboxApi }),
+      ),
     [baseSendConversationMessage, currentUserId],
   );
 
@@ -189,6 +65,13 @@ export function useRealtimeInbox({
   const initialConversationForActiveThread =
     initialConversation?.id === activeConversationId ? initialConversation : null;
   const conversation = liveConversation ?? initialConversationForActiveThread;
+
+  // Keep the ref in sync so we know for which conversation ID live data last resolved.
+  useEffect(() => {
+    if (liveConversation && activeConversationId === liveConversation.id) {
+      lastResolvedLiveIdRef.current = activeConversationId;
+    }
+  }, [liveConversation, activeConversationId]);
 
   useEffect(() => {
     if (initialSelectedConversationId) {
@@ -323,11 +206,20 @@ export function useRealtimeInbox({
   const normalizedConversations = conversations as unknown as ConversationSummary[];
   const normalizedSearchResults = filteredSearchResults as unknown as UserConversationTarget[];
 
+  // Only show loading when the active conversation ID has changed and we don't yet have
+  // live data for it. This prevents the loading flicker on every conversation switch caused
+  // by liveConversation briefly becoming undefined while Convex re-fetches.
+  const isLiveConversationLoading =
+    Boolean(activeConversationId) &&
+    liveConversation === undefined &&
+    lastResolvedLiveIdRef.current !== activeConversationId &&
+    !conversation;
+
   return {
     activeConversationId,
     conversation: normalizedConversation,
     conversations: normalizedConversations,
-    isLiveConversationLoading: Boolean(activeConversationId) && liveConversation === undefined && !conversation,
+    isLiveConversationLoading,
     isSending,
     isSearching: deferredSearch.length > 0 && liveSearchResults === undefined,
     search,
@@ -337,23 +229,5 @@ export function useRealtimeInbox({
     handleSelectConversation,
     handleStartConversation,
     handleSendMessage,
-  };
-}
-
-/**
- * WHY:   Workspace top-bar badges should subscribe to realtime inbox and notification summaries.
- * WHAT:  Returns the latest unread counts with server-rendered values as a hydration fallback.
- * HOW:   Reads the Convex notification summary and inbox unread summary queries directly from the client provider.
- */
-export function useWorkspaceSignalCounts(initialCounts: {
-  notificationCount: number;
-  inboxCount: number;
-}) {
-  const liveNotifications = useQuery(notificationsApi.getWorkspaceNotificationSummary, {});
-  const liveInboxSummary = useQuery(inboxApi.getInboxUnreadSummary, {});
-
-  return {
-    notificationCount: liveNotifications?.unreadCount ?? initialCounts.notificationCount,
-    inboxCount: liveInboxSummary?.unreadCount ?? initialCounts.inboxCount,
   };
 }

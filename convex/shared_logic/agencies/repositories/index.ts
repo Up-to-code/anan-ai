@@ -28,4 +28,6 @@ export {
 export {
   listOffersDirectoryProfiles,
   searchOrganizationDirectoryExact,
+  listOfferOrganizationsDirectory,
+  getOrganizationPublicProfile,
 } from "./directory";

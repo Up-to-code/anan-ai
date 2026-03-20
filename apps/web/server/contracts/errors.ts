@@ -30,6 +30,7 @@ const DOMAIN_STATUS_BY_CODE: Record<string, number> = {
   INVALID_REDIRECT_URI: 400,
   INVALID_SCOPE: 400,
   INVITE_EXPIRED: 410,
+  RATE_LIMITED: 429,
 };
 
 /**

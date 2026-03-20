@@ -1,5 +1,6 @@
 import { View, Pressable } from "react-native";
 import { useRouter } from "expo-router";
+import type { ReactNode } from "react";
 import { PropertyMediaPager } from "@/components/features/PropertyMediaPager";
 import { AppText } from "@/components/ui/AppText";
 import { MobilePropertyFeedItem } from "@/types/mobile";
@@ -9,6 +10,27 @@ type PropertyChatCardProps = {
   property: MobilePropertyFeedItem;
   onPress?: () => void;
 };
+
+const SAR_PRICE_FORMATTER = new Intl.NumberFormat("en-SA", {
+  style: "currency",
+  currency: "SAR",
+  maximumFractionDigits: 0,
+});
+
+function PropertyMetaItem({
+  icon,
+  value,
+}: {
+  icon: ReactNode;
+  value: string | number;
+}) {
+  return (
+    <View className="flex-row items-center gap-1">
+      {icon}
+      <AppText className="text-xs text-slate-500">{value}</AppText>
+    </View>
+  );
+}
 
 /**
  * Rich property card rendered inside chat messages.
@@ -34,22 +56,13 @@ export function PropertyChatCard({ property, onPress }: PropertyChatCardProps) {
         </View>
 
         <AppText className="text-lg font-cairo-bold text-brand">
-          {new Intl.NumberFormat("en-SA", { style: "currency", currency: "SAR", maximumFractionDigits: 0 }).format(property.price)}
+          {SAR_PRICE_FORMATTER.format(property.price)}
         </AppText>
 
         <View className="flex-row items-center gap-3">
-          <View className="flex-row items-center gap-1">
-            <MapPin size={12} color="#94a3b8" />
-            <AppText className="text-xs text-slate-500">{property.area ?? property.location}</AppText>
-          </View>
-          <View className="flex-row items-center gap-1">
-            <BedDouble size={12} color="#94a3b8" />
-            <AppText className="text-xs text-slate-500">{property.beds}</AppText>
-          </View>
-          <View className="flex-row items-center gap-1">
-            <Bath size={12} color="#94a3b8" />
-            <AppText className="text-xs text-slate-500">{property.baths}</AppText>
-          </View>
+          <PropertyMetaItem icon={<MapPin size={12} color="#94a3b8" />} value={property.area ?? property.location} />
+          <PropertyMetaItem icon={<BedDouble size={12} color="#94a3b8" />} value={property.beds} />
+          <PropertyMetaItem icon={<Bath size={12} color="#94a3b8" />} value={property.baths} />
         </View>
 
         {property.owner.name ? (

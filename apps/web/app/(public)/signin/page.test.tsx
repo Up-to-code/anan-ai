@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, expect, it, vi } from "vitest";
 
 const { redirect, getAuthenticatedSession, sanitizeInternalReturnTo } = vi.hoisted(() => ({
   redirect: vi.fn((destination: string) => {
@@ -46,58 +46,56 @@ vi.mock("@/components/shared/Section", () => ({
 
 import SigninPage from "./page";
 
-describe("/signin page", () => {
-  beforeEach(() => {
-    redirect.mockClear();
-    getAuthenticatedSession.mockReset();
-    sanitizeInternalReturnTo.mockClear();
+beforeEach(() => {
+  redirect.mockClear();
+  getAuthenticatedSession.mockReset();
+  sanitizeInternalReturnTo.mockClear();
+});
+
+it("redirects authenticated users directly to the workspace target", async () => {
+  getAuthenticatedSession.mockResolvedValue({
+    token: "session-token",
+    user: null,
+    role: "broker",
   });
 
-  it("redirects authenticated users directly to the workspace target", async () => {
-    getAuthenticatedSession.mockResolvedValue({
-      token: "session-token",
-      user: null,
-      role: "broker",
-    });
+  await expect(
+    SigninPage({
+      searchParams: Promise.resolve({ returnTo: "/ws/settings" }),
+    }),
+  ).rejects.toThrow("NEXT_REDIRECT:/ws/settings");
 
-    await expect(
-      SigninPage({
-        searchParams: Promise.resolve({ returnTo: "/ws/settings" }),
-      }),
-    ).rejects.toThrow("NEXT_REDIRECT:/ws/settings");
+  expect(sanitizeInternalReturnTo).toHaveBeenCalledWith("/ws/settings", "/ws");
+});
 
-    expect(sanitizeInternalReturnTo).toHaveBeenCalledWith("/ws/settings", "/ws");
+it("renders the sign-in screen when no session exists", async () => {
+  getAuthenticatedSession.mockResolvedValue({
+    token: null,
+    user: null,
+    role: null,
   });
 
-  it("renders the sign-in screen when no session exists", async () => {
-    getAuthenticatedSession.mockResolvedValue({
-      token: null,
-      user: null,
-      role: null,
-    });
+  const element = await SigninPage({
+    searchParams: Promise.resolve({ returnTo: "/ws" }),
+  });
+  const markup = renderToStaticMarkup(element);
 
-    const element = await SigninPage({
-      searchParams: Promise.resolve({ returnTo: "/ws" }),
-    });
-    const markup = renderToStaticMarkup(element);
+  expect(markup).toContain("دخول النظام المؤسسي");
+  expect(markup).toContain("Google:/ws");
+});
 
-    expect(markup).toContain("دخول النظام المؤسسي");
-    expect(markup).toContain("Google:/ws");
+it("renders the sign-in screen when session lookup fails with auth configuration mismatch", async () => {
+  getAuthenticatedSession.mockRejectedValue({
+    code: "AUTH_CONFIGURATION_ERROR",
+    message: "issuer mismatch",
+    status: 503,
   });
 
-  it("renders the sign-in screen when session lookup fails with auth configuration mismatch", async () => {
-    getAuthenticatedSession.mockRejectedValue({
-      code: "AUTH_CONFIGURATION_ERROR",
-      message: "issuer mismatch",
-      status: 503,
-    });
-
-    const element = await SigninPage({
-      searchParams: Promise.resolve({ returnTo: "/ws" }),
-    });
-    const markup = renderToStaticMarkup(element);
-
-    expect(markup).toContain("دخول النظام المؤسسي");
-    expect(markup).toContain("Google:/ws");
+  const element = await SigninPage({
+    searchParams: Promise.resolve({ returnTo: "/ws" }),
   });
+  const markup = renderToStaticMarkup(element);
+
+  expect(markup).toContain("دخول النظام المؤسسي");
+  expect(markup).toContain("Google:/ws");
 });

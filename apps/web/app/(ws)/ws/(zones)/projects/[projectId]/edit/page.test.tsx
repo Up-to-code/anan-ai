@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, expect, it, vi } from "vitest";
 import type { ProjectFormData } from "@/components/shared/ag-aui/AgPropertyForm";
 
 const {
@@ -68,66 +68,70 @@ vi.mock("../../ProjectFormScreen", () => ({
 
 import EditProjectRoute from "./page";
 
-describe("/ws/projects/[projectId]/edit page", () => {
-  beforeEach(() => {
-    getProperty.mockClear();
-    updateProperty.mockClear();
-    publishProperty.mockClear();
-    deleteProperty.mockClear();
-    setCapturedProps(null);
+const uploadedImage = {
+  key: "file-new",
+  url: "https://ufs.sh/f/new",
+  name: "new.jpg",
+  size: 1800,
+  mime: "image/jpeg",
+};
+
+const saveFormInput: ProjectFormData = {
+  name: "برج الاختبار",
+  price: "2,300,000 ر.س",
+  location: "الرياض",
+  description: "وصف محدث",
+  rooms: "4",
+  baths: "4",
+  area: "400",
+  status: "active",
+  images: [uploadedImage],
+  video: null,
+  brokerId: null,
+  adLicenseNumber: "AD-NEW",
+  adLicenseStatus: "pending",
+};
+
+type CapturedEditProps = {
+  initialData: Partial<ProjectFormData>;
+  onSave: (data: ProjectFormData) => Promise<{ redirectTo: string }>;
+  onDelete: () => Promise<{ redirectTo: string }>;
+};
+
+async function renderEditProject() {
+  const element = await EditProjectRoute({ params: Promise.resolve({ projectId: "property-1" }) });
+  const markup = renderToStaticMarkup(element);
+  const props = getCapturedProps() as CapturedEditProps;
+  return { markup, props };
+}
+
+beforeEach(() => {
+  getProperty.mockClear();
+  updateProperty.mockClear();
+  publishProperty.mockClear();
+  deleteProperty.mockClear();
+  setCapturedProps(null);
+});
+
+it("updates project media through the mapped patch and publish action", async () => {
+  const { markup, props } = await renderEditProject();
+
+  expect(markup).toContain("ProjectFormScreenMock");
+  expect(props.initialData.images).toEqual([{ key: "file-existing", url: "https://ufs.sh/f/existing", name: "existing.jpg" }]);
+
+  const saveResult = await props.onSave(saveFormInput);
+  expect(saveResult).toEqual({ redirectTo: "/ws/projects/property-1" });
+  expect(updateProperty).toHaveBeenCalledWith({
+    id: "property-1",
+    patch: expect.objectContaining({ media: [uploadedImage] }),
   });
+  expect(publishProperty).toHaveBeenCalledWith({ id: "property-1" });
+});
 
-  it("updates project media through the mapped patch and supports delete", async () => {
-    const element = await EditProjectRoute({
-      params: Promise.resolve({ projectId: "property-1" }),
-    });
-    const markup = renderToStaticMarkup(element);
+it("supports deleting the project", async () => {
+  const { props } = await renderEditProject();
+  const deleteResult = await props.onDelete();
 
-    expect(markup).toContain("ProjectFormScreenMock");
-
-    const props = getCapturedProps() as {
-      initialData: Partial<ProjectFormData>;
-      onSave: (data: ProjectFormData) => Promise<{ redirectTo: string }>;
-      onDelete: () => Promise<{ redirectTo: string }>;
-    };
-
-    expect(props.initialData.images).toEqual([{ key: "file-existing", url: "https://ufs.sh/f/existing", name: "existing.jpg" }]);
-
-    const uploadedImage = {
-      key: "file-new",
-      url: "https://ufs.sh/f/new",
-      name: "new.jpg",
-      size: 1800,
-      mime: "image/jpeg",
-    };
-
-    const saveResult = await props.onSave({
-      name: "برج الاختبار",
-      price: "2,300,000 ر.س",
-      location: "الرياض",
-      description: "وصف محدث",
-      rooms: "4",
-      baths: "4",
-      area: "400",
-      status: "active",
-      images: [uploadedImage],
-      video: null,
-      brokerId: null,
-      adLicenseNumber: "AD-NEW",
-      adLicenseStatus: "pending",
-    });
-
-    expect(saveResult).toEqual({ redirectTo: "/ws/projects/property-1" });
-    expect(updateProperty).toHaveBeenCalledWith({
-      id: "property-1",
-      patch: expect.objectContaining({
-        media: [uploadedImage],
-      }),
-    });
-    expect(publishProperty).toHaveBeenCalledWith({ id: "property-1" });
-
-    const deleteResult = await props.onDelete();
-    expect(deleteResult).toEqual({ redirectTo: "/ws/projects" });
-    expect(deleteProperty).toHaveBeenCalledWith({ id: "property-1" });
-  });
+  expect(deleteResult).toEqual({ redirectTo: "/ws/projects" });
+  expect(deleteProperty).toHaveBeenCalledWith({ id: "property-1" });
 });

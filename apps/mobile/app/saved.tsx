@@ -11,14 +11,10 @@ import { usePropertyFeed } from "@/hooks/usePropertyFeed";
 export default function SavedPropertiesScreen() {
   const router = useRouter();
   const { properties } = usePropertyFeed();
-  
-  // Just mock taking the first 3 properties as "saved" for demonstration
   const savedProperties = properties.slice(0, 3);
-
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
       <Animated.View entering={FadeIn.duration(300)} className="flex-1">
-        {/* Header */}
         <Animated.View entering={FadeInDown.duration(400).delay(100)} className="flex-row items-center px-4 py-3" style={{ borderBottomWidth: 0.5, borderBottomColor: "#e2e8f0" }}>
           <IconButton icon={ChevronRight} onPress={() => router.back()} />
           <AppText className="flex-1 text-center font-cairo-bold text-base text-slate-900">العقارات المفضلة</AppText>

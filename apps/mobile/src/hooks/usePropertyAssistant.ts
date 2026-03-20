@@ -1,10 +1,227 @@
 import { useAction, useMutation } from "convex/react";
-import { useEffect, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/convexApi";
 import { mockAssistantResponse } from "@/lib/mockData";
 import { MobilePropertyFeedItem, ChatMessage } from "@/types/mobile";
 
 const hasConvexUrl = Boolean(process.env.EXPO_PUBLIC_CONVEX_URL);
+const DEMO_EXTERNAL_USER_ID = "demo-mobile-user";
+
+type AskAssistantFn = ((args: { propertyId: unknown; message: string }) => Promise<{ message: string; cards?: ChatMessage["cards"] }>) | null;
+type CreateQualifiedHandoffFn = ((args: {
+  propertyId: unknown;
+  message: string;
+  externalUserId: string;
+  qualification: {
+    monthlySalary: number;
+    downPayment: number;
+    preferredYears: number;
+  };
+}) => Promise<{ status: string }>) | null;
+
+function appendMessage(setMessages: Dispatch<SetStateAction<ChatMessage[]>>, message: ChatMessage) {
+  setMessages((prev) => [...prev, message]);
+}
+
+function appendFallbackAssistantMessage(
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>,
+  property: MobilePropertyFeedItem,
+  userText: string,
+) {
+  const fallback = mockAssistantResponse(property, userText);
+  appendMessage(setMessages, {
+    id: `${Date.now()}-assistant`,
+    role: "assistant",
+    text: fallback.message,
+    cards: fallback.cards,
+  });
+}
+
+async function runSendFlow({
+  property,
+  query,
+  setMessages,
+  setQuery,
+  askAssistant,
+}: {
+  property?: MobilePropertyFeedItem;
+  query: string;
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  setQuery: (value: string) => void;
+  askAssistant: AskAssistantFn;
+}) {
+  if (!property || !query.trim()) return;
+  const text = query.trim();
+
+  appendMessage(setMessages, {
+    id: `${Date.now()}-user`,
+    role: "user",
+    text,
+  });
+  setQuery("");
+
+  if (!hasConvexUrl || !askAssistant) {
+    appendFallbackAssistantMessage(setMessages, property, text);
+    return;
+  }
+
+  try {
+    const response = await askAssistant({ propertyId: property.id, message: text });
+    appendMessage(setMessages, {
+      id: `${Date.now()}-assistant`,
+      role: "assistant",
+      text: response.message,
+      cards: response.cards ?? [],
+    });
+  } catch {
+    appendFallbackAssistantMessage(setMessages, property, text);
+  }
+}
+
+function appendPreviewHandoffCard(setMessages: Dispatch<SetStateAction<ChatMessage[]>>) {
+  appendMessage(setMessages, {
+    id: `${Date.now()}-verify-preview`,
+    role: "assistant",
+    cards: [{
+      type: "broker_handoff",
+      title: "تم تجهيز التحويل",
+      handoffStatus: "qualified",
+      summary: "تم حفظ التحويل محلياً كمعاينة، وعند ربط Convex سيتم إرساله تلقائياً.",
+    }],
+  });
+}
+
+function appendHandoffResultCard(
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>,
+  status: string,
+) {
+  appendMessage(setMessages, {
+    id: `${Date.now()}-verify-ok`,
+    role: "assistant",
+    cards: [{
+      type: "broker_handoff",
+      title: "تم تحويلك كعميل مؤهل",
+      handoffStatus: status,
+      summary: "تم تسجيل طلبك داخل نظام المتابعة وسيتم التواصل معك من الشريك المناسب.",
+    }],
+  });
+}
+
+function appendHandoffErrorCard(setMessages: Dispatch<SetStateAction<ChatMessage[]>>) {
+  appendMessage(setMessages, {
+    id: `${Date.now()}-verify-error`,
+    role: "assistant",
+    cards: [{
+      type: "broker_handoff",
+      title: "خطأ في التحويل",
+      handoffStatus: "qualified",
+      summary: "تم حفظ التحويل محلياً كمعاينة نظراً لوجود خطأ في الاتصال بالخادم.",
+    }],
+  });
+}
+
+async function runVerifyFlow({
+  property,
+  query,
+  setMessages,
+  createQualifiedHandoff,
+}: {
+  property?: MobilePropertyFeedItem;
+  query: string;
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  createQualifiedHandoff: CreateQualifiedHandoffFn;
+}) {
+  if (!property) return;
+  if (!hasConvexUrl || !createQualifiedHandoff) {
+    appendPreviewHandoffCard(setMessages);
+    return;
+  }
+
+  try {
+    const handoff = await createQualifiedHandoff({
+      propertyId: property.id,
+      message: query || "طلب تحويل",
+      externalUserId: DEMO_EXTERNAL_USER_ID,
+      qualification: {
+        monthlySalary: 15000,
+        downPayment: Math.round(property.price * 0.15),
+        preferredYears: 20,
+      },
+    });
+    appendHandoffResultCard(setMessages, handoff.status);
+  } catch {
+    appendHandoffErrorCard(setMessages);
+  }
+}
+
+function useAssistantPanelState(property?: MobilePropertyFeedItem) {
+  const [query, setQuery] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setMessages([]);
+      setQuery(property?.recommendedPrompts?.[0] ?? "اعرض خطة السداد");
+    }
+  }, [property?.id, isOpen]);
+
+  const open = useCallback(() => {
+    setIsOpen(true);
+    if (!property || messages.length > 0) return;
+    appendMessage(setMessages, {
+      id: Date.now().toString(),
+      role: "assistant",
+      text: `هذه تفاصيل ذكية عن ${property.title}. كيف يمكنني مساعدتك؟`,
+      cards: property.demoPreviewCard ? [property.demoPreviewCard] : [],
+    });
+  }, [property, messages.length]);
+
+  return {
+    isOpen,
+    setIsOpen,
+    query,
+    setQuery,
+    messages,
+    setMessages,
+    open,
+  };
+}
+
+function usePropertyAssistantAdapters() {
+  const askAssistant = hasConvexUrl
+    ? (useAction((api as any)["user_zone/mobile/assistant"].askPropertyAssistant) as AskAssistantFn)
+    : null;
+  const createQualifiedHandoff = hasConvexUrl
+    ? (useMutation((api as any)["user_zone/mobile/assistant"].createQualifiedHandoff) as CreateQualifiedHandoffFn)
+    : null;
+  return { askAssistant, createQualifiedHandoff };
+}
+
+function usePropertyAssistantActions({
+  property,
+  query,
+  setQuery,
+  setMessages,
+  askAssistant,
+  createQualifiedHandoff,
+}: {
+  property?: MobilePropertyFeedItem;
+  query: string;
+  setQuery: (value: string) => void;
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  askAssistant: AskAssistantFn;
+  createQualifiedHandoff: CreateQualifiedHandoffFn;
+}) {
+  const send = useCallback(async (explicitProperty?: MobilePropertyFeedItem) => {
+    await runSendFlow({ property: explicitProperty ?? property, query, setMessages, setQuery, askAssistant });
+  }, [askAssistant, property, query, setMessages, setQuery]);
+  const verify = useCallback(async (explicitProperty?: MobilePropertyFeedItem) => {
+    await runVerifyFlow({ property: explicitProperty ?? property, query, setMessages, createQualifiedHandoff });
+  }, [createQualifiedHandoff, property, query, setMessages]);
+  return { send, verify };
+}
 
 /**
  * WHY:   The buyer needs a continuous conversational workspace, not isolated Q&A cards.
@@ -12,173 +229,18 @@ const hasConvexUrl = Boolean(process.env.EXPO_PUBLIC_CONVEX_URL);
  * HOW:   Accumulates text, injected properties, and generated ROI/Payment cards into a ChatMessage timeline.
  */
 export function usePropertyAssistant(property?: MobilePropertyFeedItem) {
-  const [query, setQuery] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-
-  const askAssistant = hasConvexUrl
-    ? useAction((api as any)["user_zone/mobile/assistant"].askPropertyAssistant)
-    : null;
-  const createQualifiedHandoff = hasConvexUrl
-    ? useMutation((api as any)["user_zone/mobile/assistant"].createQualifiedHandoff)
-    : null;
-
-  useEffect(() => {
-    // Reset conversation if property changes, or we might want to keep it.
-    // For now we reset it when focusing a new property feed item IF the user opens it from scratch.
-    if (!isOpen) {
-      setMessages([]);
-      setQuery(property?.recommendedPrompts?.[0] ?? "اعرض خطة السداد");
-    }
-  }, [property?.id, isOpen]);
-
-  const open = () => {
-    setIsOpen(true);
-    if (property && messages.length === 0) {
-      setMessages([
-        {
-          id: Date.now().toString(),
-          role: "assistant",
-          text: `هذه تفاصيل ذكية عن ${property.title}. كيف يمكنني مساعدتك؟`,
-          cards: property.demoPreviewCard ? [property.demoPreviewCard] : [],
-        }
-      ]);
-    }
-  };
-
-  const close = () => {
-    setIsOpen(false);
-  };
-
-  const seedPrompt = (prompt: string) => {
-    setQuery(prompt);
-  };
-
-  const send = async (explicitProperty?: MobilePropertyFeedItem) => {
-    const ctxProperty = explicitProperty ?? property;
-    if (!ctxProperty || !query.trim()) return;
-
-    const userMessage: ChatMessage = {
-      id: Date.now().toString() + "-user",
-      role: "user",
-      text: query.trim(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setQuery("");
-
-    if (!hasConvexUrl || !askAssistant) {
-      const fallback = mockAssistantResponse(ctxProperty, userMessage.text!);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString() + "-assistant",
-          role: "assistant",
-          text: fallback.message,
-          cards: fallback.cards,
-        }
-      ]);
-      return;
-    }
-
-    try {
-      const response = await askAssistant({
-        propertyId: ctxProperty.id as never,
-        message: userMessage.text!,
-      });
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString() + "-assistant",
-          role: "assistant",
-          text: response.message,
-          cards: response.cards,
-        }
-      ]);
-    } catch (_error) {
-      const fallback = mockAssistantResponse(ctxProperty, userMessage.text!);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString() + "-assistant",
-          role: "assistant",
-          text: fallback.message,
-          cards: fallback.cards,
-        }
-      ]);
-    }
-  };
-
-  const verify = async (explicitProperty?: MobilePropertyFeedItem) => {
-    const ctxProperty = explicitProperty ?? property;
-    if (!ctxProperty) return;
-
-    if (!hasConvexUrl || !createQualifiedHandoff) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString() + "-verify",
-          role: "assistant",
-          cards: [{
-            type: "broker_handoff",
-            title: "تم تجهيز التحويل",
-            handoffStatus: "qualified",
-            summary: "تم حفظ التحويل محلياً كمعاينة، وعند ربط Convex سيتم إرساله تلقائياً.",
-          }]
-        }
-      ]);
-      return;
-    }
-
-    try {
-      const handoff = await createQualifiedHandoff({
-        propertyId: ctxProperty.id as never,
-        message: query || "طلب تحويل",
-        externalUserId: "demo-mobile-user",
-        qualification: {
-          monthlySalary: 15000,
-          downPayment: Math.round(ctxProperty.price * 0.15),
-          preferredYears: 20,
-        },
-      });
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString() + "-verify-ok",
-          role: "assistant",
-          cards: [{
-            type: "broker_handoff",
-            title: "تم تحويلك كعميل مؤهل",
-            handoffStatus: handoff.status,
-            summary: "تم تسجيل طلبك داخل نظام المتابعة وسيتم التواصل معك من الشريك المناسب.",
-          }]
-        }
-      ]);
-    } catch (_error) {
-       setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString() + "-verify-err",
-          role: "assistant",
-          cards: [{
-            type: "broker_handoff",
-            title: "خطأ في التحويل",
-            handoffStatus: "qualified",
-            summary: "تم حفظ التحويل محلياً كمعاينة نظراً لوجود خطأ في الاتصال بالخادم.",
-          }]
-        }
-      ]);
-    }
-  };
+  const { askAssistant, createQualifiedHandoff } = usePropertyAssistantAdapters();
+  const { isOpen, setIsOpen, query, setQuery, messages, setMessages, open } = useAssistantPanelState(property);
+  const { send, verify } = usePropertyAssistantActions({ property, query, setQuery, setMessages, askAssistant, createQualifiedHandoff });
 
   return {
     isOpen,
     open,
-    close,
+    close: () => setIsOpen(false),
     query,
     setQuery,
     messages,
-    seedPrompt,
+    seedPrompt: setQuery,
     send,
     verify,
     collapsedPlaceholder: property ? `اسأل عن ${property.title}` : "اسأل عن هذه الوحدة",

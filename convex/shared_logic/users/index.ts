@@ -30,6 +30,36 @@ function deriveFallbackUsername(args: { email?: string | null; name?: string | n
     .slice(0, 32) || `user-${args.authUserId.slice(-6)}`;
 }
 
+function buildMyProfileResponse(args: {
+  identity: { email?: string | null };
+  profile: {
+    email?: string | null;
+    role?: string | null;
+    roleStatus?: string | null;
+    requestedRole?: string | null;
+    brokerId?: string | null;
+    REDId?: string | null;
+    isActive?: boolean;
+  };
+  name: string | undefined;
+  username: string;
+  showInOffersDirectory: boolean;
+}) {
+  return {
+    email: args.profile.email ?? args.identity.email ?? undefined,
+    name: args.name,
+    username: args.username,
+    role: args.profile.role,
+    roleStatus: args.profile.roleStatus,
+    requestedRole: args.profile.requestedRole,
+    brokerId: args.profile.brokerId,
+    REDId: args.profile.REDId,
+    showInOffersDirectory: args.showInOffersDirectory,
+    isActive: args.profile.isActive,
+    authProvider: { id: "google", passwordManaged: false },
+  } as const;
+}
+
 async function ensureUsernameIsAvailable(
   ctx: QueryCtx | MutationCtx,
   args: { usernameLower: string; profileId: string },
@@ -58,22 +88,13 @@ export const getMyProfile = query({
       name: current.profile.name ?? current.identity.name ?? null,
       authUserId: current.identity.authUserId,
     });
-    return {
-      email: current.profile.email ?? current.identity.email ?? undefined,
+    return buildMyProfileResponse({
+      identity: current.identity,
+      profile: current.profile,
       name: current.profile.name ?? current.identity.name ?? undefined,
       username,
-      role: current.profile.role,
-      roleStatus: current.profile.roleStatus,
-      requestedRole: current.profile.requestedRole,
-      brokerId: current.profile.brokerId,
-      REDId: current.profile.REDId,
       showInOffersDirectory: current.profile.showInOffersDirectory ?? true,
-      isActive: current.profile.isActive,
-      authProvider: {
-        id: "google",
-        passwordManaged: false,
-      },
-    } as const;
+    });
   },
 });
 
@@ -117,22 +138,12 @@ export const updateMyProfile = mutation({
       showInOffersDirectory: args.showInOffersDirectory ?? current.profile.showInOffersDirectory ?? true,
       updatedAt: Date.now(),
     });
-
-    return {
-      email: current.profile.email ?? current.identity.email ?? undefined,
+    return buildMyProfileResponse({
+      identity: current.identity,
+      profile: current.profile,
       name,
       username,
-      role: current.profile.role,
-      roleStatus: current.profile.roleStatus,
-      requestedRole: current.profile.requestedRole,
-      brokerId: current.profile.brokerId,
-      REDId: current.profile.REDId,
       showInOffersDirectory: args.showInOffersDirectory ?? current.profile.showInOffersDirectory ?? true,
-      isActive: current.profile.isActive,
-      authProvider: {
-        id: "google",
-        passwordManaged: false,
-      },
-    } as const;
+    });
   },
 });

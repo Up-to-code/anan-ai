@@ -1,7 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { expect, it, vi } from "vitest";
 
-const { listCurrentOrganizationOffersDirectory } = vi.hoisted(() => ({
+const { listCurrentOrganizationOffersCompanyDirectory, listCurrentOrganizationOffersDirectory } = vi.hoisted(() => ({
+  listCurrentOrganizationOffersCompanyDirectory: vi.fn(),
   listCurrentOrganizationOffersDirectory: vi.fn(),
 }));
 
@@ -22,37 +23,49 @@ vi.mock("../../../_lib/workspaceData", () => ({
 }));
 
 vi.mock("@/server/domains/organizations/service", () => ({
+  listCurrentOrganizationOffersCompanyDirectory,
   listCurrentOrganizationOffersDirectory,
 }));
 
 import WorkspaceOfferDeveloperProfilesRoute from "./page";
 
-describe("/ws/offers/developers page", () => {
-  it("renders the developer directory cards from the shared organization directory", async () => {
-    listCurrentOrganizationOffersDirectory.mockResolvedValue([
-      {
-        id: "profile-2",
-        authUserId: "auth-2",
-        email: "developer@example.com",
-        name: "سارة المطورة",
-        username: "sara.dev",
-        role: "developer" as const,
-        organizationName: "شركة الواحة للتطوير",
-        organizationSlug: "oasis-dev",
-        membershipState: "pending-invite" as const,
-        canMessage: true,
-        conversationId: "conv-1",
-      },
-    ]);
+it("renders developer people cards by default and includes the entity filters", async () => {
+  listCurrentOrganizationOffersDirectory.mockResolvedValue([
+    {
+      id: "person-2",
+      authUserId: "auth-2",
+      email: "dev@example.com",
+      name: "محمود سالم",
+      image: null,
+      role: "developer",
+      organizationName: "شركة الواحة للتطوير",
+      organizationSlug: "oasis-dev",
+      organizationLogo: null,
+      membershipState: "not-member",
+      canMessage: true,
+      conversationId: "conv-2",
+    },
+  ]);
+  listCurrentOrganizationOffersCompanyDirectory.mockResolvedValue([
+    {
+      id: "org-2",
+      name: "شركة الواحة للتطوير",
+      slug: "oasis-dev",
+      logo: null,
+      offerCount: 12,
+    },
+  ]);
 
-    const element = await WorkspaceOfferDeveloperProfilesRoute({
-      searchParams: Promise.resolve({}),
-    });
-    const markup = renderToStaticMarkup(element);
-
-    expect(listCurrentOrganizationOffersDirectory).toHaveBeenCalledWith("developer");
-    expect(markup).toContain("ملفات المطورين");
-    expect(markup).toContain("سارة المطورة");
-    expect(markup).toContain("شركة الواحة للتطوير");
+  const component = await WorkspaceOfferDeveloperProfilesRoute({
+    searchParams: Promise.resolve({}),
   });
+  const markup = renderToStaticMarkup(component);
+
+  expect(listCurrentOrganizationOffersDirectory).toHaveBeenCalledWith("developer");
+  expect(listCurrentOrganizationOffersCompanyDirectory).toHaveBeenCalledWith("developer");
+  expect(markup).toContain("ملفات المطورين");
+  expect(markup).toContain("Business persons");
+  expect(markup).toContain("People in companies or organizations");
+  expect(markup).toContain("محمود سالم");
+  expect(markup).toContain("شركة الواحة للتطوير");
 });

@@ -3,49 +3,13 @@
  * WHAT:  Stores structured memory, retrieves relevant context, and records interaction/history links.
  * HOW:   Uses internal Convex mutations and queries against `agentMemory` and `entityRelations`.
  */
-import { internalMutation, internalQuery } from "../../_generated/server";
+import { internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
+import { getRelevantContextInternal } from "./repository/getRelevantContextInternal";
+import { getRelevantMemoriesByQuery } from "./repository/getRelevantMemoriesByQuery";
+import { MEMORY_DEFAULT_TTL_MS } from "./repository/shared";
 
-const MEMORY_DEFAULT_TTL_MS = 1000 * 60 * 60 * 24 * 30;
-
-function buildMemorySummary(
-  preferences: unknown[],
-  constraints: unknown[],
-  interactions: unknown[],
-  lastSearchSummary?: {
-    query: string;
-    location: string | null;
-    budgetHint: string | null;
-    findingsCount: number;
-  } | null
-): string {
-  const parts: string[] = [];
-  if (preferences.length > 0) {
-    const prefStrings = preferences.map((p: unknown) => {
-      const o = p as { key?: string; value?: string };
-      return `${o.key ?? ""}: ${o.value ?? ""}`.trim();
-    });
-    parts.push(`User preferences: ${prefStrings.join(", ")}`);
-  }
-  if (constraints.length > 0) {
-    const cstr = constraints.map((c: unknown) => {
-      const o = c as { key?: string; value?: string };
-      return `${o.key ?? ""}: ${o.value ?? ""}`.trim();
-    });
-    parts.push(`Constraints: ${cstr.join(", ")}`);
-  }
-  if (lastSearchSummary) {
-    const loc = lastSearchSummary.location ? ` in ${lastSearchSummary.location}` : "";
-    const budget = lastSearchSummary.budgetHint ? ` (${lastSearchSummary.budgetHint})` : "";
-    parts.push(
-      `Last search: "${lastSearchSummary.query}"${loc}${budget}, ${lastSearchSummary.findingsCount} results`
-    );
-  }
-  if (interactions.length > 0) {
-    parts.push(`Recent activity: ${interactions.length} interactions tracked`);
-  }
-  return parts.join(". ") || "No specific preferences or constraints recorded yet.";
-}
+export { getRelevantContextInternal, getRelevantMemoriesByQuery };
 
 export const storeInternal = internalMutation({
   args: {
@@ -100,117 +64,6 @@ export const storeInternal = internalMutation({
       confidence,
       expiresAt,
     });
-  },
-});
-
-export const getRelevantMemoriesByQuery = internalQuery({
-  args: {
-    userId: v.string(),
-    query: v.string(),
-    limit: v.optional(v.number()),
-  },
-  returns: v.object({
-    summary: v.string(),
-    preferences: v.array(v.any()),
-    constraints: v.array(v.any()),
-    recentInteractions: v.array(v.any()),
-    lastSearchSummary: v.union(v.null(), v.any()),
-  }),
-  handler: async (ctx, { userId, limit = 10 }) => {
-    const now = Date.now();
-    const preferences = await ctx.db
-      .query("agentMemory")
-      .withIndex("userId_and_memoryType", (q) =>
-        q.eq("userId", userId).eq("memoryType", "preference")
-      )
-      .collect()
-      .then((r) => r.filter((x) => !x.expiresAt || x.expiresAt > now).slice(0, limit));
-    const constraints = await ctx.db
-      .query("agentMemory")
-      .withIndex("userId_and_memoryType", (q) =>
-        q.eq("userId", userId).eq("memoryType", "constraint")
-      )
-      .collect()
-      .then((r) => r.filter((x) => !x.expiresAt || x.expiresAt > now).slice(0, limit));
-    const recentInteractions = await ctx.db
-      .query("agentMemory")
-      .withIndex("userId_and_memoryType", (q) =>
-        q.eq("userId", userId).eq("memoryType", "interaction")
-      )
-      .collect()
-      .then((r) => r.filter((x) => !x.expiresAt || x.expiresAt > now).slice(0, 5));
-    const lastDoc = await ctx.db
-      .query("agentMemory")
-      .withIndex("userId_and_key", (q) =>
-        q.eq("userId", userId).eq("key", "last_search_summary")
-      )
-      .first();
-    let lastSearchSummary: {
-      query: string;
-      location: string | null;
-      budgetHint: string | null;
-      findingsCount: number;
-    } | null = null;
-    if (lastDoc && (!lastDoc.expiresAt || lastDoc.expiresAt > now)) {
-      try {
-        lastSearchSummary = JSON.parse(lastDoc.value);
-      } catch {
-        lastSearchSummary = null;
-      }
-    }
-    const summary = buildMemorySummary(
-      preferences,
-      constraints,
-      recentInteractions,
-      lastSearchSummary
-    );
-    return {
-      summary,
-      preferences,
-      constraints,
-      recentInteractions,
-      lastSearchSummary,
-    };
-  },
-});
-
-export const getRelevantContextInternal = internalQuery({
-  args: {
-    userId: v.string(),
-    query: v.string(),
-    limit: v.optional(v.number()),
-  },
-  returns: v.object({
-    summary: v.string(),
-    preferences: v.array(v.any()),
-    constraints: v.array(v.any()),
-    recentInteractions: v.array(v.any()),
-  }),
-  handler: async (ctx, { userId, limit = 10 }) => {
-    const now = Date.now();
-    const preferences = await ctx.db
-      .query("agentMemory")
-      .withIndex("userId_and_memoryType", (q) =>
-        q.eq("userId", userId).eq("memoryType", "preference")
-      )
-      .collect()
-      .then((r) => r.filter((x) => !x.expiresAt || x.expiresAt > now).slice(0, limit));
-    const constraints = await ctx.db
-      .query("agentMemory")
-      .withIndex("userId_and_memoryType", (q) =>
-        q.eq("userId", userId).eq("memoryType", "constraint")
-      )
-      .collect()
-      .then((r) => r.filter((x) => !x.expiresAt || x.expiresAt > now).slice(0, limit));
-    const recentInteractions = await ctx.db
-      .query("agentMemory")
-      .withIndex("userId_and_memoryType", (q) =>
-        q.eq("userId", userId).eq("memoryType", "interaction")
-      )
-      .collect()
-      .then((r) => r.filter((x) => !x.expiresAt || x.expiresAt > now).slice(0, 5));
-    const summary = buildMemorySummary(preferences, constraints, recentInteractions);
-    return { summary, preferences, constraints, recentInteractions };
   },
 });
 

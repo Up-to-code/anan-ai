@@ -22,6 +22,46 @@ type PropertyDoc = {
   media?: Array<{ url: string }>;
 };
 
+type PropertyOwner = {
+  _id?: unknown;
+  name?: string;
+  slug?: string;
+  isVerified?: boolean;
+  countryCode?: string;
+};
+
+const FALLBACK_FEED_IMAGE =
+  "https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1200&q=80";
+
+async function resolvePropertyOwner(ctx: any, property: PropertyDoc) {
+  if (property.brokerId) {
+    const owner = (await ctx.db.get(property.brokerId)) as PropertyOwner | null;
+    return owner ? { owner, ownerType: "broker" as const, orgType: "broker" as const } : null;
+  }
+  if (property.REDId) {
+    const owner = (await ctx.db.get(property.REDId)) as PropertyOwner | null;
+    return owner ? { owner, ownerType: "RED" as const, orgType: "red" as const } : null;
+  }
+  return null;
+}
+
+function resolveFeedMedia(property: PropertyDoc) {
+  const media = (property.media ?? []).map((item) => item.url).filter(Boolean);
+  if (media.length === 0 && property.heroImage?.url) media.push(property.heroImage.url);
+  if (media.length === 0) media.push(FALLBACK_FEED_IMAGE);
+  return media;
+}
+
+function toOwnerPreview(owner: PropertyOwner, ownerType: "broker" | "RED") {
+  return {
+    id: String(owner._id ?? ""),
+    type: ownerType,
+    name: owner.name ?? "Anan Partner",
+    slug: owner.slug ?? "anan-partner",
+    isVerified: owner.isVerified === true,
+  };
+}
+
 /**
  * WHY:   The mobile swipe feed needs one compact read surface optimized for media-first discovery.
  * WHAT:  Returns paginated published properties enriched with verified owner data and AI summary text.
@@ -78,16 +118,10 @@ export async function buildMobilePropertyFeedItem(
   property: PropertyDoc,
 ) {
   const adLicenseStatus = (property as { adLicenseStatus?: string }).adLicenseStatus;
-  const owner =
-    property.brokerId
-      ? await ctx.db.get(property.brokerId)
-      : property.REDId
-        ? await ctx.db.get(property.REDId)
-        : null;
-  if (!owner) return null;
-
-  const orgType: "broker" | "red" = property.brokerId ? "broker" : "red";
-  const countryCode = (owner as { countryCode?: string }).countryCode ?? DEFAULT_COMPLIANCE_COUNTRY;
+  const ownerContext = await resolvePropertyOwner(ctx, property);
+  if (!ownerContext) return null;
+  const { owner, ownerType, orgType } = ownerContext;
+  const countryCode = owner.countryCode ?? DEFAULT_COMPLIANCE_COUNTRY;
   const ruleset = await findActiveComplianceRuleset(ctx, { countryCode, orgType });
   if (!ruleset) return null;
   const enforcement = ruleset.enforcement;
@@ -96,14 +130,7 @@ export async function buildMobilePropertyFeedItem(
     if (enforcement.requireListingVerification && adLicenseStatus !== "approved") return null;
   }
 
-  const ownerType: "broker" | "RED" = property.brokerId ? "broker" : "RED";
-  const media = (property.media ?? []).map((item) => item.url).filter(Boolean);
-  if (media.length === 0 && property.heroImage?.url) {
-    media.push(property.heroImage.url);
-  }
-  if (media.length === 0) {
-    media.push("https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1200&q=80");
-  }
+  const media = resolveFeedMedia(property);
 
   return {
     id: property._id,
@@ -117,13 +144,7 @@ export async function buildMobilePropertyFeedItem(
     sqft: property.sqft,
     status: property.status,
     media,
-    owner: {
-      id: String(owner?._id ?? ""),
-      type: ownerType,
-      name: owner?.name ?? "Anan Partner",
-      slug: owner?.slug ?? "anan-partner",
-      isVerified: owner?.isVerified === true,
-    },
+    owner: toOwnerPreview(owner, ownerType),
     aiSummary: buildAiSummary(property),
   };
 }

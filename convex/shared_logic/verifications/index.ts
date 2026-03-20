@@ -2,14 +2,53 @@ import { mutation } from "../../_generated/server";
 import { ConvexError, v } from "convex/values";
 import { uploadedFileReferenceListValidator } from "../files";
 import { requireOrganizationMembership } from "../agencies/repositories/membership";
-import { getOwnerId } from "../agencies/repositories/core";
 import { resolveComplianceRulesetForOwner } from "../compliance/utils";
 
-/**
- * WHY:   Broker/developer onboarding needs a first-party verification request entrypoint.
- * WHAT:  Creates a verification request for the current organization with attached documents.
- * HOW:   Enforces membership, derives owner ids, and inserts a `verificationRequests` row.
- */
+function buildVerificationSubmittedData(args: {
+  requirements?: string[];
+  sourceUrls?: string[];
+  notes?: string;
+  organizationType?: "broker" | "red";
+  ownerType: "broker" | "RED";
+}) {
+  return {
+    requirements: args.requirements ?? [],
+    sourceUrls: args.sourceUrls ?? [],
+    notes: args.notes ?? null,
+    organizationType: args.organizationType ?? (args.ownerType === "broker" ? "broker" : "red"),
+  };
+}
+
+function requireAttachedDocuments<T>(
+  documents: ReadonlyArray<T>,
+  proofDocuments: ReadonlyArray<T> | undefined,
+) {
+  const attachedDocuments = [...documents, ...(proofDocuments ?? [])];
+  if (attachedDocuments.length === 0) {
+    throw new ConvexError({
+      code: "INVALID_ARGUMENT",
+      message: "Verification documents are required",
+    });
+  }
+  return attachedDocuments;
+}
+
+function ensurePropertyOwnerAccess(owner: any, property: any) {
+  const ownerMatches =
+    (owner.ownerType === "broker" && property.brokerId === owner.ownerBrokerId) ||
+    (owner.ownerType === "RED" && property.REDId === owner.ownerREDId);
+  if (!ownerMatches) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Cannot verify this property" });
+  }
+}
+
+function buildPropertyVerificationSubmittedData(args: { adLicenseNumber: string; notes?: string }) {
+  return {
+    adLicenseNumber: args.adLicenseNumber,
+    notes: args.notes ?? null,
+  };
+}
+
 export const createVerificationRequestForCurrentOrg = mutation({
   args: {
     documents: uploadedFileReferenceListValidator,
@@ -22,22 +61,10 @@ export const createVerificationRequestForCurrentOrg = mutation({
   handler: async (ctx, args) => {
     const { owner, profile } = await requireOrganizationMembership(ctx);
     const { ruleset } = await resolveComplianceRulesetForOwner(ctx, owner);
-
-    const attachedDocuments = [
-      ...args.documents,
-      ...(args.proofDocuments ?? []),
-    ];
-
-    if (attachedDocuments.length === 0) {
-      throw new ConvexError({
-        code: "INVALID_ARGUMENT",
-        message: "Verification documents are required",
-      });
-    }
+    const attachedDocuments = requireAttachedDocuments(args.documents, args.proofDocuments);
 
     const requestType = owner.ownerType === "broker" ? "broker" : "RED";
     const now = Date.now();
-    const ownerId = getOwnerId(owner);
     const subjectBrokerId = owner.ownerType === "broker" ? owner.ownerBrokerId : undefined;
     const subjectREDId = owner.ownerType === "RED" ? owner.ownerREDId : undefined;
 
@@ -51,12 +78,13 @@ export const createVerificationRequestForCurrentOrg = mutation({
       currentStatus: "new",
       rulesetId: ruleset?._id,
       rulesetVersion: ruleset?.version,
-      submittedData: {
-        requirements: args.requirements ?? [],
-        sourceUrls: args.sourceUrls ?? [],
-        notes: args.notes ?? null,
-        organizationType: args.organizationType ?? (owner.ownerType === "broker" ? "broker" : "red"),
-      },
+      submittedData: buildVerificationSubmittedData({
+        requirements: args.requirements,
+        sourceUrls: args.sourceUrls,
+        notes: args.notes,
+        organizationType: args.organizationType,
+        ownerType: owner.ownerType,
+      }),
       attachedDocuments,
       submittedAt: now,
       createdAt: now,
@@ -89,24 +117,8 @@ export const createPropertyVerificationRequestForCurrentOrg = mutation({
       throw new ConvexError({ code: "NOT_FOUND", message: "Property not found" });
     }
 
-    const ownerMatches =
-      (owner.ownerType === "broker" && property.brokerId === owner.ownerBrokerId) ||
-      (owner.ownerType === "RED" && property.REDId === owner.ownerREDId);
-    if (!ownerMatches) {
-      throw new ConvexError({ code: "FORBIDDEN", message: "Cannot verify this property" });
-    }
-
-    const attachedDocuments = [
-      ...args.documents,
-      ...(args.proofDocuments ?? []),
-    ];
-
-    if (attachedDocuments.length === 0) {
-      throw new ConvexError({
-        code: "INVALID_ARGUMENT",
-        message: "Verification documents are required",
-      });
-    }
+    ensurePropertyOwnerAccess(owner, property);
+    const attachedDocuments = requireAttachedDocuments(args.documents, args.proofDocuments);
 
     const now = Date.now();
     const requestId = await ctx.db.insert("verificationRequests", {
@@ -120,10 +132,7 @@ export const createPropertyVerificationRequestForCurrentOrg = mutation({
       currentStatus: "new",
       rulesetId: ruleset?._id,
       rulesetVersion: ruleset?.version,
-      submittedData: {
-        adLicenseNumber: args.adLicenseNumber,
-        notes: args.notes ?? null,
-      },
+      submittedData: buildPropertyVerificationSubmittedData(args),
       attachedDocuments,
       submittedAt: now,
       createdAt: now,

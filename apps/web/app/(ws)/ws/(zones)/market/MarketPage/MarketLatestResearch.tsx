@@ -14,6 +14,33 @@ type LatestUpdate = {
   }>;
 };
 
+type MarketLatestResearchProps = {
+  latestUpdate: LatestUpdate | null;
+  title?: string;
+};
+
+function LatestResearchEmptyState({ title }: { title: string }) {
+  return (
+    <section className="border border-slate-200 bg-white p-4 text-right">
+      <h2 className="text-base font-black text-slate-950">{title}</h2>
+      <p className="mt-3 text-sm font-medium text-slate-500">لا يوجد بحث محفوظ يطابق هذا النطاق خلال الفترة المحددة.</p>
+    </section>
+  );
+}
+
+function LatestFindingCard({ finding }: { finding: LatestUpdate["topFindings"][number] }) {
+  const summary = [finding.locationHint, finding.area, finding.priceHint].filter(Boolean).join(" • ");
+  return (
+    <article className="border border-slate-200 bg-slate-50 p-4 text-right">
+      <h3 className="text-sm font-black text-slate-950">{finding.title}</h3>
+      <p className="mt-2 text-sm font-medium text-slate-600">{summary || "تفاصيل موقع وسعر محدودة"}</p>
+      {finding.features && finding.features.length > 0 ? (
+        <p className="mt-2 text-xs font-bold text-slate-500">{finding.features.join("، ")}</p>
+      ) : null}
+    </article>
+  );
+}
+
 /**
  * WHY:   Users asked for the newest meaningful update per city or area, and that update must come from persisted research runs.
  * WHAT:  Renders the latest matching market-research card with query, source count, and top findings.
@@ -22,17 +49,9 @@ type LatestUpdate = {
 export default function MarketLatestResearch({
   latestUpdate,
   title = "آخر تحديث بحثي",
-}: {
-  latestUpdate: LatestUpdate | null;
-  title?: string;
-}) {
+}: MarketLatestResearchProps) {
   if (!latestUpdate) {
-    return (
-      <section className="border border-slate-200 bg-white p-4 text-right">
-        <h2 className="text-base font-black text-slate-950">{title}</h2>
-        <p className="mt-3 text-sm font-medium text-slate-500">لا يوجد بحث محفوظ يطابق هذا النطاق خلال الفترة المحددة.</p>
-      </section>
-    );
+    return <LatestResearchEmptyState title={title} />;
   }
 
   return (
@@ -51,17 +70,7 @@ export default function MarketLatestResearch({
       </div>
 
       <div className="mt-4 grid gap-3">
-        {latestUpdate.topFindings.map((finding) => (
-          <article key={`${finding.title}-${finding.sourceUrl ?? ""}`} className="border border-slate-200 bg-slate-50 p-4 text-right">
-            <h3 className="text-sm font-black text-slate-950">{finding.title}</h3>
-            <p className="mt-2 text-sm font-medium text-slate-600">
-              {[finding.locationHint, finding.area, finding.priceHint].filter(Boolean).join(" • ") || "تفاصيل موقع وسعر محدودة"}
-            </p>
-            {finding.features && finding.features.length > 0 && (
-              <p className="mt-2 text-xs font-bold text-slate-500">{finding.features.join("، ")}</p>
-            )}
-          </article>
-        ))}
+        {latestUpdate.topFindings.map((finding) => <LatestFindingCard key={`${finding.title}-${finding.sourceUrl ?? ""}`} finding={finding} />)}
       </div>
     </section>
   );

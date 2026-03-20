@@ -4,24 +4,7 @@ import type { MutationCtx } from "../../../_generated/server";
 import { requireVerifiedSender } from "../access";
 import { notifyOfferSenderApplied } from "./sideEffects";
 
-/**
- * WHY:   Public-offer applications should stay separate from targeted recipient responses because the access and patch rules differ.
- * WHAT:  Accepts a public offer on behalf of the current verified sender and creates the linked deal.
- * HOW:   Verifies the offer is public and publishable, patches the recipient fields, creates the deal, and notifies the sender.
- */
-export async function applyToOfferService(
-  ctx: MutationCtx,
-  args: { offerId: Id<"offers">; message?: string },
-) {
-  const access = await requireVerifiedSender(ctx);
-
-  const offer = await ctx.db.get(args.offerId);
-  if (!offer) {
-    throw new ConvexError({
-      code: "NOT_FOUND",
-      message: "Offer not found",
-    });
-  }
+function assertOfferCanBeApplied(offer: any) {
   if (offer.visibility !== "public") {
     throw new ConvexError({
       code: "FORBIDDEN",
@@ -40,34 +23,77 @@ export async function applyToOfferService(
       message: "This public offer is no longer available",
     });
   }
+}
 
+async function acceptOfferForApplicant(ctx: MutationCtx, args: {
+  offerId: Id<"offers">;
+  offer: any;
+  access: Awaited<ReturnType<typeof requireVerifiedSender>>;
+  message?: string;
+}) {
   await ctx.db.patch(args.offerId, {
     status: "accepted",
-    toBrokerId: access.brokerId,
-    toREDId: access.REDId,
-    recipientAuthUserId: access.authUserId,
-    message: args.message ?? offer.message,
+    toBrokerId: args.access.brokerId,
+    toREDId: args.access.REDId,
+    recipientAuthUserId: args.access.authUserId,
+    message: args.message ?? args.offer.message,
   });
+}
 
-  const property = await ctx.db.get(offer.propertyId);
+async function insertAppliedOfferDeal(ctx: MutationCtx, args: {
+  offer: any;
+  access: Awaited<ReturnType<typeof requireVerifiedSender>>;
+  propertyTitle?: string;
+}) {
   await ctx.db.insert("deals", {
-    title: `عرض عام مقبول — ${property?.title ?? "عقار"}`,
-    value: offer.price,
+    title: `عرض عام مقبول — ${args.propertyTitle ?? "عقار"}`,
+    value: args.offer.price,
     stage: "new",
-    REDId: offer.fromREDId ?? access.REDId,
-    brokerId: offer.fromBrokerId ?? access.brokerId,
-    propertyId: offer.propertyId,
-    offerId: offer._id,
+    REDId: args.offer.fromREDId ?? args.access.REDId,
+    brokerId: args.offer.fromBrokerId ?? args.access.brokerId,
+    propertyId: args.offer.propertyId,
+    offerId: args.offer._id,
   });
+}
 
+type ApplyToOfferArgs = { offerId: Id<"offers">; message?: string };
+
+/**
+ * WHY:   Public-offer applications should stay separate from targeted recipient responses because the access and patch rules differ.
+ * WHAT:  Accepts a public offer on behalf of the current verified sender and creates the linked deal.
+ * HOW:   Verifies the offer is public and publishable, patches the recipient fields, creates the deal, and notifies the sender.
+ */
+export async function applyToOfferService(
+  ctx: MutationCtx,
+  args: ApplyToOfferArgs,
+) {
+  const access = await requireVerifiedSender(ctx);
+  const offer = await ctx.db.get(args.offerId);
+  if (!offer) {
+    throw new ConvexError({
+      code: "NOT_FOUND",
+      message: "Offer not found",
+    });
+  }
+  assertOfferCanBeApplied(offer);
+  const property = await ctx.db.get(offer.propertyId);
+  await Promise.all([
+    acceptOfferForApplicant(ctx, {
+      offerId: args.offerId,
+      offer,
+      access,
+      message: args.message,
+    }),
+    insertAppliedOfferDeal(ctx, {
+      offer,
+      access,
+      propertyTitle: property?.title,
+    }),
+  ]);
   const delivery = await notifyOfferSenderApplied(ctx, {
     applicantUserId: access.authUserId,
     offer,
     propertyTitle: property?.title ?? offer.message ?? offer.description ?? "عرض عام",
   });
-
-  return {
-    offerId: offer._id,
-    ...delivery,
-  };
+  return { offerId: offer._id, ...delivery };
 }

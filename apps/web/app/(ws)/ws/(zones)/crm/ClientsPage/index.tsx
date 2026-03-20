@@ -7,6 +7,71 @@ import FilterChipBar from "../../../_components/Visuals/FilterChipBar";
 import type { CrmClientRecord } from "../crmTypes";
 import ZonePageIntro from "../../../_components/ZoneShell/ZonePageIntro";
 
+function matchesClientFilter(client: CrmClientRecord, filterKey: string) {
+  if (filterKey === "all") return true;
+  if (filterKey === "unlinked") return !client.project && !client.broker;
+  if (filterKey === "project") return Boolean(client.project) && !client.broker;
+  if (filterKey === "full") return Boolean(client.project) && Boolean(client.broker);
+  return true;
+}
+
+function ClientAssignments({ client }: { client: CrmClientRecord }) {
+  return (
+    <div className="flex flex-col gap-1">
+      {client.project ? (
+        <span className="text-[10px] font-black tracking-widest text-blue-600">
+          {client.project.title}
+        </span>
+      ) : (
+        <span className="text-[10px] font-black tracking-widest text-slate-400">بدون مشروع</span>
+      )}
+      {client.broker ? (
+        <span className="text-[10px] font-black tracking-widest text-emerald-600">
+          مع {client.broker.name}
+        </span>
+      ) : (
+        <span className="text-[10px] font-black tracking-widest text-slate-400">بدون وسيط</span>
+      )}
+    </div>
+  );
+}
+
+function ClientRow({ client }: { client: CrmClientRecord }) {
+  return (
+    <tr className="transition hover:bg-slate-50 group">
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 flex-shrink-0 bg-blue-50 text-blue-700 flex items-center justify-center font-black text-xs uppercase">
+            {(client.name || "U").slice(0, 2)}
+          </div>
+          <span className="font-black text-slate-950">{client.name}</span>
+          {client.badges?.includes("vip") ? (
+            <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 border border-amber-200 bg-amber-50 px-1.5 py-0.5 ml-2">
+              VIP
+            </span>
+          ) : null}
+        </div>
+      </td>
+      <td className="px-6 py-4">
+        <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 border border-slate-200 bg-white px-2 py-1">
+          {client.stage}
+        </span>
+      </td>
+      <td className="px-6 py-4 font-bold text-slate-700">{client.preference}</td>
+      <td className="px-6 py-4 font-bold text-slate-700">{client.budgetLabel}</td>
+      <td className="px-6 py-4"><ClientAssignments client={client} /></td>
+      <td className="px-6 py-4 text-left">
+        <Link
+          href={`/ws/crm/clients/${client.id}`}
+          className="inline-flex border border-slate-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 transition group-hover:border-blue-600 group-hover:bg-blue-600 group-hover:text-white"
+        >
+          التفاصيل
+        </Link>
+      </td>
+    </tr>
+  );
+}
+
 /**
  * WHY:   The CRM client index should be segmented visually instead of reading like a flat text list.
  * WHAT:  Renders client cards with chip-based filtering by relationship completeness.
@@ -19,13 +84,7 @@ export default function ClientsPage({
 }) {
   const [filterKey, setFilterKey] = useState("all");
 
-  const visibleClients = clients.filter((client) => {
-    if (filterKey === "all") return true;
-    if (filterKey === "unlinked") return !client.project && !client.broker;
-    if (filterKey === "project") return Boolean(client.project) && !client.broker;
-    if (filterKey === "full") return Boolean(client.project) && Boolean(client.broker);
-    return true;
-  });
+  const visibleClients = clients.filter((client) => matchesClientFilter(client, filterKey));
 
   return (
     <div className="flex min-h-full flex-col">
@@ -69,56 +128,7 @@ export default function ClientsPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {visibleClients.map((client) => (
-                <tr key={client.id} className="transition hover:bg-slate-50 group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 flex-shrink-0 bg-blue-50 text-blue-700 flex items-center justify-center font-black text-xs uppercase">
-                        {(client.name || "U").slice(0, 2)}
-                      </div>
-                      <span className="font-black text-slate-950">{client.name}</span>
-                      {client.badges?.includes("vip") && (
-                        <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 border border-amber-200 bg-amber-50 px-1.5 py-0.5 ml-2">
-                          VIP
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 border border-slate-200 bg-white px-2 py-1">
-                      {client.stage}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 font-bold text-slate-700">{client.preference}</td>
-                  <td className="px-6 py-4 font-bold text-slate-700">{client.budgetLabel}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col gap-1">
-                      {client.project ? (
-                        <span className="text-[10px] font-black tracking-widest text-blue-600">
-                          {client.project.title}
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-black tracking-widest text-slate-400">بدون مشروع</span>
-                      )}
-                      {client.broker ? (
-                        <span className="text-[10px] font-black tracking-widest text-emerald-600">
-                          مع {client.broker.name}
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-black tracking-widest text-slate-400">بدون وسيط</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-left">
-                    <Link
-                      href={`/ws/crm/clients/${client.id}`}
-                      className="inline-flex border border-slate-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 transition group-hover:border-blue-600 group-hover:bg-blue-600 group-hover:text-white"
-                    >
-                      التفاصيل
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+              {visibleClients.map((client) => <ClientRow key={client.id} client={client} />)}
             </tbody>
           </table>
         </div>

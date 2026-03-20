@@ -1,15 +1,108 @@
 "use client";
-
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-
 const roleLabels: Record<"manager" | "member" | "viewer", string> = {
   manager: "مدير",
   member: "عضو",
   viewer: "مشاهد",
 };
-
+type DirectoryResult = {
+  id: string;
+  authUserId: string;
+  email: string;
+  name: string;
+  username?: string;
+  membershipState: "not-member" | "pending-invite" | "member";
+  canMessage: boolean;
+  conversationId?: string | null;
+};
+function MembershipStateBadge({ state }: { state: DirectoryResult["membershipState"] }) {
+  const toneClass
+    = state === "member"
+      ? "border-green-100 bg-green-50 text-green-700"
+      : state === "pending-invite"
+        ? "border-amber-100 bg-amber-50 text-amber-700"
+        : "border-slate-200 bg-slate-50 text-slate-500";
+  const label = state === "member" ? "عضو حالي" : state === "pending-invite" ? "دعوة معلقة" : "ليس عضواً";
+  return (
+    <span className={cn("shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest", toneClass)}>
+      {label}
+    </span>
+  );
+}
+function InviteResultActions({
+  result,
+  canManage,
+  isSubmitting,
+  onInvite,
+  onMessage,
+}: {
+  result: DirectoryResult;
+  canManage: boolean;
+  isSubmitting: boolean;
+  onInvite: (email: string) => Promise<void>;
+  onMessage: (targetUserId: string, conversationId?: string | null) => Promise<void>;
+}) {
+  return (
+    <div className="mt-4 flex flex-wrap gap-2">
+      {result.membershipState === "not-member" && canManage ? (
+        <button
+          type="button"
+          onClick={() => void onInvite(result.email)}
+          disabled={isSubmitting}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-[11px] font-black tracking-widest uppercase text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          دعوة
+        </button>
+      ) : null}
+      {result.canMessage ? (
+        <button
+          type="button"
+          onClick={() => void onMessage(result.authUserId, result.conversationId)}
+          className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-[11px] font-black tracking-widest uppercase text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
+        >
+          رسالة
+        </button>
+      ) : null}
+    </div>
+  );
+}
+function InviteResultRow({
+  result,
+  canManage,
+  isSubmitting,
+  onInvite,
+  onMessage,
+}: {
+  result: DirectoryResult;
+  canManage: boolean;
+  isSubmitting: boolean;
+  onInvite: (email: string) => Promise<void>;
+  onMessage: (targetUserId: string, conversationId?: string | null) => Promise<void>;
+}) {
+  return (
+    <div className="p-4 transition hover:bg-slate-50/50">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="truncate text-sm font-black text-slate-950">{result.name}</div>
+          <div className="mt-1 truncate text-[11px] font-medium text-slate-500" dir="ltr">{result.email}</div>
+          {result.username ? (
+            <div className="mt-1 text-[10px] font-bold text-slate-400" dir="ltr">@{result.username}</div>
+          ) : null}
+        </div>
+        <MembershipStateBadge state={result.membershipState} />
+      </div>
+      <InviteResultActions
+        result={result}
+        canManage={canManage}
+        isSubmitting={isSubmitting}
+        onInvite={onInvite}
+        onMessage={onMessage}
+      />
+    </div>
+  );
+}
 /**
  * WHY:   The workspace settings area needs a simple invite flow that maps to the existing team-invite API.
  * WHAT:  Renders exact-match directory search plus invite/message actions for the current organization.
@@ -27,26 +120,15 @@ export default function InviteMemberForm({
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<"manager" | "member" | "viewer">("member");
-  const [results, setResults] = useState<Array<{
-    id: string;
-    authUserId: string;
-    email: string;
-    name: string;
-    username?: string;
-    membershipState: "not-member" | "pending-invite" | "member";
-    canMessage: boolean;
-    conversationId?: string | null;
-  }>>([]);
+  const [results, setResults] = useState<DirectoryResult[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   async function handleInvite(email: string) {
     if (!canManage) {
       setStatus("صلاحية المدير مطلوبة لإرسال الدعوات.");
       return;
     }
-
     setIsSubmitting(true);
     setStatus("جاري إرسال الدعوة...");
     const response = await fetch("/api/workspace/team-invites", {
@@ -68,13 +150,11 @@ export default function InviteMemberForm({
     );
     setIsSubmitting(false);
   }
-
   async function handleMessage(targetUserId: string, conversationId?: string | null) {
     if (conversationId) {
       router.push(`/ws/inbox/${conversationId}`);
       return;
     }
-
     const response = await fetch("/api/workspace/inbox", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -84,11 +164,9 @@ export default function InviteMemberForm({
       setStatus("تعذر فتح المحادثة.");
       return;
     }
-
     const payload = (await response.json()) as { conversationId: string };
     router.push(`/ws/inbox/${payload.conversationId}`);
   }
-
   return (
     <form
       className="flex flex-col gap-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
@@ -103,16 +181,7 @@ export default function InviteMemberForm({
         const response = await fetch(`/api/workspace/directory?q=${encodeURIComponent(query.trim())}`, {
           cache: "no-store",
         });
-        const payload = (await response.json()) as Array<{
-          id: string;
-          authUserId: string;
-          email: string;
-          name: string;
-          username?: string;
-          membershipState: "not-member" | "pending-invite" | "member";
-          canMessage: boolean;
-          conversationId?: string | null;
-        }> | { message?: string };
+        const payload = (await response.json()) as DirectoryResult[] | { message?: string };
         if (!response.ok) {
           setResults([]);
           setStatus(("message" in payload ? payload.message : null) ?? "تعذر البحث.");
@@ -132,13 +201,11 @@ export default function InviteMemberForm({
           </p>
         </div>
       ) : null}
-
       {!hasOrganization ? (
         <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
           لا يمكنك إرسال دعوات قبل ربط الحساب بمنظمة.
         </div>
       ) : null}
-
       <div className="space-y-2">
         <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">البحث بالبريد الكامل أو اسم المستخدم</label>
         <input
@@ -154,7 +221,6 @@ export default function InviteMemberForm({
           لن يظهر أي مستخدم إلا إذا كتبت بريده الكامل أو اسم المستخدم المطابق تماماً.
         </p>
       </div>
-
       <div className="space-y-3">
         <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">الدور</label>
         <div className="flex flex-wrap gap-2">
@@ -176,7 +242,6 @@ export default function InviteMemberForm({
           ))}
         </div>
       </div>
-
       <button
         type="submit"
         disabled={isSearching || !hasOrganization}
@@ -184,60 +249,20 @@ export default function InviteMemberForm({
       >
         {isSearching ? "جاري البحث..." : "بحث"}
       </button>
-
       {results.length > 0 ? (
         <div className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           {results.map((result) => (
-            <div key={result.id} className="p-4 transition hover:bg-slate-50/50">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-black text-slate-950">{result.name}</div>
-                  <div className="mt-1 truncate text-[11px] font-medium text-slate-500" dir="ltr">{result.email}</div>
-                  {result.username ? (
-                    <div className="mt-1 text-[10px] font-bold text-slate-400" dir="ltr">@{result.username}</div>
-                  ) : null}
-                </div>
-                <span className={cn(
-                  "shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest",
-                  result.membershipState === "member" ? "border-green-100 bg-green-50 text-green-700" :
-                  result.membershipState === "pending-invite" ? "border-amber-100 bg-amber-50 text-amber-700" :
-                  "border-slate-200 bg-slate-50 text-slate-500"
-                )}>
-                  {result.membershipState === "member"
-                    ? "عضو حالي"
-                    : result.membershipState === "pending-invite"
-                      ? "دعوة معلقة"
-                      : "ليس عضواً"}
-                </span>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {result.membershipState === "not-member" && canManage ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleInvite(result.email)}
-                    disabled={isSubmitting}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-[11px] font-black tracking-widest uppercase text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    دعوة
-                  </button>
-                ) : null}
-
-                {result.canMessage ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleMessage(result.authUserId, result.conversationId)}
-                    className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-[11px] font-black tracking-widest uppercase text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
-                  >
-                    رسالة
-                  </button>
-                ) : null}
-              </div>
-            </div>
+            <InviteResultRow
+              key={result.id}
+              result={result}
+              canManage={canManage}
+              isSubmitting={isSubmitting}
+              onInvite={handleInvite}
+              onMessage={handleMessage}
+            />
           ))}
         </div>
       ) : null}
-
       {!results.length && query.includes("@") && canManage && hasOrganization ? (
         <button
           type="button"
@@ -248,7 +273,6 @@ export default function InviteMemberForm({
           {isSubmitting ? "جاري إرسال الدعوة..." : "دعوة هذا البريد مباشرة"}
         </button>
       ) : null}
-
       {status ? (
         <div className="border-t border-slate-100 pt-4">
           <div aria-live="polite" className="text-xs font-bold text-slate-500">{status}</div>

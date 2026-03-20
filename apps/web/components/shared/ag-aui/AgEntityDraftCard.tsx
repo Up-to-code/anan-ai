@@ -6,6 +6,35 @@ type DraftField = {
   emphasized?: boolean;
 };
 
+type AgEntityDraftCardProps = {
+  title: string;
+  subtitle: string;
+  fields: DraftField[];
+  kind?: "project" | "offer" | "person";
+};
+
+function resolveDraftIcon(kind: NonNullable<AgEntityDraftCardProps["kind"]>) {
+  if (kind === "person") {
+    return UserRound;
+  }
+  if (kind === "offer") {
+    return BadgeCheck;
+  }
+  return Building2;
+}
+
+function DraftFieldRow({ field }: { field: DraftField }) {
+  const valueClassName = field.emphasized
+    ? "mt-1 text-sm font-black text-slate-950"
+    : "mt-1 text-sm font-bold text-slate-700";
+  return (
+    <div className="border border-slate-200 bg-slate-50 px-3 py-3">
+      <div className="text-[10px] font-black tracking-[0.22em] text-slate-400">{field.label}</div>
+      <div className={valueClassName}>{field.value}</div>
+    </div>
+  );
+}
+
 /**
  * WHY:   Draft summaries need a consistent card layout for previewing AI-generated entities.
  * WHAT:  Displays a compact summary block with key fields and a context icon.
@@ -16,13 +45,8 @@ export default function AgEntityDraftCard({
   subtitle,
   fields,
   kind = "project",
-}: {
-  title: string;
-  subtitle: string;
-  fields: DraftField[];
-  kind?: "project" | "offer" | "person";
-}) {
-  const Icon = kind === "person" ? UserRound : kind === "offer" ? BadgeCheck : Building2;
+}: AgEntityDraftCardProps) {
+  const Icon = resolveDraftIcon(kind);
 
   return (
     <section className="w-full max-w-[340px] border-2 border-slate-200 bg-white p-5">
@@ -40,20 +64,7 @@ export default function AgEntityDraftCard({
       </div>
 
       <div className="mt-5 grid gap-3">
-        {fields.map((field) => (
-          <div key={field.label} className="border border-slate-200 bg-slate-50 px-3 py-3">
-            <div className="text-[10px] font-black tracking-[0.22em] text-slate-400">{field.label}</div>
-            <div
-              className={
-                field.emphasized
-                  ? "mt-1 text-sm font-black text-slate-950"
-                  : "mt-1 text-sm font-bold text-slate-700"
-              }
-            >
-              {field.value}
-            </div>
-          </div>
-        ))}
+        {fields.map((field) => <DraftFieldRow key={field.label} field={field} />)}
       </div>
 
       <div className="mt-5 flex items-center gap-2 text-[10px] font-black tracking-[0.22em] text-blue-700">

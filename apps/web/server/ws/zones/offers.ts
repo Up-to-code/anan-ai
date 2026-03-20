@@ -17,17 +17,11 @@ import {
 import { createUnavailableZoneError } from "./errors";
 import { buildWorkspaceScopedSessionResolver } from "./session";
 
-/**
- * WHY:   Offer pages need one audience-aware gateway that hides broker/developer branching from workspace consumers.
- * WHAT:  Returns the current audience's offer snapshot and lifecycle handlers.
- * HOW:   Restores owner context into the session path, then selects the broker or developer offer service bindings.
- */
 export function getWorkspaceOffersZone(
   audience: WorkspaceAudience,
   ownerContext?: WorkspaceOwnerContext | null,
 ) {
   const requireSession = buildWorkspaceScopedSessionResolver(audience, ownerContext);
-
   if (audience === "broker") {
     return {
       getSnapshot: () => getBrokerOffersSnapshot({ requireBroker: requireSession, repository: convexOffersRepository }),

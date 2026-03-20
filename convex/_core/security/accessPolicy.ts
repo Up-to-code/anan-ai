@@ -30,6 +30,64 @@ function normalizeRole(value: unknown): ProtectedRole | null {
   return null;
 }
 
+function assertActiveProfile(profile: Doc<"userProfiles"> | null) {
+  if (profile?.isActive === false) {
+    throw new ConvexError({
+      code: "ACCOUNT_INACTIVE",
+      message: "Account is deactivated",
+    });
+  }
+}
+
+function resolveEffectiveRole(profile: Doc<"userProfiles"> | null, identityRole?: string): ProtectedRole | null {
+  if (profile?.roleStatus === "pending") {
+    throw new ConvexError({
+      code: "ROLE_PENDING",
+      message: "Role is pending approval",
+    });
+  }
+  if (profile?.roleStatus === "rejected") {
+    throw new ConvexError({
+      code: "ROLE_REJECTED",
+      message: "Role request was rejected",
+    });
+  }
+  return normalizeRole(profile?.role ?? identityRole ?? null);
+}
+
+function normalizeAllowedRoles(allowedRoles: ProtectedRole[]) {
+  return allowedRoles
+    .map((role) => normalizeRole(role))
+    .filter(Boolean) as ProtectedRole[];
+}
+
+function assertAllowedRole(
+  role: ProtectedRole | null,
+  normalizedAllowed: ProtectedRole[]
+): asserts role is ProtectedRole {
+  if (!role || !normalizedAllowed.includes(role)) {
+    throw new ConvexError({
+      code: "FORBIDDEN",
+      message: "Insufficient role permissions",
+    });
+  }
+}
+
+function assertLinkedRoleEntity(role: ProtectedRole, profile: Doc<"userProfiles"> | null) {
+  if (role === "broker" && !profile?.brokerId) {
+    throw new ConvexError({
+      code: "FORBIDDEN",
+      message: "Broker profile not linked",
+    });
+  }
+  if (role === "developer" && !profile?.REDId) {
+    throw new ConvexError({
+      code: "FORBIDDEN",
+      message: "Developer (RED) profile not linked",
+    });
+  }
+}
+
 /**
  * WHY:   Gives every protected handler a single session-entry check.
  * WHAT:  Resolves the authenticated subject and session token identifier.
@@ -56,56 +114,10 @@ export async function requireRole(
 ): Promise<AccessContext> {
   const identity = await requireResolvedIdentity(ctx);
   const profile = await findProfileForResolvedIdentity(ctx, identity);
-
-  if (profile?.isActive === false) {
-    throw new ConvexError({
-      code: "ACCOUNT_INACTIVE",
-      message: "Account is deactivated",
-    });
-  }
-
-  const profileRole = profile?.role;
-  const identityRole = (identity.identity as { role?: string }).role;
-  const role = normalizeRole(profileRole ?? identityRole ?? null);
-
-  if (profile?.roleStatus === "pending") {
-    throw new ConvexError({
-      code: "ROLE_PENDING",
-      message: "Role is pending approval",
-    });
-  }
-
-  if (profile?.roleStatus === "rejected") {
-    throw new ConvexError({
-      code: "ROLE_REJECTED",
-      message: "Role request was rejected",
-    });
-  }
-
-  const normalizedAllowed = allowedRoles
-    .map((r) => normalizeRole(r))
-    .filter(Boolean) as ProtectedRole[];
-
-  if (!role || !normalizedAllowed.includes(role)) {
-    throw new ConvexError({
-      code: "FORBIDDEN",
-      message: "Insufficient role permissions",
-    });
-  }
-
-  if (role === "broker" && !profile?.brokerId) {
-    throw new ConvexError({
-      code: "FORBIDDEN",
-      message: "Broker profile not linked",
-    });
-  }
-
-  if (role === "developer" && !profile?.REDId) {
-    throw new ConvexError({
-      code: "FORBIDDEN",
-      message: "Developer (RED) profile not linked",
-    });
-  }
+  assertActiveProfile(profile);
+  const role = resolveEffectiveRole(profile, (identity.identity as { role?: string }).role);
+  assertAllowedRole(role, normalizeAllowedRoles(allowedRoles));
+  assertLinkedRoleEntity(role, profile);
 
   return {
     authUserId: identity.authUserId,

@@ -9,7 +9,7 @@ import { tool, zodSchema } from "ai";
 import type { Tool } from "ai";
 import { z } from "zod";
 import type { ActionCtx } from "../../../../_generated/server";
-import { apiRefs } from "../../../../shared_logic/lib/generatedApiRefs";
+import { api } from "../../../../_generated/api";
 import type { AgentRuntimeContext } from "../../types";
 
 export function getKnowledgePage(ctx: ActionCtx, _runtime: AgentRuntimeContext): Tool {
@@ -18,7 +18,7 @@ export function getKnowledgePage(ctx: ActionCtx, _runtime: AgentRuntimeContext):
     inputSchema: zodSchema(z.object({ query: z.string(), limit: z.number().min(1).max(8).optional() })),
     execute: async ({ query, limit }): Promise<unknown> => {
       return (await ctx.runQuery(
-        apiRefs["shared_logic/knowledge/index"].retrieveCompanyKnowledge,
+        api.shared_logic.knowledge.index.retrieveCompanyKnowledge,
         {
         query,
         limit,

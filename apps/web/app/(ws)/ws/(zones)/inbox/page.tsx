@@ -10,6 +10,52 @@ type InboxIndexPageProps = {
   }>;
 };
 
+function mapDealOption(deal: {
+  id: string;
+  title: string;
+  stage: string;
+  value?: number | null;
+  contactName?: string | null;
+}) {
+  return {
+    id: deal.id,
+    title: deal.title,
+    stage: deal.stage,
+    value: deal.value,
+    contactName: deal.contactName ?? null,
+  };
+}
+
+function mapProjectOption(property: {
+  _id: string;
+  title: string;
+  location?: string | null;
+  address?: string | null;
+  heroImage?: { url?: string | null } | null;
+  media?: Array<{ url?: string | null }> | null;
+  price?: number | null;
+}) {
+  return {
+    id: property._id,
+    title: property.title,
+    location: property.location ?? property.address ?? "",
+    imageUrl: property.heroImage?.url ?? property.media?.[0]?.url ?? null,
+    price: property.price,
+  };
+}
+
+async function resolveCollaborationData(workspace: Awaited<ReturnType<typeof requireWorkspaceData>>) {
+  if (workspace.audience !== "broker" && workspace.audience !== "developer") {
+    return null;
+  }
+  return Promise.all([
+    getWorkspacePropertyZone(workspace.audience, workspace.ownerContext).listProperties({
+      paginationOpts: { cursor: null, numItems: 50 },
+    }),
+    getWorkspaceCrmZone(workspace.audience, workspace.ownerContext).listDeals(),
+  ]);
+}
+
 /**
  * WHY:   The inbox should now load real conversation data on the server before the client UI takes over.
  * WHAT:  Renders the 2-pane inbox experience using server-first loaders and a small client coordinator.
@@ -22,14 +68,7 @@ export default async function InboxIndexPage({ searchParams }: InboxIndexPagePro
     listInboxConversations(),
     listIncomingOrganizationInvitesForCurrentUser(),
   ]);
-  const collaborationData = workspace.audience === "broker" || workspace.audience === "developer"
-    ? await Promise.all([
-        getWorkspacePropertyZone(workspace.audience, workspace.ownerContext).listProperties({
-          paginationOpts: { cursor: null, numItems: 50 },
-        }),
-        getWorkspaceCrmZone(workspace.audience, workspace.ownerContext).listDeals(),
-      ])
-    : null;
+  const collaborationData = await resolveCollaborationData(workspace);
   const initialConversation = conversations[0]
     ? await getInboxConversation(conversations[0].id)
     : null;
@@ -38,26 +77,14 @@ export default async function InboxIndexPage({ searchParams }: InboxIndexPagePro
     <InboxWorkspaceClient
       canUseBusinessActions={workspace.audience === "broker" || workspace.audience === "developer"}
       currentUserId={workspace.user.id}
-      dealOptions={(collaborationData?.[1] ?? []).map((deal) => ({
-        id: deal.id,
-        title: deal.title,
-        stage: deal.stage,
-        value: deal.value,
-        contactName: deal.contactName ?? null,
-      }))}
+      dealOptions={(collaborationData?.[1] ?? []).map(mapDealOption)}
       initialStartUserId={startUserId ?? null}
       initialConversations={conversations}
       initialConversation={initialConversation}
       initialSelectedConversationId={null}
       hasConversationRoute={false}
       incomingInvites={incomingInvites}
-      projectOptions={(collaborationData?.[0]?.page ?? []).map((property) => ({
-        id: property._id,
-        title: property.title,
-        location: property.location ?? property.address ?? "",
-        imageUrl: property.heroImage?.url ?? property.media?.[0]?.url ?? null,
-        price: property.price,
-      }))}
+      projectOptions={(collaborationData?.[0]?.page ?? []).map(mapProjectOption)}
     />
   );
 }

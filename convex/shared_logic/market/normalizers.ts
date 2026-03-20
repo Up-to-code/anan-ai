@@ -140,14 +140,10 @@ function isUsefulAreaCandidate(value: string | undefined): value is string {
 export function normalizeSaudiCity(value?: string | null): string | undefined {
   if (!value) return undefined;
   const normalized = normalizeText(value);
-  for (const city of SAUDI_CITY_DEFINITIONS) {
-    for (const alias of city.aliases) {
-      if (normalized.includes(alias.toLowerCase())) {
-        return city.canonical;
-      }
-    }
-  }
-  return undefined;
+  const match = SAUDI_CITY_DEFINITIONS.find((city) =>
+    city.aliases.some((alias) => normalized.includes(alias.toLowerCase())),
+  );
+  return match?.canonical;
 }
 
 /**

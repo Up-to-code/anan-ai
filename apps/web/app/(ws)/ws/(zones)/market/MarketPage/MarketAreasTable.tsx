@@ -8,6 +8,43 @@ type MarketAreaRow = {
   topSignalLabel: string | null;
 };
 
+type MarketAreasTableProps = {
+  rows: MarketAreaRow[];
+  showCityColumn: boolean;
+  title?: string;
+  description?: string;
+};
+
+function MarketAreasRows({
+  rows,
+  showCityColumn,
+}: {
+  rows: MarketAreaRow[];
+  showCityColumn: boolean;
+}) {
+  if (rows.length === 0) {
+    return (
+      <tr>
+        <td colSpan={showCityColumn ? 7 : 6} className="px-4 py-8 text-center text-sm font-medium text-slate-500">
+          لا توجد أحياء مطابقة لهذا النطاق.
+        </td>
+      </tr>
+    );
+  }
+
+  return rows.map((area) => (
+    <tr key={`${area.city}-${area.area}`} className="border-t border-slate-100">
+      {showCityColumn ? <td className="px-4 py-4 text-sm font-bold text-slate-700">{area.city}</td> : null}
+      <td className="px-4 py-4 text-sm font-black text-slate-950">{area.area}</td>
+      <td className="px-4 py-4 text-sm font-bold text-slate-700">{area.demandSignals.toLocaleString("en-US")}</td>
+      <td className="px-4 py-4 text-sm font-bold text-slate-700">{area.inventoryCount.toLocaleString("en-US")}</td>
+      <td className="px-4 py-4 text-sm font-bold text-slate-700">{area.averagePriceLabel ?? "غير كافٍ"}</td>
+      <td className="px-4 py-4 text-sm font-bold text-slate-700">{area.topProductType ?? "غير واضح"}</td>
+      <td className="px-4 py-4 text-sm font-bold text-slate-700">{area.topSignalLabel ?? "غير واضح"}</td>
+    </tr>
+  ));
+}
+
 /**
  * WHY:   After choosing a city, developers need district-level clarity on where demand and product fit concentrate.
  * WHAT:  Renders the area table for the selected scope, including dominant product type and strongest repeated signal.
@@ -18,12 +55,7 @@ export default function MarketAreasTable({
   showCityColumn,
   title = "الأحياء الأعلى نشاطاً",
   description,
-}: {
-  rows: MarketAreaRow[];
-  showCityColumn: boolean;
-  title?: string;
-  description?: string;
-}) {
+}: MarketAreasTableProps) {
   return (
     <section className="border border-slate-200 bg-white">
       <div className="border-b border-slate-100 p-4 text-right">
@@ -43,27 +75,7 @@ export default function MarketAreasTable({
               <th className="px-4 py-3 text-xs font-black text-slate-500">الإشارة الأوضح</th>
             </tr>
           </thead>
-          <tbody>
-            {rows.length === 0 ? (
-              <tr>
-                <td colSpan={showCityColumn ? 7 : 6} className="px-4 py-8 text-center text-sm font-medium text-slate-500">
-                  لا توجد أحياء مطابقة لهذا النطاق.
-                </td>
-              </tr>
-            ) : (
-              rows.map((area) => (
-                <tr key={`${area.city}-${area.area}`} className="border-t border-slate-100">
-                  {showCityColumn && <td className="px-4 py-4 text-sm font-bold text-slate-700">{area.city}</td>}
-                  <td className="px-4 py-4 text-sm font-black text-slate-950">{area.area}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{area.demandSignals.toLocaleString("en-US")}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{area.inventoryCount.toLocaleString("en-US")}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{area.averagePriceLabel ?? "غير كافٍ"}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{area.topProductType ?? "غير واضح"}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{area.topSignalLabel ?? "غير واضح"}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
+          <tbody><MarketAreasRows rows={rows} showCityColumn={showCityColumn} /></tbody>
         </table>
       </div>
     </section>

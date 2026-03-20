@@ -1,84 +1,232 @@
 "use client";
-
 import { useCallback, useEffect, useRef, useState } from "react";
-
-type ActionError = {
-  message: string;
-};
-
-type UploadUrlAction = () => Promise<
-  | { ok: true; data: { uploadUrl: string } }
-  | { ok: false; error: ActionError }
->;
-
-type TranscribeAction = (input: { storageId: string }) => Promise<
-  | { ok: true; data: { text: string; languageCode?: string } }
-  | { ok: false; error: ActionError }
->;
-
-type UseVoiceRecorderParams = {
-  getUploadUrl: UploadUrlAction;
-  transcribeFromStorage: TranscribeAction;
-  onTranscriptReady: (text: string) => void | Promise<void>;
-  onError?: (message: string) => void;
-  maxDurationMs?: number;
-  disabled?: boolean;
-};
-
-const DEFAULT_MAX_DURATION_MS = 300_000;
-const METER_BARS = 12;
-
-const HIGH_QUALITY_AUDIO_CONSTRAINTS: MediaStreamConstraints = {
-  audio: {
-    channelCount: { ideal: 1 },
-    sampleRate: { ideal: 48_000 },
-    sampleSize: { ideal: 16 },
-    echoCancellation: { ideal: true },
-    noiseSuppression: { ideal: true },
-    autoGainControl: { ideal: true },
-  },
-};
-
-export function buildBarsFromFrequencyData(dataArray: Uint8Array, bars = METER_BARS) {
-  if (dataArray.length === 0) {
-    return Array.from({ length: bars }, () => 0);
-  }
-
-  const bucketSize = Math.max(1, Math.floor(dataArray.length / bars));
-  return Array.from({ length: bars }, (_, index) => {
-    const start = index * bucketSize;
-    const end = Math.min(start + bucketSize, dataArray.length);
-    let sum = 0;
-    for (let i = start; i < end; i += 1) {
-      sum += dataArray[i] ?? 0;
+import {
+  buildBarsFromFrequencyData,
+  DEFAULT_MAX_DURATION_MS,
+  HIGH_QUALITY_AUDIO_CONSTRAINTS,
+  METER_BARS,
+  type UseVoiceRecorderParams,
+  uploadAudioBlob,
+} from "./useVoiceRecorder.shared";
+export { buildBarsFromFrequencyData };
+type ProcessingPhase = "idle" | "recording" | "uploading" | "transcribing" | "sending" | "error";
+type RecorderRefs = { streamRef: React.MutableRefObject<MediaStream | null>; mediaRecorderRef: React.MutableRefObject<MediaRecorder | null>; recordedChunksRef: React.MutableRefObject<BlobPart[]>; recordStartedAtRef: React.MutableRefObject<number>; durationIntervalRef: React.MutableRefObject<number | null>; stopTimeoutRef: React.MutableRefObject<number | null>; stopPromiseRef: React.MutableRefObject<Promise<Blob> | null>; animationFrameRef: React.MutableRefObject<number | null>; audioContextRef: React.MutableRefObject<AudioContext | null>; analyserRef: React.MutableRefObject<AnalyserNode | null>; analyserDataRef: React.MutableRefObject<Uint8Array | null> };
+function createEmptyLevels() {
+  return Array.from({ length: METER_BARS }, () => 0);
+}
+function useRecorderRefs(): RecorderRefs {
+  return {
+    streamRef: useRef<MediaStream | null>(null),
+    mediaRecorderRef: useRef<MediaRecorder | null>(null),
+    recordedChunksRef: useRef<BlobPart[]>([]),
+    recordStartedAtRef: useRef<number>(0),
+    durationIntervalRef: useRef<number | null>(null),
+    stopTimeoutRef: useRef<number | null>(null),
+    stopPromiseRef: useRef<Promise<Blob> | null>(null),
+    animationFrameRef: useRef<number | null>(null),
+    audioContextRef: useRef<AudioContext | null>(null),
+    analyserRef: useRef<AnalyserNode | null>(null),
+    analyserDataRef: useRef<Uint8Array | null>(null),
+  };
+}
+function stopTracks(stream: MediaStream | null) {
+  if (!stream) return;
+  stream.getTracks().forEach((track) => {
+    try {
+      track.stop();
+    } catch {
+      // no-op
     }
-    const avg = sum / Math.max(1, end - start);
-    return Math.min(1, Math.max(0, avg / 255));
   });
 }
-
-async function uploadAudioBlob(uploadUrl: string, blob: Blob) {
-  const response = await fetch(uploadUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": blob.type || "application/octet-stream",
-    },
-    body: blob,
+function clearTimers(refs: RecorderRefs) {
+  if (refs.durationIntervalRef.current !== null) {
+    window.clearInterval(refs.durationIntervalRef.current);
+    refs.durationIntervalRef.current = null;
+  }
+  if (refs.stopTimeoutRef.current !== null) {
+    window.clearTimeout(refs.stopTimeoutRef.current);
+    refs.stopTimeoutRef.current = null;
+  }
+}
+function cleanupAudioGraph(refs: RecorderRefs) {
+  if (refs.animationFrameRef.current !== null) {
+    window.cancelAnimationFrame(refs.animationFrameRef.current);
+    refs.animationFrameRef.current = null;
+  }
+  refs.analyserRef.current = null;
+  refs.analyserDataRef.current = null;
+  const context = refs.audioContextRef.current;
+  refs.audioContextRef.current = null;
+  if (context) {
+    void context.close().catch(() => undefined);
+  }
+}
+function cleanupStream(refs: RecorderRefs) {
+  const stream = refs.streamRef.current;
+  refs.streamRef.current = null;
+  stopTracks(stream);
+  refs.mediaRecorderRef.current = null;
+  refs.recordedChunksRef.current = [];
+  refs.stopPromiseRef.current = null;
+}
+function sampleLevels(refs: RecorderRefs, setLevels: React.Dispatch<React.SetStateAction<number[]>>) {
+  const analyser = refs.analyserRef.current;
+  const dataArray = refs.analyserDataRef.current;
+  if (!analyser || !dataArray) return;
+  analyser.getByteFrequencyData(dataArray);
+  setLevels(buildBarsFromFrequencyData(dataArray));
+  refs.animationFrameRef.current = window.requestAnimationFrame(() => sampleLevels(refs, setLevels));
+}
+function markError(
+  setProcessingPhase: React.Dispatch<React.SetStateAction<ProcessingPhase>>,
+  emitError: (message: string) => void,
+  message: string,
+) {
+  setProcessingPhase("error");
+  emitError(message);
+}
+function initializeRecorder(refs: RecorderRefs, recorder: MediaRecorder) {
+  refs.mediaRecorderRef.current = recorder;
+  refs.recordedChunksRef.current = [];
+  recorder.ondataavailable = (event) => {
+    if (event.data && event.data.size > 0) {
+      refs.recordedChunksRef.current.push(event.data);
+    }
+  };
+  refs.stopPromiseRef.current = new Promise<Blob>((resolve) => {
+    recorder.onstop = () => {
+      resolve(new Blob(refs.recordedChunksRef.current, { type: recorder.mimeType || "audio/webm" }));
+    };
   });
-
-  if (!response.ok) {
-    throw new Error("تعذر رفع التسجيل الصوتي.");
+}
+function initializeAudioGraph(refs: RecorderRefs, stream: MediaStream) {
+  const audioContext = new AudioContext();
+  refs.audioContextRef.current = audioContext;
+  const source = audioContext.createMediaStreamSource(stream);
+  const analyser = audioContext.createAnalyser();
+  analyser.fftSize = 256;
+  analyser.smoothingTimeConstant = 0.72;
+  source.connect(analyser);
+  refs.analyserRef.current = analyser;
+  refs.analyserDataRef.current = new Uint8Array(analyser.frequencyBinCount);
+}
+async function getRecordingStream() {
+  try {
+    return await navigator.mediaDevices.getUserMedia(HIGH_QUALITY_AUDIO_CONSTRAINTS);
+  } catch {
+    return navigator.mediaDevices.getUserMedia({ audio: true });
   }
-
-  const payload = (await response.json().catch(() => null)) as { storageId?: string } | null;
-  const storageId = payload?.storageId?.trim();
-  if (!storageId) {
-    throw new Error("تعذر تجهيز الملف الصوتي للتفريغ.");
+}
+function scheduleRecordingTimers(
+  refs: RecorderRefs,
+  maxDurationMs: number,
+  setElapsedMs: React.Dispatch<React.SetStateAction<number>>,
+  stopRecording: () => Promise<void>,
+) {
+  refs.recordStartedAtRef.current = Date.now();
+  refs.durationIntervalRef.current = window.setInterval(() => {
+    setElapsedMs(Date.now() - refs.recordStartedAtRef.current);
+  }, 100);
+  refs.stopTimeoutRef.current = window.setTimeout(() => {
+    void stopRecording();
+  }, maxDurationMs);
+}
+async function resolveRecordedBlob(
+  refs: RecorderRefs,
+  onInvalid: (message: string) => void,
+): Promise<Blob | null> {
+  const stopPromise = refs.stopPromiseRef.current;
+  if (!stopPromise) {
+    onInvalid("تعذر إنهاء التسجيل الصوتي بشكل صحيح.");
+    return null;
   }
-
-  return storageId;
+  const blob = await stopPromise;
+  if (!blob || blob.size === 0) {
+    onInvalid("لم يتم التقاط أي صوت. حاول التحدث بالقرب من الميكروفون.");
+    return null;
+  }
+  return blob;
+}
+async function transcribeBlob(
+  blob: Blob,
+  getUploadUrl: UseVoiceRecorderParams["getUploadUrl"],
+  transcribeFromStorage: UseVoiceRecorderParams["transcribeFromStorage"],
+) {
+  const uploadActionResult = await getUploadUrl();
+  if (!uploadActionResult.ok) {
+    throw new Error(uploadActionResult.error.message || "تعذر تجهيز رفع الملف الصوتي.");
+  }
+  const storageId = await uploadAudioBlob(uploadActionResult.data.uploadUrl, blob);
+  const transcriptActionResult = await transcribeFromStorage({ storageId });
+  if (!transcriptActionResult.ok) {
+    throw new Error(transcriptActionResult.error.message || "تعذر تفريغ الرسالة الصوتية.");
+  }
+  const transcript = transcriptActionResult.data.text.trim();
+  if (!transcript) {
+    throw new Error("لم نتمكن من استخراج نص واضح من التسجيل.");
+  }
+  return transcript;
 }
 
+function useStopRecordingAction(args: { refs: RecorderRefs; emitError: (message: string) => void; resetLevels: () => void; getUploadUrl: UseVoiceRecorderParams["getUploadUrl"]; transcribeFromStorage: UseVoiceRecorderParams["transcribeFromStorage"]; onTranscriptReady: UseVoiceRecorderParams["onTranscriptReady"]; setIsRecording: React.Dispatch<React.SetStateAction<boolean>>; setIsTranscribing: React.Dispatch<React.SetStateAction<boolean>>; setProcessingPhase: React.Dispatch<React.SetStateAction<ProcessingPhase>>; setElapsedMs: React.Dispatch<React.SetStateAction<number>> }) {
+  return useCallback(async () => {
+    const recorder = args.refs.mediaRecorderRef.current;
+    if (!recorder) return;
+    clearTimers(args.refs);
+    cleanupAudioGraph(args.refs);
+    if (recorder.state === "inactive") return;
+    args.setIsRecording(false);
+    args.setProcessingPhase("uploading");
+    recorder.stop();
+    const blob = await resolveRecordedBlob(args.refs, (message) => {
+      cleanupStream(args.refs);
+      args.resetLevels();
+      markError(args.setProcessingPhase, args.emitError, message);
+    });
+    if (!blob) return;
+    args.setIsTranscribing(true);
+    try {
+      args.setProcessingPhase("transcribing");
+      const transcript = await transcribeBlob(blob, args.getUploadUrl, args.transcribeFromStorage);
+      args.setProcessingPhase("sending");
+      await args.onTranscriptReady(transcript);
+      args.setElapsedMs(0);
+      args.resetLevels();
+      args.setProcessingPhase("idle");
+    } catch (error) {
+      markError(args.setProcessingPhase, args.emitError, error instanceof Error ? error.message : "تعذر معالجة التسجيل الصوتي.");
+    } finally {
+      cleanupStream(args.refs);
+      args.setIsTranscribing(false);
+    }
+  }, [args]);
+}
+
+function useStartRecordingAction(args: { refs: RecorderRefs; disabled: boolean; isRecording: boolean; isTranscribing: boolean; maxDurationMs: number; emitError: (message: string) => void; resetLevels: () => void; stopRecording: () => Promise<void>; setIsRecording: React.Dispatch<React.SetStateAction<boolean>>; setProcessingPhase: React.Dispatch<React.SetStateAction<ProcessingPhase>>; setElapsedMs: React.Dispatch<React.SetStateAction<number>>; setLevels: React.Dispatch<React.SetStateAction<number[]>> }) {
+  return useCallback(async () => {
+    if (args.disabled || args.isRecording || args.isTranscribing) return;
+    try {
+      const stream = await getRecordingStream();
+      args.refs.streamRef.current = stream;
+      const recorder = new MediaRecorder(stream);
+      initializeRecorder(args.refs, recorder);
+      args.setElapsedMs(0);
+      args.setIsRecording(true);
+      args.setProcessingPhase("recording");
+      initializeAudioGraph(args.refs, stream);
+      sampleLevels(args.refs, args.setLevels);
+      recorder.start(250);
+      scheduleRecordingTimers(args.refs, args.maxDurationMs, args.setElapsedMs, args.stopRecording);
+    } catch {
+      cleanupStream(args.refs);
+      cleanupAudioGraph(args.refs);
+      clearTimers(args.refs);
+      args.resetLevels();
+      markError(args.setProcessingPhase, args.emitError, "فشل الوصول إلى الميكروفون. تأكد من منح الإذن للمتصفح.");
+    }
+  }, [args]);
+}
 /**
  * WHY:   Workspace chat voice input needs one reusable recorder/transcription state machine.
  * WHAT:  Handles microphone capture, bar-meter sampling, upload, server transcription, and callback delivery.
@@ -92,238 +240,12 @@ export function useVoiceRecorder({
   maxDurationMs = DEFAULT_MAX_DURATION_MS,
   disabled = false,
 }: UseVoiceRecorderParams) {
-  const [isRecording, setIsRecording] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [processingPhase, setProcessingPhase] = useState<"idle" | "recording" | "uploading" | "transcribing" | "sending" | "error">("idle");
-  const [elapsedMs, setElapsedMs] = useState(0);
-  const [levels, setLevels] = useState<number[]>(() => Array.from({ length: METER_BARS }, () => 0));
-
-  const streamRef = useRef<MediaStream | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recordedChunksRef = useRef<BlobPart[]>([]);
-  const recordStartedAtRef = useRef<number>(0);
-  const durationIntervalRef = useRef<number | null>(null);
-  const stopTimeoutRef = useRef<number | null>(null);
-  const stopPromiseRef = useRef<Promise<Blob> | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const analyserDataRef = useRef<Uint8Array | null>(null);
-
-  const resetLevels = useCallback(() => {
-    setLevels(Array.from({ length: METER_BARS }, () => 0));
-  }, []);
-
-  const emitError = useCallback(
-    (message: string) => {
-      onError?.(message);
-    },
-    [onError],
-  );
-
-  const clearTimers = useCallback(() => {
-    if (durationIntervalRef.current !== null) {
-      window.clearInterval(durationIntervalRef.current);
-      durationIntervalRef.current = null;
-    }
-    if (stopTimeoutRef.current !== null) {
-      window.clearTimeout(stopTimeoutRef.current);
-      stopTimeoutRef.current = null;
-    }
-  }, []);
-
-  const cleanupAudioGraph = useCallback(() => {
-    if (animationFrameRef.current !== null) {
-      window.cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-    analyserRef.current = null;
-    analyserDataRef.current = null;
-    const context = audioContextRef.current;
-    audioContextRef.current = null;
-    if (context) {
-      void context.close().catch(() => undefined);
-    }
-  }, []);
-
-  const cleanupStream = useCallback(() => {
-    const stream = streamRef.current;
-    streamRef.current = null;
-    if (stream) {
-      stream.getTracks().forEach((track) => {
-        try {
-          track.stop();
-        } catch {
-          // no-op
-        }
-      });
-    }
-    mediaRecorderRef.current = null;
-    recordedChunksRef.current = [];
-    stopPromiseRef.current = null;
-  }, []);
-
-  const sampleLevels = useCallback(() => {
-    const analyser = analyserRef.current;
-    const dataArray = analyserDataRef.current;
-    if (!analyser || !dataArray) return;
-
-    analyser.getByteFrequencyData(dataArray);
-    setLevels(buildBarsFromFrequencyData(dataArray));
-    animationFrameRef.current = window.requestAnimationFrame(sampleLevels);
-  }, []);
-
-  const stopRecording = useCallback(async () => {
-    if (!mediaRecorderRef.current) {
-      return;
-    }
-
-    clearTimers();
-    cleanupAudioGraph();
-
-    const recorder = mediaRecorderRef.current;
-    if (recorder.state === "inactive") {
-      return;
-    }
-    setIsRecording(false);
-    setProcessingPhase("uploading");
-    recorder.stop();
-
-    const stopPromise = stopPromiseRef.current;
-    if (!stopPromise) {
-      cleanupStream();
-      resetLevels();
-      setProcessingPhase("error");
-      emitError("تعذر إنهاء التسجيل الصوتي بشكل صحيح.");
-      return;
-    }
-
-    const blob = await stopPromise;
-    if (!blob || blob.size === 0) {
-      cleanupStream();
-      resetLevels();
-      setProcessingPhase("error");
-      emitError("لم يتم التقاط أي صوت. حاول التحدث بالقرب من الميكروفون.");
-      return;
-    }
-
-    setIsTranscribing(true);
-    try {
-      const uploadActionResult = await getUploadUrl();
-      if (!uploadActionResult.ok) {
-        throw new Error(uploadActionResult.error.message || "تعذر تجهيز رفع الملف الصوتي.");
-      }
-
-      const storageId = await uploadAudioBlob(uploadActionResult.data.uploadUrl, blob);
-      setProcessingPhase("transcribing");
-      const transcriptActionResult = await transcribeFromStorage({ storageId });
-      if (!transcriptActionResult.ok) {
-        throw new Error(transcriptActionResult.error.message || "تعذر تفريغ الرسالة الصوتية.");
-      }
-
-      const transcript = transcriptActionResult.data.text.trim();
-      if (!transcript) {
-        throw new Error("لم نتمكن من استخراج نص واضح من التسجيل.");
-      }
-
-      setProcessingPhase("sending");
-      await onTranscriptReady(transcript);
-      setElapsedMs(0);
-      resetLevels();
-      setProcessingPhase("idle");
-    } catch (error) {
-      setProcessingPhase("error");
-      emitError(error instanceof Error ? error.message : "تعذر معالجة التسجيل الصوتي.");
-    } finally {
-      cleanupStream();
-      setIsTranscribing(false);
-    }
-  }, [
-    cleanupAudioGraph,
-    cleanupStream,
-    clearTimers,
-    emitError,
-    getUploadUrl,
-    onTranscriptReady,
-    resetLevels,
-    transcribeFromStorage,
-  ]);
-
-  const startRecording = useCallback(async () => {
-    if (disabled || isRecording || isTranscribing) {
-      return;
-    }
-
-    try {
-      let stream: MediaStream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia(HIGH_QUALITY_AUDIO_CONSTRAINTS);
-      } catch {
-        // Graceful fallback for browsers that reject advanced constraints.
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      }
-      streamRef.current = stream;
-
-      const recorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = recorder;
-      recordedChunksRef.current = [];
-      setElapsedMs(0);
-      setIsRecording(true);
-      setProcessingPhase("recording");
-
-      recorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
-          recordedChunksRef.current.push(event.data);
-        }
-      };
-
-      stopPromiseRef.current = new Promise<Blob>((resolve) => {
-        recorder.onstop = () => {
-          resolve(new Blob(recordedChunksRef.current, { type: recorder.mimeType || "audio/webm" }));
-        };
-      });
-
-      const audioContext = new AudioContext();
-      audioContextRef.current = audioContext;
-      const source = audioContext.createMediaStreamSource(stream);
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      analyser.smoothingTimeConstant = 0.72;
-      source.connect(analyser);
-      analyserRef.current = analyser;
-      analyserDataRef.current = new Uint8Array(analyser.frequencyBinCount);
-      sampleLevels();
-
-      recorder.start(250);
-      recordStartedAtRef.current = Date.now();
-      durationIntervalRef.current = window.setInterval(() => {
-        setElapsedMs(Date.now() - recordStartedAtRef.current);
-      }, 100);
-      stopTimeoutRef.current = window.setTimeout(() => {
-        void stopRecording();
-      }, maxDurationMs);
-    } catch {
-      cleanupStream();
-      cleanupAudioGraph();
-      clearTimers();
-      resetLevels();
-      setProcessingPhase("error");
-      emitError("فشل الوصول إلى الميكروفون. تأكد من منح الإذن للمتصفح.");
-    }
-  }, [
-    cleanupAudioGraph,
-    cleanupStream,
-    clearTimers,
-    disabled,
-    emitError,
-    isRecording,
-    isTranscribing,
-    maxDurationMs,
-    resetLevels,
-    sampleLevels,
-    stopRecording,
-  ]);
-
+  const [isRecording, setIsRecording] = useState(false), [isTranscribing, setIsTranscribing] = useState(false);
+  const [processingPhase, setProcessingPhase] = useState<ProcessingPhase>("idle"), [elapsedMs, setElapsedMs] = useState(0);
+  const [levels, setLevels] = useState<number[]>(createEmptyLevels), refs = useRecorderRefs();
+  const resetLevels = useCallback(() => setLevels(createEmptyLevels()), []), emitError = useCallback((message: string) => onError?.(message), [onError]);
+  const stopRecording = useStopRecordingAction({ refs, emitError, resetLevels, getUploadUrl, transcribeFromStorage, onTranscriptReady, setIsRecording, setIsTranscribing, setProcessingPhase, setElapsedMs });
+  const startRecording = useStartRecordingAction({ refs, disabled, isRecording, isTranscribing, maxDurationMs, emitError, resetLevels, stopRecording, setIsRecording, setProcessingPhase, setElapsedMs, setLevels });
   const toggleRecording = useCallback(async () => {
     if (isRecording) {
       await stopRecording();
@@ -331,23 +253,6 @@ export function useVoiceRecorder({
     }
     await startRecording();
   }, [isRecording, startRecording, stopRecording]);
-
-  useEffect(() => {
-    return () => {
-      clearTimers();
-      cleanupAudioGraph();
-      cleanupStream();
-    };
-  }, [cleanupAudioGraph, cleanupStream, clearTimers]);
-
-  return {
-    elapsedMs,
-    isRecording,
-    isTranscribing,
-    processingPhase,
-    levels,
-    startRecording,
-    stopRecording,
-    toggleRecording,
-  };
+  useEffect(() => () => { clearTimers(refs); cleanupAudioGraph(refs); cleanupStream(refs); }, [refs]);
+  return { elapsedMs, isRecording, isTranscribing, processingPhase, levels, startRecording, stopRecording, toggleRecording };
 }

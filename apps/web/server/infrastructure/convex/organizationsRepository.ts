@@ -9,6 +9,8 @@ import type {
   OrganizationInviteSummary,
   OrganizationMembershipSummary,
   OrganizationSummary,
+  OfferOrganizationSummary,
+  OrganizationPublicProfile,
   OrganizationTeamMember,
   UpdateOrganizationInput,
   UpdateOrganizationMemberRoleInput,
@@ -27,6 +29,7 @@ type OrganizationsApiRefs = {
   acceptTeamInviteForCurrentUser: unknown;
   searchOrganizationDirectoryExact: unknown;
   listOffersDirectoryProfiles: unknown;
+  listOfferOrganizationsDirectory: unknown;
   listIncomingTeamInvitesForCurrentUser: unknown;
   cancelIncomingTeamInviteForCurrentUser: unknown;
   listOrganizationsByAuthUserId: unknown;
@@ -36,6 +39,7 @@ type OrganizationsApiRefs = {
   createTeamInviteForOwner: unknown;
   cancelTeamInviteForOwner: unknown;
   acceptTeamInviteForAuthUser: unknown;
+  getOrganizationPublicProfile: unknown;
 };
 
 const agenciesApi = (apiUnsafe[
@@ -78,6 +82,8 @@ export type OrganizationsRepository = {
   acceptCurrentTeamInvite(authToken: string, inviteToken: string): Promise<void>;
   searchDirectoryExact(token: string, query: string): Promise<DirectorySearchResult[]>;
   listOffersDirectoryProfiles(token: string, role: "broker" | "developer"): Promise<OffersDirectoryProfile[]>;
+  listOfferOrganizationsDirectory(token: string, role: "broker" | "developer"): Promise<OfferOrganizationSummary[]>;
+  getOrganizationPublicProfile(token: string, type: "broker" | "developer", slug: string): Promise<OrganizationPublicProfile | null>;
   listIncomingTeamInvites(token: string): Promise<IncomingOrganizationInvite[]>;
   cancelIncomingTeamInvite(token: string, inviteId: string): Promise<void>;
 };
@@ -170,7 +176,31 @@ export const convexOrganizationsRepository: OrganizationsRepository = {
       throw error;
     }
   },
-
+  async listOfferOrganizationsDirectory(token, role) {
+    try {
+      return fetchQuery(agenciesApi.listOfferOrganizationsDirectory as never, {
+        role,
+      } as never, { token }) as Promise<OfferOrganizationSummary[]>;
+    } catch (error) {
+      if (isOrganizationAccessError(error)) {
+        return [];
+      }
+      throw error;
+    }
+  },
+  async getOrganizationPublicProfile(token, type, slug) {
+    try {
+      return fetchQuery(agenciesApi.getOrganizationPublicProfile as never, {
+        type,
+        slug,
+      } as never, { token }) as Promise<OrganizationPublicProfile | null>;
+    } catch (error) {
+      if (isOrganizationAccessError(error)) {
+        return null;
+      }
+      throw error;
+    }
+  },
   async listIncomingTeamInvites(token) {
     return fetchQuery(agenciesApi.listIncomingTeamInvitesForCurrentUser as never, {} as never, {
       token,

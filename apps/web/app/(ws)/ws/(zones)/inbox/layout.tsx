@@ -4,11 +4,6 @@ import { getLayoutSidebarData, requireWorkspaceData } from "../../_lib/workspace
 import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
 import { buildComplianceBanner } from "../../_lib/complianceBanner";
 
-/**
- * WHY:   The inbox zone needs the shared workspace chrome (sidebar and top navbar).
- * WHAT:  Wraps the inbox pages with the WorkspaceShell layout.
- * HOW:   Retrieves workspace state and organization identity to populate the shell.
- */
 export default async function InboxZoneLayout({
   children,
 }: {

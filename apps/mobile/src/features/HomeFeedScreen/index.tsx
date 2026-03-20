@@ -14,6 +14,62 @@ import { usePropertyFeed } from "@/hooks/usePropertyFeed";
 import { usePropertyAssistant } from "@/hooks/usePropertyAssistant";
 import { ChatMessage, MobilePropertyFeedItem } from "@/types/mobile";
 
+function UserChatMessage({ item, delay }: { item: ChatMessage; delay: number }) {
+  return (
+    <Animated.View entering={FadeInDown.duration(400).delay(delay)} layout={Layout.springify()} className="mb-4 items-end pr-4 pl-16">
+      <View className="bg-brand/10 px-4 py-3" style={{ borderRightWidth: 2, borderRightColor: "#2563EB" }}>
+        <AppText className="text-slate-900">{item.text}</AppText>
+      </View>
+    </Animated.View>
+  );
+}
+
+function ThinkingChatMessage({ item }: { item: ChatMessage }) {
+  return (
+    <Animated.View entering={FadeIn.duration(300)} layout={Layout.springify()}>
+      <ThinkingIndicator steps={item.reasoningSteps} />
+    </Animated.View>
+  );
+}
+
+function AssistantChatMessage(args: {
+  item: ChatMessage;
+  delay: number;
+  onPropertyPress: (property: MobilePropertyFeedItem) => void;
+}) {
+  return (
+    <Animated.View
+      entering={args.item.isStreaming ? FadeIn.duration(300) : FadeInDown.duration(400).delay(args.delay)}
+      layout={Layout.springify()}
+      className="mb-5 items-start pl-4 pr-8"
+    >
+      {args.item.text ? (
+        <View className="mb-3 w-full">
+          {args.item.isStreaming ? (
+            <StreamingText text={args.item.text} speed={15} />
+          ) : (
+            <AppText className="leading-6 text-slate-700">{args.item.text}</AppText>
+          )}
+        </View>
+      ) : null}
+      {args.item.properties?.map((property, pIdx) => (
+        <Animated.View
+          entering={args.item.isStreaming ? FadeInDown.duration(400).delay(300 + pIdx * 100) : undefined}
+          key={property.id}
+          className="mb-3 w-full"
+        >
+          <PropertyChatCard property={property} onPress={() => args.onPropertyPress(property)} />
+        </Animated.View>
+      ))}
+      {args.item.cards?.map((card, idx) => (
+        <Animated.View entering={FadeInDown.duration(400).delay(300 + idx * 100)} key={`${card.type}-${idx}`} className="mb-3 w-full">
+          <AIPanelResultCard card={card} />
+        </Animated.View>
+      ))}
+    </Animated.View>
+  );
+}
+
 /**
  * ChatGPT-style home screen with AG-UI patterns:
  * - Streaming text responses
@@ -44,69 +100,10 @@ export default function HomeFeedScreen() {
   };
 
   const renderMessage = ({ item, index }: { item: ChatMessage; index: number }) => {
-    const isUser = item.role === "user";
     const delay = index * 100;
-
-    // User message
-    if (isUser) {
-      return (
-        <Animated.View 
-          entering={FadeInDown.duration(400).delay(delay)}
-          layout={Layout.springify()}
-          className="mb-4 pr-4 pl-16 items-end"
-        >
-          <View className="bg-brand/10 px-4 py-3" style={{ borderRightWidth: 2, borderRightColor: "#2563EB" }}>
-            <AppText className="text-slate-900">{item.text}</AppText>
-          </View>
-        </Animated.View>
-      );
-    }
-
-    // AG-UI: Thinking state
-    if (item.isThinking) {
-      return (
-        <Animated.View entering={FadeIn.duration(300)} layout={Layout.springify()}>
-          <ThinkingIndicator steps={item.reasoningSteps} />
-        </Animated.View>
-      );
-    }
-
-    // AI message with AG-UI streaming + rich content
-    return (
-      <Animated.View 
-        entering={item.isStreaming ? FadeIn.duration(300) : FadeInDown.duration(400).delay(delay)}
-        layout={Layout.springify()}
-        className="mb-5 pl-4 pr-8 items-start"
-      >
-        {/* Streaming or static text */}
-        {item.text ? (
-          <View className="mb-3 w-full">
-            {item.isStreaming ? (
-              <StreamingText text={item.text} speed={15} />
-            ) : (
-              <AppText className="text-slate-700 leading-6">{item.text}</AppText>
-            )}
-          </View>
-        ) : null}
-
-        {/* Embedded property cards with media */}
-        {item.properties?.map((property, pIdx) => (
-          <Animated.View entering={item.isStreaming ? FadeInDown.duration(400).delay(300 + pIdx * 100) : undefined} key={property.id} className="w-full mb-3">
-            <PropertyChatCard
-              property={property}
-              onPress={() => navigateToProperty(property)}
-            />
-          </Animated.View>
-        ))}
-
-        {/* AG-UI Tool result cards */}
-        {item.cards?.map((card, idx) => (
-          <Animated.View entering={FadeInDown.duration(400).delay(300 + idx * 100)} key={`${card.type}-${idx}`} className="w-full mb-3">
-            <AIPanelResultCard card={card} />
-          </Animated.View>
-        ))}
-      </Animated.View>
-    );
+    if (item.role === "user") return <UserChatMessage item={item} delay={delay} />;
+    if (item.isThinking) return <ThinkingChatMessage item={item} />;
+    return <AssistantChatMessage item={item} delay={delay} onPropertyPress={navigateToProperty} />;
   };
 
   // Build chat messages — welcome + properties if no conversation yet

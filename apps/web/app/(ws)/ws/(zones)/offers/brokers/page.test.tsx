@@ -1,7 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { expect, it, vi } from "vitest";
 
-const { listCurrentOrganizationOffersDirectory } = vi.hoisted(() => ({
+const { listCurrentOrganizationOffersCompanyDirectory, listCurrentOrganizationOffersDirectory } = vi.hoisted(() => ({
+  listCurrentOrganizationOffersCompanyDirectory: vi.fn(),
   listCurrentOrganizationOffersDirectory: vi.fn(),
 }));
 
@@ -22,37 +23,49 @@ vi.mock("../../../_lib/workspaceData", () => ({
 }));
 
 vi.mock("@/server/domains/organizations/service", () => ({
+  listCurrentOrganizationOffersCompanyDirectory,
   listCurrentOrganizationOffersDirectory,
 }));
 
 import WorkspaceOfferBrokerProfilesRoute from "./page";
 
-describe("/ws/offers/brokers page", () => {
-  it("renders the broker directory cards from the shared organization directory", async () => {
-    listCurrentOrganizationOffersDirectory.mockResolvedValue([
-      {
-        id: "profile-1",
-        authUserId: "auth-1",
-        email: "khaled@example.com",
-        name: "خالد العتيبي",
-        username: "khaled",
-        role: "broker" as const,
-        organizationName: "وسيط النخبة",
-        organizationSlug: "elite-broker",
-        membershipState: "not-member" as const,
-        canMessage: true,
-        conversationId: null,
-      },
-    ]);
+it("renders broker people cards by default and includes the entity filters", async () => {
+  listCurrentOrganizationOffersDirectory.mockResolvedValue([
+    {
+      id: "person-1",
+      authUserId: "auth-1",
+      email: "broker@example.com",
+      name: "سارة العتيبي",
+      image: null,
+      role: "broker",
+      organizationName: "وسيط النخبة",
+      organizationSlug: "elite-broker",
+      organizationLogo: null,
+      membershipState: "not-member",
+      canMessage: true,
+      conversationId: "conv-1",
+    },
+  ]);
+  listCurrentOrganizationOffersCompanyDirectory.mockResolvedValue([
+    {
+      id: "org-1",
+      name: "وسيط النخبة",
+      slug: "elite-broker",
+      logo: null,
+      offerCount: 5,
+    },
+  ]);
 
-    const element = await WorkspaceOfferBrokerProfilesRoute({
-      searchParams: Promise.resolve({}),
-    });
-    const markup = renderToStaticMarkup(element);
-
-    expect(listCurrentOrganizationOffersDirectory).toHaveBeenCalledWith("broker");
-    expect(markup).toContain("ملفات الوسطاء");
-    expect(markup).toContain("خالد العتيبي");
-    expect(markup).toContain("وسيط النخبة");
+  const component = await WorkspaceOfferBrokerProfilesRoute({
+    searchParams: Promise.resolve({}),
   });
+  const markup = renderToStaticMarkup(component);
+
+  expect(listCurrentOrganizationOffersDirectory).toHaveBeenCalledWith("broker");
+  expect(listCurrentOrganizationOffersCompanyDirectory).toHaveBeenCalledWith("broker");
+  expect(markup).toContain("ملفات الوسطاء");
+  expect(markup).toContain("Business persons");
+  expect(markup).toContain("People in companies or organizations");
+  expect(markup).toContain("سارة العتيبي");
+  expect(markup).toContain("وسيط النخبة");
 });

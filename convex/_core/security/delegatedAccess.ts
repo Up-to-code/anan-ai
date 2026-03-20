@@ -14,11 +14,6 @@ export type DelegatedAccessContext = {
   profile: Doc<"userProfiles"> | null;
 };
 
-/**
- * WHY:   Delegated OAuth tokens must honor both granted scopes and Anan ownership boundaries.
- * WHAT:  Resolves the delegated caller profile and validates required scopes.
- * HOW:   Loads `userProfiles` by the auth-backed user id and raises standardized FORBIDDEN errors.
- */
 export async function requireDelegatedScopes(
   ctx: Ctx,
   delegated: { userId: Id<"users">; clientId: string; scopes: string[] },

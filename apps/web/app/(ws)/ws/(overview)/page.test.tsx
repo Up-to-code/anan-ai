@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, expect, it, vi } from "vitest";
 import { DomainError } from "@/server/contracts/errors";
 
 const { redirect, requireWorkspaceData, getAnanProThread, listIncomingOrganizationInvitesForCurrentUser } = vi.hoisted(() => ({
@@ -69,79 +69,77 @@ const baseWorkspacePayload = {
   },
 };
 
-describe("/ws overview page", () => {
-  beforeEach(() => {
-    redirect.mockClear();
-    requireWorkspaceData.mockReset();
-    getAnanProThread.mockReset();
-    listIncomingOrganizationInvitesForCurrentUser.mockReset();
+beforeEach(() => {
+  redirect.mockClear();
+  requireWorkspaceData.mockReset();
+  getAnanProThread.mockReset();
+  listIncomingOrganizationInvitesForCurrentUser.mockReset();
 
-    requireWorkspaceData.mockResolvedValue(baseWorkspacePayload);
-    listIncomingOrganizationInvitesForCurrentUser.mockResolvedValue([]);
+  requireWorkspaceData.mockResolvedValue(baseWorkspacePayload);
+  listIncomingOrganizationInvitesForCurrentUser.mockResolvedValue([]);
+});
+
+it("renders blank draft mode for /ws without creating a thread", async () => {
+  const element = await WorkspacePage({ searchParams: Promise.resolve({}) });
+  const markup = renderToStaticMarkup(element);
+
+  expect(getAnanProThread).not.toHaveBeenCalled();
+  expect(markup).toContain("data-slot=\"workspace-dashboard\"");
+  expect(markup).toContain("data-thread=\"blank\"");
+  expect(markup).toContain("data-selected-thread-id=\"\"");
+});
+
+it("keeps /ws?newThread=1 as a blank draft without creating a thread", async () => {
+  const element = await WorkspacePage({
+    searchParams: Promise.resolve({ newThread: "1", threadId: "thread-123" }),
+  });
+  const markup = renderToStaticMarkup(element);
+
+  expect(getAnanProThread).not.toHaveBeenCalled();
+  expect(markup).toContain("data-thread=\"blank\"");
+  expect(markup).toContain("data-selected-thread-id=\"\"");
+});
+
+it("loads an existing thread when threadId is valid", async () => {
+  getAnanProThread.mockResolvedValue({
+    id: "thread-123",
+    title: "Saved",
+    messages: [],
   });
 
-  it("renders blank draft mode for /ws without creating a thread", async () => {
-    const element = await WorkspacePage({ searchParams: Promise.resolve({}) });
-    const markup = renderToStaticMarkup(element);
-
-    expect(getAnanProThread).not.toHaveBeenCalled();
-    expect(markup).toContain("data-slot=\"workspace-dashboard\"");
-    expect(markup).toContain("data-thread=\"blank\"");
-    expect(markup).toContain("data-selected-thread-id=\"\"");
+  const element = await WorkspacePage({
+    searchParams: Promise.resolve({ threadId: "thread-123" }),
   });
+  const markup = renderToStaticMarkup(element);
 
-  it("keeps /ws?newThread=1 as a blank draft without creating a thread", async () => {
-    const element = await WorkspacePage({
-      searchParams: Promise.resolve({ newThread: "1", threadId: "thread-123" }),
-    });
-    const markup = renderToStaticMarkup(element);
+  expect(getAnanProThread).toHaveBeenCalledWith("thread-123");
+  expect(markup).toContain("data-thread=\"loaded\"");
+  expect(markup).toContain("data-selected-thread-id=\"thread-123\"");
+});
 
-    expect(getAnanProThread).not.toHaveBeenCalled();
-    expect(markup).toContain("data-thread=\"blank\"");
-    expect(markup).toContain("data-selected-thread-id=\"\"");
-  });
+it("falls back to blank /ws when threadId is invalid", async () => {
+  getAnanProThread.mockResolvedValue(null);
 
-  it("loads an existing thread when threadId is valid", async () => {
-    getAnanProThread.mockResolvedValue({
-      id: "thread-123",
-      title: "Saved",
-      messages: [],
-    });
+  await expect(
+    WorkspacePage({ searchParams: Promise.resolve({ threadId: "missing-thread" }) }),
+  ).rejects.toThrow("NEXT_REDIRECT:/ws");
 
-    const element = await WorkspacePage({
-      searchParams: Promise.resolve({ threadId: "thread-123" }),
-    });
-    const markup = renderToStaticMarkup(element);
+  expect(redirect).toHaveBeenCalledWith("/ws");
+});
 
-    expect(getAnanProThread).toHaveBeenCalledWith("thread-123");
-    expect(markup).toContain("data-thread=\"loaded\"");
-    expect(markup).toContain("data-selected-thread-id=\"thread-123\"");
-  });
+it("renders retry state when workspace upstream is temporarily unavailable", async () => {
+  requireWorkspaceData.mockRejectedValue(
+    new DomainError({
+      code: "UPSTREAM_UNAVAILABLE",
+      message: "تعذر الاتصال بخدمات مساحة العمل حالياً. أعد المحاولة بعد لحظات.",
+      status: 503,
+    }),
+  );
 
-  it("falls back to blank /ws when threadId is invalid", async () => {
-    getAnanProThread.mockResolvedValue(null);
+  const element = await WorkspacePage({ searchParams: Promise.resolve({}) });
+  const markup = renderToStaticMarkup(element);
 
-    await expect(
-      WorkspacePage({ searchParams: Promise.resolve({ threadId: "missing-thread" }) }),
-    ).rejects.toThrow("NEXT_REDIRECT:/ws");
-
-    expect(redirect).toHaveBeenCalledWith("/ws");
-  });
-
-  it("renders retry state when workspace upstream is temporarily unavailable", async () => {
-    requireWorkspaceData.mockRejectedValue(
-      new DomainError({
-        code: "UPSTREAM_UNAVAILABLE",
-        message: "تعذر الاتصال بخدمات مساحة العمل حالياً. أعد المحاولة بعد لحظات.",
-        status: 503,
-      }),
-    );
-
-    const element = await WorkspacePage({ searchParams: Promise.resolve({}) });
-    const markup = renderToStaticMarkup(element);
-
-    expect(markup).toContain("تعذر تحميل مساحة العمل الآن");
-    expect(markup).toContain("إعادة المحاولة");
-    expect(getAnanProThread).not.toHaveBeenCalled();
-  });
+  expect(markup).toContain("تعذر تحميل مساحة العمل الآن");
+  expect(markup).toContain("إعادة المحاولة");
+  expect(getAnanProThread).not.toHaveBeenCalled();
 });

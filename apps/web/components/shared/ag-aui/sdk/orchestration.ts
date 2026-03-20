@@ -1,72 +1,80 @@
 import type { AgUiConversationTurn } from "./types";
 
+const PROJECT_CREATE_ACTION: AgUiConversationTurn["action"] = {
+  id: "create_project",
+  title: "إنشاء مشروع",
+  zone: "projects",
+  fields: ["name", "city", "district", "price", "brokerFee", "rooms", "bathrooms"],
+};
+
+const PROJECT_CREATE_READY_CARD = {
+  id: "project-draft",
+  componentId: "project_create_draft",
+  props: {
+    name: "مشروع مساكن الربوة",
+    city: "الرياض",
+    district: "الربوة",
+    price: "1,850,000 ر.س",
+    brokerFee: "2.5%",
+    rooms: "4",
+    bathrooms: "4",
+    summary: "مشروع سكني متوسط الارتفاع مع وحدات ثلاث وأربع غرف في نطاق مرتفع الطلب.",
+  },
+} as const;
+
+const PROJECT_CREATE_CONSTRAINTS_CARD = {
+  id: "constraints",
+  componentId: "constraint_summary",
+  props: { constraints: ["سكني", "4 غرف", "الرياض", "عمولة 2.5%"] },
+} as const;
+
+const PROJECT_CREATE_MISSING_FIELDS_CARD = {
+  id: "missing",
+  componentId: "field_request_list",
+  props: { fields: ["السعر المستهدف", "عدد الحمامات", "وصف مختصر للبيع"] },
+} as const;
+
+const PROJECT_CREATE_FOLLOWUP_CARD = {
+  id: "followup",
+  componentId: "missing_data_prompt",
+  props: { prompt: "اذكر السعر والحمامات والوصف، وسأكمل المسودة فوراً." },
+} as const;
+
+function buildProjectCreateDraft(hasPrice: boolean) {
+  return {
+    actionId: "create_project",
+    title: "مشروع مساكن الربوة",
+    description: "مشروع سكني متوسط الارتفاع مع وحدات ثلاث وأربع غرف في نطاق مرتفع الطلب.",
+    fields: {
+      name: "مشروع مساكن الربوة",
+      city: "الرياض",
+      district: "الربوة",
+      price: hasPrice ? "1,850,000 ر.س" : "",
+      brokerFee: "2.5%",
+      rooms: "4",
+      bathrooms: "4",
+    },
+    missingFields: hasPrice ? [] : ["price", "bathrooms", "description"],
+    zone: "projects",
+    state: hasPrice ? "ready" : "collecting",
+  } as const;
+}
+
 function projectCreateTurn(input: string): AgUiConversationTurn {
   const hasPrice = /\d/.test(input);
   return {
     objective: "create_project",
     targetZone: "projects",
-    action: {
-      id: "create_project",
-      title: "إنشاء مشروع",
-      zone: "projects",
-      fields: ["name", "city", "district", "price", "brokerFee", "rooms", "bathrooms"],
-    },
-    draft: {
-      actionId: "create_project",
-      title: "مشروع مساكن الربوة",
-      description: "مشروع سكني متوسط الارتفاع مع وحدات ثلاث وأربع غرف في نطاق مرتفع الطلب.",
-      fields: {
-        name: "مشروع مساكن الربوة",
-        city: "الرياض",
-        district: "الربوة",
-        price: hasPrice ? "1,850,000 ر.س" : "",
-        brokerFee: "2.5%",
-        rooms: "4",
-        bathrooms: "4",
-      },
-      missingFields: hasPrice ? [] : ["price", "bathrooms", "description"],
-      zone: "projects",
-      state: hasPrice ? "ready" : "collecting",
-    },
+    action: PROJECT_CREATE_ACTION,
+    draft: buildProjectCreateDraft(hasPrice),
     executionState: hasPrice ? "ready" : "collecting",
     assistantText: hasPrice
       ? "جمعت المسودة الأولية للمشروع. راجع البطاقة التالية، وإذا كانت مناسبة أستطيع تجهيز الإنشاء مباشرة."
       : "بدأت تكوين المشروع، لكن ما زلت أحتاج السعر المستهدف قبل أن أجهز بطاقة الموافقة.",
     followupQuestion: hasPrice ? undefined : "ما السعر المستهدف لهذا المشروع؟",
     cards: hasPrice
-      ? [
-          {
-            id: "project-draft",
-            componentId: "project_create_draft",
-            props: {
-              name: "مشروع مساكن الربوة",
-              city: "الرياض",
-              district: "الربوة",
-              price: "1,850,000 ر.س",
-              brokerFee: "2.5%",
-              rooms: "4",
-              bathrooms: "4",
-              summary: "مشروع سكني متوسط الارتفاع مع وحدات ثلاث وأربع غرف في نطاق مرتفع الطلب.",
-            },
-          },
-          {
-            id: "constraints",
-            componentId: "constraint_summary",
-            props: { constraints: ["سكني", "4 غرف", "الرياض", "عمولة 2.5%"] },
-          },
-        ]
-      : [
-          {
-            id: "missing",
-            componentId: "field_request_list",
-            props: { fields: ["السعر المستهدف", "عدد الحمامات", "وصف مختصر للبيع"] },
-          },
-          {
-            id: "followup",
-            componentId: "missing_data_prompt",
-            props: { prompt: "اذكر السعر والحمامات والوصف، وسأكمل المسودة فوراً." },
-          },
-        ],
+      ? [PROJECT_CREATE_READY_CARD, PROJECT_CREATE_CONSTRAINTS_CARD]
+      : [PROJECT_CREATE_MISSING_FIELDS_CARD, PROJECT_CREATE_FOLLOWUP_CARD],
   };
 }
 
@@ -74,12 +82,7 @@ function publishOfferTurn(): AgUiConversationTurn {
   return {
     objective: "publish_offer",
     targetZone: "offers",
-    action: {
-      id: "publish_offer",
-      title: "نشر عرض",
-      zone: "offers",
-      fields: ["project", "unit", "audience", "price", "notes"],
-    },
+    action: { id: "publish_offer", title: "نشر عرض", zone: "offers", fields: ["project", "unit", "audience", "price", "notes"] },
     draft: {
       actionId: "publish_offer",
       title: "عرض إطلاق وحدات الربوة",
@@ -113,25 +116,40 @@ function publishOfferTurn(): AgUiConversationTurn {
   };
 }
 
+const SEND_OFFER_FIELDS = {
+  recipient: "شركة مسار الأولى",
+  project: "مساكن الربوة",
+  unit: "A-12",
+};
+
+const SEND_OFFER_CARD_PROPS = {
+  recipient: "شركة مسار الأولى",
+  project: "مساكن الربوة",
+  unit: "A-12",
+  message: "أرسل لك وحدة جاهزة للحجز الفوري ضمن إطلاق الربوة مع عمولة مرنة.",
+  action: "انتظار موافقة الاستلام أو اقتراح موعد معاينة",
+};
+
+const SEND_OFFER_THREAD_PROPS = {
+  subject: "خيط إرسال العرض التجريبي",
+  sender: "فريق التطوير",
+  recipient: "شركة مسار الأولى",
+  project: "مساكن الربوة",
+  unit: "A-12",
+  status: "ينتظر الإرسال",
+  update: "سيتم فتح الخيط بعد الموافقة",
+};
+
 function sendOfferTurn(): AgUiConversationTurn {
   return {
     objective: "send_offer",
     targetZone: "offers",
-    action: {
-      id: "send_offer",
-      title: "إرسال عرض",
-      zone: "offers",
-      fields: ["recipient", "project", "unit", "message", "action"],
-    },
+    action: { id: "send_offer", title: "إرسال عرض", zone: "offers", fields: ["recipient", "project", "unit", "message", "action"] },
     draft: {
       actionId: "send_offer",
       title: "إرسال عرض لوحدة A-12",
       description: "إرسال عرض مخصص إلى وسيط أو جهة تطوير.",
-      fields: {
-        recipient: "شركة مسار الأولى",
-        project: "مساكن الربوة",
-        unit: "A-12",
-      },
+      fields: SEND_OFFER_FIELDS,
       missingFields: [],
       zone: "offers",
       state: "ready",
@@ -142,26 +160,12 @@ function sendOfferTurn(): AgUiConversationTurn {
       {
         id: "offer-send",
         componentId: "offer_send_draft",
-        props: {
-          recipient: "شركة مسار الأولى",
-          project: "مساكن الربوة",
-          unit: "A-12",
-          message: "أرسل لك وحدة جاهزة للحجز الفوري ضمن إطلاق الربوة مع عمولة مرنة.",
-          action: "انتظار موافقة الاستلام أو اقتراح موعد معاينة",
-        },
+        props: SEND_OFFER_CARD_PROPS,
       },
       {
         id: "thread-update",
         componentId: "thread_update",
-        props: {
-          subject: "خيط إرسال العرض التجريبي",
-          sender: "فريق التطوير",
-          recipient: "شركة مسار الأولى",
-          project: "مساكن الربوة",
-          unit: "A-12",
-          status: "ينتظر الإرسال",
-          update: "سيتم فتح الخيط بعد الموافقة",
-        },
+        props: SEND_OFFER_THREAD_PROPS,
       },
     ],
   };
@@ -171,12 +175,7 @@ function latestUpdateTurn(): AgUiConversationTurn {
   return {
     objective: "latest_update",
     targetZone: "projects",
-    action: {
-      id: "latest_update",
-      title: "آخر تحديث",
-      zone: "projects",
-      fields: ["entity"],
-    },
+    action: { id: "latest_update", title: "آخر تحديث", zone: "projects", fields: ["entity"] },
     executionState: "completed",
     assistantText: "هذه أحدث صورة تشغيلية متاحة للمشروع والوسيط المرتبط به.",
     cards: [
@@ -214,15 +213,9 @@ function marketTurn(): AgUiConversationTurn {
   return {
     objective: "search_market",
     targetZone: "market",
-    action: {
-      id: "search_market",
-      title: "تحليل السوق",
-      zone: "market",
-      fields: ["city", "area", "budget"],
-    },
+    action: { id: "search_market", title: "تحليل السوق", zone: "market", fields: ["city", "area", "budget"] },
     executionState: "completed",
-    assistantText:
-      "حللت اتجاهات السوق بصورة تجريبية، وهذه البطاقة توضح أين ترتفع السرعة وأي مزيج وحدات يبدو أفضل.",
+    assistantText: "حللت اتجاهات السوق بصورة تجريبية، وهذه البطاقة توضح أين ترتفع السرعة وأي مزيج وحدات يبدو أفضل.",
     cards: [
       {
         id: "market-insight",

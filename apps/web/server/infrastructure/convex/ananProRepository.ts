@@ -41,6 +41,28 @@ type RawAssistantMessage = {
   createdAt: number;
 };
 
+function mapThreadMessages(messages: RawAssistantMessage[]) {
+  return messages.map((message) => ({
+    id: message._id,
+    role: message.role,
+    content: message.content,
+    uiTurn: message.metadata?.uiTurn,
+    meta: message.metadata?.meta,
+    inputMode: message.metadata?.inputMode,
+    createdAt: message.createdAt,
+  }));
+}
+
+function resolveThreadTitle(messages: RawAssistantMessage[]) {
+  return messages.find((message) => message.role === "user")?.content.slice(0, 80) ?? "anan workspace";
+}
+
+async function fetchThreadMessages(token: string, threadId: string) {
+  return (await fetchQuery(ananProApi.listMessages as never, { threadId } as never, {
+    token,
+  })) as RawAssistantMessage[];
+}
+
 export type AnanProRepository = {
   getThread(token: string, threadId?: string): Promise<AnanProThread | null>;
   listThreads(token: string, limit?: number): Promise<AnanProThreadSummary[]>;
@@ -61,9 +83,7 @@ export type AnanProRepository = {
 export const convexAnanProRepository: AnanProRepository = {
   async getThread(token, threadId) {
     if (threadId) {
-      const messages = (await fetchQuery(ananProApi.listMessages as never, { threadId } as never, {
-        token,
-      })) as RawAssistantMessage[];
+      const messages = await fetchThreadMessages(token, threadId);
 
       if (messages.length === 0) {
         return null;
@@ -71,18 +91,8 @@ export const convexAnanProRepository: AnanProRepository = {
 
       return {
         id: threadId,
-        title:
-          messages.find((message) => message.role === "user")?.content.slice(0, 80) ??
-          "anan workspace",
-        messages: messages.map((message) => ({
-          id: message._id,
-          role: message.role,
-          content: message.content,
-          uiTurn: message.metadata?.uiTurn,
-          meta: message.metadata?.meta,
-          inputMode: message.metadata?.inputMode,
-          createdAt: message.createdAt,
-        })),
+        title: resolveThreadTitle(messages),
+        messages: mapThreadMessages(messages),
       };
     }
 
@@ -94,22 +104,12 @@ export const convexAnanProRepository: AnanProRepository = {
       return null;
     }
 
-    const messages = (await fetchQuery(ananProApi.listMessages as never, { threadId: thread._id } as never, {
-      token,
-    })) as RawAssistantMessage[];
+    const messages = await fetchThreadMessages(token, thread._id);
 
     return {
       id: thread._id,
       title: thread?.title ?? null,
-      messages: messages.map((message) => ({
-        id: message._id,
-        role: message.role,
-        content: message.content,
-        uiTurn: message.metadata?.uiTurn,
-        meta: message.metadata?.meta,
-        inputMode: message.metadata?.inputMode,
-        createdAt: message.createdAt,
-      })),
+      messages: mapThreadMessages(messages),
     };
   },
 
@@ -130,22 +130,12 @@ export const convexAnanProRepository: AnanProRepository = {
       token,
     })) as { threadId: string };
 
-    const messages = (await fetchQuery(ananProApi.listMessages as never, { threadId: response.threadId } as never, {
-      token,
-    })) as RawAssistantMessage[];
+    const messages = await fetchThreadMessages(token, response.threadId);
 
     return {
       id: response.threadId,
       title: messages[0]?.content.slice(0, 80) ?? "anan workspace",
-      messages: messages.map((message) => ({
-        id: message._id,
-        role: message.role,
-        content: message.content,
-        uiTurn: message.metadata?.uiTurn,
-        meta: message.metadata?.meta,
-        inputMode: message.metadata?.inputMode,
-        createdAt: message.createdAt,
-      })),
+      messages: mapThreadMessages(messages),
     };
   },
 

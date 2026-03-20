@@ -1,6 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
-import { uploadedFileReferenceListValidator, uploadedFileReferenceValidator } from "../../shared_logic/files";
+import { uploadedFileReferenceListValidator, uploadedFileReferenceValidator } from "./uploadedFiles";
 
 /**
  * Properties Schema

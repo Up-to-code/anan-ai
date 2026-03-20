@@ -1,11 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-/**
- * WHY:   Public/server-rendered pages need Button styling without importing the client `Button` component.
- * WHAT:  Renders a Link that visually matches `components/shared/Button.tsx` variants.
- * HOW:   Uses static class maps only (no handlers), so server pages stay SSR-first and low-JS.
- */
 export default function ButtonLink({
   children,
   href,
@@ -21,7 +16,6 @@ export default function ButtonLink({
 }) {
   const baseStyles =
     "inline-flex items-center justify-center font-black uppercase tracking-widest transition-all active:scale-[0.98] rounded-none";
-
   const variants = {
     primary: "bg-blue-600 text-white hover:bg-blue-700 px-8 py-2.5 text-xs font-black tracking-widest",
     outline:
@@ -42,4 +36,3 @@ export default function ButtonLink({
     </Link>
   );
 }
-

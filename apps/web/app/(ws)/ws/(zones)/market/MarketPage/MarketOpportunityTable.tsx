@@ -10,6 +10,45 @@ type OpportunityRow = {
   reason: string;
 };
 
+type MarketOpportunityTableProps = {
+  rows: OpportunityRow[];
+  priorityLabels: Record<"high" | "medium" | "watch", string>;
+  title?: string;
+};
+
+function OpportunityRows({
+  rows,
+  priorityLabels,
+}: {
+  rows: OpportunityRow[];
+  priorityLabels: Record<"high" | "medium" | "watch", string>;
+}) {
+  if (rows.length === 0) {
+    return (
+      <tr>
+        <td colSpan={8} className="px-4 py-8 text-center text-sm font-medium text-slate-500">
+          لا توجد فرص واضحة ضمن هذا النطاق حالياً.
+        </td>
+      </tr>
+    );
+  }
+
+  return rows.map((row) => (
+    <tr key={`${row.city}-${row.area}`} className="border-t border-slate-100 align-top">
+      <td className="px-4 py-4 text-sm font-black text-slate-950">{priorityLabels[row.priority]}</td>
+      <td className="px-4 py-4 text-sm font-bold text-slate-700">{row.city}</td>
+      <td className="px-4 py-4 text-sm font-black text-slate-950">{row.area}</td>
+      <td className="px-4 py-4 text-sm font-bold text-slate-700">{row.dominantProductType ?? "غير واضح"}</td>
+      <td className="px-4 py-4 text-sm font-bold text-slate-700">{row.strongestSellingPoint ?? "غير واضح"}</td>
+      <td className="px-4 py-4 text-sm font-bold text-slate-700">
+        {row.demandSignals.toLocaleString("en-US")} / {row.researchRuns.toLocaleString("en-US")}
+      </td>
+      <td className="px-4 py-4 text-sm font-bold text-slate-700">{row.inventoryCount.toLocaleString("en-US")}</td>
+      <td className="px-4 py-4 text-sm font-medium leading-6 text-slate-600">{row.reason}</td>
+    </tr>
+  ));
+}
+
 /**
  * WHY:   Opportunity ranking must stay transparent so users can see the signals behind each recommendation.
  * WHAT:  Renders the reusable opportunities table for overview previews and the dedicated opportunities tab.
@@ -19,11 +58,7 @@ export default function MarketOpportunityTable({
   rows,
   priorityLabels,
   title = "أفضل الفرص الحالية",
-}: {
-  rows: OpportunityRow[];
-  priorityLabels: Record<"high" | "medium" | "watch", string>;
-  title?: string;
-}) {
+}: MarketOpportunityTableProps) {
   return (
     <section className="border border-slate-200 bg-white">
       <div className="border-b border-slate-100 p-4 text-right">
@@ -43,30 +78,7 @@ export default function MarketOpportunityTable({
               <th className="px-4 py-3 text-xs font-black text-slate-500">سبب الترتيب</th>
             </tr>
           </thead>
-          <tbody>
-            {rows.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-sm font-medium text-slate-500">
-                  لا توجد فرص واضحة ضمن هذا النطاق حالياً.
-                </td>
-              </tr>
-            ) : (
-              rows.map((row) => (
-                <tr key={`${row.city}-${row.area}`} className="border-t border-slate-100 align-top">
-                  <td className="px-4 py-4 text-sm font-black text-slate-950">{priorityLabels[row.priority]}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{row.city}</td>
-                  <td className="px-4 py-4 text-sm font-black text-slate-950">{row.area}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{row.dominantProductType ?? "غير واضح"}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{row.strongestSellingPoint ?? "غير واضح"}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">
-                    {row.demandSignals.toLocaleString("en-US")} / {row.researchRuns.toLocaleString("en-US")}
-                  </td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{row.inventoryCount.toLocaleString("en-US")}</td>
-                  <td className="px-4 py-4 text-sm font-medium leading-6 text-slate-600">{row.reason}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
+          <tbody><OpportunityRows rows={rows} priorityLabels={priorityLabels} /></tbody>
         </table>
       </div>
     </section>

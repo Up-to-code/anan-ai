@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { User, Building2, Phone, Mail, ChevronDown, CheckCircle2 } from "lucide-react";
-import { useMutation } from "convex/react";
-import { api } from "@/lib/convexApi";
 import PageHero from "@/components/shared/PageHero";
 import Section from "@/components/shared/Section";
 import SectionLabel from "@/components/shared/SectionLabel";
@@ -11,10 +9,9 @@ import SectionLabel from "@/components/shared/SectionLabel";
 /**
  * WHY:   Allow users to express interest before full launch.
  * WHAT:  A landing page to collect early access requests linked to a generic forms database.
- * HOW:   Uses `submitForm` Convex endpoint to push data while showing optimistic UI states.
+ * HOW:   Sends the payload to `/api/forms` so validation + abuse controls live on the server boundary.
  */
 export default function EarlyAccessPage() {
-    const submitForm = useMutation(api.public_zone.forms.submitForm);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -25,18 +22,29 @@ export default function EarlyAccessPage() {
         setError(null);
 
         const formData = new FormData(e.currentTarget);
-        const data = {
-            name: formData.get("name"),
-            type: formData.get("type"),
-            phone: formData.get("phone"),
-            email: formData.get("email"),
-        };
+        const name = String(formData.get("name") ?? "").trim();
+        const type = String(formData.get("type") ?? "").trim();
+        const phone = String(formData.get("phone") ?? "").trim();
+        const email = String(formData.get("email") ?? "").trim();
 
         try {
-            await submitForm({
-                formName: "early-access",
-                data,
+            const response = await fetch("/api/forms", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    formName: "early-access",
+                    data: {
+                        name,
+                        type,
+                        phone,
+                        ...(email ? { email } : {}),
+                    },
+                }),
             });
+            if (!response.ok) {
+                const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+                throw new Error(payload?.message ?? "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.");
+            }
             setIsSuccess(true);
         } catch (err: any) {
             setError(err.message || "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.");

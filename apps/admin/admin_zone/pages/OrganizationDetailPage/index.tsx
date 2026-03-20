@@ -8,23 +8,16 @@ import WorkspacePanel from "@/components/shared/WorkspacePanel";
 import { getOrganizationDetailPageData } from "@/admin_zone/api/organizations";
 import { labelForOwnerType, labelForRole } from "@/lib/adminLabels";
 import { formatCurrency, formatDateTime, formatNumber } from "@/lib/format";
+import {
+  renderOrganizationMessagesTab,
+  renderOrganizationOffersTab,
+} from "./tabSections";
+import { count, record, rows } from "./utils";
 
 type OrganizationDetailPageProps = {
   organizationKey: string;
   tab?: "overview" | "members" | "properties" | "offers" | "messages" | "access" | "verification";
 };
-
-function record(value: unknown) {
-  return (value as Record<string, unknown>) ?? {};
-}
-
-function rows(value: unknown) {
-  return (value as Array<Record<string, unknown>>) ?? [];
-}
-
-function count(value: unknown) {
-  return Number(value ?? 0);
-}
 
 /**
  * WHY:   Organization detail pages should stay simple by splitting summary, members, properties, offers, messages, access, and verification into routes.
@@ -147,125 +140,22 @@ export default async function OrganizationDetailPage({ organizationKey, tab = "o
   }
 
   if (tab === "offers") {
-    return (
-      <div className="space-y-6">
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <StatCard label="مرسل" value={formatNumber(count(offerSummary.sent))} hint="العروض التي خرجت من هذه الجهة." />
-          <StatCard label="مستقبل" value={formatNumber(count(offerSummary.received))} hint="العروض التي استقبلتها هذه الجهة." />
-          <StatCard label="معلق" value={formatNumber(count(offerSummary.pending))} hint="العروض التي لم تصل بعد إلى قرار نهائي." />
-          <StatCard label="مقبول" value={formatNumber(count(offerSummary.accepted))} hint="العروض المقبولة." />
-          <StatCard label="عام" value={formatNumber(count(offerSummary.public))} hint="العروض العامة المرتبطة بهذه الجهة." />
-          <StatCard label="خاص" value={formatNumber(count(offerSummary.private))} hint="العروض الخاصة المباشرة." />
-        </section>
-        <section className="grid gap-6 xl:grid-cols-2">
-          <WorkspacePanel className="space-y-4">
-            <div className="text-sm font-black text-blue-600">توزيع الحالة</div>
-            <InlineBarChart
-              items={[
-                { label: "معلق", value: count(offerStatusBreakdown.pending), tone: "primary" },
-                { label: "مقبول", value: count(offerStatusBreakdown.accepted), tone: "neutral" },
-                { label: "مرفوض", value: count(offerStatusBreakdown.rejected), tone: "danger" },
-              ]}
-            />
-          </WorkspacePanel>
-          <WorkspacePanel className="space-y-4">
-            <div className="text-sm font-black text-blue-600">عام مقابل خاص</div>
-            <InlineBarChart
-              items={[
-                { label: "عام", value: count(offerVisibilityBreakdown.public), tone: "primary" },
-                { label: "خاص", value: count(offerVisibilityBreakdown.private), tone: "neutral" },
-              ]}
-            />
-          </WorkspacePanel>
-        </section>
-        <WorkspacePanel className="space-y-4">
-          <div className="text-sm font-black text-blue-600">أحدث العروض</div>
-          {recentOffers.length > 0 ? (
-            <DataTable headers={["العقار", "الدور", "الطرف المقابل", "القيمة", "الحالة", "المحادثات", "الصفقات"]}>
-              {recentOffers.map((offer) => (
-                <tr key={String(offer.id)} className="border-b border-slate-100 last:border-b-0">
-                  <td className="px-4 py-3">
-                    <div className="font-black text-slate-900">{String(offer.propertyTitle ?? "عقار")}</div>
-                    <div className="mt-1 text-xs font-semibold text-slate-500">{formatDateTime(count(offer.createdAt))}</div>
-                  </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-600">{String(offer.role === "sender" ? "مرسل" : "مستقبل")}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-600">{String(record(offer.counterpart).name ?? "السوق العامة")}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-600">{formatCurrency(count(offer.price))}</td>
-                  <td className="px-4 py-3"><StatusBadge value={String(offer.status ?? "pending")} /></td>
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-600">{formatNumber(count(offer.conversationCount))}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-600">{formatNumber(count(offer.dealCount))}</td>
-                </tr>
-              ))}
-            </DataTable>
-          ) : (
-            <EmptyState title="لا توجد عروض" description="لا توجد عروض مرتبطة بهذه الجهة بعد." />
-          )}
-        </WorkspacePanel>
-        <WorkspacePanel className="space-y-4">
-          <div className="text-sm font-black text-blue-600">أعلى الأطراف المقابلة</div>
-          {topCounterparts.length > 0 ? (
-            <DataTable headers={["الجهة", "النوع", "العروض", "المقبول", "المحادثات", "الطلبات"]}>
-              {topCounterparts.map((item) => (
-                <tr key={String(item.organizationKey)} className="border-b border-slate-100 last:border-b-0">
-                  <td className="px-4 py-3 font-black text-slate-900">{String(item.organizationName ?? "جهة")}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-600">{labelForOwnerType(String(item.ownerType ?? ""))}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-600">{formatNumber(count(item.offersCount))}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-600">{formatNumber(count(item.acceptedOffersCount))}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-600">{formatNumber(count(item.conversationsCount))}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-600">{formatNumber(count(item.ordersCount))}</td>
-                </tr>
-              ))}
-            </DataTable>
-          ) : (
-            <EmptyState title="لا توجد روابط تعاون" description="لم تظهر أي جهة مقابلة في سجل العروض الحالي." />
-          )}
-        </WorkspacePanel>
-      </div>
-    );
+    return renderOrganizationOffersTab({
+      offerSummary,
+      offerStatusBreakdown,
+      offerVisibilityBreakdown,
+      topCounterparts,
+      recentOffers,
+    });
   }
 
   if (tab === "messages") {
-    return (
-      <div className="space-y-6">
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="المحادثات" value={formatNumber(count(messages.conversationCount))} hint="عدد المحادثات المباشرة الخاصة بهذه الجهة." />
-          <StatCard label="غير المقروء" value={formatNumber(count(messages.unreadConversationCount))} hint="المحادثات التي تحتوي على عناصر غير مقروءة." />
-          <StatCard label="الرسائل" value={formatNumber(count(messages.inboxCount))} hint="حجم رسائل الـ inbox التابعة للجهة." />
-          <StatCard label="الإشعارات" value={formatNumber(count(metrics.notificationsCount))} hint="حجم الإشعارات الموجهة لملفات هذه الجهة." />
-        </section>
-        <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <WorkspacePanel className="space-y-4">
-            <div className="text-sm font-black text-blue-600">ملخص المحادثات</div>
-            {conversations.length > 0 ? (
-              <DataTable headers={["الطرف الآخر", "الدور", "الرسائل", "غير المقروء", "آخر تحديث"]}>
-                {conversations.map((conversation) => (
-                  <tr key={String(conversation.id)} className="border-b border-slate-100 last:border-b-0">
-                    <td className="px-4 py-3">
-                      <div className="font-black text-slate-900">{String(conversation.otherUserName ?? "مستخدم")}</div>
-                      <div className="mt-1 text-xs font-semibold text-slate-500">{String(conversation.lastMessagePreview ?? "لا توجد معاينة")}</div>
-                    </td>
-                    <td className="px-4 py-3 text-sm font-semibold text-slate-600">{labelForRole(String(conversation.otherUserRole ?? ""))}</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-slate-600">{formatNumber(count(conversation.messagesCount))}</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-slate-600">{formatNumber(count(conversation.unreadCount))}</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-slate-600">{formatDateTime(count(conversation.updatedAt))}</td>
-                  </tr>
-                ))}
-              </DataTable>
-            ) : (
-              <EmptyState title="لا توجد محادثات" description="لم تتولد محادثات مباشرة لهذه المنظمة بعد." />
-            )}
-          </WorkspacePanel>
-          <WorkspacePanel className="space-y-4">
-            <div className="text-sm font-black text-blue-600">آخر رسائل الـ inbox</div>
-            {latestInboxMessages.length > 0 ? (
-              <JsonPreview value={latestInboxMessages} />
-            ) : (
-              <EmptyState title="لا توجد رسائل" description="لا توجد رسائل inbox حديثة تخص هذه المنظمة." />
-            )}
-          </WorkspacePanel>
-        </section>
-      </div>
-    );
+    return renderOrganizationMessagesTab({
+      messages,
+      metrics,
+      conversations,
+      latestInboxMessages,
+    });
   }
 
   if (tab === "access") {

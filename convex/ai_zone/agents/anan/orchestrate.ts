@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * orchestrate.ts — Main Orchestration Logic
  *
@@ -157,8 +156,7 @@ export async function orchestrate(
 
     try {
         await ctx.runMutation(
-            (internal as any).ai_zone.agents.shared.orchestrationTrackerActions
-                .trackOrchestrationUsageInternal,
+            internal.ai_zone.agents.shared.orchestrationTrackerActions.trackOrchestrationUsageInternal as any,
             {
                 orchestratorName: "anan_orchestrator",
                 role,
@@ -188,4 +186,3 @@ export async function orchestrate(
         },
     };
 }
-// @ts-nocheck

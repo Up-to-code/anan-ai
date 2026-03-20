@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { expect, it, vi } from "vitest";
 
 vi.mock("@/components/shared/InstitutionalChatInput", () => ({
   default: ({
@@ -46,54 +46,52 @@ vi.mock("../../_components/AIMotion", () => ({
 
 import WorkspaceDashboard from "./WorkspaceDashboard";
 
-describe("WorkspaceDashboard", () => {
-  it("renders a centered landing state before the first message", () => {
-    const markup = renderToStaticMarkup(<WorkspaceDashboard initialThread={null} />);
+it("renders a centered landing state before the first message", () => {
+  const markup = renderToStaticMarkup(<WorkspaceDashboard initialThread={null} />);
 
-    expect(markup).toContain("كيف يمكنني مساعدتك؟");
-    expect(markup).toContain("data-slot=\"ai-motion-logo\"");
-    expect(markup).toContain("data-slot=\"chat-input\"");
-    expect(markup).toContain("data-layout=\"landing\"");
-    expect(markup).not.toContain("السياق");
-    expect(markup).not.toContain("الإشعارات");
-    expect(markup).not.toContain("التحكم");
-  });
+  expect(markup).toContain("كيف يمكنني مساعدتك؟");
+  expect(markup).toContain("data-slot=\"ai-motion-logo\"");
+  expect(markup).toContain("data-slot=\"chat-input\"");
+  expect(markup).toContain("data-layout=\"landing\"");
+  expect(markup).not.toContain("السياق");
+  expect(markup).not.toContain("الإشعارات");
+  expect(markup).not.toContain("التحكم");
+});
 
-  it("renders the conversation stream inline when messages exist", () => {
-    const markup = renderToStaticMarkup(
-      <WorkspaceDashboard
-        initialThread={{
-          id: "thread-1",
-          title: "anan workspace",
-          messages: [
-            {
-              id: "message-1",
-              role: "user",
-              content: "hello",
-              createdAt: 1,
+it("renders the conversation stream inline when messages exist", () => {
+  const markup = renderToStaticMarkup(
+    <WorkspaceDashboard
+      initialThread={{
+        id: "thread-1",
+        title: "anan workspace",
+        messages: [
+          {
+            id: "message-1",
+            role: "user",
+            content: "hello",
+            createdAt: 1,
+          },
+          {
+            id: "message-2",
+            role: "assistant",
+            content: "world",
+            createdAt: 2,
+            uiTurn: {
+              version: "1",
+              title: "Turn",
+              subtitle: null,
+              cards: [],
             },
-            {
-              id: "message-2",
-              role: "assistant",
-              content: "world",
-              createdAt: 2,
-              uiTurn: {
-                version: "1",
-                title: "Turn",
-                subtitle: null,
-                cards: [],
-              },
-            },
-          ],
-        }}
-      />,
-    );
+          },
+        ],
+      }}
+    />,
+  );
 
-    expect(markup).toContain("hello");
-    expect(markup).toContain("world");
-    expect(markup).toContain("استكمل العمل من آخر نقطة وصلت إليها داخل هذه المحادثة.");
-    expect(markup).toContain("data-slot=\"ag-ui-turn\"");
-    expect(markup).toContain("data-layout=\"thread\"");
-    expect(markup).not.toContain("كيف يمكنني مساعدتك؟");
-  });
+  expect(markup).toContain("hello");
+  expect(markup).toContain("world");
+  expect(markup).toContain("استكمل العمل من آخر نقطة وصلت إليها داخل هذه المحادثة.");
+  expect(markup).toContain("data-slot=\"ag-ui-turn\"");
+  expect(markup).toContain("data-layout=\"thread\"");
+  expect(markup).not.toContain("كيف يمكنني مساعدتك؟");
 });

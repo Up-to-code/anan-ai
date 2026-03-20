@@ -4,11 +4,6 @@ const CHANNEL_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 
 export type ChannelType = "whatsapp" | "web" | "app";
 
-/**
- * WHY:   Non-browser channels cannot rely on browser OAuth redirects or cookies.
- * WHAT:  Creates or refreshes a lightweight backend-managed channel session token.
- * HOW:   Stores a random opaque token in `channelSessions` keyed by auth subject + channel.
- */
 export async function issueChannelSession(
   ctx: MutationCtx,
   params: {

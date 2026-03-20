@@ -6,6 +6,34 @@ type MarketCityRow = {
   averagePriceLabel: string | null;
 };
 
+type MarketCitiesTableProps = {
+  rows: MarketCityRow[];
+  title?: string;
+  description?: string;
+};
+
+function MarketCitiesRows({ rows }: { rows: MarketCityRow[] }) {
+  if (rows.length === 0) {
+    return (
+      <tr>
+        <td colSpan={5} className="px-4 py-8 text-center text-sm font-medium text-slate-500">
+          لا توجد مدن قابلة للعرض ضمن هذا النطاق.
+        </td>
+      </tr>
+    );
+  }
+
+  return rows.map((city) => (
+    <tr key={city.city} className="border-t border-slate-100">
+      <td className="px-4 py-4 text-sm font-black text-slate-950">{city.city}</td>
+      <td className="px-4 py-4 text-sm font-bold text-slate-700">{city.demandSignals.toLocaleString("en-US")}</td>
+      <td className="px-4 py-4 text-sm font-bold text-slate-700">{city.researchRuns.toLocaleString("en-US")}</td>
+      <td className="px-4 py-4 text-sm font-bold text-slate-700">{city.inventoryCount.toLocaleString("en-US")}</td>
+      <td className="px-4 py-4 text-sm font-bold text-slate-700">{city.averagePriceLabel ?? "غير كافٍ"}</td>
+    </tr>
+  ));
+}
+
 /**
  * WHY:   Developers need a ranked view of which Saudi cities show the strongest demand relative to available inventory.
  * WHAT:  Renders the city-level market table ordered by aggregated demand signals.
@@ -15,11 +43,7 @@ export default function MarketCitiesTable({
   rows,
   title = "المدن الأعلى طلباً",
   description,
-}: {
-  rows: MarketCityRow[];
-  title?: string;
-  description?: string;
-}) {
+}: MarketCitiesTableProps) {
   return (
     <section className="border border-slate-200 bg-white">
       <div className="border-b border-slate-100 p-4 text-right">
@@ -37,25 +61,7 @@ export default function MarketCitiesTable({
               <th className="px-4 py-3 text-xs font-black text-slate-500">متوسط السعر</th>
             </tr>
           </thead>
-          <tbody>
-            {rows.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-sm font-medium text-slate-500">
-                  لا توجد مدن قابلة للعرض ضمن هذا النطاق.
-                </td>
-              </tr>
-            ) : (
-              rows.map((city) => (
-                <tr key={city.city} className="border-t border-slate-100">
-                  <td className="px-4 py-4 text-sm font-black text-slate-950">{city.city}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{city.demandSignals.toLocaleString("en-US")}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{city.researchRuns.toLocaleString("en-US")}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{city.inventoryCount.toLocaleString("en-US")}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{city.averagePriceLabel ?? "غير كافٍ"}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
+          <tbody><MarketCitiesRows rows={rows} /></tbody>
         </table>
       </div>
     </section>

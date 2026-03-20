@@ -9,11 +9,6 @@ type WorkspaceDashboardProps = {
   initialSelectedThreadId?: string | null;
 };
 
-/**
- * WHY:   `/ws` is the operator's primary assistant surface and needs durable thread history inside the same workspace page.
- * WHAT:  Composes the thread rail plus the active assistant canvas for creating, reopening, and continuing Anan Workspace conversations.
- * HOW:   Delegates all fetch/state orchestration to `useWorkspaceAssistant` and keeps this file focused on layout wiring only.
- */
 export default function WorkspaceDashboard({
   initialThread,
   initialSelectedThreadId = null,

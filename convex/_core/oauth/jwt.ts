@@ -64,6 +64,34 @@ export async function signJwt(payload: JwtPayload): Promise<string> {
   return `${signingInput}.${base64UrlEncode(new Uint8Array(signature))}`;
 }
 
+function decodeBase64UrlToArrayBuffer(input: string): ArrayBuffer {
+  const decoded = atobCompat(input);
+  const buffer = new ArrayBuffer(decoded.length);
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < decoded.length; i += 1) {
+    bytes[i] = decoded.charCodeAt(i);
+  }
+  return buffer;
+}
+
+function decodeBase64UrlToUint8Array(input: string): Uint8Array {
+  return new Uint8Array(decodeBase64UrlToArrayBuffer(input));
+}
+
+function parseJwtClaims(payload: string): Record<string, unknown> {
+  const decoded = new TextDecoder().decode(decodeBase64UrlToUint8Array(payload));
+  return JSON.parse(decoded) as Record<string, unknown>;
+}
+
+function validateJwtClaims(claims: Record<string, unknown>) {
+  if (claims.iss !== getIssuer()) {
+    throw new Error("Invalid JWT issuer");
+  }
+  if (typeof claims.exp === "number" && claims.exp * 1000 <= Date.now()) {
+    throw new Error("JWT expired");
+  }
+}
+
 /**
  * WHY:   Bearer access tokens must be validated before any delegated data is returned.
  * WHAT:  Verifies an RS256 JWT and returns its parsed payload.
@@ -78,27 +106,7 @@ export async function verifyJwt(token: string): Promise<Record<string, unknown>>
   const verified = await crypto.subtle.verify(
     "RSASSA-PKCS1-v1_5",
     await getPublicKey(),
-    Uint8Array.from(
-      (() => {
-        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-        const clean = signature + "=".repeat((4 - (signature.length % 4 || 4)) % 4);
-        const reverse = new Map(alphabet.split("").map((char, index) => [char, index]));
-        const bytes: number[] = [];
-        for (let i = 0; i < clean.length; i += 4) {
-          const chars = clean.slice(i, i + 4).split("");
-          const values = chars.map((char) => (char === "=" ? 0 : (reverse.get(char) ?? 0)));
-          const triple =
-            ((values[0] ?? 0) << 18) |
-            ((values[1] ?? 0) << 12) |
-            ((values[2] ?? 0) << 6) |
-            (values[3] ?? 0);
-          bytes.push((triple >> 16) & 0xff);
-          if (chars[2] !== "=") bytes.push((triple >> 8) & 0xff);
-          if (chars[3] !== "=") bytes.push(triple & 0xff);
-        }
-        return bytes;
-      })(),
-    ),
+    decodeBase64UrlToArrayBuffer(signature),
     encoder.encode(`${header}.${payload}`),
   );
 
@@ -106,13 +114,8 @@ export async function verifyJwt(token: string): Promise<Record<string, unknown>>
     throw new Error("Invalid JWT signature");
   }
 
-  const claims = JSON.parse(new TextDecoder().decode(Uint8Array.from(atobCompat(payload), (char) => char.charCodeAt(0))));
-  if (claims.iss !== getIssuer()) {
-    throw new Error("Invalid JWT issuer");
-  }
-  if (typeof claims.exp === "number" && claims.exp * 1000 <= Date.now()) {
-    throw new Error("JWT expired");
-  }
+  const claims = parseJwtClaims(payload);
+  validateJwtClaims(claims);
   return claims;
 }
 

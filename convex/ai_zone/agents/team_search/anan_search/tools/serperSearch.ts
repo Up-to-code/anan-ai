@@ -16,6 +16,38 @@ function readPositiveInt(raw: string | undefined, fallback: number): number {
 const SERPER_TIMEOUT_MS = readPositiveInt(process.env.SERPER_WEB_ACTION_TIMEOUT_MS, 7000);
 const SERPER_MAX_RETRIES = readPositiveInt(process.env.SERPER_WEB_ACTION_MAX_RETRIES, 2);
 
+type SerperSearchArgs = { query: string; num?: number; deep?: boolean };
+type SerperSearchResult =
+  | { ok: true; results: Array<{ title: string; url: string; snippet: string }>; queriesUsed: string[] }
+  | { ok: false; error: string };
+
+const DEFAULT_SEARCH_ERROR = "Web search request failed";
+
+function resolveLocaleParams(query: string) {
+  const preferredLanguage = detectPreferredLanguage(query);
+  return preferredLanguage === "ar" ? { gl: "sa", hl: "ar" } : { gl: "us", hl: "en" };
+}
+
+function buildSerperPayload(args: SerperSearchArgs) {
+  return {
+    q: args.query,
+    num: Math.min(args.deep ? 10 : args.num ?? 5, 10),
+    ...resolveLocaleParams(args.query),
+  };
+}
+
+function mapOrganicResults(organic?: Array<{ title?: string; link?: string; snippet?: string }>) {
+  return (organic ?? []).map((entry) => ({
+    title: sanitizeWebText(entry.title),
+    url: entry.link ?? "",
+    snippet: sanitizeWebText(entry.snippet),
+  }));
+}
+
+function toSearchError(error: unknown): string {
+  return error instanceof Error ? error.message : DEFAULT_SEARCH_ERROR;
+}
+
 export const runSerperWebSearch = internalAction({
   args: {
     query: v.string(),
@@ -24,19 +56,13 @@ export const runSerperWebSearch = internalAction({
   } as any,
   handler: async (
     _ctx: any,
-    { query, num = 5, deep = false }: { query: string; num?: number; deep?: boolean },
-  ): Promise<
-    | { ok: true; results: Array<{ title: string; url: string; snippet: string }>; queriesUsed: string[] }
-    | { ok: false; error: string }
-  > => {
+    { query, num = 5, deep = false }: SerperSearchArgs,
+  ): Promise<SerperSearchResult> => {
     const apiKey = process.env.SERPER_API_KEY;
     if (!apiKey) {
       return { ok: false as const, error: "Web search is not configured (missing SERPER_API_KEY)." };
     }
     try {
-      const preferredLanguage = detectPreferredLanguage(query);
-      const localeParams =
-        preferredLanguage === "ar" ? { gl: "sa", hl: "ar" } : { gl: "us", hl: "en" };
       const data = await fetchJsonWithRetry<{
         organic?: Array<{ title?: string; link?: string; snippet?: string }>;
       }>(
@@ -44,28 +70,19 @@ export const runSerperWebSearch = internalAction({
         {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-API-KEY": apiKey },
-          body: JSON.stringify({
-            q: query,
-            num: Math.min(deep ? 10 : num, 10),
-            ...localeParams,
-          }),
+          body: JSON.stringify(buildSerperPayload({ query, num, deep })),
         },
         { timeoutMs: SERPER_TIMEOUT_MS, maxRetries: SERPER_MAX_RETRIES }
       );
-      const results = (data.organic ?? []).map((o) => ({
-        title: sanitizeWebText(o.title),
-        url: o.link ?? "",
-        snippet: sanitizeWebText(o.snippet),
-      }));
       return {
         ok: true as const,
-        results,
+        results: mapOrganicResults(data.organic),
         queriesUsed: [query],
       };
     } catch (e) {
       return {
         ok: false as const,
-        error: e instanceof Error ? e.message : "Web search request failed",
+        error: toSearchError(e),
       };
     }
   },

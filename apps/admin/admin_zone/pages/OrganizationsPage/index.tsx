@@ -11,57 +11,45 @@ type OrganizationsPageProps = {
   tab?: "brokers" | "developers" | "memberships" | "invites";
 };
 
-/**
- * WHY:   Organizations are now managed through dedicated Arabic tabs for brokers, developers, memberships, and invites.
- * WHAT:  Renders the requested organizations tab using joined admin read models from the backend.
- * HOW:   Loads the relevant organization dataset server-side and maps it into a focused table.
- */
-export default async function OrganizationsPage({ tab = "brokers" }: OrganizationsPageProps) {
-  const { rows } = await getOrganizationsPageData(tab);
-  const items = rows as Array<Record<string, unknown>>;
+function MembershipsTable({ items }: { items: Array<Record<string, unknown>> }) {
+  return (
+    <WorkspacePanel>
+      <DataTable headers={["المنظمة", "النوع", "المستخدم", "الدور", "الحالة", "الإنشاء"]}>
+        {items.map((item) => (
+          <tr key={String(item.id)} className="border-b border-slate-100 last:border-b-0">
+            <td className="px-4 py-3 font-black text-slate-900">{String(item.organizationName ?? "منظمة")}</td>
+            <td className="px-4 py-3 text-sm font-semibold text-slate-600">{labelForOwnerType(String(item.ownerType ?? ""))}</td>
+            <td className="px-4 py-3 text-sm font-semibold text-slate-600">{String((item.profile as Record<string, unknown> | null)?.name ?? "غير متوفر")}</td>
+            <td className="px-4 py-3 text-sm font-semibold text-slate-600">{String(item.role ?? "غير متوفر")}</td>
+            <td className="px-4 py-3"><StatusBadge value={String(item.status ?? "unknown")} /></td>
+            <td className="px-4 py-3 text-sm font-semibold text-slate-600">{formatDateTime(Number(item.createdAt ?? 0))}</td>
+          </tr>
+        ))}
+      </DataTable>
+    </WorkspacePanel>
+  );
+}
 
-  if (items.length === 0) {
-    return <EmptyState title="لا توجد بيانات" description="لا توجد منظمات أو عضويات أو دعوات في هذا القسم حاليًا." />;
-  }
+function InvitesTable({ items }: { items: Array<Record<string, unknown>> }) {
+  return (
+    <WorkspacePanel>
+      <DataTable headers={["المنظمة", "النوع", "البريد", "الدور", "الحالة", "ينتهي في"]}>
+        {items.map((item) => (
+          <tr key={String(item.id)} className="border-b border-slate-100 last:border-b-0">
+            <td className="px-4 py-3 font-black text-slate-900">{String(item.organizationName ?? "منظمة")}</td>
+            <td className="px-4 py-3 text-sm font-semibold text-slate-600">{labelForOwnerType(String(item.ownerType ?? ""))}</td>
+            <td className="px-4 py-3 text-sm font-semibold text-slate-600">{String(item.email ?? "غير متوفر")}</td>
+            <td className="px-4 py-3 text-sm font-semibold text-slate-600">{String(item.role ?? "غير متوفر")}</td>
+            <td className="px-4 py-3"><StatusBadge value={String(item.status ?? "unknown")} /></td>
+            <td className="px-4 py-3 text-sm font-semibold text-slate-600">{formatDateTime(Number(item.expiresAt ?? 0))}</td>
+          </tr>
+        ))}
+      </DataTable>
+    </WorkspacePanel>
+  );
+}
 
-  if (tab === "memberships") {
-    return (
-      <WorkspacePanel>
-        <DataTable headers={["المنظمة", "النوع", "المستخدم", "الدور", "الحالة", "الإنشاء"]}>
-          {items.map((item) => (
-            <tr key={String(item.id)} className="border-b border-slate-100 last:border-b-0">
-              <td className="px-4 py-3 font-black text-slate-900">{String(item.organizationName ?? "منظمة")}</td>
-              <td className="px-4 py-3 text-sm font-semibold text-slate-600">{labelForOwnerType(String(item.ownerType ?? ""))}</td>
-              <td className="px-4 py-3 text-sm font-semibold text-slate-600">{String((item.profile as Record<string, unknown> | null)?.name ?? "غير متوفر")}</td>
-              <td className="px-4 py-3 text-sm font-semibold text-slate-600">{String(item.role ?? "غير متوفر")}</td>
-              <td className="px-4 py-3"><StatusBadge value={String(item.status ?? "unknown")} /></td>
-              <td className="px-4 py-3 text-sm font-semibold text-slate-600">{formatDateTime(Number(item.createdAt ?? 0))}</td>
-            </tr>
-          ))}
-        </DataTable>
-      </WorkspacePanel>
-    );
-  }
-
-  if (tab === "invites") {
-    return (
-      <WorkspacePanel>
-        <DataTable headers={["المنظمة", "النوع", "البريد", "الدور", "الحالة", "ينتهي في"]}>
-          {items.map((item) => (
-            <tr key={String(item.id)} className="border-b border-slate-100 last:border-b-0">
-              <td className="px-4 py-3 font-black text-slate-900">{String(item.organizationName ?? "منظمة")}</td>
-              <td className="px-4 py-3 text-sm font-semibold text-slate-600">{labelForOwnerType(String(item.ownerType ?? ""))}</td>
-              <td className="px-4 py-3 text-sm font-semibold text-slate-600">{String(item.email ?? "غير متوفر")}</td>
-              <td className="px-4 py-3 text-sm font-semibold text-slate-600">{String(item.role ?? "غير متوفر")}</td>
-              <td className="px-4 py-3"><StatusBadge value={String(item.status ?? "unknown")} /></td>
-              <td className="px-4 py-3 text-sm font-semibold text-slate-600">{formatDateTime(Number(item.expiresAt ?? 0))}</td>
-            </tr>
-          ))}
-        </DataTable>
-      </WorkspacePanel>
-    );
-  }
-
+function OrganizationsTable({ items }: { items: Array<Record<string, unknown>> }) {
   return (
     <WorkspacePanel>
       <DataTable headers={["المنظمة", "الحالة", "الأعضاء", "الملفات", "العقارات", "الملف"]}>
@@ -80,4 +68,22 @@ export default async function OrganizationsPage({ tab = "brokers" }: Organizatio
       </DataTable>
     </WorkspacePanel>
   );
+}
+
+/**
+ * WHY:   Organizations are now managed through dedicated Arabic tabs for brokers, developers, memberships, and invites.
+ * WHAT:  Renders the requested organizations tab using joined admin read models from the backend.
+ * HOW:   Loads the relevant organization dataset server-side and maps it into a focused table.
+ */
+export default async function OrganizationsPage({ tab = "brokers" }: OrganizationsPageProps) {
+  const { rows } = await getOrganizationsPageData(tab);
+  const items = rows as Array<Record<string, unknown>>;
+
+  if (items.length === 0) {
+    return <EmptyState title="لا توجد بيانات" description="لا توجد منظمات أو عضويات أو دعوات في هذا القسم حاليًا." />;
+  }
+
+  if (tab === "memberships") return <MembershipsTable items={items} />;
+  if (tab === "invites") return <InvitesTable items={items} />;
+  return <OrganizationsTable items={items} />;
 }

@@ -114,6 +114,7 @@ export const conversationTargetSchema = z.object({
   name: z.string().min(1),
   email: z.string().email().nullable().optional(),
   username: z.string().nullable().optional(),
+  image: z.string().nullable().optional(),
   role: z.string().min(1),
   brokerId: z.string().nullable().optional(),
   redId: z.string().nullable().optional(),

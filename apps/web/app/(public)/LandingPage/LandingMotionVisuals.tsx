@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
+import { ChartOverlay, ConnectionOverlay } from "./LandingMotionOverlays";
 
 type MotionVectorProps = {
   src: string;
@@ -14,15 +15,44 @@ type MotionVectorProps = {
   overlay?: ReactNode;
 };
 
-type SignalLine = {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  color: string;
-  duration?: number;
-  delay?: number;
-};
+const HERO_NETWORK_LINES = [
+  { x1: 360, y1: 260, x2: 600, y2: 260, color: "#2563EB", duration: 4.2 },
+  { x1: 360, y1: 260, x2: 120, y2: 260, color: "#2563EB", duration: 4.2, delay: 0.3 },
+  { x1: 360, y1: 260, x2: 520, y2: 100, color: "#60A5FA", duration: 4.8, delay: 0.5 },
+  { x1: 360, y1: 260, x2: 200, y2: 420, color: "#94A3B8", duration: 5.2, delay: 0.7 },
+];
+
+const CONVERGENCE_LINES = [
+  { x1: 310, y1: 260, x2: 500, y2: 370, color: "#2563EB", duration: 4.2 },
+  { x1: 310, y1: 260, x2: 120, y2: 150, color: "#2563EB", duration: 4.2, delay: 0.28 },
+  { x1: 310, y1: 260, x2: 310, y2: 60, color: "#60A5FA", duration: 4.6, delay: 0.54 },
+  { x1: 310, y1: 260, x2: 120, y2: 370, color: "#CBD5E1", duration: 5.1, delay: 0.78 },
+];
+
+function CenterBrandMark({
+  reduceMotion,
+  size,
+  wrapperClassName,
+  borderClassName,
+}: {
+  reduceMotion: boolean | null;
+  size: number;
+  wrapperClassName: string;
+  borderClassName: string;
+}) {
+  return (
+    <motion.div
+      className={wrapperClassName}
+      animate={reduceMotion ? undefined : { scale: [1, 1.02, 1] }}
+      transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
+      whileHover={reduceMotion ? undefined : { scale: 1.04 }}
+    >
+      <div className={borderClassName}>
+        <Image src="/brand-mark.svg" alt="Anan" width={size} height={size} style={{ width: size, height: size }} priority />
+      </div>
+    </motion.div>
+  );
+}
 
 /**
  * WHY:   The landing page still needs motion affordances after moving to file-based SVG illustrations.
@@ -54,187 +84,49 @@ function MotionVector({
   );
 }
 
-/**
- * WHY:   The landing SVGs need motion without rewriting the file-based vectors again.
- * WHAT:  Adds subtle animated signal travel over existing connector geometry.
- * HOW:   Draws low-contrast SVG lines and moving dots on top of the static asset.
- */
-function ConnectionOverlay({
-  lines,
-  viewBoxWidth,
-  viewBoxHeight,
-}: {
-  lines: SignalLine[];
-  viewBoxWidth: number;
-  viewBoxHeight: number;
-}) {
-  const reduceMotion = useReducedMotion();
-
+function HeroNetworkCanvas({ reduceMotion }: { reduceMotion: boolean | null }) {
   return (
-    <svg
-      viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
-      className="h-full w-full"
-      aria-hidden="true"
+    <motion.div
+      className="w-full"
+      animate={reduceMotion ? undefined : { opacity: [0.94, 1, 0.94], y: [0, -4, 0] }}
+      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      whileHover={reduceMotion ? undefined : { scale: 1.01 }}
     >
-      {lines.map((line, index) => (
-        <g key={`${line.x1}-${line.y1}-${index}`}>
-          <motion.line
-            x1={line.x1}
-            y1={line.y1}
-            x2={line.x2}
-            y2={line.y2}
-            stroke={line.color}
-            strokeWidth="2"
-            strokeLinecap="round"
-            initial={{ opacity: 0.16 }}
-            animate={reduceMotion ? undefined : { opacity: [0.16, 0.42, 0.16] }}
-            transition={{
-              duration: line.duration ?? 3.6,
-              delay: line.delay ?? index * 0.16,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-          <motion.circle
-            r="4"
-            fill={line.color}
-            stroke="white"
-            strokeWidth="1.5"
-            initial={{ opacity: 0 }}
-            animate={
-              reduceMotion
-                ? undefined
-                : {
-                    cx: [line.x1, line.x2],
-                    cy: [line.y1, line.y2],
-                    opacity: [0, 1, 0],
-                  }
-            }
-            transition={{
-              duration: line.duration ?? 3.6,
-              delay: line.delay ?? index * 0.16,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        </g>
-      ))}
-    </svg>
-  );
-}
-
-/**
- * WHY:   The developer panel should feel live without turning into a fake dashboard.
- * WHAT:  Adds a restrained animated chart trace and point pulses over the dark SVG.
- * HOW:   Reuses the current line coordinates and animates one traveling indicator plus soft point scaling.
- */
-function ChartOverlay() {
-  const reduceMotion = useReducedMotion();
-  const points = [
-    { x: 160, y: 210 },
-    { x: 220, y: 180 },
-    { x: 280, y: 140 },
-    { x: 340, y: 115 },
-  ];
-
-  return (
-    <svg viewBox="0 0 520 420" className="h-full w-full" aria-hidden="true">
-      <motion.path
-        d="M 160 210 L 220 180 L 280 140 L 340 115"
-        fill="none"
-        stroke="#60A5FA"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        initial={{ opacity: 0.18, pathLength: 0.6 }}
-        animate={reduceMotion ? undefined : { opacity: [0.18, 0.42, 0.18], pathLength: [0.6, 1, 0.6] }}
-        transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
+      <Image
+        src="/vectors/landing/anan_landing_hero_brand_v2.svg"
+        alt="شبكة عنان"
+        width={680}
+        height={500}
+        className="h-auto w-full"
+        priority
       />
-      {points.map((point, index) => (
-        <motion.circle
-          key={`${point.x}-${point.y}`}
-          cx={point.x}
-          cy={point.y}
-          r="5"
-          fill="#60A5FA"
-          initial={{ opacity: 0.24, scale: 1 }}
-          animate={reduceMotion ? undefined : { opacity: [0.24, 0.7, 0.24], scale: [1, 1.18, 1] }}
-          transition={{ duration: 2.4, delay: index * 0.22, repeat: Infinity, ease: "easeInOut" }}
+      <div className="pointer-events-none absolute inset-0">
+        <ConnectionOverlay
+          viewBoxWidth={720}
+          viewBoxHeight={520}
+          lines={HERO_NETWORK_LINES}
         />
-      ))}
-      <motion.circle
-        r="4.5"
-        fill="#FFFFFF"
-        stroke="#2563EB"
-        strokeWidth="2"
-        initial={{ opacity: 0 }}
-        animate={
-          reduceMotion
-            ? undefined
-            : {
-                cx: points.map((point) => point.x),
-                cy: points.map((point) => point.y),
-                opacity: [0, 1, 1, 0],
-              }
-        }
-        transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
-      />
-    </svg>
+      </div>
+    </motion.div>
   );
 }
 
 /**
- * WHY:   The hero needs a centered brand visual while aligning with the repo vector style.
- * WHAT:  Wraps the hero brand vector and overlays the shared Anan mark.
- * HOW:   Applies restrained pulse/hover motion to the vector block and logo chip.
- */
-/**
- * WHY:   The landing hero needs a central brand focal point that reinforces Anan's network motif.
- * WHAT:  Renders the hero network illustration with animated signal overlays and a brand mark core.
- * HOW:   Composes MotionVector/ConnectionOverlay with reduced-motion awareness for accessibility.
+ * Hero focal visual with network signals and a centered brand mark.
  */
 export function HeroBrandNetworkVisual() {
   const reduceMotion = useReducedMotion();
 
   return (
     <div className="relative mx-auto mt-4 flex w-full max-w-[680px] items-center justify-center px-4 md:px-8">
-      <motion.div
-        className="w-full"
-        animate={reduceMotion ? undefined : { opacity: [0.94, 1, 0.94], y: [0, -4, 0] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-        whileHover={reduceMotion ? undefined : { scale: 1.01 }}
-      >
-        <Image
-          src="/vectors/landing/anan_landing_hero_brand_v2.svg"
-          alt="شبكة عنان"
-          width={680}
-          height={500}
-          className="h-auto w-full"
-          priority
-        />
-        <div className="pointer-events-none absolute inset-0">
-          <ConnectionOverlay
-            viewBoxWidth={720}
-            viewBoxHeight={520}
-            lines={[
-              { x1: 360, y1: 260, x2: 600, y2: 260, color: "#2563EB", duration: 4.2 },
-              { x1: 360, y1: 260, x2: 120, y2: 260, color: "#2563EB", duration: 4.2, delay: 0.3 },
-              { x1: 360, y1: 260, x2: 520, y2: 100, color: "#60A5FA", duration: 4.8, delay: 0.5 },
-              { x1: 360, y1: 260, x2: 200, y2: 420, color: "#94A3B8", duration: 5.2, delay: 0.7 },
-            ]}
-          />
-        </div>
-      </motion.div>
+      <HeroNetworkCanvas reduceMotion={reduceMotion} />
 
-      <motion.div
-        className="absolute inset-0 flex items-center justify-center"
-        animate={reduceMotion ? undefined : { scale: [1, 1.025, 1] }}
-        transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
-        whileHover={reduceMotion ? undefined : { scale: 1.04 }}
-      >
-        <div className="rounded-none border border-slate-200 bg-white/96 p-4">
-          <Image src="/brand-mark.svg" alt="Anan" width={104} height={104} className="h-[104px] w-[104px]" priority />
-        </div>
-      </motion.div>
+      <CenterBrandMark
+        reduceMotion={reduceMotion}
+        size={104}
+        wrapperClassName="absolute inset-0 flex items-center justify-center"
+        borderClassName="rounded-none border border-slate-200 bg-white/96 p-4"
+      />
     </div>
   );
 }
@@ -332,23 +224,15 @@ export function ConvergenceFieldVisual() {
           <ConnectionOverlay
             viewBoxWidth={620}
             viewBoxHeight={520}
-            lines={[
-              { x1: 310, y1: 260, x2: 500, y2: 370, color: "#2563EB", duration: 4.2 },
-              { x1: 310, y1: 260, x2: 120, y2: 150, color: "#2563EB", duration: 4.2, delay: 0.28 },
-              { x1: 310, y1: 260, x2: 310, y2: 60, color: "#60A5FA", duration: 4.6, delay: 0.54 },
-              { x1: 310, y1: 260, x2: 120, y2: 370, color: "#CBD5E1", duration: 5.1, delay: 0.78 },
-            ]}
+            lines={CONVERGENCE_LINES}
           />
         </div>
-        <motion.div
-          className="pointer-events-none absolute inset-0 flex items-center justify-center"
-          animate={reduceMotion ? undefined : { scale: [1, 1.02, 1] }}
-          transition={{ duration: 4.4, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <div className="border border-slate-200 bg-white/96 p-3">
-            <Image src="/brand-mark.svg" alt="A" width={72} height={72} className="h-[72px] w-[72px]" />
-          </div>
-        </motion.div>
+        <CenterBrandMark
+          reduceMotion={reduceMotion}
+          size={72}
+          wrapperClassName="pointer-events-none absolute inset-0 flex items-center justify-center"
+          borderClassName="border border-slate-200 bg-white/96 p-3"
+        />
       </div>
     </motion.div>
   );

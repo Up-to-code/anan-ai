@@ -9,7 +9,7 @@ import { tool, zodSchema } from "ai";
 import type { Tool } from "ai";
 import { z } from "zod";
 import type { ActionCtx } from "../../../../_generated/server";
-import { internalRefs } from "../../../../shared_logic/lib/generatedApiRefs";
+import { internal } from "../../../../_generated/api";
 import type { AgentRuntimeContext } from "../../types";
 
 export function getMemoryContext(ctx: ActionCtx, runtime: AgentRuntimeContext): Tool {
@@ -18,7 +18,7 @@ export function getMemoryContext(ctx: ActionCtx, runtime: AgentRuntimeContext): 
     inputSchema: zodSchema(z.object({ query: z.string(), limit: z.number().min(1).max(20).optional() })),
     execute: async ({ query, limit }): Promise<unknown> => {
       return (await ctx.runQuery(
-        internalRefs["shared_logic/memory/repository"].getRelevantMemoriesByQuery,
+        internal.shared_logic.memory.repository.getRelevantMemoriesByQuery,
         { userId: runtime.userId, query, limit },
       )) as unknown;
     },

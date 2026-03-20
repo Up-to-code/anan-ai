@@ -1,310 +1,132 @@
-import { describe, expect, it, vi } from "vitest";
+import { expect, it, vi } from "vitest";
 
-vi.mock("@/server/auth/session", () => ({
-  requireSessionContext: vi.fn(),
-}));
+vi.mock("@/server/auth/session", () => ({ requireSessionContext: vi.fn() }));
 
-import {
-  getWorkspaceBehaviorForCurrentUser,
-  getWorkspaceSnapshotForCurrentUser,
-} from "./service";
+import { getWorkspaceBehaviorForCurrentUser } from "./service";
 
-describe("workspaces domain service", () => {
-  it("builds the workspace snapshot from the current session and organizations repository", async () => {
-    const requireSession = vi.fn(async () => ({
-      token: "token-1",
-      context: {
-        userId: "user-1",
-        name: "Ahmed",
-        email: "ahmed@example.com",
-        role: "broker",
-        brokerId: "broker-1",
-        isActive: true,
-      },
-      profile: {
-        role: "broker",
-        roleStatus: "approved",
-        brokerId: "broker-1",
-      },
-    }));
-    const organizationsRepository = {
-      listForCurrentUser: vi.fn(async () => [
-        {
-          id: "broker-1",
-          type: "broker" as const,
-          name: "Fresh Start Realty",
-          slug: "fresh-start-realty",
-          status: "active" as const,
-          isVerified: false,
-        },
-      ]),
-      getCurrentOrganization: vi.fn(async () => null),
-      createForUser: vi.fn(),
-      listTeamMembers: vi.fn(),
-      listTeamInvites: vi.fn(),
-      createTeamInvite: vi.fn(),
-      cancelTeamInvite: vi.fn(),
-      acceptTeamInvite: vi.fn(),
-    };
+function createRequireSession(session: any) {
+  return vi.fn(async () => session);
+}
 
-    const snapshot = await getWorkspaceSnapshotForCurrentUser({
-      requireSession,
-      organizationsRepository,
-    });
+function createOrganizationsRepository(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    listForCurrentUser: vi.fn(async () => []),
+    getCurrentOrganization: vi.fn(async () => null),
+    createForUser: vi.fn(),
+    listTeamMembers: vi.fn(),
+    listTeamInvites: vi.fn(),
+    createTeamInvite: vi.fn(),
+    cancelTeamInvite: vi.fn(),
+    acceptTeamInvite: vi.fn(),
+    ...overrides,
+  };
+}
 
-    expect(snapshot.user).toEqual({
-      id: "user-1",
-      name: "Ahmed",
-      email: "ahmed@example.com",
-      image: undefined,
+function createBrokerSession(args: { userId: string; brokerId: string; name?: string; email?: string }) {
+  return {
+    token: `token-${args.userId}`,
+    context: {
+      userId: args.userId,
+      name: args.name ?? "Ahmed",
+      email: args.email ?? "ahmed@example.com",
+      role: "broker",
+      brokerId: args.brokerId,
       isActive: true,
-    });
-    expect(snapshot.profile?.role).toBe("broker");
-    expect(snapshot.organizations[0]?.slug).toBe("fresh-start-realty");
-    expect(organizationsRepository.listForCurrentUser).toHaveBeenCalledWith("token-1");
+    },
+    profile: { role: "broker", roleStatus: "approved", brokerId: args.brokerId },
+  };
+}
+
+function createOrganization(args: { id: string; type: "broker" | "red"; name: string; slug: string }) {
+  return { ...args, status: "active" as const, isVerified: true };
+}
+
+it("resolves broker workspace behavior when organization access is blocked", async () => {
+  const requireSession = createRequireSession(createBrokerSession({ userId: "user-1", brokerId: "broker-1" }));
+  const organizationsRepository = createOrganizationsRepository({
+    listForCurrentUser: vi.fn(async () => [createOrganization({ id: "broker-1", type: "broker", name: "Fresh Start Realty", slug: "fresh-start-realty" })]),
+    getCurrentOrganization: vi.fn(async () => ({ organization: null, membership: null, accessError: true as const })),
   });
 
-  it("resolves broker workspace behavior when organization access is blocked", async () => {
-    const requireSession = vi.fn(async () => ({
-      token: "token-1",
-      context: {
-        userId: "user-1",
-        name: "Ahmed",
-        email: "ahmed@example.com",
-        role: "broker",
-        brokerId: "broker-1",
-        isActive: true,
-      },
-      profile: {
-        role: "broker",
-        roleStatus: "approved",
-        brokerId: "broker-1",
-      },
-    }));
-    const organizationsRepository = {
-      listForCurrentUser: vi.fn(async () => [
-        {
-          id: "broker-1",
-          type: "broker" as const,
-          name: "Fresh Start Realty",
-          slug: "fresh-start-realty",
-          status: "active" as const,
-          isVerified: true,
-        },
-      ]),
-      getCurrentOrganization: vi.fn(async () => ({
-        organization: null,
-        membership: null,
-        accessError: true as const,
-      })),
-      createForUser: vi.fn(),
-      listTeamMembers: vi.fn(),
-      listTeamInvites: vi.fn(),
-      createTeamInvite: vi.fn(),
-      cancelTeamInvite: vi.fn(),
-      acceptTeamInvite: vi.fn(),
-    };
+  const behavior = await getWorkspaceBehaviorForCurrentUser({ requireSession, organizationsRepository });
 
-    const behavior = await getWorkspaceBehaviorForCurrentUser({
-      requireSession,
-      organizationsRepository,
-    });
+  expect(behavior.audience).toBe("broker");
+  expect(behavior.ownerContext).toBeNull();
+  expect(behavior.onboarding.needsOrganization).toBe(true);
+  expect(behavior.visibleZoneKeys).toContain("projects");
+});
 
-    expect(behavior.audience).toBe("broker");
-    expect(behavior.ownerContext).toBeNull();
-    expect(behavior.onboarding.needsOrganization).toBe(true);
-    expect(behavior.visibleZoneKeys).toContain("projects");
+it("falls back to the first organization when the current org is not set", async () => {
+  const requireSession = createRequireSession(createBrokerSession({ userId: "user-1", brokerId: "broker-1" }));
+  const organizationsRepository = createOrganizationsRepository({
+    listForCurrentUser: vi.fn(async () => [createOrganization({ id: "broker-1", type: "broker", name: "Fresh Start Realty", slug: "fresh-start-realty" })]),
   });
 
-  it("falls back to the first organization when the current org is not set", async () => {
-    const requireSession = vi.fn(async () => ({
-      token: "token-1",
-      context: {
-        userId: "user-1",
-        name: "Ahmed",
-        email: "ahmed@example.com",
-        role: "broker",
-        brokerId: "broker-1",
-        isActive: true,
-      },
-      profile: {
-        role: "broker",
-        roleStatus: "approved",
-        brokerId: "broker-1",
-      },
-    }));
-    const organizationsRepository = {
-      listForCurrentUser: vi.fn(async () => [
-        {
-          id: "broker-1",
-          type: "broker" as const,
-          name: "Fresh Start Realty",
-          slug: "fresh-start-realty",
-          status: "active" as const,
-          isVerified: true,
-        },
-      ]),
-      getCurrentOrganization: vi.fn(async () => null),
-      createForUser: vi.fn(),
-      listTeamMembers: vi.fn(),
-      listTeamInvites: vi.fn(),
-      createTeamInvite: vi.fn(),
-      cancelTeamInvite: vi.fn(),
-      acceptTeamInvite: vi.fn(),
-    };
+  const behavior = await getWorkspaceBehaviorForCurrentUser({ requireSession, organizationsRepository });
 
-    const behavior = await getWorkspaceBehaviorForCurrentUser({
-      requireSession,
-      organizationsRepository,
-    });
+  expect(behavior.primaryOrganization?.id).toBe("broker-1");
+  expect(behavior.onboarding.needsOrganization).toBe(false);
+  expect(behavior.ownerContext).toEqual({ ownerType: "broker", ownerId: "broker-1" });
+});
 
-    expect(behavior.primaryOrganization?.id).toBe("broker-1");
-    expect(behavior.onboarding.needsOrganization).toBe(false);
-    expect(behavior.ownerContext).toEqual({ ownerType: "broker", ownerId: "broker-1" });
+it("normalizes legacy RED roles into the developer audience", async () => {
+  const requireSession = createRequireSession({
+    token: "token-2",
+    context: { userId: "user-2", role: "RED", redId: "red-1", isActive: true },
+    profile: { role: "RED", REDId: "red-1" },
+  });
+  const organizationsRepository = createOrganizationsRepository({
+    listForCurrentUser: vi.fn(async () => [createOrganization({ id: "red-1", type: "red", name: "Alpha Developments", slug: "alpha-developments" })]),
   });
 
-  it("normalizes legacy RED roles into the developer audience", async () => {
-    const requireSession = vi.fn(async () => ({
-      token: "token-2",
-      context: {
-        userId: "user-2",
-        role: "RED",
-        redId: "red-1",
-        isActive: true,
-      },
-      profile: {
-        role: "RED",
-        REDId: "red-1",
-      },
-    }));
-    const organizationsRepository = {
-      listForCurrentUser: vi.fn(async () => [
-        {
-          id: "red-1",
-          type: "red" as const,
-          name: "Alpha Developments",
-          slug: "alpha-developments",
-          status: "active" as const,
-          isVerified: true,
-        },
-      ]),
-      getCurrentOrganization: vi.fn(async () => null),
-      createForUser: vi.fn(),
-      listTeamMembers: vi.fn(),
-      listTeamInvites: vi.fn(),
-      createTeamInvite: vi.fn(),
-      cancelTeamInvite: vi.fn(),
-      acceptTeamInvite: vi.fn(),
-    };
+  const behavior = await getWorkspaceBehaviorForCurrentUser({ requireSession, organizationsRepository });
 
-    const behavior = await getWorkspaceBehaviorForCurrentUser({
-      requireSession,
-      organizationsRepository,
-    });
+  expect(behavior.audience).toBe("developer");
+  expect(behavior.ownerContext).toEqual({ ownerType: "RED", ownerId: "red-1" });
+  expect(behavior.onboarding.needsOrganization).toBe(false);
+  expect(behavior.onboarding.suggestedOrganizationType).toBe("red");
+});
 
-    expect(behavior.audience).toBe("developer");
-    expect(behavior.ownerContext).toEqual({ ownerType: "RED", ownerId: "red-1" });
-    expect(behavior.onboarding.needsOrganization).toBe(false);
-    expect(behavior.onboarding.suggestedOrganizationType).toBe("red");
+it("returns onboarding behavior for authenticated users with no organization", async () => {
+  const requireSession = createRequireSession({
+    token: "token-3",
+    context: { userId: "user-3", role: "user", isActive: true },
+    profile: { requestedRole: "developer" },
   });
 
-  it("returns onboarding behavior for authenticated users with no organization", async () => {
-    const requireSession = vi.fn(async () => ({
-      token: "token-3",
-      context: {
-        userId: "user-3",
-        role: "user",
-        isActive: true,
-      },
-      profile: {
-        requestedRole: "developer",
-      },
-    }));
-    const organizationsRepository = {
-      listForCurrentUser: vi.fn(async () => []),
-      getCurrentOrganization: vi.fn(async () => null),
-      createForUser: vi.fn(),
-      listTeamMembers: vi.fn(),
-      listTeamInvites: vi.fn(),
-      createTeamInvite: vi.fn(),
-      cancelTeamInvite: vi.fn(),
-      acceptTeamInvite: vi.fn(),
-    };
-
-    const behavior = await getWorkspaceBehaviorForCurrentUser({
-      requireSession,
-      organizationsRepository,
-    });
-
-    expect(behavior.primaryOrganization).toBeNull();
-    expect(behavior.audience).toBe("developer");
-    expect(behavior.onboarding.needsOrganization).toBe(true);
-    expect(behavior.onboarding.suggestedOrganizationType).toBe("red");
+  const behavior = await getWorkspaceBehaviorForCurrentUser({
+    requireSession,
+    organizationsRepository: createOrganizationsRepository(),
   });
 
-  it("prefers the current organization when available", async () => {
-    const requireSession = vi.fn(async () => ({
-      token: "token-4",
-      context: {
-        userId: "user-4",
-        name: "Laila",
-        email: "laila@example.com",
-        role: "broker",
-        brokerId: "broker-2",
-        isActive: true,
-      },
-      profile: {
-        role: "broker",
-        roleStatus: "approved",
-        brokerId: "broker-2",
-      },
-    }));
-    const organizationsRepository = {
-      listForCurrentUser: vi.fn(async () => [
-        {
-          id: "broker-1",
-          type: "broker" as const,
-          name: "Legacy Org",
-          slug: "legacy-org",
-          status: "active" as const,
-          isVerified: true,
-        },
-      ]),
-      getCurrentOrganization: vi.fn(async () => ({
-        organization: {
-          id: "broker-2",
-          type: "broker" as const,
-          name: "Primary Org",
-          slug: "primary-org",
-          status: "active" as const,
-          isVerified: true,
-        },
-        membership: {
-          id: "member-1",
-          ownerType: "broker" as const,
-          ownerId: "broker-2",
-          authUserId: "user-4",
-          profileId: "profile-4",
-          role: "manager" as const,
-          status: "active" as const,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        },
-      })),
-      createForUser: vi.fn(),
-      listTeamMembers: vi.fn(),
-      listTeamInvites: vi.fn(),
-      createTeamInvite: vi.fn(),
-      cancelTeamInvite: vi.fn(),
-      acceptTeamInvite: vi.fn(),
-    };
+  expect(behavior.primaryOrganization).toBeNull();
+  expect(behavior.audience).toBe("developer");
+  expect(behavior.onboarding.needsOrganization).toBe(true);
+  expect(behavior.onboarding.suggestedOrganizationType).toBe("red");
+});
 
-    const behavior = await getWorkspaceBehaviorForCurrentUser({
-      requireSession,
-      organizationsRepository,
-    });
-
-    expect(behavior.primaryOrganization?.id).toBe("broker-2");
-    expect(behavior.organizations[0]?.id).toBe("broker-2");
+it("prefers the current organization when available", async () => {
+  const requireSession = createRequireSession(createBrokerSession({ userId: "user-4", brokerId: "broker-2", name: "Laila", email: "laila@example.com" }));
+  const organizationsRepository = createOrganizationsRepository({
+    listForCurrentUser: vi.fn(async () => [createOrganization({ id: "broker-1", type: "broker", name: "Legacy Org", slug: "legacy-org" })]),
+    getCurrentOrganization: vi.fn(async () => ({
+      organization: createOrganization({ id: "broker-2", type: "broker", name: "Primary Org", slug: "primary-org" }),
+      membership: {
+        id: "member-1",
+        ownerType: "broker" as const,
+        ownerId: "broker-2",
+        authUserId: "user-4",
+        profileId: "profile-4",
+        role: "manager" as const,
+        status: "active" as const,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+    })),
   });
+
+  const behavior = await getWorkspaceBehaviorForCurrentUser({ requireSession, organizationsRepository });
+
+  expect(behavior.primaryOrganization?.id).toBe("broker-2");
+  expect(behavior.organizations[0]?.id).toBe("broker-2");
 });

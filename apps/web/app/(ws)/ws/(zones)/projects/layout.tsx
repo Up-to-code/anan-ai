@@ -4,11 +4,6 @@ import { getLayoutSidebarData, requireWorkspaceData } from "../../_lib/workspace
 import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
 import { buildComplianceBanner } from "../../_lib/complianceBanner";
 
-/**
- * WHY:   Projects now uses the unified workspace shell - no more separate zone.
- * WHAT:  Wraps the projects route with the main workspace layout.
- * HOW:   Resolves workspace chrome data and renders children inside `WorkspaceShell`.
- */
 export default async function ProjectsZoneLayout({
   children,
 }: {

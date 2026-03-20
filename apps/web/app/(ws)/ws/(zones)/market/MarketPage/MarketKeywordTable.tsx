@@ -4,6 +4,11 @@ type KeywordRow = {
   source: "query" | "feature" | "derived_topic";
 };
 
+type MarketKeywordTableProps = {
+  title: string;
+  rows: KeywordRow[];
+};
+
 function getSourceLabel(source: KeywordRow["source"]): string {
   switch (source) {
     case "query":
@@ -15,18 +20,32 @@ function getSourceLabel(source: KeywordRow["source"]): string {
   }
 }
 
+function KeywordTableBody({ rows }: { rows: KeywordRow[] }) {
+  if (rows.length === 0) {
+    return (
+      <tr>
+        <td colSpan={3} className="px-4 py-8 text-center text-sm font-medium text-slate-500">
+          لا توجد كلمات أو موضوعات مطابقة لهذا النطاق.
+        </td>
+      </tr>
+    );
+  }
+
+  return rows.map((row) => (
+    <tr key={`${row.source}-${row.label}`} className="border-t border-slate-100">
+      <td className="px-4 py-4 text-sm font-black text-slate-950">{row.label}</td>
+      <td className="px-4 py-4 text-sm font-bold text-slate-700">{row.count.toLocaleString("en-US")}</td>
+      <td className="px-4 py-4 text-sm font-bold text-slate-700">{getSourceLabel(row.source)}</td>
+    </tr>
+  ));
+}
+
 /**
  * WHY:   Keyword and topic analysis should stay readable as data tables rather than clouds or decorative chips.
  * WHAT:  Renders the reusable keyword/topic ranking table used in the research tab.
  * HOW:   Accepts pre-filtered rows and maps the raw source enum into short Arabic labels.
  */
-export default function MarketKeywordTable({
-  title,
-  rows,
-}: {
-  title: string;
-  rows: KeywordRow[];
-}) {
+export default function MarketKeywordTable({ title, rows }: MarketKeywordTableProps) {
   return (
     <section className="border border-slate-200 bg-white">
       <div className="border-b border-slate-100 p-4 text-right">
@@ -42,21 +61,7 @@ export default function MarketKeywordTable({
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 ? (
-              <tr>
-                <td colSpan={3} className="px-4 py-8 text-center text-sm font-medium text-slate-500">
-                  لا توجد كلمات أو موضوعات مطابقة لهذا النطاق.
-                </td>
-              </tr>
-            ) : (
-              rows.map((row) => (
-                <tr key={`${row.source}-${row.label}`} className="border-t border-slate-100">
-                  <td className="px-4 py-4 text-sm font-black text-slate-950">{row.label}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{row.count.toLocaleString("en-US")}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{getSourceLabel(row.source)}</td>
-                </tr>
-              ))
-            )}
+            <KeywordTableBody rows={rows} />
           </tbody>
         </table>
       </div>

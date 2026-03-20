@@ -1,39 +1,75 @@
 import { query } from "../../_generated/server";
 import { requireCurrentProfile } from "../lib/profile";
 
+type AssistantEntitlement = {
+  verified: boolean;
+  hasActiveSubscription: boolean;
+  actionModeEnabled: boolean;
+  mode: "action" | "qa";
+  subscription: unknown | null;
+};
+
+function buildDefaultEntitlement(): AssistantEntitlement {
+  return {
+    verified: false,
+    hasActiveSubscription: false,
+    actionModeEnabled: false,
+    mode: "qa",
+    subscription: null,
+  };
+}
+
+function isActiveSubscriptionStatus(status: string | undefined) {
+  return status === "active" || status === "trial";
+}
+
+async function getSubscriptionForProfile(ctx: any, profile: any) {
+  if (profile.brokerId) {
+    return ctx.db
+      .query("subscriptions")
+      .withIndex("ownerBrokerId", (q: any) => q.eq("ownerBrokerId", profile.brokerId))
+      .first();
+  }
+  if (profile.REDId) {
+    return ctx.db
+      .query("subscriptions")
+      .withIndex("ownerREDId", (q: any) => q.eq("ownerREDId", profile.REDId))
+      .first();
+  }
+  return null;
+}
+
+async function resolveVerifiedState(ctx: any, profile: any) {
+  if (profile.brokerId) {
+    return (await ctx.db.get(profile.brokerId))?.isVerified === true;
+  }
+  if (profile.REDId) {
+    return (await ctx.db.get(profile.REDId))?.isVerified === true;
+  }
+  return true;
+}
+
+async function resolveAssistantEntitlementForProfile(ctx: any, profile: any): Promise<AssistantEntitlement> {
+  const [verified, sub] = await Promise.all([
+    resolveVerifiedState(ctx, profile),
+    getSubscriptionForProfile(ctx, profile),
+  ]);
+  const hasActiveSubscription = !!sub && isActiveSubscriptionStatus(sub.status);
+  const actionModeEnabled = verified && hasActiveSubscription && sub?.actionModeEnabled === true;
+  return {
+    verified,
+    hasActiveSubscription,
+    actionModeEnabled,
+    mode: actionModeEnabled ? "action" : "qa",
+    subscription: sub ?? null,
+  };
+}
+
 export const getAssistantEntitlement = query({
   args: {},
   handler: async (ctx) => {
     const profile = await requireCurrentProfile(ctx);
-
-    const broker = profile.brokerId ? await ctx.db.get(profile.brokerId) : null;
-    const red = profile.REDId ? await ctx.db.get(profile.REDId) : null;
-
-    const verified = profile.brokerId ? broker?.isVerified === true : profile.REDId ? red?.isVerified === true : true;
-
-    const sub =
-      profile.brokerId
-        ? await ctx.db
-            .query("subscriptions")
-            .withIndex("ownerBrokerId", (q) => q.eq("ownerBrokerId", profile.brokerId!))
-            .first()
-        : profile.REDId
-          ? await ctx.db
-              .query("subscriptions")
-              .withIndex("ownerREDId", (q) => q.eq("ownerREDId", profile.REDId!))
-              .first()
-          : null;
-
-    const hasActiveSubscription = !!sub && (sub.status === "active" || sub.status === "trial");
-    const actionModeEnabled = verified && hasActiveSubscription && sub?.actionModeEnabled === true;
-
-    return {
-      verified,
-      hasActiveSubscription,
-      actionModeEnabled,
-      mode: actionModeEnabled ? ("action" as const) : ("qa" as const),
-      subscription: sub ?? null,
-    };
+    return resolveAssistantEntitlementForProfile(ctx, profile);
   },
 });
 
@@ -45,53 +81,13 @@ export const getAssistantEntitlementSafe = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
-      return {
-        verified: false,
-        hasActiveSubscription: false,
-        actionModeEnabled: false,
-        mode: "qa" as const,
-      subscription: null,
-    };
+      return buildDefaultEntitlement();
     }
     try {
       const profile = await requireCurrentProfile(ctx);
-
-      const broker = profile.brokerId ? await ctx.db.get(profile.brokerId) : null;
-      const red = profile.REDId ? await ctx.db.get(profile.REDId) : null;
-
-      const verified = profile.brokerId ? broker?.isVerified === true : profile.REDId ? red?.isVerified === true : true;
-
-      const sub =
-        profile.brokerId
-          ? await ctx.db
-              .query("subscriptions")
-              .withIndex("ownerBrokerId", (q) => q.eq("ownerBrokerId", profile.brokerId!))
-              .first()
-          : profile.REDId
-            ? await ctx.db
-                .query("subscriptions")
-                .withIndex("ownerREDId", (q) => q.eq("ownerREDId", profile.REDId!))
-                .first()
-            : null;
-
-      const hasActiveSubscription = !!sub && (sub.status === "active" || sub.status === "trial");
-      const actionModeEnabled = verified && hasActiveSubscription && sub?.actionModeEnabled === true;
-
-      return {
-        verified,
-        hasActiveSubscription,
-        actionModeEnabled,
-        mode: actionModeEnabled ? ("action" as const) : ("qa" as const),
-        subscription: sub ?? null,
-      };
+      return resolveAssistantEntitlementForProfile(ctx, profile);
     } catch (_e) {
-      return {
-        verified: false,
-        hasActiveSubscription: false,
-        actionModeEnabled: false,
-        mode: "qa" as const,
-        subscription: null,
-      };
+      return buildDefaultEntitlement();
     }
   },
 });

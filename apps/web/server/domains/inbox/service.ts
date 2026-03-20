@@ -11,103 +11,25 @@ import type {
   ShareFileInConversationInput,
   ShareProjectInConversationInput,
 } from "@/server/contracts/inbox";
-import type { WorkspaceBehavior } from "@/server/contracts/workspace";
 import {
   convexInboxRepository,
   type InboxRepository,
 } from "@/server/infrastructure/convex/inboxRepository";
 import { getWorkspaceBehaviorForCurrentUser } from "@/server/domains/workspaces/service";
 import { getWorkspaceCrmZone, getWorkspaceOffersZone, getWorkspacePropertyZone } from "@/server/ws/zones";
-
-type InboxServiceDependencies = {
-  requireSession: typeof requireSessionContext;
-  getWorkspaceBehavior: typeof getWorkspaceBehaviorForCurrentUser;
-  repository: InboxRepository;
-};
+import {
+  buildActor,
+  buildRecipient,
+  getFileHref,
+  type InboxServiceDependencies,
+  requireCollaborationContext,
+} from "./service.helpers";
 
 const defaultDependencies: InboxServiceDependencies = {
   requireSession: requireSessionContext,
   getWorkspaceBehavior: getWorkspaceBehaviorForCurrentUser,
   repository: convexInboxRepository,
 };
-
-type CollaborationAccessContext = {
-  session: Awaited<ReturnType<typeof requireSessionContext>>;
-  workspace: WorkspaceBehavior;
-  conversation: Awaited<ReturnType<InboxRepository["get"]>>;
-};
-
-/**
- * WHY:   Collaboration cards should only be created inside broker↔developer inbox threads in this phase.
- * WHAT:  Resolves the authenticated session, workspace behavior, and current conversation in one shared helper.
- * HOW:   Loads session/workspace concurrently, verifies broker/developer audience, and rejects non-collaboration recipients early.
- */
-async function requireCollaborationContext(
-  conversationId: string,
-  dependencies: InboxServiceDependencies,
-): Promise<CollaborationAccessContext> {
-  const [session, workspace] = await Promise.all([
-    dependencies.requireSession(),
-    dependencies.getWorkspaceBehavior(),
-  ]);
-
-  if (workspace.audience !== "broker" && workspace.audience !== "developer") {
-    throw new DomainError({
-      code: "FORBIDDEN",
-      message: "Inbox collaboration actions are only available for brokers and developers",
-      status: 403,
-    });
-  }
-
-  if (!workspace.ownerContext || !workspace.primaryOrganization) {
-    throw new DomainError({
-      code: "FORBIDDEN",
-      message: "Organization context is required for inbox collaboration",
-      status: 403,
-    });
-  }
-
-  const conversation = await dependencies.repository.get(session.token, conversationId);
-  const recipientRole = conversation.otherUser.role;
-  if (recipientRole !== "broker" && recipientRole !== "developer") {
-    throw new DomainError({
-      code: "FORBIDDEN",
-      message: "Inbox collaboration actions are limited to broker and developer threads",
-      status: 403,
-    });
-  }
-
-  return { session, workspace, conversation };
-}
-
-function buildActor(workspace: WorkspaceBehavior, authUserId: string) {
-  return {
-    authUserId,
-    name: workspace.user.name ?? workspace.user.email ?? "عضو عنان",
-    role: workspace.audience,
-    organizationId: workspace.primaryOrganization?.id ?? null,
-    organizationType: workspace.audience,
-    organizationName: workspace.primaryOrganization?.name ?? null,
-  } as const;
-}
-
-function buildRecipient(conversation: Awaited<ReturnType<InboxRepository["get"]>>) {
-  return {
-    recipientAuthUserId: conversation.otherUser.id,
-    organizationId: conversation.otherUser.brokerId ?? conversation.otherUser.redId ?? null,
-    organizationType: conversation.otherUser.organizationType ?? null,
-    organizationName: conversation.otherUser.organizationName ?? null,
-  } as const;
-}
-
-/**
- * WHY:   The inbox collaboration journey needs one consistent URL target for files that were already uploaded.
- * WHAT:  Returns the user-facing action link for a shared file.
- * HOW:   Reuses the UploadThing/public URL stored on the uploaded file reference.
- */
-function getFileHref(file: UploadedFileReference) {
-  return file.url;
-}
 
 /**
  * WHY:   The workspace inbox index should load conversation data from one server-owned service boundary.
@@ -244,11 +166,6 @@ export async function shareInboxFileInConversation(
   });
 }
 
-/**
- * WHY:   Project references should be shared from the inbox without forcing users to leave the active collaboration thread.
- * WHAT:  Sends a structured project-share card for one workspace property.
- * HOW:   Loads the property through the audience-aware workspace zone, then emits a typed inbox event card to the conversation.
- */
 export async function shareInboxProjectInConversation(
   input: ShareProjectInConversationInput,
   dependencies: InboxServiceDependencies = defaultDependencies,
@@ -290,11 +207,6 @@ export async function shareInboxProjectInConversation(
   });
 }
 
-/**
- * WHY:   CRM handoff belongs inside broker↔developer collaboration so users can share a live deal from the thread itself.
- * WHAT:  Sends a structured deal-share card for one accessible CRM record.
- * HOW:   Reads the deal through the current audience's CRM zone, validates ownership implicitly, and posts a typed inbox event.
- */
 export async function shareInboxDealInConversation(
   input: ShareDealInConversationInput,
   dependencies: InboxServiceDependencies = defaultDependencies,
@@ -311,9 +223,7 @@ export async function shareInboxDealInConversation(
       status: 404,
     });
   }
-
   const summary = input.note?.trim() || deal.description || deal.contactName || "تمت مشاركة صفقة CRM";
-
   return dependencies.repository.send(session.token, {
     conversationId: input.conversationId,
     type: "deal_share",

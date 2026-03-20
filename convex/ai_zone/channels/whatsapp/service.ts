@@ -19,6 +19,41 @@ export class WhatsAppService {
     return `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${this.phoneNumberId}/messages`;
   }
 
+  private buildTextBody(userId: string, text: string, contextMessageId?: string) {
+    const body: Record<string, unknown> = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: userId.replace(/\D/g, ""),
+      type: "text",
+      text: { body: text },
+    };
+    if (contextMessageId) {
+      body.context = { message_id: contextMessageId };
+    }
+    return body;
+  }
+
+  private async postMessage(body: Record<string, unknown>) {
+    const response = await fetch(this.baseUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    return { response, data };
+  }
+
+  private toFailureResult(response: Response, data: Record<string, unknown>): SendResult {
+    const err = (data as { error?: { message?: string } })?.error;
+    return {
+      success: false,
+      error: err?.message ?? `HTTP ${response.status} ${response.statusText}`,
+    };
+  }
+
   /**
    * Send a text message to a WhatsApp user.
    * @param userId - WhatsApp ID (phone number with country code, no +)
@@ -34,35 +69,9 @@ export class WhatsAppService {
       return { success: false, error: "WHATSAPP_ACCESS_TOKEN not set" };
     }
 
-    const body: Record<string, unknown> = {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: userId.replace(/\D/g, ""),
-      type: "text",
-      text: { body: text },
-    };
-
-    if (contextMessageId) {
-      body.context = { message_id: contextMessageId };
-    }
-
-    const res = await fetch(this.baseUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.token}`,
-      },
-      body: JSON.stringify(body),
-    });
-
-    const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-    const err = (data as { error?: { message?: string } })?.error;
-
-    if (!res.ok) {
-      return {
-        success: false,
-        error: err?.message ?? `HTTP ${res.status} ${res.statusText}`,
-      };
+    const { response, data } = await this.postMessage(this.buildTextBody(userId, text, contextMessageId));
+    if (!response.ok) {
+      return this.toFailureResult(response, data);
     }
 
     const messages = (data as { messages?: Array<{ id: string }> })?.messages;

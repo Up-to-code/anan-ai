@@ -9,11 +9,6 @@ export type BrandWorkspaceTab = {
   label: React.ReactNode;
 };
 
-/**
- * WHY:   Route-backed zone tabs should feel like a primary branded control instead of generic utility pills.
- * WHAT:  Renders a responsive tab row with active-route highlighting and a subtle underline treatment.
- * HOW:   Matches exact href or nested route prefixes using the current pathname.
- */
 export default function BrandWorkspaceTabs({
   tabs,
   className,

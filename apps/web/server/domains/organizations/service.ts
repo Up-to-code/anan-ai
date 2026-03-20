@@ -10,6 +10,8 @@ import {
   type OrganizationInviteSummary,
   type OrganizationMembershipSummary,
   type OrganizationSummary,
+  type OfferOrganizationSummary,
+  type OrganizationPublicProfile,
   type OrganizationTeamMember,
   type UpdateOrganizationInput,
   type UpdateOrganizationMemberRoleInput,
@@ -32,11 +34,6 @@ const defaultDependencies: OrganizationsServiceDependencies = {
   organizationsRepository: convexOrganizationsRepository,
 };
 
-/**
- * WHY:   Workspace pages and API routes both need one gateway-owned organization listing path.
- * WHAT:  Returns the organizations linked to the current authenticated user.
- * HOW:   Requires the session once, then delegates listing to the repository adapter with the current token.
- */
 export async function listOrganizationsForCurrentUser(
   dependencies: OrganizationsServiceDependencies = defaultDependencies,
 ): Promise<OrganizationSummary[]> {
@@ -44,11 +41,6 @@ export async function listOrganizationsForCurrentUser(
   return dependencies.organizationsRepository.listForCurrentUser(session.token);
 }
 
-/**
- * WHY:   Organization onboarding is the first business mutation moved behind the Next.js gateway.
- * WHAT:  Validates the create payload, enforces gateway-level access rules, and creates the organization.
- * HOW:   Parses the payload with Zod, blocks admin sessions up front, then delegates to the Convex repository.
- */
 export async function createOrganizationForCurrentUser(
   input: unknown,
   dependencies: OrganizationsServiceDependencies = defaultDependencies,
@@ -189,6 +181,23 @@ export async function listCurrentOrganizationOffersDirectory(
 ): Promise<OffersDirectoryProfile[]> {
   const session = await dependencies.requireSession();
   return dependencies.organizationsRepository.listOffersDirectoryProfiles(session.token, role);
+}
+
+export async function listCurrentOrganizationOffersCompanyDirectory(
+  role: "broker" | "developer",
+  dependencies: OrganizationsServiceDependencies = defaultDependencies,
+): Promise<OfferOrganizationSummary[]> {
+  const session = await dependencies.requireSession();
+  return dependencies.organizationsRepository.listOfferOrganizationsDirectory(session.token, role);
+}
+
+export async function getOrganizationPublicProfile(
+  type: "broker" | "developer",
+  slug: string,
+  dependencies: OrganizationsServiceDependencies = defaultDependencies,
+): Promise<OrganizationPublicProfile | null> {
+  const session = await dependencies.requireSession();
+  return dependencies.organizationsRepository.getOrganizationPublicProfile(session.token, type, slug);
 }
 
 export async function listIncomingOrganizationInvitesForCurrentUser(

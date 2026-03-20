@@ -4,6 +4,26 @@ import { listIncomingOrganizationInvitesForCurrentUser } from "@/server/domains/
 import { requireWorkspaceData } from "../../../_lib/workspaceData";
 import { getWorkspaceCrmZone, getWorkspacePropertyZone } from "@/server/ws/zones";
 
+function toDealOption(deal: Awaited<ReturnType<ReturnType<typeof getWorkspaceCrmZone>["listDeals"]>>[number]) {
+  return {
+    id: deal.id,
+    title: deal.title,
+    stage: deal.stage,
+    value: deal.value,
+    contactName: deal.contactName ?? null,
+  };
+}
+
+function toProjectOption(property: Awaited<ReturnType<ReturnType<typeof getWorkspacePropertyZone>["listProperties"]>>["page"][number]) {
+  return {
+    id: property._id,
+    title: property.title,
+    location: property.location ?? property.address ?? "",
+    imageUrl: property.heroImage?.url ?? property.media?.[0]?.url ?? null,
+    price: property.price,
+  };
+}
+
 export default async function InboxConversationPage({
   params,
 }: {
@@ -29,25 +49,13 @@ export default async function InboxConversationPage({
     <InboxWorkspaceClient
       canUseBusinessActions={workspace.audience === "broker" || workspace.audience === "developer"}
       currentUserId={workspace.user.id}
-      dealOptions={(collaborationData?.[1] ?? []).map((deal) => ({
-        id: deal.id,
-        title: deal.title,
-        stage: deal.stage,
-        value: deal.value,
-        contactName: deal.contactName ?? null,
-      }))}
+      dealOptions={(collaborationData?.[1] ?? []).map(toDealOption)}
       initialConversations={conversations}
       initialConversation={conversation}
       initialSelectedConversationId={conversationId}
       hasConversationRoute
       incomingInvites={incomingInvites}
-      projectOptions={(collaborationData?.[0]?.page ?? []).map((property) => ({
-        id: property._id,
-        title: property.title,
-        location: property.location ?? property.address ?? "",
-        imageUrl: property.heroImage?.url ?? property.media?.[0]?.url ?? null,
-        price: property.price,
-      }))}
+      projectOptions={(collaborationData?.[0]?.page ?? []).map(toProjectOption)}
     />
   );
 }

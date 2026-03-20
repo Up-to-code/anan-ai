@@ -55,5 +55,6 @@ describe("/ws/offers page", () => {
     expect(getSnapshot).toHaveBeenCalled();
     expect(markup).toContain("مالقا ريزيدنس");
     expect(markup).toContain("صفحة 1 من 1");
+    expect(markup).toContain("data-slot=\"offers-grid\"");
   });
 });

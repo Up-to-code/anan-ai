@@ -5,33 +5,13 @@ import type { OfferMarketplaceItem } from "../offerTypes";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle, Send, MapPin, Home, Bed, Bath, Ruler, DollarSign, User, Tag, MessageCircle, Building2, Paperclip } from "lucide-react";
 import type { OfferActionResult } from "@/server/contracts/offers";
-
-type DeliveryFeedback = {
-  targetName: string;
-  organizationName: string;
-  pushStatus: "pending" | "sent" | "failed" | "skipped";
-  conversationId: string | null;
-};
-
-function mapDeliveryFeedback(result: OfferActionResult): DeliveryFeedback | null {
-  if (!result.notification) {
-    return null;
-  }
-
-  return {
-    targetName: result.notification.targetName,
-    organizationName: result.notification.organizationName,
-    pushStatus: result.notification.pushStatus,
-    conversationId: result.conversationId,
-  };
-}
-
-function getPushStatusLabel(pushStatus: DeliveryFeedback["pushStatus"]) {
-  if (pushStatus === "sent") return "تم إرسال الإشعار الفوري.";
-  if (pushStatus === "failed") return "تعذر إرسال الإشعار الفوري، لكن التنبيه سُجل داخل النظام.";
-  if (pushStatus === "skipped") return "تم تسجيل التنبيه بدون Push على هذا الحساب.";
-  return "الإشعار الفوري قيد المعالجة لهذا الحساب.";
-}
+import {
+  getLinkedProject,
+  getPushStatusLabel,
+  KIND_LABELS,
+  mapDeliveryFeedback,
+  type DeliveryFeedback,
+} from "./viewModel";
 
 export default function OfferDetailPage({
   offer,
@@ -53,9 +33,7 @@ export default function OfferDetailPage({
   const [isMessaging, setIsMessaging] = useState(false);
   const [messageError, setMessageError] = useState<string | null>(null);
 
-  const linkedProject = offer.projectRefId
-    ? { id: offer.projectRefId, name: offer.project.title, image: offer.image, location: offer.location, type: offer.propertyType, description: offer.summary }
-    : null;
+  const linkedProject = getLinkedProject(offer);
 
   const handleApply = async () => {
     const result = await onApply();
@@ -75,13 +53,6 @@ export default function OfferDetailPage({
     } finally {
       setIsMessaging(false);
     }
-  };
-
-  const KIND_LABELS: Record<string, string> = {
-    developer: "عرض مطور عقاري",
-    broker: "عرض وسيط عقاري",
-    client: "طلب عميل مباشر",
-    inbox: "فرصة ربط عاجلة",
   };
 
   return (

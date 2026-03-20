@@ -6,16 +6,8 @@ import type { WorkspaceProject } from "../../projectTypes";
 import AgPropertyForm from "@/components/shared/ag-aui/AgPropertyForm";
 import AgDeleteConfirmModal from "@/components/shared/ag-aui/AgDeleteConfirmModal";
 
-/**
- * WHY:   Editing a project should use the exact same rich form as creation.
- * WHAT:  A client-side wrapper that initializes AgPropertyForm with project data.
- * HOW:   Maps WorkspaceProject to ProjectFormData and handles routing/modals.
- */
-export default function AgPropertyFormEditView({ project }: { project: WorkspaceProject }) {
-  const router = useRouter();
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  const initialData = {
+function toInitialData(project: WorkspaceProject) {
+  return {
     name: project.title,
     price: project.priceLabel,
     location: project.location,
@@ -28,7 +20,12 @@ export default function AgPropertyFormEditView({ project }: { project: Workspace
     video: null,
     brokerId: project.brokers[0]?.id ?? null,
   };
+}
 
+export default function AgPropertyFormEditView({ project }: { project: WorkspaceProject }) {
+  const router = useRouter();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const initialData = toInitialData(project);
   return (
     <div className="flex min-h-full flex-col p-6 lg:p-12">
       <AgPropertyForm

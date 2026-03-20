@@ -56,11 +56,6 @@ async function loadWorkspaceState(
 
 const loadWorkspaceStateCached = cache(async () => loadWorkspaceState(defaultDependencies));
 
-/**
- * WHY:   The workspace should resolve one audience/capability model on the server before any page or route renders.
- * WHAT:  Returns the normalized workspace behavior for the current authenticated user.
- * HOW:   Loads the session and linked organizations once, then derives audience, owner context, zone access, and onboarding defaults.
- */
 export async function getWorkspaceBehaviorForCurrentUser(
   dependencies: WorkspacesServiceDependencies = defaultDependencies,
 ): Promise<WorkspaceBehavior> {
@@ -75,13 +70,13 @@ export async function getWorkspaceBehaviorForCurrentUser(
   const orderedOrganizations = primaryOrganization
     ? [primaryOrganization, ...organizations.filter((org) => org.id !== primaryOrganization.id)]
     : organizations;
-  const audience = resolveWorkspaceAudience({
-    role: session.context.role,
-    organizationType: primaryOrganization?.type,
-    requestedRole: session.profile?.requestedRole,
-  });
+  const audience = resolveWorkspaceAudience({ role: session.context.role, organizationType: primaryOrganization?.type, requestedRole: session.profile?.requestedRole });
   const visibleZoneKeys = resolveVisibleZoneKeys(audience);
-
+  const suggestedOrganizationType = resolveSuggestedOrganizationType({
+    role: session.context.role,
+    requestedRole: session.profile?.requestedRole,
+    organizationType: primaryOrganization?.type,
+  });
   return {
     user: toSessionUser(session.context),
     session: session.context,
@@ -94,11 +89,7 @@ export async function getWorkspaceBehaviorForCurrentUser(
     capabilities: resolveWorkspaceCapabilities(visibleZoneKeys),
     onboarding: {
       needsOrganization: primaryOrganization === null,
-      suggestedOrganizationType: resolveSuggestedOrganizationType({
-        role: session.context.role,
-        requestedRole: session.profile?.requestedRole,
-        organizationType: primaryOrganization?.type,
-      }),
+      suggestedOrganizationType,
     },
   };
 }

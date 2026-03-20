@@ -12,6 +12,52 @@ type PropertiesPageProps = {
   tab?: "all" | "brokers" | "developers" | "status";
 };
 
+function PropertiesStatusPanel(args: {
+  data: {
+    total: number;
+    statusBreakdown: Record<string, number>;
+    ownerBreakdown: Record<string, number>;
+    trend: Array<{ label: string; value: number }>;
+  };
+}) {
+  return (
+    <div className="max-w-2xl">
+      <WorkspacePanel className="space-y-4">
+        <div className="text-sm font-black text-blue-600">توزيع الحالة</div>
+        <InlineBarChart
+          items={[
+            { label: "متاح", value: args.data.statusBreakdown.available ?? 0, tone: "primary" },
+            { label: "محجوز", value: args.data.statusBreakdown.reserved ?? 0, tone: "neutral" },
+            { label: "مباع", value: args.data.statusBreakdown.sold ?? 0, tone: "danger" },
+            { label: "غير محدد", value: args.data.statusBreakdown.unspecified ?? 0, tone: "neutral" },
+          ]}
+        />
+      </WorkspacePanel>
+    </div>
+  );
+}
+
+function PropertiesTable({ rows }: { rows: Array<Record<string, unknown>> }) {
+  return (
+    <WorkspacePanel>
+      <DataTable headers={["العقار", "العنوان", "السعر", "الغرف", "المالك", "الحالة"]}>
+        {rows.map((row) => (
+          <tr key={String(row._id)} className="border-b border-slate-100 last:border-b-0">
+            <td className="px-4 py-3 font-black text-slate-900">{String(row.title ?? "عقار")}</td>
+            <td className="px-4 py-3 text-sm font-semibold text-slate-600">{String(row.address ?? "غير متوفر")}</td>
+            <td className="px-4 py-3 text-sm font-semibold text-slate-600">{formatCurrency(Number(row.price ?? 0))}</td>
+            <td className="px-4 py-3 text-sm font-semibold text-slate-600">
+              {formatNumber(Number(row.beds ?? 0))} / {formatNumber(Number(row.baths ?? 0))}
+            </td>
+            <td className="px-4 py-3 text-sm font-semibold text-slate-600">{row.brokerId ? "وسيط" : row.REDId ? "مطور" : "غير محدد"}</td>
+            <td className="px-4 py-3"><StatusBadge value={String(row.status ?? "unknown")} /></td>
+          </tr>
+        ))}
+      </DataTable>
+    </WorkspacePanel>
+  );
+}
+
 /**
  * WHY:   Properties are now split into simple route-backed tabs so each view answers one inventory question.
  * WHAT:  Renders all properties, broker-owned properties, developer-owned properties, or status breakdowns.
@@ -32,22 +78,7 @@ export default async function PropertiesPage({ tab = "all" }: PropertiesPageProp
       ownerBreakdown: Record<string, number>;
       trend: Array<{ label: string; value: number }>;
     };
-
-    return (
-      <div className="max-w-2xl">
-        <WorkspacePanel className="space-y-4">
-          <div className="text-sm font-black text-blue-600">توزيع الحالة</div>
-          <InlineBarChart
-            items={[
-              { label: "متاح", value: data.statusBreakdown.available ?? 0, tone: "primary" },
-              { label: "محجوز", value: data.statusBreakdown.reserved ?? 0, tone: "neutral" },
-              { label: "مباع", value: data.statusBreakdown.sold ?? 0, tone: "danger" },
-              { label: "غير محدد", value: data.statusBreakdown.unspecified ?? 0, tone: "neutral" },
-            ]}
-          />
-        </WorkspacePanel>
-      </div>
-    );
+    return <PropertiesStatusPanel data={data} />;
   }
 
   const filteredRows =
@@ -61,22 +92,5 @@ export default async function PropertiesPage({ tab = "all" }: PropertiesPageProp
     return <EmptyState title="لا توجد عقارات" description="لم يتم العثور على عقارات ضمن هذا التصنيف." />;
   }
 
-  return (
-    <WorkspacePanel>
-      <DataTable headers={["العقار", "العنوان", "السعر", "الغرف", "المالك", "الحالة"]}>
-        {filteredRows.map((row) => (
-          <tr key={String(row._id)} className="border-b border-slate-100 last:border-b-0">
-            <td className="px-4 py-3 font-black text-slate-900">{String(row.title ?? "عقار")}</td>
-            <td className="px-4 py-3 text-sm font-semibold text-slate-600">{String(row.address ?? "غير متوفر")}</td>
-            <td className="px-4 py-3 text-sm font-semibold text-slate-600">{formatCurrency(Number(row.price ?? 0))}</td>
-            <td className="px-4 py-3 text-sm font-semibold text-slate-600">
-              {formatNumber(Number(row.beds ?? 0))} / {formatNumber(Number(row.baths ?? 0))}
-            </td>
-            <td className="px-4 py-3 text-sm font-semibold text-slate-600">{row.brokerId ? "وسيط" : row.REDId ? "مطور" : "غير محدد"}</td>
-            <td className="px-4 py-3"><StatusBadge value={String(row.status ?? "unknown")} /></td>
-          </tr>
-        ))}
-      </DataTable>
-    </WorkspacePanel>
-  );
+  return <PropertiesTable rows={filteredRows} />;
 }

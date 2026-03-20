@@ -4,42 +4,14 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { UploadedFileReference } from "@/server/contracts/files";
-import type { ConversationDetail, ConversationSummary } from "@/server/contracts/inbox";
 import type { OfferActionResult } from "@/server/contracts/offers";
 import type { IncomingOrganizationInvite } from "@/server/contracts/organizations";
 import InboxSidebar from "./components/InboxSidebar";
 import { InboxThreadEmptyState, InboxThreadLoadingState } from "./components/InboxStates";
 import InboxThreadView from "./InboxThreadView";
+import { useInboxBusinessActions } from "./useInboxBusinessActions";
+import type { InboxWorkspaceClientProps } from "./InboxWorkspaceClient.types";
 import { useRealtimeInbox } from "./useRealtimeInbox";
-
-type InboxProjectOption = {
-  id: string;
-  title: string;
-  location: string;
-  imageUrl?: string | null;
-  price?: number;
-};
-
-type InboxDealOption = {
-  id: string;
-  title: string;
-  stage: "new" | "contacted" | "negotiation" | "won" | "lost";
-  value?: number;
-  contactName?: string | null;
-};
-
-type InboxWorkspaceClientProps = {
-  canUseBusinessActions: boolean;
-  currentUserId: string;
-  dealOptions: InboxDealOption[];
-  initialConversations: ConversationSummary[];
-  initialConversation: ConversationDetail | null;
-  initialSelectedConversationId: string | null;
-  initialStartUserId?: string | null;
-  hasConversationRoute: boolean;
-  incomingInvites: IncomingOrganizationInvite[];
-  projectOptions: InboxProjectOption[];
-};
 
 /**
  * WHY:   The inbox page needs one coordinator that binds realtime data, invite actions, and responsive thread visibility.
@@ -60,11 +32,16 @@ export default function InboxWorkspaceClient({
 }: InboxWorkspaceClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [businessActionError, setBusinessActionError] = useState<string | null>(null);
-  const [isBusinessActionPending, setIsBusinessActionPending] = useState(false);
   const [pendingInvites, setPendingInvites] = useState(incomingInvites);
   const [isMobileThreadVisible, setIsMobileThreadVisible] = useState(hasConversationRoute);
   const [startUserIdToResolve, setStartUserIdToResolve] = useState<string | null>(initialStartUserId);
+  const {
+    businessActionError,
+    clearBusinessActionError,
+    isBusinessActionPending,
+    postInboxIntent,
+    runBusinessAction,
+  } = useInboxBusinessActions();
   const {
     activeConversationId,
     conversation,
@@ -144,7 +121,7 @@ export default function InboxWorkspaceClient({
   };
 
   const handleShowConversation = (conversationId: string) => {
-    setBusinessActionError(null);
+    clearBusinessActionError();
     setIsMobileThreadVisible(true);
     startTransition(() => {
       handleSelectConversation(conversationId);
@@ -152,7 +129,7 @@ export default function InboxWorkspaceClient({
   };
 
   const handleCreateConversation = (targetUserId: string) => {
-    setBusinessActionError(null);
+    clearBusinessActionError();
     setIsMobileThreadVisible(true);
     startTransition(() => {
       void handleStartConversation(targetUserId);
@@ -170,35 +147,6 @@ export default function InboxWorkspaceClient({
     }
 
     await handleStartConversation(invite.inviterAuthUserId);
-  };
-
-  const postInboxIntent = async <TResult,>(body: Record<string, unknown>) => {
-    const response = await fetch("/api/workspace/inbox", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const payload = await response.json().catch(() => null);
-      throw new Error(payload?.message ?? "تعذر تنفيذ الإجراء.");
-    }
-
-    return response.json() as Promise<TResult>;
-  };
-
-  const runBusinessAction = async (action: () => Promise<void>) => {
-    setBusinessActionError(null);
-    setIsBusinessActionPending(true);
-
-    try {
-      await action();
-    } catch (error) {
-      setBusinessActionError(error instanceof Error ? error.message : "تعذر تنفيذ هذا الإجراء الآن.");
-      throw error;
-    } finally {
-      setIsBusinessActionPending(false);
-    }
   };
 
   const handleShareFile = async (file: UploadedFileReference, note?: string) => {

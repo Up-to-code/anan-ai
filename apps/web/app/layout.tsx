@@ -36,12 +36,7 @@ export const metadata: Metadata = {
   description: "Advanced Institutional Real Estate Intelligence",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const extraFontFaces = `
+const extraFontFaces = `
 @font-face {
   font-family: ${JSON.stringify(cairo.style.fontFamily)};
   font-style: normal;
@@ -68,6 +63,11 @@ export default function RootLayout({
 }
 `.trim();
 
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="ar" dir="rtl">
       <body

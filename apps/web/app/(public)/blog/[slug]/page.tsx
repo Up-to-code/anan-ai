@@ -29,6 +29,37 @@ const STATIC_POSTS: Record<string, { title: string; content: string; date: strin
   },
 };
 
+type StaticPost = (typeof STATIC_POSTS)[string];
+
+function BlogPostHeader({ post }: { post: StaticPost }) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-6">
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 bg-blue-50 px-3 py-1">
+          {post.category}
+        </span>
+        <span className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-2">
+          <Calendar className="h-4 w-4" />
+          {post.date}
+        </span>
+      </div>
+      <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight">{post.title}</h1>
+    </div>
+  );
+}
+
+function BlogShareActions() {
+  return (
+    <div className="border-t-2 border-slate-100 pt-16 mt-16 text-center">
+      <h3 className="text-xl font-black text-slate-900 mb-6 uppercase">شارك هذا المقال</h3>
+      <div className="flex justify-center gap-4">
+        <button type="button" className="h-12 w-12 bg-slate-50 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors text-slate-400 font-black text-xs uppercase tracking-widest">تويتر</button>
+        <button type="button" className="h-12 w-12 bg-slate-50 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors text-slate-400 font-black text-xs uppercase tracking-widest">لينكدإن</button>
+      </div>
+    </div>
+  );
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
   const post = STATIC_POSTS[resolvedParams.slug];
@@ -59,34 +90,14 @@ export default async function BlogPostPage({ params }: Props) {
             <ChevronRight className="h-4 w-4" />
             العودة للمدونة
           </Link>
-
-          <div className="space-y-6">
-            <div className="flex items-center gap-6">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 bg-blue-50 px-3 py-1">
-                {post.category}
-              </span>
-              <span className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                {post.date}
-              </span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight">
-              {post.title}
-            </h1>
-          </div>
+          <BlogPostHeader post={post} />
         </div>
 
         <article className="prose prose-slate prose-lg md:prose-xl text-slate-700 font-bold leading-relaxed whitespace-pre-line border-t-2 border-slate-100 pt-16">
           {post.content}
         </article>
 
-        <div className="border-t-2 border-slate-100 pt-16 mt-16 text-center">
-            <h3 className="text-xl font-black text-slate-900 mb-6 uppercase">شارك هذا المقال</h3>
-            <div className="flex justify-center gap-4">
-               <button type="button" className="h-12 w-12 bg-slate-50 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors text-slate-400 font-black text-xs uppercase tracking-widest">تويتر</button>
-               <button type="button" className="h-12 w-12 bg-slate-50 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors text-slate-400 font-black text-xs uppercase tracking-widest">لينكدإن</button>
-            </div>
-        </div>
+        <BlogShareActions />
       </Section>
     </main>
   );
