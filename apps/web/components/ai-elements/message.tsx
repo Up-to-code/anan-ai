@@ -28,8 +28,8 @@ export const MessageContent = ({
   <div
     className={cn(
       "w-fit min-w-0 max-w-full text-[15px] leading-7",
-      "group-[.is-user]:rounded-2xl group-[.is-user]:rounded-br-md group-[.is-user]:bg-slate-950 group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-white group-[.is-user]:shadow-[0_10px_24px_-18px_rgba(15,23,42,0.9)]",
-      "group-[.is-assistant]:rounded-2xl group-[.is-assistant]:rounded-bl-md group-[.is-assistant]:border group-[.is-assistant]:border-slate-200 group-[.is-assistant]:bg-white group-[.is-assistant]:px-4 group-[.is-assistant]:py-3 group-[.is-assistant]:text-slate-900 group-[.is-assistant]:shadow-[0_10px_28px_-22px_rgba(15,23,42,0.45)]",
+      "group-[.is-user]:rounded-none group-[.is-user]:bg-slate-950 group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-white",
+      "group-[.is-assistant]:rounded-none group-[.is-assistant]:border-2 group-[.is-assistant]:border-slate-200 group-[.is-assistant]:bg-white group-[.is-assistant]:px-4 group-[.is-assistant]:py-3 group-[.is-assistant]:text-slate-900",
       className,
     )}
     {...props}

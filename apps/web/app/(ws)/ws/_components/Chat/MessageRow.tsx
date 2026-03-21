@@ -4,10 +4,12 @@ import React from "react";
 import { User } from "lucide-react";
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import { AIMotionLogo, type AIMotionState } from "@/app/(ws)/ws/_components/AIMotion";
+import type { SessionUser } from "@/server/contracts/session";
 import { cn } from "@/lib/utils";
 
 export default function MessageRow({
   isUser,
+  user,
   content,
   isInfo = false,
   avatarState = "idle",
@@ -15,6 +17,7 @@ export default function MessageRow({
   children,
 }: {
   isUser: boolean;
+  user?: SessionUser;
   content?: string;
   isInfo?: boolean;
   avatarState?: AIMotionState;
@@ -31,7 +34,13 @@ export default function MessageRow({
         )}
       >
         {isUser ? (
-          <User className="h-5 w-5 text-white" />
+          user?.image ? (
+            <img src={user.image} alt={user.name ?? "User"} className="h-full w-full object-cover rounded-none" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-blue-600 text-xs font-bold text-white rounded-none">
+              {user?.name?.charAt(0)?.toUpperCase() || <User className="h-5 w-5 text-white" />}
+            </div>
+          )
         ) : (
           <AIMotionLogo state={avatarState} size="compact" />
         )}
@@ -43,7 +52,7 @@ export default function MessageRow({
             isUser ? "text-right" : "text-left",
           )}
         >
-          {isUser ? "أنت" : "Anan AI"}
+          {isUser ? user?.name || "أنت" : "Anan AI"}
         </div>
         {content ? (
           <Message

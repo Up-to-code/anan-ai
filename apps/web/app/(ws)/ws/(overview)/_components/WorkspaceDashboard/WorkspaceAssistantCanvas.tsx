@@ -1,10 +1,14 @@
 "use client";
 
 import type { AnanProStreamStageEvent, AnanProThread } from "@/server/contracts/ananPro";
+import type { SessionUser } from "@/server/contracts/session";
 import type { AIMotionState } from "@/app/(ws)/ws/_components/AIMotion";
+import { AIMotionLogo } from "@/app/(ws)/ws/_components/AIMotion";
+import { motion, LayoutGroup } from "framer-motion";
 import { LandingView, ThreadView, type AssistantComposerProps } from "./WorkspaceAssistantCanvas.sections";
 
 type WorkspaceAssistantCanvasProps = {
+  user: SessionUser;
   thread: AnanProThread | null;
   value: string;
   sendError: string | null;
@@ -14,10 +18,6 @@ type WorkspaceAssistantCanvasProps = {
   isVoiceTranscribing: boolean;
   voiceProcessingPhase: "idle" | "recording" | "uploading" | "transcribing" | "sending" | "error";
   canRegenerate: boolean;
-  activeTeamLabel: string | null;
-  completedTeamLabels: string[];
-  stageHistory: AnanProStreamStageEvent[];
-  streamLifecycleStatus: "running" | "completed" | "failed" | "cancelled" | null;
   liveAssistantMotionState: AIMotionState;
   liveStageLabel: string;
   voiceElapsedMs: number;
@@ -31,9 +31,21 @@ type WorkspaceAssistantCanvasProps = {
 
 function LoadingState() {
   return (
-    <section className="flex h-[calc(100svh-7rem)] flex-1 items-center justify-center bg-[#f7f7f5] px-6">
-      <div className="text-sm font-medium text-slate-500">جاري تحميل المحادثة...</div>
-    </section>
+    <LayoutGroup id="workspace-assistant-surface">
+      <section className="flex h-[calc(100dvh-7rem)] flex-1 flex-col items-center justify-center bg-white px-6">
+        <motion.div layoutId="assistant-motion-logo" className="mb-6">
+          <AIMotionLogo state="loading" size="hero" floating />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="text-sm font-bold tracking-wider text-slate-400 uppercase"
+        >
+          تهيئة بيئة العمل...
+        </motion.div>
+      </section>
+    </LayoutGroup>
   );
 }
 
@@ -67,16 +79,13 @@ export default function WorkspaceAssistantCanvas(props: WorkspaceAssistantCanvas
   const composerProps = toComposerProps(props);
 
   return (
-    <section className="flex h-[calc(100svh-7rem)] min-w-0 flex-1 flex-col overflow-hidden">
+    <section className="flex h-[calc(100dvh-7rem)] min-w-0 flex-1 flex-col overflow-hidden">
       {hasMessages ? (
         <ThreadView
           {...composerProps}
+          user={props.user}
           thread={props.thread}
           lastAssistantMessageId={lastAssistantMessageId}
-          activeTeamLabel={props.activeTeamLabel}
-          completedTeamLabels={props.completedTeamLabels}
-          stageHistory={props.stageHistory}
-          streamLifecycleStatus={props.streamLifecycleStatus}
           liveAssistantMotionState={props.liveAssistantMotionState}
           liveStageLabel={props.liveStageLabel}
         />

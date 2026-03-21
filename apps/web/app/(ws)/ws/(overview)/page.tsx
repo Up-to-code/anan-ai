@@ -94,6 +94,7 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
     <WorkspaceDashboard
       initialThread={ananProThread}
       initialSelectedThreadId={selectedThreadId}
+      user={workspace.user}
     />
   );
 }

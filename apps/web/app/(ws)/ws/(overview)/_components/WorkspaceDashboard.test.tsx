@@ -110,7 +110,6 @@ it("renders the conversation stream inline when messages exist", () => {
 
   expect(markup).toContain("hello");
   expect(markup).toContain("world");
-  expect(markup).toContain("جاهز للمتابعة");
   expect(markup).toContain("data-slot=\"ag-ui-turn\"");
   expect(markup).toContain("data-layout=\"thread\"");
   expect(markup).toContain("data-slot=\"thread-composer-dock\"");

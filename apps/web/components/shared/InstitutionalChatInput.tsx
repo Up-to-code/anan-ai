@@ -75,22 +75,15 @@ export default function InstitutionalChatInput({
   const sendDisabled = !value.trim() || isSending || isMicProcessing;
 
   return (
-    <div className="w-full">
+    <div className="w-full" data-slot={`chat-input-shell-${layout}`}>
       <PromptInput
         onSubmit={() => {
           if (!sendDisabled) onSend();
         }}
         className={cn(
-          "w-full overflow-hidden rounded-xl border border-slate-300 bg-white transition-colors duration-150 focus-within:border-slate-950 focus-within:ring-1 focus-within:ring-slate-950/10",
+          "w-full overflow-hidden rounded-none border-2 border-slate-300 bg-white transition-all duration-200 focus-within:border-blue-600 focus-within:ring-0",
         )}
       >
-        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5 text-xs">
-          <span className="font-medium text-slate-500">
-            {isLanding ? "ابدأ محادثة جديدة" : "تابع من نفس المحادثة"}
-          </span>
-          <span className="text-slate-400">Enter للإرسال</span>
-        </div>
-
         <PromptInputBody>
           <PromptInputTextarea
             value={value}
@@ -113,14 +106,16 @@ export default function InstitutionalChatInput({
             isLanding ? "bg-slate-50/60" : "bg-slate-50/40",
           )}
         >
-          <div className="text-xs text-slate-500">Shift + Enter لسطر جديد</div>
+          <div className="text-[11px] text-slate-400">
+            {isSending ? "الرسالة قيد المتابعة" : "Enter للإرسال"}
+          </div>
 
           <PromptInputTools className="gap-2">
             {canRegenerate && !isSending ? (
               <PromptInputButton
                 type="button"
                 onClick={onRegenerate}
-                className="rounded-lg border border-slate-300 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                className="rounded-none border border-slate-300 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
               >
                 <RotateCcw className="h-4 w-4" />
               </PromptInputButton>
@@ -133,7 +128,7 @@ export default function InstitutionalChatInput({
                 onClick={onMicToggle}
                 disabled={!onMicToggle || (isMicProcessing && !isMicRecording)}
                 className={cn(
-                  "relative rounded-lg border transition-colors",
+                  "relative rounded-none border transition-colors",
                   isMicRecording
                     ? "border-red-300 bg-red-50 text-red-600 hover:bg-red-100"
                     : "border-slate-300 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-800",
@@ -147,7 +142,7 @@ export default function InstitutionalChatInput({
               <PromptInputButton
                 type="button"
                 onClick={onStopGenerating}
-                className="rounded-lg bg-red-600 text-white hover:bg-red-500"
+                className="rounded-none bg-red-600 text-white hover:bg-red-500"
               >
                 <Square className="h-4 w-4" />
               </PromptInputButton>
@@ -157,8 +152,8 @@ export default function InstitutionalChatInput({
                 disabled={sendDisabled}
                 className={cn(
                   sendDisabled
-                    ? "cursor-not-allowed rounded-lg bg-slate-200 text-slate-400 hover:bg-slate-200"
-                    : "rounded-lg bg-slate-950 text-white hover:bg-slate-800",
+                    ? "cursor-not-allowed rounded-none bg-slate-200 text-slate-400 hover:bg-slate-200"
+                    : "rounded-none bg-slate-950 text-white hover:bg-slate-800",
                 )}
               >
                 <ArrowUp className="h-4 w-4" />
@@ -170,7 +165,7 @@ export default function InstitutionalChatInput({
 
       {isMicRecording && micLevels.length > 0 ? (
         <div className="mt-2 flex items-center justify-end">
-          <div className="pointer-events-none flex items-end gap-0.5 rounded-md border border-red-200 bg-white px-2 py-1">
+          <div className="pointer-events-none flex items-end gap-0.5 rounded-none border border-red-200 bg-white px-2 py-1">
             {micLevels.map((level, index) => (
               <motion.span
                 key={index}
