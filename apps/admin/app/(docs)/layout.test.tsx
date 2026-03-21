@@ -37,17 +37,17 @@ describe("docs standalone layout", () => {
     ).rejects.toThrow("NEXT_REDIRECT:/signin?returnTo=/docs");
   });
 
-  it("renders standalone docs chrome for authenticated users", async () => {
+  it("redirects authenticated users to the dashboard", async () => {
     getAuthenticatedSession.mockResolvedValue({
       token: "token-1",
       role: "admin",
       user: { id: "u1", isActive: true, name: "Ahmed" },
     });
 
-    const element = await DocsRootLayout({
-      children: <div>docs</div>,
-    });
-
-    expect(element).toBeTruthy();
+    await expect(
+      DocsRootLayout({
+        children: <div>docs</div>,
+      }),
+    ).rejects.toThrow("NEXT_REDIRECT:/dashboard");
   });
 });

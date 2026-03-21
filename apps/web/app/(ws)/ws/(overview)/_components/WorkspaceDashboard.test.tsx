@@ -64,15 +64,18 @@ beforeEach(() => {
   useSearchParams.mockReturnValue(new URLSearchParams());
 });
 
-it("renders a centered landing state before the first message", () => {
+it("renders a chat-first landing state before the first message", () => {
   const markup = renderToStaticMarkup(<WorkspaceDashboard initialThread={null} />);
 
-  expect(markup).toContain("كيف يمكنني مساعدتك؟");
+  expect(markup).toContain("data-slot=\"assistant-surface\"");
+  expect(markup).toContain("data-slot=\"assistant-landing-panel\"");
   expect(markup).toContain("data-slot=\"ai-motion-logo\"");
   expect(markup).toContain("data-slot=\"chat-input\"");
   expect(markup).toContain("data-layout=\"landing\"");
   expect(markup).toContain("data-slot=\"landing-composer-dock\"");
+  expect(markup).toContain("مساعد عنان");
   expect(markup).toContain("ما هي أكثر المناطق طلبًا هذا الشهر؟");
+  expect(markup).not.toContain("كيف يمكنني مساعدتك؟");
   expect(markup).not.toContain("السياق");
   expect(markup).not.toContain("الإشعارات");
   expect(markup).not.toContain("التحكم");
@@ -112,6 +115,7 @@ it("renders the conversation stream inline when messages exist", () => {
   expect(markup).toContain("world");
   expect(markup).toContain("data-slot=\"ag-ui-turn\"");
   expect(markup).toContain("data-layout=\"thread\"");
+  expect(markup).toContain("data-slot=\"assistant-surface\"");
   expect(markup).toContain("data-slot=\"thread-composer-dock\"");
-  expect(markup).not.toContain("كيف يمكنني مساعدتك؟");
+  expect(markup).not.toContain("data-slot=\"assistant-landing-panel\"");
 });

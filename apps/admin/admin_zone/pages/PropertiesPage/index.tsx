@@ -71,14 +71,16 @@ export default async function PropertiesPage({ tab = "all" }: PropertiesPageProp
   const rows = result.page as Array<Record<string, unknown>>;
 
   if (tab === "status") {
-    const analytics = await getAnalyticsPageData("properties");
-    const data = analytics.data as {
-      total: number;
-      statusBreakdown: Record<string, number>;
-      ownerBreakdown: Record<string, number>;
-      trend: Array<{ label: string; value: number }>;
+    const analytics = await getAnalyticsPageData("inventory");
+    const data = analytics.data as unknown as {
+      inventory: {
+        total: number;
+        statusBreakdown: Record<string, number>;
+        ownerBreakdown: Record<string, number>;
+        trend: Array<{ label: string; value: number }>;
+      };
     };
-    return <PropertiesStatusPanel data={data} />;
+    return <PropertiesStatusPanel data={data.inventory} />;
   }
 
   const filteredRows =

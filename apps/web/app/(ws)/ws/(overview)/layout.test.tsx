@@ -20,11 +20,20 @@ vi.mock("@/server/domains/compliance/service", () => ({
 vi.mock("../_components/WorkspaceShell", () => ({
   default: ({
     organization,
+    variant,
+    headerTitle,
     children,
   }: {
     organization: { name: string };
+    variant?: string;
+    headerTitle?: string;
     children?: React.ReactNode;
-  }) => <div data-slot="workspace-shell">Shell:{organization.name}{children}</div>,
+  }) => (
+    <div data-slot="workspace-shell" data-variant={variant} data-title={headerTitle}>
+      Shell:{organization.name}
+      {children}
+    </div>
+  ),
 }));
 
 import WorkspaceOverviewLayout from "./layout";
@@ -71,6 +80,8 @@ it("renders the shared workspace shell for overview routes", async () => {
   const markup = renderToStaticMarkup(element);
 
   expect(markup).toContain("data-slot=\"workspace-shell\"");
+  expect(markup).toContain("data-variant=\"assistant\"");
+  expect(markup).toContain("data-title=\"مساعد عنان\"");
   expect(markup).toContain("Shell:Alpha");
   expect(markup).toContain("Body");
 });

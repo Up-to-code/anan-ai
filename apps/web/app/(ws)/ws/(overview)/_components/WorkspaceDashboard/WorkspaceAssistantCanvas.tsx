@@ -32,7 +32,7 @@ type WorkspaceAssistantCanvasProps = {
 function LoadingState() {
   return (
     <LayoutGroup id="workspace-assistant-surface">
-      <section className="flex h-[calc(100dvh-7rem)] flex-1 flex-col items-center justify-center bg-white px-6">
+      <section className="flex h-full min-h-0 flex-1 flex-col items-center justify-center bg-white px-6">
         <motion.div layoutId="assistant-motion-logo" className="mb-6">
           <AIMotionLogo state="loading" size="hero" floating />
         </motion.div>
@@ -79,7 +79,7 @@ export default function WorkspaceAssistantCanvas(props: WorkspaceAssistantCanvas
   const composerProps = toComposerProps(props);
 
   return (
-    <section className="flex h-[calc(100dvh-7rem)] min-w-0 flex-1 flex-col overflow-hidden">
+    <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       {hasMessages ? (
         <ThreadView
           {...composerProps}

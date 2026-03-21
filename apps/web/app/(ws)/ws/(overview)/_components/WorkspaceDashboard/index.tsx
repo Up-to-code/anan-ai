@@ -23,8 +23,8 @@ export default function WorkspaceDashboard({
   });
 
   return (
-    <div className="h-[calc(100dvh-7rem)] overflow-hidden bg-white">
-      <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-white">
+      <div className="flex min-h-0 flex-1 flex-col">
         <WorkspaceAssistantCanvas
           user={user}
           thread={assistant.thread}

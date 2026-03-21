@@ -1,13 +1,17 @@
 import SectionScaffold from "@/components/shared/SectionScaffold";
-import { dashboardTabs } from "@/lib/adminSectionTabs";
 
+/**
+ * WHY:   The rebuilt dashboard no longer splits into shallow sub-tabs and should feel like one integrated command center.
+ * WHAT:  Wraps dashboard routes with a simple section header and no secondary tabs.
+ * HOW:   Reuses the shared section scaffold while omitting route tabs entirely.
+ */
 export default function DashboardSectionLayout({ children }: { children: React.ReactNode }) {
   return (
     <SectionScaffold
-      eyebrow="لوحة التحكم"
-      title="لوحة التحكم"
-      description="ملخص بسيط لحجم المنصة، الكيانات الرئيسية، وطوابير العمل التي تحتاج تدخل الإدارة."
-      tabs={dashboardTabs}
+      eyebrow="لوحة المتابعة"
+      title="لوحة المتابعة"
+      description="متابعة موحدة للحركة التجارية، صحة الشركاء، وضغط الطوابير التشغيلية."
+      tabs={[]}
     >
       {children}
     </SectionScaffold>

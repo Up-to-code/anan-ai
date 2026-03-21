@@ -17,6 +17,7 @@ import type { AIMotionState } from "@/app/(ws)/ws/_components/AIMotion";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 export type AssistantComposerProps = {
   value: string;
@@ -44,6 +45,14 @@ type ThreadViewProps = AssistantComposerProps & {
   liveAssistantMotionState: AIMotionState;
   liveStageLabel: string;
 };
+
+const DEFAULT_COMPOSER_DOCK_HEIGHT = 208;
+const SUGGESTION_CHIPS = [
+  "ما هي أكثر المناطق طلبًا هذا الشهر؟",
+  "أنشئ عرضًا لمشروع جديد",
+  "ابحث في المشاريع المتاحة",
+  "ما هو أداء وسطائي؟",
+];
 
 function formatVoiceElapsed(ms: number) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -179,7 +188,76 @@ function AssistantComposer(props: AssistantComposerProps) {
   );
 }
 
+function useComposerDockHeight() {
+  const composerDockRef = useRef<HTMLDivElement | null>(null);
+  const [composerDockHeight, setComposerDockHeight] = useState(DEFAULT_COMPOSER_DOCK_HEIGHT);
 
+  useEffect(() => {
+    const dockElement = composerDockRef.current;
+    if (!dockElement) {
+      return;
+    }
+
+    const updateHeight = () => {
+      setComposerDockHeight(dockElement.offsetHeight || DEFAULT_COMPOSER_DOCK_HEIGHT);
+    };
+
+    updateHeight();
+
+    if (typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    const observer = new ResizeObserver(() => updateHeight());
+    observer.observe(dockElement);
+
+    return () => observer.disconnect();
+  }, []);
+
+  return { composerDockRef, composerDockHeight };
+}
+
+function AssistantSurface({
+  dockSlot,
+  children,
+  ...props
+}: AssistantComposerProps & {
+  dockSlot: "landing-composer-dock" | "thread-composer-dock";
+  children: React.ReactNode;
+}) {
+  const { composerDockRef, composerDockHeight } = useComposerDockHeight();
+  const surfaceStyle = {
+    ["--assistant-composer-offset" as string]: `${composerDockHeight}px`,
+  } as CSSProperties;
+
+  return (
+    <LayoutGroup id="workspace-assistant-surface">
+      <motion.div
+        layout
+        data-slot="assistant-surface"
+        className="flex min-h-0 flex-1 flex-col bg-[#f7f7f5]"
+        style={surfaceStyle}
+      >
+        <Conversation className="min-h-0 flex-1 px-4 sm:px-6 lg:px-8">
+          <ConversationContent className="mx-auto w-full max-w-5xl gap-7 pt-6 pb-[calc(var(--assistant-composer-offset)+1.5rem)] sm:pt-8">
+            {children}
+          </ConversationContent>
+          <ConversationScrollButton className="bottom-[calc(env(safe-area-inset-bottom)+var(--assistant-composer-offset)+1rem)]" />
+        </Conversation>
+        <motion.div
+          ref={composerDockRef}
+          layout
+          data-slot={dockSlot}
+          className="sticky bottom-0 z-20 shrink-0 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.875rem)] backdrop-blur-sm sm:px-6 lg:px-8"
+        >
+          <div className="mx-auto w-full max-w-5xl">
+            <AssistantComposer {...props} />
+          </div>
+        </motion.div>
+      </motion.div>
+    </LayoutGroup>
+  );
+}
 
 function ThreadMessages({
   user,
@@ -197,7 +275,7 @@ function ThreadMessages({
   liveStageLabel: string;
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-7 pb-10">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-7">
       {thread?.messages.map((message) => (
         <motion.div
           key={message.id}
@@ -239,123 +317,61 @@ export function ThreadView({
   ...props
 }: ThreadViewProps) {
   return (
-    <LayoutGroup id="workspace-assistant-surface">
-      <div className="flex min-h-0 flex-1 flex-col bg-[#f7f7f5]">
-        <Conversation className="min-h-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
-          <ConversationContent className="mx-auto w-full max-w-5xl gap-7 pb-40">
-            <ThreadMessages
-              user={props.user}
-              thread={thread}
-              isSending={props.isSending}
-              lastAssistantMessageId={lastAssistantMessageId}
-              liveAssistantMotionState={props.liveAssistantMotionState}
-              liveStageLabel={props.liveStageLabel}
-            />
-          </ConversationContent>
-          <ConversationScrollButton className="bottom-6" />
-        </Conversation>
-        <motion.div
-          layout
-          data-slot="thread-composer-dock"
-          className="sticky bottom-0 z-20 shrink-0 border-t border-slate-200 bg-white px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6 lg:px-8"
-        >
-          <div className="mx-auto w-full max-w-5xl">
-            <AssistantComposer {...props} layout="thread" />
-          </div>
-        </motion.div>
-      </div>
-    </LayoutGroup>
+    <AssistantSurface {...props} dockSlot="thread-composer-dock">
+      <ThreadMessages
+        user={props.user}
+        thread={thread}
+        isSending={props.isSending}
+        lastAssistantMessageId={lastAssistantMessageId}
+        liveAssistantMotionState={props.liveAssistantMotionState}
+        liveStageLabel={props.liveStageLabel}
+      />
+    </AssistantSurface>
   );
 }
 
-const SUGGESTION_CHIPS = [
-  "ما هي أكثر المناطق طلبًا هذا الشهر؟",
-  "أنشئ عرضًا لمشروع جديد",
-  "ابحث في المشاريع المتاحة",
-  "ما هو أداء وسطائي؟",
-];
-
 export function LandingView(props: AssistantComposerProps) {
   return (
-    <LayoutGroup id="workspace-assistant-surface">
+    <AssistantSurface {...props} dockSlot="landing-composer-dock">
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.35 }}
-        className="flex min-h-0 flex-1 flex-col bg-[#f7f7f5]"
+        data-slot="assistant-landing-panel"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8"
       >
-        <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
-          <motion.div layout className="w-full max-w-5xl">
-            <div className="mx-auto flex max-w-xl flex-col items-center text-center">
-              <motion.div
-                layout
-                initial={{ scale: 0.96, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className="mb-5"
-              >
-                <AIMotionLogo state="idle" size="standard" />
-              </motion.div>
-              <motion.h1
-                layout
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: 0.05 }}
-                className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl"
-              >
-                كيف يمكنني مساعدتك؟
-              </motion.h1>
-              <motion.p
-                layout
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: 0.1 }}
-                className="mt-3 max-w-lg text-sm leading-7 text-slate-500"
-              >
-                ابدأ مباشرة من الأسفل. سنحافظ على نفس المساحة ونحوّلها إلى محادثة مستمرة بدون أي انقطاع.
-              </motion.p>
+        <div className="border-b border-slate-200/80 pb-5">
+          <div className="flex items-center gap-3">
+            <div className="shrink-0">
+              <AIMotionLogo state="idle" size="standard" />
             </div>
-
-            <motion.div
-              layout
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.4, delay: 0.18 }}
-              className="mx-auto mt-8 max-w-3xl"
-            >
-              <Suggestions className="w-full justify-center">
-                {SUGGESTION_CHIPS.map((chip) => (
-                  <Suggestion
-                    key={chip}
-                    onClick={() => props.onSend(chip)}
-                    suggestion={chip}
-                    className="rounded-md border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950"
-                  >
-                    {chip}
-                  </Suggestion>
-                ))}
-              </Suggestions>
-            </motion.div>
-          </motion.div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-950">مساعد عنان</p>
+              <p className="mt-1 text-sm leading-6 text-slate-500">
+                اطلب تحليلًا، أنشئ عرضًا، أو اسأل عن المشاريع والعملاء من نفس المساحة.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <motion.div
-          layout
-          data-slot="landing-composer-dock"
-          className="sticky bottom-0 z-20 shrink-0 border-t border-slate-200 bg-white px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6 lg:px-8"
-        >
-          <div className="mx-auto w-full max-w-5xl">
-            <motion.div
-              layout
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.12 }}
-            >
-              <AssistantComposer {...props} layout="landing" />
-            </motion.div>
-          </div>
-        </motion.div>
+        <div className="flex flex-col gap-3">
+          <p className="text-sm font-medium text-slate-600">
+            ابدأ بطلب واضح أو اختر واحدة من هذه المهام السريعة:
+          </p>
+          <Suggestions className="w-full justify-start">
+            {SUGGESTION_CHIPS.map((chip) => (
+              <Suggestion
+                key={chip}
+                onClick={() => props.onSend(chip)}
+                suggestion={chip}
+                className="rounded-md border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950"
+              >
+                {chip}
+              </Suggestion>
+            ))}
+          </Suggestions>
+        </div>
       </motion.div>
-    </LayoutGroup>
+    </AssistantSurface>
   );
 }

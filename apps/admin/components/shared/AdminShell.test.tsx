@@ -1,12 +1,14 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-const { usePathname } = vi.hoisted(() => ({
+const { usePathname, useSearchParams } = vi.hoisted(() => ({
   usePathname: vi.fn(() => "/dashboard"),
+  useSearchParams: vi.fn(() => new URLSearchParams("range=90d")),
 }));
 
 vi.mock("next/navigation", () => ({
   usePathname,
+  useSearchParams,
 }));
 
 vi.mock("@/components/auth/LogoutButton", () => ({
@@ -23,10 +25,12 @@ describe("AdminShell", () => {
       </AdminShell>,
     );
 
-    expect(html).toContain("مركز إدارة المنصة");
-    expect(html).toContain("لوحة التحكم");
+    expect(html).toContain("إدارة عنان");
+    expect(html).toContain("لوحة المتابعة");
     expect(html).toContain("التحليلات");
+    expect(html).toContain("الطلبات");
     expect(html).toContain("العقارات");
+    expect(html).toContain("90 يوم");
     expect(html).not.toContain("Docs");
   });
 });

@@ -49,6 +49,7 @@ import type * as admin_zone_activities from "../admin_zone/activities.js";
 import type * as admin_zone_analytics from "../admin_zone/analytics.js";
 import type * as admin_zone_banks from "../admin_zone/banks.js";
 import type * as admin_zone_charts from "../admin_zone/charts.js";
+import type * as admin_zone_commandCenter from "../admin_zone/commandCenter.js";
 import type * as admin_zone_compliance from "../admin_zone/compliance.js";
 import type * as admin_zone_compliance_defaults from "../admin_zone/compliance/defaults.js";
 import type * as admin_zone_developers from "../admin_zone/developers.js";
@@ -358,6 +359,7 @@ declare const fullApi: ApiFromModules<{
   "admin_zone/analytics": typeof admin_zone_analytics;
   "admin_zone/banks": typeof admin_zone_banks;
   "admin_zone/charts": typeof admin_zone_charts;
+  "admin_zone/commandCenter": typeof admin_zone_commandCenter;
   "admin_zone/compliance": typeof admin_zone_compliance;
   "admin_zone/compliance/defaults": typeof admin_zone_compliance_defaults;
   "admin_zone/developers": typeof admin_zone_developers;

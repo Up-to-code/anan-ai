@@ -6,7 +6,7 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import StatCard from "@/components/shared/StatCard";
 import WorkspacePanel from "@/components/shared/WorkspacePanel";
 import { labelForChannel, labelForOwnerType, labelForRole, labelForStatus, labelForVerificationType } from "@/lib/adminLabels";
-import { formatCurrency, formatDateTime, formatNumber } from "@/lib/format";
+import { formatDateTime, formatNumber } from "@/lib/format";
 import { getAdminUserDetailPageData } from "@/admin_zone/api/users";
 import {
   renderUserActivityTab,

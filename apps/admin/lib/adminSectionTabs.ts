@@ -1,34 +1,16 @@
 import type { RouteTab } from "@/lib/adminNavigation";
 
-export const dashboardTabs: RouteTab[] = [
-  { href: "/dashboard", label: "نظرة عامة", exact: true },
-  { href: "/dashboard/entities", label: "ملخص الكيانات" },
-  { href: "/dashboard/activity", label: "ملخص النشاط" },
-];
+export const dashboardTabs: RouteTab[] = [];
 
-export const docsTabs: RouteTab[] = [
-  { href: "/docs", label: "Overview", exact: true },
-  { href: "/docs/architecture", label: "Architecture" },
-  { href: "/docs/convex", label: "Convex" },
-  { href: "/docs/security", label: "Security" },
-  { href: "/docs/web-gateway", label: "Web Gateway" },
-  { href: "/docs/channels", label: "Channels" },
-  { href: "/docs/capabilities", label: "Capabilities" },
-  { href: "/docs/ui", label: "UI Components" },
-  { href: "/docs/data", label: "Data & Contracts" },
-  { href: "/docs/ai-chatflow", label: "AI Chatflow" },
-  { href: "/docs/mobile", label: "Mobile" },
-  { href: "/docs/workflow", label: "Workflow" },
-];
+export const docsTabs: RouteTab[] = [];
 
 export const analyticsTabs: RouteTab[] = [
-  { href: "/analytics/messages", label: "الرسائل" },
-  { href: "/analytics/active-30d", label: "النشاط خلال 30 يوم" },
-  { href: "/analytics/brokers", label: "الوسطاء" },
-  { href: "/analytics/developers", label: "المطورون" },
-  { href: "/analytics/properties", label: "العقارات" },
-  { href: "/analytics/offers", label: "العروض" },
-  { href: "/analytics/connections", label: "الروابط" },
+  { href: "/analytics/executive", label: "تنفيذي" },
+  { href: "/analytics/engagement", label: "التفاعل" },
+  { href: "/analytics/commercial", label: "التجاري" },
+  { href: "/analytics/partners", label: "الشركاء" },
+  { href: "/analytics/inventory", label: "المخزون" },
+  { href: "/analytics/collaboration", label: "التعاون" },
 ];
 
 export const usersTabs: RouteTab[] = [

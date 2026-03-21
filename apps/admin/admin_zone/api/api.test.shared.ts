@@ -1,18 +1,9 @@
 import { vi } from "vitest";
 
-export const { requireAdminPageSession } = vi.hoisted(() => ({
+const adminApiMocks = vi.hoisted(() => ({
   requireAdminPageSession: vi.fn(),
-}));
-
-export const { requireAdminSession } = vi.hoisted(() => ({
   requireAdminSession: vi.fn(),
-}));
-
-export const { convexAdminActivityRepository } = vi.hoisted(() => ({
   convexAdminActivityRepository: { list: vi.fn() },
-}));
-
-export const { convexAdminAnalyticsRepository } = vi.hoisted(() => ({
   convexAdminAnalyticsRepository: {
     getMessageAnalytics: vi.fn(),
     getActiveUsersAnalytics: vi.fn(),
@@ -22,9 +13,12 @@ export const { convexAdminAnalyticsRepository } = vi.hoisted(() => ({
     getOfferAnalytics: vi.fn(),
     getConnectionAnalytics: vi.fn(),
   },
-}));
-
-export const { convexAdminDiagnosticsRepository } = vi.hoisted(() => ({
+  convexAdminCommandCenterRepository: {
+    getOverview: vi.fn(),
+    getCommercialAnalytics: vi.fn(),
+    getPartnerHealthAnalytics: vi.fn(),
+    getQueueHealthAnalytics: vi.fn(),
+  },
   convexAdminDiagnosticsRepository: {
     listDevLogs: vi.fn(),
     getErrorRate: vi.fn(),
@@ -32,9 +26,6 @@ export const { convexAdminDiagnosticsRepository } = vi.hoisted(() => ({
     getErrorHealthChart: vi.fn(),
     getChannelDistribution: vi.fn(),
   },
-}));
-
-export const { convexAdminKnowledgeRepository } = vi.hoisted(() => ({
   convexAdminKnowledgeRepository: {
     list: vi.fn(),
     get: vi.fn(),
@@ -42,16 +33,10 @@ export const { convexAdminKnowledgeRepository } = vi.hoisted(() => ({
     update: vi.fn(),
     remove: vi.fn(),
   },
-}));
-
-export const { convexAdminOrdersRepository } = vi.hoisted(() => ({
   convexAdminOrdersRepository: {
     list: vi.fn(),
     update: vi.fn(),
   },
-}));
-
-export const { convexAdminOrganizationsRepository } = vi.hoisted(() => ({
   convexAdminOrganizationsRepository: {
     listBrokers: vi.fn(),
     listDevelopers: vi.fn(),
@@ -59,16 +44,10 @@ export const { convexAdminOrganizationsRepository } = vi.hoisted(() => ({
     listInvites: vi.fn(),
     getDetail: vi.fn(),
   },
-}));
-
-export const { convexAdminOverviewRepository } = vi.hoisted(() => ({
   convexAdminOverviewRepository: {
     getStats: vi.fn(),
     listRecentActivities: vi.fn(),
   },
-}));
-
-export const { convexAdminPropertiesRepository } = vi.hoisted(() => ({
   convexAdminPropertiesRepository: {
     list: vi.fn(),
     listReds: vi.fn(),
@@ -77,9 +56,6 @@ export const { convexAdminPropertiesRepository } = vi.hoisted(() => ({
     update: vi.fn(),
     remove: vi.fn(),
   },
-}));
-
-export const { convexAdminUsersRepository } = vi.hoisted(() => ({
   convexAdminUsersRepository: {
     listAdminProfiles: vi.fn(),
     listAdminMemberships: vi.fn(),
@@ -88,9 +64,6 @@ export const { convexAdminUsersRepository } = vi.hoisted(() => ({
     getDetail: vi.fn(),
     update: vi.fn(),
   },
-}));
-
-export const { convexAdminVerificationsRepository } = vi.hoisted(() => ({
   convexAdminVerificationsRepository: {
     getSummary: vi.fn(),
     list: vi.fn(),
@@ -98,6 +71,36 @@ export const { convexAdminVerificationsRepository } = vi.hoisted(() => ({
     review: vi.fn(),
   },
 }));
+
+const requireAdminPageSession = adminApiMocks.requireAdminPageSession;
+const requireAdminSession = adminApiMocks.requireAdminSession;
+const convexAdminActivityRepository = adminApiMocks.convexAdminActivityRepository;
+const convexAdminAnalyticsRepository = adminApiMocks.convexAdminAnalyticsRepository;
+const convexAdminCommandCenterRepository = adminApiMocks.convexAdminCommandCenterRepository;
+const convexAdminDiagnosticsRepository = adminApiMocks.convexAdminDiagnosticsRepository;
+const convexAdminKnowledgeRepository = adminApiMocks.convexAdminKnowledgeRepository;
+const convexAdminOrdersRepository = adminApiMocks.convexAdminOrdersRepository;
+const convexAdminOrganizationsRepository = adminApiMocks.convexAdminOrganizationsRepository;
+const convexAdminOverviewRepository = adminApiMocks.convexAdminOverviewRepository;
+const convexAdminPropertiesRepository = adminApiMocks.convexAdminPropertiesRepository;
+const convexAdminUsersRepository = adminApiMocks.convexAdminUsersRepository;
+const convexAdminVerificationsRepository = adminApiMocks.convexAdminVerificationsRepository;
+
+export {
+  convexAdminActivityRepository,
+  convexAdminAnalyticsRepository,
+  convexAdminCommandCenterRepository,
+  convexAdminDiagnosticsRepository,
+  convexAdminKnowledgeRepository,
+  convexAdminOrdersRepository,
+  convexAdminOrganizationsRepository,
+  convexAdminOverviewRepository,
+  convexAdminPropertiesRepository,
+  convexAdminUsersRepository,
+  convexAdminVerificationsRepository,
+  requireAdminPageSession,
+  requireAdminSession,
+};
 
 vi.mock("@/lib/serverSession", () => ({
   requireAdminPageSession,
@@ -113,6 +116,10 @@ vi.mock("@/server/infrastructure/convex/adminActivityRepository", () => ({
 
 vi.mock("@/server/infrastructure/convex/adminAnalyticsRepository", () => ({
   convexAdminAnalyticsRepository,
+}));
+
+vi.mock("@/server/infrastructure/convex/adminCommandCenterRepository", () => ({
+  convexAdminCommandCenterRepository,
 }));
 
 vi.mock("@/server/infrastructure/convex/adminDiagnosticsRepository", () => ({
@@ -169,6 +176,10 @@ function resetAnalyticsAndDiagnosticsMocks() {
   convexAdminAnalyticsRepository.getPropertyAnalytics.mockReset();
   convexAdminAnalyticsRepository.getOfferAnalytics.mockReset();
   convexAdminAnalyticsRepository.getConnectionAnalytics.mockReset();
+  convexAdminCommandCenterRepository.getOverview.mockReset();
+  convexAdminCommandCenterRepository.getCommercialAnalytics.mockReset();
+  convexAdminCommandCenterRepository.getPartnerHealthAnalytics.mockReset();
+  convexAdminCommandCenterRepository.getQueueHealthAnalytics.mockReset();
   convexAdminDiagnosticsRepository.listDevLogs.mockReset();
   convexAdminDiagnosticsRepository.getErrorRate.mockReset();
   convexAdminDiagnosticsRepository.getSearchActivityChart.mockReset();

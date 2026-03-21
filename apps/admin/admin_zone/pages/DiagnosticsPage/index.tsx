@@ -1,7 +1,8 @@
-import { getAdminDiagnosticsPageData } from "@/admin_zone/api/diagnostics";
-import EmptyState from "@/components/shared/EmptyState";
-import InlineBarChart from "@/components/shared/InlineBarChart";
+import LineTrendChart from "@/components/shared/LineTrendChart";
+import MetricBarChart from "@/components/shared/MetricBarChart";
+import StatCard from "@/components/shared/StatCard";
 import WorkspacePanel from "@/components/shared/WorkspacePanel";
+import { getAdminDiagnosticsPageData } from "@/admin_zone/api/diagnostics";
 import { formatPercent } from "@/lib/format";
 
 type DiagnosticsPageProps = {
@@ -10,73 +11,74 @@ type DiagnosticsPageProps = {
   };
 };
 
-function buildSearchItems(data: Awaited<ReturnType<typeof getAdminDiagnosticsPageData>>) {
+function buildSearchTrend(data: Awaited<ReturnType<typeof getAdminDiagnosticsPageData>>) {
   return data.searchActivity.labels.map((label, index) => ({
     label,
-    value: (data.searchActivity.successSeries[index] ?? 0) + (data.searchActivity.failedSeries[index] ?? 0),
-    tone: (data.searchActivity.failedSeries[index] ?? 0) > 0 ? "danger" as const : "primary" as const,
+    success: data.searchActivity.successSeries[index] ?? 0,
+    failed: data.searchActivity.failedSeries[index] ?? 0,
   }));
 }
 
-function DiagnosticsRangeForm({ range }: { range: "day" | "week" | "month" }) {
-  return (
-    <form className="flex items-center gap-4">
-      <select name="range" defaultValue={range} className="h-10 border-2 border-slate-100 px-4 text-sm font-semibold text-slate-700">
-        <option value="day">يوم</option>
-        <option value="week">أسبوع</option>
-        <option value="month">شهر</option>
-      </select>
-      <button type="submit" className="h-10 border-2 border-blue-600 bg-blue-600 px-5 text-[11px] font-black uppercase tracking-[0.18em] text-white">
-        تطبيق
-      </button>
-    </form>
-  );
-}
-
-function DiagnosticsCards({ data }: { data: Awaited<ReturnType<typeof getAdminDiagnosticsPageData>> }) {
-  return (
-    <div className="grid gap-4 md:grid-cols-3">
-      <div className="border-2 border-slate-100 bg-white p-6">
-        <div className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">إجمالي الأحداث</div>
-        <div className="mt-3 text-4xl font-black text-slate-900">{data.errorRate.total}</div>
-      </div>
-      <div className="border-2 border-slate-100 bg-white p-6">
-        <div className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">الأخطاء</div>
-        <div className="mt-3 text-4xl font-black text-rose-600">{data.errorRate.errors}</div>
-      </div>
-      <div className="border-2 border-slate-100 bg-white p-6">
-        <div className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">معدل الأخطاء</div>
-        <div className="mt-3 text-4xl font-black text-slate-900">{formatPercent(data.errorRate.rate)}</div>
-      </div>
-    </div>
-  );
-}
-
 /**
- * WHY:   Platform operations needs a dedicated view for runtime health and failure rates.
- * WHAT:  Renders one focused panel: the error rate metrics and search activity chart.
- * HOW:   Loads the diagnostic datasets server-side and projects into one unified workspace panel.
+ * WHY:   Diagnostics should feel like part of the rebuilt admin instead of an old isolated chart page.
+ * WHAT:  Renders runtime health cards plus trend and breakdown charts for search and error activity.
+ * HOW:   Loads the diagnostics datasets server-side and maps them into the shared chart primitives.
  */
 export default async function DiagnosticsPage({ searchParams }: DiagnosticsPageProps) {
   const range = searchParams.range ?? "week";
   const data = await getAdminDiagnosticsPageData(range);
-  const searchItems = buildSearchItems(data);
+  const searchTrend = buildSearchTrend(data);
 
   return (
     <div className="space-y-6">
-      <WorkspacePanel className="space-y-6">
-        <DiagnosticsRangeForm range={range} />
-        <DiagnosticsCards data={data} />
+      <section className="grid gap-4 md:grid-cols-3">
+        <StatCard label="إجمالي الأحداث" value={String(data.errorRate.total)} />
+        <StatCard label="الأخطاء" value={String(data.errorRate.errors)} />
+        <StatCard label="معدل الأخطاء" value={formatPercent(data.errorRate.rate)} />
+      </section>
 
-        <div>
-          <div className="text-[11px] font-black uppercase tracking-[0.22em] text-blue-600 mb-4">نشاط البحث</div>
-          {searchItems.length > 0 ? (
-            <InlineBarChart items={searchItems} />
-          ) : (
-            <EmptyState title="لا يوجد نشاط" description="لم يتم تسجيل نشاط بحث ضمن الفترة المحددة." />
-          )}
-        </div>
-      </WorkspacePanel>
+      <section className="grid gap-6 xl:grid-cols-2">
+        <WorkspacePanel className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">اتجاه نشاط البحث</h2>
+              <p className="mt-1 text-sm text-slate-500">مقارنة بين العمليات الناجحة والفاشلة خلال النطاق المحدد.</p>
+            </div>
+            <form className="flex items-center gap-2">
+              <select name="range" defaultValue={range} className="h-10 rounded-md border border-stone-300 bg-white px-3 text-sm">
+                <option value="day">يوم</option>
+                <option value="week">أسبوع</option>
+                <option value="month">شهر</option>
+              </select>
+              <button type="submit" className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+                تطبيق
+              </button>
+            </form>
+          </div>
+          <LineTrendChart
+            data={searchTrend}
+            series={[
+              { dataKey: "success", label: "ناجح", color: "#15803d" },
+              { dataKey: "failed", label: "فاشل", color: "#be123c" },
+            ]}
+          />
+        </WorkspacePanel>
+
+        <WorkspacePanel className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">توزيع القنوات</h2>
+            <p className="mt-1 text-sm text-slate-500">حجم استخدام واتساب، التطبيق، والويب داخل إشارات التشخيص.</p>
+          </div>
+          <MetricBarChart
+            data={[
+              { label: "واتساب", value: data.channelDistribution.whatsapp },
+              { label: "التطبيق", value: data.channelDistribution.app },
+              { label: "الويب", value: data.channelDistribution.web },
+            ]}
+            series={[{ dataKey: "value", label: "القنوات", color: "#1f2937" }]}
+          />
+        </WorkspacePanel>
+      </section>
     </div>
   );
 }

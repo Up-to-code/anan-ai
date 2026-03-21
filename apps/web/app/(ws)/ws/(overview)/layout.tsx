@@ -33,6 +33,8 @@ export default async function WorkspaceOverviewLayout({
       user={chrome.user}
       visibleZoneKeys={workspace.visibleZoneKeys}
       organization={organizationDisplay}
+      variant="assistant"
+      headerTitle="مساعد عنان"
       complianceBanner={complianceBanner}
       recentAssistantThreads={chrome.recentAssistantThreads}
       allAssistantThreads={chrome.allAssistantThreads}

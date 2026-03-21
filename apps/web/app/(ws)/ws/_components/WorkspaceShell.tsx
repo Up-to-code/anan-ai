@@ -10,11 +10,14 @@ import WorkspaceSidebarDrawer from "./WorkspaceSidebarDrawer";
 import WorkspaceTopNavbar from "./WorkspaceTopNavbar";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
 import type { AnanProThreadSummary } from "@/server/contracts/ananPro";
+import { cn } from "@/lib/utils";
+
+export type WorkspaceShellVariant = "default" | "assistant";
 
 /**
  * WHY:   The workspace route group needs one responsive shell that behaves consistently across desktop and Safari-class mobile browsers.
  * WHAT:  Renders the desktop sidebar rail, mobile drawer trigger, top navbar, and main content column for `/ws`.
- * HOW:   Uses `svh`-based sizing on the desktop shell and leaves mobile content flow un-clipped so the sidebar stays reachable.
+ * HOW:   Uses `svh`-based sizing on the desktop shell, supports an assistant-first overview variant, and keeps mobile navigation reachable.
  */
 export default function WorkspaceShell({
   user,
@@ -24,6 +27,8 @@ export default function WorkspaceShell({
   allAssistantThreads = [],
   signalCounts = { notificationCount: 0, inboxCount: 0 },
   complianceBanner = null,
+  variant = "default",
+  headerTitle,
   children,
 }: {
   user: SidebarUser;
@@ -38,14 +43,21 @@ export default function WorkspaceShell({
     ctaLabel?: string;
     ctaHref?: string;
   } | null;
+  variant?: WorkspaceShellVariant;
+  headerTitle?: string;
   children: React.ReactNode;
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const isAssistantVariant = variant === "assistant";
 
   return (
     <div
       data-slot="workspace-shell"
-      className="min-h-svh bg-slate-50 lg:flex lg:h-svh lg:overflow-hidden"
+      data-variant={variant}
+      className={cn(
+        "min-h-svh lg:flex lg:h-svh lg:overflow-hidden",
+        isAssistantVariant ? "bg-white" : "bg-slate-50",
+      )}
     >
       {!sidebarCollapsed ? (
         <div className={`hidden shrink-0 lg:flex lg:h-svh relative group ${WORKSPACE_SIDEBAR_WIDTH_CLASS}`}>
@@ -84,6 +96,8 @@ export default function WorkspaceShell({
           organization={organization}
           visibleZoneKeys={visibleZoneKeys}
           initialSignalCounts={signalCounts}
+          variant={variant}
+          title={headerTitle}
           mobileNavigation={
             <WorkspaceSidebarDrawer
               user={user}
@@ -112,7 +126,12 @@ export default function WorkspaceShell({
           </div>
         ) : null}
 
-        <main className="min-w-0 flex-1 overflow-visible motion-safe:animate-zone-page-enter lg:overflow-auto">
+        <main
+          className={cn(
+            "min-w-0 flex-1 motion-safe:animate-zone-page-enter",
+            isAssistantVariant ? "overflow-hidden" : "overflow-visible lg:overflow-auto",
+          )}
+        >
           {children}
         </main>
       </div>

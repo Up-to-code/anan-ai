@@ -59,11 +59,35 @@ describe("WorkspaceShell", () => {
     );
 
     expect(markup).toContain("data-slot=\"workspace-shell\"");
+    expect(markup).toContain("data-variant=\"default\"");
     expect(markup).toContain("data-slot=\"workspace-sidebar-desktop\"");
     expect(markup).toContain("data-slot=\"workspace-sidebar-trigger\"");
+    expect(markup).toContain("data-slot=\"workspace-top-navbar\"");
     expect(markup).toContain("Body");
     expect(markup).toContain("Alpha");
     expect(markup).toContain("/ws/notifications");
     expect(markup).toContain("/ws/inbox");
+  });
+
+  it("renders assistant-first chrome when the overview variant is requested", () => {
+    const markup = renderToStaticMarkup(
+      <WorkspaceShell
+        user={{ name: "Ahmed", email: "ahmed@example.com" }}
+        visibleZoneKeys={["overview", "offers", "inbox", "settings"]}
+        organization={{ name: "Alpha", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
+        variant="assistant"
+        headerTitle="مساعد عنان"
+      >
+        <div>Assistant Body</div>
+      </WorkspaceShell>,
+    );
+
+    expect(markup).toContain("data-slot=\"workspace-shell\"");
+    expect(markup).toContain("data-variant=\"assistant\"");
+    expect(markup).toContain("data-slot=\"workspace-top-navbar\"");
+    expect(markup).toContain("مساعد عنان");
+    expect(markup).toContain("Assistant Body");
+    expect(markup).toContain("data-slot=\"workspace-sidebar-desktop\"");
+    expect(markup).toContain("data-slot=\"workspace-sidebar-trigger\"");
   });
 });

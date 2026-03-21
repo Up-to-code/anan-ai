@@ -48,38 +48,38 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #2563EB;
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --background: #f5f5f4;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #1f2937;
+  --primary-foreground: #fafaf9;
+  --secondary: #f5f5f4;
+  --secondary-foreground: #1c1917;
+  --muted: #fafaf9;
+  --muted-foreground: #57534e;
+  --accent: #f5f5f4;
+  --accent-foreground: #1c1917;
   --destructive: oklch(0.58 0.22 27);
-  --border: #F1F5F9;
-  --input: #F1F5F9;
-  --ring: #2563EB;
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
-  --radius: 0px;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --border: #d6d3d1;
+  --input: #e7e5e4;
+  --ring: #1f2937;
+  --chart-1: #1f2937;
+  --chart-2: #a16207;
+  --chart-3: #15803d;
+  --chart-4: #0f766e;
+  --chart-5: #be123c;
+  --radius: 10px;
+  --sidebar: #fafaf9;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #1f2937;
+  --sidebar-primary-foreground: #fafaf9;
+  --sidebar-accent: #f5f5f4;
+  --sidebar-accent-foreground: #1c1917;
+  --sidebar-border: #d6d3d1;
+  --sidebar-ring: #1f2937;
 }
 
 .dark {
@@ -132,8 +132,8 @@
 
 /* --- Anan Sharp Scrollbar (Chrome/Safari/Edge) --- */
 :root {
-  --sb-thumb: #0f172a;
-  --sb-thumb-hover: #2563eb;
+  --sb-thumb: #44403c;
+  --sb-thumb-hover: #1f2937;
   --sb-track: transparent;
 }
 

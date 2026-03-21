@@ -1,10 +1,15 @@
 import DashboardPage from "@/admin_zone/pages/DashboardPage";
 
+type DashboardRouteProps = {
+  searchParams: Promise<{ range?: "30d" | "90d" }>;
+};
+
 /**
- * WHY:   The dashboard route should stay thin and delegate all UI and data composition to its page module.
- * WHAT:  Renders the admin dashboard orchestrator.
- * HOW:   Imports and returns the `DashboardPage` module directly.
+ * WHY:   The dashboard route should stay thin while still respecting the shared time-window query string.
+ * WHAT:  Resolves the selected range and renders the rebuilt dashboard page module.
+ * HOW:   Awaits the App Router search params and forwards the normalized range to `DashboardPage`.
  */
-export default function DashboardRoute() {
-  return <DashboardPage />;
+export default async function DashboardRoute({ searchParams }: DashboardRouteProps) {
+  const { range } = await searchParams;
+  return <DashboardPage range={range === "30d" ? "30d" : "90d"} />;
 }

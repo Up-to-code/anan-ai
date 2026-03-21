@@ -3,6 +3,7 @@ import { beforeEach, expect, it } from "vitest";
 import {
   convexAdminActivityRepository,
   convexAdminAnalyticsRepository,
+  convexAdminCommandCenterRepository,
   convexAdminDiagnosticsRepository,
   convexAdminKnowledgeRepository,
   convexAdminOrdersRepository,
@@ -41,34 +42,50 @@ it("loads activity data with the mapped admin-log source", async () => {
   expect(result.rows).toEqual([{ id: "row-1" }]);
 });
 
-it("loads the requested analytics tab dataset", async () => {
-  convexAdminAnalyticsRepository.getDeveloperAnalytics.mockResolvedValue({ total: 3 });
+it("loads the executive analytics dataset", async () => {
+  convexAdminCommandCenterRepository.getOverview.mockResolvedValue({ range: "90d", kpis: {} });
+  convexAdminCommandCenterRepository.getCommercialAnalytics.mockResolvedValue({ range: "90d", summary: {} });
+  convexAdminCommandCenterRepository.getPartnerHealthAnalytics.mockResolvedValue({ range: "90d", summary: {} });
+  convexAdminCommandCenterRepository.getQueueHealthAnalytics.mockResolvedValue({ range: "90d", summary: {} });
 
-  const result = await getAnalyticsPageData("developers");
+  const result = await getAnalyticsPageData("executive");
 
-  expect(requireAdminPageSession).toHaveBeenCalledWith("/analytics/developers");
-  expect(convexAdminAnalyticsRepository.getDeveloperAnalytics).toHaveBeenCalledWith("admin-token");
-  expect(result.data).toEqual({ total: 3 });
+  expect(requireAdminPageSession).toHaveBeenCalledWith("/analytics/executive");
+  expect(convexAdminCommandCenterRepository.getOverview).toHaveBeenCalledWith("admin-token", "90d");
+  expect(convexAdminCommandCenterRepository.getCommercialAnalytics).toHaveBeenCalledWith("admin-token", "90d");
+  expect(convexAdminCommandCenterRepository.getPartnerHealthAnalytics).toHaveBeenCalledWith("admin-token", "90d");
+  expect(convexAdminCommandCenterRepository.getQueueHealthAnalytics).toHaveBeenCalledWith("admin-token", "90d");
+  expect(result.data).toEqual({
+    overview: { range: "90d", kpis: {} },
+    commercial: { range: "90d", summary: {} },
+    partners: { range: "90d", summary: {} },
+    queue: { range: "90d", summary: {} },
+  });
 });
 
-it("loads the offers analytics dataset", async () => {
-  convexAdminAnalyticsRepository.getOfferAnalytics.mockResolvedValue({ summary: { total: 9 } });
+it("loads the commercial analytics dataset", async () => {
+  convexAdminCommandCenterRepository.getCommercialAnalytics.mockResolvedValue({ range: "30d", summary: { total: 9 } });
 
-  const result = await getAnalyticsPageData("offers");
+  const result = await getAnalyticsPageData("commercial", "30d");
 
-  expect(requireAdminPageSession).toHaveBeenCalledWith("/analytics/offers");
-  expect(convexAdminAnalyticsRepository.getOfferAnalytics).toHaveBeenCalledWith("admin-token");
-  expect(result.data).toEqual({ summary: { total: 9 } });
+  expect(requireAdminPageSession).toHaveBeenCalledWith("/analytics/commercial");
+  expect(convexAdminCommandCenterRepository.getCommercialAnalytics).toHaveBeenCalledWith("admin-token", "30d");
+  expect(result.data).toEqual({ range: "30d", summary: { total: 9 } });
 });
 
-it("loads the connections analytics dataset", async () => {
+it("loads the collaboration analytics dataset", async () => {
   convexAdminAnalyticsRepository.getConnectionAnalytics.mockResolvedValue({ summary: { totalPairs: 4 } });
+  convexAdminCommandCenterRepository.getQueueHealthAnalytics.mockResolvedValue({ range: "30d", summary: { unassignedOrders: 2 } });
 
-  const result = await getAnalyticsPageData("connections");
+  const result = await getAnalyticsPageData("collaboration", "30d");
 
-  expect(requireAdminPageSession).toHaveBeenCalledWith("/analytics/connections");
+  expect(requireAdminPageSession).toHaveBeenCalledWith("/analytics/collaboration");
   expect(convexAdminAnalyticsRepository.getConnectionAnalytics).toHaveBeenCalledWith("admin-token");
-  expect(result.data).toEqual({ summary: { totalPairs: 4 } });
+  expect(convexAdminCommandCenterRepository.getQueueHealthAnalytics).toHaveBeenCalledWith("admin-token", "30d");
+  expect(result.data).toEqual({
+    connections: { summary: { totalPairs: 4 } },
+    queue: { range: "30d", summary: { unassignedOrders: 2 } },
+  });
 });
 
 it("loads diagnostics datasets in parallel", async () => {
@@ -136,11 +153,13 @@ it("loads organization invites and detail routes", async () => {
 it("loads dashboard overview stats and recent activity", async () => {
   convexAdminOverviewRepository.getStats.mockResolvedValue({ totalUsers: 10 });
   convexAdminOverviewRepository.listRecentActivities.mockResolvedValue([{ id: "activity-1" }]);
+  convexAdminCommandCenterRepository.getOverview.mockResolvedValue({ range: "90d", kpis: { activeUsers: 10 } });
 
   const result = await getDashboardOverviewPageData();
 
   expect(result.stats).toEqual({ totalUsers: 10 });
   expect(result.recentActivities).toEqual([{ id: "activity-1" }]);
+  expect(result.commandCenter).toEqual({ range: "90d", kpis: { activeUsers: 10 } });
 });
 
 it("loads admin properties and forwards property creation", async () => {

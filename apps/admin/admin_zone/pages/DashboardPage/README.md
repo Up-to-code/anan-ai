@@ -1,5 +1,5 @@
 # Dashboard Page
 
-- Loads overview stats, chart summaries, recent notifications, and operational activity.
-- Uses lightweight shared charts to avoid adding a full chart library.
-- Acts as the main control-plane landing page for admins.
+- Loads the command-center aggregates plus recent activity for the admin landing page.
+- Balances leadership KPIs, commercial trend charts, queue health, and ranked organizations.
+- Uses shared Recharts-based primitives so dashboard visuals match analytics pages.
