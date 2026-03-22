@@ -9,6 +9,7 @@ import { LandingView, ThreadView, type AssistantComposerProps } from "./Workspac
 type WorkspaceAssistantCanvasProps = {
   user: SessionUser;
   thread: AnanProThread | null;
+  unavailableThreadId: string | null;
   value: string;
   sendError: string | null;
   isLoadingThread: boolean;
@@ -24,6 +25,7 @@ type WorkspaceAssistantCanvasProps = {
   onToggleVoiceRecording: () => void;
   onStopStreaming: () => void;
   onRegenerate: () => void;
+  onResetUnavailableThread: () => void;
   onChange: (value: string) => void;
   onSend: (message?: string) => void;
 };
@@ -31,31 +33,33 @@ type WorkspaceAssistantCanvasProps = {
 function LoadingState() {
   return (
     <LayoutGroup id="workspace-assistant-surface">
-      <section className="flex h-full min-h-0 flex-1 flex-col bg-[#f5f3ef] px-4 py-6 sm:px-6 lg:px-8">
+      <section className="flex h-full min-h-0 flex-1 flex-col bg-[#fafaf8] px-4 py-6 sm:px-6 lg:px-8">
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6">
           <div className="flex items-center gap-3">
-            <motion.div layoutId="assistant-motion-logo" className="flex h-10 w-10 items-center justify-center rounded-[8px] border border-stone-300 bg-white">
+            <motion.div layoutId="assistant-motion-logo" className="flex h-10 w-10 items-center justify-center rounded-[8px] border border-stone-200 bg-white shadow-sm">
               <AIMotionLogo state="loading" size="compact" />
             </motion.div>
             <div className="space-y-2">
-              <div className="h-3 w-28 rounded-[8px] bg-stone-200" />
-              <div className="h-2.5 w-40 rounded-[8px] bg-stone-100" />
+              <div className="h-3 w-28 animate-pulse rounded-[8px] bg-stone-200" />
+              <div className="h-2.5 w-40 animate-pulse rounded-[8px] bg-stone-100" />
             </div>
           </div>
 
           <div className="space-y-4">
-            <div className="ml-auto h-16 w-[68%] rounded-[8px] bg-slate-950/8" />
-            <div className="h-24 w-[74%] rounded-[8px] border border-stone-200 bg-white" />
-            <div className="ml-auto h-14 w-[42%] rounded-[8px] bg-slate-950/8" />
+            <div className="ml-auto h-14 w-[60%] animate-pulse rounded-[8px] bg-slate-900/[0.06]" />
+            <div className="h-20 w-[70%] animate-pulse rounded-[8px] border border-stone-100 bg-white shadow-sm" />
+            <div className="ml-auto h-12 w-[40%] animate-pulse rounded-[8px] bg-slate-900/[0.06]" />
           </div>
 
-          <div className="mt-auto rounded-[8px] border border-stone-300 bg-white p-4">
-            <div className="h-16 rounded-[8px] bg-stone-100" />
-            <div className="mt-3 flex items-center justify-between">
-              <div className="h-8 w-24 rounded-[8px] bg-stone-100" />
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-[8px] bg-stone-100" />
-                <div className="h-8 w-8 rounded-[8px] bg-stone-100" />
+          <div className="mx-auto mt-auto w-full max-w-3xl">
+            <div className="animate-pulse rounded-[8px] border border-stone-200 bg-white p-5 shadow-sm">
+              <div className="h-12 rounded-[8px] bg-stone-100" />
+              <div className="mt-3 flex items-center justify-between">
+                <div className="h-3 w-20 rounded-[8px] bg-stone-100" />
+                <div className="flex items-center gap-1.5">
+                  <div className="h-9 w-9 rounded-[8px] bg-stone-100" />
+                  <div className="h-9 w-9 rounded-[8px] bg-stone-100" />
+                </div>
               </div>
             </div>
           </div>
@@ -106,7 +110,12 @@ export default function WorkspaceAssistantCanvas(props: WorkspaceAssistantCanvas
           liveStageLabel={props.liveStageLabel}
         />
       ) : (
-        <LandingView {...composerProps} layout="landing" />
+        <LandingView
+          {...composerProps}
+          layout="landing"
+          unavailableThreadId={props.unavailableThreadId}
+          onResetUnavailableThread={props.onResetUnavailableThread}
+        />
       )}
     </section>
   );

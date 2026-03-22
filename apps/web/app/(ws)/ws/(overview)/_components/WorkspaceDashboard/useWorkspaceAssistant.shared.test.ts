@@ -12,13 +12,12 @@ it("builds a thread URL by replacing draft state and preserving unrelated params
   ).toBe("/ws?tab=signals&threadId=thread-A#section");
 });
 
-it("builds a draft URL by removing threadId and keeping the rest of the query", () => {
+it("builds a draft URL by removing threadId and stale draft params while keeping the rest of the query", () => {
   expect(
     buildWorkspaceAssistantHref({
       pathname: "/ws",
-      search: "threadId=thread-A&tab=signals",
+      search: "threadId=thread-A&newThread=1&tab=signals",
       threadId: null,
-      newThread: true,
     }),
-  ).toBe("/ws?tab=signals&newThread=1");
+  ).toBe("/ws?tab=signals");
 });

@@ -6,38 +6,26 @@ import type {
 } from "@/server/contracts/ananPro";
 import type { AIMotionState } from "../../../_components/AIMotion";
 
-function applyNewThreadSearchParam(searchParams: URLSearchParams, newThread: boolean | undefined) {
-  if (newThread === true) {
-    searchParams.set("newThread", "1");
-    return;
-  }
-  if (newThread === false) {
-    searchParams.delete("newThread");
-  }
-}
-
 /**
  * WHY:   Workspace assistant route changes need one consistent URL builder whether the caller uses browser history or a router wrapper.
- * WHAT:  Builds the next `/ws` href for either a concrete thread selection or a draft/new-thread state.
- * HOW:   Preserves unrelated query params and hash fragments while normalizing `threadId` and `newThread`.
+ * WHAT:  Builds the next `/ws` href for either a concrete thread selection or the bare draft route.
+ * HOW:   Preserves unrelated query params and hash fragments while normalizing `threadId` and removing legacy draft params.
  */
 export function buildWorkspaceAssistantHref(args: {
   pathname: string;
   search?: string;
   hash?: string;
   threadId: string | null;
-  newThread?: boolean;
 }) {
   const normalizedSearch = args.search?.startsWith("?")
     ? args.search.slice(1)
     : (args.search ?? "");
   const searchParams = new URLSearchParams(normalizedSearch);
+  searchParams.delete("newThread");
   if (args.threadId) {
     searchParams.set("threadId", args.threadId);
-    searchParams.delete("newThread");
   } else {
     searchParams.delete("threadId");
-    applyNewThreadSearchParam(searchParams, args.newThread);
   }
 
   const nextSearch = searchParams.toString();

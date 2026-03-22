@@ -57,7 +57,7 @@ export function AgPropertyFormSidebar({
       <div className="rounded-lg border border-slate-200 bg-white p-8">
         <div className="mb-6 flex flex-row-reverse items-center justify-between border-b border-slate-100 pb-4">
           <h3 className="text-lg font-black text-slate-950">المعرض المرئي</h3>
-          <span className="rounded-md bg-slate-50 px-2 py-1 text-[10px] font-black tracking-widest text-slate-400">{formState.images.length}/10</span>
+          <span className="rounded-lg bg-slate-50 px-2 py-1 text-[10px] font-black tracking-widest text-slate-400">{formState.images.length}/10</span>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -83,7 +83,7 @@ export function AgPropertyFormSidebar({
                   e.stopPropagation();
                   onRemoveImage(idx);
                 }}
-                className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-md bg-white/90 text-red-600 opacity-0 shadow transition group-hover:opacity-100 hover:bg-red-600 hover:text-white"
+                className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-lg bg-white/90 text-red-600 opacity-0 shadow transition group-hover:opacity-100 hover:bg-red-600 hover:text-white"
               >
                 <X className="h-3 w-3" />
               </button>

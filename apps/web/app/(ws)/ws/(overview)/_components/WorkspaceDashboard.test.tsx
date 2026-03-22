@@ -68,7 +68,13 @@ beforeEach(() => {
 });
 
 it("renders a chat-first landing state before the first message", () => {
-  const markup = renderToStaticMarkup(<WorkspaceDashboard initialThread={null} />);
+  const markup = renderToStaticMarkup(
+    <WorkspaceDashboard
+      initialThread={null}
+      initialRouteState={{ requestedThreadId: null, unavailableThreadId: null }}
+      user={{ id: "user-1", name: "Ahmed", email: "ahmed@example.com" }}
+    />,
+  );
 
   expect(markup).toContain("data-slot=\"assistant-surface\"");
   expect(markup).toContain("data-slot=\"assistant-landing-panel\"");
@@ -76,12 +82,25 @@ it("renders a chat-first landing state before the first message", () => {
   expect(markup).toContain("data-slot=\"chat-input\"");
   expect(markup).toContain("data-layout=\"landing\"");
   expect(markup).toContain("data-slot=\"landing-composer-dock\"");
-  expect(markup).toContain("مساعد عنان");
+  expect(markup).toContain("كيف يمكنني مساعدتك اليوم؟");
   expect(markup).toContain("ما هي أكثر المناطق طلبًا هذا الشهر؟");
-  expect(markup).not.toContain("كيف يمكنني مساعدتك؟");
   expect(markup).not.toContain("السياق");
   expect(markup).not.toContain("الإشعارات");
   expect(markup).not.toContain("التحكم");
+});
+
+it("renders an inline unavailable-thread notice for invalid direct links", () => {
+  const markup = renderToStaticMarkup(
+    <WorkspaceDashboard
+      initialThread={null}
+      initialRouteState={{ requestedThreadId: "missing-thread", unavailableThreadId: "missing-thread" }}
+      user={{ id: "user-1", name: "Ahmed", email: "ahmed@example.com" }}
+    />,
+  );
+
+  expect(markup).toContain("data-slot=\"assistant-unavailable-thread\"");
+  expect(markup).toContain("تعذر العثور على المحادثة المطلوبة");
+  expect(markup).toContain("بدء محادثة جديدة");
 });
 
 it("renders the conversation stream inline when messages exist", () => {
@@ -111,6 +130,8 @@ it("renders the conversation stream inline when messages exist", () => {
           },
         ],
       }}
+      initialRouteState={{ requestedThreadId: "thread-1", unavailableThreadId: null }}
+      user={{ id: "user-1", name: "Ahmed", email: "ahmed@example.com" }}
     />,
   );
 

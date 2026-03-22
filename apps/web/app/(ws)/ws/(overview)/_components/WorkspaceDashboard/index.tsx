@@ -2,24 +2,30 @@
 
 import type { AnanProThread } from "@/server/contracts/ananPro";
 import WorkspaceAssistantCanvas from "./WorkspaceAssistantCanvas";
-import { useWorkspaceAssistant } from "./useWorkspaceAssistant";
+import {
+  useWorkspaceAssistant,
+  type AssistantInitialRouteState,
+} from "./useWorkspaceAssistant";
 
 import type { SessionUser } from "@/server/contracts/session";
 
 type WorkspaceDashboardProps = {
   initialThread: AnanProThread | null;
-  initialSelectedThreadId?: string | null;
+  initialRouteState?: AssistantInitialRouteState;
   user: SessionUser;
 };
 
 export default function WorkspaceDashboard({
   initialThread,
-  initialSelectedThreadId = null,
+  initialRouteState = {
+    requestedThreadId: null,
+    unavailableThreadId: null,
+  },
   user,
 }: WorkspaceDashboardProps) {
   const assistant = useWorkspaceAssistant({
     initialThread,
-    initialSelectedThreadId,
+    initialRouteState,
   });
 
   return (
@@ -43,6 +49,8 @@ export default function WorkspaceDashboard({
           onToggleVoiceRecording={assistant.toggleVoiceRecording}
           onStopStreaming={assistant.handleStopStreaming}
           onRegenerate={assistant.handleRegenerate}
+          unavailableThreadId={assistant.unavailableThreadId}
+          onResetUnavailableThread={assistant.handleResetUnavailableThread}
           onChange={assistant.setValue}
           onSend={assistant.handleSend}
         />

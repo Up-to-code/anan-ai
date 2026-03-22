@@ -41,10 +41,10 @@ export default function DeveloperCard({
             <img
               src={developer.avatarImage}
               alt={developer.name}
-              className="h-14 w-14 rounded-full object-cover ring-2 ring-slate-100 transition-shadow group-hover:ring-indigo-100"
+              className="h-14 w-14 rounded-lg object-cover ring-2 ring-slate-100 transition-shadow group-hover:ring-indigo-100"
             />
           ) : (
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-50 to-slate-100 text-lg font-black text-slate-500 ring-2 ring-slate-100">
+            <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-50 to-slate-100 text-lg font-black text-slate-500 ring-2 ring-slate-100">
               {developer.avatarLabel}
             </div>
           )}
@@ -58,7 +58,7 @@ export default function DeveloperCard({
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2">
             <h3 className="truncate text-sm font-bold text-slate-900">{developer.name}</h3>
-            <span className="inline-flex items-center gap-1 rounded-md border border-indigo-100 bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+            <span className="inline-flex items-center gap-1 rounded-lg border border-indigo-100 bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
               <Building2 className="h-3 w-3" />
               {developer.badge ?? "مطور"}
             </span>

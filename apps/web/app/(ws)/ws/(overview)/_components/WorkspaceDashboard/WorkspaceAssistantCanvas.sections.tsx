@@ -35,6 +35,11 @@ export type AssistantComposerProps = {
   layout: "thread" | "landing";
 };
 
+type LandingViewProps = AssistantComposerProps & {
+  unavailableThreadId?: string | null;
+  onResetUnavailableThread?: () => void;
+};
+
 type ThreadViewProps = AssistantComposerProps & {
   user: SessionUser;
   thread: AnanProThread | null;
@@ -206,22 +211,22 @@ function AssistantSurface({
       <motion.div
         layout
         data-slot="assistant-surface"
-        className="flex min-h-0 flex-1 flex-col bg-[#f5f3ef]"
+        className="flex min-h-0 flex-1 flex-col bg-[#fafaf8]"
         style={surfaceStyle}
       >
         <Conversation className="min-h-0 flex-1 px-4 sm:px-6 lg:px-8">
-          <ConversationContent className="mx-auto w-full max-w-5xl gap-6 pt-6 pb-[calc(var(--assistant-composer-offset)+1.5rem)] sm:pt-8">
+          <ConversationContent className="mx-auto w-full max-w-5xl gap-6 pt-6 pb-[calc(var(--assistant-composer-offset)+2.5rem)] sm:pt-8">
             {children}
           </ConversationContent>
-          <ConversationScrollButton className="bottom-[calc(env(safe-area-inset-bottom)+var(--assistant-composer-offset)+1rem)]" />
+          <ConversationScrollButton className="bottom-[calc(env(safe-area-inset-bottom)+var(--assistant-composer-offset)+1.5rem)]" />
         </Conversation>
         <motion.div
           ref={composerDockRef}
           layout
           data-slot={dockSlot}
-          className="sticky bottom-0 z-20 shrink-0 border-t border-slate-200 bg-white px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.875rem)] sm:px-6 lg:px-8"
+          className="sticky bottom-0 z-20 shrink-0 bg-[#fafaf8] px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6 lg:px-8"
         >
-          <div className="mx-auto w-full max-w-5xl">
+          <div className="mx-auto w-full max-w-3xl">
             <AssistantComposer {...props} />
           </div>
         </motion.div>
@@ -301,55 +306,89 @@ export function ThreadView({
   );
 }
 
-export function LandingView(props: AssistantComposerProps) {
+export function LandingView(props: LandingViewProps) {
   return (
     <LayoutGroup id="workspace-assistant-surface">
       <motion.div
         data-slot="assistant-surface"
-        className="flex min-h-0 flex-1 items-center justify-center bg-[#f5f3ef] px-4 py-6 sm:px-6 lg:px-8"
+        className="flex min-h-0 flex-1 items-center justify-center bg-[#fafaf8] px-4 py-8 sm:px-6 lg:px-8"
       >
         <motion.div
-        data-slot="assistant-landing-panel"
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        className="mx-auto flex w-full max-w-2xl flex-col gap-6 rounded-[8px] border border-stone-300 bg-white p-6 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.25)]"
-      >
-        <div className="flex flex-col items-center gap-4 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-[8px] border border-stone-300 bg-stone-50">
-            <AIMotionLogo state="idle" size="standard" />
-          </div>
-          <div className="space-y-2">
-            <p className="text-lg font-semibold text-slate-950">مساعد عنان</p>
-            <p className="text-sm leading-6 text-slate-500">
-              اطلب تحليلًا سريعًا، أنشئ عرضًا، أو ابدأ سؤالًا جديدًا من نفس مساحة العمل.
-            </p>
-          </div>
-        </div>
+          data-slot="assistant-landing-panel"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="mx-auto flex w-full max-w-3xl flex-col items-center gap-8"
+        >
+          {props.unavailableThreadId ? (
+            <div
+              data-slot="assistant-unavailable-thread"
+              className="w-full max-w-2xl rounded-[8px] border border-amber-200 bg-amber-50 px-4 py-4 text-right"
+            >
+              <p className="text-sm font-semibold text-amber-900">
+                تعذر العثور على المحادثة المطلوبة أو لم تعد متاحة.
+              </p>
+              <div className="mt-3 flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={props.onResetUnavailableThread}
+                  className="inline-flex items-center rounded-[8px] border border-amber-300 bg-white px-3 py-2 text-xs font-semibold text-amber-900 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                >
+                  بدء محادثة جديدة
+                </button>
+              </div>
+            </div>
+          ) : null}
 
-        <div data-slot="landing-composer-dock" className="space-y-3">
-          <AssistantComposer {...props} />
-        </div>
+          <div className="flex flex-col items-center gap-5 text-center px-4">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
+            >
+              <AIMotionLogo state="idle" size="standard" />
+            </motion.div>
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                كيف يمكنني مساعدتك اليوم؟
+              </h1>
+              <p className="mx-auto max-w-md text-[15px] leading-relaxed text-slate-500">
+                اطلب تحليلًا للسوق، أنشئ عرضًا، أو ابحث في مشاريعك.
+              </p>
+            </div>
+          </div>
 
-        <div className="space-y-3">
-          <p className="text-right text-sm font-medium text-slate-600">
-            جرّب واحدة من هذه الرسائل السريعة:
-          </p>
-          <Suggestions className="w-full justify-end">
-            {SUGGESTION_CHIPS.map((chip) => (
-              <Suggestion
-                key={chip}
-                onClick={() => props.onSend(chip)}
-                suggestion={chip}
-                className="rounded-[8px] border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950"
-              >
-                {chip}
-              </Suggestion>
-            ))}
-          </Suggestions>
-        </div>
+          <motion.div
+            data-slot="landing-composer-dock"
+            className="w-full max-w-2xl"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
+          >
+            <AssistantComposer {...props} />
+          </motion.div>
+
+          <motion.div
+            className="flex w-full max-w-2xl flex-col items-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.35, ease: "easeOut" }}
+          >
+            <Suggestions className="flex flex-wrap items-center justify-center gap-2 w-full">
+              {SUGGESTION_CHIPS.map((chip) => (
+                <Suggestion
+                  key={chip}
+                  onClick={() => props.onSend(chip)}
+                  suggestion={chip}
+                  className="rounded-[8px] border border-slate-200 bg-white px-4 py-2 text-[13px] font-medium text-slate-500 shadow-sm transition-all hover:border-slate-300 hover:bg-white hover:text-slate-900 hover:shadow-md active:scale-[0.98]"
+                >
+                  {chip}
+                </Suggestion>
+              ))}
+            </Suggestions>
+          </motion.div>
+        </motion.div>
       </motion.div>
-    </motion.div>
-  </LayoutGroup>
+    </LayoutGroup>
   );
 }

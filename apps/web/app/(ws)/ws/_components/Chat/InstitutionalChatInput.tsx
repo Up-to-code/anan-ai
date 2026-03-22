@@ -81,7 +81,10 @@ export default function InstitutionalChatInput({
           if (!sendDisabled) onSend();
         }}
         className={cn(
-          "w-full overflow-hidden rounded-[8px] border border-slate-300 bg-white transition-colors duration-150 focus-within:border-slate-950 focus-within:ring-0",
+          "w-full overflow-hidden transition-all duration-300",
+          isLanding
+            ? "rounded-2xl border border-slate-200 bg-white shadow-[0_2px_24px_-4px_rgba(0,0,0,0.08)] focus-within:border-slate-300 focus-within:shadow-[0_4px_32px_-4px_rgba(0,0,0,0.12)]"
+            : "rounded-2xl border border-slate-200 bg-white shadow-sm focus-within:border-slate-400 focus-within:shadow-[0_2px_16px_-4px_rgba(0,0,0,0.1)]",
         )}
       >
         <PromptInputBody>
@@ -91,31 +94,33 @@ export default function InstitutionalChatInput({
             disabled={Boolean(isMicProcessing)}
             placeholder={placeholder}
             className={cn(
-              "w-full text-right text-slate-900 placeholder:text-slate-400",
-              isLanding ? "px-4 py-4 text-[15px] font-medium" : "px-4 py-3 text-[15px] font-medium",
+              "w-full resize-none text-right text-slate-900 placeholder:text-slate-400 focus:outline-none",
+              isLanding
+                ? "px-6 pt-6 pb-4 text-base font-medium leading-relaxed"
+                : "px-5 pt-5 pb-3 text-[15px] font-medium leading-relaxed",
             )}
             rows={1}
-            style={{ minHeight: isLanding ? "88px" : "72px" }}
+            style={{ minHeight: isLanding ? "100px" : "72px" }}
             dir="rtl"
           />
         </PromptInputBody>
 
         <PromptInputFooter
           className={cn(
-            "border-t border-slate-200 px-3 py-2.5",
-            isLanding ? "bg-stone-50" : "bg-slate-50/60",
+            "flex items-center justify-between",
+            isLanding ? "px-4 pb-4 pt-1" : "px-4 pb-3 pt-1",
           )}
         >
-          <div className="text-[11px] text-slate-400">
-            {isSending ? "الرسالة قيد المتابعة" : "Enter للإرسال"}
+          <div className="text-[11px] font-medium text-slate-400">
+            {isSending ? "الرسالة قيد المعالجة..." : "Enter للإرسال"}
           </div>
 
-          <PromptInputTools className="gap-2">
+          <PromptInputTools className="gap-1.5">
             {canRegenerate && !isSending ? (
               <PromptInputButton
                 type="button"
                 onClick={onRegenerate}
-                className="rounded-[8px] border border-slate-300 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                className="h-9 w-9 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition-all hover:border-slate-300 hover:bg-white hover:text-slate-900 hover:shadow-sm"
               >
                 <RotateCcw className="h-4 w-4" />
               </PromptInputButton>
@@ -128,10 +133,10 @@ export default function InstitutionalChatInput({
                 onClick={onMicToggle}
                 disabled={!onMicToggle || (isMicProcessing && !isMicRecording)}
                 className={cn(
-                  "relative rounded-[8px] border transition-colors",
+                  "relative h-9 w-9 rounded-xl border transition-all",
                   isMicRecording
-                    ? "border-red-300 bg-red-50 text-red-600 hover:bg-red-100"
-                    : "border-slate-300 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-800",
+                    ? "border-red-200 bg-red-50 text-red-600 shadow-sm shadow-red-100 hover:bg-red-100"
+                    : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-white hover:text-slate-800 hover:shadow-sm",
                 )}
               >
                 {isMicRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
@@ -142,7 +147,7 @@ export default function InstitutionalChatInput({
               <PromptInputButton
                 type="button"
                 onClick={onStopGenerating}
-                className="rounded-[8px] bg-red-600 text-white hover:bg-red-500"
+                className="h-9 w-9 rounded-xl bg-red-600 text-white shadow-sm shadow-red-200 transition-all hover:bg-red-500 hover:shadow-md"
               >
                 <Square className="h-4 w-4" />
               </PromptInputButton>
@@ -151,9 +156,10 @@ export default function InstitutionalChatInput({
                 type="submit"
                 disabled={sendDisabled}
                 className={cn(
+                  "h-9 w-9 rounded-xl transition-all",
                   sendDisabled
-                    ? "cursor-not-allowed rounded-[8px] bg-slate-200 text-slate-400 hover:bg-slate-200"
-                    : "rounded-[8px] bg-slate-950 text-white hover:bg-slate-800",
+                    ? "cursor-not-allowed bg-slate-100 text-slate-300"
+                    : "bg-slate-900 text-white shadow-sm shadow-slate-300 hover:bg-slate-800 hover:shadow-md",
                 )}
               >
                 <ArrowUp className="h-4 w-4" />
@@ -164,12 +170,12 @@ export default function InstitutionalChatInput({
       </PromptInput>
 
       {isMicRecording && micLevels.length > 0 ? (
-        <div className="mt-2 flex items-center justify-end">
-          <div className="pointer-events-none flex items-end gap-0.5 rounded-[8px] border border-red-200 bg-white px-2 py-1">
+        <div className="mt-3 flex items-center justify-end">
+          <div className="pointer-events-none flex items-end gap-0.5 rounded-xl border border-red-200 bg-white px-3 py-1.5 shadow-sm">
             {micLevels.map((level, index) => (
               <motion.span
                 key={index}
-                className="w-0.5 bg-red-500"
+                className="w-0.5 rounded-full bg-red-500"
                 animate={{ height: Math.max(2, Math.round(level * 18)) }}
                 transition={{ duration: 0.12, ease: "easeOut" }}
                 style={{ height: "2px" }}
@@ -181,3 +187,4 @@ export default function InstitutionalChatInput({
     </div>
   );
 }
+

@@ -89,25 +89,25 @@ export default function SidebarContent({
     <div
       className={cn(
         "flex min-h-full flex-col bg-slate-950 text-white",
-        mode === "desktop" ? "h-full border-e border-white/5" : "w-full shadow-none",
+        mode === "desktop" ? "h-full border-e border-white/5" : "w-full",
       )}
     >
       {/* Brand Header */}
-      <div className="flex h-16 shrink-0 items-center border-b border-white/5 px-6">
-        <span id={titleId} className="text-xl font-black tracking-tight text-blue-400">
-          عنان <span className="text-white">Anan</span>
+      <div className="flex h-14 shrink-0 items-center border-b border-white/[0.06] px-5">
+        <span id={titleId} className="text-lg font-black tracking-tight text-blue-400">
+          عنان <span className="text-white/90">Anan</span>
         </span>
       </div>
 
       {/* Grouped Navigation */}
-      <nav aria-label="Workspace navigation" className="flex-1 space-y-8 overflow-y-auto px-4 py-6">
+      <nav aria-label="Workspace navigation" className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
         {/* Group: الرئيسية (Main) */}
         {mainItems.length > 0 && (
           <div>
-            <h3 className="mb-3 px-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+            <h3 className="mb-2 px-2 text-[9px] font-black uppercase tracking-widest text-slate-600">
               الرئيسية
             </h3>
-            <ul className="space-y-1">
+            <ul className="space-y-0.5">
               {mainItems.map((item) => {
                 const Icon = item.icon;
                 const isActive =
@@ -120,13 +120,13 @@ export default function SidebarContent({
                       href={item.href}
                       onClick={onNavigate}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[11px] font-black tracking-[0.18em] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
+                        "flex items-center gap-3 rounded-[8px] px-3 py-2 text-[11px] font-bold tracking-wide transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
                         isActive
-                          ? "bg-blue-600/15 text-blue-400"
-                          : "text-slate-400 hover:bg-white/5 hover:text-white",
+                          ? "bg-blue-500/10 text-blue-400"
+                          : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-200",
                       )}
                     >
-                      <Icon className={cn("h-4 w-4", isActive ? "text-blue-400" : "text-slate-500")} />
+                      <Icon className={cn("h-4 w-4 transition-colors", isActive ? "text-blue-400" : "text-slate-500")} />
                       {item.label}
                     </Link>
                   </li>
@@ -139,10 +139,10 @@ export default function SidebarContent({
         {/* Group: الإعدادات (Settings) */}
         {settingsItems.length > 0 && (
           <div>
-            <h3 className="mb-3 px-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+            <h3 className="mb-2 px-2 text-[9px] font-black uppercase tracking-widest text-slate-600">
               الإعدادات
             </h3>
-            <ul className="space-y-1">
+            <ul className="space-y-0.5">
               {settingsItems.map((item) => {
                 const Icon = item.icon;
                 const isActive =
@@ -154,13 +154,13 @@ export default function SidebarContent({
                       href={item.href}
                       onClick={onNavigate}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[11px] font-black tracking-[0.18em] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
+                        "flex items-center gap-3 rounded-[8px] px-3 py-2 text-[11px] font-bold tracking-wide transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
                         isActive
-                          ? "bg-blue-600/15 text-blue-400"
-                          : "text-slate-400 hover:bg-white/5 hover:text-white",
+                          ? "bg-blue-500/10 text-blue-400"
+                          : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-200",
                       )}
                     >
-                      <Icon className={cn("h-4 w-4", isActive ? "text-blue-400" : "text-slate-500")} />
+                      <Icon className={cn("h-4 w-4 transition-colors", isActive ? "text-blue-400" : "text-slate-500")} />
                       {item.label}
                     </Link>
                   </li>
@@ -172,22 +172,22 @@ export default function SidebarContent({
       </nav>
 
       {/* Assistant Threads */}
-      <div className="border-t border-white/5 px-3 py-4">
-        <div className="mb-3 flex items-center justify-between px-3">
-          <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">مساعد Anan Workspace</span>
+      <div className="border-t border-white/[0.06] px-3 py-3">
+        <div className="mb-2 flex items-center justify-between px-2">
+          <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">المحادثات</span>
           <Link
-            href="/ws?newThread=1"
+            href="/ws"
             prefetch={false}
-            onClick={(event) => handleAssistantLinkClick(event, "/ws?newThread=1")}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-700 bg-slate-800 text-slate-400 transition hover:border-blue-500 hover:text-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            onClick={(event) => handleAssistantLinkClick(event, "/ws")}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-white/[0.06] text-slate-400 transition-all duration-150 hover:bg-blue-500/15 hover:text-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 active:scale-95"
             aria-label="محادثة جديدة"
           >
-            <PenSquare className="h-4 w-4" />
+            <PenSquare className="h-3.5 w-3.5" />
           </Link>
         </div>
-        <div className="max-h-48 space-y-1 overflow-y-auto">
+        <div className="max-h-48 space-y-0.5 overflow-y-auto">
           {recentThreads.length === 0 ? (
-            <div className="px-3 py-2 text-[10px] font-bold text-slate-500">
+            <div className="px-2 py-2 text-[10px] font-medium text-slate-600">
               ستظهر هنا محادثات المساعد بعد أول رسالة ترسلها.
             </div>
           ) : recentThreads.map((thread) => (
@@ -197,37 +197,37 @@ export default function SidebarContent({
               prefetch={false}
               onClick={(event) => handleAssistantLinkClick(event, `/ws?threadId=${encodeURIComponent(thread.id)}`)}
               className={cn(
-                "flex items-start gap-3 border border-transparent px-3 py-2 transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
-                activeAssistantThreadId === thread.id && "border-white/10 bg-white/5",
+                "group flex items-start gap-2.5 rounded-[8px] border border-transparent px-2.5 py-2 transition-all duration-150 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
+                activeAssistantThreadId === thread.id && "border-blue-500/20 bg-blue-500/10",
               )}
             >
-              <MessageSquareText className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+              <MessageSquareText className={cn("mt-0.5 h-3.5 w-3.5 shrink-0 transition-colors", activeAssistantThreadId === thread.id ? "text-blue-400" : "text-slate-600 group-hover:text-slate-400")} />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[10px] font-bold text-slate-300">{getThreadLabel(thread)}</div>
-                <div className="truncate text-[9px] text-slate-500">{formatThreadDate(thread.updatedAt)}</div>
+                <div className={cn("truncate text-[11px] font-medium", activeAssistantThreadId === thread.id ? "text-blue-300" : "text-slate-300")}>{getThreadLabel(thread)}</div>
+                <div className="truncate text-[9px] text-slate-600">{formatThreadDate(thread.updatedAt)}</div>
               </div>
             </Link>
           ))}
         </div>
         {assistantThreads.length > recentThreads.length ? (
           <Dialog.Root>
-            <Dialog.Trigger className="mt-3 w-full border border-white/10 px-3 py-2 text-[10px] font-black tracking-[0.18em] text-slate-300 transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+            <Dialog.Trigger className="mt-2 w-full rounded-[8px] bg-white/[0.04] px-3 py-2 text-[10px] font-bold tracking-wide text-slate-400 transition-all duration-150 hover:bg-white/[0.08] hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
               عرض كل المحادثات
             </Dialog.Trigger>
             <Dialog.Portal>
-              <Dialog.Backdrop className="fixed inset-0 z-50 bg-slate-950/70" />
-              <Dialog.Popup className="fixed inset-0 z-50 flex items-center justify-center p-4 outline-none">
-                <div className="w-full max-w-2xl border border-slate-800 bg-slate-950 text-white">
-                  <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-                    <Dialog.Title className="text-sm font-black tracking-[0.18em]">كل محادثات المساعد</Dialog.Title>
+              <Dialog.Backdrop className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm transition-opacity duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
+              <Dialog.Popup className="fixed inset-0 z-50 flex items-center justify-center p-4 outline-none transition-all duration-200 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+                <div className="w-full max-w-2xl rounded-[8px] border border-slate-800 bg-slate-950 text-white shadow-2xl">
+                  <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3.5">
+                    <Dialog.Title className="text-sm font-bold">كل محادثات المساعد</Dialog.Title>
                     <Dialog.Close
                       aria-label="إغلاق"
-                      className="inline-flex h-9 w-9 items-center justify-center border border-white/10 text-slate-300 transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] bg-white/[0.06] text-slate-400 transition-all hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 active:scale-95"
                     >
                       <X className="h-4 w-4" />
                     </Dialog.Close>
                   </div>
-                  <div className="max-h-[70vh] overflow-y-auto p-3">
+                  <div className="max-h-[70vh] overflow-y-auto p-2">
                     {assistantThreads.map((thread) => (
                       <Link
                         key={thread.id}
@@ -235,13 +235,13 @@ export default function SidebarContent({
                         prefetch={false}
                         onClick={(event) => handleAssistantLinkClick(event, `/ws?threadId=${encodeURIComponent(thread.id)}`)}
                         className={cn(
-                          "flex items-start justify-between gap-4 border border-transparent px-3 py-3 transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
-                          activeAssistantThreadId === thread.id && "border-white/10 bg-white/5",
+                          "flex items-start justify-between gap-4 rounded-[8px] border border-transparent px-3 py-2.5 transition-all duration-150 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
+                          activeAssistantThreadId === thread.id && "border-blue-500/20 bg-blue-500/10",
                         )}
                       >
                         <div className="min-w-0">
-                          <div className="truncate text-sm font-black text-white">{getThreadLabel(thread)}</div>
-                          <div className="mt-1 truncate text-xs text-slate-400">{formatThreadDate(thread.updatedAt)}</div>
+                          <div className="truncate text-sm font-bold text-white">{getThreadLabel(thread)}</div>
+                          <div className="mt-0.5 truncate text-xs text-slate-500">{formatThreadDate(thread.updatedAt)}</div>
                         </div>
                       </Link>
                     ))}

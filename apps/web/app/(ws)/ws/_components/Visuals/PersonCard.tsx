@@ -42,7 +42,7 @@ export default function PersonCard({
               </div>
             )}
             {person.badges?.includes("verified") ? (
-              <div className="absolute -bottom-1 -left-1 rounded-md border border-blue-200 bg-blue-50 p-1 text-blue-700">
+              <div className="absolute -bottom-1 -left-1 rounded-lg border border-blue-200 bg-blue-50 p-1 text-blue-700">
                 <ShieldCheck className="h-3 w-3" />
               </div>
             ) : null}
@@ -51,7 +51,7 @@ export default function PersonCard({
             <div className="flex items-center gap-2">
               <h3 className="truncate text-base font-black text-slate-950">{person.name}</h3>
               {person.badges?.includes("vip") ? (
-                <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[9px] font-black tracking-[0.16em] text-amber-700">
+                <span className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[9px] font-black tracking-[0.16em] text-amber-700">
                   VIP
                 </span>
               ) : null}

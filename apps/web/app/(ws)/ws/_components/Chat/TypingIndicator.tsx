@@ -17,10 +17,10 @@ export default function TypingIndicator({
 }) {
   return (
     <div
-      className="flex min-w-0 shrink-0 items-start gap-3 rounded-[8px] border border-stone-300 bg-stone-50 px-4 py-3"
+      className="flex min-w-0 shrink-0 items-start gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-5 py-3.5"
       dir="rtl"
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] border border-stone-300 bg-white">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white shadow-sm">
         <AIMotionLogo state={state} size="compact" />
       </div>
       <div className="flex min-w-0 flex-col gap-1.5 pt-0.5 text-right">

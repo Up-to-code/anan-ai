@@ -1,6 +1,5 @@
 "use client";
 
-import ConvexClientProvider from "@/app/ConvexClientProvider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, ChevronDown, Mail } from "lucide-react";
@@ -27,11 +26,7 @@ export default function WorkspaceTopNavbar({
   title?: string;
   mobileNavigation?: React.ReactNode;
 }) {
-  return (
-    <ConvexClientProvider>
-      <WorkspaceTopNavbarInner {...props} />
-    </ConvexClientProvider>
-  );
+  return <WorkspaceTopNavbarInner {...props} />;
 }
 
 function WorkspaceTopNavbarInner({
@@ -110,15 +105,15 @@ function WorkspaceTopNavbarInner({
           href="/ws/me"
           className={cn(
             "group flex items-center text-right transition hover:bg-slate-50",
-            isAssistantVariant ? "gap-2 rounded-lg px-2 py-1.5" : "gap-3 rounded-lg p-1 pe-3",
+            isAssistantVariant ? "gap-2 rounded-[8px] px-2 py-1.5" : "gap-3 rounded-[8px] p-1 pe-3",
           )}
         >
           <div
             className={cn(
               "flex items-center justify-center text-sm font-bold text-white transition",
               isAssistantVariant
-                ? "h-8 w-8 rounded-lg bg-slate-900"
-                : "h-9 w-9 rounded-lg bg-blue-600 shadow-sm ring-2 ring-transparent group-hover:ring-blue-100",
+                ? "h-8 w-8 rounded-[8px] bg-slate-900"
+                : "h-9 w-9 rounded-[8px] bg-blue-600 shadow-sm ring-2 ring-transparent group-hover:ring-blue-100",
             )}
           >
             {accountInitial}
@@ -160,7 +155,7 @@ function SignalButton({
       href={href}
       className={cn(
         "relative p-2 transition",
-        "rounded-lg",
+        "rounded-[8px]",
         isActive
           ? isAssistantVariant
             ? "bg-slate-100 text-slate-900"

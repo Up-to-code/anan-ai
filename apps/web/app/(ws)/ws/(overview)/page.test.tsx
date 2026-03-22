@@ -2,17 +2,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, it, vi } from "vitest";
 import { DomainError } from "@/server/contracts/errors";
 
-const { redirect, requireWorkspaceData, getAnanProThread, listIncomingOrganizationInvitesForCurrentUser } = vi.hoisted(() => ({
-  redirect: vi.fn((destination: string) => {
-    throw new Error(`NEXT_REDIRECT:${destination}`);
-  }),
+const { requireWorkspaceData, getAnanProThread, listIncomingOrganizationInvitesForCurrentUser } = vi.hoisted(() => ({
   requireWorkspaceData: vi.fn(),
   getAnanProThread: vi.fn(),
   listIncomingOrganizationInvitesForCurrentUser: vi.fn(),
-}));
-
-vi.mock("next/navigation", () => ({
-  redirect,
 }));
 
 vi.mock("../_lib/workspaceData", () => ({
@@ -30,15 +23,16 @@ vi.mock("@/server/domains/auth/organizations/service", () => ({
 vi.mock("./_components/WorkspaceDashboard", () => ({
   default: ({
     initialThread,
-    initialSelectedThreadId,
+    initialRouteState,
   }: {
     initialThread: { id: string } | null;
-    initialSelectedThreadId: string | null;
+    initialRouteState: { requestedThreadId: string | null; unavailableThreadId: string | null };
   }) => (
     <div
       data-slot="workspace-dashboard"
       data-thread={initialThread ? "loaded" : "blank"}
-      data-selected-thread-id={initialSelectedThreadId ?? ""}
+      data-requested-thread-id={initialRouteState.requestedThreadId ?? ""}
+      data-unavailable-thread-id={initialRouteState.unavailableThreadId ?? ""}
     />
   ),
 }));
@@ -70,7 +64,6 @@ const baseWorkspacePayload = {
 };
 
 beforeEach(() => {
-  redirect.mockClear();
   requireWorkspaceData.mockReset();
   getAnanProThread.mockReset();
   listIncomingOrganizationInvitesForCurrentUser.mockReset();
@@ -86,18 +79,20 @@ it("renders blank draft mode for /ws without creating a thread", async () => {
   expect(getAnanProThread).not.toHaveBeenCalled();
   expect(markup).toContain("data-slot=\"workspace-dashboard\"");
   expect(markup).toContain("data-thread=\"blank\"");
-  expect(markup).toContain("data-selected-thread-id=\"\"");
+  expect(markup).toContain("data-requested-thread-id=\"\"");
+  expect(markup).toContain("data-unavailable-thread-id=\"\"");
 });
 
-it("keeps /ws?newThread=1 as a blank draft without creating a thread", async () => {
+it("ignores a legacy newThread param when no threadId is provided", async () => {
   const element = await WorkspacePage({
-    searchParams: Promise.resolve({ newThread: "1", threadId: "thread-123" }),
+    searchParams: Promise.resolve({ newThread: "1" } as never),
   });
   const markup = renderToStaticMarkup(element);
 
   expect(getAnanProThread).not.toHaveBeenCalled();
   expect(markup).toContain("data-thread=\"blank\"");
-  expect(markup).toContain("data-selected-thread-id=\"\"");
+  expect(markup).toContain("data-requested-thread-id=\"\"");
+  expect(markup).toContain("data-unavailable-thread-id=\"\"");
 });
 
 it("loads an existing thread when threadId is valid", async () => {
@@ -114,17 +109,19 @@ it("loads an existing thread when threadId is valid", async () => {
 
   expect(getAnanProThread).toHaveBeenCalledWith("thread-123");
   expect(markup).toContain("data-thread=\"loaded\"");
-  expect(markup).toContain("data-selected-thread-id=\"thread-123\"");
+  expect(markup).toContain("data-requested-thread-id=\"thread-123\"");
+  expect(markup).toContain("data-unavailable-thread-id=\"\"");
 });
 
-it("falls back to blank /ws when threadId is invalid", async () => {
+it("renders a recoverable blank state when threadId is invalid", async () => {
   getAnanProThread.mockResolvedValue(null);
 
-  await expect(
-    WorkspacePage({ searchParams: Promise.resolve({ threadId: "missing-thread" }) }),
-  ).rejects.toThrow("NEXT_REDIRECT:/ws");
+  const element = await WorkspacePage({ searchParams: Promise.resolve({ threadId: "missing-thread" }) });
+  const markup = renderToStaticMarkup(element);
 
-  expect(redirect).toHaveBeenCalledWith("/ws");
+  expect(markup).toContain("data-thread=\"blank\"");
+  expect(markup).toContain("data-requested-thread-id=\"missing-thread\"");
+  expect(markup).toContain("data-unavailable-thread-id=\"missing-thread\"");
 });
 
 it("renders retry state when workspace upstream is temporarily unavailable", async () => {

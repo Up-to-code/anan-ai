@@ -75,7 +75,7 @@ export default function BrokerPresenceChip({
           </span>
         </span>
         {broker.badges?.includes("verified") ? (
-          <span className="rounded-md border border-blue-200 bg-white px-1.5 py-1 text-[9px] font-black tracking-[0.18em] text-blue-700">
+          <span className="rounded-lg border border-blue-200 bg-white px-1.5 py-1 text-[9px] font-black tracking-[0.18em] text-blue-700">
             موثق
           </span>
         ) : null}

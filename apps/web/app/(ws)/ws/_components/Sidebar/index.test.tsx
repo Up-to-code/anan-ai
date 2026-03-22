@@ -61,7 +61,7 @@ it("shows the projects navigation entry for developer roles", () => {
   expect(markup).toContain("/ws/inbox");
   expect(markup).toContain("data-slot=\"workspace-sidebar-desktop\"");
   expect(markup).not.toContain("Alpha Dev");
-  expect(markup).toContain("مساعد Anan Workspace");
+  expect(markup).toContain("المحادثات");
   expect(markup).not.toContain("ANAN");
   expect(markup).not.toContain("Institutional");
 });
@@ -114,7 +114,7 @@ it("renders the drawer variant with the shared navigation content", () => {
   expect(markup).toContain("/ws/projects");
 });
 
-it("keeps the new-thread entry as a URL-only draft action", () => {
+it("keeps the new-thread entry as a bare /ws draft action", () => {
   const markup = renderToStaticMarkup(
     <Sidebar
       user={{ name: "Ahmed", email: "ahmed@example.com" }}
@@ -126,7 +126,7 @@ it("keeps the new-thread entry as a URL-only draft action", () => {
     />,
   );
 
-  expect(markup).toContain("/ws?newThread=1");
+  expect(markup).toContain("href=\"/ws\"");
   expect(markup).toContain("h-4 w-4");
 });
 
@@ -151,7 +151,7 @@ it("highlights an assistant thread only when the URL threadId is valid", () => {
   );
 
   expect(markup).toContain("/ws?threadId=thread-2");
-  expect(markup).toContain("border-white/10 bg-white/5");
+  expect(markup).toContain("border-blue-500/20 bg-blue-500/10");
 });
 
 it("does not highlight any thread when threadId is missing or invalid", () => {

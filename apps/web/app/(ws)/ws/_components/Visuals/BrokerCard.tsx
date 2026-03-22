@@ -55,10 +55,10 @@ export default function BrokerCard({
             <img
               src={broker.avatarImage}
               alt={broker.name}
-              className="h-14 w-14 rounded-full object-cover ring-2 ring-slate-100 transition-shadow group-hover:ring-blue-100"
+              className="h-14 w-14 rounded-lg object-cover ring-2 ring-slate-100 transition-shadow group-hover:ring-blue-100"
             />
           ) : (
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-50 to-slate-100 text-lg font-black text-slate-500 ring-2 ring-slate-100">
+            <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-blue-50 to-slate-100 text-lg font-black text-slate-500 ring-2 ring-slate-100">
               {broker.avatarLabel}
             </div>
           )}
@@ -76,13 +76,13 @@ export default function BrokerCard({
           <div className="flex items-center gap-2">
             <h3 className="truncate text-sm font-bold text-slate-900">{broker.name}</h3>
             {broker.badges?.includes("verified") && (
-              <span className="inline-flex items-center gap-1 rounded-md border border-blue-100 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+              <span className="inline-flex items-center gap-1 rounded-lg border border-blue-100 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
                 <ShieldCheck className="h-3 w-3" />
                 موثق
               </span>
             )}
             {broker.badges?.includes("vip") && (
-              <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+              <span className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">
                 VIP
               </span>
             )}

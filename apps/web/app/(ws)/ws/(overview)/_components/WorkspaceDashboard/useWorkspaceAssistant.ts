@@ -21,9 +21,14 @@ import { useVoiceRecorder } from "./useVoiceRecorder";
 
 const assistantApi = api.ai_zone.assistantWorkspace;
 
+export type AssistantInitialRouteState = {
+  requestedThreadId: string | null;
+  unavailableThreadId: string | null;
+};
+
 type UseWorkspaceAssistantParams = {
   initialThread: AnanProThread | null;
-  initialSelectedThreadId: string | null;
+  initialRouteState: AssistantInitialRouteState;
 };
 
 type LiveAssistantThreadSummary = {
@@ -74,6 +79,83 @@ function buildLiveAssistantThread(
   };
 }
 
+function isIncomingMessageWeaker(args: {
+  currentMessage: AnanProThread["messages"][number];
+  incomingMessage: AnanProThread["messages"][number] | undefined;
+}) {
+  if (!args.incomingMessage) {
+    return true;
+  }
+
+  if ((args.currentMessage.content?.length ?? 0) > (args.incomingMessage.content?.length ?? 0)) {
+    return true;
+  }
+
+  if (args.currentMessage.uiTurn && !args.incomingMessage.uiTurn) {
+    return true;
+  }
+
+  if (args.currentMessage.meta && !args.incomingMessage.meta) {
+    return true;
+  }
+
+  if (args.currentMessage.inputMode && !args.incomingMessage.inputMode) {
+    return true;
+  }
+
+  return false;
+}
+
+export function isIncomingThreadWeaker(args: {
+  currentThread: AnanProThread | null;
+  incomingThread: AnanProThread | null;
+}) {
+  const currentThread = args.currentThread;
+  const incomingThread = args.incomingThread;
+  if (!currentThread) {
+    return false;
+  }
+
+  if (!incomingThread) {
+    return currentThread.messages.length > 0;
+  }
+
+  if ((currentThread.title?.trim()?.length ?? 0) > (incomingThread.title?.trim()?.length ?? 0)) {
+    return true;
+  }
+
+  if (currentThread.messages.length > incomingThread.messages.length) {
+    return true;
+  }
+
+  return currentThread.messages.some((message, index) =>
+    isIncomingMessageWeaker({
+      currentMessage: message,
+      incomingMessage: incomingThread.messages[index],
+    }),
+  );
+}
+
+export function shouldPreserveLocalThreadWhileRouteSyncs(args: {
+  pendingRouteThreadId: string | null;
+  routeThreadId: string | null;
+  selectedThreadId: string | null;
+  currentThread: AnanProThread | null;
+}) {
+  if (!args.pendingRouteThreadId) {
+    return false;
+  }
+
+  if (args.routeThreadId === args.pendingRouteThreadId) {
+    return false;
+  }
+
+  return (
+    args.selectedThreadId === args.pendingRouteThreadId ||
+    args.currentThread?.id === args.pendingRouteThreadId
+  );
+}
+
 export function shouldKeepLocalThreadSnapshot(args: {
   currentThread: AnanProThread | null;
   incomingThread: AnanProThread | null;
@@ -96,11 +178,32 @@ export function shouldKeepLocalThreadSnapshot(args: {
     return false;
   }
 
+  if (isIncomingThreadWeaker({
+    currentThread,
+    incomingThread: args.incomingThread,
+  })) {
+    return true;
+  }
+
   if (args.activeStreamSessionId) {
     return currentMessageCount >= incomingMessageCount;
   }
 
   return currentMessageCount > incomingMessageCount;
+}
+
+export function shouldPreserveOptimisticDraftThread(args: {
+  routeThreadId: string | null;
+  selectedThreadId: string | null;
+  currentThread: AnanProThread | null;
+  activeStreamSessionId: string | null;
+}) {
+  return (
+    !args.routeThreadId &&
+    !args.selectedThreadId &&
+    Boolean(args.activeStreamSessionId) &&
+    Boolean(args.currentThread?.messages.length)
+  );
 }
 
 /**
@@ -110,12 +213,17 @@ export function shouldKeepLocalThreadSnapshot(args: {
  */
 export function useWorkspaceAssistant({
   initialThread,
-  initialSelectedThreadId,
+  initialRouteState,
 }: UseWorkspaceAssistantParams) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [thread, setThread] = useState<AnanProThread | null>(initialThread);
-  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(initialSelectedThreadId ?? initialThread?.id ?? null);
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(
+    initialThread?.id ?? (initialRouteState.unavailableThreadId ? null : initialRouteState.requestedThreadId),
+  );
+  const [unavailableThreadId, setUnavailableThreadId] = useState<string | null>(
+    initialRouteState.unavailableThreadId,
+  );
   const [value, setValue] = useState("");
   const [sendError, setSendError] = useState<string | null>(null);
   const [streamStage, setStreamStage] = useState<AnanProStreamStageEvent | null>(null);
@@ -127,10 +235,11 @@ export function useWorkspaceAssistant({
   const [isStoppingStream, setIsStoppingStream] = useState(false);
   const stopRequestedRef = useRef(false);
   const latestAssistantHrefRef = useRef("");
+  const pendingRouteThreadIdRef = useRef<string | null>(null);
   const lastResolvedLiveThreadIdRef = useRef<string | null>(initialThread?.id ?? null);
   const routeThreadId = pathname === "/ws" ? searchParams.get("threadId") : null;
-  const isDraftRoute = pathname === "/ws" && searchParams.get("newThread") === "1";
-  const shouldStartNewThread = !selectedThreadId && pathname === "/ws" && (isDraftRoute || !routeThreadId);
+  const hasLegacyDraftParam = pathname === "/ws" && searchParams.get("newThread") === "1";
+  const shouldStartNewThread = !selectedThreadId && pathname === "/ws" && !routeThreadId;
 
   const liveThreadSummary = useQuery(
     assistantApi.getThreadById,
@@ -164,7 +273,7 @@ export function useWorkspaceAssistant({
 
   const replaceAssistantRoute = useCallback((
     threadId: string | null,
-    options?: { history?: "push" | "replace"; newThread?: boolean },
+    options?: { history?: "push" | "replace" },
   ) => {
     if (pathname !== "/ws") return;
     if (typeof window === "undefined") return;
@@ -175,24 +284,23 @@ export function useWorkspaceAssistant({
       search: searchParams.toString(),
       hash,
       threadId: routeThreadId,
-      newThread: isDraftRoute ? true : false,
     });
     const nextHref = buildWorkspaceAssistantHref({
       pathname,
       search: searchParams.toString(),
       hash,
       threadId,
-      newThread: options?.newThread,
     });
 
     if (nextHref === currentHref) return;
     latestAssistantHrefRef.current = nextHref;
+    pendingRouteThreadIdRef.current = threadId;
     if (options?.history === "push") {
       window.history.pushState(null, "", nextHref);
       return;
     }
     window.history.replaceState(null, "", nextHref);
-  }, [isDraftRoute, pathname, routeThreadId, searchParams]);
+  }, [pathname, routeThreadId, searchParams]);
 
   useEffect(() => {
     if (pathname !== "/ws") {
@@ -206,15 +314,48 @@ export function useWorkspaceAssistant({
       search: searchParams.toString(),
       hash,
       threadId: routeThreadId,
-      newThread: isDraftRoute ? true : false,
     });
-  }, [isDraftRoute, pathname, routeThreadId, searchParams]);
+  }, [pathname, routeThreadId, searchParams]);
 
   useEffect(() => {
-    if (isDraftRoute) {
-      setThread(null);
-      setSelectedThreadId(null);
-      resetEphemeralAssistantState();
+    if (pathname !== "/ws" || !hasLegacyDraftParam || routeThreadId) {
+      return;
+    }
+    replaceAssistantRoute(null);
+  }, [hasLegacyDraftParam, pathname, replaceAssistantRoute, routeThreadId]);
+
+  useEffect(() => {
+    if (
+      pendingRouteThreadIdRef.current &&
+      routeThreadId === pendingRouteThreadIdRef.current
+    ) {
+      pendingRouteThreadIdRef.current = null;
+    }
+  }, [routeThreadId]);
+
+  useEffect(() => {
+    if (pathname !== "/ws" || !routeThreadId || unavailableThreadId !== routeThreadId) {
+      return;
+    }
+    replaceAssistantRoute(null);
+  }, [pathname, replaceAssistantRoute, routeThreadId, unavailableThreadId]);
+
+  useEffect(() => {
+    if (shouldPreserveLocalThreadWhileRouteSyncs({
+      pendingRouteThreadId: pendingRouteThreadIdRef.current,
+      routeThreadId,
+      selectedThreadId,
+      currentThread: thread,
+    })) {
+      return;
+    }
+
+    if (shouldPreserveOptimisticDraftThread({
+      routeThreadId,
+      selectedThreadId,
+      currentThread: thread,
+      activeStreamSessionId,
+    })) {
       return;
     }
 
@@ -228,19 +369,30 @@ export function useWorkspaceAssistant({
       return;
     }
 
+    if (unavailableThreadId === routeThreadId) {
+      if (selectedThreadId !== null || thread !== null) {
+        setThread(null);
+        setSelectedThreadId(null);
+        resetEphemeralAssistantState();
+      }
+      return;
+    }
+
     if (routeThreadId === selectedThreadId) {
       return;
     }
 
+    setUnavailableThreadId(null);
     setThread((current) => (current?.id === routeThreadId ? current : null));
     setSelectedThreadId(routeThreadId);
     resetEphemeralAssistantState();
   }, [
-    isDraftRoute,
+    activeStreamSessionId,
     resetEphemeralAssistantState,
     routeThreadId,
     selectedThreadId,
     thread,
+    unavailableThreadId,
   ]);
 
   useEffect(() => {
@@ -250,6 +402,7 @@ export function useWorkspaceAssistant({
 
     if (liveThread?.id === selectedThreadId) {
       lastResolvedLiveThreadIdRef.current = selectedThreadId;
+      setUnavailableThreadId(null);
     }
 
     if (shouldKeepLocalThreadSnapshot({
@@ -269,6 +422,28 @@ export function useWorkspaceAssistant({
     routeThreadId,
     selectedThreadId,
     thread,
+  ]);
+
+  useEffect(() => {
+    if (
+      !selectedThreadId ||
+      liveThread !== null ||
+      routeThreadId !== selectedThreadId ||
+      activeStreamSessionId
+    ) {
+      return;
+    }
+
+    setUnavailableThreadId(selectedThreadId);
+    setThread(null);
+    setSelectedThreadId(null);
+    resetEphemeralAssistantState();
+  }, [
+    activeStreamSessionId,
+    liveThread,
+    resetEphemeralAssistantState,
+    routeThreadId,
+    selectedThreadId,
   ]);
 
   const isLoadingThread =
@@ -302,31 +477,13 @@ export function useWorkspaceAssistant({
     disabled: isSending || isLoadingThread,
     onTranscriptReady: async (transcript) => {
       setSendError(null);
+      setUnavailableThreadId(null);
       sendWithOptimisticUpdate(transcript, "voice");
     },
     onError: (message) => {
       setSendError(message);
     },
   });
-
-  const handleSelectThread = (threadId: string) => {
-    if (threadId === selectedThreadId || isLoadingThread) {
-      return;
-    }
-
-    setSendError(null);
-    setSelectedThreadId(threadId);
-    setThread((current) => (current?.id === threadId ? current : null));
-    resetEphemeralAssistantState();
-    replaceAssistantRoute(threadId, { history: "push" });
-  };
-
-  const handleCreateThread = () => {
-    setThread(null);
-    setSelectedThreadId(null);
-    resetEphemeralAssistantState();
-    replaceAssistantRoute(null, { history: "push", newThread: true });
-  };
 
   const handleStopStreaming = useCallback(async () => {
     if (!activeStreamSessionId || isStoppingStream) {
@@ -350,6 +507,14 @@ export function useWorkspaceAssistant({
     }
   }, [activeStreamSessionId, isStoppingStream]);
 
+  const handleResetUnavailableThread = useCallback(() => {
+    setUnavailableThreadId(null);
+    setThread(null);
+    setSelectedThreadId(null);
+    resetEphemeralAssistantState();
+    replaceAssistantRoute(null);
+  }, [replaceAssistantRoute, resetEphemeralAssistantState]);
+
   const handleRegenerate = useCallback(() => {
     if (!thread || isSending || isLoadingThread) return;
     const targetUserMessage = [...thread.messages].reverse().find((message) => message.role === "user");
@@ -371,6 +536,7 @@ export function useWorkspaceAssistant({
       setValue("");
     }
     setSendError(null);
+    setUnavailableThreadId(null);
     sendWithOptimisticUpdate(nextMessage, inputMode);
   };
 
@@ -382,10 +548,8 @@ export function useWorkspaceAssistant({
   const canRegenerate = Boolean(thread?.messages.some((message) => message.role === "user")) && !isSending && !isLoadingThread;
 
   return {
-    activeThreadId: selectedThreadId,
-    handleCreateThread,
     handleRegenerate,
-    handleSelectThread,
+    handleResetUnavailableThread,
     handleSend,
     handleStopStreaming,
     isLoadingThread,
@@ -407,6 +571,7 @@ export function useWorkspaceAssistant({
     sendError,
     setValue,
     thread,
+    unavailableThreadId,
     value,
   };
 }

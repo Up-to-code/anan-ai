@@ -32,8 +32,8 @@ export default function MessageRow({
       <div
         data-slot={isUser ? "user-avatar" : "ai-avatar"}
         className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] border border-slate-200 bg-white shadow-[0_6px_14px_-12px_rgba(15,23,42,0.35)]",
-          isUser ? "border-slate-950 bg-slate-950" : "",
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm",
+          isUser ? "border-slate-900 bg-slate-900" : "",
         )}
       >
         {isUser ? (
@@ -71,12 +71,12 @@ export default function MessageRow({
           >
             <div
               className={cn(
-                "w-fit min-w-0 max-w-full whitespace-pre-wrap break-words rounded-[8px] border px-4 py-3 text-[15px] leading-7 text-right",
+                "w-fit min-w-0 max-w-full whitespace-pre-wrap break-words rounded-2xl border px-5 py-3.5 text-[15px] leading-7 text-right",
                 isUser
-                  ? "border-slate-950 bg-slate-950 text-white"
-                  : "border-slate-200 bg-white text-slate-900",
-                !isUser && isInfo && "bg-slate-100 text-slate-600 shadow-none",
-                isStreaming && !isUser && "border-stone-300 bg-stone-50",
+                  ? "border-slate-900 bg-slate-900 text-white"
+                  : "border-slate-100 bg-white text-slate-900 shadow-sm",
+                !isUser && isInfo && "bg-slate-50 text-slate-600 shadow-none",
+                isStreaming && !isUser && "border-stone-200 bg-stone-50",
               )}
               dir="rtl"
               style={{ unicodeBidi: "plaintext" }}
