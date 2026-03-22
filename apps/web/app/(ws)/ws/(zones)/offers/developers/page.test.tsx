@@ -22,7 +22,7 @@ vi.mock("../../../_lib/workspaceData", () => ({
   requireWorkspaceData: vi.fn(async () => ({ audience: "developer", ownerContext: null })),
 }));
 
-vi.mock("@/server/domains/organizations/service", () => ({
+vi.mock("@/server/domains/auth/organizations/service", () => ({
   listCurrentOrganizationOffersCompanyDirectory,
   listCurrentOrganizationOffersDirectory,
 }));

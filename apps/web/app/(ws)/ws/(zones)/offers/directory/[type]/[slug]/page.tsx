@@ -1,5 +1,5 @@
 import { requireWorkspaceData } from "../../../../../_lib/workspaceData";
-import { getOrganizationPublicProfile } from "@/server/domains/organizations/service";
+import { getOrganizationPublicProfile } from "@/server/domains/auth/organizations/service";
 import { notFound } from "next/navigation";
 import OrganizationProfileUI from "./OrganizationProfileUI";
 

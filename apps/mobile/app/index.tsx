@@ -1,10 +1,10 @@
-import HomeFeedScreen from "@/features/HomeFeedScreen";
+import BuyerAssistantHomeScreen from "@/features/BuyerAssistantHomeScreen";
 
 /**
- * WHY:   The root mobile route should stay a thin orchestrator in line with the Anan architecture rules.
- * WHAT:  Renders the buyer feed home experience.
- * HOW:   Delegates all screen behavior to the feature folder.
+ * WHY:   The new mobile app should open directly into the buyer assistant workspace.
+ * WHAT:  Renders the chat-first Anan home screen.
+ * HOW:   Delegates all state and composition to the buyer assistant feature folder.
  */
 export default function IndexRoute() {
-  return <HomeFeedScreen />;
+  return <BuyerAssistantHomeScreen />;
 }

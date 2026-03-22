@@ -27,9 +27,9 @@ export default function Card({
     };
 
     return (
-        <div className={`p-8 lg:p-10 space-y-8 transition-all group rounded-none ${variants[variant]} ${className}`}>
+        <div className={`space-y-8 rounded-lg p-8 transition-all group lg:p-10 ${variants[variant]} ${className}`}>
             {Icon && (
-                <div className={`h-12 w-12 flex items-center justify-center ${variant === "dark" ? "bg-blue-600/20" : "bg-blue-600/10"}`}>
+                <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${variant === "dark" ? "bg-blue-600/20" : "bg-blue-600/10"}`}>
                     <Icon className={`h-6 w-6 ${variant === "dark" ? "text-blue-400" : "text-blue-600"}`} />
                 </div>
             )}

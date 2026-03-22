@@ -2,10 +2,9 @@ import Link from "next/link";
 import { Clock3, Link2 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { buildWorkspaceSecurityAppsPath, getAuthenticatedSession } from "@/lib/serverSession";
-import PageHeader from "@/components/shared/PageHeader";
-import WorkspacePanel from "@/components/shared/WorkspacePanel";
+import { PageHeader, WorkspacePanel } from "@/app/(ws)/ws/public";
 import type { OAuthAuthorizedAppSummary } from "@/server/contracts/oauth";
-import { listAuthorizedAppsForCurrentUser } from "@/server/domains/oauth/service";
+import { listAuthorizedAppsForCurrentUser } from "@/server/domains/auth/oauth/service";
 
 function AuthorizedAppCard({ app }: { app: OAuthAuthorizedAppSummary }) {
   return (

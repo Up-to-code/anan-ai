@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { DomainError, toErrorResponse } from "@/server/contracts/errors";
 import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
 import { submitPublicFormInputSchema } from "@/server/contracts/forms";
-import { createPublicFormSubmission } from "@/server/domains/forms/service";
+import { createPublicFormSubmission } from "@/server/domains/public/forms/service";
 
 function getClientIp(request: NextRequest) {
   const forwardedFor = request.headers.get("x-forwarded-for");

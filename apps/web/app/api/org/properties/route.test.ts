@@ -8,7 +8,7 @@ const {
   createOrganizationPropertyByApiKey: vi.fn(),
 }));
 
-vi.mock("@/server/domains/organizationApiKeys/service", () => ({
+vi.mock("@/server/domains/auth/organizationApiKeys/service", () => ({
   listOrganizationPropertiesByApiKey,
   createOrganizationPropertyByApiKey,
 }));

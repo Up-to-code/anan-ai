@@ -19,7 +19,7 @@ export default function Button({
     type = "button",
     href
 }: ButtonProps) {
-    const baseStyles = "inline-flex items-center justify-center font-black uppercase tracking-widest transition-all active:scale-[0.98] rounded-none";
+    const baseStyles = "inline-flex items-center justify-center font-black uppercase tracking-widest transition-all active:scale-[0.98] rounded-lg";
     const variants = {
         primary: "bg-blue-600 text-white hover:bg-blue-700 px-8 py-2.5 text-xs font-black tracking-widest",
         outline: "border border-blue-600 text-blue-600 hover:bg-blue-50 px-12 py-5 text-sm font-black tracking-widest bg-white/50 backdrop-blur-sm shadow-sm",

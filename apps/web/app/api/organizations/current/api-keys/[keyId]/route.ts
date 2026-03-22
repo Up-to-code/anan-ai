@@ -1,5 +1,5 @@
 import { toErrorResponse } from "@/server/contracts/errors";
-import { revokeCurrentOrganizationApiKeyForCurrentUser } from "@/server/domains/organizationApiKeys/service";
+import { revokeCurrentOrganizationApiKeyForCurrentUser } from "@/server/domains/auth/organizationApiKeys/service";
 
 type OrganizationApiKeyRouteProps = {
   params: Promise<{ keyId: string }>;

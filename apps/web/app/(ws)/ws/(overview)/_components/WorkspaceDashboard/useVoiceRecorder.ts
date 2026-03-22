@@ -168,64 +168,93 @@ async function transcribeBlob(
   }
   return transcript;
 }
+function assignRecordingStream(refs: RecorderRefs, stream: MediaStream) {
+  refs.streamRef.current = stream;
+}
 
 function useStopRecordingAction(args: { refs: RecorderRefs; emitError: (message: string) => void; resetLevels: () => void; getUploadUrl: UseVoiceRecorderParams["getUploadUrl"]; transcribeFromStorage: UseVoiceRecorderParams["transcribeFromStorage"]; onTranscriptReady: UseVoiceRecorderParams["onTranscriptReady"]; setIsRecording: React.Dispatch<React.SetStateAction<boolean>>; setIsTranscribing: React.Dispatch<React.SetStateAction<boolean>>; setProcessingPhase: React.Dispatch<React.SetStateAction<ProcessingPhase>>; setElapsedMs: React.Dispatch<React.SetStateAction<number>> }) {
+  const {
+    refs,
+    emitError,
+    resetLevels,
+    getUploadUrl,
+    transcribeFromStorage,
+    onTranscriptReady,
+    setIsRecording,
+    setIsTranscribing,
+    setProcessingPhase,
+    setElapsedMs,
+  } = args;
   return useCallback(async () => {
-    const recorder = args.refs.mediaRecorderRef.current;
+    const recorder = refs.mediaRecorderRef.current;
     if (!recorder) return;
-    clearTimers(args.refs);
-    cleanupAudioGraph(args.refs);
+    clearTimers(refs);
+    cleanupAudioGraph(refs);
     if (recorder.state === "inactive") return;
-    args.setIsRecording(false);
-    args.setProcessingPhase("uploading");
+    setIsRecording(false);
+    setProcessingPhase("uploading");
     recorder.stop();
-    const blob = await resolveRecordedBlob(args.refs, (message) => {
-      cleanupStream(args.refs);
-      args.resetLevels();
-      markError(args.setProcessingPhase, args.emitError, message);
+    const blob = await resolveRecordedBlob(refs, (message) => {
+      cleanupStream(refs);
+      resetLevels();
+      markError(setProcessingPhase, emitError, message);
     });
     if (!blob) return;
-    args.setIsTranscribing(true);
+    setIsTranscribing(true);
     try {
-      args.setProcessingPhase("transcribing");
-      const transcript = await transcribeBlob(blob, args.getUploadUrl, args.transcribeFromStorage);
-      args.setProcessingPhase("sending");
-      await args.onTranscriptReady(transcript);
-      args.setElapsedMs(0);
-      args.resetLevels();
-      args.setProcessingPhase("idle");
+      setProcessingPhase("transcribing");
+      const transcript = await transcribeBlob(blob, getUploadUrl, transcribeFromStorage);
+      setProcessingPhase("sending");
+      await onTranscriptReady(transcript);
+      setElapsedMs(0);
+      resetLevels();
+      setProcessingPhase("idle");
     } catch (error) {
-      markError(args.setProcessingPhase, args.emitError, error instanceof Error ? error.message : "تعذر معالجة التسجيل الصوتي.");
+      markError(setProcessingPhase, emitError, error instanceof Error ? error.message : "تعذر معالجة التسجيل الصوتي.");
     } finally {
-      cleanupStream(args.refs);
-      args.setIsTranscribing(false);
+      cleanupStream(refs);
+      setIsTranscribing(false);
     }
-  }, [args]);
+  }, [emitError, getUploadUrl, onTranscriptReady, refs, resetLevels, setElapsedMs, setIsRecording, setIsTranscribing, setProcessingPhase, transcribeFromStorage]);
 }
 
 function useStartRecordingAction(args: { refs: RecorderRefs; disabled: boolean; isRecording: boolean; isTranscribing: boolean; maxDurationMs: number; emitError: (message: string) => void; resetLevels: () => void; stopRecording: () => Promise<void>; setIsRecording: React.Dispatch<React.SetStateAction<boolean>>; setProcessingPhase: React.Dispatch<React.SetStateAction<ProcessingPhase>>; setElapsedMs: React.Dispatch<React.SetStateAction<number>>; setLevels: React.Dispatch<React.SetStateAction<number[]>> }) {
+  const {
+    refs,
+    disabled,
+    isRecording,
+    isTranscribing,
+    maxDurationMs,
+    emitError,
+    resetLevels,
+    stopRecording,
+    setIsRecording,
+    setProcessingPhase,
+    setElapsedMs,
+    setLevels,
+  } = args;
   return useCallback(async () => {
-    if (args.disabled || args.isRecording || args.isTranscribing) return;
+    if (disabled || isRecording || isTranscribing) return;
     try {
       const stream = await getRecordingStream();
-      args.refs.streamRef.current = stream;
+      assignRecordingStream(refs, stream);
       const recorder = new MediaRecorder(stream);
-      initializeRecorder(args.refs, recorder);
-      args.setElapsedMs(0);
-      args.setIsRecording(true);
-      args.setProcessingPhase("recording");
-      initializeAudioGraph(args.refs, stream);
-      sampleLevels(args.refs, args.setLevels);
+      initializeRecorder(refs, recorder);
+      setElapsedMs(0);
+      setIsRecording(true);
+      setProcessingPhase("recording");
+      initializeAudioGraph(refs, stream);
+      sampleLevels(refs, setLevels);
       recorder.start(250);
-      scheduleRecordingTimers(args.refs, args.maxDurationMs, args.setElapsedMs, args.stopRecording);
+      scheduleRecordingTimers(refs, maxDurationMs, setElapsedMs, stopRecording);
     } catch {
-      cleanupStream(args.refs);
-      cleanupAudioGraph(args.refs);
-      clearTimers(args.refs);
-      args.resetLevels();
-      markError(args.setProcessingPhase, args.emitError, "فشل الوصول إلى الميكروفون. تأكد من منح الإذن للمتصفح.");
+      cleanupStream(refs);
+      cleanupAudioGraph(refs);
+      clearTimers(refs);
+      resetLevels();
+      markError(setProcessingPhase, emitError, "فشل الوصول إلى الميكروفون. تأكد من منح الإذن للمتصفح.");
     }
-  }, [args]);
+  }, [disabled, emitError, isRecording, isTranscribing, maxDurationMs, refs, resetLevels, setElapsedMs, setIsRecording, setLevels, setProcessingPhase, stopRecording]);
 }
 /**
  * WHY:   Workspace chat voice input needs one reusable recorder/transcription state machine.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { UploadedFileReference } from "@/server/contracts/files";
@@ -33,8 +33,13 @@ export default function InboxWorkspaceClient({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [pendingInvites, setPendingInvites] = useState(incomingInvites);
-  const [isMobileThreadVisible, setIsMobileThreadVisible] = useState(hasConversationRoute);
-  const [startUserIdToResolve, setStartUserIdToResolve] = useState<string | null>(initialStartUserId);
+  const [isMobileThreadVisible, setIsMobileThreadVisible] = useState(
+    () => hasConversationRoute || Boolean(initialStartUserId && initialStartUserId !== currentUserId),
+  );
+  const [isResolvingStartConversation, setIsResolvingStartConversation] = useState(
+    () => Boolean(initialStartUserId && initialStartUserId !== currentUserId && !hasConversationRoute),
+  );
+  const startUserIdToResolveRef = useRef<string | null>(initialStartUserId);
   const {
     businessActionError,
     clearBusinessActionError,
@@ -65,35 +70,21 @@ export default function InboxWorkspaceClient({
   });
 
   useEffect(() => {
-    if (!startUserIdToResolve || hasConversationRoute) {
+    const startUserIdToResolve = startUserIdToResolveRef.current;
+    if (!startUserIdToResolve || hasConversationRoute || startUserIdToResolve === currentUserId) {
+      startUserIdToResolveRef.current = null;
       return;
     }
 
-    if (startUserIdToResolve === currentUserId) {
-      setStartUserIdToResolve(null);
-      return;
-    }
-
-    setIsMobileThreadVisible(true);
+    startUserIdToResolveRef.current = null;
     startTransition(() => {
       router.replace("/ws/inbox");
       void handleStartConversation(startUserIdToResolve).finally(() => {
-        setStartUserIdToResolve(null);
+        setIsResolvingStartConversation(false);
       });
     });
-  }, [currentUserId, handleStartConversation, hasConversationRoute, router, startTransition, startUserIdToResolve]);
-
-  useEffect(() => {
-    if (hasConversationRoute) {
-      setIsMobileThreadVisible(true);
-    }
-  }, [hasConversationRoute]);
-
-  useEffect(() => {
-    if (!activeConversationId) {
-      setIsMobileThreadVisible(false);
-    }
-  }, [activeConversationId]);
+  }, [currentUserId, handleStartConversation, hasConversationRoute, router, startTransition]);
+  const isThreadPaneVisible = hasConversationRoute || isResolvingStartConversation || isMobileThreadVisible;
 
   const handleAcceptInvite = async (invite: IncomingOrganizationInvite) => {
     const response = await fetch("/api/workspace/incoming-invites/accept", {
@@ -227,7 +218,7 @@ export default function InboxWorkspaceClient({
       <div
         className={cn(
           "min-w-0 border-l border-slate-200 bg-white md:flex md:w-[310px] md:shrink-0 lg:w-[340px]",
-          isMobileThreadVisible ? "hidden md:flex" : "flex w-full",
+          isThreadPaneVisible ? "hidden md:flex" : "flex w-full",
         )}
       >
         <InboxSidebar
@@ -249,7 +240,7 @@ export default function InboxWorkspaceClient({
       <div
         className={cn(
           "min-w-0 flex-1 bg-white",
-          isMobileThreadVisible ? "flex" : "hidden md:flex",
+          isThreadPaneVisible ? "flex" : "hidden md:flex",
         )}
       >
         <div className="flex h-full w-full flex-col">
@@ -268,7 +259,7 @@ export default function InboxWorkspaceClient({
               onSend={handleSendMessage}
               projectOptions={projectOptions}
               sendError={businessActionError || sendError}
-              showBackButton={isMobileThreadVisible}
+              showBackButton={isThreadPaneVisible}
             />
           ) : isLiveConversationLoading ? (
             <InboxThreadLoadingState />

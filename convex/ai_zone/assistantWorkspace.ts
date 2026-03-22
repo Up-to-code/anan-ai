@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { action, internalMutation, mutation, query } from "../_generated/server";
 import {
   createAssistantThread,
+  getAccessibleThread,
   getLatestThread,
   handleAssistantMessage,
   listRecentThreads,
@@ -53,6 +54,16 @@ export const listThreads = query({
   handler: async (ctx, args) => {
     const owner = await resolveAssistantOwner(ctx);
     return listRecentThreads(ctx, owner, ASSISTANT_KIND, args.limit ?? 6);
+  },
+});
+
+export const getThreadById = query({
+  args: {
+    threadId: v.id("assistantThreads"),
+  },
+  handler: async (ctx, args) => {
+    const owner = await resolveAssistantOwner(ctx);
+    return getAccessibleThread(ctx, owner, args.threadId, ASSISTANT_KIND);
   },
 });
 

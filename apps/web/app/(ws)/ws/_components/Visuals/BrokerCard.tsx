@@ -40,7 +40,7 @@ export default function BrokerCard({
   return (
     <article
       className={cn(
-        "group relative overflow-hidden rounded-xl border border-slate-200/60 bg-white shadow-sm transition-all duration-300",
+        "group relative overflow-hidden rounded-lg border border-slate-200/60 bg-white shadow-sm transition-all duration-300",
         "hover:shadow-lg hover:-translate-y-0.5 hover:border-slate-300",
         "border-l-[3px]",
         accent.border,
@@ -76,13 +76,13 @@ export default function BrokerCard({
           <div className="flex items-center gap-2">
             <h3 className="truncate text-sm font-bold text-slate-900">{broker.name}</h3>
             {broker.badges?.includes("verified") && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+              <span className="inline-flex items-center gap-1 rounded-md border border-blue-100 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
                 <ShieldCheck className="h-3 w-3" />
                 موثق
               </span>
             )}
             {broker.badges?.includes("vip") && (
-              <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+              <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">
                 VIP
               </span>
             )}

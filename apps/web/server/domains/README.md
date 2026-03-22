@@ -8,3 +8,9 @@ Each domain service coordinates one business capability:
 - return stable web-facing DTOs and domain errors
 
 Controllers should not contain business orchestration.
+
+Surface-aligned entrypoints:
+
+- `domains/public/**` for public route handlers.
+- `domains/auth/**` for auth-session-owned route handlers.
+- `domains/workspace/**` for authenticated workspace and org route handlers.

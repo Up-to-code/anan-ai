@@ -3,8 +3,8 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { Menu, X } from "lucide-react";
 import { useId, useState } from "react";
-import Sidebar from "@/components/shared/Sidebar";
-import type { SidebarUser } from "@/components/shared/Sidebar/types";
+import Sidebar from "./Sidebar";
+import type { SidebarUser } from "./Sidebar/types";
 import type { WorkspaceOrganizationDisplay } from "../_lib/organizationDisplay";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
 import type { AnanProThreadSummary } from "@/server/contracts/ananPro";
@@ -40,7 +40,7 @@ export default function WorkspaceSidebarDrawer({
         aria-expanded={open}
         aria-controls={drawerId}
         data-slot="workspace-sidebar-trigger"
-        className="inline-flex h-12 w-12 items-center justify-center rounded-none border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+        className="inline-flex h-12 w-12 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
         onClick={() => setOpen(true)}
       >
         <Menu className="h-5 w-5" />
@@ -78,7 +78,7 @@ export default function WorkspaceSidebarDrawer({
 
               <Dialog.Close
                 aria-label="إغلاق القائمة"
-                className="absolute left-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-none border border-white/10 bg-white/5 text-white transition hover:border-white/20 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                className="absolute left-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white transition hover:border-white/20 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
               >
                 <X className="h-4 w-4" />
               </Dialog.Close>

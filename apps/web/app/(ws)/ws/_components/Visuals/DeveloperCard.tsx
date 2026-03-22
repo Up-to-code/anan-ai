@@ -27,7 +27,7 @@ export default function DeveloperCard({
   return (
     <article
       className={cn(
-        "group relative overflow-hidden rounded-xl border border-slate-200/60 bg-white shadow-sm transition-all duration-300",
+        "group relative overflow-hidden rounded-lg border border-slate-200/60 bg-white shadow-sm transition-all duration-300",
         "hover:shadow-lg hover:-translate-y-0.5 hover:border-slate-300",
         "border-l-[3px] border-l-indigo-500",
         className,
@@ -58,7 +58,7 @@ export default function DeveloperCard({
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2">
             <h3 className="truncate text-sm font-bold text-slate-900">{developer.name}</h3>
-            <span className="inline-flex items-center gap-1 rounded-full border border-indigo-100 bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+            <span className="inline-flex items-center gap-1 rounded-md border border-indigo-100 bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
               <Building2 className="h-3 w-3" />
               {developer.badge ?? "مطور"}
             </span>

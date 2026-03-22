@@ -2,12 +2,11 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { buildWorkspaceSecurityAppsPath, getAuthenticatedSession } from "@/lib/serverSession";
-import PageHeader from "@/components/shared/PageHeader";
-import WorkspacePanel from "@/components/shared/WorkspacePanel";
+import { PageHeader, WorkspacePanel } from "@/app/(ws)/ws/public";
 import {
   getAuthorizedAppDetailForCurrentUser,
   revokeAuthorizedAppForCurrentUser,
-} from "@/server/domains/oauth/service";
+} from "@/server/domains/auth/oauth/service";
 import RevokeAppButton from "../_components/RevokeAppButton";
 
 type WorkspaceSecurityDetailPageProps = { params: Promise<{ clientId: string }> };

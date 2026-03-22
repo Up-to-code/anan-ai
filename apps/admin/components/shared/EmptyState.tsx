@@ -13,7 +13,7 @@ type EmptyStateProps = {
  */
 export default function EmptyState({ title, description, className }: EmptyStateProps) {
   return (
-    <div className={cn("rounded-xl border border-dashed border-stone-300 bg-stone-50 p-8 text-center", className)}>
+    <div className={cn("rounded-lg border border-dashed border-stone-300 bg-stone-50 p-8 text-center", className)}>
       <div className="text-base font-medium text-slate-900">{title}</div>
       <p className="mt-2 text-sm leading-7 text-slate-600">{description}</p>
     </div>

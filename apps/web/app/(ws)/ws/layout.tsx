@@ -1,7 +1,7 @@
 /**
- * WHY:   `/ws` now hosts multiple sibling route groups with different shell behavior.
- * WHAT:  Provides a neutral route boundary so overview pages and business zones can each own their layout.
- * HOW:   Leaves authentication and chrome decisions to the nested route-group layouts.
+ * WHY:   `/ws` hosts multiple sibling route groups with different shell behavior.
+ * WHAT:  Provides a neutral route boundary under the workspace runtime.
+ * HOW:   Leaves auth and Convex context ownership to the parent `(ws)` group layout.
  */
 export default function WorkspaceRootLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;

@@ -1,7 +1,7 @@
 # UI Components
 
-Atomic mobile primitives shared across the feed and assistant surfaces.
+Shared atomic primitives for the mobile buyer MVP.
 
-- Text and badges define the visual language.
-- Buttons and icon buttons keep touch targets consistent.
-- Structural helpers such as stat rows and sheet handles stay reusable here.
+- `AppText.tsx` centralizes Cairo typography and Arabic-first alignment.
+- `Button.tsx` provides compact button variants for conversation and journey actions.
+- `IconButton.tsx` handles icon-only actions for navigation and search affordances.

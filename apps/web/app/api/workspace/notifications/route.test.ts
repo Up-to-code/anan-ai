@@ -8,7 +8,7 @@ const { getWorkspaceNotificationSummary, listWorkspaceNotifications, markWorkspa
   markWorkspaceNotificationRead: vi.fn(),
 }));
 
-vi.mock("@/server/domains/notifications/service", () => ({
+vi.mock("@/server/domains/workspace/notifications/service", () => ({
   getWorkspaceNotificationSummary,
   listWorkspaceNotifications,
   markWorkspaceNotificationRead,

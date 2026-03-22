@@ -23,8 +23,8 @@ type MarketLatestResearchProps = {
 
 function LatestResearchEmptyState({ title }: { title: string }) {
   return (
-    <section className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200 shadow-sm p-8 text-right flex flex-col items-center justify-center text-center">
-      <div className="bg-blue-50 text-blue-500 p-4 rounded-full mb-4">
+    <section className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-white/95 p-8 text-center text-right shadow-sm backdrop-blur-md">
+      <div className="mb-4 rounded-lg bg-blue-50 p-4 text-blue-500">
         <FileSearch className="w-8 h-8" />
       </div>
       <h2 className="text-base font-bold text-slate-900">{title}</h2>
@@ -38,11 +38,11 @@ function LatestResearchEmptyState({ title }: { title: string }) {
 function LatestFindingCard({ finding }: { finding: LatestUpdate["topFindings"][number] }) {
   const summary = [finding.locationHint, finding.area, finding.priceHint].filter(Boolean).join(" • ");
   return (
-    <article className="border border-slate-100 bg-slate-50/50 p-4 rounded-xl text-right transition-colors hover:bg-slate-50">
+    <article className="rounded-lg border border-slate-100 bg-slate-50/50 p-4 text-right transition-colors hover:bg-slate-50">
       <h3 className="text-sm font-bold text-slate-900">{finding.title}</h3>
       <p className="mt-2 text-xs font-semibold text-slate-600">{summary || "تفاصيل موقع وسعر محدودة"}</p>
       {finding.features && finding.features.length > 0 ? (
-        <p className="mt-2 text-[10px] font-bold text-slate-400 bg-white inline-block px-2 py-1 rounded shadow-sm border border-slate-100">
+        <p className="mt-2 inline-block rounded-md border border-slate-100 bg-white px-2 py-1 text-[10px] font-bold text-slate-400 shadow-sm">
           {finding.features.join("، ")}
         </p>
       ) : null}
@@ -64,26 +64,26 @@ export default function MarketLatestResearch({
   }
 
   return (
-    <section className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200 shadow-sm p-6">
+    <section className="rounded-lg border border-slate-200 bg-white/95 p-6 shadow-sm backdrop-blur-md">
       <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
-        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+        <span className="rounded-md border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600">
           {latestUpdate.sourceCount.toLocaleString("en-US")} مصدر
         </span>
         <h2 className="text-base font-bold text-slate-900">{title}</h2>
       </div>
 
-      <div className="mt-5 text-right bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+      <div className="mt-5 rounded-lg border border-slate-100 bg-slate-50/50 p-4 text-right">
         <div className="flex items-center justify-between mb-2">
           {latestUpdate.status === "completed" ? (
-            <span className="flex items-center gap-1.5 text-[10px] font-black tracking-widest text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 uppercase">
+            <span className="flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-600">
               <CheckCircle2 className="w-3 h-3" /> مكتمل
             </span>
           ) : latestUpdate.status === "partial" ? (
-            <span className="flex items-center gap-1.5 text-[10px] font-black tracking-widest text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-200 uppercase">
+            <span className="flex items-center gap-1.5 rounded-md border border-orange-200 bg-orange-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-orange-600">
               <Clock className="w-3 h-3" /> جزئي (يُمكن تحسينه)
             </span>
           ) : (
-            <span className="flex items-center gap-1.5 text-[10px] font-black tracking-widest text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-200 uppercase">
+            <span className="flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-red-600">
               <AlertCircle className="w-3 h-3" /> فشل التحليل
             </span>
           )}

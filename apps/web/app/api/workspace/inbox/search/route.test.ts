@@ -6,7 +6,7 @@ const { searchInboxTargets } = vi.hoisted(() => ({
   searchInboxTargets: vi.fn(),
 }));
 
-vi.mock("@/server/domains/inbox/service", () => ({
+vi.mock("@/server/domains/workspace/inbox/service", () => ({
   searchInboxTargets,
 }));
 

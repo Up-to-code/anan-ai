@@ -2,7 +2,7 @@ import { DomainError } from "@/server/contracts/errors";
 import {
   listAnanProStreamEvents,
   sendAnanProMessage,
-} from "@/server/domains/ananPro/service";
+} from "@/server/domains/workspace/ananPro/service";
 import { delay, serializeSseEvent } from "./route.helpers";
 
 type StreamEvent = Awaited<ReturnType<typeof listAnanProStreamEvents>>[number];

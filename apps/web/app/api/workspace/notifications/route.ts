@@ -3,7 +3,7 @@ import {
   getWorkspaceNotificationSummary,
   listWorkspaceNotifications,
   markWorkspaceNotificationRead,
-} from "@/server/domains/notifications/service";
+} from "@/server/domains/workspace/notifications/service";
 import { DomainError, toErrorResponse } from "@/server/contracts/errors";
 import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
 

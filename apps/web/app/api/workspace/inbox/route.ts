@@ -9,7 +9,7 @@ import {
   shareInboxFileInConversation,
   shareInboxProjectInConversation,
   sendInboxMessage,
-} from "@/server/domains/inbox/service";
+} from "@/server/domains/workspace/inbox/service";
 import {
   bootstrapOfferConversationInputSchema,
   createPrivateOfferInConversationInputSchema,

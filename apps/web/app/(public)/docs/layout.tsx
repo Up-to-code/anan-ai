@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import DocsShell from "@/components/docs/DocsShell";
+import { DocsShell } from "@/app/(public)/docs/public";
 
 export const metadata: Metadata = {
   title: "Anan Developer Docs",

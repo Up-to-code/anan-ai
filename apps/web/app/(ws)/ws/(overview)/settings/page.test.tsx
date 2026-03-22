@@ -11,7 +11,7 @@ const { listCurrentOrganizationApiKeysForCurrentUser } = vi.hoisted(() => ({
 vi.mock("../../_lib/organizationTeam", () => ({
   getWorkspaceOrganizationTeam,
 }));
-vi.mock("@/server/domains/organizationApiKeys/service", () => ({
+vi.mock("@/server/domains/auth/organizationApiKeys/service", () => ({
   listCurrentOrganizationApiKeysForCurrentUser,
 }));
 

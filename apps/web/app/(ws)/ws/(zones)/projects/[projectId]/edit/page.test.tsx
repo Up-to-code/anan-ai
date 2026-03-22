@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, it, vi } from "vitest";
-import type { ProjectFormData } from "@/components/shared/ag-aui/AgPropertyForm";
+import type { ProjectFormData } from "@/app/(ws)/ws/public";
 
 const {
   getProperty,

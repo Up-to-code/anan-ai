@@ -1,7 +1,4 @@
-import LegalArticle from "@/components/shared/LegalArticle";
-import PageHero from "@/components/shared/PageHero";
-import Section from "@/components/shared/Section";
-import SectionLabel from "@/components/shared/SectionLabel";
+import { LegalArticle, PageHero, Section, SectionLabel } from "@/app/(public)/public";
 
 /**
  * WHY:   Users and partners need a clear privacy policy aligned to KSA requirements.

@@ -1,11 +1,13 @@
 import { Users2, Percent, Wallet, Zap } from "lucide-react";
-import ActionRow from "@/components/shared/ActionRow";
-import ButtonLink from "@/components/shared/ButtonLink";
-import Card from "@/components/shared/Card";
-import FeatureCardGrid from "@/components/shared/FeatureCardGrid";
-import PageHero from "@/components/shared/PageHero";
-import Section from "@/components/shared/Section";
-import SectionLabel from "@/components/shared/SectionLabel";
+import {
+  ActionRow,
+  ButtonLink,
+  Card,
+  FeatureCardGrid,
+  PageHero,
+  Section,
+  SectionLabel,
+} from "@/app/(public)/public";
 
 /**
  * WHY:   Brokers need a dedicated public entry page describing collaboration and offers.

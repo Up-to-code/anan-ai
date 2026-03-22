@@ -10,11 +10,14 @@ const config: Config = {
     extend: {
       colors: {
         brand: "#2563EB",
+        "brand-soft": "#DBEAFE",
         ink: "#0F172A",
         surface: "#FFFFFF",
         line: "#E2E8F0",
         muted: "#64748B",
         panel: "#F8FAFC",
+        success: "#0F766E",
+        sand: "#F8F5EF",
       },
       fontFamily: {
         cairo: ["Cairo_400Regular", "sans-serif"],

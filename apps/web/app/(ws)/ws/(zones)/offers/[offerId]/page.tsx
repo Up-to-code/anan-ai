@@ -3,7 +3,7 @@ import OfferDetailPage from "../OfferDetailPage";
 import { requireWorkspaceData } from "../../../_lib/workspaceData";
 import { getWorkspaceOffersZone } from "@/server/ws/zones";
 import { mapOfferToMarketplaceItem } from "../offerViewModel";
-import { bootstrapInboxOfferConversation } from "@/server/domains/inbox/service";
+import { bootstrapInboxOfferConversation } from "@/server/domains/workspace/inbox/service";
 
 type WorkspaceOfferDetailRouteProps = {
   params: Promise<{ offerId: string }>;

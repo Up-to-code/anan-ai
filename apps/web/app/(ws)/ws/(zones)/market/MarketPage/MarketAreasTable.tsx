@@ -11,6 +11,16 @@ import {
   Legend,
 } from "recharts";
 
+type TooltipPayload<Row> = {
+  payload: Row;
+};
+
+type TooltipProps<Row> = {
+  active?: boolean;
+  label?: string;
+  payload?: TooltipPayload<Row>[];
+};
+
 type MarketAreaRow = {
   city: string;
   area: string;
@@ -31,13 +41,13 @@ type MarketAreasTableProps = {
 /**
  * Custom tooltip to show the extra text fields (Product Type, Top Signal, Price)
  */
-function AreaTooltip({ active, payload, label }: any) {
+function AreaTooltip({ active, payload, label }: TooltipProps<MarketAreaRow>) {
   if (active && payload && payload.length) {
-    const data = payload[0].payload as MarketAreaRow;
+    const data = payload[0].payload;
     return (
-      <div className="bg-white/95 backdrop-blur-md border border-slate-200 p-4 rounded-xl shadow-xl text-right max-w-xs">
+      <div className="max-w-xs rounded-lg border border-slate-200 bg-white/95 p-4 text-right shadow-xl backdrop-blur-md">
         <p className="mb-3 text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">
-          {data.city ? `${data.city} - ` : ""}{label}
+          {data.city ? `${data.city} - ` : ""}{label ?? data.area}
         </p>
         <div className="space-y-2 text-xs font-semibold text-slate-600">
           <p className="flex justify-between items-center"><span className="text-slate-400">إشارات الطلب:</span> <span className="text-blue-600">{data.demandSignals.toLocaleString("en-US")}</span></p>
@@ -72,7 +82,7 @@ export default function MarketAreasTable({
 }: MarketAreasTableProps) {
   if (rows.length === 0) {
     return (
-      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
           <h2 className="text-base font-bold text-slate-900">{title}</h2>
           {description ? <p className="mt-1 text-xs font-medium text-slate-500">{description}</p> : null}
@@ -85,13 +95,13 @@ export default function MarketAreasTable({
   }
 
   // If showing cross-city areas, we might want "Hittin (Riyadh)"
-  const chartData = rows.map(r => ({
-    ...r,
-    displayName: showCityColumn ? `${r.area} (${r.city})` : r.area,
+  const chartData = rows.map((row) => ({
+    ...row,
+    displayName: showCityColumn ? `${row.area} (${row.city})` : row.area,
   }));
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
         <h2 className="text-base font-bold text-slate-900">{title}</h2>
         {description ? <p className="mt-1 text-xs font-medium text-slate-500">{description}</p> : null}

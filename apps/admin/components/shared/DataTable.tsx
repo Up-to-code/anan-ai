@@ -14,7 +14,7 @@ type DataTableProps = {
  */
 export default function DataTable({ headers, children, className }: DataTableProps) {
   return (
-    <div className={cn("overflow-x-auto rounded-xl border border-stone-300 bg-white", className)}>
+    <div className={cn("overflow-x-auto rounded-lg border border-stone-300 bg-white", className)}>
       <table className="min-w-full border-collapse">
         <thead>
           <tr className="border-b border-stone-300 bg-stone-50">

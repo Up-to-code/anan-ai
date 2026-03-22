@@ -4,7 +4,7 @@ import { toErrorResponse } from "@/server/contracts/errors";
 import {
   deleteOrganizationPropertyByApiKey,
   updateOrganizationPropertyByApiKey,
-} from "@/server/domains/organizationApiKeys/service";
+} from "@/server/domains/auth/organizationApiKeys/service";
 
 type OrganizationPropertyRouteProps = {
   params: Promise<{ propertyId: string }>;

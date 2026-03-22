@@ -1,5 +1,5 @@
 import { DomainError, toErrorResponse } from "@/server/contracts/errors";
-import { updateCurrentOrganizationMemberRole } from "@/server/domains/organizations/service";
+import { updateCurrentOrganizationMemberRole } from "@/server/domains/auth/organizations/service";
 
 type TeamMemberRouteProps = {
   params: Promise<{ membershipId: string }>;

@@ -1,17 +1,5 @@
-import { beforeEach, expect, it, vi } from "vitest";
+import { expect, it, vi } from "vitest";
 import type { AnanProThread } from "@/server/contracts/ananPro";
-
-const { notifyAssistantThreadsChanged } = vi.hoisted(() => ({
-  notifyAssistantThreadsChanged: vi.fn(),
-}));
-
-vi.mock("./useWorkspaceAssistant.shared", async () => {
-  const actual = await vi.importActual<typeof import("./useWorkspaceAssistant.shared")>("./useWorkspaceAssistant.shared");
-  return {
-    ...actual,
-    notifyAssistantThreadsChanged,
-  };
-});
 
 import { buildStreamState, streamAssistantResponse, type StreamSetters } from "./useWorkspaceAssistantSend.stream";
 
@@ -55,10 +43,6 @@ function createSetters() {
   };
 }
 
-beforeEach(() => {
-  notifyAssistantThreadsChanged.mockReset();
-});
-
 it("treats the streamed thread event as authoritative and refreshes the sidebar immediately", async () => {
   const optimisticThread: AnanProThread = {
     id: "",
@@ -88,8 +72,39 @@ it("treats the streamed thread event as authoritative and refreshes the sidebar 
     { threadId: "thread-A" },
     { threadId: "thread-A" },
   ]);
-  expect(notifyAssistantThreadsChanged).toHaveBeenCalledTimes(2);
   expect(streamLifecycleStatus.current).toBe("completed");
   expect(thread.current?.id).toBe("thread-A");
   expect(state.didFinish).toBe(true);
+});
+
+it("patches the optimistic thread id before persistence completes", async () => {
+  const optimisticThread: AnanProThread = {
+    id: "",
+    title: null,
+    messages: [
+      { id: "optimistic-user", role: "user", content: "ابدأ", createdAt: 1 },
+      { id: "assistant-1", role: "assistant", content: "", createdAt: 2 },
+    ],
+  };
+  const state = buildStreamState("assistant-1", optimisticThread);
+  const { setters, thread, selectedThreadId, routeCalls } = createSetters();
+  setters.setThread(optimisticThread);
+
+  await streamAssistantResponse({
+    response: new Response(
+      [
+        'event: thread\ndata: {"threadId":"thread-B","title":"Fresh"}\n\n',
+        'event: delta\ndata: {"text":"مرحبا"}\n\n',
+      ].join(""),
+    ),
+    state,
+    setters,
+  });
+
+  expect(selectedThreadId.current).toBe("thread-B");
+  expect(routeCalls).toEqual([{ threadId: "thread-B" }]);
+  expect(thread.current?.id).toBe("thread-B");
+  expect(thread.current?.title).toBe("Fresh");
+  expect(thread.current?.messages[1]?.content).toBe("مرحبا");
+  expect(state.didFinish).toBe(false);
 });

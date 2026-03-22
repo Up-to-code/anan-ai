@@ -1,5 +1,5 @@
 import { toErrorResponse } from "@/server/contracts/errors";
-import { getWorkspaceBehaviorForCurrentUser } from "@/server/domains/workspaces/service";
+import { getWorkspaceBehaviorForCurrentUser } from "@/server/domains/auth/workspaces/service";
 
 /**
  * WHY:   Workspace pages and future client-side consumers need one gateway entrypoint for the composed workspace payload.

@@ -18,12 +18,12 @@ vi.mock("@/lib/serverSession", () => ({
   sanitizeInternalReturnTo,
 }));
 
-vi.mock("@/components/auth/GoogleSignInButton", () => ({
+vi.mock("./_components/GoogleSignInButton", () => ({
   default: ({ redirectTo }: { redirectTo: string }) => <button type="button">Google:{redirectTo}</button>,
 }));
 
-vi.mock("@/components/shared/PageHero", () => ({
-  default: ({
+vi.mock("@/app/(public)/public", () => ({
+  PageHero: ({
     title,
     description,
     actions,
@@ -38,10 +38,7 @@ vi.mock("@/components/shared/PageHero", () => ({
       <div>{actions}</div>
     </div>
   ),
-}));
-
-vi.mock("@/components/shared/Section", () => ({
-  default: ({ children }: { children?: React.ReactNode }) => <section>{children}</section>,
+  Section: ({ children }: { children?: React.ReactNode }) => <section>{children}</section>,
 }));
 
 import SigninPage from "./page";

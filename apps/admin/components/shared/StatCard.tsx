@@ -26,7 +26,7 @@ export default function StatCard({ label, value, hint, icon: Icon, delta, classN
       : null;
 
   return (
-    <div className={cn("rounded-xl border border-stone-300 bg-white p-5 transition-colors hover:border-stone-400", className)}>
+    <div className={cn("rounded-lg border border-stone-300 bg-white p-5 transition-colors hover:border-stone-400", className)}>
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="text-sm font-medium text-slate-500">{label}</div>

@@ -5,7 +5,7 @@ const { createPublicFormSubmission } = vi.hoisted(() => ({
   createPublicFormSubmission: vi.fn(),
 }));
 
-vi.mock("@/server/domains/forms/service", () => ({
+vi.mock("@/server/domains/public/forms/service", () => ({
   createPublicFormSubmission,
 }));
 

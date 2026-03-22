@@ -4,7 +4,7 @@ import { toErrorResponse } from "@/server/contracts/errors";
 import {
   createOrganizationPropertyByApiKey,
   listOrganizationPropertiesByApiKey,
-} from "@/server/domains/organizationApiKeys/service";
+} from "@/server/domains/auth/organizationApiKeys/service";
 
 /**
  * WHY:   Organization API keys need a machine-readable properties collection endpoint.

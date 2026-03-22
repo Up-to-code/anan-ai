@@ -7,7 +7,6 @@ import { runSendFlow, type SendOptions } from "./useWorkspaceAssistantSend.flow"
 type UseWorkspaceAssistantSendParams = {
   thread: AnanProThread | null;
   shouldStartNewThread: boolean;
-  startTransition: React.TransitionStartFunction;
   setThread: React.Dispatch<React.SetStateAction<AnanProThread | null>>;
   setSelectedThreadId: React.Dispatch<React.SetStateAction<string | null>>;
   setSendError: React.Dispatch<React.SetStateAction<string | null>>;
@@ -48,7 +47,7 @@ function toSendFlowParams(params: UseWorkspaceAssistantSendParams) {
 /**
  * WHY:   Sending a workspace assistant message needs one stable entry point that preserves optimistic UI and stream wiring.
  * WHAT:  Returns a callback that starts the send flow with the current thread context and stream session identifiers.
- * HOW:   Captures the latest active thread, then forwards all setters and router-sync callbacks into `runSendFlow`.
+ * HOW:   Captures the latest active thread, then forwards all setters and route-sync callbacks into `runSendFlow`.
  */
 export function useWorkspaceAssistantSend(params: UseWorkspaceAssistantSendParams) {
   return useCallback(
@@ -57,17 +56,15 @@ export function useWorkspaceAssistantSend(params: UseWorkspaceAssistantSendParam
       const startNewThread = params.shouldStartNewThread && !options?.regenerate;
       const { assistantMessageId, streamSessionId } = createStreamIdentifiers();
 
-      params.startTransition(() => {
-        void runSendFlow({
-          params: toSendFlowParams(params),
-          previousThread,
-          startNewThread,
-          nextMessage,
-          inputMode,
-          options,
-          streamSessionId,
-          assistantMessageId,
-        });
+      void runSendFlow({
+        params: toSendFlowParams(params),
+        previousThread,
+        startNewThread,
+        nextMessage,
+        inputMode,
+        options,
+        streamSessionId,
+        assistantMessageId,
       });
     },
     [params],

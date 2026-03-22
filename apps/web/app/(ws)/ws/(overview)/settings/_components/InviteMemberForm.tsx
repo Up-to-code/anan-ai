@@ -169,7 +169,7 @@ export default function InviteMemberForm({
   }
   return (
     <form
-      className="flex flex-col gap-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+      className="flex flex-col gap-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
       onSubmit={async (event) => {
         event.preventDefault();
         if (!hasOrganization) {

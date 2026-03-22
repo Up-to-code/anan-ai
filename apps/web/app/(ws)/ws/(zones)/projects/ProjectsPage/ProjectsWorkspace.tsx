@@ -9,7 +9,7 @@ import PropertyCard from "../../../_components/Visuals/PropertyCard";
 import type { WorkspaceProject } from "../projectTypes";
 import ProjectsSummary from "./ProjectsSummary";
 import ZonePageIntro from "../../../_components/ZoneShell/ZonePageIntro";
-import AgDeleteConfirmModal from "@/components/shared/ag-aui/AgDeleteConfirmModal";
+import { AgDeleteConfirmModal } from "@/app/(ws)/ws/public";
 
 type ProjectsWorkspaceProps = {
   initialProjects: WorkspaceProject[];

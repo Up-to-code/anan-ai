@@ -1,5 +1,5 @@
 import { getWorkspaceOrganizationTeam } from "../../_lib/organizationTeam";
-import { listCurrentOrganizationApiKeysForCurrentUser } from "@/server/domains/organizationApiKeys/service";
+import { listCurrentOrganizationApiKeysForCurrentUser } from "@/server/domains/auth/organizationApiKeys/service";
 import type { OrganizationApiKeySummary } from "@/server/contracts/organizationApiKeys";
 import SettingsHeader from "./_components/SettingsHeader";
 import ApiKeysWorkspace from "./_components/ApiKeysWorkspace";

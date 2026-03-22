@@ -3,7 +3,7 @@ import { toErrorResponse } from "@/server/contracts/errors";
 import {
   createCurrentOrganizationApiKeyForCurrentUser,
   listCurrentOrganizationApiKeysForCurrentUser,
-} from "@/server/domains/organizationApiKeys/service";
+} from "@/server/domains/auth/organizationApiKeys/service";
 
 /**
  * WHY:   Workspace settings need one gateway-owned read endpoint for organization API keys.

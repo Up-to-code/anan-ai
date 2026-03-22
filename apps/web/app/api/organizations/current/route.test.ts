@@ -5,7 +5,7 @@ const { updateCurrentOrganizationForCurrentUser } = vi.hoisted(() => ({
   updateCurrentOrganizationForCurrentUser: vi.fn(),
 }));
 
-vi.mock("@/server/domains/organizations/service", () => ({
+vi.mock("@/server/domains/auth/organizations/service", () => ({
   updateCurrentOrganizationForCurrentUser,
 }));
 

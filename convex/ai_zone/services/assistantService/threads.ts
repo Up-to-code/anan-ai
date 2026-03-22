@@ -156,6 +156,21 @@ export async function listRecentThreads(
 }
 
 /**
+ * Returns one specific assistant thread only when the current owner is allowed to access it.
+ */
+export async function getAccessibleThread(
+  ctx: QueryCtx,
+  ownerOrUser: string | AssistantOwner,
+  threadId: Id<"assistantThreads">,
+  assistantKind?: AssistantKind
+) {
+  const owner = normalizeOwner(ownerOrUser);
+  const thread = await ctx.db.get(threadId);
+  if (!thread || !canAccessThread(thread, owner, assistantKind)) return null;
+  return thread;
+}
+
+/**
  * Lists all messages for a thread, verifying ownership first.
  */
 export async function listThreadMessages(

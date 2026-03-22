@@ -58,7 +58,7 @@ function ApiKeyPermissions({ permissions }: { permissions: OrganizationApiKeyPer
       {permissions.map((permission) => (
         <span
           key={permissionKey(permission)}
-          className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-black tracking-wide text-slate-600"
+          className="rounded-md border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-black tracking-wide text-slate-600"
         >
           {permissionLabel(permission)}
         </span>
@@ -79,14 +79,14 @@ function ApiKeysList({
   return (
     <div className="space-y-4">
       {keys.map((key) => (
-        <article key={key.keyId} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <article key={key.keyId} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-3">
                 <h3 className="text-lg font-black text-slate-950">{key.name}</h3>
                 <span
                   className={cn(
-                    "rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]",
+                    "rounded-md border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]",
                     key.status === "active"
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                       : "border-rose-200 bg-rose-50 text-rose-700",
@@ -167,7 +167,7 @@ export default function ApiKeysWorkspace({
 
   if (!hasOrganization) {
     return (
-      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-xl font-black text-slate-950">مفاتيح API</h2>
         <p className="mt-2 text-sm font-medium text-slate-500">أنشئ منظمة أولاً قبل إصدار أي مفاتيح تكامل.</p>
       </section>
@@ -176,7 +176,7 @@ export default function ApiKeysWorkspace({
 
   if (!canManage) {
     return (
-      <section className="rounded-xl border border-amber-200 bg-amber-50/80 p-6 shadow-sm">
+      <section className="rounded-lg border border-amber-200 bg-amber-50/80 p-6 shadow-sm">
         <h2 className="text-xl font-black text-slate-950">مفاتيح API</h2>
         <p className="mt-2 text-sm font-medium text-amber-900">
           إدارة مفاتيح API متاحة للمدير فقط. يمكنك طلب ترقية الصلاحية من مدير المنظمة إذا كنت تحتاج هذا التكامل.
@@ -256,7 +256,7 @@ export default function ApiKeysWorkspace({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-2">
           <h2 className="text-xl font-black tracking-tight text-slate-950">مفاتيح API</h2>
           <p className="text-sm font-medium text-slate-500">
@@ -265,7 +265,7 @@ export default function ApiKeysWorkspace({
         </div>
 
         {revealedResult ? (
-          <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900">
+          <div className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900">
             <div className="font-black">اعرض واحفظ المفتاح الآن</div>
             <div className="mt-2 font-medium">هذه هي المرة الوحيدة التي سنعرض فيها القيمة السرية الكاملة.</div>
             <code className="mt-4 block overflow-x-auto rounded-lg bg-slate-950 px-4 py-3 text-left text-xs font-bold text-emerald-200">
@@ -295,13 +295,13 @@ export default function ApiKeysWorkspace({
                 <p className="mt-1 text-sm font-medium text-slate-500">اختر إجراءات واضحة لكل مورد. القراءة والإنشاء والتحديث والحذف يتم ضبطها بشكل مستقل.</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => applyPreset("read")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:bg-slate-50">قراءة فقط</button>
-                <button type="button" onClick={() => applyPreset("write")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:bg-slate-50">قراءة وكتابة</button>
-                <button type="button" onClick={() => applyPreset("full")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:bg-slate-50">كامل الصلاحيات</button>
+                <button type="button" onClick={() => applyPreset("read")} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:bg-slate-50">قراءة فقط</button>
+                <button type="button" onClick={() => applyPreset("write")} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:bg-slate-50">قراءة وكتابة</button>
+                <button type="button" onClick={() => applyPreset("full")} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:bg-slate-50">كامل الصلاحيات</button>
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-slate-200">
+            <div className="overflow-hidden rounded-lg border border-slate-200">
               <div className="grid grid-cols-[160px_repeat(4,minmax(0,1fr))] border-b border-slate-200 bg-slate-50 text-center text-[11px] font-black uppercase tracking-widest text-slate-500">
                 <div className="px-4 py-3 text-right">المورد</div>
                 {actionCatalog.map((action) => {

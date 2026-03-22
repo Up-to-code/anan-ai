@@ -114,7 +114,7 @@ function SearchResultsList({
   searchResults: UserConversationTarget[];
 }) {
   return (
-    <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
+    <div className="mt-3 overflow-hidden rounded-lg border border-slate-200 bg-white">
       {searchResults.map((result, index) => (
         <button key={result.id} type="button" onClick={() => onStartConversation(result.id)} className={cn("flex w-full items-center gap-3 px-4 py-3 text-right transition hover:bg-slate-50", index > 0 ? "border-t border-slate-100" : "")}>
           <UserAvatar name={result.name} image={result.image} size="sm" />
@@ -126,7 +126,7 @@ function SearchResultsList({
             </div>
             {formatMembershipState(result.membershipState) ? <div className="mt-1 text-[10px] font-medium text-slate-400">{formatMembershipState(result.membershipState)}</div> : null}
           </div>
-          <span className="shrink-0 rounded-full border border-blue-200 bg-blue-50 px-2 py-1 text-[10px] font-black tracking-widest text-blue-700">ابدأ</span>
+          <span className="shrink-0 rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-[10px] font-black tracking-widest text-blue-700">ابدأ</span>
         </button>
       ))}
     </div>
@@ -146,7 +146,7 @@ function SearchResultsState({
 }) {
   if (searchResults.length > 0) return <SearchResultsList onStartConversation={onStartConversation} searchResults={searchResults} />;
   if (isSearching) return <div className="mt-3 text-xs font-medium text-slate-500">جاري البحث...</div>;
-  if (hasSearch) return <div className="mt-3 rounded-xl border border-dashed border-slate-200 px-4 py-3 text-xs font-medium text-slate-500">لا توجد نتائج مطابقة.</div>;
+  if (hasSearch) return <div className="mt-3 rounded-lg border border-dashed border-slate-200 px-4 py-3 text-xs font-medium text-slate-500">لا توجد نتائج مطابقة.</div>;
   return null;
 }
 
@@ -159,14 +159,14 @@ function SidebarHeader(props: Pick<InboxSidebarProps, "conversations" | "invites
           <h1 className="text-base font-black text-slate-950">البريد الوارد</h1>
           <p className="mt-0.5 text-xs font-medium text-slate-500">{props.conversations.length > 0 ? `${props.conversations.length} محادثة` : "ابدأ محادثة جديدة"}</p>
         </div>
-        <button type="button" aria-label="محادثة جديدة" onClick={() => props.onSearchChange(" ")} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+        <button type="button" aria-label="محادثة جديدة" onClick={() => props.onSearchChange(" ")} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
           <PenSquare className="h-4 w-4" />
         </button>
       </div>
       <label className="mt-4 block" htmlFor="workspace-inbox-search">
         <div className="relative">
           <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input id="workspace-inbox-search" value={props.search} onChange={(event) => props.onSearchChange(event.target.value)} placeholder="ابحث عن مستخدم أو دور..." className="w-full rounded-full border-2 border-transparent bg-slate-100 py-2.5 pl-4 pr-10 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10" />
+          <input id="workspace-inbox-search" value={props.search} onChange={(event) => props.onSearchChange(event.target.value)} placeholder="ابحث عن مستخدم أو دور..." className="w-full rounded-lg border-2 border-transparent bg-slate-100 py-2.5 pl-4 pr-10 text-sm font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10" />
         </div>
       </label>
       <SearchResultsState hasSearch={hasSearch} isSearching={props.isSearching} onStartConversation={props.onStartConversation} searchResults={props.searchResults} />

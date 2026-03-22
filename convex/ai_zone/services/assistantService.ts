@@ -11,6 +11,7 @@ export type { AssistantOwner } from "./assistantService/types";
 export { resolveAssistantOwner, resolveAssistantOwnerSafe } from "./assistantService/owner";
 
 export {
+  getAccessibleThread,
   getLatestThread,
   getMessageContent,
   listRecentThreads,

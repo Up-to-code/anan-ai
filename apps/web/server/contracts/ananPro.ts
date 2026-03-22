@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AgUiConversationTurn } from "@/components/shared/ag-aui/sdk/types";
+import type { AgUiConversationTurn } from "@/app/(ws)/ws/public";
 
 export const ananProInputModeSchema = z.enum(["text", "voice"]);
 

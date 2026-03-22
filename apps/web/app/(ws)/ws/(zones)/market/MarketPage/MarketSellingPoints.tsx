@@ -14,7 +14,7 @@ export default function MarketSellingPoints({
   description?: string;
 }) {
   return (
-    <section className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col">
+    <section className="flex flex-col rounded-lg border border-slate-200 bg-white/95 p-6 shadow-sm backdrop-blur-md">
       <div className="border-b border-slate-100 pb-5 text-right">
         <h2 className="text-base font-bold text-slate-900">{title}</h2>
         {description ? <p className="mt-1 text-xs font-semibold text-slate-500">{description}</p> : null}
@@ -27,7 +27,7 @@ export default function MarketSellingPoints({
       ) : (
         <ul className="mt-5 grid gap-3">
           {items.map((item) => (
-            <li key={`${item.source}-${item.label}`} className="flex items-center justify-between border border-slate-100 bg-slate-50 px-5 py-4 rounded-xl shadow-sm transition-colors hover:bg-slate-100/50">
+            <li key={`${item.source}-${item.label}`} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-5 py-4 shadow-sm transition-colors hover:bg-slate-100/50">
               <div className="text-right">
                 <div className="text-sm font-bold text-slate-900">{item.label}</div>
                 <div className="mt-1 text-[10px] font-black tracking-wider text-slate-400 uppercase">

@@ -2,7 +2,6 @@
 
 import type { AnanProStreamStageEvent, AnanProThread } from "@/server/contracts/ananPro";
 import {
-  notifyAssistantThreadsChanged,
   parseSseChunk,
   type AssistantStreamEvent,
 } from "./useWorkspaceAssistant.shared";
@@ -47,9 +46,22 @@ function handleThreadEvent(
   event: Extract<AssistantStreamEvent, { event: "thread" }>,
   setters: StreamSetters,
 ) {
+  setters.setThread((current) => {
+    if (!current) {
+      return {
+        id: event.data.threadId,
+        title: event.data.title ?? null,
+        messages: [],
+      };
+    }
+    return {
+      ...current,
+      id: event.data.threadId,
+      title: event.data.title ?? current.title ?? null,
+    };
+  });
   setters.setSelectedThreadId(event.data.threadId);
   setters.replaceThreadRoute(event.data.threadId);
-  notifyAssistantThreadsChanged();
 }
 
 function handleDeltaEvent(
@@ -122,7 +134,6 @@ function handleDoneEvent(
   setters.setThread(event.data.thread);
   setters.setSelectedThreadId(event.data.thread.id);
   setters.replaceThreadRoute(event.data.thread.id);
-  notifyAssistantThreadsChanged();
 }
 
 function dispatchStreamEvent(

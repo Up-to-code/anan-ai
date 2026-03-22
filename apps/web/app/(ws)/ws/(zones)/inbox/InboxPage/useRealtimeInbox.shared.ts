@@ -78,14 +78,30 @@ export function upsertConversationSummary<T extends { id: string; updatedAt: num
   return [nextConversation, ...withoutCurrent].sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
+type OptimisticSendMutationArgs = {
+  conversationId?: Id<"inboxConversations">;
+  body: string;
+  clientRequestId?: string;
+};
+
+type OptimisticLocalStore = {
+  getQuery<QueryResult>(query: unknown, args: Record<string, unknown>): QueryResult | null | undefined;
+  setQuery<QueryResult>(query: unknown, args: Record<string, unknown>, value: QueryResult): void;
+};
+
+type InboxApiRefs = {
+  getConversation: unknown;
+  listConversations: unknown;
+};
+
 function buildOptimisticConversationState(args: {
-  localStore: any;
+  localStore: OptimisticLocalStore;
   currentUserId: string;
-  mutationArgs: { conversationId?: Id<"inboxConversations">; body: string; clientRequestId?: string };
-  inboxApi: any;
+  mutationArgs: OptimisticSendMutationArgs;
+  inboxApi: InboxApiRefs;
 }) {
   if (!args.mutationArgs.conversationId) return null;
-  const conversation = args.localStore.getQuery(args.inboxApi.getConversation, {
+  const conversation = args.localStore.getQuery<ConversationDetail>(args.inboxApi.getConversation, {
     conversationId: args.mutationArgs.conversationId,
   });
   if (!conversation?.otherUser) return null;
@@ -95,19 +111,18 @@ function buildOptimisticConversationState(args: {
     currentUserId: args.currentUserId,
     recipientUserId: conversation.otherUser.id,
   });
-  const optimisticStoreMessage = optimisticMessage as unknown as (typeof conversation.messages)[number];
-  return { conversation, optimisticStoreMessage, updatedAt: optimisticStoreMessage.createdAt };
+  return { conversation, optimisticStoreMessage: optimisticMessage, updatedAt: optimisticMessage.createdAt };
 }
 
 function applyOptimisticConversation(args: {
-  localStore: any;
-  inboxApi: any;
+  localStore: OptimisticLocalStore;
+  inboxApi: InboxApiRefs;
   conversationId: Id<"inboxConversations">;
-  conversation: any;
-  optimisticStoreMessage: any;
+  conversation: ConversationDetail;
+  optimisticStoreMessage: ConversationMessage;
   updatedAt: number;
 }) {
-  const optimisticConversation = {
+  const optimisticConversation: ConversationDetail = {
     ...args.conversation,
     updatedAt: args.updatedAt,
     unreadCount: 0,
@@ -120,15 +135,15 @@ function applyOptimisticConversation(args: {
 }
 
 function applyOptimisticConversationSummary(args: {
-  localStore: any;
-  inboxApi: any;
-  optimisticConversation: any;
-  optimisticStoreMessage: any;
+  localStore: OptimisticLocalStore;
+  inboxApi: InboxApiRefs;
+  optimisticConversation: ConversationDetail;
+  optimisticStoreMessage: ConversationMessage;
   updatedAt: number;
 }) {
-  const conversations = args.localStore.getQuery(args.inboxApi.listConversations, {});
+  const conversations = args.localStore.getQuery<ConversationSummary[]>(args.inboxApi.listConversations, {});
   if (!conversations) return;
-  const summary = {
+  const summary: ConversationSummary = {
     id: args.optimisticConversation.id,
     directKey: args.optimisticConversation.directKey || "",
     otherUser: args.optimisticConversation.otherUser,
@@ -136,12 +151,12 @@ function applyOptimisticConversationSummary(args: {
     updatedAt: args.updatedAt,
     lastMessage: buildSummaryPreview(args.optimisticStoreMessage),
     lastMessagePreview: args.optimisticStoreMessage.body,
-  } as (typeof conversations)[number];
+  };
   args.localStore.setQuery(args.inboxApi.listConversations, {}, upsertConversationSummary(conversations, summary));
 }
 
-export function createOptimisticSendConversationUpdate(args: { currentUserId: string; inboxApi: any }) {
-  return (localStore: any, mutationArgs: { conversationId?: Id<"inboxConversations">; body: string; clientRequestId?: string }) => {
+export function createOptimisticSendConversationUpdate(args: { currentUserId: string; inboxApi: InboxApiRefs }) {
+  return (localStore: OptimisticLocalStore, mutationArgs: OptimisticSendMutationArgs) => {
     const state = buildOptimisticConversationState({
       localStore,
       currentUserId: args.currentUserId,

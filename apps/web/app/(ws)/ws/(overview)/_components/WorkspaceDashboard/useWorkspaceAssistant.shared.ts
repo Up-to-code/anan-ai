@@ -4,7 +4,7 @@ import type {
   AnanProStreamStageEvent,
   AnanProThread,
 } from "@/server/contracts/ananPro";
-import type { AIMotionState } from "@/app/(ws)/ws/_components/AIMotion";
+import type { AIMotionState } from "../../../_components/AIMotion";
 
 function applyNewThreadSearchParam(searchParams: URLSearchParams, newThread: boolean | undefined) {
   if (newThread === true) {
@@ -17,7 +17,7 @@ function applyNewThreadSearchParam(searchParams: URLSearchParams, newThread: boo
 }
 
 /**
- * WHY:   Workspace assistant route changes must stay aligned with the App Router rather than mutating browser history directly.
+ * WHY:   Workspace assistant route changes need one consistent URL builder whether the caller uses browser history or a router wrapper.
  * WHAT:  Builds the next `/ws` href for either a concrete thread selection or a draft/new-thread state.
  * HOW:   Preserves unrelated query params and hash fragments while normalizing `threadId` and `newThread`.
  */
@@ -42,16 +42,6 @@ export function buildWorkspaceAssistantHref(args: {
 
   const nextSearch = searchParams.toString();
   return `${args.pathname}${nextSearch ? `?${nextSearch}` : ""}${args.hash ?? ""}`;
-}
-
-/**
- * WHY:   The workspace shell sidebar needs a lightweight client signal when thread ordering changes after sends complete.
- * WHAT:  Dispatches a browser event telling thread-list consumers to re-fetch summaries.
- * HOW:   Uses one custom event so multiple shells can refresh without wiring global state into the layout.
- */
-export function notifyAssistantThreadsChanged() {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent("workspace-assistant-threads:changed"));
 }
 
 export type AssistantStreamEvent =
@@ -123,10 +113,10 @@ export function parseSseChunk(rawChunk: string): AssistantStreamEvent | null {
  * HOW:   Collapses multiple backend phases into user-facing buckets like thinking, agent, tool, and syncing.
  */
 export function getAssistantMotionState(
-  isPending: boolean,
+  isStreaming: boolean,
   streamStage: AnanProStreamStageEvent | null,
 ): AIMotionState {
-  if (!isPending || !streamStage) return "idle";
+  if (!isStreaming || !streamStage) return "idle";
   switch (streamStage.phase) {
     case "intent_started":
     case "intent_done":
@@ -153,14 +143,14 @@ export function getAssistantMotionState(
  * HOW:   Special-cases cancellation first, then maps each known workspace stage to a concise label.
  */
 export function getAssistantStageLabel(
-  isPending: boolean,
+  isStreaming: boolean,
   streamStage: AnanProStreamStageEvent | null,
   streamLifecycleStatus: "running" | "completed" | "failed" | "cancelled" | null,
 ) {
   if (streamLifecycleStatus === "cancelled") {
     return "تم إيقاف التوليد.";
   }
-  if (!isPending || !streamStage) return "anan workspace يجهز الخطوة التالية...";
+  if (!isStreaming || !streamStage) return "anan workspace يجهز الخطوة التالية...";
   const team = streamStage.teamId?.replace("team_workspace_", "");
   switch (streamStage.phase) {
     case "intent_started":

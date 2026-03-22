@@ -5,7 +5,7 @@ const { createOrganizationForCurrentUser } = vi.hoisted(() => ({
   createOrganizationForCurrentUser: vi.fn(),
 }));
 
-vi.mock("@/server/domains/organizations/service", () => ({
+vi.mock("@/server/domains/auth/organizations/service", () => ({
   createOrganizationForCurrentUser,
 }));
 

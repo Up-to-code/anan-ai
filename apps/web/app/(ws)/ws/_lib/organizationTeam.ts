@@ -1,9 +1,9 @@
-import { getWorkspaceBehaviorForCurrentUser } from "@/server/domains/workspaces/service";
+import { getWorkspaceBehaviorForCurrentUser } from "@/server/domains/auth/workspaces/service";
 import {
   getCurrentOrganizationForCurrentUser,
   listCurrentOrganizationTeamInvites,
   listCurrentOrganizationTeamMembers,
-} from "@/server/domains/organizations/service";
+} from "@/server/domains/auth/organizations/service";
 import { normalizeDomainError } from "@/server/contracts/errors";
 import type { OrganizationInviteDisplay, OrganizationMemberDisplay } from "./entities";
 

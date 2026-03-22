@@ -11,6 +11,16 @@ import {
   Legend,
 } from "recharts";
 
+type TooltipPayload<Row> = {
+  payload: Row;
+};
+
+type TooltipProps<Row> = {
+  active?: boolean;
+  payload?: TooltipPayload<Row>[];
+  priorityLabels: Record<"high" | "medium" | "watch", string>;
+};
+
 type OpportunityRow = {
   city: string;
   area: string;
@@ -32,13 +42,13 @@ type MarketOpportunityTableProps = {
 /**
  * Custom tooltip to show the ranking rationale and extra qualitative data.
  */
-function OpportunityTooltip({ active, payload, label, priorityLabels }: any) {
+function OpportunityTooltip({ active, payload, priorityLabels }: TooltipProps<OpportunityRow>) {
   if (active && payload && payload.length) {
-    const data = payload[0].payload as OpportunityRow;
+    const data = payload[0].payload;
     return (
-      <div className="bg-white/95 backdrop-blur-md border border-slate-200 p-5 rounded-xl shadow-xl text-right max-w-sm">
+      <div className="max-w-sm rounded-lg border border-slate-200 bg-white/95 p-5 text-right shadow-xl backdrop-blur-md">
         <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
-          <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+          <span className={`rounded-md px-2 py-1 text-[10px] font-bold ${
             data.priority === 'high' ? 'bg-red-50 text-red-600 border border-red-200' :
             data.priority === 'medium' ? 'bg-orange-50 text-orange-600 border border-orange-200' :
             'bg-blue-50 text-blue-600 border border-blue-200'
@@ -50,7 +60,7 @@ function OpportunityTooltip({ active, payload, label, priorityLabels }: any) {
           </p>
         </div>
         <div className="space-y-3 text-xs font-semibold text-slate-600">
-          <p className="border-r-2 border-blue-500 pr-3 leading-relaxed text-slate-700 mb-3 bg-slate-50 p-2 rounded-l-md">
+          <p className="mb-3 rounded-s-md bg-slate-50 p-2 pr-3 leading-relaxed text-slate-700 border-r-2 border-blue-500">
             {data.reason}
           </p>
           <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-100">
@@ -78,7 +88,7 @@ export default function MarketOpportunityTable({
 }: MarketOpportunityTableProps) {
   if (rows.length === 0) {
     return (
-      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+      <section className="flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
           <h2 className="text-base font-bold text-slate-900">{title}</h2>
         </div>
@@ -89,13 +99,13 @@ export default function MarketOpportunityTable({
     );
   }
 
-  const chartData = rows.map(r => ({
-    ...r,
-    displayName: `${r.area} (${r.city})`,
+  const chartData = rows.map((row) => ({
+    ...row,
+    displayName: `${row.area} (${row.city})`,
   }));
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+    <section className="flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
         <h2 className="text-base font-bold text-slate-900">{title}</h2>
       </div>

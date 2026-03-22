@@ -2,54 +2,31 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { DomainError } from "@/server/contracts/errors";
 
 const {
-  getAnanProThread,
   getAnanProVoiceUploadUrl,
   sendAnanProMessage,
   transcribeAnanProVoiceFromStorage,
 } = vi.hoisted(() => ({
-  getAnanProThread: vi.fn(),
   getAnanProVoiceUploadUrl: vi.fn(),
   sendAnanProMessage: vi.fn(),
   transcribeAnanProVoiceFromStorage: vi.fn(),
 }));
 
-vi.mock("@/server/domains/ananPro/service", () => ({
-  getAnanProThread,
+vi.mock("@/server/domains/workspace/ananPro/service", () => ({
   getAnanProVoiceUploadUrl,
   sendAnanProMessage,
   transcribeAnanProVoiceFromStorage,
 }));
 
 import {
-  getAssistantThread,
   getVoiceUploadUrl,
   sendAssistantMessage,
   transcribeVoiceFromStorage,
 } from "./actions";
 
 beforeEach(() => {
-  getAnanProThread.mockReset();
   getAnanProVoiceUploadUrl.mockReset();
   sendAnanProMessage.mockReset();
   transcribeAnanProVoiceFromStorage.mockReset();
-});
-
-it("loads assistant thread successfully", async () => {
-  getAnanProThread.mockResolvedValue({
-    id: "thread-1",
-    title: "Thread",
-    messages: [],
-  });
-
-  const result = await getAssistantThread("thread-1");
-  expect(result).toEqual({
-    ok: true,
-    data: {
-      id: "thread-1",
-      title: "Thread",
-      messages: [],
-    },
-  });
 });
 
 it("validates send input and returns stable invalid argument errors", async () => {

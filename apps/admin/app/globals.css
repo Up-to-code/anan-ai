@@ -71,7 +71,7 @@
   --chart-3: #15803d;
   --chart-4: #0f766e;
   --chart-5: #be123c;
-  --radius: 10px;
+  --radius: 8px;
   --sidebar: #fafaf9;
   --sidebar-foreground: #0f172a;
   --sidebar-primary: #1f2937;
@@ -130,7 +130,7 @@
   }
 }
 
-/* --- Anan Sharp Scrollbar (Chrome/Safari/Edge) --- */
+/* --- Anan Scrollbar (Chrome/Safari/Edge) --- */
 :root {
   --sb-thumb: #44403c;
   --sb-thumb-hover: #1f2937;
@@ -157,7 +157,7 @@
 
 ::-webkit-scrollbar-thumb {
   background: var(--sb-thumb);
-  border-radius: 0px;
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover {

@@ -51,7 +51,7 @@ export default function BrokerPresenceChip({
         type="button"
         onClick={() => setOpen((current) => !current)}
         className={cn(
-          "inline-flex items-center gap-3 border px-3 py-2.5 text-right transition hover:-translate-y-0.5",
+          "inline-flex items-center gap-3 rounded-lg border px-3 py-2.5 text-right transition hover:-translate-y-0.5",
           STATE_STYLES[broker.state],
         )}
       >
@@ -60,9 +60,9 @@ export default function BrokerPresenceChip({
           <img
             src={broker.avatarImage}
             alt={broker.name}
-            className="h-10 w-10 rounded-none object-cover"
+            className="h-10 w-10 rounded-lg object-cover"
           />
-          <span className="absolute -bottom-1 -left-1 h-3 w-3 rounded-none border border-white bg-blue-600" />
+          <span className="absolute -bottom-1 -left-1 h-3 w-3 rounded-full border border-white bg-blue-600" />
         </div>
         <span className="min-w-0">
           <span className="block truncate text-xs font-black text-slate-950">{broker.name}</span>
@@ -75,7 +75,7 @@ export default function BrokerPresenceChip({
           </span>
         </span>
         {broker.badges?.includes("verified") ? (
-          <span className="border border-blue-200 bg-white px-1.5 py-1 text-[9px] font-black tracking-[0.18em] text-blue-700">
+          <span className="rounded-md border border-blue-200 bg-white px-1.5 py-1 text-[9px] font-black tracking-[0.18em] text-blue-700">
             موثق
           </span>
         ) : null}
@@ -83,7 +83,7 @@ export default function BrokerPresenceChip({
 
       <div
         className={cn(
-          "absolute top-full z-20 mt-2 w-72 border-2 border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 transition",
+          "absolute top-full z-20 mt-2 w-72 rounded-lg border-2 border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 transition",
           open ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-1 opacity-0",
         )}
       >
@@ -92,7 +92,7 @@ export default function BrokerPresenceChip({
           <img
             src={broker.avatarImage}
             alt={broker.name}
-            className="h-14 w-14 rounded-none object-cover"
+            className="h-14 w-14 rounded-lg object-cover"
           />
           <div className="min-w-0">
             <div className="text-sm font-black text-slate-950">{broker.name}</div>

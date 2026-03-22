@@ -6,7 +6,7 @@ const { searchCurrentOrganizationDirectoryExact } = vi.hoisted(() => ({
   searchCurrentOrganizationDirectoryExact: vi.fn(),
 }));
 
-vi.mock("@/server/domains/organizations/service", () => ({
+vi.mock("@/server/domains/auth/organizations/service", () => ({
   searchCurrentOrganizationDirectoryExact,
 }));
 

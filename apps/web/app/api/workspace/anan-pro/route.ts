@@ -4,7 +4,7 @@ import {
   getAnanProThread,
   listAnanProThreads,
   sendAnanProMessage,
-} from "@/server/domains/ananPro/service";
+} from "@/server/domains/workspace/ananPro/service";
 import { sendAnanProMessageInputSchema } from "@/server/contracts/ananPro";
 import { DomainError, toErrorResponse } from "@/server/contracts/errors";
 import { toInvalidJsonResponse } from "@/app/api/_shared/errors";

@@ -10,7 +10,7 @@ const { cancelAnanProStreamSession, getAnanProThread, listAnanProThreads, listAn
   sendAnanProMessage: vi.fn(),
 }));
 
-vi.mock("@/server/domains/ananPro/service", () => ({
+vi.mock("@/server/domains/workspace/ananPro/service", () => ({
   cancelAnanProStreamSession,
   getAnanProThread,
   listAnanProThreads,

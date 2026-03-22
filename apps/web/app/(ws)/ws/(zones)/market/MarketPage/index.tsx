@@ -58,7 +58,9 @@ export default function MarketPage({ model, actionPath, intro, children }: Marke
         description={intro.description}
       />
       <div className="grid gap-6 px-6 py-6 lg:px-8 lg:py-8">
-        <MarketPageContent model={model} actionPath={actionPath} children={children} />
+        <MarketPageContent model={model} actionPath={actionPath}>
+          {children}
+        </MarketPageContent>
       </div>
     </div>
   );

@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
-import PageHero from "@/components/shared/PageHero";
-import Section from "@/components/shared/Section";
-import SectionLabel from "@/components/shared/SectionLabel";
+import { PageHero, Section, SectionLabel } from "@/app/(public)/public";
 
 export const metadata: Metadata = {
   title: "المدونة والتحديثات | عنان",

@@ -1,5 +1,5 @@
 import { DomainError, toErrorResponse } from "@/server/contracts/errors";
-import { createOrganizationForCurrentUser } from "@/server/domains/organizations/service";
+import { createOrganizationForCurrentUser } from "@/server/domains/auth/organizations/service";
 
 /**
  * WHY:   Organization creation is the first business mutation exposed through the Next.js gateway.

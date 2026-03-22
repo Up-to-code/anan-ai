@@ -5,7 +5,7 @@ const { getWorkspaceBehaviorForCurrentUser } = vi.hoisted(() => ({
   getWorkspaceBehaviorForCurrentUser: vi.fn(),
 }));
 
-vi.mock("@/server/domains/workspaces/service", () => ({
+vi.mock("@/server/domains/auth/workspaces/service", () => ({
   getWorkspaceBehaviorForCurrentUser,
 }));
 

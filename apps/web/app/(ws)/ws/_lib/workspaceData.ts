@@ -3,10 +3,10 @@ import { DomainError, normalizeDomainError } from "@/server/contracts/errors";
 import {
   getWorkspaceBehaviorForCurrentUser,
   getWorkspaceSidebarDataForCurrentUser,
-} from "@/server/domains/workspaces/service";
-import { listAnanProThreads } from "@/server/domains/ananPro/service";
-import { getWorkspaceNotificationSummary } from "@/server/domains/notifications/service";
-import { getInboxUnreadSummaryForCurrentUser } from "@/server/domains/inbox/service";
+} from "@/server/domains/auth/workspaces/service";
+import { listAnanProThreads } from "@/server/domains/workspace/ananPro/service";
+import { getWorkspaceNotificationSummary } from "@/server/domains/workspace/notifications/service";
+import { getInboxUnreadSummaryForCurrentUser } from "@/server/domains/workspace/inbox/service";
 
 function isNextRedirectError(error: unknown) {
   const digest = (error as { digest?: string } | null)?.digest;

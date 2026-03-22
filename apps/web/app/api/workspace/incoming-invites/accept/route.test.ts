@@ -4,7 +4,7 @@ const { acceptCurrentOrganizationInvite } = vi.hoisted(() => ({
   acceptCurrentOrganizationInvite: vi.fn(),
 }));
 
-vi.mock("@/server/domains/organizations/service", () => ({
+vi.mock("@/server/domains/auth/organizations/service", () => ({
   acceptCurrentOrganizationInvite,
 }));
 

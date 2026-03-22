@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { AIMotionLogo, type AIMotionState } from "@/app/(ws)/ws/_components/AIMotion";
+import { AIMotionLogo, type AIMotionState } from "../AIMotion";
 
 /**
  * WHY:   Assistant typing needs a branded presence instead of generic dots or placeholder icons.
@@ -16,11 +16,14 @@ export default function TypingIndicator({
   text: string;
 }) {
   return (
-    <div className="flex min-w-0 shrink-0 items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_10px_28px_-22px_rgba(15,23,42,0.45)]">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
+    <div
+      className="flex min-w-0 shrink-0 items-start gap-3 rounded-[8px] border border-stone-300 bg-stone-50 px-4 py-3"
+      dir="rtl"
+    >
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] border border-stone-300 bg-white">
         <AIMotionLogo state={state} size="compact" />
       </div>
-      <div className="flex min-w-0 flex-col gap-1.5 pt-0.5">
+      <div className="flex min-w-0 flex-col gap-1.5 pt-0.5 text-right">
         <div className="text-[11px] font-medium text-slate-500">Anan AI</div>
         <div className="flex items-center gap-1.5">
           {[0, 1, 2].map((i) => (
@@ -33,7 +36,7 @@ export default function TypingIndicator({
           ))}
         </div>
         {text ? (
-          <span className="text-[11px] text-slate-400">{text}</span>
+          <span className="text-[11px] text-slate-500" style={{ unicodeBidi: "plaintext" }}>{text}</span>
         ) : null}
       </div>
     </div>

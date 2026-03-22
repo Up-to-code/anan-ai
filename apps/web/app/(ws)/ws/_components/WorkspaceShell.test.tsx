@@ -1,14 +1,19 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { usePathname, useSearchParams } = vi.hoisted(() => ({
+const { usePathname, useSearchParams, useQuery } = vi.hoisted(() => ({
   usePathname: vi.fn(),
   useSearchParams: vi.fn(),
+  useQuery: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
   usePathname,
   useSearchParams,
+}));
+
+vi.mock("convex/react", () => ({
+  useQuery,
 }));
 
 vi.mock("next/link", () => ({
@@ -21,9 +26,9 @@ vi.mock("next/link", () => ({
     href: string;
     children: React.ReactNode;
     className?: string;
-    onClick?: () => void;
+    onClick?: (event: unknown) => void;
   }) => (
-    <a href={href} className={className} onClick={onClick}>
+    <a href={href} className={className} onClick={onClick as never}>
       {children}
     </a>
   ),
@@ -45,6 +50,8 @@ describe("WorkspaceShell", () => {
     usePathname.mockReturnValue("/ws");
     useSearchParams.mockReset();
     useSearchParams.mockReturnValue(new URLSearchParams());
+    useQuery.mockReset();
+    useQuery.mockReturnValue(undefined);
   });
 
   it("renders the desktop sidebar shell and mobile nav trigger", () => {

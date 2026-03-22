@@ -4,7 +4,7 @@ import { toErrorResponse } from "@/server/contracts/errors";
 import {
   deleteOrganizationClientByApiKey,
   updateOrganizationClientByApiKey,
-} from "@/server/domains/organizationApiKeys/service";
+} from "@/server/domains/auth/organizationApiKeys/service";
 
 type OrganizationClientRouteProps = {
   params: Promise<{ clientId: string }>;

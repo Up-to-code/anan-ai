@@ -37,7 +37,7 @@ export default function PropertyCard({
   const Content = (
     <article
       className={cn(
-        "group overflow-hidden rounded-xl border border-slate-200/60 bg-white shadow-sm transition-all duration-500 hover:shadow-md hover:border-slate-300",
+        "group overflow-hidden rounded-lg border border-slate-200/60 bg-white shadow-sm transition-all duration-500 hover:shadow-md hover:border-slate-300",
         density === "flexible" ? "w-full" : density === "detail" ? "w-full max-w-sm" : "w-full max-w-xs",
       )}
     >
@@ -63,7 +63,7 @@ export default function PropertyCard({
       </div>
 
       {/* Content area */}
-      <div className="p-5 space-y-4">
+      <div className="space-y-4 p-5">
         <div className="text-right">
           <h2 className="text-base font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">{title}</h2>
           <p className="mt-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{location}</p>

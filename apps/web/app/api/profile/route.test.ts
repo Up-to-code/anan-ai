@@ -5,7 +5,7 @@ const { getCurrentProfileForCurrentUser } = vi.hoisted(() => ({
   getCurrentProfileForCurrentUser: vi.fn(),
 }));
 
-vi.mock("@/server/domains/profiles/service", () => ({
+vi.mock("@/server/domains/auth/profiles/service", () => ({
   getCurrentProfileForCurrentUser,
 }));
 

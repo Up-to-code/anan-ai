@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useRef, useSyncExternalStore } from "react";
 import { useConvex } from "convex/react";
 
 import { api } from "@/lib/convexApi";
@@ -9,34 +9,37 @@ const inboxApi = api.shared_logic.inbox;
 const notificationsApi = api.shared_logic.notifications;
 const EMPTY_ARGS = {} as Record<string, never>;
 
-function useSafeLiveQuery<QueryResult>(
-  createWatch: (() => {
-    localQueryResult: () => QueryResult | undefined;
-    onUpdate: (callback: () => void) => () => void;
-  }) | null,
-) {
-  const [value, setValue] = useState<QueryResult | undefined>(undefined);
+type QueryWatch<QueryResult> = {
+  localQueryResult: () => QueryResult | undefined;
+  onUpdate: (callback: () => void) => () => void;
+};
 
-  useEffect(() => {
+function useSafeLiveQuery<QueryResult>(
+  createWatch: (() => QueryWatch<QueryResult>) | null,
+) {
+  const watchRef = useRef<QueryWatch<QueryResult> | null>(null);
+  const subscribe = useCallback((onStoreChange: () => void) => {
     if (!createWatch) {
-      setValue(undefined);
-      return;
+      watchRef.current = null;
+      onStoreChange();
+      return () => undefined;
     }
 
     const watch = createWatch();
-    const syncValue = () => {
-      try {
-        setValue(watch.localQueryResult());
-      } catch {
-        setValue(undefined);
-      }
-    };
-
-    syncValue();
-    return watch.onUpdate(syncValue);
+    watchRef.current = watch;
+    onStoreChange();
+    return watch.onUpdate(onStoreChange);
   }, [createWatch]);
 
-  return value;
+  const getSnapshot = useCallback(() => {
+    try {
+      return watchRef.current?.localQueryResult();
+    } catch {
+      return undefined;
+    }
+  }, []);
+
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
 /**

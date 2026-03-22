@@ -1,6 +1,6 @@
 "use client";
 
-import { AG_UI_COMPONENT_REGISTRY } from "@/components/shared/ag-aui/sdk/registry";
+import { AG_UI_COMPONENT_REGISTRY } from "@/app/(ws)/ws/public";
 import type { AnanProUiTurn } from "@/server/contracts/ananPro";
 
 /**

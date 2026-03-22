@@ -35,7 +35,7 @@ export default function MarketCitiesTable({
   title = "المدن الأعلى طلباً",
   description,
 }: MarketCitiesTableProps) {
-      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
           <h2 className="text-base font-bold text-slate-900">{title}</h2>
           {description ? <p className="mt-1 text-xs font-medium text-slate-500">{description}</p> : null}
@@ -46,7 +46,7 @@ export default function MarketCitiesTable({
       </section>
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+    <section className="flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
         <h2 className="text-base font-bold text-slate-900">{title}</h2>
         {description ? <p className="mt-1 text-xs font-medium text-slate-500">{description}</p> : null}
@@ -76,7 +76,7 @@ export default function MarketCitiesTable({
               contentStyle={{
                 backgroundColor: "#ffffff",
                 border: "1px solid #e2e8f0",
-                borderRadius: "12px",
+                borderRadius: "8px",
                 boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
                 fontWeight: 600,
                 fontSize: "12px",

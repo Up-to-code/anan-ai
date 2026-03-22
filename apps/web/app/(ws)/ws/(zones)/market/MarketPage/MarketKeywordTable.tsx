@@ -10,6 +10,15 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+type TooltipPayload<Row> = {
+  payload: Row;
+};
+
+type TooltipProps<Row> = {
+  active?: boolean;
+  payload?: TooltipPayload<Row>[];
+};
+
 type KeywordRow = {
   label: string;
   count: number;
@@ -35,11 +44,11 @@ function getSourceLabel(source: KeywordRow["source"]): string {
 /**
  * Custom tooltip to show the exact count and translated source.
  */
-function KeywordTooltip({ active, payload }: any) {
+function KeywordTooltip({ active, payload }: TooltipProps<KeywordRow>) {
   if (active && payload && payload.length) {
-    const data = payload[0].payload as KeywordRow;
+    const data = payload[0].payload;
     return (
-      <div className="bg-white/95 backdrop-blur-md border border-slate-200 p-4 rounded-xl shadow-xl text-right max-w-xs">
+      <div className="max-w-xs rounded-lg border border-slate-200 bg-white/95 p-4 text-right shadow-xl backdrop-blur-md">
         <p className="mb-3 text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">
           {data.label}
         </p>
@@ -61,7 +70,7 @@ function KeywordTooltip({ active, payload }: any) {
 export default function MarketKeywordTable({ title, rows }: MarketKeywordTableProps) {
   if (rows.length === 0) {
     return (
-      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
           <h2 className="text-base font-bold text-slate-900">{title}</h2>
         </div>
@@ -76,7 +85,7 @@ export default function MarketKeywordTable({ title, rows }: MarketKeywordTablePr
   const chartHeight = Math.max(300, rows.length * 40 + 60);
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+    <section className="flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
         <h2 className="text-base font-bold text-slate-900">{title}</h2>
       </div>

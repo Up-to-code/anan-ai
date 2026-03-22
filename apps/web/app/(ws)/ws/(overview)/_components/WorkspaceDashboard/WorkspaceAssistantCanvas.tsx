@@ -1,9 +1,8 @@
 "use client";
 
-import type { AnanProStreamStageEvent, AnanProThread } from "@/server/contracts/ananPro";
+import type { AnanProThread } from "@/server/contracts/ananPro";
 import type { SessionUser } from "@/server/contracts/session";
-import type { AIMotionState } from "@/app/(ws)/ws/_components/AIMotion";
-import { AIMotionLogo } from "@/app/(ws)/ws/_components/AIMotion";
+import { AIMotionLogo, type AIMotionState } from "../../../_components/AIMotion";
 import { motion, LayoutGroup } from "framer-motion";
 import { LandingView, ThreadView, type AssistantComposerProps } from "./WorkspaceAssistantCanvas.sections";
 
@@ -32,18 +31,35 @@ type WorkspaceAssistantCanvasProps = {
 function LoadingState() {
   return (
     <LayoutGroup id="workspace-assistant-surface">
-      <section className="flex h-full min-h-0 flex-1 flex-col items-center justify-center bg-white px-6">
-        <motion.div layoutId="assistant-motion-logo" className="mb-6">
-          <AIMotionLogo state="loading" size="hero" floating />
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-sm font-bold tracking-wider text-slate-400 uppercase"
-        >
-          تهيئة بيئة العمل...
-        </motion.div>
+      <section className="flex h-full min-h-0 flex-1 flex-col bg-[#f5f3ef] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6">
+          <div className="flex items-center gap-3">
+            <motion.div layoutId="assistant-motion-logo" className="flex h-10 w-10 items-center justify-center rounded-[8px] border border-stone-300 bg-white">
+              <AIMotionLogo state="loading" size="compact" />
+            </motion.div>
+            <div className="space-y-2">
+              <div className="h-3 w-28 rounded-[8px] bg-stone-200" />
+              <div className="h-2.5 w-40 rounded-[8px] bg-stone-100" />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="ml-auto h-16 w-[68%] rounded-[8px] bg-slate-950/8" />
+            <div className="h-24 w-[74%] rounded-[8px] border border-stone-200 bg-white" />
+            <div className="ml-auto h-14 w-[42%] rounded-[8px] bg-slate-950/8" />
+          </div>
+
+          <div className="mt-auto rounded-[8px] border border-stone-300 bg-white p-4">
+            <div className="h-16 rounded-[8px] bg-stone-100" />
+            <div className="mt-3 flex items-center justify-between">
+              <div className="h-8 w-24 rounded-[8px] bg-stone-100" />
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-[8px] bg-stone-100" />
+                <div className="h-8 w-8 rounded-[8px] bg-stone-100" />
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
     </LayoutGroup>
   );

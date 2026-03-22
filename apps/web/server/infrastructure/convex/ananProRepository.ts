@@ -11,6 +11,7 @@ import type {
 
 type AnanProApiRefs = {
   getThreadSafe: unknown;
+  getThreadById: unknown;
   listMessages: unknown;
   listThreads: unknown;
   listStreamEvents: unknown;
@@ -62,6 +63,12 @@ async function fetchThreadMessages(token: string, threadId: string) {
   })) as RawAssistantMessage[];
 }
 
+async function fetchThreadSummary(token: string, threadId: string) {
+  return (await fetchQuery(ananProApi.getThreadById as never, { threadId } as never, {
+    token,
+  })) as RawAssistantThread;
+}
+
 export type AnanProRepository = {
   getThread(token: string, threadId?: string): Promise<AnanProThread | null>;
   listThreads(token: string, limit?: number): Promise<AnanProThreadSummary[]>;
@@ -84,7 +91,15 @@ export const convexAnanProRepository: AnanProRepository = {
       const messages = await fetchThreadMessages(token, threadId);
 
       if (messages.length === 0) {
-        return null;
+        const thread = await fetchThreadSummary(token, threadId);
+        if (!thread?._id) {
+          return null;
+        }
+        return {
+          id: thread._id,
+          title: thread.title ?? null,
+          messages: [],
+        };
       }
 
       return {

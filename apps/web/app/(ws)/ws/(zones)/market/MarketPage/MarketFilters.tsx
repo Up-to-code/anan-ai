@@ -16,13 +16,10 @@ export default function MarketFilters({
 }) {
   return (
     <form action={actionPath} method="GET" className="relative group">
-      {/* Decorative background glow */}
-      <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-blue-500/20 to-slate-400/20 blur-md opacity-40 group-hover:opacity-75 transition duration-500"></div>
-      
-      <div className="relative flex flex-col lg:flex-row gap-4 lg:gap-0 lg:items-center bg-white/95 backdrop-blur-xl rounded-2xl shadow-sm p-4 lg:p-2 lg:rounded-full border border-slate-200">
+      <div className="relative flex flex-col gap-4 rounded-lg border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur-xl lg:flex-row lg:gap-0 lg:items-center">
         
         {/* City Filter */}
-        <div className="flex-[0.8] flex items-center px-4 py-2 lg:border-l border-slate-200 focus-within:bg-slate-50 focus-within:rounded-xl lg:focus-within:rounded-full transition-colors group/input">
+        <div className="flex flex-[0.8] items-center rounded-lg px-4 py-2 transition-colors focus-within:bg-slate-50 lg:border-l lg:border-slate-200 group/input">
           <Map className="w-4 h-4 text-slate-400 ml-3 shrink-0 group-focus-within/input:text-blue-500 transition-colors" />
           <div className="flex-1 relative">
             <span className="absolute -top-3 right-0 text-[9px] font-black text-slate-400">المدينة</span>
@@ -40,7 +37,7 @@ export default function MarketFilters({
         </div>
 
         {/* Area Filter */}
-        <div className="flex-[0.8] flex items-center px-4 py-2 lg:border-l border-slate-200 focus-within:bg-slate-50 focus-within:rounded-xl lg:focus-within:rounded-full transition-colors group/input">
+        <div className="flex flex-[0.8] items-center rounded-lg px-4 py-2 transition-colors focus-within:bg-slate-50 lg:border-l lg:border-slate-200 group/input">
           <MapPin className="w-4 h-4 text-slate-400 ml-3 shrink-0 group-focus-within/input:text-blue-500 transition-colors" />
           <div className="flex-1 text-right relative">
             <span className="absolute -top-3 right-0 text-[9px] font-black text-slate-400">الحي</span>
@@ -60,7 +57,7 @@ export default function MarketFilters({
         </div>
 
         {/* Window Days */}
-        <div className="flex-shrink-0 lg:w-44 flex items-center px-4 py-2 lg:border-l border-slate-200 focus-within:bg-slate-50 focus-within:rounded-xl lg:focus-within:rounded-full transition-colors group/input">
+        <div className="flex flex-shrink-0 items-center rounded-lg px-4 py-2 transition-colors focus-within:bg-slate-50 lg:w-44 lg:border-l lg:border-slate-200 group/input">
           <Calendar className="w-4 h-4 text-slate-400 ml-3 shrink-0 group-focus-within/input:text-blue-500 transition-colors" />
           <div className="flex-1 relative">
             <span className="absolute -top-3 right-0 text-[9px] font-black text-slate-400">الفترة</span>
@@ -77,7 +74,7 @@ export default function MarketFilters({
         </div>
 
         {/* Query */}
-        <div className="flex-1 flex items-center px-4 py-2 focus-within:bg-slate-50 focus-within:rounded-xl lg:focus-within:rounded-full transition-colors group/input">
+        <div className="flex flex-1 items-center rounded-lg px-4 py-2 transition-colors focus-within:bg-slate-50 group/input">
           <Search className="w-4 h-4 text-slate-400 ml-3 shrink-0 group-focus-within/input:text-blue-500 transition-colors" />
           <div className="flex-1 relative">
             <span className="absolute -top-3 right-0 text-[9px] font-black text-slate-400">استعلام حر</span>
@@ -91,17 +88,17 @@ export default function MarketFilters({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 px-2 shrink-0 justify-end w-full lg:w-auto mt-2 lg:mt-0">
+        <div className="mt-2 flex w-full shrink-0 items-center justify-end gap-2 px-2 lg:mt-0 lg:w-auto">
           <Link
             href={actionPath}
             title="إعادة ضبط"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-900"
           >
             <RotateCcw className="w-4 h-4" />
           </Link>
           <button
             type="submit"
-            className="flex h-10 px-6 items-center justify-center rounded-full bg-slate-950 text-sm font-black text-white hover:bg-slate-800 transition-all shadow-md active:scale-95"
+            className="flex h-10 items-center justify-center rounded-lg bg-slate-950 px-6 text-sm font-black text-white shadow-md transition-all hover:bg-slate-800 active:scale-95"
           >
             بحث
           </button>

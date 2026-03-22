@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import type { OrganizationInviteDisplay, OrganizationMemberDisplay } from "@/app/(ws)/ws/_lib/entities";
+import type { OrganizationInviteDisplay, OrganizationMemberDisplay } from "../../../_lib/entities";
 
 const roleLabels: Record<OrganizationMemberDisplay["role"], string> = {
   manager: "مدير",
@@ -166,7 +166,7 @@ export default function MembersWorkspace({
     <div className="space-y-6">
       <StatusNotice status={status} />
 
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 p-6">
           <h2 className="text-xl font-black tracking-tight text-slate-950">أعضاء المنظمة ({members.length})</h2>
           <p className="mt-1 text-sm font-medium text-slate-500">إدارة الأدوار والصلاحيات للأعضاء الحاليين.</p>
@@ -179,7 +179,7 @@ export default function MembersWorkspace({
       </section>
 
       {pendingInvites.length > 0 ? (
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 p-6">
             <h2 className="text-xl font-black tracking-tight text-slate-950">الدعوات المعلقة ({pendingInvites.length})</h2>
             <p className="mt-1 text-sm font-medium text-slate-500">راجع الدعوات المرسلة وألغِ غير المطلوبة.</p>

@@ -1,9 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { User, Code2, Briefcase } from "lucide-react";
-import ButtonLink from "@/components/shared/ButtonLink";
-import PageHero from "@/components/shared/PageHero";
-import Section from "@/components/shared/Section";
-import SectionLabel from "@/components/shared/SectionLabel";
+import { ButtonLink, PageHero, Section, SectionLabel } from "@/app/(public)/public";
 
 const teamRoles = [
   {

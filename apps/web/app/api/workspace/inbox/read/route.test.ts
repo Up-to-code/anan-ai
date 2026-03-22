@@ -5,7 +5,7 @@ const { markInboxConversationRead } = vi.hoisted(() => ({
   markInboxConversationRead: vi.fn(),
 }));
 
-vi.mock("@/server/domains/inbox/service", () => ({
+vi.mock("@/server/domains/workspace/inbox/service", () => ({
   markInboxConversationRead,
 }));
 

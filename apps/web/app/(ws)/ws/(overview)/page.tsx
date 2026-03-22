@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import OrganizationOnboarding from "../_components/OrganizationOnboarding";
 import WorkspaceDashboard from "./_components/WorkspaceDashboard";
 import { requireWorkspaceData } from "../_lib/workspaceData";
-import { getAnanProThread } from "@/server/domains/ananPro/service";
-import { listIncomingOrganizationInvitesForCurrentUser } from "@/server/domains/organizations/service";
+import { getAnanProThread } from "@/server/domains/workspace/ananPro/service";
+import { listIncomingOrganizationInvitesForCurrentUser } from "@/server/domains/auth/organizations/service";
 import { normalizeDomainError } from "@/server/contracts/errors";
 
 export const dynamic = "force-dynamic";

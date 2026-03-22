@@ -13,7 +13,7 @@ const {
   updateWorkspaceNotificationPreferences: vi.fn(),
 }));
 
-vi.mock("@/server/domains/notifications/service", () => ({
+vi.mock("@/server/domains/workspace/notifications/service", () => ({
   getWorkspacePushConfig,
   registerWorkspacePushSubscription,
   removeWorkspacePushSubscription,

@@ -4,19 +4,17 @@ import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
-} from "@/components/ai-elements/conversation";
-import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
-import InstitutionalChatInput from "@/components/shared/InstitutionalChatInput";
+} from "@/app/(ws)/ws/_components/ai-elements/conversation";
+import { Suggestion, Suggestions } from "@/app/(ws)/ws/_components/ai-elements/suggestion";
+import InstitutionalChatInput from "../../../_components/Chat/InstitutionalChatInput";
 import MessageRow from "../../../_components/Chat/MessageRow";
 import TypingIndicator from "../../../_components/Chat/TypingIndicator";
 import AgUiTurnRenderer from "../../../_components/Chat/AgUiTurnRenderer";
-import { AIMotionLogo } from "../../../_components/AIMotion";
-import type { AnanProStreamStageEvent, AnanProThread } from "@/server/contracts/ananPro";
+import { AIMotionLogo, type AIMotionState } from "../../../_components/AIMotion";
+import type { AnanProThread } from "@/server/contracts/ananPro";
 import type { SessionUser } from "@/server/contracts/session";
-import type { AIMotionState } from "@/app/(ws)/ws/_components/AIMotion";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 export type AssistantComposerProps = {
@@ -61,33 +59,6 @@ function formatVoiceElapsed(ms: number) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-function stagePhaseLabel(phase: AnanProStreamStageEvent["phase"]) {
-  switch (phase) {
-    case "intent_started":
-      return "تحليل النية";
-    case "intent_done":
-      return "تحديد المسارات";
-    case "team_started":
-      return "تشغيل الفرق";
-    case "team_done":
-      return "إنهاء الفرق";
-    case "merge_started":
-      return "دمج النتائج";
-    case "merge_done":
-      return "اكتمال الدمج";
-    case "action_started":
-      return "تنفيذ الإجراء";
-    case "action_done":
-      return "نتيجة الإجراء";
-    case "persist_started":
-      return "حفظ المحادثة";
-    case "persist_done":
-      return "تم الحفظ";
-    default:
-      return phase;
-  }
-}
-
 function VoiceStatusBanners({
   sendError,
   isVoiceRecording,
@@ -103,7 +74,7 @@ function VoiceStatusBanners({
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
-          className="mb-3 rounded-lg border border-red-100 bg-red-50 px-4 py-2.5 text-sm text-red-700"
+          className="mb-3 rounded-[8px] border border-red-100 bg-red-50 px-4 py-2.5 text-right text-sm text-red-700"
         >
           {sendError}
         </motion.div>
@@ -114,10 +85,10 @@ function VoiceStatusBanners({
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
-          className="mb-3 flex items-center gap-2 text-xs font-semibold text-red-600"
+          className="mb-3 flex items-center justify-end gap-2 text-right text-xs font-semibold text-red-600"
         >
-          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-red-500" />
           جاري التسجيل الصوتي... {formatVoiceElapsed(voiceElapsedMs)}
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-red-500" />
         </motion.div>
       ) : null}
       {voiceProcessingPhase === "uploading" ? (
@@ -126,10 +97,10 @@ function VoiceStatusBanners({
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
-          className="mb-3 flex items-center gap-2 text-xs font-medium text-slate-400"
+          className="mb-3 flex items-center justify-end gap-2 text-right text-xs font-medium text-slate-500"
         >
-          <Loader2 className="h-3 w-3 animate-spin" />
           جاري رفع التسجيل الصوتي...
+          <Loader2 className="h-3 w-3 animate-spin" />
         </motion.div>
       ) : null}
       {voiceProcessingPhase === "transcribing" || isVoiceTranscribing ? (
@@ -138,10 +109,10 @@ function VoiceStatusBanners({
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
-          className="mb-3 flex items-center gap-2 text-xs font-medium text-slate-400"
+          className="mb-3 flex items-center justify-end gap-2 text-right text-xs font-medium text-slate-500"
         >
-          <Loader2 className="h-3 w-3 animate-spin" />
           جاري تفريغ الرسالة الصوتية...
+          <Loader2 className="h-3 w-3 animate-spin" />
         </motion.div>
       ) : null}
       {voiceProcessingPhase === "sending" ? (
@@ -150,10 +121,10 @@ function VoiceStatusBanners({
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
-          className="mb-3 flex items-center gap-2 text-xs font-medium text-slate-400"
+          className="mb-3 flex items-center justify-end gap-2 text-right text-xs font-medium text-slate-500"
         >
-          <Loader2 className="h-3 w-3 animate-spin" />
           جاري إرسال النص إلى المساعد...
+          <Loader2 className="h-3 w-3 animate-spin" />
         </motion.div>
       ) : null}
     </AnimatePresence>
@@ -235,11 +206,11 @@ function AssistantSurface({
       <motion.div
         layout
         data-slot="assistant-surface"
-        className="flex min-h-0 flex-1 flex-col bg-[#f7f7f5]"
+        className="flex min-h-0 flex-1 flex-col bg-[#f5f3ef]"
         style={surfaceStyle}
       >
         <Conversation className="min-h-0 flex-1 px-4 sm:px-6 lg:px-8">
-          <ConversationContent className="mx-auto w-full max-w-5xl gap-7 pt-6 pb-[calc(var(--assistant-composer-offset)+1.5rem)] sm:pt-8">
+          <ConversationContent className="mx-auto w-full max-w-5xl gap-6 pt-6 pb-[calc(var(--assistant-composer-offset)+1.5rem)] sm:pt-8">
             {children}
           </ConversationContent>
           <ConversationScrollButton className="bottom-[calc(env(safe-area-inset-bottom)+var(--assistant-composer-offset)+1rem)]" />
@@ -248,7 +219,7 @@ function AssistantSurface({
           ref={composerDockRef}
           layout
           data-slot={dockSlot}
-          className="sticky bottom-0 z-20 shrink-0 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.875rem)] backdrop-blur-sm sm:px-6 lg:px-8"
+          className="sticky bottom-0 z-20 shrink-0 border-t border-slate-200 bg-white px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.875rem)] sm:px-6 lg:px-8"
         >
           <div className="mx-auto w-full max-w-5xl">
             <AssistantComposer {...props} />
@@ -275,7 +246,7 @@ function ThreadMessages({
   liveStageLabel: string;
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-7">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       {thread?.messages.map((message) => (
         <motion.div
           key={message.id}
@@ -332,39 +303,45 @@ export function ThreadView({
 
 export function LandingView(props: AssistantComposerProps) {
   return (
-    <AssistantSurface {...props} dockSlot="landing-composer-dock">
+    <LayoutGroup id="workspace-assistant-surface">
       <motion.div
+        data-slot="assistant-surface"
+        className="flex min-h-0 flex-1 items-center justify-center bg-[#f5f3ef] px-4 py-6 sm:px-6 lg:px-8"
+      >
+        <motion.div
         data-slot="assistant-landing-panel"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8"
+        className="mx-auto flex w-full max-w-2xl flex-col gap-6 rounded-[8px] border border-stone-300 bg-white p-6 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.25)]"
       >
-        <div className="border-b border-slate-200/80 pb-5">
-          <div className="flex items-center gap-3">
-            <div className="shrink-0">
-              <AIMotionLogo state="idle" size="standard" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-950">مساعد عنان</p>
-              <p className="mt-1 text-sm leading-6 text-slate-500">
-                اطلب تحليلًا، أنشئ عرضًا، أو اسأل عن المشاريع والعملاء من نفس المساحة.
-              </p>
-            </div>
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-[8px] border border-stone-300 bg-stone-50">
+            <AIMotionLogo state="idle" size="standard" />
+          </div>
+          <div className="space-y-2">
+            <p className="text-lg font-semibold text-slate-950">مساعد عنان</p>
+            <p className="text-sm leading-6 text-slate-500">
+              اطلب تحليلًا سريعًا، أنشئ عرضًا، أو ابدأ سؤالًا جديدًا من نفس مساحة العمل.
+            </p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium text-slate-600">
-            ابدأ بطلب واضح أو اختر واحدة من هذه المهام السريعة:
+        <div data-slot="landing-composer-dock" className="space-y-3">
+          <AssistantComposer {...props} />
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-right text-sm font-medium text-slate-600">
+            جرّب واحدة من هذه الرسائل السريعة:
           </p>
-          <Suggestions className="w-full justify-start">
+          <Suggestions className="w-full justify-end">
             {SUGGESTION_CHIPS.map((chip) => (
               <Suggestion
                 key={chip}
                 onClick={() => props.onSend(chip)}
                 suggestion={chip}
-                className="rounded-md border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950"
+                className="rounded-[8px] border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950"
               >
                 {chip}
               </Suggestion>
@@ -372,6 +349,7 @@ export function LandingView(props: AssistantComposerProps) {
           </Suggestions>
         </div>
       </motion.div>
-    </AssistantSurface>
+    </motion.div>
+  </LayoutGroup>
   );
 }

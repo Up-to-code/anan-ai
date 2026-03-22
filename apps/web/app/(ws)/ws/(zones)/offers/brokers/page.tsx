@@ -9,7 +9,7 @@ import {
 import {
   listCurrentOrganizationOffersCompanyDirectory,
   listCurrentOrganizationOffersDirectory,
-} from "@/server/domains/organizations/service";
+} from "@/server/domains/auth/organizations/service";
 
 export default async function WorkspaceOfferBrokerProfilesRoute({
   searchParams,

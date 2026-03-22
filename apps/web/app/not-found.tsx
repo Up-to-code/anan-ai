@@ -1,8 +1,5 @@
-import Navbar from "@/components/shared/Navbar";
-import Footer from "@/components/shared/Footer";
-import Section from "@/components/shared/Section";
-import ButtonLink from "@/components/shared/ButtonLink";
 import { AlertCircle } from "lucide-react";
+import { ButtonLink, Footer, Navbar, Section } from "@/app/(public)/public";
 
 /**
  * WHY:   Missing routes must render quickly and consistently without requiring client hydration.

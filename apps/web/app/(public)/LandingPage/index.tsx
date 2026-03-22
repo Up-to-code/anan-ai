@@ -1,10 +1,12 @@
 import { Minus, MessageCircle, BarChart3, Users2, ChevronRight, Sparkles, Target } from "lucide-react";
-import ActionRow from "@/components/shared/ActionRow";
-import ButtonLink from "@/components/shared/ButtonLink";
-import FeatureCardGrid from "@/components/shared/FeatureCardGrid";
-import PageHero from "@/components/shared/PageHero";
-import Section from "@/components/shared/Section";
-import SectionLabel from "@/components/shared/SectionLabel";
+import {
+  ActionRow,
+  ButtonLink,
+  FeatureCardGrid,
+  PageHero,
+  Section,
+  SectionLabel,
+} from "@/app/(public)/public";
 import FadeIn from "./FadeIn";
 import {
   AiIntelligenceVisual,

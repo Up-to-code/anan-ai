@@ -1,7 +1,7 @@
 import { expect, it, vi } from "vitest";
 import { DomainError } from "@/server/contracts/errors";
 
-vi.mock("@/server/domains/workspaces/service", () => ({
+vi.mock("@/server/domains/auth/workspaces/service", () => ({
   getWorkspaceBehaviorForCurrentUser: vi.fn(),
 }));
 

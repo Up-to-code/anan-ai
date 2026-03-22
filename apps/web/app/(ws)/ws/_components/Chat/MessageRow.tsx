@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { User } from "lucide-react";
-import { Message, MessageContent } from "@/components/ai-elements/message";
-import { AIMotionLogo, type AIMotionState } from "@/app/(ws)/ws/_components/AIMotion";
+import { AIMotionLogo, type AIMotionState } from "../AIMotion";
 import type { SessionUser } from "@/server/contracts/session";
 import { cn } from "@/lib/utils";
 
@@ -25,19 +25,30 @@ export default function MessageRow({
   children?: React.ReactNode;
 }) {
   return (
-    <div className={cn("flex min-w-0 shrink-0 gap-3 sm:gap-4", isUser ? "flex-row-reverse" : "flex-row")}>
+    <div
+      className={cn("flex min-w-0 shrink-0 gap-3", isUser ? "flex-row-reverse" : "flex-row")}
+      dir="rtl"
+    >
       <div
         data-slot={isUser ? "user-avatar" : "ai-avatar"}
         className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-[0_8px_20px_-18px_rgba(15,23,42,0.55)]",
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] border border-slate-200 bg-white shadow-[0_6px_14px_-12px_rgba(15,23,42,0.35)]",
           isUser ? "border-slate-950 bg-slate-950" : "",
         )}
       >
         {isUser ? (
           user?.image ? (
-            <img src={user.image} alt={user.name ?? "User"} className="h-full w-full object-cover rounded-none" />
+            <Image
+              src={user.image}
+              alt={user.name ?? "User"}
+              width={40}
+              height={40}
+              unoptimized
+              loader={({ src }) => src}
+              className="h-full w-full rounded-[inherit] object-cover"
+            />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-blue-600 text-xs font-bold text-white rounded-none">
+            <div className="flex h-full w-full items-center justify-center rounded-[inherit] bg-blue-600 text-xs font-bold text-white">
               {user?.name?.charAt(0)?.toUpperCase() || <User className="h-5 w-5 text-white" />}
             </div>
           )
@@ -45,33 +56,36 @@ export default function MessageRow({
           <AIMotionLogo state={avatarState} size="compact" />
         )}
       </div>
-      <div className={cn("flex min-w-0 flex-1 flex-col gap-2", isUser ? "items-end" : "items-start")}>
+      <div className={cn("flex min-w-0 flex-1 flex-col gap-1.5", isUser ? "items-end" : "items-start")}>
         <div
           className={cn(
             "px-1 text-[11px] font-medium text-slate-400",
-            isUser ? "text-right" : "text-left",
+            "text-right",
           )}
         >
           {isUser ? user?.name || "أنت" : "Anan AI"}
         </div>
         {content ? (
-          <Message
-            from={isUser ? "user" : "assistant"}
+          <div
             className={cn("max-w-[92%] sm:max-w-[82%]", isStreaming && "transition-all duration-150")}
           >
-            <MessageContent
+            <div
               className={cn(
-                "whitespace-pre-wrap break-words",
+                "w-fit min-w-0 max-w-full whitespace-pre-wrap break-words rounded-[8px] border px-4 py-3 text-[15px] leading-7 text-right",
+                isUser
+                  ? "border-slate-950 bg-slate-950 text-white"
+                  : "border-slate-200 bg-white text-slate-900",
                 !isUser && isInfo && "bg-slate-100 text-slate-600 shadow-none",
-                isStreaming && !isUser && "border-slate-300",
+                isStreaming && !isUser && "border-stone-300 bg-stone-50",
               )}
               dir="rtl"
+              style={{ unicodeBidi: "plaintext" }}
             >
               {content}
-            </MessageContent>
-          </Message>
+            </div>
+          </div>
         ) : null}
-        {children}
+        {children ? <div className="w-full">{children}</div> : null}
       </div>
     </div>
   );

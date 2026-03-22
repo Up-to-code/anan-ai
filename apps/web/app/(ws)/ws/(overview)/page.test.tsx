@@ -19,11 +19,11 @@ vi.mock("../_lib/workspaceData", () => ({
   requireWorkspaceData,
 }));
 
-vi.mock("@/server/domains/ananPro/service", () => ({
+vi.mock("@/server/domains/workspace/ananPro/service", () => ({
   getAnanProThread,
 }));
 
-vi.mock("@/server/domains/organizations/service", () => ({
+vi.mock("@/server/domains/auth/organizations/service", () => ({
   listIncomingOrganizationInvitesForCurrentUser,
 }));
 

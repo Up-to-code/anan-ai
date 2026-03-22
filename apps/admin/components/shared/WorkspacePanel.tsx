@@ -7,10 +7,10 @@ type WorkspacePanelProps = {
 };
 
 const tones = {
-  default: "rounded-xl border border-stone-300 bg-white",
-  dark: "rounded-xl border border-slate-800 bg-slate-900 text-white",
-  muted: "rounded-xl border border-stone-300 bg-stone-50",
-  warn: "rounded-xl border border-amber-300 bg-amber-50",
+  default: "rounded-lg border border-stone-300 bg-white",
+  dark: "rounded-lg border border-slate-800 bg-slate-900 text-white",
+  muted: "rounded-lg border border-stone-300 bg-stone-50",
+  warn: "rounded-lg border border-amber-300 bg-amber-50",
 };
 
 /**

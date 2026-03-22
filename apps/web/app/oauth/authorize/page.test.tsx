@@ -18,12 +18,12 @@ vi.mock("@/server/auth/session", () => ({
   getOptionalSessionContext,
 }));
 
-vi.mock("@/server/domains/oauth/service", () => ({
+vi.mock("@/server/domains/auth/oauth/service", () => ({
   getAuthorizationPromptForCurrentUser,
   approveAuthorizationForCurrentUser,
 }));
 
-vi.mock("@/components/oauth/ConsentAutoSubmit", () => ({
+vi.mock("./_components/ConsentAutoSubmit", () => ({
   default: ({
     children,
     approveLabel,
@@ -33,8 +33,8 @@ vi.mock("@/components/oauth/ConsentAutoSubmit", () => ({
   }) => <form><span>{approveLabel}</span>{children}</form>,
 }));
 
-vi.mock("@/components/shared/PageHero", () => ({
-  default: ({
+vi.mock("@/app/(public)/public", () => ({
+  PageHero: ({
     title,
     description,
   }: {
@@ -46,10 +46,7 @@ vi.mock("@/components/shared/PageHero", () => ({
       <div>{description}</div>
     </div>
   ),
-}));
-
-vi.mock("@/components/shared/Section", () => ({
-  default: ({ children }: { children?: React.ReactNode }) => <section>{children}</section>,
+  Section: ({ children }: { children?: React.ReactNode }) => <section>{children}</section>,
 }));
 
 import OAuthAuthorizePage from "./page";

@@ -1,19 +1,22 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, it, vi } from "vitest";
 
-const { usePathname, useRouter, useSearchParams } = vi.hoisted(() => ({
+const { usePathname, useSearchParams, useQuery } = vi.hoisted(() => ({
   usePathname: vi.fn(),
-  useRouter: vi.fn(),
   useSearchParams: vi.fn(),
+  useQuery: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
   usePathname,
-  useRouter,
   useSearchParams,
 }));
 
-vi.mock("@/components/shared/InstitutionalChatInput", () => ({
+vi.mock("convex/react", () => ({
+  useQuery,
+}));
+
+vi.mock("../../_components/Chat/InstitutionalChatInput", () => ({
   default: ({
     value,
     isSending,
@@ -60,8 +63,8 @@ import WorkspaceDashboard from "./WorkspaceDashboard";
 
 beforeEach(() => {
   usePathname.mockReturnValue("/ws");
-  useRouter.mockReturnValue({ replace: vi.fn() });
   useSearchParams.mockReturnValue(new URLSearchParams());
+  useQuery.mockReturnValue(undefined);
 });
 
 it("renders a chat-first landing state before the first message", () => {

@@ -1,13 +1,14 @@
 # Anan Mobile
 
-Expo-managed buyer app for the Anan mobile feed MVP.
+Expo-managed buyer app for the chat-first Anan mobile MVP.
 
-- `app/` keeps route files thin and delegates to feature folders.
-- `src/features/` owns screen-level orchestration.
-- `src/components/ui/` contains atomic primitives.
-- `src/components/features/` contains feed and assistant-specific building blocks.
+- `app/` keeps Expo Router entrypoints thin.
+- `src/features/` owns screen orchestration for chat, search, and property detail.
+- `src/components/chat/` contains the shared buyer-assistant UI building blocks.
+- `src/hooks/` owns client state and deterministic guest-mode orchestration.
+- `src/lib/mvp/` contains the local catalog and mock assistant adapter.
 
-The mobile UI follows the sharp Arabic-first Anan system: flat surfaces, blue accents, strong contrast, and RTL-native layout.
+The mobile UI follows the Arabic-first Anan system: Cairo typography, crisp surfaces, blue-led brand accents, and motion kept deliberately light.
 
 ## Commands
 
@@ -20,6 +21,5 @@ pnpm mobile:typecheck
 
 ## References
 
-- Deep handbook: `docs/handbook/mobile/README.md`
-- Data/LLM guidance: `docs/llm-data-access-guide.md`
-- Repo architecture rules: `ARCHITECTURE.md`
+- Mobile handbook: `docs/handbook/mobile/README.md`
+- Mobile architecture: `docs/handbook/mobile/architecture.md`
