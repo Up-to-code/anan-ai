@@ -8,6 +8,7 @@ import {
 import {
   sendAnanProMessageInputSchema,
   transcribeVoiceFromStorageInputSchema,
+  type AnanProThread,
   type SendAnanProMessageInput,
   type TranscribeVoiceFromStorageInput,
   type TranscribeVoiceFromStorageResult,
