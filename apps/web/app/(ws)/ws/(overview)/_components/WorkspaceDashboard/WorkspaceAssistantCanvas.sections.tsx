@@ -14,7 +14,8 @@ import { AIMotionLogo, type AIMotionState } from "../../../_components/AIMotion"
 import type { AnanProThread } from "@/server/contracts/ananPro";
 import type { SessionUser } from "@/server/contracts/session";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { Loader2, BrainCircuit, Target, CheckSquare, Wand2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 export type AssistantComposerProps = {
@@ -51,10 +52,26 @@ type ThreadViewProps = AssistantComposerProps & {
 
 const DEFAULT_COMPOSER_DOCK_HEIGHT = 208;
 const SUGGESTION_CHIPS = [
-  "ما هي أكثر المناطق طلبًا هذا الشهر؟",
-  "أنشئ عرضًا لمشروع جديد",
-  "ابحث في المشاريع المتاحة",
-  "ما هو أداء وسطائي؟",
+  {
+    label: "حلّل حركة السوق العقاري في الرياض هذا الأسبوع",
+    icon: BrainCircuit,
+    colorClass: "text-purple-600",
+  },
+  {
+    label: "أنشئ عرض سعر لعميل مهتم بمشروع سكني",
+    icon: Target,
+    colorClass: "text-orange-500",
+  },
+  {
+    label: "قارن أداء الوسطاء في فريقي خلال آخر ٣٠ يوم",
+    icon: CheckSquare,
+    colorClass: "text-red-500",
+  },
+  {
+    label: "ما هي المشاريع الجديدة القريبة من منافسينا؟",
+    icon: Wand2,
+    colorClass: "text-teal-500",
+  },
 ];
 
 function formatVoiceElapsed(ms: number) {
@@ -352,8 +369,8 @@ export function LandingView(props: LandingViewProps) {
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 كيف يمكنني مساعدتك اليوم؟
               </h1>
-              <p className="mx-auto max-w-md text-[15px] leading-relaxed text-slate-500">
-                اطلب تحليلًا للسوق، أنشئ عرضًا، أو ابحث في مشاريعك.
+              <p className="mx-auto max-w-lg text-[15px] leading-relaxed text-slate-500">
+                تحليل السوق العقاري، إنشاء عروض الأسعار، متابعة أداء الفريق، والمزيد.
               </p>
             </div>
           </div>
@@ -377,12 +394,13 @@ export function LandingView(props: LandingViewProps) {
             <Suggestions className="flex flex-wrap items-center justify-center gap-2 w-full">
               {SUGGESTION_CHIPS.map((chip) => (
                 <Suggestion
-                  key={chip}
-                  onClick={() => props.onSend(chip)}
-                  suggestion={chip}
-                  className="rounded-[8px] border border-slate-200 bg-white px-4 py-2 text-[13px] font-medium text-slate-500 shadow-sm transition-all hover:border-slate-300 hover:bg-white hover:text-slate-900 hover:shadow-md active:scale-[0.98]"
+                  key={chip.label}
+                  onClick={() => props.onSend(chip.label)}
+                  suggestion={chip.label}
+                  className="rounded-full flex items-center gap-2 border border-slate-200 bg-white px-4 py-2 text-[13px] font-medium text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98]"
                 >
-                  {chip}
+                  <chip.icon className={cn("h-3.5 w-3.5", chip.colorClass)} />
+                  {chip.label}
                 </Suggestion>
               ))}
             </Suggestions>

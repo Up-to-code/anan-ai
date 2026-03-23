@@ -83,7 +83,7 @@ it("renders a chat-first landing state before the first message", () => {
   expect(markup).toContain("data-layout=\"landing\"");
   expect(markup).toContain("data-slot=\"landing-composer-dock\"");
   expect(markup).toContain("كيف يمكنني مساعدتك اليوم؟");
-  expect(markup).toContain("ما هي أكثر المناطق طلبًا هذا الشهر؟");
+  expect(markup).toContain("حلّل حركة السوق العقاري في الرياض هذا الأسبوع");
   expect(markup).not.toContain("السياق");
   expect(markup).not.toContain("الإشعارات");
   expect(markup).not.toContain("التحكم");
