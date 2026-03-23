@@ -310,6 +310,9 @@ import type * as uploadthing from "../uploadthing.js";
 import type * as user_zone_mobile_assistant from "../user_zone/mobile/assistant.js";
 import type * as user_zone_mobile_contracts from "../user_zone/mobile/contracts.js";
 import type * as user_zone_mobile_feed from "../user_zone/mobile/feed.js";
+import type * as user_zone_web_assistant from "../user_zone/web/assistant.js";
+import type * as user_zone_web_contracts from "../user_zone/web/contracts.js";
+import type * as user_zone_web_properties from "../user_zone/web/properties.js";
 
 import type {
   ApiFromModules,
@@ -620,6 +623,9 @@ declare const fullApi: ApiFromModules<{
   "user_zone/mobile/assistant": typeof user_zone_mobile_assistant;
   "user_zone/mobile/contracts": typeof user_zone_mobile_contracts;
   "user_zone/mobile/feed": typeof user_zone_mobile_feed;
+  "user_zone/web/assistant": typeof user_zone_web_assistant;
+  "user_zone/web/contracts": typeof user_zone_web_contracts;
+  "user_zone/web/properties": typeof user_zone_web_properties;
 }>;
 
 /**
