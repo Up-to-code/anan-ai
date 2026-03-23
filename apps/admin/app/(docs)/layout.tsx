@@ -3,7 +3,7 @@ import { getAuthenticatedSession } from "@/lib/serverSession";
 
 /**
  * WHY:   In-app docs are intentionally removed from the rebuilt admin v1 experience.
- * WHAT:  Guards the legacy `/docs` route group, then redirects authenticated users back to `/dashboard`.
+ * WHAT:  Guards the legacy `/docs` route group, then redirects authenticated users back to `/overview`.
  * HOW:   Preserves auth behavior for direct hits while replacing the old docs shell with a single redirect.
  */
 export default async function DocsRootLayout({
@@ -16,5 +16,5 @@ export default async function DocsRootLayout({
     redirect("/signin?returnTo=/docs");
   }
 
-  redirect("/dashboard");
+  redirect("/overview");
 }

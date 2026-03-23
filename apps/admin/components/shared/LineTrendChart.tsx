@@ -10,19 +10,13 @@ import {
   YAxis,
 } from "recharts";
 import { cn } from "@/lib/utils";
-
-type ChartSeries = {
-  dataKey: string;
-  label: string;
-  color: string;
-};
+import { type ChartDatum, type ChartSeries, formatChartNumber } from "@/components/shared/chartTypes";
 
 type LineTrendChartProps = {
-  data: Array<Record<string, number | string>>;
+  data: ChartDatum[];
   series: ChartSeries[];
   className?: string;
   height?: number;
-  valueFormatter?: (value: number) => string;
 };
 
 /**
@@ -35,26 +29,24 @@ export default function LineTrendChart({
   series,
   className,
   height = 260,
-  valueFormatter,
 }: LineTrendChartProps) {
   return (
     <div className={cn("w-full", className)} dir="ltr">
       <div style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-            <CartesianGrid stroke="#e7e5e4" vertical={false} />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "#57534e", fontSize: 12 }} />
-            <YAxis tickLine={false} axisLine={false} tick={{ fill: "#57534e", fontSize: 12 }} width={34} />
+          <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
+            <CartesianGrid stroke="#c4c4c4" vertical={false} />
+            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
+            <YAxis tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 12 }} width={40} />
             <Tooltip
               contentStyle={{
-                borderRadius: 10,
-                border: "1px solid #d6d3d1",
+                borderRadius: 8,
+                border: "1px solid #c4c4c4",
                 backgroundColor: "#ffffff",
                 boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
               }}
               formatter={(value, name) => {
-                const numericValue = Number(value ?? 0);
-                return [valueFormatter ? valueFormatter(numericValue) : numericValue, String(name ?? "")];
+                return [formatChartNumber(value as number | string), String(name ?? "")];
               }}
             />
             {series.map((item) => (
@@ -66,7 +58,7 @@ export default function LineTrendChart({
                 stroke={item.color}
                 strokeWidth={2}
                 dot={false}
-                activeDot={{ r: 4 }}
+                activeDot={{ r: 4, strokeWidth: 0 }}
               />
             ))}
           </LineChart>

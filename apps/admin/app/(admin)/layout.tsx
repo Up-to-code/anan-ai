@@ -15,7 +15,7 @@ export default async function AdminLayout({
   const session = await getAuthenticatedSession();
 
   if (!session.token || !session.user || session.role !== "admin") {
-    redirect("/signin?returnTo=/dashboard");
+    redirect("/signin?returnTo=/overview");
   }
 
   return <AdminShell user={session.user}>{children}</AdminShell>;

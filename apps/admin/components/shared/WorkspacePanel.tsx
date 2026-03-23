@@ -7,10 +7,10 @@ type WorkspacePanelProps = {
 };
 
 const tones = {
-  default: "rounded-lg border border-stone-300 bg-white",
-  dark: "rounded-lg border border-slate-800 bg-slate-900 text-white",
-  muted: "rounded-lg border border-stone-300 bg-stone-50",
-  warn: "rounded-lg border border-amber-300 bg-amber-50",
+  default: "rounded-[8px] border border-border bg-white",
+  dark: "rounded-[8px] border border-border bg-slate-900 text-white",
+  muted: "rounded-[8px] border border-border bg-slate-50",
+  warn: "rounded-[8px] border border-border bg-amber-50",
 };
 
 /**
@@ -24,7 +24,7 @@ export default function WorkspacePanel({
   tone = "default",
 }: WorkspacePanelProps) {
   return (
-    <section className={cn("p-5 sm:p-6", tones[tone], className)}>
+    <section className={cn("p-4 sm:p-5", tones[tone], className)}>
       {children}
     </section>
   );

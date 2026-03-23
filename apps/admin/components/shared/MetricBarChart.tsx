@@ -10,14 +10,14 @@ import {
   YAxis,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { type ChartDatum, type ChartSeries, formatChartNumber } from "@/components/shared/chartTypes";
 
 type MetricBarChartProps = {
-  data: Array<Record<string, number | string>>;
-  series: Array<{ dataKey: string; label: string; color: string }>;
+  data: ChartDatum[];
+  series: ChartSeries[];
   className?: string;
   height?: number;
   horizontal?: boolean;
-  valueFormatter?: (value: number) => string;
 };
 
 /**
@@ -31,7 +31,6 @@ export default function MetricBarChart({
   className,
   height = 280,
   horizontal = false,
-  valueFormatter,
 }: MetricBarChartProps) {
   return (
     <div className={cn("w-full", className)} dir="ltr">
@@ -40,31 +39,30 @@ export default function MetricBarChart({
           <BarChart
             data={data}
             layout={horizontal ? "vertical" : "horizontal"}
-            margin={horizontal ? { top: 0, right: 12, left: 30, bottom: 0 } : { top: 8, right: 12, left: 0, bottom: 0 }}
+            margin={horizontal ? { top: 0, right: 12, left: 30, bottom: 0 } : { top: 8, right: 12, left: 0, bottom: 8 }}
             barGap={8}
           >
-            <CartesianGrid stroke="#e7e5e4" vertical={false} />
+            <CartesianGrid stroke="#c4c4c4" vertical={false} />
             {horizontal ? (
               <>
-                <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: "#57534e", fontSize: 12 }} />
-                <YAxis type="category" dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "#57534e", fontSize: 12 }} width={96} />
+                <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
+                <YAxis type="category" dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 12 }} width={112} />
               </>
             ) : (
               <>
-                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "#57534e", fontSize: 12 }} />
-                <YAxis tickLine={false} axisLine={false} tick={{ fill: "#57534e", fontSize: 12 }} width={34} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
+                <YAxis tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 12 }} width={40} />
               </>
             )}
             <Tooltip
               contentStyle={{
-                borderRadius: 10,
-                border: "1px solid #d6d3d1",
+                borderRadius: 8,
+                border: "1px solid #c4c4c4",
                 backgroundColor: "#ffffff",
                 boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
               }}
               formatter={(value, name) => {
-                const numericValue = Number(value ?? 0);
-                return [valueFormatter ? valueFormatter(numericValue) : numericValue, String(name ?? "")];
+                return [formatChartNumber(value as number | string), String(name ?? "")];
               }}
             />
             {series.map((item) => (
@@ -73,7 +71,7 @@ export default function MetricBarChart({
                 dataKey={item.dataKey}
                 name={item.label}
                 fill={item.color}
-                radius={horizontal ? [0, 6, 6, 0] : [6, 6, 0, 0]}
+                radius={horizontal ? [0, 8, 8, 0] : [8, 8, 0, 0]}
                 maxBarSize={horizontal ? 24 : 36}
               />
             ))}

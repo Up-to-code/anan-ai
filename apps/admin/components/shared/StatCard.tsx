@@ -26,14 +26,14 @@ export default function StatCard({ label, value, hint, icon: Icon, delta, classN
       : null;
 
   return (
-    <div className={cn("rounded-lg border border-stone-300 bg-white p-5 transition-colors hover:border-stone-400", className)}>
+    <div className={cn("rounded-[8px] border border-border bg-white p-5 transition-colors hover:border-slate-500", className)}>
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="text-sm font-medium text-slate-500">{label}</div>
           <div className="text-3xl font-semibold tracking-tight text-slate-900">{value}</div>
         </div>
         {Icon ? (
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-stone-100 text-slate-500">
+          <div className="flex h-10 w-10 items-center justify-center rounded-[8px] bg-zinc-100 text-slate-500">
             <Icon className="h-5 w-5" />
           </div>
         ) : null}

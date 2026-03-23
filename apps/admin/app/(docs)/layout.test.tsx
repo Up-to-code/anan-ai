@@ -37,7 +37,7 @@ describe("docs standalone layout", () => {
     ).rejects.toThrow("NEXT_REDIRECT:/signin?returnTo=/docs");
   });
 
-  it("redirects authenticated users to the dashboard", async () => {
+  it("redirects authenticated users to the overview", async () => {
     getAuthenticatedSession.mockResolvedValue({
       token: "token-1",
       role: "admin",
@@ -48,6 +48,6 @@ describe("docs standalone layout", () => {
       DocsRootLayout({
         children: <div>docs</div>,
       }),
-    ).rejects.toThrow("NEXT_REDIRECT:/dashboard");
+    ).rejects.toThrow("NEXT_REDIRECT:/overview");
   });
 });

@@ -1,15 +1,17 @@
 import {
-  Activity,
-  BarChart3,
   BookOpen,
-  Bug,
   Building2,
-  ClipboardCheck,
+  Bot,
+  BrainCircuit,
+  Building,
+  CreditCard,
+  FolderKanban,
   LayoutDashboard,
-  ShoppingBag,
-  ShieldCheck,
+  Settings,
+  Settings2,
+  SquareChartGantt,
   Users,
-  Waypoints,
+  WalletCards,
 } from "lucide-react";
 
 export type AdminNavItem = {
@@ -32,34 +34,56 @@ export type RouteTab = {
 
 export const adminNavGroups: AdminNavGroup[] = [
   {
-    label: "القيادة والتحكم",
+    label: "نظرة عامة",
     items: [
-      { href: "/dashboard", label: "لوحة المتابعة", icon: LayoutDashboard, sectionKey: "dashboard" },
-      { href: "/analytics", label: "التحليلات", icon: BarChart3, sectionKey: "analytics" },
+      { href: "/overview", label: "لوحة التحكم", icon: LayoutDashboard, sectionKey: "overview" },
     ],
   },
   {
-    label: "الشبكة والسوق",
+    label: "المبيعات",
     items: [
-      { href: "/organizations", label: "المنظمات", icon: Waypoints, sectionKey: "organizations" },
-      { href: "/users", label: "المستخدمون", icon: Users, sectionKey: "users" },
-      { href: "/properties", label: "العقارات", icon: Building2, sectionKey: "properties" },
+      { href: "/sales/projects", label: "المشاريع", icon: FolderKanban, sectionKey: "sales-projects" },
+      { href: "/sales/properties", label: "العقارات", icon: SquareChartGantt, sectionKey: "sales-properties" },
     ],
   },
   {
-    label: "العمليات والحوكمة",
+    label: "التمويل والبنوك",
     items: [
-      { href: "/orders", label: "الطلبات", icon: ShoppingBag, sectionKey: "orders" },
-      { href: "/verifications", label: "التحقق", icon: ClipboardCheck, sectionKey: "verifications" },
-      { href: "/activity", label: "النشاط", icon: Activity, sectionKey: "activity" },
-      { href: "/compliance", label: "الامتثال", icon: ShieldCheck, sectionKey: "compliance" },
+      { href: "/banks", label: "البنوك", icon: CreditCard, sectionKey: "banks" },
     ],
   },
   {
-    label: "النظام والمعرفة التشغيلية",
+    label: "المنظمات",
     items: [
-      { href: "/knowledge", label: "المعرفة", icon: BookOpen, sectionKey: "knowledge" },
-      { href: "/diagnostics", label: "التشخيص", icon: Bug, sectionKey: "diagnostics" },
+      { href: "/organizations", label: "كل المنظمات", icon: Building, sectionKey: "organizations" },
+    ],
+  },
+  {
+    label: "المستخدمون",
+    items: [
+      { href: "/users", label: "كل المستخدمين", icon: Users, sectionKey: "users" },
+    ],
+  },
+  {
+    label: "إدارة العروض",
+    items: [
+      { href: "/offers", label: "مراجعة العروض", icon: WalletCards, sectionKey: "offers" },
+    ],
+  },
+  {
+    label: "إعدادات الذكاء",
+    items: [
+      { href: "/ai-settings/knowledge", label: "قاعدة المعرفة", icon: BookOpen, sectionKey: "ai-knowledge" },
+      { href: "/ai-settings/models", label: "النماذج", icon: BrainCircuit, sectionKey: "ai-models" },
+      { href: "/ai-settings/agents", label: "فرق الوكلاء", icon: Bot, sectionKey: "ai-agents" },
+    ],
+  },
+  {
+    label: "الإعدادات",
+    items: [
+      { href: "/settings/general", label: "عام", icon: Settings2, sectionKey: "settings-general" },
+      { href: "/settings/team", label: "الفريق والصلاحيات", icon: Users, sectionKey: "settings-team" },
+      { href: "/settings/profile", label: "الملف الشخصي", icon: Settings, sectionKey: "settings-profile" },
     ],
   },
 ];

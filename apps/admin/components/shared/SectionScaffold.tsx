@@ -8,6 +8,7 @@ type SectionScaffoldProps = {
   title: string;
   description: ReactNode;
   tabs?: RouteTab[];
+  actions?: ReactNode;
   children: ReactNode;
 };
 
@@ -16,12 +17,12 @@ type SectionScaffoldProps = {
  * WHAT:  Composes the section header, secondary tabs, and page body.
  * HOW:   Treats tabs as optional so simple sections can render without empty tab chrome.
  */
-export default function SectionScaffold({ eyebrow, title, description, tabs, children }: SectionScaffoldProps) {
+export default function SectionScaffold({ eyebrow, title, description, tabs, actions, children }: SectionScaffoldProps) {
   return (
-    <div className="space-y-6">
-      <PageHeader eyebrow={eyebrow} title={title} description={description} />
+    <div className="space-y-4">
+      <PageHeader eyebrow={eyebrow} title={title} description={description} actions={actions} />
       {tabs && tabs.length > 0 ? <RouteTabs tabs={tabs} /> : null}
-      <div className="space-y-6">{children}</div>
+      <div className="space-y-4">{children}</div>
     </div>
   );
 }

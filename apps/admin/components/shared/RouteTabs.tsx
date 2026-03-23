@@ -23,7 +23,7 @@ export default function RouteTabs({ tabs, className }: RouteTabsProps) {
   }
 
   return (
-    <nav className={cn("flex flex-wrap gap-5 border-b border-stone-300", className)} aria-label="section tabs">
+    <nav className={cn("flex flex-wrap items-center gap-6 border-b border-border", className)} aria-label="section tabs">
       {tabs.map((tab) => {
         const active = tab.exact ? pathname === tab.href : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
 
@@ -32,10 +32,10 @@ export default function RouteTabs({ tabs, className }: RouteTabsProps) {
             key={tab.href}
             href={tab.href}
             className={cn(
-              "border-b-2 px-1 py-3 text-sm font-medium transition-colors",
+              "border-b-2 px-1 py-2 text-sm font-medium transition-colors",
               active
                 ? "border-slate-900 text-slate-900"
-                : "border-transparent text-slate-500 hover:border-stone-400 hover:text-slate-900",
+                : "border-transparent text-slate-500 hover:border-slate-500 hover:text-slate-900",
             )}
           >
             {tab.label}

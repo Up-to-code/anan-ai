@@ -13,5 +13,5 @@ type UserDetailRouteProps = {
  */
 export default async function UserDetailRoute({ params }: UserDetailRouteProps) {
   const { userId } = await params;
-  return <UserDetailPage userKey={userId} />;
+  return <UserDetailPage userId={userId} />;
 }

@@ -6,7 +6,7 @@ const { redirect, getAuthenticatedSession, sanitizeInternalReturnTo } = vi.hoist
     throw new Error(`NEXT_REDIRECT:${target}`);
   }),
   getAuthenticatedSession: vi.fn(),
-  sanitizeInternalReturnTo: vi.fn((returnTo?: string | null, fallback = "/dashboard") => returnTo ?? fallback),
+  sanitizeInternalReturnTo: vi.fn((returnTo?: string | null, fallback = "/overview") => returnTo ?? fallback),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -56,7 +56,7 @@ it("renders the google sign-in button for anonymous visitors", async () => {
   });
 
   const element = await SigninPage({
-    searchParams: Promise.resolve({ returnTo: "/dashboard" }),
+    searchParams: Promise.resolve({ returnTo: "/overview" }),
   });
   const html = renderToStaticMarkup(element);
 
@@ -72,7 +72,7 @@ it("renders an access denied state for authenticated non-admin users", async () 
   });
 
   const element = await SigninPage({
-    searchParams: Promise.resolve({ returnTo: "/dashboard" }),
+    searchParams: Promise.resolve({ returnTo: "/overview" }),
   });
   const html = renderToStaticMarkup(element);
 
@@ -88,7 +88,7 @@ it("renders the google sign-in button when session lookup fails with auth config
   });
 
   const element = await SigninPage({
-    searchParams: Promise.resolve({ returnTo: "/dashboard" }),
+    searchParams: Promise.resolve({ returnTo: "/overview" }),
   });
   const html = renderToStaticMarkup(element);
 

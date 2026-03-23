@@ -16,7 +16,7 @@ type AdminRangeControlProps = {
 export default function AdminRangeControl({ className }: AdminRangeControlProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const currentRange = searchParams.get("range") === "30d" ? "30d" : "90d";
+  const currentRange = searchParams.get("range") === "90d" ? "90d" : "30d";
 
   const buildHref = (range: "30d" | "90d") => {
     const params = new URLSearchParams(searchParams.toString());
@@ -25,7 +25,7 @@ export default function AdminRangeControl({ className }: AdminRangeControlProps)
   };
 
   return (
-    <nav className={cn("flex items-center gap-1 rounded-lg border border-stone-300 bg-white p-1", className)} aria-label="time range">
+    <nav className={cn("flex items-center gap-1 rounded-[8px] border border-border bg-white p-1", className)} aria-label="time range">
       {[
         { value: "30d" as const, label: "30 يوم" },
         { value: "90d" as const, label: "90 يوم" },
@@ -34,7 +34,7 @@ export default function AdminRangeControl({ className }: AdminRangeControlProps)
           key={item.value}
           href={buildHref(item.value)}
           className={cn(
-            "rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors",
+            "rounded-[8px] px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors",
             currentRange === item.value ? "bg-slate-900 text-white" : "hover:bg-stone-100 hover:text-slate-900",
           )}
         >
@@ -44,4 +44,3 @@ export default function AdminRangeControl({ className }: AdminRangeControlProps)
     </nav>
   );
 }
-

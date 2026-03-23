@@ -14,10 +14,10 @@ type DataTableProps = {
  */
 export default function DataTable({ headers, children, className }: DataTableProps) {
   return (
-    <div className={cn("overflow-x-auto rounded-lg border border-stone-300 bg-white", className)}>
+    <div className={cn("overflow-x-auto rounded-[8px] border border-border bg-white", className)}>
       <table className="min-w-full border-collapse">
         <thead>
-          <tr className="border-b border-stone-300 bg-stone-50">
+          <tr className="border-b border-border bg-slate-50">
             {headers.map((header) => (
               <th key={header} className="px-4 py-3 text-right text-xs font-medium text-slate-500">
                 {header}
