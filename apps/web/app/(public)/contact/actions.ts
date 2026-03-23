@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createContactInquiryInputSchema } from "@/server/contracts/contact";
-import { createContactInquiry } from "@/server/domains/contact/service";
+import { createContactInquiry } from "@/server/domains/public/contact/service";
 
 function getRequestIp(requestHeaders: { get(name: string): string | null }) {
   const forwardedFor = requestHeaders.get("x-forwarded-for");

@@ -6,5 +6,5 @@ type OrganizationDetailRouteProps = {
 
 export default async function OrganizationDetailRoute({ params }: OrganizationDetailRouteProps) {
   const { organizationId } = await params;
-  return <OrganizationDetailPage organizationKey={organizationId} />;
+  return <OrganizationDetailPage organizationId={organizationId} />;
 }

@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { HelpCircle } from "lucide-react";
-import PageHero from "@/components/shared/PageHero";
-import Section from "@/components/shared/Section";
-import SectionLabel from "@/components/shared/SectionLabel";
+import { PageHero, Section, SectionLabel } from "@/app/(public)/public";
 
 export const metadata: Metadata = {
   title: "الأسئلة الشائعة | عنان",

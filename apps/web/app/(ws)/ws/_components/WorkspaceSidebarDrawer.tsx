@@ -3,8 +3,8 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { Menu, X } from "lucide-react";
 import { useId, useState } from "react";
-import Sidebar from "@/components/shared/Sidebar";
-import type { SidebarUser } from "@/components/shared/Sidebar/types";
+import Sidebar from "./Sidebar";
+import type { SidebarUser } from "./Sidebar/types";
 import type { WorkspaceOrganizationDisplay } from "../_lib/organizationDisplay";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
 import type { AnanProThreadSummary } from "@/server/contracts/ananPro";
@@ -40,7 +40,7 @@ export default function WorkspaceSidebarDrawer({
         aria-expanded={open}
         aria-controls={drawerId}
         data-slot="workspace-sidebar-trigger"
-        className="inline-flex h-12 w-12 items-center justify-center rounded-none border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-[8px] border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:text-slate-900 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 active:scale-95"
         onClick={() => setOpen(true)}
       >
         <Menu className="h-5 w-5" />
@@ -48,12 +48,14 @@ export default function WorkspaceSidebarDrawer({
 
       <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Portal>
-          <Dialog.Backdrop className="fixed inset-0 z-50 bg-slate-950/60 lg:hidden" />
+          <Dialog.Backdrop
+            className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm transition-opacity duration-300 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0 lg:hidden"
+          />
 
           <Dialog.Popup
             id={drawerId}
             data-slot="workspace-sidebar-mobile-drawer"
-            className="fixed inset-y-0 right-0 z-50 flex w-[min(22rem,100vw)] max-w-full outline-none lg:hidden"
+            className="fixed inset-y-0 right-0 z-50 flex w-[min(22rem,100vw)] max-w-full outline-none transition-transform duration-300 ease-out data-[ending-style]:translate-x-full data-[starting-style]:translate-x-full lg:hidden"
           >
             <Dialog.Title id={dialogTitleId} className="sr-only">
               تنقل مساحة العمل
@@ -62,7 +64,7 @@ export default function WorkspaceSidebarDrawer({
               القائمة الرئيسية الخاصة بمنطقة العمل الحالية.
             </Dialog.Description>
 
-            <div className="relative flex h-full w-full">
+            <div className="relative flex h-full w-full shadow-2xl shadow-slate-950/40">
               <Sidebar
                 user={user}
                 organization={organization}
@@ -75,10 +77,9 @@ export default function WorkspaceSidebarDrawer({
                 className="h-full w-full"
               />
 
-
               <Dialog.Close
                 aria-label="إغلاق القائمة"
-                className="absolute left-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-none border border-white/10 bg-white/5 text-white transition hover:border-white/20 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                className="absolute left-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-[8px] bg-white/10 text-white/80 backdrop-blur-sm transition-all hover:bg-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 active:scale-95"
               >
                 <X className="h-4 w-4" />
               </Dialog.Close>
@@ -89,3 +90,4 @@ export default function WorkspaceSidebarDrawer({
     </>
   );
 }
+

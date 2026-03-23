@@ -10,7 +10,7 @@ import { tool, zodSchema } from "ai";
 import type { Tool } from "ai";
 import { z } from "zod";
 import type { ActionCtx } from "../../../../../_generated/server";
-import { apiRefs } from "../../../../../shared_logic/lib/generatedApiRefs";
+import { api } from "../../../../../_generated/api";
 import type { AgentRuntimeContext } from "../../../types";
 
 export function getLastSearchContext(ctx: ActionCtx, runtime: AgentRuntimeContext): Tool {
@@ -19,7 +19,7 @@ export function getLastSearchContext(ctx: ActionCtx, runtime: AgentRuntimeContex
     inputSchema: zodSchema(z.object({})),
     execute: async (): Promise<unknown> => {
       return (await ctx.runQuery(
-        apiRefs["shared_logic/properties/history"].getLastSearchContext,
+        api.shared_logic.properties.history.getLastSearchContext,
         { userId: runtime.userId, threadId: runtime.threadId },
       )) as unknown;
     },

@@ -46,6 +46,22 @@ function getFollowUpStatus(
   return nextFollowUpAt < nowTimestamp ? "overdue" : "scheduled";
 }
 
+const STAGE_PROGRESS_WIDTH: Record<string, string> = {
+  new: "10%",
+  qualified: "35%",
+  proposal: "65%",
+  won: "100%",
+};
+
+const FOLLOW_UP_STATUS_UI: Record<
+  ReturnType<typeof getFollowUpStatus>,
+  { label: string; toneClassName: string }
+> = {
+  overdue: { label: "متابعة متأخرة", toneClassName: "border-rose-200 bg-rose-50 text-rose-700" },
+  scheduled: { label: "موعد مجدول", toneClassName: "border-emerald-200 bg-emerald-50 text-emerald-700" },
+  none: { label: "بدون متابعة", toneClassName: "border-slate-200 bg-slate-50 text-slate-500" },
+};
+
 /**
  * WHY:   CRM client detail should make the relationship picture immediately visible.
  * WHAT:  Renders the client stage plus linked project and broker visuals in one screen.
@@ -136,11 +152,7 @@ export default function ClientDetailPage({
               <div
                 className="h-1.5 bg-blue-600 transition-all"
                 style={{
-                  width:
-                    client.stage === "new" ? "10%" :
-                    client.stage === "qualified" ? "35%" :
-                    client.stage === "proposal" ? "65%" :
-                    client.stage === "won" ? "100%" : "5%",
+                  width: STAGE_PROGRESS_WIDTH[client.stage] ?? "5%",
                 }}
               />
             </div>
@@ -163,15 +175,9 @@ export default function ClientDetailPage({
             </div>
             <div className="mt-3 text-sm font-black text-slate-900">{formatFollowUpLabel(client.nextFollowUpAt)}</div>
             <div
-              className={`mt-2 inline-flex border px-2 py-1 text-[10px] font-black tracking-[0.18em] ${
-                followUpStatus === "overdue"
-                  ? "border-rose-200 bg-rose-50 text-rose-700"
-                  : followUpStatus === "scheduled"
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border-slate-200 bg-slate-50 text-slate-500"
-              }`}
+              className={`mt-2 inline-flex border px-2 py-1 text-[10px] font-black tracking-[0.18em] ${FOLLOW_UP_STATUS_UI[followUpStatus].toneClassName}`}
             >
-              {followUpStatus === "overdue" ? "متابعة متأخرة" : followUpStatus === "scheduled" ? "موعد مجدول" : "بدون متابعة"}
+              {FOLLOW_UP_STATUS_UI[followUpStatus].label}
             </div>
             <form action={onFollowUpSubmit} className="mt-4 space-y-3">
               <input

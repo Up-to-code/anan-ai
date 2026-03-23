@@ -3,7 +3,7 @@ import ZonePageIntro from "../../_components/ZoneShell/ZonePageIntro";
 import {
   getWorkspaceNotificationSummary,
   listWorkspaceNotifications,
-} from "@/server/domains/notifications/service";
+} from "@/server/domains/workspace/notifications/service";
 
 type WorkspaceNotificationsPageProps = {
   searchParams: Promise<{

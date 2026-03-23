@@ -24,98 +24,80 @@ interface WebhookMessage {
   document?: { id?: string; filename?: string; caption?: string };
 }
 
+type WebhookValue = {
+  metadata?: { phone_number_id?: string };
+  contacts?: Array<{ wa_id?: string; profile?: { name?: string } }>;
+  messages?: WebhookMessage[];
+};
+
+type WebhookBody = {
+  entry?: Array<{
+    changes?: Array<{
+      value?: WebhookValue;
+    }>;
+  }>;
+};
+
+function parseWebhookBody(body: string): WebhookBody {
+  return JSON.parse(body) as WebhookBody;
+}
+
+function buildImageText(message: WebhookMessage) {
+  return message.image?.caption
+    ? `[Image. Caption: ${message.image.caption}]`
+    : "User sent an image.";
+}
+
+function buildVideoText(message: WebhookMessage) {
+  return message.video?.caption
+    ? `[Video. Caption: ${message.video.caption}]`
+    : "User sent a video.";
+}
+
+function buildDocumentText(message: WebhookMessage) {
+  return message.document?.caption
+    ? `[Document. Caption: ${message.document.caption}]`
+    : "User sent a document.";
+}
+
+function toExtractedMessage(
+  message: WebhookMessage,
+  base: Pick<ExtractedMessage, "from" | "messageId" | "phoneNumberId" | "displayName">,
+): ExtractedMessage | null {
+  if (message.text?.body) return { ...base, text: message.text.body, mediaType: "text" };
+  if (message.image) return { ...base, text: buildImageText(message), mediaType: "image", mediaId: message.image.id };
+  if (message.audio) return { ...base, text: "User sent an audio message.", mediaType: "audio", mediaId: message.audio.id };
+  if (message.voice) return { ...base, text: "User sent a voice message.", mediaType: "audio", mediaId: message.voice.id };
+  if (message.video) return { ...base, text: buildVideoText(message), mediaType: "video", mediaId: message.video.id };
+  if (message.document) return { ...base, text: buildDocumentText(message), mediaType: "document", mediaId: message.document.id };
+  return null;
+}
+
+function extractEventsFromValue(value?: WebhookValue) {
+  if (!value?.messages) return [];
+  const contact = value.contacts?.[0];
+  const base = {
+    from: "",
+    messageId: undefined as string | undefined,
+    phoneNumberId: value.metadata?.phone_number_id ?? "",
+    displayName: contact?.profile?.name ?? "",
+  };
+  return value.messages.flatMap((message: WebhookMessage) => {
+    const extracted = toExtractedMessage(message, {
+      ...base,
+      from: message.from ?? "",
+      messageId: message.id,
+    });
+    return extracted ? [extracted] : [];
+  });
+}
+
 /**
  * Extract message events from WhatsApp webhook body.
  */
 export function extractWebhookEvents(body: string): ExtractedMessage[] {
-  const data = JSON.parse(body) as {
-    entry?: Array<{
-      changes?: Array<{
-        value?: {
-          metadata?: { phone_number_id?: string };
-          contacts?: Array<{ wa_id?: string; profile?: { name?: string } }>;
-          messages?: WebhookMessage[];
-        };
-      }>;
-    }>;
-  };
-
-  const events: ExtractedMessage[] = [];
-
-  for (const entry of data.entry ?? []) {
-    for (const change of entry.changes ?? []) {
-      const value = change.value;
-      if (!value?.messages) continue;
-
-      const contact = value.contacts?.[0];
-      const phoneNumberId = value.metadata?.phone_number_id ?? "";
-      const displayName = contact?.profile?.name ?? "";
-
-      for (const msg of value.messages) {
-        const base = {
-          from: msg.from ?? "",
-          messageId: msg.id,
-          phoneNumberId,
-          displayName,
-        };
-
-        if (msg.text?.body) {
-          events.push({ ...base, text: msg.text.body, mediaType: "text" });
-          continue;
-        }
-        if (msg.image) {
-          events.push({
-            ...base,
-            text: msg.image.caption
-              ? `[Image. Caption: ${msg.image.caption}]`
-              : "User sent an image.",
-            mediaType: "image",
-            mediaId: msg.image.id,
-          });
-          continue;
-        }
-        if (msg.audio) {
-          events.push({
-            ...base,
-            text: "User sent an audio message.",
-            mediaType: "audio",
-            mediaId: msg.audio.id,
-          });
-          continue;
-        }
-        if (msg.voice) {
-          events.push({
-            ...base,
-            text: "User sent a voice message.",
-            mediaType: "audio",
-            mediaId: msg.voice.id,
-          });
-          continue;
-        }
-        if (msg.video) {
-          events.push({
-            ...base,
-            text: msg.video.caption
-              ? `[Video. Caption: ${msg.video.caption}]`
-              : "User sent a video.",
-            mediaType: "video",
-            mediaId: msg.video.id,
-          });
-          continue;
-        }
-        if (msg.document) {
-          events.push({
-            ...base,
-            text: msg.document.caption
-              ? `[Document. Caption: ${msg.document.caption}]`
-              : "User sent a document.",
-            mediaType: "document",
-            mediaId: msg.document.id,
-          });
-          continue;
-        }
-      }
-    }
-  }
-  return events;
+  const data = parseWebhookBody(body);
+  return (data.entry ?? []).flatMap((entry) =>
+    (entry.changes ?? []).flatMap((change) => extractEventsFromValue(change.value)),
+  );
 }

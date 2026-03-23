@@ -5,11 +5,6 @@ import MarketRouteTabs from "./MarketRouteTabs";
 import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
 import { buildComplianceBanner } from "../../_lib/complianceBanner";
 
-/**
- * WHY:   Market pages should feel like focused reading surfaces instead of a full workspace control center.
- * WHAT:  Wraps the market route with the main workspace shell, keeping sidebar + header consistent.
- * HOW:   Loads workspace chrome data once and renders the market tabs inside the shared shell.
- */
 export default async function MarketZoneLayout({
   children,
 }: {

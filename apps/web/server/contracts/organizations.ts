@@ -126,9 +126,11 @@ export type OffersDirectoryProfile = {
   email: string;
   name: string;
   username?: string;
+  image?: string | null;
   role: "broker" | "developer";
   organizationName: string;
   organizationSlug?: string;
+  organizationLogo?: string | null;
   membershipState: "not-member" | "pending-invite" | "member";
   canMessage: boolean;
   conversationId?: string | null;
@@ -146,4 +148,36 @@ export type IncomingOrganizationInvite = {
   canMessage: boolean;
   conversationId?: string | null;
   expiresAt: number;
+};
+
+export type OfferOrganizationSummary = {
+  id: string;
+  name: string;
+  slug: string;
+  logo?: string | null;
+  offerCount: number;
+};
+
+export type OrganizationPublicOffer = {
+  id: string;
+  price: number;
+  status: string;
+  description?: string;
+  property: {
+    id: string;
+    title: string;
+    address: string;
+    location?: string;
+  } | null;
+};
+
+export type OrganizationPublicProfile = {
+  id: string;
+  name: string;
+  slug: string;
+  logo?: string | null;
+  description?: string;
+  website?: string;
+  contactEmail?: string;
+  offers: OrganizationPublicOffer[];
 };

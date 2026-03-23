@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Mail, MapPin, Phone } from "lucide-react";
-import PageHero from "@/components/shared/PageHero";
-import Section from "@/components/shared/Section";
-import SectionLabel from "@/components/shared/SectionLabel";
+import { PageHero, Section, SectionLabel } from "@/app/(public)/public";
 import { submitContactInquiry } from "./actions";
 
 export const metadata: Metadata = {
@@ -56,7 +54,7 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
             </h2>
             <div className="space-y-8 text-slate-700 font-bold">
               <div className="flex items-start gap-6 border-b border-slate-100 pb-8">
-                <div className="h-12 w-12 bg-blue-50 flex items-center justify-center shrink-0">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-50">
                   <MapPin className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
@@ -66,7 +64,7 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
               </div>
 
               <div className="flex items-start gap-6 border-b border-slate-100 pb-8">
-                <div className="h-12 w-12 bg-blue-50 flex items-center justify-center shrink-0">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-50">
                   <Mail className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
@@ -77,7 +75,7 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
               </div>
 
               <div className="flex items-start gap-6">
-                <div className="h-12 w-12 bg-blue-50 flex items-center justify-center shrink-0">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-50">
                   <Phone className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
@@ -89,7 +87,7 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
             </div>
           </div>
 
-          <div className="bg-slate-50 p-12 border-2 border-slate-100">
+          <div className="rounded-lg border-2 border-slate-100 bg-slate-50 p-12">
             <h2 className="text-2xl font-black text-slate-900 uppercase mb-8">أرسل استفسارك</h2>
             {submitted === "1" ? (
               <div className="mb-6 border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
@@ -108,7 +106,7 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
                 <input
                   type="text"
                   name="name"
-                  className="w-full bg-white border-2 border-slate-200 px-4 py-3 text-slate-900 font-bold focus:border-blue-600 focus:outline-none transition-colors"
+                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-4 py-3 font-bold text-slate-900 transition-colors focus:border-blue-600 focus:outline-none"
                   placeholder="شركة التطوير العقاري المحدودة"
                   required
                 />
@@ -118,7 +116,7 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
                 <input
                   type="email"
                   name="email"
-                  className="w-full bg-white border-2 border-slate-200 px-4 py-3 text-slate-900 font-bold focus:border-blue-600 focus:outline-none transition-colors"
+                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-4 py-3 font-bold text-slate-900 transition-colors focus:border-blue-600 focus:outline-none"
                   placeholder="name@company.sa"
                   required
                 />
@@ -127,14 +125,14 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
                 <label className="text-xs font-black uppercase text-slate-500">الرسالة</label>
                 <textarea
                   name="message"
-                  className="w-full bg-white border-2 border-slate-200 px-4 py-3 text-slate-900 font-bold focus:border-blue-600 focus:outline-none transition-colors min-h-[160px] resize-none"
+                  className="min-h-[160px] w-full resize-none rounded-lg border-2 border-slate-200 bg-white px-4 py-3 font-bold text-slate-900 transition-colors focus:border-blue-600 focus:outline-none"
                   placeholder="تفاصيل الشراكة أو الاستفسار..."
                   required
                 />
               </div>
               <button
                 type="submit"
-                className="inline-flex w-full items-center justify-center bg-blue-600 text-white hover:bg-blue-700 py-4 text-sm font-black uppercase tracking-widest transition-all active:scale-[0.98] rounded-none"
+                className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 py-4 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-blue-700 active:scale-[0.98]"
               >
                 <span className="flex items-center gap-3">إرسال الطلب المستعجل</span>
               </button>

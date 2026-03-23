@@ -1,5 +1,5 @@
 import { DomainError, toErrorResponse } from "@/server/contracts/errors";
-import { createVerificationRequestForCurrentOrg } from "@/server/domains/verifications/service";
+import { createVerificationRequestForCurrentOrg } from "@/server/domains/workspace/verifications/service";
 
 /**
  * WHY:   Verification requests should submit through a dedicated gateway route.

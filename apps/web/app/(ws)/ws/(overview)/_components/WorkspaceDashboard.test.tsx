@@ -1,7 +1,22 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, expect, it, vi } from "vitest";
 
-vi.mock("@/components/shared/InstitutionalChatInput", () => ({
+const { usePathname, useSearchParams, useQuery } = vi.hoisted(() => ({
+  usePathname: vi.fn(),
+  useSearchParams: vi.fn(),
+  useQuery: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  usePathname,
+  useSearchParams,
+}));
+
+vi.mock("convex/react", () => ({
+  useQuery,
+}));
+
+vi.mock("../../_components/Chat/InstitutionalChatInput", () => ({
   default: ({
     value,
     isSending,
@@ -46,54 +61,85 @@ vi.mock("../../_components/AIMotion", () => ({
 
 import WorkspaceDashboard from "./WorkspaceDashboard";
 
-describe("WorkspaceDashboard", () => {
-  it("renders a centered landing state before the first message", () => {
-    const markup = renderToStaticMarkup(<WorkspaceDashboard initialThread={null} />);
+beforeEach(() => {
+  usePathname.mockReturnValue("/ws");
+  useSearchParams.mockReturnValue(new URLSearchParams());
+  useQuery.mockReturnValue(undefined);
+});
 
-    expect(markup).toContain("كيف يمكنني مساعدتك؟");
-    expect(markup).toContain("data-slot=\"ai-motion-logo\"");
-    expect(markup).toContain("data-slot=\"chat-input\"");
-    expect(markup).toContain("data-layout=\"landing\"");
-    expect(markup).not.toContain("السياق");
-    expect(markup).not.toContain("الإشعارات");
-    expect(markup).not.toContain("التحكم");
-  });
+it("renders a chat-first landing state before the first message", () => {
+  const markup = renderToStaticMarkup(
+    <WorkspaceDashboard
+      initialThread={null}
+      initialRouteState={{ requestedThreadId: null, unavailableThreadId: null }}
+      user={{ id: "user-1", name: "Ahmed", email: "ahmed@example.com" }}
+    />,
+  );
 
-  it("renders the conversation stream inline when messages exist", () => {
-    const markup = renderToStaticMarkup(
-      <WorkspaceDashboard
-        initialThread={{
-          id: "thread-1",
-          title: "anan workspace",
-          messages: [
-            {
-              id: "message-1",
-              role: "user",
-              content: "hello",
-              createdAt: 1,
+  expect(markup).toContain("data-slot=\"assistant-surface\"");
+  expect(markup).toContain("data-slot=\"assistant-landing-panel\"");
+  expect(markup).toContain("data-slot=\"ai-motion-logo\"");
+  expect(markup).toContain("data-slot=\"chat-input\"");
+  expect(markup).toContain("data-layout=\"landing\"");
+  expect(markup).toContain("data-slot=\"landing-composer-dock\"");
+  expect(markup).toContain("كيف يمكنني مساعدتك اليوم؟");
+  expect(markup).toContain("حلّل حركة السوق العقاري في الرياض هذا الأسبوع");
+  expect(markup).not.toContain("السياق");
+  expect(markup).not.toContain("الإشعارات");
+  expect(markup).not.toContain("التحكم");
+});
+
+it("renders an inline unavailable-thread notice for invalid direct links", () => {
+  const markup = renderToStaticMarkup(
+    <WorkspaceDashboard
+      initialThread={null}
+      initialRouteState={{ requestedThreadId: "missing-thread", unavailableThreadId: "missing-thread" }}
+      user={{ id: "user-1", name: "Ahmed", email: "ahmed@example.com" }}
+    />,
+  );
+
+  expect(markup).toContain("data-slot=\"assistant-unavailable-thread\"");
+  expect(markup).toContain("تعذر العثور على المحادثة المطلوبة");
+  expect(markup).toContain("بدء محادثة جديدة");
+});
+
+it("renders the conversation stream inline when messages exist", () => {
+  const markup = renderToStaticMarkup(
+    <WorkspaceDashboard
+      initialThread={{
+        id: "thread-1",
+        title: "anan workspace",
+        messages: [
+          {
+            id: "message-1",
+            role: "user",
+            content: "hello",
+            createdAt: 1,
+          },
+          {
+            id: "message-2",
+            role: "assistant",
+            content: "world",
+            createdAt: 2,
+            uiTurn: {
+              version: "1",
+              title: "Turn",
+              subtitle: null,
+              cards: [],
             },
-            {
-              id: "message-2",
-              role: "assistant",
-              content: "world",
-              createdAt: 2,
-              uiTurn: {
-                version: "1",
-                title: "Turn",
-                subtitle: null,
-                cards: [],
-              },
-            },
-          ],
-        }}
-      />,
-    );
+          },
+        ],
+      }}
+      initialRouteState={{ requestedThreadId: "thread-1", unavailableThreadId: null }}
+      user={{ id: "user-1", name: "Ahmed", email: "ahmed@example.com" }}
+    />,
+  );
 
-    expect(markup).toContain("hello");
-    expect(markup).toContain("world");
-    expect(markup).toContain("استكمل العمل من آخر نقطة وصلت إليها داخل هذه المحادثة.");
-    expect(markup).toContain("data-slot=\"ag-ui-turn\"");
-    expect(markup).toContain("data-layout=\"thread\"");
-    expect(markup).not.toContain("كيف يمكنني مساعدتك؟");
-  });
+  expect(markup).toContain("hello");
+  expect(markup).toContain("world");
+  expect(markup).toContain("data-slot=\"ag-ui-turn\"");
+  expect(markup).toContain("data-layout=\"thread\"");
+  expect(markup).toContain("data-slot=\"assistant-surface\"");
+  expect(markup).toContain("data-slot=\"thread-composer-dock\"");
+  expect(markup).not.toContain("data-slot=\"assistant-landing-panel\"");
 });

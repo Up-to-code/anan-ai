@@ -9,7 +9,7 @@
             "Maximized Contrast",
             "Whitespace as a Structural Element",
             "No AI-specific terminology (Institutional Protocol only)",
-            "Shareable First: All new UI elements must be created in 'components/shared/'"
+            "Zone-owned First: Build UI inside its owning public/docs/oauth/workspace zone unless it is a true cross-zone primitive."
         ]
     },
     "tokens": {
@@ -59,7 +59,7 @@
             }
         },
         "geometry": {
-            "radius": "0px (rounded-none)",
+            "radius": "8px (rounded-lg)",
             "shadows": "None (Flat UI only)",
             "borders": "Solid, 2px stroke on grids and navbars"
         }
@@ -73,14 +73,14 @@
         "button_primary": {
             "background": "blue-600",
             "text": "white",
-            "shape": "rounded-none",
+            "shape": "rounded-lg",
             "padding": "px-8 py-2.5",
             "typography": "text-xs font-black uppercase tracking-widest"
         },
         "button_outline": {
             "border": "2px border-blue-600",
             "text": "blue-600",
-            "shape": "rounded-none",
+            "shape": "rounded-lg",
             "padding": "px-12 py-5",
             "typography": "text-sm font-black uppercase tracking-widest"
         },

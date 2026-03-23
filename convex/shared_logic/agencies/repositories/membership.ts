@@ -4,7 +4,6 @@ import { requireCurrentProfile } from "../../lib/profile";
 import {
   buildOwnerContext,
   findProfileByAuthUserId,
-  getOrganizationRecord,
   getOwnerId,
   resolveOwnerContextFromProfile,
   resolveTenantOrgIdForOwner,
@@ -13,9 +12,9 @@ import {
   type OwnerContext,
   type UserProfileRecord,
 } from "./core";
-import { appendInboxCollaborationEvent } from "../../inbox";
 import { tenants } from "../../../tenants";
 import { auditLog } from "../../../auditLog";
+import { maybeNotifyMembershipRoleUpdated } from "./membershipRoleEvents";
 
 function normalizeTenantRole(role?: string): "manager" | "member" | "viewer" {
   if (role === "owner" || role === "admin" || role === "manager") return "manager";
@@ -151,6 +150,64 @@ export const listCurrentTeamMembers = query({
   },
 });
 
+function requireTenantOrganizationId(owner: OwnerContext) {
+  if (!owner.tenantOrgId) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Tenant organization required" });
+  }
+  return owner.tenantOrgId;
+}
+
+async function getTenantMemberOrThrow(ctx: AgenciesRepositoryCtx, tenantOrgId: string, authUserId: string) {
+  const member = await tenants.getMember(ctx as never, tenantOrgId, authUserId);
+  if (!member) {
+    throw new ConvexError({ code: "NOT_FOUND", message: "Member not found" });
+  }
+  return member;
+}
+
+async function assertCanDemoteCurrentManager(args: {
+  ctx: AgenciesRepositoryCtx;
+  tenantOrgId: string;
+  targetAuthUserId: string;
+  actorAuthUserId: string;
+  memberRole?: string;
+  requestedRole: "manager" | "member" | "viewer";
+}) {
+  if (
+    args.targetAuthUserId !== args.actorAuthUserId ||
+    normalizeTenantRole(args.memberRole) !== "manager" ||
+    args.requestedRole === "manager"
+  ) {
+    return;
+  }
+  const members = await tenants.listMembers(args.ctx as never, args.tenantOrgId, { status: "active" });
+  const activeManagerCount = members.filter((item) => normalizeTenantRole(item.role) === "manager").length;
+  if (activeManagerCount <= 1) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Cannot remove the last manager" });
+  }
+}
+
+async function auditMembershipRoleUpdate(args: {
+  ctx: any;
+  actorId: string;
+  resourceId: string;
+  tenantOrgId: string;
+  previousRole?: string;
+  nextRole: "manager" | "member" | "viewer";
+}) {
+  await auditLog.logChange(args.ctx, {
+    action: "membership.role.updated",
+    actorId: args.actorId,
+    resourceType: "tenantMemberships",
+    resourceId: args.resourceId,
+    before: { role: normalizeTenantRole(args.previousRole), tenantOrgId: args.tenantOrgId },
+    after: { role: args.nextRole, tenantOrgId: args.tenantOrgId },
+    generateDiff: true,
+    severity: "info",
+    tags: ["organizations", "memberships"],
+  });
+}
+
 /**
  * WHY:   Manager role changes are one of the highest-risk organization mutations and need isolated authorization logic.
  * WHAT:  Updates the role for one membership inside the current manager's organization.
@@ -163,94 +220,39 @@ export const updateMembershipRoleForCurrentUser = mutation({
   },
   handler: async (ctx, args) => {
     const current = await requireManagerAccess(ctx);
-    if (!current.owner.tenantOrgId) {
-      throw new ConvexError({ code: "FORBIDDEN", message: "Tenant organization required" });
-    }
-
+    const tenantOrgId = requireTenantOrganizationId(current.owner);
     const targetAuthUserId = args.membershipId;
-    const member = await tenants.getMember(ctx as never, current.owner.tenantOrgId, targetAuthUserId);
-    if (!member) {
-      throw new ConvexError({ code: "NOT_FOUND", message: "Member not found" });
-    }
-
-    if (targetAuthUserId === current.profile.authUserId && normalizeTenantRole(member.role) === "manager" && args.role !== "manager") {
-      const members = await tenants.listMembers(ctx as never, current.owner.tenantOrgId, { status: "active" });
-      const activeManagerCount = members.filter((item) => normalizeTenantRole(item.role) === "manager").length;
-      if (activeManagerCount <= 1) {
-        throw new ConvexError({ code: "FORBIDDEN", message: "Cannot remove the last manager" });
-      }
-    }
+    const member = await getTenantMemberOrThrow(ctx, tenantOrgId, targetAuthUserId);
+    await assertCanDemoteCurrentManager({
+      ctx,
+      tenantOrgId,
+      targetAuthUserId,
+      actorAuthUserId: current.profile.authUserId,
+      memberRole: member.role,
+      requestedRole: args.role,
+    });
 
     await tenants.updateMemberRole(
       ctx as never,
       current.profile.authUserId,
-      current.owner.tenantOrgId,
+      tenantOrgId,
       targetAuthUserId,
       args.role,
     );
-
-    await auditLog.logChange(ctx, {
-      action: "membership.role.updated",
+    await auditMembershipRoleUpdate({
+      ctx,
       actorId: current.profile.authUserId,
-      resourceType: "tenantMemberships",
       resourceId: targetAuthUserId,
-      before: { role: normalizeTenantRole(member.role), tenantOrgId: current.owner.tenantOrgId },
-      after: { role: args.role, tenantOrgId: current.owner.tenantOrgId },
-      generateDiff: true,
-      severity: "info",
-      tags: ["organizations", "memberships"],
+      tenantOrgId,
+      previousRole: member.role,
+      nextRole: args.role,
     });
-
-    if (targetAuthUserId !== current.profile.authUserId) {
-      const [targetProfile, organization] = await Promise.all([
-        findProfileByAuthUserId(ctx, targetAuthUserId),
-        getOrganizationRecord(ctx, current.owner),
-      ]);
-
-      if (targetProfile?.authUserId && organization?.name) {
-        const organizationType = current.owner.ownerType === "broker" ? "broker" as const : "developer" as const;
-        await appendInboxCollaborationEvent(ctx, {
-          senderUserId: current.profile.authUserId,
-          recipientUserId: targetProfile.authUserId,
-          type: "role_event",
-          body: `تم تحديث دورك في ${organization.name}`,
-          metadata: {
-            contextType: "role_event",
-            actor: {
-              authUserId: current.profile.authUserId,
-              name: current.profile.name ?? current.profile.email ?? "عضو الفريق",
-              role: current.profile.role === "RED" ? "developer" : current.profile.role ?? "user",
-              organizationId: current.owner.ownerType === "broker"
-                ? String(current.owner.ownerBrokerId)
-                : String(current.owner.ownerREDId),
-              organizationType,
-              organizationName: organization.name,
-            },
-            recipient: {
-              recipientAuthUserId: targetProfile.authUserId,
-              organizationId: current.owner.ownerType === "broker"
-                ? String(current.owner.ownerBrokerId)
-                : String(current.owner.ownerREDId),
-              organizationType,
-              organizationName: organization.name,
-            },
-            title: organization.name,
-            summary: `تم تغيير الدور إلى ${args.role}`,
-            href: "/ws/inbox",
-            action: {
-              type: "open_membership",
-              label: "افتح العضوية",
-              href: "/ws/inbox",
-            },
-            membershipId: targetAuthUserId,
-            organizationRole: args.role,
-            organizationName: organization.name,
-            organizationType,
-          },
-        });
-      }
-    }
-
+    await maybeNotifyMembershipRoleUpdated({
+      ctx,
+      current,
+      targetAuthUserId,
+      role: args.role,
+    });
     return { previousRole: normalizeTenantRole(member.role) };
   },
 });

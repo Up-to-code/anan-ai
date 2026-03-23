@@ -8,6 +8,11 @@ type PageHeaderProps = {
   actions?: React.ReactNode;
 };
 
+/**
+ * WHY:   The rebuilt admin should use straightforward page headers instead of decorative dashboard hero copy.
+ * WHAT:  Renders a simple title row with optional supporting text and actions.
+ * HOW:   Shows the eyebrow only when it adds meaning beyond the title and keeps the hierarchy text-first.
+ */
 export default function PageHeader({
   eyebrow,
   title,
@@ -16,21 +21,13 @@ export default function PageHeader({
   actions,
 }: PageHeaderProps) {
   return (
-    <header className={cn("flex items-start justify-between gap-4 border-b-2 border-slate-100 pb-6", className)}>
-      <div className="space-y-3">
-        <div className="text-xs font-black uppercase tracking-widest text-blue-600">
-          {eyebrow}
-        </div>
-        <h1 className="text-3xl font-black tracking-tight text-slate-900">
-          {title}
-        </h1>
-        {description && (
-          <div className="max-w-xl text-sm font-semibold leading-relaxed text-slate-700">
-            {description}
-          </div>
-        )}
+    <header className={cn("flex flex-col gap-3 border-b border-border pb-4 lg:flex-row lg:items-end lg:justify-between", className)}>
+      <div className="space-y-2">
+        {eyebrow && eyebrow !== title ? <div className="text-xs font-medium text-slate-500">{eyebrow}</div> : null}
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h1>
+        {description ? <div className="max-w-3xl text-sm leading-6 text-slate-600">{description}</div> : null}
       </div>
-      {actions && <div className="flex shrink-0">{actions}</div>}
+      {actions ? <div className="flex shrink-0">{actions}</div> : null}
     </header>
   );
 }

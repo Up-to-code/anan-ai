@@ -27,7 +27,7 @@ export async function getAuthenticatedSession() {
  * WHAT:  Resolves the current admin session or redirects to the admin sign-in page.
  * HOW:   Reuses the lightweight authenticated-session lookup, then redirects when the session is missing or not admin.
  */
-export async function requireAdminPageSession(returnTo = "/dashboard") {
+export async function requireAdminPageSession(returnTo = "/overview") {
   const session = await getAuthenticatedSession();
 
   if (!session.token || !session.user || session.role !== "admin") {
@@ -42,7 +42,7 @@ export async function requireAdminPageSession(returnTo = "/dashboard") {
  * WHAT:  Sanitizes an internal return path for admin redirects.
  * HOW:   Accepts only local paths and strips sign-in loops.
  */
-export function sanitizeInternalReturnTo(returnTo?: string | null, fallback = "/dashboard") {
+export function sanitizeInternalReturnTo(returnTo?: string | null, fallback = "/overview") {
   if (!returnTo) {
     return fallback;
   }

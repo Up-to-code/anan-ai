@@ -27,45 +27,40 @@ const defaultDependencies: SessionDependencies = {
   profilesRepository: convexProfilesRepository,
 };
 
-/**
- * WHY:   Every admin server entrypoint needs the same authenticated context without duplicating token and profile lookups.
- * WHAT:  Resolves the optional current session, returning null when no active authenticated user exists.
- * HOW:   Reads the Convex auth token, fetches the session projection and current profile, then builds SessionContext.
- */
-export async function getOptionalSessionContext(
-  dependencies: SessionDependencies = defaultDependencies,
-): Promise<ResolvedSession | null> {
-  const token = await dependencies.getToken();
-  if (!token) {
-    return null;
-  }
-
-  let user: Awaited<ReturnType<SessionsRepository["getCurrent"]>>;
-  let profile: Awaited<ReturnType<ProfilesRepository["getCurrent"]>>;
+async function getUserAndProfile(
+  dependencies: SessionDependencies,
+  token: string,
+): Promise<{
+  user: Awaited<ReturnType<SessionsRepository["getCurrent"]>>;
+  profile: Awaited<ReturnType<ProfilesRepository["getCurrent"]>>;
+}> {
   try {
-    [user, profile] = await Promise.all([
+    const [user, profile] = await Promise.all([
       dependencies.sessionsRepository.getCurrent(token),
       dependencies.profilesRepository.getCurrent(token),
     ]);
+    return { user, profile };
   } catch (error) {
-    if (isNoAuthProviderError(error)) {
-      if (isClearlyExpiredJwtToken(token)) {
-        return null;
-      }
-      throw new DomainError({
-        code: "AUTH_CONFIGURATION_ERROR",
-        message:
-          "Active session token could not be matched to an auth provider. Verify CONVEX_SITE_URL issuer alignment.",
-        status: 503,
-      });
+    if (!isNoAuthProviderError(error)) {
+      throw error;
     }
-    throw error;
+    if (isClearlyExpiredJwtToken(token)) {
+      return { user: null, profile: null };
+    }
+    throw new DomainError({
+      code: "AUTH_CONFIGURATION_ERROR",
+      message:
+        "Active session token could not be matched to an auth provider. Verify CONVEX_SITE_URL issuer alignment.",
+      status: 503,
+    });
   }
+}
 
-  if (!user || user.isActive === false) {
-    return null;
-  }
-
+function buildResolvedSession(
+  token: string,
+  user: NonNullable<Awaited<ReturnType<SessionsRepository["getCurrent"]>>>,
+  profile: Awaited<ReturnType<ProfilesRepository["getCurrent"]>>,
+): ResolvedSession {
   return {
     token,
     profile,
@@ -81,6 +76,26 @@ export async function getOptionalSessionContext(
       isActive: user.isActive,
     },
   };
+}
+
+/**
+ * WHY:   Every admin server entrypoint needs the same authenticated context without duplicating token and profile lookups.
+ * WHAT:  Resolves the optional current session, returning null when no active authenticated user exists.
+ * HOW:   Reads the Convex auth token, fetches the session projection and current profile, then builds SessionContext.
+ */
+export async function getOptionalSessionContext(
+  dependencies: SessionDependencies = defaultDependencies,
+): Promise<ResolvedSession | null> {
+  const token = await dependencies.getToken();
+  if (!token) {
+    return null;
+  }
+  const { user, profile } = await getUserAndProfile(dependencies, token);
+
+  if (!user || user.isActive === false) {
+    return null;
+  }
+  return buildResolvedSession(token, user, profile);
 }
 
 /**

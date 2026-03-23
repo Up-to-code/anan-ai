@@ -2,11 +2,6 @@
 
 import Link from "next/link";
 
-/**
- * WHY:   Workspace routes need a scoped error boundary for clearer recovery actions.
- * WHAT:  Renders a friendly error message with retry and navigation links.
- * HOW:   Uses Next.js `error.tsx` conventions and exposes `reset()` for retry.
- */
 export default function WorkspaceError({
   error,
   reset,

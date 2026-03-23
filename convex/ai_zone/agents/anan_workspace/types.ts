@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * types.ts — Workspace Orchestrator Type Definitions
  *
@@ -7,7 +6,8 @@
  * WHAT:  Defines OrchestrateInput, OrchestrateOutput, and re-exports AnanAgentResult.
  */
 
-import type { ActionCtx } from "../../_generated/server";
+import type { ActionCtx } from "../../../_generated/server";
+import type { Id } from "../../../_generated/dataModel";
 import type { AnanAgentResult } from "../AnanAgent";
 
 export type { AnanAgentResult };
@@ -65,7 +65,7 @@ export interface OrchestrateInput {
   prompt: string;
   role: "user" | "broker" | "RED" | "admin";
   userId: string;
-  threadId?: string;
+  threadId?: Id<"assistantThreads">;
   channel?: "app" | "whatsapp" | "web";
   ragContext?: string;
   modelOverride?: string;
@@ -84,4 +84,3 @@ export interface OrchestrateOutput {
   agentResults: AnanAgentResult[];
   totalTokenUsage: { inputTokens: number; outputTokens: number };
 }
-// @ts-nocheck

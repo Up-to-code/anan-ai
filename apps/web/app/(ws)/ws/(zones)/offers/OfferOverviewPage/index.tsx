@@ -1,7 +1,132 @@
 import type { OfferMarketplaceItem } from "../offerTypes";
 import Link from "next/link";
-import { Eye, Plus } from "lucide-react";
+import { Eye, MapPin, Plus } from "lucide-react";
 import OfferPaginationNav from "../OfferPaginationNav";
+
+function kindLabel(kind: OfferMarketplaceItem["kind"]) {
+  if (kind === "developer") return "مطور";
+  if (kind === "broker") return "وسيط";
+  if (kind === "client") return "عميل";
+  return "ربط";
+}
+
+function avatarLabel(name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) return "؟";
+  return [...trimmed].slice(0, 1).join("").toUpperCase();
+}
+
+function OfferOwnerBlock({ item }: { item: OfferMarketplaceItem }) {
+  const ownerKindLabel = item.kind === "broker" ? "وسيط" : item.kind === "developer" ? "شركة تطوير" : "جهة العرض";
+  return (
+    <div className="mt-3 flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2">
+      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-700">
+        {avatarLabel(item.ownerLabel)}
+      </div>
+      <div className="min-w-0">
+        <div className="truncate text-sm font-medium text-slate-800">{item.ownerLabel}</div>
+        <div className="text-xs text-slate-500">{ownerKindLabel}</div>
+      </div>
+    </div>
+  );
+}
+
+function OfferMetaGrid({ item }: { item: OfferMarketplaceItem }) {
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+      <div className="rounded-md border border-slate-200 bg-white p-2">
+        <div className="text-xs text-slate-500">السعر</div>
+        <div className="mt-1 font-semibold text-slate-900">{item.priceLabel}</div>
+      </div>
+      <div className="rounded-md border border-slate-200 bg-white p-2">
+        <div className="text-xs text-slate-500">نوع العرض</div>
+        <div className="mt-1 font-semibold text-slate-900">{item.propertyType}</div>
+      </div>
+    </div>
+  );
+}
+
+function OfferCardFooter({ item }: { item: OfferMarketplaceItem }) {
+  return (
+    <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+      <div className="inline-flex items-center gap-1">
+        <MapPin className="h-3.5 w-3.5" />
+        <span className="truncate">{item.location}</span>
+      </div>
+      <Link
+        href={`/ws/offers/${item.id}`}
+        className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+      >
+        <Eye className="h-3.5 w-3.5" />
+        استعراض
+      </Link>
+    </div>
+  );
+}
+
+function OfferOverviewCard({ item }: { item: OfferMarketplaceItem }) {
+  return (
+    <article className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <Link href={`/ws/offers/${item.id}`} className="block">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={item.image} alt={item.title} className="h-40 w-full object-cover" />
+      </Link>
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2">
+          <Link href={`/ws/offers/${item.id}`} className="line-clamp-2 text-base font-semibold text-slate-900 hover:text-slate-700">
+            {item.title}
+          </Link>
+          <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600">
+            {kindLabel(item.kind)}
+          </span>
+        </div>
+
+        <p className="mt-2 line-clamp-2 text-sm text-slate-600">{item.summary}</p>
+        <p className="mt-1 truncate text-xs text-slate-500">المشروع: {item.project.title}</p>
+        <OfferOwnerBlock item={item} />
+        <OfferMetaGrid item={item} />
+        <OfferCardFooter item={item} />
+      </div>
+    </article>
+  );
+}
+
+function OfferOverviewToolbar({ page, pageCount }: { page: number; pageCount: number }) {
+  return (
+    <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4">
+      <div className="flex items-center gap-2">
+        <Link
+          href="/ws/offers/create"
+          className="inline-flex items-center gap-2 rounded-md border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+        >
+          <Plus className="h-4 w-4" />
+          طرح عرض جديد
+        </Link>
+      </div>
+      <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
+        صفحة {page} من {pageCount}
+      </div>
+    </div>
+  );
+}
+
+function OfferOverviewContent({ items }: { items: OfferMarketplaceItem[] }) {
+  if (items.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-16 text-center text-sm font-semibold text-slate-600">
+        لا توجد عروض متاحة في هذه الصفحة حالياً.
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-slot="offers-grid">
+      {items.map((item) => (
+        <OfferOverviewCard key={item.id} item={item} />
+      ))}
+    </div>
+  );
+}
 
 export default function OfferOverviewPage({
   items,
@@ -20,108 +145,13 @@ export default function OfferOverviewPage({
   hasNextPage: boolean;
   routeBase: string;
 }) {
-  const KIND_LABELS: Record<string, string> = {
-    developer: "عرض مطور",
-    broker: "تعاون وسيط",
-    client: "طلب عميل",
-    inbox: "مهمة ربط",
-  };
-
   return (
     <div className="flex min-h-full flex-col pb-32">
       <div className="px-6 py-6 lg:px-8 lg:py-8 grid gap-6">
-        <section className="border border-slate-200 bg-white p-6 text-right">
-          <h1 className="text-2xl font-black text-slate-950">جميع العروض</h1>
-          <p className="mt-3 max-w-3xl text-sm font-medium leading-7 text-slate-600">
-            قائمة موحدة للعروض المنشورة والمستلمة والمرسلة داخل مساحة العمل الحالية، مع تقسيم واضح للصفحات حتى يبقى الاستعراض سريعاً.
-          </p>
-          <div className="mt-4 text-xs font-black tracking-[0.18em] text-slate-400">
-            {totalItems} عرض في الإجمالي
-          </div>
-        </section>
+        <OfferOverviewToolbar page={page} pageCount={pageCount} />
 
-        <div className="flex justify-between items-center bg-blue-50/50 border border-blue-100 p-4">
-          <div className="flex gap-2">
-            <Link
-              href="/ws/offers/create"
-              className="bg-blue-600 px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white hover:bg-slate-950 transition flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              طرح عرض جديد
-            </Link>
-          </div>
-          <div className="text-xs font-black text-slate-400 uppercase tracking-widest bg-white border border-slate-200 px-4 py-2">
-            صفحة {page} من {pageCount}
-          </div>
-        </div>
-
-        <div className="flex flex-col border border-slate-200 bg-white w-full">
-          {items.length === 0 && (
-            <div className="p-16 text-center">
-              <div className="text-sm font-black text-slate-400">لا توجد عروض متاحة في هذه الصفحة حالياً.</div>
-            </div>
-          )}
-          {items.map((item, index) => (
-            <article
-              key={item.id}
-              className={`group flex flex-col gap-6 p-6 transition hover:bg-slate-50 md:flex-row md:items-start md:justify-between ${
-                index !== items.length - 1 ? "border-b border-slate-100" : ""
-              }`}
-            >
-              <div className="flex min-w-0 flex-1 flex-col gap-3 relative">
-                <div className="flex items-center gap-3">
-                  <Link href={`/ws/offers/${item.id}`} className="text-xl font-black text-slate-950 truncate transition-colors hover:text-blue-600">
-                    {item.title}
-                  </Link>
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 border border-slate-200 bg-slate-50 px-3 py-1 shrink-0">
-                    {KIND_LABELS[item.kind] || item.kind}
-                  </div>
-                  {item.demandLabel && (
-                    <div className="text-[10px] font-black uppercase tracking-widest text-blue-600 border border-blue-200 bg-blue-50 px-3 py-1 shrink-0 hidden lg:block">
-                      {item.demandLabel}
-                    </div>
-                  )}
-                </div>
-                <p className="text-sm font-medium leading-relaxed text-slate-500 max-w-3xl">
-                  <span className="font-bold text-slate-900 border-b border-slate-200 pb-0.5">{item.project.title}</span> • {item.summary}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-6 items-center">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">السعر</span>
-                    <span className="text-sm font-black text-slate-950 mt-1">{item.priceLabel}</span>
-                  </div>
-                  <div className="w-px h-8 bg-slate-100 hidden sm:block" />
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">المساحة</span>
-                    <span className="text-sm font-black text-slate-950 mt-1">{item.project.area}</span>
-                  </div>
-                  <div className="w-px h-8 bg-slate-100 hidden sm:block" />
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">الموقع</span>
-                    <span className="text-sm font-black text-slate-950 mt-1">{item.location}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end w-full md:w-auto mt-4 md:mt-0">
-                {item.broker && (
-                  <div className="text-xs font-bold text-slate-500">
-                    الوسيط: <span className="font-black text-slate-900">{item.broker.name}</span>
-                  </div>
-                )}
-                <div className="flex gap-2 w-full md:w-auto">
-                  <Link
-                    href={`/ws/offers/${item.id}`}
-                    className="flex items-center justify-center gap-2 flex-1 md:flex-initial border border-slate-200 bg-white px-6 py-3 text-xs font-black uppercase tracking-[0.2em] text-slate-900 transition-colors hover:border-blue-600 hover:bg-blue-600 hover:text-white"
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                    استعراض
-                  </Link>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
+        <div className="text-xs font-semibold text-slate-500">{totalItems} عروض</div>
+        <OfferOverviewContent items={items} />
 
         {items.length > 0 ? (
           <OfferPaginationNav

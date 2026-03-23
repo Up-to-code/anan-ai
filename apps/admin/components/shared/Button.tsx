@@ -9,6 +9,7 @@ interface ButtonProps {
     onClick?: () => void;
     type?: "button" | "submit";
     href?: string;
+    disabled?: boolean;
 }
 
 export default function Button({
@@ -17,39 +18,26 @@ export default function Button({
     className = "",
     onClick,
     type = "button",
-    href
+    href,
+    disabled = false,
 }: ButtonProps) {
-    const baseStyles = "inline-flex items-center justify-center font-black uppercase tracking-widest transition-all active:scale-[0.98] rounded-none";
-
+    const baseStyles = "inline-flex items-center justify-center rounded-[8px] text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50";
     const variants = {
-        primary: "bg-blue-600 text-white hover:bg-blue-700 px-8 py-2.5 text-xs font-black tracking-widest",
-        outline: "border border-blue-600 text-blue-600 hover:bg-blue-50 px-12 py-5 text-sm font-black tracking-widest bg-white/50 backdrop-blur-sm shadow-sm",
-        ghost: "text-slate-900 hover:bg-slate-50 px-6 py-3 text-xs border-b border-transparent hover:border-blue-600",
-        dark: "bg-slate-900 text-white hover:bg-slate-800 px-12 py-5 text-sm font-black tracking-widest",
-        white: "bg-white text-blue-600 hover:bg-slate-50 px-12 py-5 text-sm font-black tracking-widest"
+        primary: "bg-slate-900 text-white hover:bg-slate-800 px-4 py-2",
+        outline: "border border-border bg-white text-slate-900 hover:bg-slate-50 px-4 py-2",
+        ghost: "text-slate-700 hover:bg-slate-100 px-4 py-2",
+        dark: "bg-slate-900 text-white hover:bg-slate-800 px-4 py-2",
+        white: "border border-border bg-white text-slate-900 hover:bg-slate-50 px-4 py-2"
     };
-
-    const content = (
-        <span className="flex items-center gap-3">
-            {children}
-        </span>
-    );
-
+    const content = <span className="flex items-center gap-3">{children}</span>;
     if (href) {
-        return (
-            <a
-                href={href}
-                className={`${baseStyles} ${variants[variant]} ${className}`}
-            >
-                {content}
-            </a>
-        );
+        return <a href={href} className={`${baseStyles} ${variants[variant]} ${className}`}>{content}</a>;
     }
-
     return (
         <button
             type={type}
             onClick={onClick}
+            disabled={disabled}
             className={`${baseStyles} ${variants[variant]} ${className}`}
         >
             {content}

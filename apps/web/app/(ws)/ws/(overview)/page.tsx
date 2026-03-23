@@ -1,10 +1,10 @@
-import { redirect } from "next/navigation";
 import OrganizationOnboarding from "../_components/OrganizationOnboarding";
 import WorkspaceDashboard from "./_components/WorkspaceDashboard";
 import { requireWorkspaceData } from "../_lib/workspaceData";
-import { getAnanProThread } from "@/server/domains/ananPro/service";
-import { listIncomingOrganizationInvitesForCurrentUser } from "@/server/domains/organizations/service";
+import { getAnanProThread } from "@/server/domains/workspace/ananPro/service";
+import { listIncomingOrganizationInvitesForCurrentUser } from "@/server/domains/auth/organizations/service";
 import { normalizeDomainError } from "@/server/contracts/errors";
+import type { AssistantInitialRouteState } from "./_components/WorkspaceDashboard/useWorkspaceAssistant";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,6 @@ type WorkspacePageProps = {
   searchParams: Promise<{
     orgError?: string;
     threadId?: string;
-    newThread?: string;
     onboarding?: string;
   }>;
 };
@@ -23,7 +22,7 @@ type WorkspacePageProps = {
  * HOW:   Forces dynamic rendering (session/headers), requires auth before loading optional thread state, and avoids noisy unauthorized errors.
  */
 export default async function WorkspacePage({ searchParams }: WorkspacePageProps) {
-  const { orgError, threadId, newThread, onboarding } = await searchParams;
+  const { orgError, threadId, onboarding } = await searchParams;
   let workspace: Awaited<ReturnType<typeof requireWorkspaceData>>;
   try {
     workspace = await requireWorkspaceData("/ws");
@@ -78,22 +77,24 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
     );
   }
 
-  const shouldStartDraft = newThread === "1" || !threadId;
-  let selectedThreadId: string | null = null;
+  const initialRouteState: AssistantInitialRouteState = {
+    requestedThreadId: threadId ?? null,
+    unavailableThreadId: null,
+  };
   let ananProThread = null;
 
-  if (!shouldStartDraft) {
+  if (threadId) {
     ananProThread = await getAnanProThread(threadId);
     if (!ananProThread) {
-      redirect("/ws");
+      initialRouteState.unavailableThreadId = threadId;
     }
-    selectedThreadId = threadId ?? null;
   }
 
   return (
     <WorkspaceDashboard
       initialThread={ananProThread}
-      initialSelectedThreadId={selectedThreadId}
+      initialRouteState={initialRouteState}
+      user={workspace.user}
     />
   );
 }

@@ -11,15 +11,19 @@ type RouteTabsProps = {
 };
 
 /**
- * WHY:   Every admin section now uses route-backed tabs to keep each screen focused on a single goal.
- * WHAT:  Renders a horizontal tab bar that highlights the active route and navigates through real URLs.
- * HOW:   Matches the current pathname against each configured tab and applies the shared Anan admin styling.
+ * WHY:   Admin sections still need route-backed secondary navigation, but in a simpler, more product-like style.
+ * WHAT:  Renders a horizontal tab row with a plain underline active state.
+ * HOW:   Matches the current pathname against each configured route and applies a subtle border indicator.
  */
 export default function RouteTabs({ tabs, className }: RouteTabsProps) {
   const pathname = usePathname();
 
+  if (tabs.length === 0) {
+    return null;
+  }
+
   return (
-    <nav className={cn("flex flex-wrap gap-3", className)} aria-label="section tabs">
+    <nav className={cn("flex flex-wrap items-center gap-6 border-b border-border", className)} aria-label="section tabs">
       {tabs.map((tab) => {
         const active = tab.exact ? pathname === tab.href : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
 
@@ -28,10 +32,10 @@ export default function RouteTabs({ tabs, className }: RouteTabsProps) {
             key={tab.href}
             href={tab.href}
             className={cn(
-              "border px-4 py-2 text-sm font-black transition-colors",
+              "border-b-2 px-1 py-2 text-sm font-medium transition-colors",
               active
-                ? "border-blue-600 bg-blue-600 text-white shadow-sm"
-                : "border-slate-200/60 bg-white/50 backdrop-blur-sm text-slate-600 hover:border-slate-300 hover:bg-white hover:text-blue-600 shadow-sm",
+                ? "border-slate-900 text-slate-900"
+                : "border-transparent text-slate-500 hover:border-slate-500 hover:text-slate-900",
             )}
           >
             {tab.label}

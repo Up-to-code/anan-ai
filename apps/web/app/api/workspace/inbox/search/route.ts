@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { searchInboxTargets } from "@/server/domains/inbox/service";
+import { searchInboxTargets } from "@/server/domains/workspace/inbox/service";
 import { toErrorResponse } from "@/server/contracts/errors";
 
 /**

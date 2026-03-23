@@ -17,6 +17,106 @@ import {
 } from "./search";
 
 type PropertyFindingCached = Infer<typeof propertyFindingValidator>;
+type CacheCandidate = {
+  query: string;
+  createdAt: number;
+  status: string;
+  propertyFindings: PropertyFindingCached[];
+};
+
+type CacheMatchContext = {
+  minFindings: number;
+  queryNorm: string;
+  queryTokens: string[];
+  queryLocation: string | null;
+};
+
+function toCandidate(record: {
+  query: string;
+  createdAt: number;
+  status: string;
+  propertyFindings: PropertyFindingCached[];
+}): CacheCandidate {
+  return {
+    query: record.query,
+    createdAt: record.createdAt,
+    status: record.status,
+    propertyFindings: record.propertyFindings,
+  };
+}
+
+function buildTierCutoffs(now: number, maxAgeMs: number | undefined) {
+  if (maxAgeMs) return [now - maxAgeMs];
+  return [now - SEARCH_CACHE_TTL_HOT_MS, now - SEARCH_CACHE_TTL_WARM_MS, now - SEARCH_CACHE_TTL_COLD_MS];
+}
+
+async function collectThreadCandidates(
+  ctx: any,
+  userId: string,
+  threadId: string,
+  cutoff: number,
+): Promise<CacheCandidate[]> {
+  const byThread = await ctx.db
+    .query("knowledgeResearch")
+    .withIndex("by_threadId_and_createdAt", (q: any) => q.eq("threadId", threadId))
+    .order("desc")
+    .take(30);
+  return byThread.flatMap((record: any) => {
+    if (record.userId !== userId || record.status !== "completed" || record.createdAt < cutoff) return [];
+    return [toCandidate(record)];
+  });
+}
+
+function candidateKey(candidate: CacheCandidate) {
+  return `${candidate.query}:${candidate.createdAt}`;
+}
+
+function appendUserCandidates(
+  candidates: CacheCandidate[],
+  byUser: Array<{
+    status: string;
+    createdAt: number;
+    threadId?: string;
+    query: string;
+    propertyFindings: PropertyFindingCached[];
+  }>,
+  cutoff: number,
+  threadId: string | undefined,
+) {
+  const seen = new Set(candidates.map(candidateKey));
+  for (const record of byUser) {
+    if (record.status !== "completed" || record.createdAt < cutoff) continue;
+    if (threadId && record.threadId !== threadId) continue;
+    const candidate = toCandidate(record);
+    const key = candidateKey(candidate);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    candidates.push(candidate);
+  }
+}
+
+function toCacheResponse(record: CacheCandidate) {
+  return {
+    query: record.query,
+    createdAt: record.createdAt,
+    propertyFindings: record.propertyFindings,
+    status: record.status,
+  };
+}
+
+function findMatchingCandidate(candidates: CacheCandidate[], context: CacheMatchContext) {
+  for (const record of candidates) {
+    if (record.propertyFindings.length < context.minFindings) continue;
+    const recordNorm = normalizeQueryForCache(record.query);
+    if (context.queryNorm === recordNorm) return toCacheResponse(record);
+    const recordTokens = tokenizeForCache(record.query);
+    if (jaccardSimilarity(context.queryTokens, recordTokens) < 0.5) continue;
+    const recordLocation = extractLocationHint(record.query);
+    if (context.queryLocation && recordLocation && context.queryLocation !== recordLocation) continue;
+    return toCacheResponse(record);
+  }
+  return null;
+}
 
 /**
  * WHY:   Search orchestration needs a dedicated cache layer separate from the live property query.
@@ -153,83 +253,28 @@ export const getCachedSearchResults = query({
   ),
   handler: async (ctx, { userId, threadId, query, limit = 3, maxAgeMs }) => {
     const now = Date.now();
-    const tierCutoffs = maxAgeMs
-      ? [now - maxAgeMs]
-      : [now - SEARCH_CACHE_TTL_HOT_MS, now - SEARCH_CACHE_TTL_WARM_MS, now - SEARCH_CACHE_TTL_COLD_MS];
-    const minFindings = Math.min(limit, 3);
-    const queryNorm = normalizeQueryForCache(query);
-    const queryTokens = tokenizeForCache(query);
-    const queryLocation = extractLocationHint(query);
+    const tierCutoffs = buildTierCutoffs(now, maxAgeMs);
+    const context: CacheMatchContext = {
+      minFindings: Math.min(limit, 3),
+      queryNorm: normalizeQueryForCache(query),
+      queryTokens: tokenizeForCache(query),
+      queryLocation: extractLocationHint(query) ?? null,
+    };
+    const byUser = await ctx.db
+      .query("knowledgeResearch")
+      .withIndex("by_userId_and_createdAt", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(50);
 
     for (const cutoff of tierCutoffs) {
-      const candidates: Array<{
-        query: string;
-        createdAt: number;
-        status: string;
-        propertyFindings: PropertyFindingCached[];
-      }> = [];
-
+      const candidates: CacheCandidate[] = [];
       if (threadId) {
-        const byThread = await ctx.db
-          .query("knowledgeResearch")
-          .withIndex("by_threadId_and_createdAt", (q) => q.eq("threadId", threadId))
-          .order("desc")
-          .take(30);
-        for (const record of byThread) {
-          if (record.userId !== userId || record.status !== "completed" || record.createdAt < cutoff) continue;
-          candidates.push({
-            query: record.query,
-            createdAt: record.createdAt,
-            status: record.status,
-            propertyFindings: record.propertyFindings,
-          });
-        }
+        candidates.push(...await collectThreadCandidates(ctx, userId, threadId, cutoff));
       }
-
-      const byUser = await ctx.db
-        .query("knowledgeResearch")
-        .withIndex("by_userId_and_createdAt", (q) => q.eq("userId", userId))
-        .order("desc")
-        .take(50);
-
-      for (const record of byUser) {
-        if (record.status !== "completed" || record.createdAt < cutoff) continue;
-        if (threadId && record.threadId !== threadId) continue;
-        if (candidates.some((candidate) => candidate.query === record.query && candidate.createdAt === record.createdAt)) {
-          continue;
-        }
-        candidates.push({
-          query: record.query,
-          createdAt: record.createdAt,
-          status: record.status,
-          propertyFindings: record.propertyFindings,
-        });
-      }
-
+      appendUserCandidates(candidates, byUser, cutoff, threadId);
       candidates.sort((left, right) => right.createdAt - left.createdAt);
-
-      for (const record of candidates) {
-        if (record.propertyFindings.length < minFindings) continue;
-        const recordNorm = normalizeQueryForCache(record.query);
-        if (queryNorm === recordNorm) {
-          return {
-            query: record.query,
-            createdAt: record.createdAt,
-            propertyFindings: record.propertyFindings,
-            status: record.status,
-          };
-        }
-        const recordTokens = tokenizeForCache(record.query);
-        if (jaccardSimilarity(queryTokens, recordTokens) < 0.5) continue;
-        const recordLocation = extractLocationHint(record.query);
-        if (queryLocation && recordLocation && queryLocation !== recordLocation) continue;
-        return {
-          query: record.query,
-          createdAt: record.createdAt,
-          propertyFindings: record.propertyFindings,
-          status: record.status,
-        };
-      }
+      const match = findMatchingCandidate(candidates, context);
+      if (match) return match;
     }
 
     return null;

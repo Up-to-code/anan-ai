@@ -1,4 +1,4 @@
-import { markInboxConversationRead } from "@/server/domains/inbox/service";
+import { markInboxConversationRead } from "@/server/domains/workspace/inbox/service";
 import { markConversationReadInputSchema } from "@/server/contracts/inbox";
 import { DomainError, toErrorResponse } from "@/server/contracts/errors";
 import { toInvalidJsonResponse } from "@/app/api/_shared/errors";

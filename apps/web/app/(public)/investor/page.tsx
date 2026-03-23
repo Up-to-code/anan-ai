@@ -1,5 +1,4 @@
-import PageHero from "@/components/shared/PageHero";
-import Section from "@/components/shared/Section";
+import { PageHero, Section } from "@/app/(public)/public";
 
 export default function InvestorPage() {
     return (

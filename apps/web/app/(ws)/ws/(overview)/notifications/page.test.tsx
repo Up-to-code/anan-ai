@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import WorkspaceNotificationsPage from "./page";
 
-vi.mock("@/server/domains/notifications/service", () => ({
+vi.mock("@/server/domains/workspace/notifications/service", () => ({
   listWorkspaceNotifications: vi.fn(async () => ([
     {
       id: "notif-1",

@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ProjectFormData } from "@/components/shared/ag-aui/AgPropertyForm";
+import { beforeEach, expect, it, vi } from "vitest";
+import type { ProjectFormData } from "@/app/(ws)/ws/public";
 
 const {
   createProperty,
@@ -43,53 +43,48 @@ vi.mock("../ProjectFormScreen", () => ({
 
 import CreateProjectPage from "./page";
 
-describe("/ws/projects/create page", () => {
-  beforeEach(() => {
-    createProperty.mockClear();
-    publishProperty.mockClear();
-    setCapturedProps(null);
-  });
+const uploadedImage = {
+  key: "file-1",
+  url: "https://ufs.sh/f/file-1",
+  name: "cover.jpg",
+  size: 1200,
+  mime: "image/jpeg",
+};
 
-  it("saves uploaded images as media and publishes when status is active", async () => {
-    const element = await CreateProjectPage();
-    const markup = renderToStaticMarkup(element);
+const formInput: ProjectFormData = {
+  name: "مشروع تجريبي",
+  price: "3,200,000 ر.س",
+  location: "الرياض",
+  description: "تفاصيل المشروع",
+  rooms: "4",
+  baths: "5",
+  area: "380",
+  status: "active",
+  images: [uploadedImage],
+  video: null,
+  brokerId: null,
+  adLicenseNumber: "AD-001",
+  adLicenseStatus: null,
+};
 
-    expect(markup).toContain("ProjectFormScreenMock");
+beforeEach(() => {
+  createProperty.mockClear();
+  publishProperty.mockClear();
+  setCapturedProps(null);
+});
 
-    const props = getCapturedProps() as {
-      onSave: (data: ProjectFormData) => Promise<{ redirectTo: string }>;
-    };
+it("saves uploaded images as media and publishes when status is active", async () => {
+  const element = await CreateProjectPage();
+  const markup = renderToStaticMarkup(element);
 
-    const uploadedImage = {
-      key: "file-1",
-      url: "https://ufs.sh/f/file-1",
-      name: "cover.jpg",
-      size: 1200,
-      mime: "image/jpeg",
-    };
+  expect(markup).toContain("ProjectFormScreenMock");
 
-    const result = await props.onSave({
-      name: "مشروع تجريبي",
-      price: "3,200,000 ر.س",
-      location: "الرياض",
-      description: "تفاصيل المشروع",
-      rooms: "4",
-      baths: "5",
-      area: "380",
-      status: "active",
-      images: [uploadedImage],
-      video: null,
-      brokerId: null,
-      adLicenseNumber: "AD-001",
-      adLicenseStatus: null,
-    });
+  const props = getCapturedProps() as {
+    onSave: (data: ProjectFormData) => Promise<{ redirectTo: string }>;
+  };
+  const result = await props.onSave(formInput);
 
-    expect(result).toEqual({ redirectTo: "/ws/projects/property-new" });
-    expect(createProperty).toHaveBeenCalledWith(
-      expect.objectContaining({
-        media: [uploadedImage],
-      }),
-    );
-    expect(publishProperty).toHaveBeenCalledWith({ id: "property-new" });
-  });
+  expect(result).toEqual({ redirectTo: "/ws/projects/property-new" });
+  expect(createProperty).toHaveBeenCalledWith(expect.objectContaining({ media: [uploadedImage] }));
+  expect(publishProperty).toHaveBeenCalledWith({ id: "property-new" });
 });

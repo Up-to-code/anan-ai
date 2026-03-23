@@ -1,8 +1,3 @@
-/**
- * WHY:   The workspace notifications page needs one reusable visual alert card with relationship context.
- * WHAT:  Renders a notification item with severity styling, related entity labels, and action text.
- * HOW:   Uses a small severity-to-style mapping and plain display props so server pages can render the feed directly.
- */
 export default function NotificationCard({
   title,
   summary,

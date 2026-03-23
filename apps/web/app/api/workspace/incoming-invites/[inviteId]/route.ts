@@ -1,5 +1,5 @@
 import { toErrorResponse } from "@/server/contracts/errors";
-import { cancelIncomingOrganizationInvite } from "@/server/domains/organizations/service";
+import { cancelIncomingOrganizationInvite } from "@/server/domains/auth/organizations/service";
 
 type IncomingInviteRouteProps = {
   params: Promise<{ inviteId: string }>;

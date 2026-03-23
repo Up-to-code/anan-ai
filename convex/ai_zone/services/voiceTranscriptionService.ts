@@ -1,7 +1,7 @@
 import { ConvexError } from "convex/values";
 import type { Id } from "../../_generated/dataModel";
 import type { ActionCtx } from "../../_generated/server";
-import { apiRefs } from "../../shared_logic/lib/generatedApiRefs";
+import { api } from "../../_generated/api";
 
 const ASSEMBLYAI_BASE_URL = "https://api.assemblyai.com";
 const POLL_INTERVAL_MS = 1_500;
@@ -34,26 +34,18 @@ async function sleep(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * WHY:   Voice-note transcription needs one shared service to keep external API logic out of controllers.
- * WHAT:  Uploads a stored audio URL to AssemblyAI and polls until transcript completion.
- * HOW:   Requires an authenticated workspace context, then calls AssemblyAI async transcript endpoints with bounded polling.
- */
-export async function transcribeStoredVoiceNote(
-  ctx: ActionCtx,
-  storageId: Id<"_storage">,
-): Promise<{ text: string; languageCode?: string }> {
-  await ctx.runQuery(apiRefs["ai_zone/assistantWorkspace"].getThread, {});
-
-  const storageUrl = await ctx.runQuery(apiRefs["shared_logic/lib/storage"].getUrl, { storageId });
+async function resolveVoiceStorageUrl(ctx: ActionCtx, storageId: Id<"_storage">) {
+  const storageUrl = await ctx.runQuery(api.shared_logic.lib.storage.getUrl, { storageId });
   if (!storageUrl) {
     throw new ConvexError({
       code: "NOT_FOUND",
       message: "Voice upload was not found.",
     });
   }
+  return storageUrl;
+}
 
-  const apiKey = getAssemblyAiApiKey();
+async function createTranscript(apiKey: string, storageUrl: string) {
   const createResponse = await fetch(`${ASSEMBLYAI_BASE_URL}/v2/transcript`, {
     method: "POST",
     headers: {
@@ -66,54 +58,67 @@ export async function transcribeStoredVoiceNote(
       speech_models: ["universal-3-pro", "universal-2"],
     }),
   });
-
-  const createPayload = (await createResponse.json().catch(() => null)) as AssemblyAiCreateTranscriptResponse | null;
-  if (!createResponse.ok || !createPayload?.id) {
+  const payload = (await createResponse.json().catch(() => null)) as AssemblyAiCreateTranscriptResponse | null;
+  if (!createResponse.ok || !payload?.id) {
     throw new ConvexError({
       code: "INTERNAL_ERROR",
-      message: createPayload?.error || "Failed to submit voice transcription request.",
+      message: payload?.error || "Failed to submit voice transcription request.",
     });
   }
+  return payload.id;
+}
 
-  const transcriptId = createPayload.id;
+function resolveCompletedTranscript(payload: AssemblyAiTranscriptStatusResponse | null) {
+  if (payload?.status !== "completed") return null;
+  const text = payload.text?.trim();
+  if (!text) {
+    throw new ConvexError({
+      code: "INTERNAL_ERROR",
+      message: "Voice transcript completed with empty text.",
+    });
+  }
+  return { text, languageCode: payload.language_code };
+}
+
+function assertTranscriptNotErrored(payload: AssemblyAiTranscriptStatusResponse | null) {
+  if (payload?.status === "error") {
+    throw new ConvexError({
+      code: "INTERNAL_ERROR",
+      message: payload.error || "Voice transcription failed.",
+    });
+  }
+}
+
+async function pollTranscriptResult(apiKey: string, transcriptId: string) {
   for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt += 1) {
     await sleep(POLL_INTERVAL_MS);
     const pollResponse = await fetch(`${ASSEMBLYAI_BASE_URL}/v2/transcript/${encodeURIComponent(transcriptId)}`, {
-      headers: {
-        Authorization: apiKey,
-      },
+      headers: { Authorization: apiKey },
     });
-
-    const pollPayload = (await pollResponse.json().catch(() => null)) as AssemblyAiTranscriptStatusResponse | null;
-    if (!pollResponse.ok || !pollPayload?.status) {
-      continue;
-    }
-
-    if (pollPayload.status === "completed") {
-      const text = pollPayload.text?.trim();
-      if (!text) {
-        throw new ConvexError({
-          code: "INTERNAL_ERROR",
-          message: "Voice transcript completed with empty text.",
-        });
-      }
-
-      return {
-        text,
-        languageCode: pollPayload.language_code,
-      };
-    }
-
-    if (pollPayload.status === "error") {
-      throw new ConvexError({
-        code: "INTERNAL_ERROR",
-        message: pollPayload.error || "Voice transcription failed.",
-      });
-    }
+    const payload = (await pollResponse.json().catch(() => null)) as AssemblyAiTranscriptStatusResponse | null;
+    if (!pollResponse.ok || !payload?.status) continue;
+    const completed = resolveCompletedTranscript(payload);
+    if (completed) return completed;
+    assertTranscriptNotErrored(payload);
   }
-
   throw new ConvexError({
     code: "INTERNAL_ERROR",
     message: "Voice transcription timed out.",
   });
+}
+
+/**
+ * WHY:   Voice-note transcription needs one shared service to keep external API logic out of controllers.
+ * WHAT:  Uploads a stored audio URL to AssemblyAI and polls until transcript completion.
+ * HOW:   Requires an authenticated workspace context, then calls AssemblyAI async transcript endpoints with bounded polling.
+ */
+export async function transcribeStoredVoiceNote(
+  ctx: ActionCtx,
+  storageId: Id<"_storage">,
+): Promise<{ text: string; languageCode?: string }> {
+  await ctx.runQuery(api.ai_zone.assistantWorkspace.getThread, {});
+  const storageUrl = await resolveVoiceStorageUrl(ctx, storageId);
+  const apiKey = getAssemblyAiApiKey();
+  const transcriptId = await createTranscript(apiKey, storageUrl);
+  return pollTranscriptResult(apiKey, transcriptId);
 }

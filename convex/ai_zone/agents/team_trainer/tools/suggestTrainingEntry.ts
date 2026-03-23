@@ -9,7 +9,7 @@ import { tool, zodSchema } from "ai";
 import type { Tool } from "ai";
 import { z } from "zod";
 import type { ActionCtx } from "../../../../_generated/server";
-import { internalRefs } from "../../../../shared_logic/lib/generatedApiRefs";
+import { internal } from "../../../../_generated/api";
 import type { AgentRuntimeContext } from "../../types";
 import { addToRecommendationRAG } from "../../shared/ragInstances";
 
@@ -25,7 +25,7 @@ export function suggestTrainingEntry(ctx: ActionCtx, _runtime: AgentRuntimeConte
     execute: async ({ title, content, category, target }): Promise<unknown> => {
       const ragTarget = target ?? "all";
       const entryId = (await ctx.runMutation(
-        internalRefs["ai_zone/agents/shared/ragActions"].createRagEntryInternal,
+        internal.ai_zone.agents.shared.ragActions.createRagEntryInternal,
         {
           ragType: "recommendation",
           title,

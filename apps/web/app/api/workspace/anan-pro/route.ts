@@ -2,13 +2,14 @@ import { NextRequest } from "next/server";
 import {
   cancelAnanProStreamSession,
   getAnanProThread,
-  listAnanProStreamEvents,
   listAnanProThreads,
   sendAnanProMessage,
-} from "@/server/domains/ananPro/service";
+} from "@/server/domains/workspace/ananPro/service";
 import { sendAnanProMessageInputSchema } from "@/server/contracts/ananPro";
 import { DomainError, toErrorResponse } from "@/server/contracts/errors";
 import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
+import { parseThreadListLimit, shouldListThreads } from "./route.helpers";
+import { createAnanProMessageStream } from "./route.stream";
 
 /**
  * WHY:   The workspace assistant view needs one gateway endpoint for listing or loading Anan Workspace threads.
@@ -18,14 +19,8 @@ import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
 export async function GET(request: NextRequest) {
   try {
     const threadId = request.nextUrl.searchParams.get("threadId") ?? undefined;
-    const list = request.nextUrl.searchParams.get("list");
-    if (list === "threads") {
-      const limitParam = request.nextUrl.searchParams.get("limit");
-      const parsedLimit = limitParam ? Number(limitParam) : NaN;
-      const limit = Number.isFinite(parsedLimit) && parsedLimit > 0
-        ? Math.min(Math.floor(parsedLimit), 50)
-        : 12;
-
+    if (shouldListThreads(request)) {
+      const limit = parseThreadListLimit(request);
       return Response.json(await listAnanProThreads(limit), {
         headers: {
           "Cache-Control": "private, max-age=15",
@@ -36,15 +31,6 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return toErrorResponse(error);
   }
-}
-
-function serializeSseEvent(event: string, payload: unknown) {
-  const data = JSON.stringify(payload);
-  return `event: ${event}\ndata: ${data}\n\n`;
-}
-
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -66,194 +52,7 @@ export async function POST(request: NextRequest) {
 
     const streamMode = request.nextUrl.searchParams.get("stream") === "1";
     if (streamMode) {
-      const encoder = new TextEncoder();
-      const stream = new ReadableStream<Uint8Array>({
-        async start(controller) {
-          try {
-            const streamSessionId = parsed.data.streamSessionId ?? crypto.randomUUID();
-            const sendPromise = sendAnanProMessage({
-              ...parsed.data,
-              streamSessionId,
-            });
-            let afterSeq = 0;
-            let emittedThread = false;
-            let emittedAssistantMeta = false;
-
-            while (true) {
-              const events = await listAnanProStreamEvents({
-                sessionId: streamSessionId,
-                afterSeq,
-                limit: 64,
-              });
-
-              for (const event of events) {
-                afterSeq = Math.max(afterSeq, event.seq);
-                if (event.eventType === "stage" && event.phase) {
-                  controller.enqueue(encoder.encode(serializeSseEvent("meta", {
-                    type: "stage",
-                    stage: {
-                      seq: event.seq,
-                      phase: event.phase,
-                      status: event.status,
-                      teamId: event.teamId,
-                      agentName: event.agentName,
-                      details: event.details,
-                      timestamp: event.timestamp,
-                    },
-                  })));
-                  continue;
-                }
-
-                if (event.eventType === "delta") {
-                  controller.enqueue(encoder.encode(serializeSseEvent("delta", {
-                    text: event.delta ?? "",
-                  })));
-                  continue;
-                }
-
-                if (event.eventType === "thread" && event.threadId) {
-                  emittedThread = true;
-                  controller.enqueue(encoder.encode(serializeSseEvent("thread", {
-                    threadId: event.threadId,
-                    title: event.title ?? null,
-                  })));
-                  continue;
-                }
-
-                if (event.eventType === "assistant_meta") {
-                  emittedAssistantMeta = true;
-                  controller.enqueue(encoder.encode(serializeSseEvent("meta", {
-                    type: "assistant_meta",
-                    meta: event.meta,
-                  })));
-                  continue;
-                }
-
-                if (event.eventType === "lifecycle") {
-                  controller.enqueue(encoder.encode(serializeSseEvent("meta", {
-                    type: "lifecycle",
-                    lifecycle: {
-                      sessionId: streamSessionId,
-                      status: event.status,
-                      details: event.details,
-                      timestamp: event.timestamp,
-                    },
-                  })));
-                  continue;
-                }
-
-                if (event.eventType === "error") {
-                  controller.enqueue(encoder.encode(serializeSseEvent("error", {
-                    code: event.code ?? "INTERNAL_SERVER_ERROR",
-                    message: event.message ?? "تعذر إرسال الرسالة.",
-                    status: 500,
-                  })));
-                }
-              }
-
-              const settled = await Promise.race([
-                sendPromise.then((thread) => ({ done: true as const, thread })),
-                delay(170).then(() => ({ done: false as const })),
-              ]);
-
-              if (settled.done) {
-                const thread = settled.thread;
-                const trailing = await listAnanProStreamEvents({
-                  sessionId: streamSessionId,
-                  afterSeq,
-                  limit: 128,
-                });
-                for (const event of trailing) {
-                  afterSeq = Math.max(afterSeq, event.seq);
-                  if (event.eventType === "stage" && event.phase) {
-                    controller.enqueue(encoder.encode(serializeSseEvent("meta", {
-                      type: "stage",
-                      stage: {
-                        seq: event.seq,
-                        phase: event.phase,
-                        status: event.status,
-                        teamId: event.teamId,
-                        agentName: event.agentName,
-                        details: event.details,
-                        timestamp: event.timestamp,
-                      },
-                    })));
-                    continue;
-                  }
-                  if (event.eventType === "delta") {
-                    controller.enqueue(encoder.encode(serializeSseEvent("delta", {
-                      text: event.delta ?? "",
-                    })));
-                    continue;
-                  }
-                  if (event.eventType === "thread" && event.threadId) {
-                    emittedThread = true;
-                    controller.enqueue(encoder.encode(serializeSseEvent("thread", {
-                      threadId: event.threadId,
-                      title: event.title ?? null,
-                    })));
-                    continue;
-                  }
-                  if (event.eventType === "assistant_meta") {
-                    emittedAssistantMeta = true;
-                    controller.enqueue(encoder.encode(serializeSseEvent("meta", {
-                      type: "assistant_meta",
-                      meta: event.meta,
-                    })));
-                    continue;
-                  }
-                  if (event.eventType === "lifecycle") {
-                    controller.enqueue(encoder.encode(serializeSseEvent("meta", {
-                      type: "lifecycle",
-                      lifecycle: {
-                        sessionId: streamSessionId,
-                        status: event.status,
-                        details: event.details,
-                        timestamp: event.timestamp,
-                      },
-                    })));
-                    continue;
-                  }
-                  if (event.eventType === "error") {
-                    controller.enqueue(encoder.encode(serializeSseEvent("error", {
-                      code: event.code ?? "INTERNAL_SERVER_ERROR",
-                      message: event.message ?? "تعذر إرسال الرسالة.",
-                      status: 500,
-                    })));
-                  }
-                }
-
-                const assistantMessage = [...thread.messages].reverse().find((message) => message.role === "assistant");
-                if (!emittedThread) {
-                  controller.enqueue(encoder.encode(serializeSseEvent("thread", {
-                    threadId: thread.id,
-                    title: thread.title ?? null,
-                  })));
-                }
-
-                if (!emittedAssistantMeta && assistantMessage?.meta) {
-                  controller.enqueue(encoder.encode(serializeSseEvent("meta", {
-                    type: "assistant_meta",
-                    meta: assistantMessage.meta,
-                  })));
-                }
-
-                controller.enqueue(encoder.encode(serializeSseEvent("done", { thread })));
-                break;
-              }
-            }
-          } catch (error) {
-            const normalized = error instanceof DomainError
-              ? { code: error.code, message: error.message, status: error.status }
-              : { code: "INTERNAL_SERVER_ERROR", message: "تعذر إرسال الرسالة.", status: 500 };
-            controller.enqueue(encoder.encode(serializeSseEvent("error", normalized)));
-          } finally {
-            controller.close();
-          }
-        },
-      });
-
-      return new Response(stream, {
+      return new Response(createAnanProMessageStream(parsed.data), {
         headers: {
           "Content-Type": "text/event-stream; charset=utf-8",
           "Cache-Control": "no-cache, no-transform",

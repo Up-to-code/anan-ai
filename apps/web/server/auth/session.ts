@@ -28,40 +28,36 @@ const defaultDependencies: SessionDependencies = {
   profilesRepository: convexProfilesRepository,
 };
 
-async function resolveOptionalSessionContext(
+async function getUserAndProfile(
   dependencies: SessionDependencies,
-): Promise<ResolvedSession | null> {
-  const token = await dependencies.getToken();
-  if (!token) {
-    return null;
-  }
-
-  let user: Awaited<ReturnType<SessionsRepository["getCurrent"]>>;
-  let profile: Awaited<ReturnType<ProfilesRepository["getCurrent"]>>;
+  token: string,
+): Promise<{
+  user: Awaited<ReturnType<SessionsRepository["getCurrent"]>>;
+  profile: Awaited<ReturnType<ProfilesRepository["getCurrent"]>>;
+}> {
   try {
-    [user, profile] = await Promise.all([
+    const [user, profile] = await Promise.all([
       dependencies.sessionsRepository.getCurrent(token),
       dependencies.profilesRepository.getCurrent(token),
     ]);
+    return { user, profile };
   } catch (error) {
-    if (isNoAuthProviderError(error)) {
-      if (isClearlyExpiredJwtToken(token)) {
-        return null;
-      }
-      throw new DomainError({
-        code: "AUTH_CONFIGURATION_ERROR",
-        message:
-          "Active session token could not be matched to an auth provider. Verify CONVEX_SITE_URL issuer alignment.",
-        status: 503,
-      });
+    if (!isNoAuthProviderError(error)) {
+      throw error;
     }
-    throw error;
+    if (isClearlyExpiredJwtToken(token)) {
+      return { user: null, profile: null };
+    }
+    throw new DomainError({
+      code: "AUTH_CONFIGURATION_ERROR",
+      message:
+        "Active session token could not be matched to an auth provider. Verify CONVEX_SITE_URL issuer alignment.",
+      status: 503,
+    });
   }
+}
 
-  if (!user || user.isActive === false) {
-    return null;
-  }
-
+function buildResolvedSession(token: string, user: NonNullable<Awaited<ReturnType<SessionsRepository["getCurrent"]>>>, profile: Awaited<ReturnType<ProfilesRepository["getCurrent"]>>) {
   return {
     token,
     profile,
@@ -77,6 +73,23 @@ async function resolveOptionalSessionContext(
       isActive: user.isActive,
     },
   };
+}
+
+async function resolveOptionalSessionContext(
+  dependencies: SessionDependencies,
+): Promise<ResolvedSession | null> {
+  const token = await dependencies.getToken();
+  if (!token) {
+    return null;
+  }
+
+  const { user, profile } = await getUserAndProfile(dependencies, token);
+
+  if (!user || user.isActive === false) {
+    return null;
+  }
+
+  return buildResolvedSession(token, user, profile);
 }
 
 const getOptionalSessionContextCached = cache(async () => resolveOptionalSessionContext(defaultDependencies));

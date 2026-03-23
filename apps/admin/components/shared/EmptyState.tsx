@@ -7,15 +7,15 @@ type EmptyStateProps = {
 };
 
 /**
- * WHY:   Admin pages need one consistent empty-state treatment across tables, feeds, and detail panels.
- * WHAT:  Renders a minimal institutional empty state with a title and description.
- * HOW:   Uses the shared token palette and border treatment from the admin design system.
+ * WHY:   Empty admin states should stay calm and informative without adding decorative filler.
+ * WHAT:  Renders a dashed empty-state panel with a title and description.
+ * HOW:   Reuses the rebuilt neutral palette and centered text treatment across pages.
  */
 export default function EmptyState({ title, description, className }: EmptyStateProps) {
   return (
-    <div className={cn("border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center", className)}>
-      <div className="text-sm font-black uppercase tracking-widest text-slate-500">{title}</div>
-      <p className="mt-3 text-sm font-semibold leading-relaxed text-slate-600">{description}</p>
+    <div className={cn("rounded-[8px] border border-dashed border-border bg-slate-50 p-8 text-center", className)}>
+      <div className="text-base font-medium text-slate-900">{title}</div>
+      <p className="mt-2 text-sm leading-7 text-slate-600">{description}</p>
     </div>
   );
 }

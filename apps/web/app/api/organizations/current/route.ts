@@ -1,5 +1,5 @@
 import { toErrorResponse } from "@/server/contracts/errors";
-import { updateCurrentOrganizationForCurrentUser } from "@/server/domains/organizations/service";
+import { updateCurrentOrganizationForCurrentUser } from "@/server/domains/auth/organizations/service";
 import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
 
 /**

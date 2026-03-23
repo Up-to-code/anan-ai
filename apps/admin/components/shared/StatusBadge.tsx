@@ -7,24 +7,37 @@ type StatusBadgeProps = {
 };
 
 const toneByValue: Record<string, string> = {
-  available: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  sold: "border-slate-200 bg-slate-100 text-slate-700",
-  reserved: "border-amber-200 bg-amber-50 text-amber-700",
-  new_lead: "border-blue-200 bg-blue-50 text-blue-700",
-  contacted: "border-sky-200 bg-sky-50 text-sky-700",
-  qualified: "border-indigo-200 bg-indigo-50 text-indigo-700",
-  offer_made: "border-violet-200 bg-violet-50 text-violet-700",
-  under_contract: "border-orange-200 bg-orange-50 text-orange-700",
-  closed_won: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  closed_lost: "border-rose-200 bg-rose-50 text-rose-700",
-  failed: "border-rose-200 bg-rose-50 text-rose-700",
-  success: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  available: "border-emerald-300 bg-emerald-50 text-emerald-800",
+  sold: "border-border bg-zinc-100 text-zinc-700",
+  reserved: "border-amber-300 bg-amber-50 text-amber-800",
+  new_lead: "border-sky-300 bg-sky-50 text-sky-800",
+  contacted: "border-cyan-300 bg-cyan-50 text-cyan-800",
+  qualified: "border-indigo-300 bg-indigo-50 text-indigo-800",
+  offer_made: "border-violet-300 bg-violet-50 text-violet-800",
+  under_contract: "border-orange-300 bg-orange-50 text-orange-800",
+  closed_won: "border-emerald-300 bg-emerald-50 text-emerald-800",
+  closed_lost: "border-rose-300 bg-rose-50 text-rose-800",
+  failed: "border-rose-300 bg-rose-50 text-rose-800",
+  success: "border-emerald-300 bg-emerald-50 text-emerald-800",
+  active: "border-emerald-300 bg-emerald-50 text-emerald-800",
+  inactive: "border-border bg-zinc-100 text-zinc-700",
+  approved: "border-emerald-300 bg-emerald-50 text-emerald-800",
+  accepted: "border-emerald-300 bg-emerald-50 text-emerald-800",
+  rejected: "border-rose-300 bg-rose-50 text-rose-800",
+  pending: "border-border bg-zinc-100 text-zinc-700",
+  draft: "border-border bg-zinc-100 text-zinc-700",
+  published: "border-sky-300 bg-sky-50 text-sky-800",
+  complete: "border-emerald-300 bg-emerald-50 text-emerald-800",
+  missing_document: "border-rose-300 bg-rose-50 text-rose-800",
+  pending_review: "border-amber-300 bg-amber-50 text-amber-800",
+  in_review: "border-amber-300 bg-amber-50 text-amber-800",
+  new: "border-sky-300 bg-sky-50 text-sky-800",
 };
 
 /**
- * WHY:   Status values appear across the admin console and need one quick, readable visual treatment.
- * WHAT:  Renders a bordered uppercase status chip using the institutional palette.
- * HOW:   Maps known statuses to tones and falls back to a neutral appearance for unknown values.
+ * WHY:   Status values appear across the admin console and still need a shared visual treatment after the redesign.
+ * WHAT:  Renders a compact status tag with the rebuilt neutral palette and mapped status label.
+ * HOW:   Applies a tone for known values and falls back to a muted default for unknown states.
  */
 export default function StatusBadge({ value, className }: StatusBadgeProps) {
   const normalized = value?.trim() || "unknown";
@@ -32,8 +45,8 @@ export default function StatusBadge({ value, className }: StatusBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex border px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em]",
-        toneByValue[normalized] ?? "border-slate-200 bg-slate-50 text-slate-600",
+        "inline-flex rounded-[8px] border px-2.5 py-1 text-xs font-medium",
+        toneByValue[normalized] ?? "border-border bg-zinc-100 text-zinc-700",
         className,
       )}
     >

@@ -36,7 +36,7 @@ export default async function SigninPage({ searchParams }: SigninPageProps) {
       }
     })(),
   ]);
-  const redirectTo = sanitizeInternalReturnTo(returnTo, "/dashboard");
+  const redirectTo = sanitizeInternalReturnTo(returnTo, "/overview");
 
   if (session.token && session.role === "admin") {
     redirect(redirectTo);

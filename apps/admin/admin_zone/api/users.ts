@@ -2,6 +2,27 @@ import { requireAdminSession } from "@/server/auth/guards";
 import { requireAdminPageSession } from "@/lib/serverSession";
 import { convexAdminUsersRepository } from "@/server/infrastructure/convex/adminUsersRepository";
 
+async function listUsersByTab(args: {
+  paginationOpts: { numItems: number; cursor: string | null };
+  role?: "admin" | "broker" | "developer" | "user" | "RED";
+  tab: "users" | "profiles" | "memberships" | "verification";
+  token: string;
+}) {
+  if (args.tab === "profiles") {
+    return convexAdminUsersRepository.listAdminProfiles(args.token, { paginationOpts: args.paginationOpts });
+  }
+  if (args.tab === "memberships") {
+    return convexAdminUsersRepository.listAdminMemberships(args.token, { paginationOpts: args.paginationOpts });
+  }
+  if (args.tab === "verification") {
+    return convexAdminUsersRepository.listAdminUserVerification(args.token, { paginationOpts: args.paginationOpts });
+  }
+  return convexAdminUsersRepository.listAdminUsers(args.token, {
+    paginationOpts: args.paginationOpts,
+    role: args.role,
+  });
+}
+
 /**
  * WHY:   Admin pages should not repeat session resolution and token plumbing for user management.
  * WHAT:  Exposes server-side readers and writers for the users list and detail screens.
@@ -19,17 +40,12 @@ export async function getAdminUsersPageData(input: {
     cursor: input.cursor ?? null,
   };
   const tab = input.tab ?? "users";
-  const users =
-    tab === "profiles"
-      ? await convexAdminUsersRepository.listAdminProfiles(session.token, { paginationOpts })
-      : tab === "memberships"
-        ? await convexAdminUsersRepository.listAdminMemberships(session.token, { paginationOpts })
-        : tab === "verification"
-          ? await convexAdminUsersRepository.listAdminUserVerification(session.token, { paginationOpts })
-          : await convexAdminUsersRepository.listAdminUsers(session.token, {
-              paginationOpts,
-              role: input.role,
-            });
+  const users = await listUsersByTab({
+    token: session.token,
+    tab,
+    paginationOpts,
+    role: input.role,
+  });
 
   return { session, tab, users };
 }

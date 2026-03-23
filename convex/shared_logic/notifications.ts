@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "../_generated/server";
 import type { Doc, Id } from "../_generated/dataModel";
-import { internalRefs } from "./lib/generatedApiRefs";
+import { internal } from "../_generated/api";
 import { requireSession } from "../_core/security/accessPolicy";
 import { enforceHttpRateLimit } from "./lib/middleware/rateLimit";
 
@@ -48,7 +48,7 @@ export async function createWorkspaceNotification(
 
   await ctx.scheduler.runAfter(
     0,
-    internalRefs["shared_logic/workspaceWorkflows"].startNotificationWorkflow,
+    internal.shared_logic.workspaceWorkflows.startNotificationWorkflow,
     { notificationId },
   );
 

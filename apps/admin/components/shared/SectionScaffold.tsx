@@ -7,21 +7,22 @@ type SectionScaffoldProps = {
   eyebrow: string;
   title: string;
   description: ReactNode;
-  tabs: RouteTab[];
+  tabs?: RouteTab[];
+  actions?: ReactNode;
   children: ReactNode;
 };
 
 /**
- * WHY:   The Arabic redesign needs a consistent section frame above every tabbed workspace.
- * WHAT:  Renders the page header, route-backed tabs, and page body for a section.
- * HOW:   Composes the shared header and tab primitives once so route files stay thin.
+ * WHY:   Many admin route groups still need a consistent frame for title, optional tabs, and body content.
+ * WHAT:  Composes the section header, secondary tabs, and page body.
+ * HOW:   Treats tabs as optional so simple sections can render without empty tab chrome.
  */
-export default function SectionScaffold({ eyebrow, title, description, tabs, children }: SectionScaffoldProps) {
+export default function SectionScaffold({ eyebrow, title, description, tabs, actions, children }: SectionScaffoldProps) {
   return (
-    <div className="space-y-8">
-      <PageHeader eyebrow={eyebrow} title={title} description={description} />
-      <RouteTabs tabs={tabs} />
-      <div className="space-y-6">{children}</div>
+    <div className="space-y-4">
+      <PageHeader eyebrow={eyebrow} title={title} description={description} actions={actions} />
+      {tabs && tabs.length > 0 ? <RouteTabs tabs={tabs} /> : null}
+      <div className="space-y-4">{children}</div>
     </div>
   );
 }

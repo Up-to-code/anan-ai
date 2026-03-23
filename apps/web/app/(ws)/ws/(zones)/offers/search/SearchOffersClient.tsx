@@ -3,25 +3,137 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { OfferMarketplaceItem } from "../offerTypes";
-import { Search, SlidersHorizontal, MapPin, Home } from "lucide-react";
+import { Search, SlidersHorizontal, MapPin, Home, Eye } from "lucide-react";
+
+export type SearchOfferFilters = {
+  searchQuery: string;
+  filterCity: string;
+  filterType: string;
+  filterKind: "الكل" | OfferMarketplaceItem["kind"];
+};
+
+function avatarLabel(name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) return "؟";
+  return [...trimmed].slice(0, 1).join("").toUpperCase();
+}
+
+function kindLabel(kind: OfferMarketplaceItem["kind"]) {
+  if (kind === "developer") return "مطور";
+  if (kind === "broker") return "وسيط";
+  if (kind === "inbox") return "ربط";
+  return "عميل";
+}
+
+function ownerTypeLabel(kind: OfferMarketplaceItem["kind"]) {
+  if (kind === "broker") return "وسيط";
+  if (kind === "developer") return "شركة تطوير";
+  return "جهة العرض";
+}
+
+function SearchOfferOwner({ item }: { item: OfferMarketplaceItem }) {
+  return (
+    <div className="mt-3 flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2">
+      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-700">
+        {avatarLabel(item.ownerLabel)}
+      </div>
+      <div className="min-w-0">
+        <div className="truncate text-sm font-medium text-slate-800">{item.ownerLabel}</div>
+        <div className="text-xs text-slate-500">{ownerTypeLabel(item.kind)}</div>
+      </div>
+    </div>
+  );
+}
+
+function SearchOfferMeta({ item }: { item: OfferMarketplaceItem }) {
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+      <div className="rounded-md border border-slate-200 bg-white p-2">
+        <div className="text-xs text-slate-500">السعر</div>
+        <div className="mt-1 font-semibold text-slate-900">{item.priceLabel}</div>
+      </div>
+      <div className="rounded-md border border-slate-200 bg-white p-2">
+        <div className="text-xs text-slate-500">نوع العرض</div>
+        <div className="mt-1 font-semibold text-slate-900">{item.propertyType}</div>
+      </div>
+    </div>
+  );
+}
+
+function SearchOfferFooter({ item }: { item: OfferMarketplaceItem }) {
+  return (
+    <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+      <div className="inline-flex items-center gap-1">
+        <MapPin className="h-3.5 w-3.5" />
+        <span className="truncate">{item.location}</span>
+      </div>
+      <Link
+        href={`/ws/offers/${item.id}`}
+        className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+      >
+        <Eye className="h-3.5 w-3.5" />
+        استعراض
+      </Link>
+    </div>
+  );
+}
+
+function SearchOfferCard({ item }: { item: OfferMarketplaceItem }) {
+  return (
+    <article className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <Link href={`/ws/offers/${item.id}`} className="block">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={item.image} alt={item.title} className="h-40 w-full object-cover" />
+      </Link>
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2">
+          <Link href={`/ws/offers/${item.id}`} className="line-clamp-2 text-base font-semibold text-slate-900 hover:text-slate-700">
+            {item.title}
+          </Link>
+          <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600">
+            {kindLabel(item.kind)}
+          </span>
+        </div>
+
+        <p className="mt-2 line-clamp-2 text-sm text-slate-600">{item.summary}</p>
+        <SearchOfferOwner item={item} />
+        <SearchOfferMeta item={item} />
+        <SearchOfferFooter item={item} />
+      </div>
+    </article>
+  );
+}
+
+export function filterSearchOffers(items: OfferMarketplaceItem[], filters: SearchOfferFilters) {
+  return items.filter((item) => {
+    if (filters.searchQuery.trim()) {
+      const q = filters.searchQuery.toLowerCase();
+      if (
+        !item.title.toLowerCase().includes(q) &&
+        !item.project.title.toLowerCase().includes(q) &&
+        !item.location.toLowerCase().includes(q)
+      ) {
+        return false;
+      }
+    }
+    if (filters.filterCity !== "الكل" && !item.location.includes(filters.filterCity)) return false;
+    if (filters.filterType !== "الكل" && item.propertyType !== filters.filterType) return false;
+    if (filters.filterKind !== "الكل" && item.kind !== filters.filterKind) return false;
+    return true;
+  });
+}
 
 export default function SearchOffersClient({ items }: { items: OfferMarketplaceItem[] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCity, setFilterCity] = useState("الكل");
   const [filterType, setFilterType] = useState("الكل");
-  const [filterKind, setFilterKind] = useState("الكل");
+  const [filterKind, setFilterKind] = useState<SearchOfferFilters["filterKind"]>("الكل");
 
-  const filteredItems = items.filter((item) => {
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      if (!item.title.toLowerCase().includes(q) && !item.project.title.toLowerCase().includes(q) && !item.location.toLowerCase().includes(q)) {
-        return false;
-      }
-    }
-    if (filterCity !== "الكل" && !item.location.includes(filterCity)) return false;
-    if (filterType !== "الكل" && item.propertyType !== filterType) return false;
-    if (filterKind !== "الكل" && item.kind !== filterKind) return false;
-    return true;
+  const filteredItems = filterSearchOffers(items, {
+    searchQuery,
+    filterCity,
+    filterType,
+    filterKind,
   });
 
   return (
@@ -68,7 +180,11 @@ export default function SearchOffersClient({ items }: { items: OfferMarketplaceI
             </div>
             <div>
               <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">تصنيف العرض</label>
-              <select value={filterKind} onChange={(e) => setFilterKind(e.target.value)} className="w-full cursor-pointer border border-slate-200 bg-slate-50 p-4 text-sm font-black text-slate-950 outline-none">
+              <select
+                value={filterKind}
+                onChange={(e) => setFilterKind(e.target.value as SearchOfferFilters["filterKind"])}
+                className="w-full cursor-pointer border border-slate-200 bg-slate-50 p-4 text-sm font-black text-slate-950 outline-none"
+              >
                 <option>الكل</option>
                 <option value="developer">عرض مطور</option>
                 <option value="broker">عرض وسيط</option>
@@ -83,32 +199,9 @@ export default function SearchOffersClient({ items }: { items: OfferMarketplaceI
           {filteredItems.length} نتيجة
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" data-slot="offers-grid">
           {filteredItems.map((item) => (
-            <Link key={item.id} href={`/ws/offers/${item.id}`} className="block group">
-              <div className="overflow-hidden border border-slate-200 bg-white transition hover:border-blue-600">
-                <div className="h-48 bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} />
-                <div className="grid gap-3 p-5">
-                  <div className="flex items-center gap-2">
-                    <h3 className="flex-1 truncate text-base font-black text-slate-950 transition group-hover:text-blue-600">{item.title}</h3>
-                    <span className="shrink-0 border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                      {item.kind === "developer" ? "مطور" : item.kind === "broker" ? "وسيط" : item.kind === "inbox" ? "ربط" : "عميل"}
-                    </span>
-                  </div>
-                  <p className="line-clamp-2 text-xs font-bold text-slate-500">{item.summary}</p>
-                  <div className="flex items-end justify-between border-t border-slate-100 pt-2">
-                    <div>
-                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">السعر</div>
-                      <div className="text-sm font-black text-slate-950">{item.priceLabel}</div>
-                    </div>
-                    <div className="text-left">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">الموقع</div>
-                      <div className="text-sm font-black text-slate-700">{item.location}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Link>
+            <SearchOfferCard key={item.id} item={item} />
           ))}
         </div>
 

@@ -14,7 +14,7 @@ export default function SettingsSummary({ items }: { items: SettingsSummaryItem[
       {items.map((item) => (
         <div 
           key={item.label} 
-          className="group rounded-xl border border-slate-200 bg-white p-5 transition hover:border-blue-200 hover:shadow-sm"
+          className="group rounded-lg border border-slate-200 bg-white p-5 transition hover:border-blue-200 hover:shadow-sm"
         >
           <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-blue-500 transition-colors">
             {item.label}

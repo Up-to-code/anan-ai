@@ -2,12 +2,68 @@
  * WhatsApp webhook handler.
  */
 import { httpAction } from "../../../_generated/server";
-import { apiRefs, internalRefs } from "../../../shared_logic/lib/generatedApiRefs";
+import { api, internal } from "../../../_generated/api";
 import { extractWebhookEvents } from "./api";
 import { WhatsAppService } from "./service";
 import { processVoicePipeline } from "./preprocess/voicePipeline";
 import { processTextPipeline } from "./preprocess/textPipeline";
 import { VOICE_FALLBACK_MESSAGE_AR } from "../rules/whatsapp.rules";
+import type { Id } from "../../../_generated/dataModel";
+
+function receivedResponse() {
+  return new Response(JSON.stringify({ received: true }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+async function readWebhookBody(request: Request) {
+  try {
+    return await request.text();
+  } catch {
+    return null;
+  }
+}
+
+async function resolveTextToProcess(event: ReturnType<typeof extractWebhookEvents>[number]) {
+  if (event.mediaType !== "audio" || !event.mediaId) {
+    return event.text;
+  }
+  const voiceResult = await processVoicePipeline({
+    mediaId: event.mediaId,
+    userId: event.from,
+  });
+  if (!voiceResult.success) {
+    return `${voiceResult.assistantContextText}\n${voiceResult.fallbackMessage}`;
+  }
+  return voiceResult.text;
+}
+
+async function processWebhookEvent(ctx: any, waService: WhatsAppService, event: ReturnType<typeof extractWebhookEvents>[number]) {
+  const userId = event.from;
+  await ctx.runMutation(api.shared_logic.users.whatsapp.ensureWhatsAppUser, {
+    userId,
+    displayName: event.displayName,
+  });
+  const processed = processTextPipeline({
+    text: await resolveTextToProcess(event),
+    channelType: "whatsapp",
+    userId,
+    displayName: event.displayName,
+  });
+  try {
+    const reply = await ctx.runAction(internal.ai_zone.channels.whatsapp.actions.generateReply, {
+      userId: processed.userId,
+      message: processed.text,
+      displayName: processed.displayName,
+      threadId: processed.threadId as Id<"assistantThreads"> | undefined,
+    });
+    await waService.sendText(userId, reply.text, event.messageId);
+  } catch (err) {
+    console.error("Webhook process error:", err);
+    await waService.sendText(userId, VOICE_FALLBACK_MESSAGE_AR, event.messageId);
+  }
+}
 
 /** GET /api/whatsapp/webhook – Meta verification */
 export async function handleWhatsAppWebhookGet(_ctx: unknown, request: Request): Promise<Response> {
@@ -26,77 +82,17 @@ export const handleWhatsAppWebhookPost = httpAction(async (ctx, request) => {
   if (request.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405 });
   }
-
-  let body: string;
-  try {
-    body = await request.text();
-  } catch {
+  const body = await readWebhookBody(request);
+  if (body === null) {
     return new Response("Bad Request", { status: 400 });
   }
-
   const events = extractWebhookEvents(body);
   if (events.length === 0) {
-    return new Response(JSON.stringify({ received: true }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return receivedResponse();
   }
 
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID ?? events[0]?.phoneNumberId ?? "";
   const waService = new WhatsAppService(phoneNumberId);
-
-  for (const event of events) {
-    const userId = event.from;
-    const displayName = event.displayName;
-
-    await ctx.runMutation(apiRefs["shared_logic/users/whatsapp"].ensureWhatsAppUser, {
-      userId,
-      displayName,
-    });
-
-    let textToProcess = event.text;
-    if (event.mediaType === "audio" && event.mediaId) {
-      const voiceResult = await processVoicePipeline({
-        mediaId: event.mediaId,
-        userId,
-      });
-      if (!voiceResult.success) {
-        textToProcess = `${voiceResult.assistantContextText}\n${voiceResult.fallbackMessage}`;
-      } else {
-        textToProcess = voiceResult.text;
-      }
-    }
-
-    const processed = processTextPipeline({
-      text: textToProcess,
-      channelType: "whatsapp",
-      userId,
-      displayName,
-    });
-
-    try {
-      const reply = await ctx.runAction(
-        internalRefs["ai_zone/channels/whatsapp/actions"].generateReply,
-        {
-          userId: processed.userId,
-          message: processed.text,
-          displayName: processed.displayName,
-          threadId: processed.threadId,
-        },
-      );
-      await waService.sendText(userId, reply.text, event.messageId);
-    } catch (err) {
-      console.error("Webhook process error:", err);
-      await waService.sendText(
-        userId,
-        VOICE_FALLBACK_MESSAGE_AR,
-        event.messageId,
-      );
-    }
-  }
-
-  return new Response(JSON.stringify({ received: true }), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
+  for (const event of events) await processWebhookEvent(ctx, waService, event);
+  return receivedResponse();
 });

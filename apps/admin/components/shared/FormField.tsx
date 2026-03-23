@@ -15,9 +15,9 @@ type FormFieldProps = {
 export default function FormField({ label, htmlFor, children, hint }: FormFieldProps) {
   return (
     <label htmlFor={htmlFor} className="block space-y-2">
-      <span className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">{label}</span>
+      <span className="text-sm font-medium text-slate-700">{label}</span>
       {children}
-      {hint ? <span className="block text-xs font-semibold text-slate-500">{hint}</span> : null}
+      {hint ? <span className="block text-xs text-slate-500">{hint}</span> : null}
     </label>
   );
 }

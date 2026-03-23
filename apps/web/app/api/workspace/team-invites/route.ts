@@ -1,5 +1,5 @@
 import { DomainError, toErrorResponse } from "@/server/contracts/errors";
-import { createCurrentOrganizationInvite } from "@/server/domains/organizations/service";
+import { createCurrentOrganizationInvite } from "@/server/domains/auth/organizations/service";
 import { createOrganizationInviteInputSchema } from "@/server/contracts/organizations";
 
 /**

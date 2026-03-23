@@ -4,11 +4,6 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useState, startTransition, type ReactNode } from "react";
 import Button from "@/components/shared/Button";
 
-/**
- * WHY:   Public Anan sign-in should use the same Google-only flow everywhere in the web app.
- * WHAT:  Renders a Google sign-in button that starts Convex Auth and preserves a return URL.
- * HOW:   Calls the Convex Auth `signIn` action with the Google provider and requested redirect target.
- */
 export default function GoogleSignInButton({
   redirectTo,
   className,

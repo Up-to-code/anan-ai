@@ -9,6 +9,15 @@ import { requireRole } from "../_core/security/accessPolicy";
 type GenerateTextOptions = Parameters<typeof generateText>[0];
 type GenerateTextResult = Awaited<ReturnType<typeof generateText>>;
 type GenerateTextUsage = GenerateTextResult["usage"];
+type CacheRequest = ReturnType<typeof buildCacheRequest>;
+type CachedGenerateTextConfig = {
+  modelName: string;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
+  pin?: boolean;
+  modelVersion?: string;
+  bypass?: boolean;
+};
 
 type CachedGenerateTextResponse = {
   text: string;
@@ -93,6 +102,43 @@ function toGenerateTextResultFromCache(
   } as GenerateTextResult;
 }
 
+async function lookupCachedResult(
+  ctx: ActionCtx,
+  request: CacheRequest,
+  modelVersion?: string,
+): Promise<GenerateTextResult | null> {
+  try {
+    const cached = await llmCache.lookup(ctx, { request, modelVersion });
+    if (!cached?.response) return null;
+    const parsed = toGenerateTextResultFromCache(cached.response);
+    if (parsed) return parsed;
+    console.warn("[llmCache] Ignoring malformed cached response and regenerating");
+  } catch (error) {
+    console.warn("[llmCache] Cache lookup failed, regenerating:", error);
+  }
+  return null;
+}
+
+async function storeCachedResult(
+  ctx: ActionCtx,
+  request: CacheRequest,
+  cache: CachedGenerateTextConfig,
+  response: CachedGenerateTextResponse,
+) {
+  try {
+    await llmCache.store(ctx, {
+      request,
+      response,
+      tags: cache.tags,
+      metadata: cache.metadata,
+      pin: cache.pin,
+      modelVersion: cache.modelVersion,
+    });
+  } catch (error) {
+    console.warn("[llmCache] Cache store failed (non-critical):", error);
+  }
+}
+
 /**
  * WHY:   LLM calls are expensive and repeated prompts should be cached automatically.
  * WHAT:  Runs `generateText` with an LLM cache lookup/store around it.
@@ -101,47 +147,21 @@ function toGenerateTextResultFromCache(
 export async function cachedGenerateText(
   ctx: ActionCtx,
   options: GenerateTextOptions,
-  cache: {
-    modelName: string;
-    tags?: string[];
-    metadata?: Record<string, unknown>;
-    pin?: boolean;
-    modelVersion?: string;
-    bypass?: boolean;
-  },
+  cache: CachedGenerateTextConfig,
 ): Promise<GenerateTextResult> {
   const request = buildCacheRequest(options, cache.modelName);
 
   if (!cache.bypass) {
-    try {
-      const cached = await llmCache.lookup(ctx, { request, modelVersion: cache.modelVersion });
-      if (cached?.response) {
-        const parsed = toGenerateTextResultFromCache(cached.response);
-        if (parsed) {
-          return parsed;
-        }
-        console.warn("[llmCache] Ignoring malformed cached response and regenerating");
-      }
-    } catch (error) {
-      console.warn("[llmCache] Cache lookup failed, regenerating:", error);
+    const cachedResult = await lookupCachedResult(ctx, request, cache.modelVersion);
+    if (cachedResult) {
+      return cachedResult;
     }
   }
 
   const response = await generateText(options);
   const safeResponse = toCachedResponse(response);
   if (safeResponse) {
-    try {
-      await llmCache.store(ctx, {
-        request,
-        response: safeResponse,
-        tags: cache.tags,
-        metadata: cache.metadata,
-        pin: cache.pin,
-        modelVersion: cache.modelVersion,
-      });
-    } catch (error) {
-      console.warn("[llmCache] Cache store failed (non-critical):", error);
-    }
+    await storeCachedResult(ctx, request, cache, safeResponse);
   } else {
     console.warn("[llmCache] Skipping cache store due to unsupported response shape");
   }

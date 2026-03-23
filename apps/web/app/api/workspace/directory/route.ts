@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { searchCurrentOrganizationDirectoryExact } from "@/server/domains/organizations/service";
+import { searchCurrentOrganizationDirectoryExact } from "@/server/domains/auth/organizations/service";
 import { normalizeDomainError, toErrorResponse } from "@/server/contracts/errors";
 
 /**

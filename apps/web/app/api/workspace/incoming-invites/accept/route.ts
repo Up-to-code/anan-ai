@@ -1,5 +1,5 @@
 import { DomainError, toErrorResponse } from "@/server/contracts/errors";
-import { acceptCurrentOrganizationInvite } from "@/server/domains/organizations/service";
+import { acceptCurrentOrganizationInvite } from "@/server/domains/auth/organizations/service";
 
 /**
  * WHY:   Incoming invite cards need one HTTP action for the invited user to accept without exposing direct Convex calls.

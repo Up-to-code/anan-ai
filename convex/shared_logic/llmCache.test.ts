@@ -1,7 +1,7 @@
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, expect, it, vi } from "vitest";
 import { convexTest } from "convex-test";
 import schema from "../schema";
-import { apiRefs } from "./lib/generatedApiRefs";
+import { api } from "../_generated/api";
 import { modules } from "../test.setup";
 import { cachedGenerateText } from "./llmCache";
 
@@ -41,167 +41,165 @@ vi.mock("../_core/security/accessPolicy", () => ({
   requireRole: mockRequireRole,
 }));
 
-describe("llm cache", () => {
-  const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
-  afterAll(() => {
-    warnSpy.mockRestore();
-  });
+afterAll(() => {
+  warnSpy.mockRestore();
+});
 
-  beforeEach(() => {
-    mockLookup.mockReset();
-    mockStore.mockReset();
-    mockGetConfig.mockReset();
-    mockSetConfig.mockReset();
-    mockGetStats.mockReset();
-    mockGenerateText.mockReset();
-    mockRequireRole.mockReset();
-    warnSpy.mockClear();
-  });
+beforeEach(() => {
+  mockLookup.mockReset();
+  mockStore.mockReset();
+  mockGetConfig.mockReset();
+  mockSetConfig.mockReset();
+  mockGetStats.mockReset();
+  mockGenerateText.mockReset();
+  mockRequireRole.mockReset();
+  warnSpy.mockClear();
+});
 
-  it("returns cached response without calling generateText", async () => {
-    mockLookup.mockResolvedValueOnce({ response: { text: "cached" } } as any);
+it("returns cached response without calling generateText", async () => {
+  mockLookup.mockResolvedValueOnce({ response: { text: "cached" } } as any);
 
-    const result = await cachedGenerateText(
-      {} as any,
-      { model: "gpt-4o-mini", prompt: "hello" } as any,
-      { modelName: "gpt-4o-mini" },
-    );
+  const result = await cachedGenerateText(
+    {} as any,
+    { model: "gpt-4o-mini", prompt: "hello" } as any,
+    { modelName: "gpt-4o-mini" },
+  );
 
-    expect(result).toEqual({ text: "cached" });
-    expect(mockGenerateText).not.toHaveBeenCalled();
-    expect(mockStore).not.toHaveBeenCalled();
-  });
+  expect(result).toEqual({ text: "cached" });
+  expect(mockGenerateText).not.toHaveBeenCalled();
+  expect(mockStore).not.toHaveBeenCalled();
+});
 
-  it("stores responses on cache miss", async () => {
-    mockLookup.mockResolvedValueOnce(null);
-    mockGenerateText.mockResolvedValueOnce({ text: "fresh" });
+it("stores responses on cache miss", async () => {
+  mockLookup.mockResolvedValueOnce(null);
+  mockGenerateText.mockResolvedValueOnce({ text: "fresh" });
 
-    const result = await cachedGenerateText(
-      {} as any,
-      { model: "gpt-4o-mini", prompt: "hello" } as any,
-      { modelName: "gpt-4o-mini", tags: ["intent"] },
-    );
+  const result = await cachedGenerateText(
+    {} as any,
+    { model: "gpt-4o-mini", prompt: "hello" } as any,
+    { modelName: "gpt-4o-mini", tags: ["intent"] },
+  );
 
-    expect(result).toEqual({ text: "fresh" });
-    expect(mockGenerateText).toHaveBeenCalled();
-    expect(mockStore).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        response: expect.objectContaining({ text: "fresh" }),
-        tags: ["intent"],
-      }),
-    );
-  });
+  expect(result).toEqual({ text: "fresh" });
+  expect(mockGenerateText).toHaveBeenCalled();
+  expect(mockStore).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      response: expect.objectContaining({ text: "fresh" }),
+      tags: ["intent"],
+    }),
+  );
+});
 
-  it("bypasses lookup when requested", async () => {
-    mockGenerateText.mockResolvedValueOnce({ text: "bypass" });
+it("bypasses lookup when requested", async () => {
+  mockGenerateText.mockResolvedValueOnce({ text: "bypass" });
 
-    const result = await cachedGenerateText(
-      {} as any,
-      { model: "gpt-4o-mini", prompt: "hello" } as any,
-      { modelName: "gpt-4o-mini", bypass: true },
-    );
+  const result = await cachedGenerateText(
+    {} as any,
+    { model: "gpt-4o-mini", prompt: "hello" } as any,
+    { modelName: "gpt-4o-mini", bypass: true },
+  );
 
-    expect(result).toEqual({ text: "bypass" });
-    expect(mockLookup).not.toHaveBeenCalled();
-    expect(mockStore).toHaveBeenCalled();
-  });
+  expect(result).toEqual({ text: "bypass" });
+  expect(mockLookup).not.toHaveBeenCalled();
+  expect(mockStore).toHaveBeenCalled();
+});
 
-  it("stores a Convex-safe response shape from rich SDK results", async () => {
-    mockLookup.mockResolvedValueOnce(null);
-    mockGenerateText.mockResolvedValueOnce({
-      text: "[\"team_workspace_projects\"]",
-      usage: { inputTokens: 263, outputTokens: 7, totalTokens: 270, reasoningTokens: 0 },
-      response: {
-        id: "gen-id",
-        headers: { "content-type": "application/json" },
+it("stores a Convex-safe response shape from rich SDK results", async () => {
+  mockLookup.mockResolvedValueOnce(null);
+  mockGenerateText.mockResolvedValueOnce({
+    text: "[\"team_workspace_projects\"]",
+    usage: { inputTokens: 263, outputTokens: 7, totalTokens: 270, reasoningTokens: 0 },
+    response: {
+      id: "gen-id",
+      headers: { "content-type": "application/json" },
+    },
+    steps: [
+      {
+        content: [{ type: "text", text: "[\"team_workspace_projects\"]" }],
       },
-      steps: [
-        {
-          content: [{ type: "text", text: "[\"team_workspace_projects\"]" }],
-        },
-      ],
-    } as any);
+    ],
+  } as any);
 
-    await cachedGenerateText(
-      {} as any,
-      { model: "google/gemini-2.5-flash", prompt: "classify" } as any,
-      { modelName: "google/gemini-2.5-flash" },
-    );
+  await cachedGenerateText(
+    {} as any,
+    { model: "google/gemini-2.5-flash", prompt: "classify" } as any,
+    { modelName: "google/gemini-2.5-flash" },
+  );
 
-    const storedResponse = (mockStore as any).mock.calls[0]?.[1]?.response;
-    expect(storedResponse).toEqual(
-      expect.objectContaining({
-        text: "[\"team_workspace_projects\"]",
-        usage: expect.objectContaining({
-          inputTokens: 263,
-          outputTokens: 7,
-          totalTokens: 270,
-          promptTokens: 263,
-          completionTokens: 7,
-        }),
+  const storedResponse = (mockStore as any).mock.calls[0]?.[1]?.response;
+  expect(storedResponse).toEqual(
+    expect.objectContaining({
+      text: "[\"team_workspace_projects\"]",
+      usage: expect.objectContaining({
+        inputTokens: 263,
+        outputTokens: 7,
+        totalTokens: 270,
+        promptTokens: 263,
+        completionTokens: 7,
       }),
-    );
-    expect(storedResponse).not.toHaveProperty("response");
-    expect(storedResponse).not.toHaveProperty("steps");
-  });
+    }),
+  );
+  expect(storedResponse).not.toHaveProperty("response");
+  expect(storedResponse).not.toHaveProperty("steps");
+});
 
-  it("ignores malformed cached payloads and regenerates", async () => {
-    mockLookup.mockResolvedValueOnce({ response: { bad: true } } as any);
-    mockGenerateText.mockResolvedValueOnce({ text: "regenerated" });
+it("ignores malformed cached payloads and regenerates", async () => {
+  mockLookup.mockResolvedValueOnce({ response: { bad: true } } as any);
+  mockGenerateText.mockResolvedValueOnce({ text: "regenerated" });
 
-    const result = await cachedGenerateText(
-      {} as any,
-      { model: "gpt-4o-mini", prompt: "hello" } as any,
-      { modelName: "gpt-4o-mini" },
-    );
+  const result = await cachedGenerateText(
+    {} as any,
+    { model: "gpt-4o-mini", prompt: "hello" } as any,
+    { modelName: "gpt-4o-mini" },
+  );
 
-    expect(result).toEqual({ text: "regenerated" });
-    expect(mockGenerateText).toHaveBeenCalledTimes(1);
-    expect(warnSpy).toHaveBeenCalledWith(
-      "[llmCache] Ignoring malformed cached response and regenerating",
-    );
-  });
+  expect(result).toEqual({ text: "regenerated" });
+  expect(mockGenerateText).toHaveBeenCalledTimes(1);
+  expect(warnSpy).toHaveBeenCalledWith(
+    "[llmCache] Ignoring malformed cached response and regenerating",
+  );
+});
 
-  it("returns live output when cache store fails", async () => {
-    mockLookup.mockResolvedValueOnce(null);
-    mockGenerateText.mockResolvedValueOnce({ text: "live" });
-    mockStore.mockRejectedValueOnce(new Error("store failed"));
+it("returns live output when cache store fails", async () => {
+  mockLookup.mockResolvedValueOnce(null);
+  mockGenerateText.mockResolvedValueOnce({ text: "live" });
+  mockStore.mockRejectedValueOnce(new Error("store failed"));
 
-    const result = await cachedGenerateText(
-      {} as any,
-      { model: "gpt-4o-mini", prompt: "hello" } as any,
-      { modelName: "gpt-4o-mini" },
-    );
+  const result = await cachedGenerateText(
+    {} as any,
+    { model: "gpt-4o-mini", prompt: "hello" } as any,
+    { modelName: "gpt-4o-mini" },
+  );
 
-    expect(result).toEqual({ text: "live" });
-    expect(warnSpy).toHaveBeenCalledWith(
-      "[llmCache] Cache store failed (non-critical):",
-      expect.any(Error),
-    );
-  });
+  expect(result).toEqual({ text: "live" });
+  expect(warnSpy).toHaveBeenCalledWith(
+    "[llmCache] Cache store failed (non-critical):",
+    expect.any(Error),
+  );
+});
 
-  it("guards admin cache config queries", async () => {
-    const t = convexTest(schema, modules);
+it("guards admin cache config queries", async () => {
+  const t = convexTest(schema, modules);
 
-    await t.query(apiRefs["shared_logic/llmCache"].getLlmCacheConfig as never, {} as never);
-    await t.query(apiRefs["shared_logic/llmCache"].getLlmCacheStats as never, {} as never);
+  await t.query(api.shared_logic.llmCache.getLlmCacheConfig as never, {} as never);
+  await t.query(api.shared_logic.llmCache.getLlmCacheStats as never, {} as never);
 
-    expect(mockRequireRole).toHaveBeenCalledTimes(2);
-    expect(mockGetConfig).toHaveBeenCalled();
-    expect(mockGetStats).toHaveBeenCalled();
-  });
+  expect(mockRequireRole).toHaveBeenCalledTimes(2);
+  expect(mockGetConfig).toHaveBeenCalled();
+  expect(mockGetStats).toHaveBeenCalled();
+});
 
-  it("guards admin cache config updates", async () => {
-    const t = convexTest(schema, modules);
+it("guards admin cache config updates", async () => {
+  const t = convexTest(schema, modules);
 
-    await t.mutation(
-      apiRefs["shared_logic/llmCache"].updateLlmCacheConfig as never,
-      { config: { defaultTtlMs: 5000 } } as never,
-    );
+  await t.mutation(
+    api.shared_logic.llmCache.updateLlmCacheConfig as never,
+    { config: { defaultTtlMs: 5000 } } as never,
+  );
 
-    expect(mockRequireRole).toHaveBeenCalled();
-    expect(mockSetConfig).toHaveBeenCalled();
-  });
+  expect(mockRequireRole).toHaveBeenCalled();
+  expect(mockSetConfig).toHaveBeenCalled();
 });

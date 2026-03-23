@@ -1,4 +1,4 @@
-import { cancelCurrentOrganizationInvite } from "@/server/domains/organizations/service";
+import { cancelCurrentOrganizationInvite } from "@/server/domains/auth/organizations/service";
 import { toErrorResponse } from "@/server/contracts/errors";
 
 type TeamInviteRouteProps = {

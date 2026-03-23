@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * orchestrate.ts — Workspace Orchestration Logic
  *
@@ -9,7 +8,7 @@
 
 import { FALLBACK_MESSAGES } from "../shared/errorHandler";
 import { internal } from "../../../_generated/api";
-import type { OrchestrateInput, OrchestrateOutput } from "./types";
+import type { OrchestrateInput, OrchestrateOutput, WorkspaceStreamPhase, WorkspaceStreamStageEvent } from "./types";
 import { getAvailableTeams, getTeamAgents, getTeamDefinitions } from "./teamRegistry";
 import { analyzeWorkspaceIntent } from "./intentAnalyzer";
 import { mergeResults, collectResults } from "./resultMerger";
@@ -33,16 +32,14 @@ export async function orchestrate(
   } = input;
 
   const emitStage = async (
-    phase: OrchestrateInput["onStageEvent"] extends (...args: infer A) => any
-      ? A[0]["phase"]
-      : never,
-    extra: Record<string, unknown> = {},
+    phase: WorkspaceStreamPhase,
+    extra: Omit<Partial<WorkspaceStreamStageEvent>, "phase" | "timestamp"> = {},
   ) => {
     if (!onStageEvent) return;
     await onStageEvent({
-      phase: phase as any,
+      phase,
       timestamp: Date.now(),
-      ...extra,
+      ...(extra as object),
     });
   };
 
@@ -153,8 +150,7 @@ export async function orchestrate(
 
   try {
     await ctx.runMutation(
-      (internal as any).ai_zone.agents.shared.orchestrationTrackerActions
-        .trackOrchestrationUsageInternal,
+      internal.ai_zone.agents.shared.orchestrationTrackerActions.trackOrchestrationUsageInternal as any,
       {
         orchestratorName: "anan_workspace_orchestrator",
         role,
@@ -185,4 +181,3 @@ export async function orchestrate(
     },
   };
 }
-// @ts-nocheck

@@ -4,7 +4,6 @@ import {
   findProfileByAuthUserId,
   normalizeDirectPair,
   normalizeEmail,
-  normalizeUsername,
   resolveTenantOrgIdForOwner,
   type AgenciesRepositoryCtx,
   type OwnerContext,
@@ -12,6 +11,88 @@ import {
 import { requireOrganizationMembership } from "./membership";
 import { listTeamInvitesForOwner } from "./invites";
 import { tenants } from "../../../tenants";
+import {
+  countPublicPublishedOffersForOrg,
+  findExactDirectoryProfile,
+  getUserImageByEmail,
+  listPublicPublishedOffersForOrganization,
+  resolveDirectoryMembershipState,
+  resolveDirectConversationId,
+} from "./directory.helpers";
+
+function canIncludeProfile(profile: any, role: "broker" | "developer", currentAuthUserId: string) {
+  if (profile.authUserId === currentAuthUserId) return false;
+  if (profile.isActive === false || profile.showInOffersDirectory === false) return false;
+  if (role === "broker") return Boolean(profile.brokerId);
+  return Boolean(profile.REDId);
+}
+
+async function resolveProfileOrganization(ctx: AgenciesRepositoryCtx, profile: any): Promise<any | null> {
+  if (profile.brokerId) return ctx.db.get(profile.brokerId as any);
+  if (profile.REDId) return ctx.db.get(profile.REDId as any);
+  return null;
+}
+
+function toDirectoryProfile(args: {
+  profile: any;
+  organization: any;
+  userImage: string | null;
+  orgLogoUrl: string | null;
+  membershipState: "member" | "pending-invite" | "not-member";
+  conversationId: any;
+}) {
+  return {
+    id: String(args.profile._id),
+    authUserId: args.profile.authUserId,
+    email: args.profile.email ?? "",
+    name: args.profile.name ?? args.profile.email ?? "مستخدم عنان",
+    username: args.profile.username ?? undefined,
+    image: args.userImage,
+    role: args.profile.brokerId ? "broker" : "developer",
+    organizationName: args.organization.name,
+    organizationSlug: args.organization.slug,
+    organizationLogo: args.orgLogoUrl ?? null,
+    membershipState: args.membershipState,
+    canMessage: true,
+    conversationId: args.conversationId ?? null,
+  } as const;
+}
+
+async function buildOffersDirectoryProfile(args: {
+  ctx: AgenciesRepositoryCtx;
+  profile: any;
+  role: "broker" | "developer";
+  currentAuthUserId: string;
+  tenantOrgId: string;
+  invites: any[];
+}) {
+  if (!canIncludeProfile(args.profile, args.role, args.currentAuthUserId)) return null;
+  const organization = await resolveProfileOrganization(args.ctx, args.profile);
+  if (!organization) return null;
+
+  const [existingMembership, orgLogoUrl, userImage] = await Promise.all([
+    tenants.getMember(args.ctx as never, args.tenantOrgId, args.profile.authUserId),
+    organization.logoId ? args.ctx.storage.getUrl(organization.logoId) : null,
+    getUserImageByEmail(args.ctx, args.profile.email ?? ""),
+  ]);
+  const pendingInvite = args.invites.find(
+    (invite) => invite.status === "pending" && normalizeEmail(invite.email) === normalizeEmail(args.profile.email ?? ""),
+  );
+  const directKey = normalizeDirectPair(args.currentAuthUserId, args.profile.authUserId);
+  const conversation = await args.ctx.db
+    .query("inboxConversations")
+    .withIndex("directKey", (q) => q.eq("directKey", directKey))
+    .unique();
+
+  return toDirectoryProfile({
+    profile: args.profile,
+    organization,
+    userImage,
+    orgLogoUrl,
+    membershipState: resolveDirectoryMembershipState(existingMembership, pendingInvite),
+    conversationId: conversation?._id,
+  });
+}
 
 async function listOffersDirectoryProfilesForOwner(
   ctx: AgenciesRepositoryCtx,
@@ -27,60 +108,16 @@ async function listOffersDirectoryProfilesForOwner(
   ]);
 
   const directory = await Promise.all(
-    profiles.map(async (profile) => {
-      if (profile.authUserId === args.currentAuthUserId) {
-        return null;
-      }
-
-      const isBroker = Boolean(profile.brokerId);
-      const isDeveloper = Boolean(profile.REDId);
-      if (profile.isActive === false || profile.showInOffersDirectory === false) {
-        return null;
-      }
-      if (args.role === "broker" && !isBroker) {
-        return null;
-      }
-      if (args.role === "developer" && !isDeveloper) {
-        return null;
-      }
-
-      const organization = profile.brokerId
-        ? await ctx.db.get(profile.brokerId)
-        : profile.REDId
-          ? await ctx.db.get(profile.REDId)
-          : null;
-      if (!organization) {
-        return null;
-      }
-
-      const existingMembership = await tenants.getMember(ctx as never, tenantOrgId, profile.authUserId);
-      const pendingInvite = invites.find(
-        (invite) => invite.status === "pending" && normalizeEmail(invite.email) === normalizeEmail(profile.email ?? ""),
-      );
-      const directKey = normalizeDirectPair(args.currentAuthUserId, profile.authUserId);
-      const conversation = await ctx.db
-        .query("inboxConversations")
-        .withIndex("directKey", (q) => q.eq("directKey", directKey))
-        .unique();
-
-      return {
-        id: String(profile._id),
-        authUserId: profile.authUserId,
-        email: profile.email ?? "",
-        name: profile.name ?? profile.email ?? "مستخدم عنان",
-        username: profile.username ?? undefined,
-        role: isBroker ? "broker" : "developer",
-        organizationName: organization.name,
-        organizationSlug: organization.slug,
-        membershipState: (existingMembership?.status ?? "active") === "active"
-          ? "member"
-          : pendingInvite
-            ? "pending-invite"
-            : "not-member",
-        canMessage: true,
-        conversationId: conversation?._id ?? null,
-      } as const;
-    }),
+    profiles.map((profile) =>
+      buildOffersDirectoryProfile({
+        ctx,
+        profile,
+        role: args.role,
+        currentAuthUserId: args.currentAuthUserId,
+        tenantOrgId,
+        invites,
+      }),
+    ),
   );
 
   return directory
@@ -123,22 +160,7 @@ export const searchOrganizationDirectoryExact = query({
     if (!normalized) {
       return [];
     }
-
-    const email = normalized.includes("@") ? normalizeEmail(normalized) : null;
-    const usernameLower = email ? null : normalizeUsername(normalized);
-
-    let profile = null;
-    if (usernameLower) {
-      profile = await ctx.db
-        .query("userProfiles")
-        .withIndex("usernameLower", (q) => q.eq("usernameLower", usernameLower))
-        .first();
-    } else if (email) {
-      profile = await ctx.db
-        .query("userProfiles")
-        .withIndex("email", (q) => q.eq("email", email))
-        .first();
-    }
+    const profile = await findExactDirectoryProfile(ctx, normalized);
 
     if (!profile || profile.isActive === false || profile.authUserId === current.profile.authUserId) {
       return [];
@@ -147,11 +169,7 @@ export const searchOrganizationDirectoryExact = query({
     const existingMembership = await tenants.getMember(ctx as never, tenantOrgId, profile.authUserId);
     const invites = await listTeamInvitesForOwner(ctx, current.owner);
     const pendingInvite = invites.find((invite) => invite.status === "pending" && normalizeEmail(invite.email) === normalizeEmail(profile.email ?? ""));
-    const directKey = normalizeDirectPair(current.profile.authUserId, profile.authUserId);
-    const conversation = await ctx.db
-      .query("inboxConversations")
-      .withIndex("directKey", (q) => q.eq("directKey", directKey))
-      .unique();
+    const conversationId = await resolveDirectConversationId(ctx, current.profile.authUserId, profile.authUserId);
 
     return [{
       id: profile._id,
@@ -159,13 +177,82 @@ export const searchOrganizationDirectoryExact = query({
       email: profile.email ?? "",
       name: profile.name ?? profile.email ?? "مستخدم عنان",
       username: profile.username,
-      membershipState: (existingMembership?.status ?? "active") === "active"
-        ? "member"
-        : pendingInvite
-          ? "pending-invite"
-          : "not-member",
+      membershipState: resolveDirectoryMembershipState(existingMembership, pendingInvite),
       canMessage: true,
-      conversationId: conversation?._id ?? null,
+      conversationId,
     }] as const;
+  },
+});
+
+/**
+ * WHY:   Pivoting the directory to be organization-centric as requested.
+ * WHAT:  Lists active organizations (Brokers/REDs) with their public published offer counts.
+ * HOW:   Iterates over active orgs of a specific role, queries their published offers, and resolves logos from storage.
+ */
+export const listOfferOrganizationsDirectory = query({
+  args: {
+    role: v.union(v.literal("broker"), v.literal("developer")),
+  },
+  handler: async (ctx, args) => {
+    await requireOrganizationMembership(ctx);
+
+    const table = args.role === "broker" ? "brokers" : "RED";
+    const organizations = await ctx.db
+      .query(table as any)
+      .withIndex("status", (q) => q.eq("status", "active"))
+      .collect();
+
+    const results = await Promise.all(
+      organizations.map(async (org: any) => {
+        const publicPublishedCount = await countPublicPublishedOffersForOrg(ctx, args.role, org._id);
+        const logoUrl = org.logoId ? await ctx.storage.getUrl(org.logoId) : null;
+        return {
+          id: String(org._id),
+          name: org.name,
+          slug: org.slug,
+          logo: logoUrl,
+          offerCount: publicPublishedCount,
+        };
+      })
+    );
+
+    return results.sort((a, b) => b.offerCount - a.offerCount || a.name.localeCompare(b.name, "ar"));
+  },
+});
+
+/**
+ * WHY:   Detail view for an organization in the directory.
+ * WHAT:  Returns the organization profile including their public published offers.
+ * HOW:   Queries by slug, resolves the logo, and fetches all public-visibility published offers.
+ */
+export const getOrganizationPublicProfile = query({
+  args: {
+    type: v.union(v.literal("broker"), v.literal("developer")),
+    slug: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const table = args.type === "broker" ? "brokers" : "RED";
+    const organization = await ctx.db
+      .query(table as any)
+      .withIndex("slug", (q) => q.eq("slug", args.slug))
+      .unique();
+
+    if (!organization) return null;
+
+    const [logoUrl, publicPublishedOffers] = await Promise.all([
+      organization.logoId ? ctx.storage.getUrl(organization.logoId) : null,
+      listPublicPublishedOffersForOrganization(ctx, args.type, organization._id),
+    ]);
+
+    return {
+      id: organization._id,
+      name: organization.name,
+      slug: organization.slug,
+      logo: logoUrl,
+      description: organization.description,
+      website: organization.website,
+      contactEmail: organization.contactEmail,
+      offers: publicPublishedOffers,
+    };
   },
 });

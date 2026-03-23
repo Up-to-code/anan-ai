@@ -2,31 +2,37 @@
 
 import type { AnanProThread } from "@/server/contracts/ananPro";
 import WorkspaceAssistantCanvas from "./WorkspaceAssistantCanvas";
-import { useWorkspaceAssistant } from "./useWorkspaceAssistant";
+import {
+  useWorkspaceAssistant,
+  type AssistantInitialRouteState,
+} from "./useWorkspaceAssistant";
+
+import type { SessionUser } from "@/server/contracts/session";
 
 type WorkspaceDashboardProps = {
   initialThread: AnanProThread | null;
-  initialSelectedThreadId?: string | null;
+  initialRouteState?: AssistantInitialRouteState;
+  user: SessionUser;
 };
 
-/**
- * WHY:   `/ws` is the operator's primary assistant surface and needs durable thread history inside the same workspace page.
- * WHAT:  Composes the thread rail plus the active assistant canvas for creating, reopening, and continuing Anan Workspace conversations.
- * HOW:   Delegates all fetch/state orchestration to `useWorkspaceAssistant` and keeps this file focused on layout wiring only.
- */
 export default function WorkspaceDashboard({
   initialThread,
-  initialSelectedThreadId = null,
+  initialRouteState = {
+    requestedThreadId: null,
+    unavailableThreadId: null,
+  },
+  user,
 }: WorkspaceDashboardProps) {
   const assistant = useWorkspaceAssistant({
     initialThread,
-    initialSelectedThreadId,
+    initialRouteState,
   });
 
   return (
-    <div className="min-h-[calc(100svh-7rem)] bg-white">
-      <div className="flex min-h-[calc(100svh-7rem)] flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-white">
+      <div className="flex min-h-0 flex-1 flex-col">
         <WorkspaceAssistantCanvas
+          user={user}
           thread={assistant.thread}
           value={assistant.value}
           sendError={assistant.sendError}
@@ -36,10 +42,6 @@ export default function WorkspaceDashboard({
           isVoiceTranscribing={assistant.isVoiceTranscribing}
           voiceProcessingPhase={assistant.voiceProcessingPhase}
           canRegenerate={assistant.canRegenerate}
-          activeTeamLabel={assistant.activeTeamLabel}
-          completedTeamLabels={assistant.completedTeamLabels}
-          stageHistory={assistant.stageHistory}
-          streamLifecycleStatus={assistant.streamLifecycleStatus}
           liveAssistantMotionState={assistant.liveAssistantMotionState}
           liveStageLabel={assistant.liveStageLabel}
           voiceElapsedMs={assistant.voiceElapsedMs}
@@ -47,6 +49,8 @@ export default function WorkspaceDashboard({
           onToggleVoiceRecording={assistant.toggleVoiceRecording}
           onStopStreaming={assistant.handleStopStreaming}
           onRegenerate={assistant.handleRegenerate}
+          unavailableThreadId={assistant.unavailableThreadId}
+          onResetUnavailableThread={assistant.handleResetUnavailableThread}
           onChange={assistant.setValue}
           onSend={assistant.handleSend}
         />

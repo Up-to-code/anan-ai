@@ -1,4 +1,5 @@
 import { requireAdminPageSession } from "@/lib/serverSession";
+import { convexAdminCommandCenterRepository } from "@/server/infrastructure/convex/adminCommandCenterRepository";
 import { convexAdminAnalyticsRepository } from "@/server/infrastructure/convex/adminAnalyticsRepository";
 
 /**
@@ -7,34 +8,61 @@ import { convexAdminAnalyticsRepository } from "@/server/infrastructure/convex/a
  * HOW:   Uses the analytics repository to fetch only the data needed for the selected tab.
  */
 export async function getAnalyticsPageData(
-  tab: "messages" | "active-30d" | "brokers" | "developers" | "properties" | "offers" | "connections",
+  tab:
+    | "executive"
+    | "engagement"
+    | "commercial"
+    | "partners"
+    | "inventory"
+    | "collaboration",
+  range: "30d" | "90d" = "90d",
 ) {
   const session = await requireAdminPageSession(`/analytics/${tab}`);
   const token = session.token;
 
-  if (tab === "messages") {
-    return { session, tab, data: await convexAdminAnalyticsRepository.getMessageAnalytics(token) };
+  if (tab === "executive") {
+    const [overview, commercial, partners, queue] = await Promise.all([
+      convexAdminCommandCenterRepository.getOverview(token, range),
+      convexAdminCommandCenterRepository.getCommercialAnalytics(token, range),
+      convexAdminCommandCenterRepository.getPartnerHealthAnalytics(token, range),
+      convexAdminCommandCenterRepository.getQueueHealthAnalytics(token, range === "90d" ? "90d" : "30d"),
+    ]);
+    return { session, tab, data: { overview, commercial, partners, queue } };
   }
 
-  if (tab === "active-30d") {
-    return { session, tab, data: await convexAdminAnalyticsRepository.getActiveUsersAnalytics(token) };
+  if (tab === "engagement") {
+    const [messages, activeUsers] = await Promise.all([
+      convexAdminAnalyticsRepository.getMessageAnalytics(token),
+      convexAdminAnalyticsRepository.getActiveUsersAnalytics(token),
+    ]);
+    return { session, tab, data: { messages, activeUsers } };
   }
 
-  if (tab === "brokers") {
-    return { session, tab, data: await convexAdminAnalyticsRepository.getBrokerAnalytics(token) };
+  if (tab === "commercial") {
+    return { session, tab, data: await convexAdminCommandCenterRepository.getCommercialAnalytics(token, range) };
   }
 
-  if (tab === "developers") {
-    return { session, tab, data: await convexAdminAnalyticsRepository.getDeveloperAnalytics(token) };
+  if (tab === "partners") {
+    const [partners, brokers, developers] = await Promise.all([
+      convexAdminCommandCenterRepository.getPartnerHealthAnalytics(token, range),
+      convexAdminAnalyticsRepository.getBrokerAnalytics(token),
+      convexAdminAnalyticsRepository.getDeveloperAnalytics(token),
+    ]);
+    return { session, tab, data: { partners, brokers, developers } };
   }
 
-  if (tab === "offers") {
-    return { session, tab, data: await convexAdminAnalyticsRepository.getOfferAnalytics(token) };
+  if (tab === "collaboration") {
+    const [connections, queue] = await Promise.all([
+      convexAdminAnalyticsRepository.getConnectionAnalytics(token),
+      convexAdminCommandCenterRepository.getQueueHealthAnalytics(token, range === "90d" ? "90d" : "30d"),
+    ]);
+    return { session, tab, data: { connections, queue } };
   }
 
-  if (tab === "connections") {
-    return { session, tab, data: await convexAdminAnalyticsRepository.getConnectionAnalytics(token) };
-  }
-
-  return { session, tab, data: await convexAdminAnalyticsRepository.getPropertyAnalytics(token) };
+  const [inventory, brokers, developers] = await Promise.all([
+    convexAdminAnalyticsRepository.getPropertyAnalytics(token),
+    convexAdminAnalyticsRepository.getBrokerAnalytics(token),
+    convexAdminAnalyticsRepository.getDeveloperAnalytics(token),
+  ]);
+  return { session, tab, data: { inventory, brokers, developers } };
 }
