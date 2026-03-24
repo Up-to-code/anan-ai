@@ -8,7 +8,7 @@ import FilterChipBar from "../../../_components/Visuals/FilterChipBar";
 import type { WorkspaceProject } from "../projectTypes";
 import ProjectsSummary from "./ProjectsSummary";
 import ZonePageIntro from "../../../_components/ZoneShell/ZonePageIntro";
-import AgDeleteConfirmModal from "@/components/shared/ag-aui/AgDeleteConfirmModal";
+import { AgDeleteConfirmModal } from "@anan/ag-ui/anan";
 
 type ProjectsWorkspaceProps = {
   initialProjects: WorkspaceProject[];

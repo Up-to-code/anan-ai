@@ -5,7 +5,7 @@ import {
   listBrokerProperties,
   publishBrokerProperty,
   updateBrokerProperty,
-} from "@/server/broker_zone/properties";
+} from "@/server/broker_zone";
 import type { WorkspaceAudience, WorkspaceOwnerContext } from "@/server/contracts/workspace";
 import { convexBrokerZoneRepository } from "@/server/infrastructure/convex/brokerZoneRepository";
 import { convexComplianceRepository } from "@/server/infrastructure/convex/complianceRepository";
@@ -18,7 +18,7 @@ import {
   listRedProperties,
   publishRedProperty,
   updateRedProperty,
-} from "@/server/red_zone/properties";
+} from "@/server/red_zone";
 import { createUnavailableZoneError } from "./errors";
 import { buildWorkspaceScopedSessionResolver } from "./session";
 

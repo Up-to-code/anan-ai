@@ -33,6 +33,7 @@ const mockedRefs = vi.hoisted(() => ({
     "ai_zone/assistant": { getThread: Symbol("assistant.getThread") },
     "shared_logic/subscriptions/index": {
       getAssistantEntitlement: Symbol("subscriptions.getAssistantEntitlement"),
+      getAssistantEntitlementSafe: Symbol("subscriptions.getAssistantEntitlementSafe"),
     },
     "shared_logic/knowledge/index": {
       retrieveCompanyKnowledge: Symbol("knowledge.retrieveCompanyKnowledge"),
@@ -76,7 +77,10 @@ describe("assistantService handleAssistantMessage", () => {
         };
       }
 
-      if (ref === apiRefs["shared_logic/subscriptions/index"].getAssistantEntitlement) {
+      if (
+        ref === apiRefs["shared_logic/subscriptions/index"].getAssistantEntitlement ||
+        ref === apiRefs["shared_logic/subscriptions/index"].getAssistantEntitlementSafe
+      ) {
         return { mode: "qa" };
       }
 
@@ -197,6 +201,51 @@ describe("assistantService handleAssistantMessage", () => {
         userMessageMetadata: {
           inputMode: "voice",
         },
+      }),
+    );
+  });
+
+  it("uses safe entitlement lookup for public assistant guest sessions", async () => {
+    const ctx = createCtx();
+    const publicSaveMutation = Symbol("assistantPublic._saveConversationStep");
+
+    const result = await handleAssistantMessage(ctx as any, {
+      message: "hello from public",
+      assistantKind: "anan_main_public",
+      ownerOverride: {
+        userId: "channel:main_assistant_web:guest_1",
+        ownerType: "user",
+      },
+      saveConversationStepMutationOverride: publicSaveMutation,
+    });
+
+    expect(ctx.runQuery).toHaveBeenCalledWith(
+      apiRefs["shared_logic/subscriptions/index"].getAssistantEntitlementSafe,
+      {},
+    );
+    expect(ctx.runQuery).not.toHaveBeenCalledWith(
+      apiRefs["shared_logic/subscriptions/index"].getAssistantEntitlement,
+      {},
+    );
+
+    const [mutationRef, payload] = (ctx.runMutation as any).mock.calls[0] as [
+      unknown,
+      Record<string, unknown>,
+    ];
+    expect(mutationRef).toBe(publicSaveMutation);
+    expect(payload).toEqual(
+      expect.objectContaining({
+        userId: "channel:main_assistant_web:guest_1",
+        ownerType: "user",
+        userMessage: "hello from public",
+        mode: "qa",
+      }),
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        ok: true,
+        output: "default orchestrator output",
       }),
     );
   });

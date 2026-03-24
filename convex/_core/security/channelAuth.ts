@@ -2,7 +2,7 @@ import type { MutationCtx } from "../../_generated/server";
 
 const CHANNEL_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 
-export type ChannelType = "whatsapp" | "web" | "app";
+export type ChannelType = "whatsapp" | "web" | "app" | "main_assistant_web";
 
 /**
  * WHY:   Non-browser channels cannot rely on browser OAuth redirects or cookies.

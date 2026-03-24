@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { WorkspaceProject } from "../../projectTypes";
-import AgPropertyForm from "@/components/shared/ag-aui/AgPropertyForm";
-import AgDeleteConfirmModal from "@/components/shared/ag-aui/AgDeleteConfirmModal";
+import { AgDeleteConfirmModal, AgPropertyForm } from "@anan/ag-ui/anan";
 
 /**
  * WHY:   Editing a project should use the exact same rich form as creation.

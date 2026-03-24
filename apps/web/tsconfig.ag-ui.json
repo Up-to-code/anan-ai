@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "app/(ws)/ws/_components/Chat/AgUiTurnRenderer.tsx",
+    "app/(ws)/ws/_lib/entities.ts",
+    "app/(ws)/ws/(zones)/projects/ProjectFormScreen.tsx",
+    "app/(ws)/ws/(zones)/projects/ProjectsPage/ProjectsWorkspace.tsx",
+    "app/(ws)/ws/(zones)/projects/create/page.tsx",
+    "app/(ws)/ws/(zones)/projects/[projectId]/edit/page.tsx",
+    "app/(ws)/ws/(zones)/projects/[projectId]/edit/AgPropertyFormEditView.tsx",
+    "server/contracts/ananPro.ts",
+    "../../packages/ag-ui/src/**/*.ts",
+    "../../packages/ag-ui/src/**/*.tsx"
+  ],
+  "exclude": ["node_modules", ".next", "**/*.test.ts", "**/*.test.tsx"]
+}

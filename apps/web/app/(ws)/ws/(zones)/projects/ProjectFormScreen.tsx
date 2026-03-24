@@ -2,8 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import AgDeleteConfirmModal from "@/components/shared/ag-aui/AgDeleteConfirmModal";
-import AgPropertyForm, { type ProjectFormData } from "@/components/shared/ag-aui/AgPropertyForm";
+import { AgDeleteConfirmModal, AgPropertyForm, type ProjectFormData } from "@anan/ag-ui/anan";
 
 type ProjectFormScreenProps = {
   projectId?: string;

@@ -1,27 +1,48 @@
-# Backend: Admin Zone
+# Backend: `admin_zone`
 
-## Architecture: The Fortress Pattern (Server-Side)
+## Ownership And Purpose
+`convex/admin_zone` owns admin-only operational projections and mutations for users, organizations, properties, compliance, analytics, orders, knowledge, notifications, threads, and system maintenance tasks.
 
-This zone owns all administrative logic. It is strictly isolated from other business domains.
+## Why This Zone Exists
+Admin needs broad operational visibility and control that should not leak into broker, developer, or buyer surfaces. This zone keeps those privileged read models and operational mutations isolated behind admin-only access.
 
-### 1. Handler Isolation
-Convex functions in this folder MUST only be accessible by users with the `admin` role. Logic that is reusable by other zones should be moved to `convex/shared_logic`.
+## Architecture Overview
+- Root feature handlers such as `users.ts`, `organizations.ts`, `properties.ts`, `overview.ts`, `analytics.ts`, `verifications.ts`
+- Focused operational handlers such as `orders.ts`, `banks.ts`, `knowledge.ts`, `threads.ts`, `notifications.ts`
+- `services/`: admin-internal helpers for user/property operations
 
-### 2. Service Pattern
-Complex business logic (e.g., specific bank calculation logic or user permission merging) should live in the `services/` subdirectory as side-effect-free functions. The main Convex handlers should act as Orchestrators that handle the database I/O and call these services.
-
-### 3. Documentation (WHY/WHAT/HOW)
-Mandatory for every exported `query` or `mutation`. 
-
-```typescript
-/**
- * WHY:   Allows root administrators to review system-wide bank entities.
- * WHAT:  Returns a paginated list of banks filtered by status.
- * HOW:   Uses `db.query("banks")` with a strict index filter.
- */
-export const listBanks = query(...)
+## Flowchart
+```mermaid
+flowchart LR
+  A["Admin surface"] --> B["admin_zone handler"]
+  B --> C["admin services or direct query/mutation logic"]
+  C --> D["shared_logic + DB"]
+  D --> E["Admin projection or mutation result"]
 ```
 
-### 4. Directives
-- **X** DO NOT import directly from another zone's handler files.
-- **X** DO NOT bypass the centralized retry logic in `shared_logic`.
+## Stable Entrypoints
+- Root feature files such as `users.ts`, `organizations.ts`, `properties.ts`, `overview.ts`, `analytics.ts`
+- `services/usersService.ts`
+- `services/propertiesService.ts`
+
+## Outside-In Usage
+Use `admin_zone` only for admin-optimized projections or operations. Other zones should not import admin handlers to avoid accidentally coupling themselves to privileged read models. If behavior is reusable across non-admin callers, move it to `shared_logic`.
+
+## Allowed And Forbidden Imports
+- Allowed: `_core`, `shared_logic`, local services
+- Allowed: admin app/server consumers and tests
+- Forbidden: broker/developer/user/public flows depending on admin-only handlers
+- Forbidden: cross-zone deep imports when the ownership is actually shared business logic
+
+## Dependency Map
+- Upstream consumers: admin UI and operational tooling
+- Downstream dependencies: `shared_logic`, local services, schema, admin-only mutation/query handlers
+
+## Common Extension Tasks
+- Add an admin projection: create or extend a focused root handler file
+- Add reusable admin helper logic: put it in `services/` if it reduces handler size and keeps behavior pure
+- Promote non-admin reusable behavior out to `shared_logic`
+
+## Related Docs
+- `convex/admin_zone/ZONE_REGISTER.md`
+- `convex/admin_zone/ZONE_AUDIT.md`

@@ -1,5 +1,5 @@
 /**
- * Text pipeline – normalize intent, produce ProcessedInput for agent.
+ * Text pipeline – normalize intent, produce ProcessedInput for the deterministic buyer flow.
  */
 import type { ChannelType } from "../../../../shared_logic/lib/middleware/channelDetect";
 
@@ -9,6 +9,16 @@ export type ProcessedInput = {
   text: string;
   threadId?: string;
   displayName?: string;
+  messageType:
+    | "text"
+    | "image"
+    | "audio"
+    | "video"
+    | "document"
+    | "interactive_button_reply"
+    | "interactive_list_reply";
+  interactiveReplyId?: string;
+  interactiveReplyTitle?: string;
 };
 
 /**
@@ -21,6 +31,9 @@ export function processTextPipeline(params: {
   userId: string;
   threadId?: string;
   displayName?: string;
+  messageType: ProcessedInput["messageType"];
+  interactiveReplyId?: string;
+  interactiveReplyTitle?: string;
 }): ProcessedInput {
   const normalized = params.text.replace(/\s+/g, " ").trim();
   return {
@@ -29,5 +42,8 @@ export function processTextPipeline(params: {
     text: normalized,
     threadId: params.threadId,
     displayName: params.displayName,
+    messageType: params.messageType,
+    interactiveReplyId: params.interactiveReplyId,
+    interactiveReplyTitle: params.interactiveReplyTitle,
   };
 }

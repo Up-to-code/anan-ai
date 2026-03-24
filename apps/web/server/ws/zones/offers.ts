@@ -4,7 +4,7 @@ import {
   getBrokerOffersSnapshot,
   publishBrokerOffer,
   respondToBrokerOffer,
-} from "@/server/broker_zone/offers";
+} from "@/server/broker_zone";
 import type { WorkspaceAudience, WorkspaceOwnerContext } from "@/server/contracts/workspace";
 import { convexOffersRepository } from "@/server/infrastructure/convex/offersRepository";
 import {
@@ -13,7 +13,7 @@ import {
   getRedOffersSnapshot,
   publishRedOffer,
   respondToRedOffer,
-} from "@/server/red_zone/offers";
+} from "@/server/red_zone";
 import { createUnavailableZoneError } from "./errors";
 import { buildWorkspaceScopedSessionResolver } from "./session";
 

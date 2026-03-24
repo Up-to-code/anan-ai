@@ -124,6 +124,7 @@ import type * as ai_zone_agents_team_workspace_projects_anan_workspace_projects_
 import type * as ai_zone_agents_types from "../ai_zone/agents/types.js";
 import type * as ai_zone_assistant from "../ai_zone/assistant.js";
 import type * as ai_zone_assistantPro from "../ai_zone/assistantPro.js";
+import type * as ai_zone_assistantPublic from "../ai_zone/assistantPublic.js";
 import type * as ai_zone_assistantWorkspace from "../ai_zone/assistantWorkspace.js";
 import type * as ai_zone_channels_rules_index from "../ai_zone/channels/rules/index.js";
 import type * as ai_zone_channels_whatsapp_actions from "../ai_zone/channels/whatsapp/actions.js";
@@ -135,6 +136,8 @@ import type * as ai_zone_channels_whatsapp_service from "../ai_zone/channels/wha
 import type * as ai_zone_channels_whatsapp_webhook from "../ai_zone/channels/whatsapp/webhook.js";
 import type * as ai_zone_services_agUi from "../ai_zone/services/agUi.js";
 import type * as ai_zone_services_assistantService from "../ai_zone/services/assistantService.js";
+import type * as ai_zone_services_publicAssistantResponse from "../ai_zone/services/publicAssistantResponse.js";
+import type * as ai_zone_services_voiceSynthesisService from "../ai_zone/services/voiceSynthesisService.js";
 import type * as ai_zone_services_voiceTranscriptionService from "../ai_zone/services/voiceTranscriptionService.js";
 import type * as ai_zone_workflows_index from "../ai_zone/workflows/index.js";
 import type * as auditLog from "../auditLog.js";
@@ -233,6 +236,13 @@ import type * as uploadthing from "../uploadthing.js";
 import type * as user_zone_mobile_assistant from "../user_zone/mobile/assistant.js";
 import type * as user_zone_mobile_contracts from "../user_zone/mobile/contracts.js";
 import type * as user_zone_mobile_feed from "../user_zone/mobile/feed.js";
+import type * as user_zone_whatsapp_contracts from "../user_zone/whatsapp/contracts.js";
+import type * as user_zone_whatsapp_formatters from "../user_zone/whatsapp/formatters.js";
+import type * as user_zone_whatsapp_handoff from "../user_zone/whatsapp/handoff.js";
+import type * as user_zone_whatsapp_index from "../user_zone/whatsapp/index.js";
+import type * as user_zone_whatsapp_propertyFlow from "../user_zone/whatsapp/propertyFlow.js";
+import type * as user_zone_whatsapp_searchFlow from "../user_zone/whatsapp/searchFlow.js";
+import type * as user_zone_whatsapp_state from "../user_zone/whatsapp/state.js";
 
 import type {
   ApiFromModules,
@@ -357,6 +367,7 @@ declare const fullApi: ApiFromModules<{
   "ai_zone/agents/types": typeof ai_zone_agents_types;
   "ai_zone/assistant": typeof ai_zone_assistant;
   "ai_zone/assistantPro": typeof ai_zone_assistantPro;
+  "ai_zone/assistantPublic": typeof ai_zone_assistantPublic;
   "ai_zone/assistantWorkspace": typeof ai_zone_assistantWorkspace;
   "ai_zone/channels/rules/index": typeof ai_zone_channels_rules_index;
   "ai_zone/channels/whatsapp/actions": typeof ai_zone_channels_whatsapp_actions;
@@ -368,6 +379,8 @@ declare const fullApi: ApiFromModules<{
   "ai_zone/channels/whatsapp/webhook": typeof ai_zone_channels_whatsapp_webhook;
   "ai_zone/services/agUi": typeof ai_zone_services_agUi;
   "ai_zone/services/assistantService": typeof ai_zone_services_assistantService;
+  "ai_zone/services/publicAssistantResponse": typeof ai_zone_services_publicAssistantResponse;
+  "ai_zone/services/voiceSynthesisService": typeof ai_zone_services_voiceSynthesisService;
   "ai_zone/services/voiceTranscriptionService": typeof ai_zone_services_voiceTranscriptionService;
   "ai_zone/workflows/index": typeof ai_zone_workflows_index;
   auditLog: typeof auditLog;
@@ -466,6 +479,13 @@ declare const fullApi: ApiFromModules<{
   "user_zone/mobile/assistant": typeof user_zone_mobile_assistant;
   "user_zone/mobile/contracts": typeof user_zone_mobile_contracts;
   "user_zone/mobile/feed": typeof user_zone_mobile_feed;
+  "user_zone/whatsapp/contracts": typeof user_zone_whatsapp_contracts;
+  "user_zone/whatsapp/formatters": typeof user_zone_whatsapp_formatters;
+  "user_zone/whatsapp/handoff": typeof user_zone_whatsapp_handoff;
+  "user_zone/whatsapp/index": typeof user_zone_whatsapp_index;
+  "user_zone/whatsapp/propertyFlow": typeof user_zone_whatsapp_propertyFlow;
+  "user_zone/whatsapp/searchFlow": typeof user_zone_whatsapp_searchFlow;
+  "user_zone/whatsapp/state": typeof user_zone_whatsapp_state;
 }>;
 
 /**

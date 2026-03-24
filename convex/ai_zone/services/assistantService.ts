@@ -31,7 +31,7 @@ export type AssistantOwner = {
     ownerREDId?: Id<"RED">;
 };
 
-type AssistantKind = "default" | "anan_workspace" | "anan_pro";
+type AssistantKind = "default" | "anan_workspace" | "anan_pro" | "anan_main_public";
 type ThreadScope = "user" | "organization";
 
 type WorkspaceProjectFields = {
@@ -117,6 +117,10 @@ function normalizeOwner(ownerOrUser: string | AssistantOwner): AssistantOwner {
 
 function isWorkspaceKind(kind?: AssistantKind): boolean {
     return kind === "anan_workspace" || kind === "anan_pro";
+}
+
+function isPublicAssistantKind(kind?: AssistantKind): boolean {
+    return kind === "anan_main_public";
 }
 
 function matchesAssistantKind(
@@ -267,6 +271,24 @@ export async function listThreadMessages(
         .collect();
 
     return messages.sort((a, b) => a.createdAt - b.createdAt);
+}
+
+/**
+ * WHY:   Public and app-specific assistant adapters still need one safe thread lookup primitive.
+ * WHAT:  Returns the requested thread only when it belongs to the supplied owner and assistant kind.
+ * HOW:   Reads the thread directly from storage, then applies the same access predicate used by message listing.
+ */
+export async function getThreadById(
+    ctx: QueryCtx,
+    owner: AssistantOwner,
+    threadId: Id<"assistantThreads">,
+    assistantKind?: AssistantKind,
+): Promise<Doc<"assistantThreads"> | null> {
+    const thread = await ctx.db.get(threadId);
+    if (!thread || !canAccessThread(thread, owner, assistantKind)) {
+        return null;
+    }
+    return thread;
 }
 
 /**
@@ -696,6 +718,9 @@ export async function handleAssistantMessage(
         orchestratorName?: string;
         promptPrefix?: string;
         streamSessionId?: string;
+        ownerOverride?: AssistantOwner;
+        initialThreadOverride?: Doc<"assistantThreads"> | null;
+        saveConversationStepMutationOverride?: unknown;
     },
 ): Promise<{
     ok: true;
@@ -708,12 +733,26 @@ export async function handleAssistantMessage(
     let streamSeq = 0;
 
     // 1. Resolve thread & owner via query
-    const { thread, owner } = await ctx.runQuery(
-        (isWorkspaceAssistant
-            ? apiRefs["ai_zone/assistantWorkspace"].getThread
-            : apiRefs["ai_zone/assistant"].getThread),
-        {},
-    );
+    let thread = args.initialThreadOverride ?? null;
+    let owner = args.ownerOverride;
+
+    if (!owner) {
+        const resolved = await ctx.runQuery(
+            (isWorkspaceAssistant
+                ? apiRefs["ai_zone/assistantWorkspace"].getThread
+                : apiRefs["ai_zone/assistant"].getThread),
+            {},
+        );
+        thread = resolved.thread;
+        owner = resolved.owner;
+    }
+    const resolvedOwner = owner;
+    if (!resolvedOwner) {
+        throw new ConvexError({
+            code: "UNAUTHORIZED",
+            message: "Assistant owner could not be resolved.",
+        });
+    }
 
     let activeThreadId = (args.threadId ?? thread?._id) as Id<"assistantThreads"> | undefined;
     let streamedAssistantText = "";
@@ -769,10 +808,10 @@ export async function handleAssistantMessage(
                     ...event,
                     timestamp: Date.now(),
                 },
-                userId: owner.userId,
-                ownerType: owner.ownerType,
-                ownerBrokerId: owner.ownerBrokerId,
-                ownerREDId: owner.ownerREDId,
+                userId: resolvedOwner.userId,
+                ownerType: resolvedOwner.ownerType,
+                ownerBrokerId: resolvedOwner.ownerBrokerId,
+                ownerREDId: resolvedOwner.ownerREDId,
             },
         );
 
@@ -827,7 +866,9 @@ export async function handleAssistantMessage(
 
     // 2. Get entitlement (determines qa vs action mode)
     const entitlement = await ctx.runQuery(
-        apiRefs["shared_logic/subscriptions/index"].getAssistantEntitlement,
+        isPublicAssistantKind(args.assistantKind)
+            ? apiRefs["shared_logic/subscriptions/index"].getAssistantEntitlementSafe
+            : apiRefs["shared_logic/subscriptions/index"].getAssistantEntitlement,
         {},
     );
     const mode = entitlement.mode;
@@ -921,8 +962,8 @@ export async function handleAssistantMessage(
         ? await orchestrateWorkspace({
             ctx,
             prompt: basePrompt,
-            role: roleMap[owner.ownerType] ?? "user",
-            userId: owner.userId,
+            role: roleMap[resolvedOwner.ownerType] ?? "user",
+            userId: resolvedOwner.userId,
             threadId: activeThreadId as string | undefined,
             ragContext: knowledgeContext || undefined,
             channel: "app",
@@ -940,8 +981,8 @@ export async function handleAssistantMessage(
         : await orchestrate({
             ctx,
             prompt: basePrompt,
-            role: roleMap[owner.ownerType] ?? "user",
-            userId: owner.userId,
+            role: roleMap[resolvedOwner.ownerType] ?? "user",
+            userId: resolvedOwner.userId,
             threadId: activeThreadId as string | undefined,
             ragContext: knowledgeContext || undefined,
             channel: "app",
@@ -970,7 +1011,7 @@ export async function handleAssistantMessage(
                     action: "create_project_draft",
                 },
             });
-            const created = await autoCreateWorkspaceProjectDraft(ctx, owner, workspaceActionState.fields);
+            const created = await autoCreateWorkspaceProjectDraft(ctx, resolvedOwner, workspaceActionState.fields);
             workspaceActionState = {
                 ...workspaceActionState,
                 state: "completed",
@@ -1064,7 +1105,9 @@ export async function handleAssistantMessage(
     }
 
     const saveConversationStepMutation =
-        isWorkspaceAssistant
+        args.saveConversationStepMutationOverride
+            ? args.saveConversationStepMutationOverride
+            : isWorkspaceAssistant
             ? internalRefs["ai_zone/assistantWorkspace"]._saveConversationStep
             : internalRefs["ai_zone/assistant"]._saveConversationStep;
 
@@ -1074,10 +1117,10 @@ export async function handleAssistantMessage(
         saveConversationStepMutation,
         {
             threadId: activeThreadId,
-            userId: owner.userId,
-            ownerType: owner.ownerType,
-            ownerBrokerId: owner.ownerBrokerId,
-            ownerREDId: owner.ownerREDId,
+            userId: resolvedOwner.userId,
+            ownerType: resolvedOwner.ownerType,
+            ownerBrokerId: resolvedOwner.ownerBrokerId,
+            ownerREDId: resolvedOwner.ownerREDId,
             userMessage: effectiveUserMessage,
             userMessageMetadata: args.inputMode ? { inputMode: args.inputMode } : undefined,
             persistUserMessage: !(args.regenerate && regenerateSource),

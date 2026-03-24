@@ -26,7 +26,7 @@ export default async function EditProjectRoute({ params }: EditProjectRouteProps
     notFound();
   }
 
-  async function saveProject(data: import("@/components/shared/ag-aui/AgPropertyForm").ProjectFormData) {
+  async function saveProject(data: import("@anan/ag-ui/anan").ProjectFormData) {
     "use server";
 
     const actionZone = getWorkspacePropertyZone(audience, ownerContext);

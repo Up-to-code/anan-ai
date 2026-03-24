@@ -59,6 +59,38 @@ anan-ai/
 │   └── ai_zone/
 ```
 
+### Package Extraction Rule
+
+`packages/*` is reserved for stable shared systems, not just heavy folders.
+
+Move code into a package only when it is already reused across apps/projects, or when it is clearly being shaped as a durable public surface with stable entrypoints, documentation, and tests. If code is large but still belongs to one app or one backend zone, keep it local and improve the local architecture first with thinner orchestrators, clearer ownership, and better folder boundaries.
+
+Use `@anan/ag-ui` as the reference pattern:
+- generic reusable core in `packages/*`
+- app-specific behavior behind adapter entrypoints
+- thin local wrappers only where a host surface still needs its own contract
+
+### Packaging Readiness Checklist
+
+Before extracting a new package, confirm all of the following:
+- the module is reused, or intentionally designed for reuse, beyond one owning surface
+- the public entrypoints and ownership are stable enough to document
+- README/examples are justified and maintainable
+- the package can be typechecked and tested independently from the host app
+- app-specific dependencies can be isolated behind adapters instead of leaking into the core API
+
+If those points are not true yet, do not package it.
+
+### Destination Buckets
+
+When auditing heavy code, classify it into exactly one of these homes:
+- `packages/*`
+  Stable shared systems with reusable APIs and independent docs/tests
+- local shared folders
+  App-wide shared code that still belongs to one runtime surface
+- zone-local folders
+  Behavior tied tightly to one page, workspace subsystem, or backend zone
+
 ---
 
 ## 3. Backend: The Multi-Agent Orchestrator
@@ -115,3 +147,4 @@ Always utilize the files in `ai_zone/agents/shared/`:
 - **Never mutate state directly:** Always use immutable updates.
 - **Small functions:** An orchestrator file should rarely exceed 150-200 lines. If it does, abstract the UI into sub-components.
 - **Follow the Breadcrumbs:** When assigned a task, look at the `ZONE_README.md` and read the `index.ts` gateway first to understand the landscape. Do not barge in and create files anywhere.
+- **Package only shared systems:** Do not move code to `packages/*` just because it is large; package only stable cross-surface or cross-project systems with clear public APIs.

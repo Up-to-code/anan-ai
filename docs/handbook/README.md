@@ -66,6 +66,7 @@ This handbook is **docs-only**: it describes enforcement, but does not add autom
 #### Web (Workspace + Public)
 
 - `docs/handbook/web/README.md`
+- `docs/handbook/web/zones.md`
 - `docs/handbook/web/app-router.md`
 - `docs/handbook/web/server-gateway.md`
 - `docs/handbook/web/ssr-performance.md`

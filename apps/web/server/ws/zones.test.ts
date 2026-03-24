@@ -8,57 +8,47 @@ vi.mock("@/server/auth/session", () => ({
   requireSessionContext,
 }));
 
-vi.mock("@/server/broker_zone/properties", () => ({
+vi.mock("@/server/broker_zone", () => ({
   listBrokerProperties: vi.fn(),
   getBrokerProperty: vi.fn(),
   createBrokerProperty: vi.fn(),
   updateBrokerProperty: vi.fn(),
   deleteBrokerProperty: vi.fn(),
   publishBrokerProperty: vi.fn(),
+  applyToBrokerOffer: vi.fn(),
+  createBrokerOffer: vi.fn(),
+  getBrokerOffersSnapshot: vi.fn(),
+  publishBrokerOffer: vi.fn(),
+  respondToBrokerOffer: vi.fn(),
+  addBrokerDealDocument: vi.fn(),
+  createBrokerDeal: vi.fn(),
+  listBrokerDeals: vi.fn(),
+  updateBrokerDealFollowUp: vi.fn(),
+  updateBrokerDealNotes: vi.fn(),
+  updateBrokerDealStage: vi.fn(),
 }));
 
-vi.mock("@/server/red_zone/properties", () => ({
+vi.mock("@/server/red_zone", () => ({
   listRedProperties: vi.fn(),
   getRedProperty: vi.fn(),
   createRedProperty: vi.fn(),
   updateRedProperty: vi.fn(),
   deleteRedProperty: vi.fn(),
   publishRedProperty: vi.fn(),
-}));
-
-vi.mock("@/server/broker_zone/offers", () => ({
-  applyToBrokerOffer: vi.fn(),
-  createBrokerOffer: vi.fn(),
-  getBrokerOffersSnapshot: vi.fn(),
-  publishBrokerOffer: vi.fn(),
-  respondToBrokerOffer: vi.fn(),
-}));
-
-vi.mock("@/server/red_zone/offers", () => ({
   applyToRedOffer: vi.fn(),
   createRedOffer: vi.fn(),
   getRedOffersSnapshot: vi.fn(),
   publishRedOffer: vi.fn(),
   respondToRedOffer: vi.fn(),
-}));
-
-vi.mock("@/server/broker_zone/crm", () => ({
-  addBrokerDealDocument: vi.fn(),
-  createBrokerDeal: vi.fn(),
-  listBrokerDeals: vi.fn(),
-  updateBrokerDealNotes: vi.fn(),
-  updateBrokerDealStage: vi.fn(),
-}));
-
-vi.mock("@/server/red_zone/crm", () => ({
   addRedDealDocument: vi.fn(),
   createRedDeal: vi.fn(),
   listRedDeals: vi.fn(),
+  updateRedDealFollowUp: vi.fn(),
   updateRedDealNotes: vi.fn(),
   updateRedDealStage: vi.fn(),
 }));
 import { getWorkspaceCrmZone, getWorkspaceOffersZone, getWorkspacePropertyZone } from "./zones";
-import { listBrokerProperties } from "@/server/broker_zone/properties";
+import { listBrokerProperties } from "@/server/broker_zone";
 
 describe("workspace zone dispatch", () => {
   it("selects broker property functions", () => {

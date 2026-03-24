@@ -14,3 +14,6 @@ export const VOICE_FALLBACK_MESSAGE_AR =
 
 export const VOICE_FALLBACK_MESSAGE_EN =
   "Sorry, we couldn't transcribe your voice. Please try again or type your message.";
+
+export const WHATSAPP_GENERIC_ERROR_MESSAGE_AR =
+  "صار عندي خلل بسيط أثناء معالجة رسالتك. أرسل طلبك مرة ثانية وسأكمل معك مباشرة.";

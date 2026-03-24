@@ -109,5 +109,6 @@ pnpm test:once
 - Keep controllers and routes **thin**.
 - Respect **zone boundaries** (no deep imports across zones).
 - Put shared logic in `convex/shared_logic` once.
+- Put code in `packages/*` only when it is a **stable shared system**, not just a large folder.
 - Use **index-first** and **paginated** queries.
 - Keep public web routes SSR/static-friendly.

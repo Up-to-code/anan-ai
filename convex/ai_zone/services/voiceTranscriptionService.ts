@@ -42,8 +42,11 @@ async function sleep(ms: number) {
 export async function transcribeStoredVoiceNote(
   ctx: ActionCtx,
   storageId: Id<"_storage">,
+  options?: { skipAuthorization?: boolean },
 ): Promise<{ text: string; languageCode?: string }> {
-  await ctx.runQuery(apiRefs["ai_zone/assistantWorkspace"].getThread, {});
+  if (!options?.skipAuthorization) {
+    await ctx.runQuery(apiRefs["ai_zone/assistantWorkspace"].getThread, {});
+  }
 
   const storageUrl = await ctx.runQuery(apiRefs["shared_logic/lib/storage"].getUrl, { storageId });
   if (!storageUrl) {

@@ -49,32 +49,7 @@ export type OfferThreadItem = {
   summary: string;
 };
 
-export type AgUiActionDefinition = {
-  id:
-    | "create_project"
-    | "publish_offer"
-    | "send_offer"
-    | "latest_update"
-    | "search_market"
-    | "search_project"
-    | "search_broker_demand";
-  title: string;
-  zone: "projects" | "offers" | "crm" | "market";
-  fields: string[];
-};
-
-export type AgUiExecutionState = "draft" | "collecting" | "ready" | "executing" | "completed" | "failed";
-
-export type AgUiDraftState = {
-  actionId: AgUiActionDefinition["id"];
-  title: string;
-  description: string;
-  fields: Record<string, string>;
-  missingFields: string[];
-  zone: AgUiActionDefinition["zone"];
-  relation?: PersonRelation | null;
-  state: AgUiExecutionState;
-};
+export type { AgUiActionDefinition, AgUiDraftState, AgUiExecutionState } from "@anan/ag-ui";
 
 export type MarketAreaInsight = {
   city: string;

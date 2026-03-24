@@ -85,7 +85,46 @@ This chapter defines what each zone owns and how to decide where new code should
   - `convex/_core/ZONE_README.md`
   - `convex/shared_logic/ZONE_README.md`
   - `convex/ai_zone/ZONE_README.md`
-  - (and others)
+  - `convex/broker_zone/ZONE_README.md`
+  - `convex/red_zone/ZONE_README.md`
+  - `convex/user_zone/ZONE_README.md`
+  - `convex/admin_zone/ZONE_README.md`
+  - `convex/public_zone/ZONE_README.md`
+
+### Local doc map
+
+- `_core`
+  - local source of truth: `convex/_core/ZONE_README.md`
+  - deep register: `convex/_core/ZONE_REGISTER.md`
+  - audit backlog: `convex/_core/ZONE_AUDIT.md`
+- `shared_logic`
+  - local source of truth: `convex/shared_logic/ZONE_README.md`
+  - deep register: `convex/shared_logic/ZONE_REGISTER.md`
+  - audit backlog: `convex/shared_logic/ZONE_AUDIT.md`
+- `ai_zone`
+  - local source of truth: `convex/ai_zone/ZONE_README.md`
+  - deep register: `convex/ai_zone/ZONE_REGISTER.md`
+  - audit backlog: `convex/ai_zone/ZONE_AUDIT.md`
+- `broker_zone`
+  - local source of truth: `convex/broker_zone/ZONE_README.md`
+  - deep register: `convex/broker_zone/ZONE_REGISTER.md`
+  - audit backlog: `convex/broker_zone/ZONE_AUDIT.md`
+- `red_zone`
+  - local source of truth: `convex/red_zone/ZONE_README.md`
+  - deep register: `convex/red_zone/ZONE_REGISTER.md`
+  - audit backlog: `convex/red_zone/ZONE_AUDIT.md`
+- `user_zone`
+  - local source of truth: `convex/user_zone/ZONE_README.md`
+  - deep register: `convex/user_zone/ZONE_REGISTER.md`
+  - audit backlog: `convex/user_zone/ZONE_AUDIT.md`
+- `admin_zone`
+  - local source of truth: `convex/admin_zone/ZONE_README.md`
+  - deep register: `convex/admin_zone/ZONE_REGISTER.md`
+  - audit backlog: `convex/admin_zone/ZONE_AUDIT.md`
+- `public_zone`
+  - local source of truth: `convex/public_zone/ZONE_README.md`
+  - deep register: `convex/public_zone/ZONE_REGISTER.md`
+  - audit backlog: `convex/public_zone/ZONE_AUDIT.md`
 
 ---
 
@@ -94,4 +133,4 @@ This chapter defines what each zone owns and how to decide where new code should
 - Putting “quick fixes” into the wrong zone and leaving them forever.
 - Deep-importing into another zone’s internal files.
 - Creating a new folder name that semantically overlaps an existing capability (duplicate ownership).
-
+- Treating this handbook page as the source of truth after a local zone doc has changed.

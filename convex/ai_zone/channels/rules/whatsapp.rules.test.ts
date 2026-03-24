@@ -6,6 +6,7 @@ import {
   WA_MAX_LINES,
   VOICE_FALLBACK_MESSAGE_AR,
   VOICE_FALLBACK_MESSAGE_EN,
+  WHATSAPP_GENERIC_ERROR_MESSAGE_AR,
 } from "./whatsapp.rules";
 
 describe("whatsapp.rules", () => {
@@ -23,5 +24,6 @@ describe("whatsapp.rules", () => {
     expect(VOICE_FALLBACK_MESSAGE_AR).toBeTruthy();
     expect(VOICE_FALLBACK_MESSAGE_AR.length).toBeGreaterThan(0);
     expect(VOICE_FALLBACK_MESSAGE_EN).toBeTruthy();
+    expect(WHATSAPP_GENERIC_ERROR_MESSAGE_AR).toBeTruthy();
   });
 });

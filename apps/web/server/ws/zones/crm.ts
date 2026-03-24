@@ -5,7 +5,7 @@ import {
   updateBrokerDealFollowUp,
   updateBrokerDealNotes,
   updateBrokerDealStage,
-} from "@/server/broker_zone/crm";
+} from "@/server/broker_zone";
 import type { WorkspaceAudience, WorkspaceOwnerContext } from "@/server/contracts/workspace";
 import { convexBrokerZoneRepository } from "@/server/infrastructure/convex/brokerZoneRepository";
 import { convexCrmRepository } from "@/server/infrastructure/convex/crmRepository";
@@ -17,7 +17,7 @@ import {
   updateRedDealFollowUp,
   updateRedDealNotes,
   updateRedDealStage,
-} from "@/server/red_zone/crm";
+} from "@/server/red_zone";
 import { createUnavailableZoneError } from "./errors";
 import { buildWorkspaceScopedSessionResolver } from "./session";
 

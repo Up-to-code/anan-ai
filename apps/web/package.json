@@ -10,6 +10,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@anan/ag-ui": "workspace:*",
     "@base-ui/react": "^1.2.0",
     "@convex-dev/auth": "^0.0.91",
     "@hookform/resolvers": "^5.2.2",
@@ -51,8 +52,8 @@
     "@playwright/test": "^1.51.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^19.2.3",
+    "@types/react-dom": "^19.2.3",
     "@types/react-svg-map": "^2.1.4",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
