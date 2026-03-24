@@ -1,6 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
-import { uploadedFileReferenceListValidator } from "../../shared_logic/files";
+import { uploadedFileReferenceListValidator } from "./uploadedFiles";
 
 /**
  * CRM Schema

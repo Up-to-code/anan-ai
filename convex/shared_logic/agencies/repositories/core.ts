@@ -178,26 +178,44 @@ export async function resolveTenantOrgIdForOwner(
   return link.tenantOrgId;
 }
 
+async function resolveTenantOrgIdFromCurrentTenantLink(
+  ctx: AgenciesRepositoryCtx,
+  currentTenantOrgId: string | undefined
+) {
+  if (!currentTenantOrgId) return null;
+  const link = await findTenantOrgLinkByTenantOrgId(ctx, currentTenantOrgId);
+  return link?.tenantOrgId ?? null;
+}
+
+async function maybePatchProfileTenantOrgId(
+  ctx: AgenciesRepositoryCtx,
+  profile: UserProfileRecord,
+  tenantOrgId: string
+) {
+  if (!isMutationCtx(ctx) || profile.currentTenantOrgId === tenantOrgId) return;
+  await ctx.db.patch(profile._id, { currentTenantOrgId: tenantOrgId, updatedAt: Date.now() });
+}
+
+async function resolveTenantOrgIdFromProfileOwner(
+  ctx: AgenciesRepositoryCtx,
+  profile: UserProfileRecord
+) {
+  if (!profile.brokerId && !profile.REDId) return null;
+  const owner = buildOwnerContextFromProfile(profile);
+  const link = await findTenantOrgLinkByOwner(ctx, owner);
+  if (!link) return null;
+  await maybePatchProfileTenantOrgId(ctx, profile, link.tenantOrgId);
+  return link.tenantOrgId;
+}
+
 export async function resolveTenantOrgIdForProfile(
   ctx: AgenciesRepositoryCtx,
   profile: UserProfileRecord,
 ): Promise<string> {
-  if (profile.currentTenantOrgId) {
-    const link = await findTenantOrgLinkByTenantOrgId(ctx, profile.currentTenantOrgId);
-    if (link) return link.tenantOrgId;
-  }
-
-  if (profile.brokerId || profile.REDId) {
-    const owner = buildOwnerContextFromProfile(profile);
-    const link = await findTenantOrgLinkByOwner(ctx, owner);
-    if (link) {
-      if (isMutationCtx(ctx) && profile.currentTenantOrgId !== link.tenantOrgId) {
-        await ctx.db.patch(profile._id, { currentTenantOrgId: link.tenantOrgId, updatedAt: Date.now() });
-      }
-      return link.tenantOrgId;
-    }
-  }
-
+  const linkedTenantOrgId = await resolveTenantOrgIdFromCurrentTenantLink(ctx, profile.currentTenantOrgId);
+  if (linkedTenantOrgId) return linkedTenantOrgId;
+  const ownerTenantOrgId = await resolveTenantOrgIdFromProfileOwner(ctx, profile);
+  if (ownerTenantOrgId) return ownerTenantOrgId;
   throw new ConvexError({ code: "FORBIDDEN", message: "Tenant organization required" });
 }
 

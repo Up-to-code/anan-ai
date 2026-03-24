@@ -1,5 +1,5 @@
 import { DomainError, toErrorResponse } from "@/server/contracts/errors";
-import { createPropertyVerificationRequestForCurrentOrg } from "@/server/domains/verifications/service";
+import { createPropertyVerificationRequestForCurrentOrg } from "@/server/domains/workspace/verifications/service";
 
 /**
  * WHY:   Property verification requests should submit through a dedicated gateway route.

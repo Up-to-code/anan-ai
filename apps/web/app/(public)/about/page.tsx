@@ -2,10 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Target, Shield, Users, ArrowRight } from "lucide-react";
-import ButtonLink from "@/components/shared/ButtonLink";
-import FeatureCardGrid from "@/components/shared/FeatureCardGrid";
-import MetricGrid from "@/components/shared/MetricGrid";
-import Section from "@/components/shared/Section";
+import { ButtonLink, FeatureCardGrid, MetricGrid, Section } from "@/app/(public)/public";
 
 const containerVariants = {
     hidden: { opacity: 0 },

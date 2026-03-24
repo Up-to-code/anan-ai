@@ -1,6 +1,6 @@
 import { DomainError } from "@/server/contracts/errors";
 import { marketFiltersSchema, type MarketFilters, type MarketSnapshot } from "@/server/contracts/market";
-import { getWorkspaceBehaviorForCurrentUser } from "@/server/domains/workspaces/service";
+import { getWorkspaceBehaviorForCurrentUser } from "@/server/domains/auth/workspaces/service";
 import {
   convexMarketRepository,
   type MarketRepository,

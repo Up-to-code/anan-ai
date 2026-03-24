@@ -10,7 +10,7 @@ import { tool, zodSchema } from "ai";
 import type { Tool } from "ai";
 import { z } from "zod";
 import type { ActionCtx } from "../../../../../_generated/server";
-import { apiRefs } from "../../../../../shared_logic/lib/generatedApiRefs";
+import { api } from "../../../../../_generated/api";
 import type { AgentRuntimeContext } from "../../../types";
 
 const inputSchema = zodSchema(
@@ -23,7 +23,7 @@ export function getLastSearchFindings(ctx: ActionCtx, runtime: AgentRuntimeConte
     inputSchema,
     execute: async ({ maxFindings }): Promise<unknown> => {
       return (await ctx.runQuery(
-        apiRefs["shared_logic/properties/history"].getLastSearchFindings,
+        api.shared_logic.properties.history.getLastSearchFindings,
         { userId: runtime.userId, threadId: runtime.threadId, maxFindings },
       )) as unknown;
     },

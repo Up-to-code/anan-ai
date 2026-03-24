@@ -1,10 +1,10 @@
-// @ts-nocheck
 import type { ActionCtx } from "../../../_generated/server";
 import { internal } from "../../../_generated/api";
+import { stepCountIs } from "ai";
 import { getChatModel } from "../../../shared_logic/lib/providers";
 import { cachedGenerateText } from "../../../shared_logic/llmCache";
 import { getAgentLLMConfigSafe } from "../config";
-import { DEFAULT_RETRY_CONFIG, FALLBACK_MODEL, withRetry, type AgentError } from "../shared/errorHandler";
+import { DEFAULT_RETRY_CONFIG, FALLBACK_MODEL, withRetry, type AgentError, type RetryConfig } from "../shared/errorHandler";
 import { extractTokenUsageFromResult } from "../shared/tokenTracker";
 import type { AgentRuntimeContext } from "../types";
 import { buildSystemPrompt } from "./promptPolicy";
@@ -42,7 +42,10 @@ export class BaseConfiguredAgent {
       this.definition.modelPolicy?.modelOverride ??
       getAgentLLMConfigSafe(runtime.orchestratorId)?.model ??
       "unknown";
-    const retryConfig = this.definition.runtimePolicy?.retryConfig ?? DEFAULT_RETRY_CONFIG;
+    const retryConfig: RetryConfig = {
+      ...DEFAULT_RETRY_CONFIG,
+      ...(this.definition.runtimePolicy?.retryConfig ?? {}),
+    };
     const systemPrompt = buildSystemPrompt(this.definition.prompt);
     const fullPrompt = [
       systemPrompt,
@@ -58,10 +61,12 @@ export class BaseConfiguredAgent {
           cachedGenerateText(
             ctx,
             {
-              model,
+              // NOTE: `cachedGenerateText` is typed against a transitive `@ai-sdk/provider` version.
+              // We cast the model here to keep typing localized until dependencies are unified.
+              model: model as any,
               prompt: fullPrompt,
               temperature: this.definition.modelPolicy?.temperature ?? 0.3,
-              maxSteps: this.definition.runtimePolicy?.maxSteps ?? 4,
+              stopWhen: stepCountIs(this.definition.runtimePolicy?.maxSteps ?? 4),
               toolChoice: "auto",
               tools,
             },
@@ -76,7 +81,7 @@ export class BaseConfiguredAgent {
             },
           ),
         this.definition.name,
-        retryConfig as any,
+        retryConfig,
       );
 
       const tokenUsage = extractTokenUsageFromResult(result);
@@ -107,10 +112,10 @@ export class BaseConfiguredAgent {
         const result = await cachedGenerateText(
           ctx,
           {
-            model,
+            model: model as any,
             prompt: fullPrompt,
             temperature: this.definition.modelPolicy?.temperature ?? 0.3,
-            maxSteps: this.definition.runtimePolicy?.maxSteps ?? 4,
+            stopWhen: stepCountIs(this.definition.runtimePolicy?.maxSteps ?? 4),
             toolChoice: "auto",
             tools,
           },
@@ -171,7 +176,7 @@ export class BaseConfiguredAgent {
             agentName: this.definition.name,
             message: String(primaryError),
             retryable: false,
-            attemptsMade: ((retryConfig as any)?.maxRetries ?? 0) + 1,
+            attemptsMade: retryConfig.maxRetries + 1,
           },
         };
       }
@@ -197,7 +202,7 @@ async function trackAgentUsage(
 ) {
   try {
     await ctx.runMutation(
-      (internal as any).ai_zone.agents.shared.tokenTrackerActions.trackTokenUsageInternal,
+      internal.ai_zone.agents.shared.tokenTrackerActions.trackTokenUsageInternal,
       params,
     );
   } catch (err) {

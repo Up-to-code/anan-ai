@@ -5,11 +5,6 @@ import OffersTabs from "./OffersTabs";
 import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
 import { buildComplianceBanner } from "../../_lib/complianceBanner";
 
-/**
- * WHY:   Offers now uses the unified workspace shell - no more separate zone.
- * WHAT:  Wraps the offers route with the main workspace layout.
- * HOW:   Loads workspace chrome data and renders offer tabs inside the shared shell.
- */
 export default async function OffersZoneLayout({
   children,
 }: {

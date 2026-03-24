@@ -7,17 +7,19 @@ async function attachProperty(ctx: QueryCtx, offer: Doc<"offers">) {
   return { ...offer, property };
 }
 
+async function resolveSenderName(ctx: QueryCtx, offer: Doc<"offers">) {
+  if (offer.fromBrokerId) {
+    return (await ctx.db.get(offer.fromBrokerId))?.name ?? "غير معروف";
+  }
+  if (offer.fromREDId) {
+    return (await ctx.db.get(offer.fromREDId))?.name ?? "غير معروف";
+  }
+  return "غير معروف";
+}
+
 async function attachSenderProjection(ctx: QueryCtx, offer: Doc<"offers">) {
   const property = await ctx.db.get(offer.propertyId);
-  let senderName = "غير معروف";
-
-  if (offer.fromBrokerId) {
-    const broker = await ctx.db.get(offer.fromBrokerId);
-    if (broker) senderName = broker.name;
-  } else if (offer.fromREDId) {
-    const red = await ctx.db.get(offer.fromREDId);
-    if (red) senderName = red.name;
-  }
+  const senderName = await resolveSenderName(ctx, offer);
 
   return { ...offer, property, senderName };
 }

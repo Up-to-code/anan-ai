@@ -1,15 +1,14 @@
 import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
 import schema from "../../schema";
-import { internalRefs } from "../lib/generatedApiRefs";
+import { internal } from "../../_generated/api";
 import { modules } from "../../test.setup";
 
 describe("memory service", () => {
   it("storeInternal stores preference and getRelevantMemoriesByQuery returns it", async () => {
     const t = convexTest(schema, modules);
-    const storeInternal = internalRefs["shared_logic/memory/repository"]?.storeInternal;
-    const getRelevant = internalRefs["shared_logic/memory/repository"]?.getRelevantMemoriesByQuery;
-    if (!storeInternal || !getRelevant) return;
+    const storeInternal = internal.shared_logic.memory.repository.storeInternal;
+    const getRelevant = internal.shared_logic.memory.repository.getRelevantMemoriesByQuery;
 
     await t.run(async (ctx) => {
       const id = await ctx.runMutation(storeInternal as never, {

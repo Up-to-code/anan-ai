@@ -1,11 +1,10 @@
 "use server";
 
 import {
-  getAnanProThread,
   getAnanProVoiceUploadUrl,
   sendAnanProMessage,
   transcribeAnanProVoiceFromStorage,
-} from "@/server/domains/ananPro/service";
+} from "@/server/domains/workspace/ananPro/service";
 import {
   sendAnanProMessageInputSchema,
   transcribeVoiceFromStorageInputSchema,
@@ -30,21 +29,6 @@ function toActionError(error: unknown): WorkspaceActionResult<never> {
       status: normalized.status,
     },
   };
-}
-
-/**
- * WHY:   The workspace dashboard should load threads through server actions so auth/session stays server-owned.
- * WHAT:  Returns one assistant thread by id (or the latest thread when id is omitted).
- * HOW:   Delegates to the AnanPro domain service and normalizes failures into a stable action result.
- */
-export async function getAssistantThread(threadId?: string): Promise<WorkspaceActionResult<AnanProThread | null>> {
-  try {
-    const parsedThreadId = typeof threadId === "string" ? threadId.trim() : "";
-    const data = await getAnanProThread(parsedThreadId || undefined);
-    return { ok: true, data };
-  } catch (error) {
-    return toActionError(error);
-  }
 }
 
 /**

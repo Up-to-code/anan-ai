@@ -33,7 +33,6 @@ export default function ProjectDetailPage({ project }: { project: WorkspaceProje
               { label: "المساحة", value: project.specs.area },
               { label: "الحالة", value: project.specs.status },
             ]}
-            brokers={project.brokers}
             density="flexible"
           />
 
@@ -113,4 +112,3 @@ export default function ProjectDetailPage({ project }: { project: WorkspaceProje
     </div>
   );
 }
-

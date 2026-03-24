@@ -1,13 +1,11 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { ConvexError, v } from "convex/values";
+import { ConvexError, type Infer, v } from "convex/values";
 import { action, mutation } from "../../_generated/server";
-import { internalRefs } from "../../shared_logic/lib/generatedApiRefs";
+import { internal } from "../../_generated/api";
 import {
   mobileAssistantResponseValidator,
   mobileQualificationContextValidator,
 } from "./contracts";
-
-const mobileFeedInternal = internalRefs["user_zone/mobile/feed"];
 
 /**
  * WHY:   The mobile feed needs a property-aware assistant that returns UI cards rather than plain chat prose.
@@ -21,8 +19,8 @@ export const askPropertyAssistant = action({
     qualification: v.optional(mobileQualificationContextValidator),
   },
   returns: mobileAssistantResponseValidator,
-  handler: async (ctx, args) => {
-    const property = await ctx.runQuery(mobileFeedInternal.getPropertyContext, {
+  handler: async (ctx, args): Promise<Infer<typeof mobileAssistantResponseValidator>> => {
+    const property = await ctx.runQuery(internal.user_zone.mobile.feed.getPropertyContext as any, {
       propertyId: args.propertyId,
     });
     if (!property) {
@@ -104,6 +102,133 @@ type AssistantResponseParams = {
   };
 };
 
+function buildRoiCard(property: AssistantResponseParams["property"]) {
+  const annualRent = Math.round(property.price * 0.08);
+  const grossYieldPercent = Number(((annualRent / property.price) * 100).toFixed(1));
+  return {
+    type: "roi_summary" as const,
+    title: "ملخص العائد الاستثماري",
+    purchasePrice: property.price,
+    estimatedAnnualRent: annualRent,
+    grossYieldPercent,
+    summary: `العائد الإجمالي التقديري يقارب ${grossYieldPercent}% لهذه الوحدة في ${property.area ?? property.location ?? "هذه المنطقة"}.`,
+  };
+}
+
+function buildPaymentPlanCard(
+  property: AssistantResponseParams["property"],
+  qualification: AssistantResponseParams["qualification"] | undefined,
+) {
+  const downPayment = qualification?.downPayment ?? Math.round(property.price * 0.1);
+  const durationMonths = (qualification?.preferredYears ?? 5) * 12;
+  const monthlyInstallment = Math.round((property.price - downPayment) / durationMonths);
+  return {
+    type: "payment_plan" as const,
+    title: "خطة السداد المبدئية",
+    downPayment,
+    monthlyInstallment,
+    durationMonths,
+    summary: `بدفعة أولى ${formatCurrency(downPayment)} يمكن توزيع الباقي على ${durationMonths} شهر بقسط تقريبي ${formatCurrency(monthlyInstallment)}.`,
+  };
+}
+
+function resolveMortgageEligibility(monthlySalary: number | undefined) {
+  if (monthlySalary === undefined) return "insufficient_data" as const;
+  if (monthlySalary >= 12000) return "eligible" as const;
+  if (monthlySalary >= 8000) return "review" as const;
+  return "insufficient_data" as const;
+}
+
+function resolveMortgageSummary(eligible: "eligible" | "review" | "insufficient_data") {
+  if (eligible === "eligible") {
+    return "المؤشرات الأولية جيدة، ويمكن متابعة فحص البنك والتزاماتك الحالية.";
+  }
+  if (eligible === "review") {
+    return "هناك فرصة للتمويل لكننا نحتاج التزاماتك الحالية والدفعة الأولى للتأكيد.";
+  }
+  return "نحتاج بيانات راتب أو دفعة أولى أو مدة تمويل لإعطاء تقدير موثوق.";
+}
+
+function buildMortgageCard(
+  qualification: AssistantResponseParams["qualification"] | undefined,
+) {
+  const monthlySalary = qualification?.monthlySalary;
+  const preferredYears = qualification?.preferredYears ?? 20;
+  const estimatedBudget = monthlySalary ? monthlySalary * 55 : undefined;
+  const monthlyInstallmentEstimate = estimatedBudget
+    ? Math.round(estimatedBudget / (preferredYears * 12))
+    : undefined;
+  const estimatedEligibility = resolveMortgageEligibility(monthlySalary);
+  return {
+    type: "mortgage_check" as const,
+    title: "فحص أهلية التمويل",
+    estimatedEligibility,
+    recommendedBudget: estimatedBudget,
+    monthlyInstallmentEstimate,
+    summary: resolveMortgageSummary(estimatedEligibility),
+  };
+}
+
+function buildPermitCard(property: AssistantResponseParams["property"]) {
+  return {
+    type: "permit_status" as const,
+    title: "حالة التصاريح",
+    permitStatus: property.owner.isVerified ? ("verified" as const) : ("pending_review" as const),
+    summary: property.owner.isVerified
+      ? `المالك ${property.owner.name} موثق داخل عنان، لكن التحقق النهائي من التصاريح يحتاج مستندات المشروع الرسمية.`
+      : "بيانات المشروع متاحة، لكن يلزم مراجعة المستندات النظامية قبل تأكيد التصاريح.",
+  };
+}
+
+function buildComparisonCard(property: AssistantResponseParams["property"]) {
+  return {
+    type: "comparison_table" as const,
+    title: "مقارنة سريعة",
+    columns: ["البند", "القيمة"],
+    rows: [
+      ["السعر", formatCurrency(property.price)],
+      ["الموقع", property.area ?? property.location ?? "غير محدد"],
+      ["غرف النوم", String(property.beds)],
+      ["الحمامات", String(property.baths)],
+    ],
+    summary: "هذا الجدول يلخص أهم عناصر القرار بسرعة قبل فتح مقارنة أوسع.",
+  };
+}
+
+function buildFallbackCard(
+  property: AssistantResponseParams["property"],
+  qualification: AssistantResponseParams["qualification"] | undefined,
+) {
+  const downPayment = qualification?.downPayment ?? Math.round(property.price * 0.1);
+  const durationMonths = 60;
+  return {
+    type: "payment_plan" as const,
+    title: "نقطة بداية سريعة",
+    downPayment,
+    monthlyInstallment: Math.round((property.price - downPayment) / durationMonths),
+    durationMonths,
+    summary: "قدمت لك خطة أولية، ويمكنني بعدها حساب العائد أو فحص التمويل أو التحقق من التصاريح.",
+  };
+}
+
+function buildIntentCards(
+  property: AssistantResponseParams["property"],
+  qualification: AssistantResponseParams["qualification"] | undefined,
+  normalizedMessage: string,
+) {
+  const cards: any[] = [];
+  if (matchesIntent(normalizedMessage, ["roi", "عائد", "استثمار", "yield"])) cards.push(buildRoiCard(property));
+  if (matchesIntent(normalizedMessage, ["plan", "payment", "دفعة", "قسط", "سداد"])) cards.push(buildPaymentPlanCard(property, qualification));
+  if (matchesIntent(normalizedMessage, ["afford", "mortgage", "qualif", "راتب", "تمويل", "أقدر"])) cards.push(buildMortgageCard(qualification));
+  if (matchesIntent(normalizedMessage, ["permit", "legal", "تصريح", "رخص", "قانون"])) cards.push(buildPermitCard(property));
+  if (matchesIntent(normalizedMessage, ["compare", "comparison", "قارن", "مقارنة"])) cards.push(buildComparisonCard(property));
+  return cards;
+}
+
+function buildAssistantSummary(propertyTitle: string, cardsCount: number) {
+  return `حللت ${propertyTitle} وأعددت لك ${cardsCount === 1 ? "بطاقة" : `${cardsCount} بطاقات`} مفيدة للقرار.`;
+}
+
 /**
  * WHY:   The MVP still needs reliable AI-like behavior before full LLM tool orchestration is wired.
  * WHAT:  Converts a mobile assistant request into typed cards and localized follow-up prompts.
@@ -111,104 +236,11 @@ type AssistantResponseParams = {
  */
 export function buildAssistantResponse({ property, message, qualification }: AssistantResponseParams) {
   const normalizedMessage = message.trim().toLowerCase();
-  const cards: any[] = [];
-
-  if (matchesIntent(normalizedMessage, ["roi", "عائد", "استثمار", "yield"])) {
-    const annualRent = Math.round(property.price * 0.08);
-    const grossYieldPercent = Number(((annualRent / property.price) * 100).toFixed(1));
-    cards.push({
-      type: "roi_summary" as const,
-      title: "ملخص العائد الاستثماري",
-      purchasePrice: property.price,
-      estimatedAnnualRent: annualRent,
-      grossYieldPercent,
-      summary: `العائد الإجمالي التقديري يقارب ${grossYieldPercent}% لهذه الوحدة في ${property.area ?? property.location ?? "هذه المنطقة"}.`,
-    });
-  }
-
-  if (matchesIntent(normalizedMessage, ["plan", "payment", "دفعة", "قسط", "سداد"])) {
-    const downPayment = qualification?.downPayment ?? Math.round(property.price * 0.1);
-    const durationMonths = (qualification?.preferredYears ?? 5) * 12;
-    const monthlyInstallment = Math.round((property.price - downPayment) / durationMonths);
-    cards.push({
-      type: "payment_plan" as const,
-      title: "خطة السداد المبدئية",
-      downPayment,
-      monthlyInstallment,
-      durationMonths,
-      summary: `بدفعة أولى ${formatCurrency(downPayment)} يمكن توزيع الباقي على ${durationMonths} شهر بقسط تقريبي ${formatCurrency(monthlyInstallment)}.`,
-    });
-  }
-
-  if (matchesIntent(normalizedMessage, ["afford", "mortgage", "qualif", "راتب", "تمويل", "أقدر"])) {
-    const monthlySalary = qualification?.monthlySalary;
-    const preferredYears = qualification?.preferredYears ?? 20;
-    const estimatedBudget = monthlySalary ? monthlySalary * 55 : undefined;
-    const monthlyInstallmentEstimate = estimatedBudget ? Math.round(estimatedBudget / (preferredYears * 12)) : undefined;
-    const eligible: "eligible" | "review" | "insufficient_data" =
-      monthlySalary === undefined
-        ? "insufficient_data"
-        : monthlySalary >= 12000
-          ? "eligible"
-          : monthlySalary >= 8000
-            ? "review"
-            : "insufficient_data";
-    cards.push({
-      type: "mortgage_check" as const,
-      title: "فحص أهلية التمويل",
-      estimatedEligibility: eligible,
-      recommendedBudget: estimatedBudget,
-      monthlyInstallmentEstimate,
-      summary:
-        eligible === "eligible"
-          ? "المؤشرات الأولية جيدة، ويمكن متابعة فحص البنك والتزاماتك الحالية."
-          : eligible === "review"
-            ? "هناك فرصة للتمويل لكننا نحتاج التزاماتك الحالية والدفعة الأولى للتأكيد."
-            : "نحتاج بيانات راتب أو دفعة أولى أو مدة تمويل لإعطاء تقدير موثوق.",
-    });
-  }
-
-  if (matchesIntent(normalizedMessage, ["permit", "legal", "تصريح", "رخص", "قانون"])) {
-    cards.push({
-      type: "permit_status" as const,
-      title: "حالة التصاريح",
-      permitStatus: property.owner.isVerified ? ("verified" as const) : ("pending_review" as const),
-      summary: property.owner.isVerified
-        ? `المالك ${property.owner.name} موثق داخل عنان، لكن التحقق النهائي من التصاريح يحتاج مستندات المشروع الرسمية.`
-        : "بيانات المشروع متاحة، لكن يلزم مراجعة المستندات النظامية قبل تأكيد التصاريح.",
-    });
-  }
-
-  if (matchesIntent(normalizedMessage, ["compare", "comparison", "قارن", "مقارنة"])) {
-    cards.push({
-      type: "comparison_table" as const,
-      title: "مقارنة سريعة",
-      columns: ["البند", "القيمة"],
-      rows: [
-        ["السعر", formatCurrency(property.price)],
-        ["الموقع", property.area ?? property.location ?? "غير محدد"],
-        ["غرف النوم", String(property.beds)],
-        ["الحمامات", String(property.baths)],
-      ],
-      summary: "هذا الجدول يلخص أهم عناصر القرار بسرعة قبل فتح مقارنة أوسع.",
-    });
-  }
-
-  if (cards.length === 0) {
-    const downPayment = qualification?.downPayment ?? Math.round(property.price * 0.1);
-    const durationMonths = 60;
-    cards.push({
-      type: "payment_plan" as const,
-      title: "نقطة بداية سريعة",
-      downPayment,
-      monthlyInstallment: Math.round((property.price - downPayment) / durationMonths),
-      durationMonths,
-      summary: "قدمت لك خطة أولية، ويمكنني بعدها حساب العائد أو فحص التمويل أو التحقق من التصاريح.",
-    });
-  }
+  const intentCards = buildIntentCards(property, qualification, normalizedMessage);
+  const cards = intentCards.length > 0 ? intentCards : [buildFallbackCard(property, qualification)];
 
   return {
-    message: `حللت ${property.title} وأعددت لك ${cards.length === 1 ? "بطاقة" : `${cards.length} بطاقات`} مفيدة للقرار.`,
+    message: buildAssistantSummary(property.title, cards.length),
     cards,
     suggestedPrompts: [
       "احسب العائد الاستثماري",

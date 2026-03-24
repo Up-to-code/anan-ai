@@ -5,7 +5,7 @@ const { cancelCurrentOrganizationInvite } = vi.hoisted(() => ({
   cancelCurrentOrganizationInvite: vi.fn(),
 }));
 
-vi.mock("@/server/domains/organizations/service", () => ({
+vi.mock("@/server/domains/auth/organizations/service", () => ({
   cancelCurrentOrganizationInvite,
 }));
 

@@ -1,7 +1,7 @@
 import { convexTest } from "convex-test";
-import { describe, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import schema from "../../schema";
-import { apiRefs } from "../lib/generatedApiRefs";
+import { api } from "../../_generated/api";
 import { modules } from "../../test.setup";
 
 function makeIdentity(args: { subject: string; email: string; name: string }) {
@@ -41,56 +41,53 @@ async function seedUserProfile(
   });
 }
 
-describe("developer handbook", () => {
-  it("rejects plain end users (role gate)", async () => {
-    const t = convexTest(schema, modules);
-    const identity = makeIdentity({ subject: "auth-u", email: "u@example.com", name: "User" });
-    await seedUserProfile(t, { authUserId: "auth-u", email: "u@example.com", name: "User", role: "user" });
+it("rejects plain end users (role gate)", async () => {
+  const t = convexTest(schema, modules);
+  const identity = makeIdentity({ subject: "auth-u", email: "u@example.com", name: "User" });
+  await seedUserProfile(t, { authUserId: "auth-u", email: "u@example.com", name: "User", role: "user" });
 
-    await expect(
-      t.withIdentity(identity).query(
-        apiRefs["shared_logic/developerHandbook/index"].retrieveDeveloperHandbookSnippets as never,
-        { query: "convex", limit: 3 } as never,
-      ),
-    ).rejects.toThrow();
-  });
-
-  it("returns snippets for broker role using search index", async () => {
-    const t = convexTest(schema, modules);
-    const identity = makeIdentity({ subject: "auth-b", email: "b@example.com", name: "Broker Dev" });
-
-    const brokerId = await t.run(async (ctx) => {
-      return await ctx.db.insert("brokers", { name: "Broker 1", slug: "broker-1" } as any);
-    });
-
-    await seedUserProfile(t, {
-      authUserId: "auth-b",
-      email: "b@example.com",
-      name: "Broker Dev",
-      role: "broker",
-      brokerId: brokerId as any,
-    });
-
-    await t.run(async (ctx) => {
-      const now = Date.now();
-      await ctx.db.insert("developerHandbookPages", {
-        slug: "authz",
-        title: "AuthZ checklist",
-        content: "Authorization requires ownership checks and role gates.",
-        category: "security",
-        createdAt: now,
-        updatedAt: now,
-      } as any);
-    });
-
-    const results = (await t.withIdentity(identity).query(
-      apiRefs["shared_logic/developerHandbook/index"].retrieveDeveloperHandbookSnippets as never,
-      { query: "authorization", limit: 4 } as never,
-    )) as any[];
-
-    expect(results.length).toBeGreaterThan(0);
-    expect(results[0]?.slug).toBe("authz");
-    expect(typeof results[0]?.excerpt).toBe("string");
-  });
+  await expect(
+    t.withIdentity(identity).query(
+      api.shared_logic.developerHandbook.index.retrieveDeveloperHandbookSnippets as never,
+      { query: "convex", limit: 3 } as never,
+    ),
+  ).rejects.toThrow();
 });
 
+it("returns snippets for broker role using search index", async () => {
+  const t = convexTest(schema, modules);
+  const identity = makeIdentity({ subject: "auth-b", email: "b@example.com", name: "Broker Dev" });
+
+  const brokerId = await t.run(async (ctx) => {
+    return await ctx.db.insert("brokers", { name: "Broker 1", slug: "broker-1" } as any);
+  });
+
+  await seedUserProfile(t, {
+    authUserId: "auth-b",
+    email: "b@example.com",
+    name: "Broker Dev",
+    role: "broker",
+    brokerId: brokerId as any,
+  });
+
+  await t.run(async (ctx) => {
+    const now = Date.now();
+    await ctx.db.insert("developerHandbookPages", {
+      slug: "authz",
+      title: "AuthZ checklist",
+      content: "Authorization requires ownership checks and role gates.",
+      category: "security",
+      createdAt: now,
+      updatedAt: now,
+    } as any);
+  });
+
+  const results = (await t.withIdentity(identity).query(
+    api.shared_logic.developerHandbook.index.retrieveDeveloperHandbookSnippets as never,
+    { query: "authorization", limit: 4 } as never,
+  )) as any[];
+
+  expect(results.length).toBeGreaterThan(0);
+  expect(results[0]?.slug).toBe("authz");
+  expect(typeof results[0]?.excerpt).toBe("string");
+});

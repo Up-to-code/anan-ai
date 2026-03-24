@@ -1,51 +1,42 @@
-/**
- * actions.ts — WhatsApp reply generation
- *
- * WHY:   WhatsApp messages are unauthenticated; need a dedicated action.
- * WHAT:  Generates a reply via orchestrate and saves the conversation.
- * HOW:   Ensures user, resolves thread, calls orchestrate, saves messages.
- */
 import { internalAction } from "../../../_generated/server";
+import type { ActionCtx } from "../../../_generated/server";
 import { v } from "convex/values";
-import { apiRefs, internalRefs } from "../../../shared_logic/lib/generatedApiRefs";
+import { api, internal } from "../../../_generated/api";
+import type { Id } from "../../../_generated/dataModel";
 import { orchestrate } from "../../agents/anan";
 
-export const generateReply: any = internalAction({
+export const generateReply = internalAction({
   args: {
     userId: v.string(),
     message: v.string(),
     displayName: v.optional(v.string()),
-    threadId: v.optional(v.string()),
+    threadId: v.optional(v.id("assistantThreads")),
   },
   handler: async (
-    ctx: any,
-    args: { userId: string; message: string; displayName?: string; threadId?: string },
+    ctx: ActionCtx,
+    args: { userId: string; message: string; displayName?: string; threadId?: Id<"assistantThreads"> },
   ): Promise<{ ok: true; text: string; threadId?: string }> => {
-    await ctx.runMutation(apiRefs["shared_logic/users/whatsapp"].ensureWhatsAppUser, {
+    await ctx.runMutation(api.shared_logic.users.whatsapp.ensureWhatsAppUser, {
       userId: args.userId,
       displayName: args.displayName,
     });
-
-    const thread: { _id?: string } | null = args.threadId
+    const thread: { _id: Id<"assistantThreads"> } | null = args.threadId
       ? { _id: args.threadId }
       : ((await ctx.runQuery(
-          internalRefs["ai_zone/assistant"]._getLatestThreadByUserId,
+          internal.ai_zone.assistant._getLatestThreadByUserId,
           { userId: args.userId },
-        )) as { _id?: string } | null);
-
+        )) as { _id: Id<"assistantThreads"> } | null);
     const basePrompt = `${args.message}\n\n[Policy: QA-only mode. Answer questions only. Do not execute actions.]`;
-
     const result = await orchestrate({
       ctx,
       prompt: basePrompt,
       role: "user",
       userId: args.userId,
-      threadId: (args.threadId ?? thread?._id) as string | undefined,
+      threadId: (args.threadId ?? thread?._id) as any,
       channel: "whatsapp",
     });
-
     const saved = (await ctx.runMutation(
-      internalRefs["ai_zone/assistant"]._saveConversationStep,
+      internal.ai_zone.assistant._saveConversationStep,
       {
         threadId: args.threadId ?? thread?._id,
         userId: args.userId,
@@ -55,7 +46,6 @@ export const generateReply: any = internalAction({
         mode: "qa",
       },
     )) as { threadId: string };
-
     return { ok: true as const, text: result.output, threadId: saved.threadId };
   },
-} as any);
+});

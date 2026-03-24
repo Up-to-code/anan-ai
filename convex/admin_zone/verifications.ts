@@ -1,12 +1,184 @@
 import { mutation, query } from "../_generated/server";
 import { ConvexError, v } from "convex/values";
 import { requireRole } from "../_core/security/accessPolicy";
+type VerificationStatus = "new" | "in_review" | "approved" | "rejected";
+type ReviewStatus = "in_review" | "approved" | "rejected";
+type VerificationRequest = Record<string, any>;
+type VerificationLookups = {
+  profiles: Array<Record<string, any>>;
+  brokers: Array<Record<string, any>>;
+  developers: Array<Record<string, any>>;
+  properties: Array<Record<string, any>>;
+};
 
-/**
- * WHY:   The redesigned admin console needs a real verification queue with review status filters.
- * WHAT:  Returns verification requests filtered by review state.
- * HOW:   Reads the dedicated verification table and sorts newest-first by submission time.
- */
+async function listVerificationRequestsByStatus(ctx: any, status?: "new" | "in_review" | "approved" | "rejected") {
+  if (status) {
+    return ctx.db
+      .query("verificationRequests")
+      .withIndex("currentStatus", (query: any) => query.eq("currentStatus", status))
+      .collect();
+  }
+  return ctx.db.query("verificationRequests").collect();
+}
+
+async function loadVerificationLookups(ctx: any): Promise<VerificationLookups> {
+  const [profiles, brokers, developers, properties] = await Promise.all([
+    ctx.db.query("userProfiles").collect(),
+    ctx.db.query("brokers").collect(),
+    ctx.db.query("RED").collect(),
+    ctx.db.query("properties").collect(),
+  ]);
+  return { profiles, brokers, developers, properties };
+}
+
+function findVerificationEntities(request: VerificationRequest, lookups: VerificationLookups) {
+  const profile = request.subjectProfileId
+    ? lookups.profiles.find((item) => item._id === request.subjectProfileId)
+    : null;
+  const broker = request.subjectBrokerId
+    ? lookups.brokers.find((item) => item._id === request.subjectBrokerId)
+    : null;
+  const developer = request.subjectREDId
+    ? lookups.developers.find((item) => item._id === request.subjectREDId)
+    : null;
+  const property = request.subjectPropertyId
+    ? lookups.properties.find((item) => item._id === request.subjectPropertyId)
+    : null;
+  return { profile, broker, developer, property };
+}
+
+function resolvePropertyOwner(
+  property: Record<string, any> | null | undefined,
+  brokers: Array<Record<string, any>>,
+  developers: Array<Record<string, any>>,
+) {
+  if (!property) return null;
+  if (property.brokerId) {
+    return brokers.find((item) => item._id === property.brokerId) ?? null;
+  }
+  if (property.REDId) {
+    return developers.find((item) => item._id === property.REDId) ?? null;
+  }
+  return null;
+}
+
+function buildVerificationSubjectDetail(request: VerificationRequest, lookups: VerificationLookups) {
+  const entities = findVerificationEntities(request, lookups);
+  return {
+    profile: entities.profile
+      ? {
+          id: String(entities.profile._id),
+          name: entities.profile.name ?? entities.profile.email ?? "مستخدم عنان",
+          email: entities.profile.email ?? null,
+          role: entities.profile.role ?? null,
+          roleStatus: entities.profile.roleStatus ?? null,
+        }
+      : null,
+    broker: entities.broker
+      ? {
+          id: String(entities.broker._id),
+          name: entities.broker.name,
+          status: entities.broker.status ?? null,
+          isVerified: entities.broker.isVerified === true,
+        }
+      : null,
+    developer: entities.developer
+      ? {
+          id: String(entities.developer._id),
+          name: entities.developer.name,
+          status: entities.developer.status ?? null,
+          isVerified: entities.developer.isVerified === true,
+        }
+      : null,
+    property: entities.property
+      ? {
+          id: String(entities.property._id),
+          title: entities.property.title,
+          address: entities.property.address,
+          adLicenseNumber: entities.property.adLicenseNumber ?? null,
+          adLicenseStatus: entities.property.adLicenseStatus ?? null,
+        }
+      : null,
+  };
+}
+
+function buildVerificationDecisionHistory(request: VerificationRequest) {
+  const submittedItem = {
+    id: `${String(request._id)}-submitted`,
+    label: "تم الإرسال",
+    createdAt: request.submittedAt,
+    notes: null,
+    status: "new",
+  };
+  if (!request.reviewedAt) {
+    return [submittedItem];
+  }
+  return [
+    submittedItem,
+    {
+      id: `${String(request._id)}-reviewed`,
+      label: "تمت المراجعة",
+      createdAt: request.reviewedAt,
+      notes: request.reviewerNotes ?? null,
+      status: request.currentStatus,
+    },
+  ];
+}
+
+async function syncUserVerification(ctx: any, request: VerificationRequest, status: ReviewStatus, now: number) {
+  if (request.requestType !== "user" || !request.subjectProfileId) return;
+  const profile = await ctx.db.get(request.subjectProfileId);
+  if (!profile) return;
+  const patch: Record<string, unknown> = {
+    roleStatus: status === "approved" ? "approved" : status === "rejected" ? "rejected" : "pending",
+    updatedAt: now,
+  };
+  if (status === "approved" && profile.requestedRole) {
+    patch.role = profile.requestedRole;
+  }
+  await ctx.db.patch(profile._id, patch);
+}
+
+async function syncBrokerVerification(ctx: any, request: VerificationRequest, status: ReviewStatus) {
+  if (request.requestType !== "broker" || !request.subjectBrokerId) return;
+  const broker = await ctx.db.get(request.subjectBrokerId);
+  if (!broker) return;
+  await ctx.db.patch(broker._id, {
+    isVerified: status === "approved",
+    status: status === "approved" ? "active" : broker.status,
+  });
+}
+
+async function syncDeveloperVerification(ctx: any, request: VerificationRequest, status: ReviewStatus) {
+  if (request.requestType !== "RED" || !request.subjectREDId) return;
+  const developer = await ctx.db.get(request.subjectREDId);
+  if (!developer) return;
+  await ctx.db.patch(developer._id, {
+    isVerified: status === "approved",
+    status: status === "approved" ? "active" : developer.status,
+  });
+}
+
+async function syncPropertyVerification(ctx: any, request: VerificationRequest, status: ReviewStatus) {
+  if (request.requestType !== "property" || !request.subjectPropertyId) return;
+  const property = await ctx.db.get(request.subjectPropertyId);
+  if (!property) return;
+  const nextStatus = status === "approved" ? "approved" : status === "rejected" ? "rejected" : "pending";
+  const submittedLicense = (request.submittedData as { adLicenseNumber?: string } | null)?.adLicenseNumber;
+  await ctx.db.patch(property._id, {
+    adLicenseStatus: nextStatus,
+    adLicenseNumber: submittedLicense ?? property.adLicenseNumber,
+    adLicenseVerificationRequestId: request._id,
+  });
+}
+
+async function syncVerificationSideEffects(ctx: any, request: VerificationRequest, status: ReviewStatus, now: number) {
+  await syncUserVerification(ctx, request, status, now);
+  await syncBrokerVerification(ctx, request, status);
+  await syncDeveloperVerification(ctx, request, status);
+  await syncPropertyVerification(ctx, request, status);
+}
+
 export const listVerificationRequests = query({
   args: {
     status: v.optional(
@@ -20,48 +192,34 @@ export const listVerificationRequests = query({
   },
   handler: async (ctx, { status }) => {
     await requireRole(ctx, ["admin"]);
-
-    const [requests, profiles, brokers, developers, properties] = await Promise.all([
-      status
-      ? await ctx.db
-          .query("verificationRequests")
-          .withIndex("currentStatus", (query) => query.eq("currentStatus", status))
-          .collect()
-      : await ctx.db.query("verificationRequests").collect(),
-      ctx.db.query("userProfiles").collect(),
-      ctx.db.query("brokers").collect(),
-      ctx.db.query("RED").collect(),
-      ctx.db.query("properties").collect(),
+    const [requests, lookups] = await Promise.all([
+      listVerificationRequestsByStatus(ctx, status as VerificationStatus | undefined),
+      loadVerificationLookups(ctx),
     ]);
-
     return requests
-      .map((request) => {
-        const profile = request.subjectProfileId ? profiles.find((item) => item._id === request.subjectProfileId) : null;
-        const broker = request.subjectBrokerId ? brokers.find((item) => item._id === request.subjectBrokerId) : null;
-        const developer = request.subjectREDId ? developers.find((item) => item._id === request.subjectREDId) : null;
-        const property = request.subjectPropertyId ? properties.find((item) => item._id === request.subjectPropertyId) : null;
-        const propertyOwner =
-          property?.brokerId
-            ? brokers.find((item) => item._id === property.brokerId)
-            : property?.REDId
-              ? developers.find((item) => item._id === property.REDId)
-              : null;
+      .map((request: any) => {
+        const entities = findVerificationEntities(request, lookups);
+        const propertyOwner = resolvePropertyOwner(
+          entities.property,
+          lookups.brokers,
+          lookups.developers,
+        );
 
         return {
           ...request,
           subjectName:
-            profile?.name ??
-            profile?.email ??
-            broker?.name ??
-            developer?.name ??
-            property?.title ??
+            entities.profile?.name ??
+            entities.profile?.email ??
+            entities.broker?.name ??
+            entities.developer?.name ??
+            entities.property?.title ??
             request.title ??
             request.requestType,
-          organizationName: broker?.name ?? developer?.name ?? propertyOwner?.name ?? null,
+          organizationName: entities.broker?.name ?? entities.developer?.name ?? propertyOwner?.name ?? null,
           documentsCount: request.attachedDocuments.length,
         };
       })
-      .sort((left, right) => right.submittedAt - left.submittedAt);
+      .sort((left: any, right: any) => right.submittedAt - left.submittedAt);
   },
 });
 
@@ -74,82 +232,13 @@ export const getVerificationRequest = query({
   args: { id: v.id("verificationRequests") },
   handler: async (ctx, { id }) => {
     await requireRole(ctx, ["admin"]);
-    const [request, profiles, brokers, developers, properties] = await Promise.all([
-      ctx.db.get(id),
-      ctx.db.query("userProfiles").collect(),
-      ctx.db.query("brokers").collect(),
-      ctx.db.query("RED").collect(),
-      ctx.db.query("properties").collect(),
-    ]);
-
-    if (!request) {
-      return null;
-    }
-
-    const profile = request.subjectProfileId ? profiles.find((item) => item._id === request.subjectProfileId) : null;
-    const broker = request.subjectBrokerId ? brokers.find((item) => item._id === request.subjectBrokerId) : null;
-    const developer = request.subjectREDId ? developers.find((item) => item._id === request.subjectREDId) : null;
-    const property = request.subjectPropertyId ? properties.find((item) => item._id === request.subjectPropertyId) : null;
-
+    const [request, lookups] = await Promise.all([ctx.db.get(id), loadVerificationLookups(ctx)]);
+    if (!request) return null;
     return {
       ...request,
-      subject: {
-        profile: profile
-          ? {
-              id: String(profile._id),
-              name: profile.name ?? profile.email ?? "مستخدم عنان",
-              email: profile.email ?? null,
-              role: profile.role ?? null,
-              roleStatus: profile.roleStatus ?? null,
-            }
-          : null,
-        broker: broker
-          ? {
-              id: String(broker._id),
-              name: broker.name,
-              status: broker.status ?? null,
-              isVerified: broker.isVerified === true,
-            }
-          : null,
-        developer: developer
-          ? {
-              id: String(developer._id),
-              name: developer.name,
-              status: developer.status ?? null,
-              isVerified: developer.isVerified === true,
-            }
-          : null,
-        property: property
-          ? {
-              id: String(property._id),
-              title: property.title,
-              address: property.address,
-              adLicenseNumber: property.adLicenseNumber ?? null,
-              adLicenseStatus: property.adLicenseStatus ?? null,
-            }
-          : null,
-      },
+      subject: buildVerificationSubjectDetail(request, lookups),
       documentsCount: request.attachedDocuments.length,
-      decisionHistory: [
-        {
-          id: `${String(request._id)}-submitted`,
-          label: "تم الإرسال",
-          createdAt: request.submittedAt,
-          notes: null,
-          status: "new",
-        },
-        ...(request.reviewedAt
-          ? [
-              {
-                id: `${String(request._id)}-reviewed`,
-                label: "تمت المراجعة",
-                createdAt: request.reviewedAt,
-                notes: request.reviewerNotes ?? null,
-                status: request.currentStatus,
-              },
-            ]
-          : []),
-      ],
+      decisionHistory: buildVerificationDecisionHistory(request),
     };
   },
 });
@@ -192,14 +281,11 @@ export const reviewVerificationRequest = mutation({
   },
   handler: async (ctx, { id, status, reviewerId, reviewerNotes }) => {
     await requireRole(ctx, ["admin"]);
-
     const request = await ctx.db.get(id);
     if (!request) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Verification request not found" });
     }
-
     const now = Date.now();
-
     await ctx.db.patch(id, {
       currentStatus: status,
       reviewerId,
@@ -207,52 +293,6 @@ export const reviewVerificationRequest = mutation({
       reviewedAt: status === "in_review" ? undefined : now,
       updatedAt: now,
     });
-
-    if (request.requestType === "user" && request.subjectProfileId) {
-      const profile = await ctx.db.get(request.subjectProfileId);
-      if (profile) {
-        const patch: Record<string, unknown> = {
-          roleStatus: status === "approved" ? "approved" : status === "rejected" ? "rejected" : "pending",
-          updatedAt: now,
-        };
-        if (status === "approved" && profile.requestedRole) {
-          patch.role = profile.requestedRole;
-        }
-        await ctx.db.patch(profile._id, patch);
-      }
-    }
-
-    if (request.requestType === "broker" && request.subjectBrokerId) {
-      const broker = await ctx.db.get(request.subjectBrokerId);
-      if (broker) {
-        await ctx.db.patch(broker._id, {
-          isVerified: status === "approved",
-          status: status === "approved" ? "active" : broker.status,
-        });
-      }
-    }
-
-    if (request.requestType === "RED" && request.subjectREDId) {
-      const developer = await ctx.db.get(request.subjectREDId);
-      if (developer) {
-        await ctx.db.patch(developer._id, {
-          isVerified: status === "approved",
-          status: status === "approved" ? "active" : developer.status,
-        });
-      }
-    }
-
-    if (request.requestType === "property" && request.subjectPropertyId) {
-      const property = await ctx.db.get(request.subjectPropertyId);
-      if (property) {
-        const nextStatus = status === "approved" ? "approved" : status === "rejected" ? "rejected" : "pending";
-        const submittedLicense = (request.submittedData as { adLicenseNumber?: string } | null)?.adLicenseNumber;
-        await ctx.db.patch(property._id, {
-          adLicenseStatus: nextStatus,
-          adLicenseNumber: submittedLicense ?? property.adLicenseNumber,
-          adLicenseVerificationRequestId: request._id,
-        });
-      }
-    }
+    await syncVerificationSideEffects(ctx, request, status, now);
   },
 });

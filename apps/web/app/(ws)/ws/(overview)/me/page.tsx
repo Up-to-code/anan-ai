@@ -1,5 +1,5 @@
 import { requireWorkspaceData } from "../../_lib/workspaceData";
-import { getCurrentProfileForCurrentUser } from "@/server/domains/profiles/service";
+import { getCurrentProfileForCurrentUser } from "@/server/domains/auth/profiles/service";
 import ProfileWorkspace from "./_components/ProfileWorkspace";
 import ZonePageIntro from "../../_components/ZoneShell/ZonePageIntro";
 

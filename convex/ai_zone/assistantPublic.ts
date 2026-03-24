@@ -1,6 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import type { Doc, Id } from "../_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation, query } from "../_generated/server";
+import { internal } from "../_generated/api";
 import {
   createAssistantThread,
   getLatestThread,
@@ -14,7 +15,6 @@ import { transcribeStoredVoiceNote } from "./services/voiceTranscriptionService"
 import { compactAssistantResponse } from "./services/publicAssistantResponse";
 import { synthesizeAssistantVoice as synthesizeAssistantVoiceAudio } from "./services/voiceSynthesisService";
 import { issueChannelSession } from "../_core/security/channelAuth";
-import { internalRefs } from "../shared_logic/lib/generatedApiRefs";
 
 const ASSISTANT_KIND = "anan_main_public" as const;
 const ORCHESTRATOR_NAME = "anan_main_public_orchestrator";
@@ -319,7 +319,7 @@ export const sendMessage = action({
     compacted: v.boolean(),
   }),
   handler: async (ctx, args) => {
-    const session = (await ctx.runQuery(internalRefs["ai_zone/assistantPublic"]._resolvePublicSession, {
+    const session = (await ctx.runQuery(internal.ai_zone.assistantPublic._resolvePublicSession, {
       guestId: args.guestId,
       channelSessionToken: args.channelSessionToken,
       threadId: args.threadId,
@@ -334,12 +334,12 @@ export const sendMessage = action({
       promptPrefix: PROMPT_PREFIX,
       ownerOverride: session.owner,
       initialThreadOverride: session.thread,
-      saveConversationStepMutationOverride: internalRefs["ai_zone/assistantPublic"]._saveConversationStep,
+      saveConversationStepMutationOverride: internal.ai_zone.assistantPublic._saveConversationStep,
     });
 
     const compacted = compactAssistantResponse(result.output);
     if (compacted.changed) {
-      await ctx.runMutation(internalRefs["ai_zone/assistantPublic"]._rewriteAssistantMessage, {
+      await ctx.runMutation(internal.ai_zone.assistantPublic._rewriteAssistantMessage, {
         messageId: result.messageId as Id<"assistantMessages">,
         content: compacted.text,
       });
@@ -369,7 +369,7 @@ export const transcribeVoiceFromStorage = action({
     languageCode: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
-    await ctx.runQuery(internalRefs["ai_zone/assistantPublic"]._resolvePublicSession, {
+    await ctx.runQuery(internal.ai_zone.assistantPublic._resolvePublicSession, {
       guestId: args.guestId,
       channelSessionToken: args.channelSessionToken,
     });
@@ -395,7 +395,7 @@ export const synthesizeAssistantVoice = action({
     voiceUnavailableReason: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
-    await ctx.runQuery(internalRefs["ai_zone/assistantPublic"]._resolvePublicSession, {
+    await ctx.runQuery(internal.ai_zone.assistantPublic._resolvePublicSession, {
       guestId: args.guestId,
       channelSessionToken: args.channelSessionToken,
     });

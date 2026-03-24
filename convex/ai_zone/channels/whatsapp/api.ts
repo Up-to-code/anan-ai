@@ -77,7 +77,9 @@ function toExtractedMessage(
   message: WebhookMessage,
   base: Pick<ExtractedMessage, "from" | "messageId" | "phoneNumberId" | "displayName">,
 ): ExtractedMessage | null {
-  if (message.text?.body) return { ...base, text: message.text.body, messageType: "text" };
+  if (message.text?.body) {
+    return { ...base, text: message.text.body, messageType: "text" };
+  }
   if (message.interactive?.button_reply) {
     return {
       ...base,
@@ -96,11 +98,21 @@ function toExtractedMessage(
       interactiveReplyTitle: message.interactive.list_reply.title,
     };
   }
-  if (message.image) return { ...base, text: buildImageText(message), messageType: "image", mediaId: message.image.id };
-  if (message.audio) return { ...base, text: "User sent an audio message.", messageType: "audio", mediaId: message.audio.id };
-  if (message.voice) return { ...base, text: "User sent a voice message.", messageType: "audio", mediaId: message.voice.id };
-  if (message.video) return { ...base, text: buildVideoText(message), messageType: "video", mediaId: message.video.id };
-  if (message.document) return { ...base, text: buildDocumentText(message), messageType: "document", mediaId: message.document.id };
+  if (message.image) {
+    return { ...base, text: buildImageText(message), messageType: "image", mediaId: message.image.id };
+  }
+  if (message.audio) {
+    return { ...base, text: "User sent an audio message.", messageType: "audio", mediaId: message.audio.id };
+  }
+  if (message.voice) {
+    return { ...base, text: "User sent a voice message.", messageType: "audio", mediaId: message.voice.id };
+  }
+  if (message.video) {
+    return { ...base, text: buildVideoText(message), messageType: "video", mediaId: message.video.id };
+  }
+  if (message.document) {
+    return { ...base, text: buildDocumentText(message), messageType: "document", mediaId: message.document.id };
+  }
   return null;
 }
 
@@ -113,7 +125,8 @@ function extractEventsFromValue(value?: WebhookValue) {
     phoneNumberId: value.metadata?.phone_number_id ?? "",
     displayName: contact?.profile?.name ?? "",
   };
-  return value.messages.flatMap((message: WebhookMessage) => {
+
+  return value.messages.flatMap((message) => {
     const extracted = toExtractedMessage(message, {
       ...base,
       from: message.from ?? "",

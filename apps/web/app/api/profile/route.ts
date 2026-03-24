@@ -2,7 +2,7 @@ import { DomainError, toErrorResponse } from "@/server/contracts/errors";
 import {
   getCurrentProfileForCurrentUser,
   updateCurrentProfileForCurrentUser,
-} from "@/server/domains/profiles/service";
+} from "@/server/domains/auth/profiles/service";
 
 /**
  * WHY:   The migrated gateway needs a stable profile endpoint separate from raw Convex queries.

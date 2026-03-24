@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { FileUp, Building2, Handshake, Tag } from "lucide-react";
 import type { UploadedFileReference } from "@/server/contracts/files";
 import type { ConversationDetail } from "@/server/contracts/inbox";
-import ChatActionBar from "@/app/(ws)/ws/_components/Chat/ChatActionBar";
+import ChatActionBar from "../../../_components/Chat/ChatActionBar";
 import InboxComposer from "./components/InboxComposer";
 import InboxMessageList from "./components/InboxMessageList";
 import InboxThreadHeader from "./components/InboxThreadHeader";

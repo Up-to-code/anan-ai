@@ -38,7 +38,7 @@ describe("admin protected layout", () => {
       AdminLayout({
         children: <div>content</div>,
       }),
-    ).rejects.toThrow("NEXT_REDIRECT:/signin?returnTo=/dashboard");
+    ).rejects.toThrow("NEXT_REDIRECT:/signin?returnTo=/overview");
   });
 
   it("renders the shell for admin users", async () => {

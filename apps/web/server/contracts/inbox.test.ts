@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import {
   conversationMessageSchema,
   createPrivateOfferInConversationInputSchema,
@@ -25,131 +25,127 @@ const baseRecipient = {
   organizationName: "Skyline RED",
 };
 
-describe("inbox contracts", () => {
-  it("validates file share metadata", () => {
-    expect(
-      fileShareMetadataSchema.parse({
-        contextType: "file_share",
-        actor: baseActor,
-        recipient: baseRecipient,
-        title: "عرض سعر محدث",
-        summary: "ملف PDF جديد",
-        href: "/ws/files/file-1",
-        action: { type: "open_file", label: "افتح الملف", href: "/ws/files/file-1" },
+const fileShareMetadata = {
+  contextType: "file_share" as const,
+  actor: baseActor,
+  recipient: baseRecipient,
+  title: "عرض سعر محدث",
+  summary: "ملف PDF جديد",
+  href: "/ws/files/file-1",
+  action: { type: "open_file", label: "افتح الملف", href: "/ws/files/file-1" },
+  file: {
+    key: "file-1",
+    url: "https://files.test/file-1.pdf",
+    name: "price-sheet.pdf",
+    mime: "application/pdf",
+  },
+};
+
+it("validates file share metadata", () => {
+  expect(fileShareMetadataSchema.parse(fileShareMetadata)).toBeTruthy();
+});
+
+it("validates project share metadata", () => {
+  expect(
+    projectShareMetadataSchema.parse({
+      contextType: "project_share",
+      actor: baseActor,
+      recipient: baseRecipient,
+      title: "مشروع جديد",
+      summary: "أرسلت لك هذا المشروع للمراجعة",
+      href: "/ws/projects/property-1",
+      action: { type: "open_project", label: "افتح المشروع", href: "/ws/projects/property-1" },
+      propertyId: "property-1",
+    }),
+  ).toBeTruthy();
+});
+
+it("validates deal share metadata", () => {
+  expect(
+    dealShareMetadataSchema.parse({
+      contextType: "deal_share",
+      actor: baseActor,
+      recipient: baseRecipient,
+      title: "صفقة متابعة",
+      summary: "راجع حالة التفاوض الحالية",
+      href: "/ws/crm/deals/deal-1",
+      action: { type: "open_deal", label: "افتح الصفقة", href: "/ws/crm/deals/deal-1" },
+      dealId: "deal-1",
+      stage: "negotiation",
+    }),
+  ).toBeTruthy();
+});
+
+it("validates invite and role event metadata", () => {
+  expect(
+    inviteEventMetadataSchema.parse({
+      contextType: "invite_event",
+      actor: baseActor,
+      recipient: baseRecipient,
+      title: "دعوة فريق",
+      summary: "تم قبول الدعوة",
+      href: "/ws/settings/members",
+      action: { type: "open_invite", label: "افتح الدعوة", href: "/ws/settings/members" },
+      inviteId: "invite-1",
+      inviteRole: "member",
+      inviteStatus: "accepted",
+      organizationName: "Skyline RED",
+      organizationType: "developer",
+    }),
+  ).toBeTruthy();
+
+  expect(
+    roleEventMetadataSchema.parse({
+      contextType: "role_event",
+      actor: baseActor,
+      recipient: baseRecipient,
+      title: "تحديث الدور",
+      summary: "تمت ترقية العضو إلى مدير",
+      href: "/ws/settings/members",
+      action: { type: "open_membership", label: "افتح العضوية", href: "/ws/settings/members" },
+      membershipId: "membership-1",
+      organizationRole: "manager",
+      previousRole: "member",
+      organizationName: "Skyline RED",
+      organizationType: "developer",
+    }),
+  ).toBeTruthy();
+});
+
+it("validates typed conversation messages", () => {
+  expect(
+    conversationMessageSchema.parse({
+      id: "message-1",
+      senderUserId: "auth-a",
+      recipientUserId: "auth-b",
+      type: "file_share",
+      body: "تمت مشاركة ملف جديد",
+      createdAt: Date.now(),
+      metadata: {
+        ...fileShareMetadata,
         file: {
           key: "file-1",
           url: "https://files.test/file-1.pdf",
           name: "price-sheet.pdf",
-          mime: "application/pdf",
         },
-      }),
-    ).toBeTruthy();
-  });
+      },
+    }),
+  ).toBeTruthy();
+});
 
-  it("validates project, deal, invite, and role event metadata", () => {
-    expect(
-      projectShareMetadataSchema.parse({
-        contextType: "project_share",
-        actor: baseActor,
-        recipient: baseRecipient,
-        title: "مشروع جديد",
-        summary: "أرسلت لك هذا المشروع للمراجعة",
-        href: "/ws/projects/property-1",
-        action: { type: "open_project", label: "افتح المشروع", href: "/ws/projects/property-1" },
-        propertyId: "property-1",
-      }),
-    ).toBeTruthy();
+it("requires the targeted private-offer conversation payload", () => {
+  expect(
+    createPrivateOfferInConversationInputSchema.safeParse({
+      conversationId: "conversation-1",
+      propertyId: "property-1",
+      price: 1000000,
+    }).success,
+  ).toBe(true);
 
-    expect(
-      dealShareMetadataSchema.parse({
-        contextType: "deal_share",
-        actor: baseActor,
-        recipient: baseRecipient,
-        title: "صفقة متابعة",
-        summary: "راجع حالة التفاوض الحالية",
-        href: "/ws/crm/deals/deal-1",
-        action: { type: "open_deal", label: "افتح الصفقة", href: "/ws/crm/deals/deal-1" },
-        dealId: "deal-1",
-        stage: "negotiation",
-      }),
-    ).toBeTruthy();
-
-    expect(
-      inviteEventMetadataSchema.parse({
-        contextType: "invite_event",
-        actor: baseActor,
-        recipient: baseRecipient,
-        title: "دعوة فريق",
-        summary: "تم قبول الدعوة",
-        href: "/ws/settings/members",
-        action: { type: "open_invite", label: "افتح الدعوة", href: "/ws/settings/members" },
-        inviteId: "invite-1",
-        inviteRole: "member",
-        inviteStatus: "accepted",
-        organizationName: "Skyline RED",
-        organizationType: "developer",
-      }),
-    ).toBeTruthy();
-
-    expect(
-      roleEventMetadataSchema.parse({
-        contextType: "role_event",
-        actor: baseActor,
-        recipient: baseRecipient,
-        title: "تحديث الدور",
-        summary: "تمت ترقية العضو إلى مدير",
-        href: "/ws/settings/members",
-        action: { type: "open_membership", label: "افتح العضوية", href: "/ws/settings/members" },
-        membershipId: "membership-1",
-        organizationRole: "manager",
-        previousRole: "member",
-        organizationName: "Skyline RED",
-        organizationType: "developer",
-      }),
-    ).toBeTruthy();
-  });
-
-  it("validates typed conversation messages", () => {
-    expect(
-      conversationMessageSchema.parse({
-        id: "message-1",
-        senderUserId: "auth-a",
-        recipientUserId: "auth-b",
-        type: "file_share",
-        body: "تمت مشاركة ملف جديد",
-        createdAt: Date.now(),
-        metadata: {
-          contextType: "file_share",
-          actor: baseActor,
-          recipient: baseRecipient,
-          title: "عرض سعر محدث",
-          summary: "ملف PDF جديد",
-          href: "/ws/files/file-1",
-          action: { type: "open_file", label: "افتح الملف", href: "/ws/files/file-1" },
-          file: {
-            key: "file-1",
-            url: "https://files.test/file-1.pdf",
-            name: "price-sheet.pdf",
-          },
-        },
-      }),
-    ).toBeTruthy();
-  });
-
-  it("requires the targeted private-offer conversation payload", () => {
-    expect(
-      createPrivateOfferInConversationInputSchema.safeParse({
-        conversationId: "conversation-1",
-        propertyId: "property-1",
-        price: 1000000,
-      }).success,
-    ).toBe(true);
-
-    expect(
-      createPrivateOfferInConversationInputSchema.safeParse({
-        propertyId: "property-1",
-        price: 1000000,
-      }).success,
-    ).toBe(false);
-  });
+  expect(
+    createPrivateOfferInConversationInputSchema.safeParse({
+      propertyId: "property-1",
+      price: 1000000,
+    }).success,
+  ).toBe(false);
 });

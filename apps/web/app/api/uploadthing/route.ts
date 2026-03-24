@@ -30,18 +30,18 @@ function missingTokenResponse() {
  * HOW:   If `UPLOADTHING_TOKEN` is configured, forwards to UploadThing's route handler.
  *        Otherwise returns a stable 503 payload instead of crashing the route module at import time.
  */
-export async function GET(request: Request, context: unknown) {
+export async function GET(request: Request) {
   if (!uploadthingHandlers) {
     return missingTokenResponse();
   }
 
-  return uploadthingHandlers.GET(request as never, context as never);
+  return uploadthingHandlers.GET(request as never);
 }
 
-export async function POST(request: Request, context: unknown) {
+export async function POST(request: Request) {
   if (!uploadthingHandlers) {
     return missingTokenResponse();
   }
 
-  return uploadthingHandlers.POST(request as never, context as never);
+  return uploadthingHandlers.POST(request as never);
 }

@@ -2,7 +2,7 @@
  * WhatsApp webhook handler.
  */
 import { httpAction } from "../../../_generated/server";
-import { apiRefs, internalRefs } from "../../../shared_logic/lib/generatedApiRefs";
+import { api, internal } from "../../../_generated/api";
 import { extractWebhookEvents } from "./api";
 import { type SendResult, WhatsAppService } from "./service";
 import { processVoicePipeline } from "./preprocess/voicePipeline";
@@ -83,7 +83,7 @@ async function processWebhookEvent(
   event: ReturnType<typeof extractWebhookEvents>[number],
 ) {
   const userId = event.from;
-  await ctx.runMutation(apiRefs["shared_logic/users/whatsapp"].ensureWhatsAppUser, {
+  await ctx.runMutation(api.shared_logic.users.whatsapp.ensureWhatsAppUser, {
     userId,
     displayName: event.displayName,
   });
@@ -99,7 +99,7 @@ async function processWebhookEvent(
   });
 
   const reply = await ctx.runAction(
-    internalRefs["user_zone/whatsapp/index"].generateBuyerReply,
+    (internal as any)["user_zone/whatsapp/index"].generateBuyerReply,
     {
       userId: processed.userId,
       message: processed.text,
@@ -158,7 +158,6 @@ export async function handleWhatsAppWebhookPostRequest(
     return new Response("Bad Request", { status: 400 });
   }
 
-  // Reject unsigned or mismatched payloads before parsing or writing any buyer state.
   const isValidSignature = await verifyWhatsAppSignature(
     body,
     request.headers.get("x-hub-signature-256"),
@@ -186,14 +185,13 @@ export async function handleWhatsAppWebhookPostRequest(
   for (const event of events) {
     if (event.messageId) {
       const claim = await ctx.runMutation(
-        internalRefs["user_zone/whatsapp/state"].claimInboundMessageReceipt,
+        (internal as any)["user_zone/whatsapp/state"].claimInboundMessageReceipt,
         {
           channel: "whatsapp",
           messageId: event.messageId,
           userId: event.from,
         },
       );
-      // The receipt table is the canonical dedupe guard for webhook retries.
       if (!claim.proceed) {
         console.info("ai_zone.whatsapp.duplicate", {
           channel: "whatsapp",
@@ -214,7 +212,7 @@ export async function handleWhatsAppWebhookPostRequest(
 
       if (event.messageId) {
         await ctx.runMutation(
-          internalRefs["user_zone/whatsapp/state"].completeInboundMessageReceipt,
+          (internal as any)["user_zone/whatsapp/state"].completeInboundMessageReceipt,
           {
             channel: "whatsapp",
             messageId: event.messageId,
@@ -249,7 +247,7 @@ export async function handleWhatsAppWebhookPostRequest(
 
       if (event.messageId) {
         await ctx.runMutation(
-          internalRefs["user_zone/whatsapp/state"].failInboundMessageReceipt,
+          (internal as any)["user_zone/whatsapp/state"].failInboundMessageReceipt,
           {
             channel: "whatsapp",
             messageId: event.messageId,

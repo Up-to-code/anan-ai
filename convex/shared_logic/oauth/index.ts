@@ -1,11 +1,12 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
 import { action, query } from "../../_generated/server";
-import { internalRefs } from "../lib/generatedApiRefs";
+import { internal } from "../../_generated/api";
 import { AUTHORIZATION_CODE_TTL_MS } from "../../_core/oauth/constants";
 import { createPairwiseSubject, randomToken, sha256Hex } from "../../_core/oauth/crypto";
 
-const oauthInternal = internalRefs["shared_logic/oauth/internal"];
+// Avoid type cycles due to `internal.*` being derived from the full module graph (including this file).
+const oauthInternal = internal.shared_logic.oauth.internal as any;
 
 /**
  * WHY:   The consent page must load app metadata and the user's current grant state.
@@ -16,7 +17,7 @@ export const getAuthorizationPrompt = query({
   args: {
     flowId: v.id("oauthFlowState"),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<unknown> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new ConvexError({ code: "UNAUTHORIZED", message: "Authentication required" });
@@ -37,7 +38,7 @@ export const approveAuthorization = action({
   args: {
     flowId: v.id("oauthFlowState"),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<unknown> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new ConvexError({ code: "UNAUTHORIZED", message: "Authentication required" });
@@ -75,7 +76,7 @@ export const approveAuthorization = action({
  */
 export const listAuthorizedApps = query({
   args: {},
-  handler: async (ctx) => {
+  handler: async (ctx): Promise<unknown> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new ConvexError({ code: "UNAUTHORIZED", message: "Authentication required" });
@@ -93,7 +94,7 @@ export const getAuthorizedAppDetail = query({
   args: {
     clientId: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<unknown> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new ConvexError({ code: "UNAUTHORIZED", message: "Authentication required" });
@@ -114,7 +115,7 @@ export const revokeAuthorizedApp = action({
   args: {
     clientId: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<unknown> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new ConvexError({ code: "UNAUTHORIZED", message: "Authentication required" });

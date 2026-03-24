@@ -29,6 +29,11 @@ export type OfferSenderProfile = {
   latestOfferTitle: string;
 };
 
+type SenderGroup = {
+  key: string;
+  items: OfferMarketplaceItem[];
+};
+
 function pickString(value?: string | string[]) {
   if (Array.isArray(value)) {
     return value[0];
@@ -46,6 +51,48 @@ function formatPrice(value: number) {
   return `${new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 0,
   }).format(value)} ر.س`;
+}
+
+function groupItemsBySender(items: OfferMarketplaceItem[], kind: "developer" | "broker"): SenderGroup[] {
+  const grouped = new Map<string, OfferMarketplaceItem[]>();
+  items
+    .filter((item) => item.kind === kind)
+    .forEach((item) => {
+      const key = `${kind}:${item.ownerLabel}`;
+      const current = grouped.get(key) ?? [];
+      current.push(item);
+      grouped.set(key, current);
+    });
+  return [...grouped.entries()].map(([key, groupedItems]) => ({ key, items: groupedItems }));
+}
+
+function resolveTopProjectTitle(groupedItems: OfferMarketplaceItem[]) {
+  const projectCounts = new Map<string, number>();
+  groupedItems.forEach((item) => {
+    projectCounts.set(item.project.title, (projectCounts.get(item.project.title) ?? 0) + 1);
+  });
+  const latestItem = groupedItems[0];
+  return [...projectCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? latestItem?.project.title ?? "بدون مشروع";
+}
+
+function buildSenderProfile(group: SenderGroup, kind: "developer" | "broker"): OfferSenderProfile {
+  const groupedItems = group.items;
+  const totalPrice = groupedItems.reduce((sum, item) => sum + parsePriceLabel(item.priceLabel), 0);
+  const publicCount = groupedItems.filter((item) => item.demandLabel).length;
+  const privateCount = groupedItems.length - publicCount;
+  const latestItem = groupedItems[0];
+  return {
+    id: group.key,
+    name: latestItem?.ownerLabel ?? "صاحب عرض",
+    kind,
+    offerCount: groupedItems.length,
+    publicCount,
+    privateCount,
+    latestLocation: latestItem?.location ?? "غير محدد",
+    averagePriceLabel: formatPrice(totalPrice / Math.max(groupedItems.length, 1)),
+    topProjectTitle: resolveTopProjectTitle(groupedItems),
+    latestOfferTitle: latestItem?.title ?? "عرض حديث",
+  };
 }
 
 export function resolvePage(searchParams: OffersPageSearchParams): number {
@@ -82,46 +129,7 @@ export function buildOfferSenderProfiles(
   items: OfferMarketplaceItem[],
   kind: "developer" | "broker",
 ): OfferSenderProfile[] {
-  const grouped = new Map<string, OfferMarketplaceItem[]>();
-
-  items
-    .filter((item) => item.kind === kind)
-    .forEach((item) => {
-      const key = `${kind}:${item.ownerLabel}`;
-      const current = grouped.get(key) ?? [];
-      current.push(item);
-      grouped.set(key, current);
-    });
-
-  return [...grouped.entries()]
-    .map(([key, groupedItems]) => {
-      const totalPrice = groupedItems.reduce((sum, item) => sum + parsePriceLabel(item.priceLabel), 0);
-      const publicCount = groupedItems.filter((item) => item.demandLabel).length;
-      const privateCount = groupedItems.length - publicCount;
-      const latestItem = groupedItems[0];
-      const projectCounts = new Map<string, number>();
-
-      groupedItems.forEach((item) => {
-        projectCounts.set(item.project.title, (projectCounts.get(item.project.title) ?? 0) + 1);
-      });
-
-      const topProjectTitle =
-        [...projectCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ??
-        latestItem?.project.title ??
-        "بدون مشروع";
-
-      return {
-        id: key,
-        name: latestItem?.ownerLabel ?? "صاحب عرض",
-        kind,
-        offerCount: groupedItems.length,
-        publicCount,
-        privateCount,
-        latestLocation: latestItem?.location ?? "غير محدد",
-        averagePriceLabel: formatPrice(totalPrice / Math.max(groupedItems.length, 1)),
-        topProjectTitle,
-        latestOfferTitle: latestItem?.title ?? "عرض حديث",
-      };
-    })
+  return groupItemsBySender(items, kind)
+    .map((group) => buildSenderProfile(group, kind))
     .sort((left, right) => right.offerCount - left.offerCount || left.name.localeCompare(right.name, "ar"));
 }

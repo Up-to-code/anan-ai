@@ -18,6 +18,7 @@ const statusLabels: Record<string, string> = {
   pending: "معلق",
   active: "نشط",
   inactive: "غير نشط",
+  accepted: "مقبول",
   canceled: "ملغي",
   trial: "تجريبي",
   private: "خاص",
@@ -26,6 +27,9 @@ const statusLabels: Record<string, string> = {
   not_member: "غير عضو",
   success: "ناجح",
   failed: "فشل",
+  complete: "مكتمل",
+  missing_document: "مستند ناقص",
+  pending_review: "بانتظار المراجعة",
   none: "غير متوفر",
   unknown: "غير معروف",
   new_lead: "طلب جديد",
@@ -53,6 +57,7 @@ const roleLabels: Record<string, string> = {
 
 const ownerTypeLabels: Record<string, string> = {
   broker: "وسيط",
+  developer: "مطور",
   red: "مطور",
   RED: "مطور",
 };

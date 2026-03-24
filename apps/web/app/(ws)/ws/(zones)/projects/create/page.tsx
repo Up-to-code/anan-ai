@@ -13,7 +13,7 @@ export default async function CreateProjectPage() {
   const audience = workspace.audience;
   const ownerContext = workspace.ownerContext ?? null;
 
-  async function createProject(data: import("@anan/ag-ui/anan").ProjectFormData) {
+  async function createProject(data: import("@/app/(ws)/ws/public").ProjectFormData) {
     "use server";
 
     const propertiesZone = getWorkspacePropertyZone(audience, ownerContext);

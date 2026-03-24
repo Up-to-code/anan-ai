@@ -38,6 +38,8 @@ export const DEFAULT_RETRY_CONFIG = {
     retryableStatusCodes: [429, 408, 500, 502, 503],
 };
 
+export type RetryConfig = typeof DEFAULT_RETRY_CONFIG;
+
 /**
  * FALLBACK_MODEL — Backup model when the primary is unavailable.
  *
@@ -70,6 +72,34 @@ export interface AgentError {
 
 // ─── Retry Logic ──────────────────────────────────────────────────────────────
 
+const TRANSIENT_ERROR_PATTERNS = [
+    "rate limit",
+    "too many requests",
+    "timeout",
+    "ECONNRESET",
+    "ETIMEDOUT",
+    "socket hang up",
+    "network error",
+    "503",
+    "502",
+    "temporarily unavailable",
+];
+
+function extractStatusCode(error: unknown): number | undefined {
+    const candidate =
+        (error as any)?.status ??
+        (error as any)?.statusCode ??
+        (error as any)?.response?.status;
+    return typeof candidate === "number" ? candidate : undefined;
+}
+
+function isTransientMessage(error: unknown): boolean {
+    const message = (error as any)?.message ?? String(error);
+    return TRANSIENT_ERROR_PATTERNS.some((pattern) =>
+        message.toLowerCase().includes(pattern.toLowerCase()),
+    );
+}
+
 /**
  * isRetryableError — Determines if an error should trigger a retry.
  *
@@ -88,35 +118,11 @@ export function isRetryableError(
     config = DEFAULT_RETRY_CONFIG,
 ): boolean {
     if (!error) return false;
-
-    // Check for HTTP status code in various error shapes
-    const statusCode =
-        (error as any)?.status ??
-        (error as any)?.statusCode ??
-        (error as any)?.response?.status;
-
-    if (typeof statusCode === "number") {
+    const statusCode = extractStatusCode(error);
+    if (statusCode !== undefined) {
         return config.retryableStatusCodes.includes(statusCode);
     }
-
-    // Check for common transient error messages
-    const message = (error as any)?.message ?? String(error);
-    const transientPatterns = [
-        "rate limit",
-        "too many requests",
-        "timeout",
-        "ECONNRESET",
-        "ETIMEDOUT",
-        "socket hang up",
-        "network error",
-        "503",
-        "502",
-        "temporarily unavailable",
-    ];
-
-    return transientPatterns.some((p) =>
-        message.toLowerCase().includes(p.toLowerCase()),
-    );
+    return isTransientMessage(error);
 }
 
 /**
@@ -149,56 +155,57 @@ export function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * withRetry — Wraps an async function with retry logic.
- *
- * WHY:   Every LLM call can fail transiently. This wrapper ensures
- *        automatic retries with exponential backoff before giving up.
- * WHAT:  Calls the function, retries on retryable errors, gives up after
- *        maxRetries attempts and throws the last error.
- * HOW:   Loop with try/catch, sleep between attempts.
- *
- * @param fn - The async function to execute with retries
- * @param agentName - Name of the agent (for error reporting)
- * @param config - Retry configuration (defaults to DEFAULT_RETRY_CONFIG)
- * @returns The result of the function if it succeeds within retry limits
- * @throws AgentError if all retry attempts are exhausted
- *
- * @example
- * const result = await withRetry(
- *   () => generateText({ model, prompt }),
- *   "anan_search",
- * );
- */
+function maybeThrowTerminalRetryError(args: {
+    error: unknown;
+    agentName: string;
+    retryable: boolean;
+    attempt: number;
+    maxRetries: number;
+}) {
+    const { error, agentName, retryable, attempt, maxRetries } = args;
+    if (retryable && attempt !== maxRetries) {
+        return;
+    }
+    throw {
+        agentName,
+        statusCode: extractStatusCode(error),
+        message: (error as any)?.message ?? String(error),
+        retryable,
+        attemptsMade: attempt + 1,
+    } satisfies AgentError;
+}
+
+function logRetryAttempt(args: {
+    agentName: string;
+    attempt: number;
+    maxRetries: number;
+    delay: number;
+    error: unknown;
+}) {
+    const { agentName, attempt, maxRetries, delay, error } = args;
+    console.warn(
+        `[${agentName}] Attempt ${attempt + 1}/${maxRetries + 1} failed. ` +
+        `Retrying in ${Math.round(delay)}ms... Error: ${(error as any)?.message ?? error}`,
+    );
+}
+
+/** Wrap an async operation with retry + backoff behavior. */
 export async function withRetry<T>(
     fn: () => Promise<T>,
     agentName: string,
     config = DEFAULT_RETRY_CONFIG,
 ): Promise<T> {
     let lastError: unknown;
-
     for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
         try {
             return await fn();
         } catch (error) {
             lastError = error;
-
-            if (!isRetryableError(error, config) || attempt === config.maxRetries) {
-                throw {
-                    agentName,
-                    statusCode:
-                        (error as any)?.status ?? (error as any)?.statusCode ?? undefined,
-                    message: (error as any)?.message ?? String(error),
-                    retryable: isRetryableError(error, config),
-                    attemptsMade: attempt + 1,
-                } satisfies AgentError;
-            }
+            const retryable = isRetryableError(error, config);
+            maybeThrowTerminalRetryError({ error, agentName, retryable, attempt, maxRetries: config.maxRetries });
 
             const delay = calculateDelay(attempt, config);
-            console.warn(
-                `[${agentName}] Attempt ${attempt + 1}/${config.maxRetries + 1} failed. ` +
-                `Retrying in ${Math.round(delay)}ms... Error: ${(error as any)?.message ?? error}`,
-            );
+            logRetryAttempt({ agentName, attempt, maxRetries: config.maxRetries, delay, error });
             await sleep(delay);
         }
     }

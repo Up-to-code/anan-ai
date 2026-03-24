@@ -1,4 +1,4 @@
-import type { SidebarUser } from "@/components/shared/Sidebar/types";
+import type { SidebarUser } from "../Sidebar/types";
 import type { WorkspaceOrganizationDisplay } from "../../_lib/organizationDisplay";
 import { WORKSPACE_SIDEBAR_WIDTH_CLASS } from "../../_lib/shell";
 import type { ZoneShellData } from "../../_lib/zones";

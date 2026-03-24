@@ -1,6 +1,7 @@
 import type { ActionCtx } from "../../../_generated/server";
 import type { Tool } from "ai";
 import type { AgentRuntimeContext, ToolFactoryMap } from "../types";
+import type { RetryConfig } from "../shared/errorHandler";
 
 export type AgentRole = "user" | "broker" | "RED" | "admin";
 
@@ -27,7 +28,7 @@ export type AgentModelPolicy = {
 export type AgentRuntimePolicy = {
   maxSteps?: number;
   enableTokenTracking?: boolean;
-  retryConfig?: unknown;
+  retryConfig?: Partial<RetryConfig>;
   failureMode?: "soft" | "hard";
 };
 

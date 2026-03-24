@@ -6,5 +6,5 @@ import { redirect } from "next/navigation";
  * HOW:   Uses an immediate server redirect so the route stays thin and stateless.
  */
 export default function HomePage() {
-  redirect("/dashboard");
+  redirect("/overview");
 }

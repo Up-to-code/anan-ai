@@ -1,7 +1,33 @@
+"use client";
+
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
+type TooltipPayload<Row> = {
+  payload: Row;
+};
+
+type TooltipProps<Row> = {
+  active?: boolean;
+  payload?: TooltipPayload<Row>[];
+};
+
 type KeywordRow = {
   label: string;
   count: number;
   source: "query" | "feature" | "derived_topic";
+};
+
+type MarketKeywordTableProps = {
+  title: string;
+  rows: KeywordRow[];
 };
 
 function getSourceLabel(source: KeywordRow["source"]): string {
@@ -16,49 +42,81 @@ function getSourceLabel(source: KeywordRow["source"]): string {
 }
 
 /**
- * WHY:   Keyword and topic analysis should stay readable as data tables rather than clouds or decorative chips.
- * WHAT:  Renders the reusable keyword/topic ranking table used in the research tab.
- * HOW:   Accepts pre-filtered rows and maps the raw source enum into short Arabic labels.
+ * Custom tooltip to show the exact count and translated source.
  */
-export default function MarketKeywordTable({
-  title,
-  rows,
-}: {
-  title: string;
-  rows: KeywordRow[];
-}) {
-  return (
-    <section className="border border-slate-200 bg-white">
-      <div className="border-b border-slate-100 p-4 text-right">
-        <h2 className="text-base font-black text-slate-950">{title}</h2>
+function KeywordTooltip({ active, payload }: TooltipProps<KeywordRow>) {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="max-w-xs rounded-lg border border-slate-200 bg-white/95 p-4 text-right shadow-xl backdrop-blur-md">
+        <p className="mb-3 text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">
+          {data.label}
+        </p>
+        <div className="space-y-2 text-xs font-semibold text-slate-600">
+          <p className="flex justify-between items-center gap-4"><span className="text-slate-400">العدد:</span> <span className="text-blue-600">{data.count.toLocaleString("en-US")}</span></p>
+          <p className="flex justify-between items-center gap-4"><span className="text-slate-400">المصدر:</span> <span className="text-slate-900">{getSourceLabel(data.source)}</span></p>
+        </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[520px] text-right">
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="px-4 py-3 text-xs font-black text-slate-500">الكلمة / الموضوع</th>
-              <th className="px-4 py-3 text-xs font-black text-slate-500">العدد</th>
-              <th className="px-4 py-3 text-xs font-black text-slate-500">المصدر</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 ? (
-              <tr>
-                <td colSpan={3} className="px-4 py-8 text-center text-sm font-medium text-slate-500">
-                  لا توجد كلمات أو موضوعات مطابقة لهذا النطاق.
-                </td>
-              </tr>
-            ) : (
-              rows.map((row) => (
-                <tr key={`${row.source}-${row.label}`} className="border-t border-slate-100">
-                  <td className="px-4 py-4 text-sm font-black text-slate-950">{row.label}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{row.count.toLocaleString("en-US")}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-700">{getSourceLabel(row.source)}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+    );
+  }
+  return null;
+}
+
+/**
+ * WHY:   Keyword and topic analysis requires graphical representation of frequency to spot dominant trends instantly.
+ * WHAT:  Renders a horizontal BarChart for the keyword/topic ranking.
+ * HOW:   Accepts pre-filtered rows and maps them to a responsive Recharts graphic.
+ */
+export default function MarketKeywordTable({ title, rows }: MarketKeywordTableProps) {
+  if (rows.length === 0) {
+    return (
+      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
+          <h2 className="text-base font-bold text-slate-900">{title}</h2>
+        </div>
+        <div className="p-12 text-center flex flex-col items-center justify-center">
+          <div className="text-sm font-bold text-slate-400">لا توجد كلمات أو موضوعات مطابقة لهذا النطاق.</div>
+        </div>
+      </section>
+    );
+  }
+
+  // Calculate dynamic height based on number of rows so the bars don't get squished
+  const chartHeight = Math.max(300, rows.length * 40 + 60);
+
+  return (
+    <section className="flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
+        <h2 className="text-base font-bold text-slate-900">{title}</h2>
+      </div>
+      <div className="w-full p-6 pt-6 pb-6 flex-1" dir="rtl">
+        <div style={{ height: chartHeight, width: "100%" }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={rows}
+              layout="vertical"
+              margin={{ top: 0, right: 30, left: 100, bottom: 0 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={true} vertical={false} />
+              <XAxis
+                type="number"
+                axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                tickLine={false}
+                tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
+              />
+              <YAxis
+                type="category"
+                dataKey="label"
+                axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                tickLine={false}
+                tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
+                width={120}
+              />
+              <Tooltip content={<KeywordTooltip />} cursor={{ fill: "#f8fafc" }} />
+              <Bar dataKey="count" fill="#3b82f6" radius={[4, 0, 0, 4]} barSize={24} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </section>
   );

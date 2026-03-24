@@ -139,6 +139,85 @@ export function buildGlobalSearchCacheKey(params: {
   return { cacheKey, normalizedQuery, scope, offset };
 }
 
+type PublicSearchResult = {
+  _id: Id<"properties">;
+  _creationTime: number;
+  title: string;
+  address: string;
+  price: number;
+  beds: number;
+  baths: number;
+  description: string;
+  location?: string;
+  area?: string;
+  status?: string;
+};
+
+type ComplianceOwner = { isVerified?: boolean; countryCode?: string };
+
+async function searchCandidates(ctx: any, normalizedQuery: string, limit: number) {
+  let results = await ctx.db
+    .query("properties")
+    .withSearchIndex("search_full", (s: any) => s.search("searchText", normalizedQuery))
+    .take(limit * 2);
+  if (results.length === 0) {
+    results = await ctx.db
+      .query("properties")
+      .withSearchIndex("search_body", (s: any) => s.search("description", normalizedQuery))
+      .take(limit * 2);
+  }
+  return results;
+}
+
+function applyAvailabilityFilter(results: any[], onlyAvailable: boolean) {
+  if (!onlyAvailable) return results;
+  return results.filter((property) => !property.status || property.status === "available");
+}
+
+async function resolveComplianceOwner(ctx: any, property: any): Promise<ComplianceOwner | null> {
+  if (property.brokerId) {
+    return (await ctx.db.get(property.brokerId)) as ComplianceOwner | null;
+  }
+  if (property.REDId) {
+    return (await ctx.db.get(property.REDId)) as ComplianceOwner | null;
+  }
+  return null;
+}
+
+function toPublicSearchResult(property: any): PublicSearchResult {
+  return {
+    _id: property._id,
+    _creationTime: property._creationTime,
+    title: property.title,
+    address: property.address,
+    price: property.price,
+    beds: property.beds,
+    baths: property.baths,
+    description: property.description,
+    location: property.location,
+    area: property.area,
+    status: property.status ? String(property.status) : undefined,
+  };
+}
+
+async function mapPublicResult(ctx: any, property: any): Promise<PublicSearchResult | null> {
+  const publicationState = property.publicationState as string | undefined;
+  if (publicationState === "draft" || publicationState === "archived") return null;
+  const owner = await resolveComplianceOwner(ctx, property);
+  if (!owner) return null;
+  const orgType = property.brokerId ? "broker" : "red";
+  const ruleset = await findActiveComplianceRuleset(ctx, {
+    countryCode: owner.countryCode ?? DEFAULT_COMPLIANCE_COUNTRY,
+    orgType,
+  });
+  if (!ruleset) return null;
+  if (ruleset.enforcement.hideUnverified) {
+    if (ruleset.enforcement.requireOrgVerification && owner.isVerified !== true) return null;
+    if (ruleset.enforcement.requireListingVerification && property.adLicenseStatus !== "approved") return null;
+  }
+  return toPublicSearchResult(property);
+}
+
 /**
  * WHY:   Public search consumers need a single query that enforces publication/compliance rules.
  * WHAT:  Returns matching published properties that pass availability and compliance filters.
@@ -166,71 +245,9 @@ export const search = query({
     }),
   ),
   handler: async (ctx, { query: q, limit = 20, onlyAvailable = true }) => {
-    type PublicSearchResult = {
-      _id: Id<"properties">;
-      _creationTime: number;
-      title: string;
-      address: string;
-      price: number;
-      beds: number;
-      baths: number;
-      description: string;
-      location?: string;
-      area?: string;
-      status?: string;
-    };
-
-    const normalized = normalizeQuery(q);
-    let results = await ctx.db
-      .query("properties")
-      .withSearchIndex("search_full", (s) => s.search("searchText", normalized))
-      .take((limit ?? 20) * 2);
-    if (results.length === 0) {
-      results = await ctx.db
-        .query("properties")
-        .withSearchIndex("search_body", (s) => s.search("description", normalized))
-        .take((limit ?? 20) * 2);
-    }
-    if (onlyAvailable) {
-      results = results.filter((p) => !p.status || p.status === "available");
-    }
-    const filteredResults = await Promise.all(
-      results.map(async (p) => {
-        const publicationState = (p as { publicationState?: string }).publicationState;
-        if (publicationState === "draft" || publicationState === "archived") return null;
-        const adLicenseStatus = (p as { adLicenseStatus?: string }).adLicenseStatus;
-        const owner = ((p as { brokerId?: string }).brokerId
-          ? await ctx.db.get((p as any).brokerId)
-          : (p as { REDId?: string }).REDId
-            ? await ctx.db.get((p as any).REDId)
-            : null) as { isVerified?: boolean; countryCode?: string } | null;
-        if (!owner) return null;
-        const orgType = (p as { brokerId?: string }).brokerId ? "broker" : "red";
-        const countryCode = owner.countryCode ?? DEFAULT_COMPLIANCE_COUNTRY;
-        const ruleset = await findActiveComplianceRuleset(ctx, { countryCode, orgType });
-        if (!ruleset) return null;
-        const enforcement = ruleset.enforcement;
-        if (enforcement.hideUnverified) {
-          if (enforcement.requireOrgVerification && owner.isVerified !== true) return null;
-          if (enforcement.requireListingVerification && adLicenseStatus !== "approved") return null;
-        }
-        return {
-          _id: p._id,
-          _creationTime: p._creationTime,
-          title: p.title,
-          address: p.address,
-          price: p.price,
-          beds: p.beds,
-          baths: p.baths,
-          description: p.description,
-          location: p.location,
-          area: p.area,
-          status: p.status ? String(p.status) : undefined,
-        } satisfies PublicSearchResult;
-      }),
-    );
-    const filtered = filteredResults.filter(Boolean) as PublicSearchResult[];
-
-    return filtered.slice(0, limit ?? 20);
+    const results = await searchCandidates(ctx, normalizeQuery(q), limit);
+    const availabilityFiltered = applyAvailabilityFilter(results, onlyAvailable);
+    const mapped = await Promise.all(availabilityFiltered.map((property) => mapPublicResult(ctx, property)));
+    return mapped.filter(Boolean).slice(0, limit) as PublicSearchResult[];
   },
 });

@@ -2,6 +2,7 @@ import { BaseConfiguredAgent } from "./core/BaseConfiguredAgent";
 import type { AgentDefinition } from "./core/types";
 import { composeToolMap } from "./core/toolRegistry";
 import type { ToolFactoryMap } from "./types";
+import type { RetryConfig } from "./shared/errorHandler";
 
 export interface AnanAgentConfig {
     name: string;
@@ -15,7 +16,7 @@ export interface AnanAgentConfig {
     instructions: string;
     ragNamespace?: string;
     enableTokenTracking?: boolean;
-    retryConfig?: unknown;
+    retryConfig?: Partial<RetryConfig>;
     promptVersion?: string;
 }
 

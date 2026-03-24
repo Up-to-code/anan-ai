@@ -1,0 +1,68 @@
+import { Gavel, LogIn, ShieldCheck } from "lucide-react";
+import GoogleSignInButton from "./GoogleSignInButton";
+import { PageHero, Section } from "@/app/(public)/public";
+
+const TRUST_SIGNALS = [
+  { icon: ShieldCheck, label: "تشفير مؤسسي" },
+  { icon: Gavel, label: "امتثال قانوني" },
+];
+
+type SigninPageViewProps = {
+  redirectTo: string;
+};
+
+export default function SigninPageView({ redirectTo }: SigninPageViewProps) {
+  return (
+    <main className="flex min-h-screen flex-col bg-white pt-20 font-sans text-slate-900 selection:bg-blue-600 selection:text-white" dir="rtl">
+      <Section className="flex flex-1 items-center justify-center pb-24">
+        <div className="w-full max-w-md">
+          <PageHero
+            contentClassName="space-y-12 text-center"
+            badge={(
+              <div className="space-y-6">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center bg-blue-600">
+                  <LogIn className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            )}
+            title="دخول النظام المؤسسي"
+            titleTag="h1"
+            titleClassName="text-4xl font-black uppercase tracking-tight text-slate-900"
+            description={(
+              <p className="font-bold text-slate-500">
+                وصول آمن للمطورين والوسطاء المعتمدين في المملكة العربية السعودية.
+              </p>
+            )}
+            descriptionClassName=""
+            actions={(
+              <>
+                <div className="space-y-6">
+                  <GoogleSignInButton
+                    redirectTo={redirectTo}
+                    className="flex w-full items-center justify-center gap-4"
+                  />
+                  <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed text-slate-400">
+                    بالدخول للنظام، أنت توافق على
+                    {" "}
+                    <a href="/terms" className="text-blue-600 hover:underline focus-visible:underline">اتفاقية الاستخدام</a>
+                    {" "}و{" "}
+                    <a href="/policy" className="text-blue-600 hover:underline focus-visible:underline">سياسة الخصوصية</a>
+                    {" "}السعودية.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-8 border-t border-slate-100 pt-12">
+                  {TRUST_SIGNALS.map(({ icon: Icon, label }) => (
+                    <div key={label} className="flex flex-col items-center gap-3">
+                      <Icon className="h-5 w-5 text-slate-300" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          />
+        </div>
+      </Section>
+    </main>
+  );
+}

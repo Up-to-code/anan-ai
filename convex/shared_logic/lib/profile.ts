@@ -4,6 +4,7 @@ import {
   findProfileForResolvedIdentity,
   requireResolvedIdentity,
 } from "../../_core/security/identity";
+import { getProfileByAuthUserId } from "../../_core/security/profileLookup";
 
 export type CurrentProfile = {
   authUserId: string;
@@ -19,13 +20,7 @@ export type CurrentProfile = {
 };
 
 type Ctx = QueryCtx | MutationCtx;
-
-export async function getProfileByAuthUserId(ctx: Ctx, authUserId: string) {
-  return ctx.db
-    .query("userProfiles")
-    .withIndex("authUserId", (q) => q.eq("authUserId", authUserId))
-    .first();
-}
+export { getProfileByAuthUserId };
 
 export async function requireCurrentProfile(ctx: Ctx): Promise<CurrentProfile> {
   const resolved = await requireResolvedIdentity(ctx);

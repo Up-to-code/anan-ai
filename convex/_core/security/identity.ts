@@ -2,7 +2,7 @@ import { ConvexError } from "convex/values";
 import { getAuthSessionId, getAuthUserId } from "@convex-dev/auth/server";
 import type { Doc } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
-import { getProfileByAuthUserId } from "../../shared_logic/lib/profile";
+import { getProfileByAuthUserId, getProfileByEmail } from "./profileLookup";
 
 type Ctx = QueryCtx | MutationCtx;
 type Identity = Awaited<ReturnType<Ctx["auth"]["getUserIdentity"]>>;
@@ -59,10 +59,7 @@ export async function findProfileForResolvedIdentity(
   if (exact) return exact;
 
   if (resolved.email) {
-    return ctx.db
-      .query("userProfiles")
-      .withIndex("email", (q) => q.eq("email", resolved.email!))
-      .first();
+    return getProfileByEmail(ctx, resolved.email);
   }
 
   return null;

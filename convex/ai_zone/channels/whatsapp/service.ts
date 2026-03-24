@@ -95,9 +95,7 @@ export function normalizeOutboundMessages(messages: WhatsAppOutboundMessage[]) {
       continue;
     }
     expanded.push(
-      ...chunkTextForWhatsApp(message.text).map(
-        (text) => ({ type: "text" as const, text }),
-      ),
+      ...chunkTextForWhatsApp(message.text).map((text) => ({ type: "text" as const, text })),
     );
   }
   return expanded.slice(0, MAX_NORMAL_MESSAGES_PER_TURN);
@@ -224,11 +222,7 @@ export class WhatsAppService {
    * WHAT:  Sends one text message to a WhatsApp user.
    * HOW:   Posts a standard text payload to the Cloud API with optional reply context.
    */
-  async sendText(
-    userId: string,
-    text: string,
-    contextMessageId?: string,
-  ): Promise<SendResult> {
+  async sendText(userId: string, text: string, contextMessageId?: string): Promise<SendResult> {
     if (!this.token) {
       return { success: false, error: "WHATSAPP_ACCESS_TOKEN not set" };
     }
@@ -304,7 +298,7 @@ export class WhatsAppService {
     messages: WhatsAppOutboundMessage[],
     contextMessageId?: string,
   ) {
-    const sequence: WhatsAppOutboundMessage[] = normalizeOutboundMessages(messages);
+    const sequence = normalizeOutboundMessages(messages);
     const results: SendResult[] = [];
 
     for (let index = 0; index < sequence.length; index += 1) {

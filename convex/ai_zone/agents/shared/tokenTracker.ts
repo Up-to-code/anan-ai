@@ -95,27 +95,7 @@ export function estimateCostUSD(
 
 // ─── Tracking Function ────────────────────────────────────────────────────────
 
-/**
- * trackTokenUsage — Saves token usage data to the aiTokenUsage table.
- *
- * WHY:   Called after every agent execution so we have a complete record
- *        of all LLM calls, their costs, and which agent made them.
- * WHAT:  Inserts a row into `aiTokenUsage` with all the details.
- * HOW:   Uses ctx.db.insert directly. Wrapped in try/catch because
- *        token tracking must NEVER crash the user's actual request.
- *
- * @param ctx - Convex mutation context
- * @param params - Token usage parameters (agent name, model, counts, etc.)
- *
- * @example
- * await trackTokenUsage(ctx, {
- *   agentName: "anan_search",
- *   modelName: "google/gemini-2.5-flash",
- *   inputTokens: 1250,
- *   outputTokens: 430,
- *   userId: "user123",
- * });
- */
+// Persist token usage without ever blocking the main agent flow.
 export async function trackTokenUsage(
     ctx: MutationCtx,
     params: TrackTokenParams,

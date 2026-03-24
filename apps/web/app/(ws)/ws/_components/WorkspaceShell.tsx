@@ -2,19 +2,22 @@
 
 import { useState } from "react";
 import { PanelLeft, PanelLeftClose } from "lucide-react";
-import Sidebar from "@/components/shared/Sidebar";
-import type { SidebarUser } from "@/components/shared/Sidebar/types";
+import Sidebar from "./Sidebar";
+import type { SidebarUser } from "./Sidebar/types";
 import type { WorkspaceOrganizationDisplay } from "../_lib/organizationDisplay";
 import { WORKSPACE_SIDEBAR_WIDTH_CLASS } from "../_lib/shell";
 import WorkspaceSidebarDrawer from "./WorkspaceSidebarDrawer";
 import WorkspaceTopNavbar from "./WorkspaceTopNavbar";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
 import type { AnanProThreadSummary } from "@/server/contracts/ananPro";
+import { cn } from "@/lib/utils";
+
+export type WorkspaceShellVariant = "default" | "assistant";
 
 /**
  * WHY:   The workspace route group needs one responsive shell that behaves consistently across desktop and Safari-class mobile browsers.
  * WHAT:  Renders the desktop sidebar rail, mobile drawer trigger, top navbar, and main content column for `/ws`.
- * HOW:   Uses `svh`-based sizing on the desktop shell and leaves mobile content flow un-clipped so the sidebar stays reachable.
+ * HOW:   Uses `svh`-based sizing on the desktop shell, supports an assistant-first overview variant, and keeps mobile navigation reachable.
  */
 export default function WorkspaceShell({
   user,
@@ -24,6 +27,8 @@ export default function WorkspaceShell({
   allAssistantThreads = [],
   signalCounts = { notificationCount: 0, inboxCount: 0 },
   complianceBanner = null,
+  variant = "default",
+  headerTitle,
   children,
 }: {
   user: SidebarUser;
@@ -38,17 +43,24 @@ export default function WorkspaceShell({
     ctaLabel?: string;
     ctaHref?: string;
   } | null;
+  variant?: WorkspaceShellVariant;
+  headerTitle?: string;
   children: React.ReactNode;
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const isAssistantVariant = variant === "assistant";
 
   return (
     <div
       data-slot="workspace-shell"
-      className="min-h-svh bg-slate-50 lg:flex lg:h-svh lg:overflow-hidden"
+      data-variant={variant}
+      className={cn(
+        "min-h-svh lg:flex lg:h-svh lg:overflow-hidden",
+        isAssistantVariant ? "bg-white" : "bg-slate-50",
+      )}
     >
       {!sidebarCollapsed ? (
-        <div className={`hidden shrink-0 lg:flex lg:h-svh relative group ${WORKSPACE_SIDEBAR_WIDTH_CLASS}`}>
+        <div className={`relative hidden shrink-0 lg:flex lg:h-svh ${WORKSPACE_SIDEBAR_WIDTH_CLASS}`}>
           <Sidebar
             user={user}
             organization={organization}
@@ -58,24 +70,32 @@ export default function WorkspaceShell({
             className="w-full"
           />
           <button
+            type="button"
             onClick={() => setSidebarCollapsed(true)}
-            className="absolute -right-3 top-6 flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:text-slate-600 group-hover:opacity-100 focus-visible:opacity-100 z-10"
+            className="absolute left-4 top-4 z-10 inline-flex h-9 min-w-9 items-center justify-center rounded-[8px] border border-white/10 bg-white/5 px-2 text-slate-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
             aria-label="إخفاء القائمة"
+            title="إخفاء القائمة"
           >
-            <PanelLeftClose className="h-3 w-3" />
+            <PanelLeftClose className="h-4 w-4" />
           </button>
         </div>
-      ) : (
-        <div className="hidden shrink-0 lg:flex lg:h-svh lg:w-16 flex-col items-center border-e border-slate-200 bg-white py-6">
+      ) : null}
+      {sidebarCollapsed ? (
+        <div className="hidden shrink-0 border-e border-white/5 bg-slate-950 py-4 lg:flex lg:h-svh lg:w-[72px] lg:flex-col lg:items-center">
           <button
+            type="button"
             onClick={() => setSidebarCollapsed(false)}
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-[8px] border border-white/10 bg-white/5 text-slate-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
             aria-label="إظهار القائمة"
+            title="إظهار القائمة"
           >
             <PanelLeft className="h-5 w-5" />
           </button>
+          <span className="mt-3 text-[10px] font-black tracking-[0.18em] text-slate-500">
+            القائمة
+          </span>
         </div>
-      )}
+      ) : null}
 
       <div className="relative flex min-w-0 flex-1 flex-col bg-transparent lg:max-h-svh lg:overflow-hidden">
         <WorkspaceTopNavbar
@@ -83,6 +103,8 @@ export default function WorkspaceShell({
           organization={organization}
           visibleZoneKeys={visibleZoneKeys}
           initialSignalCounts={signalCounts}
+          variant={variant}
+          title={headerTitle}
           mobileNavigation={
             <WorkspaceSidebarDrawer
               user={user}
@@ -102,7 +124,7 @@ export default function WorkspaceShell({
               <div className="mt-3">
                 <a
                   href={complianceBanner.ctaHref ?? "/ws?onboarding=verification"}
-                  className="inline-flex items-center border border-amber-300 bg-white px-3 py-1.5 text-[10px] font-black tracking-[0.18em] text-amber-900"
+                  className="inline-flex items-center rounded-[8px] border border-amber-300 bg-white px-3 py-1.5 text-[10px] font-black tracking-[0.18em] text-amber-900"
                 >
                   {complianceBanner.ctaLabel}
                 </a>
@@ -111,7 +133,12 @@ export default function WorkspaceShell({
           </div>
         ) : null}
 
-        <main className="min-w-0 flex-1 overflow-visible motion-safe:animate-zone-page-enter lg:overflow-auto">
+        <main
+          className={cn(
+            "min-w-0 flex-1 motion-safe:animate-zone-page-enter",
+            isAssistantVariant ? "overflow-hidden" : "overflow-visible lg:overflow-auto",
+          )}
+        >
           {children}
         </main>
       </div>

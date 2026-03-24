@@ -8,6 +8,8 @@ This route group contains the focused business-zone screens that still resolve t
 - `crm`
 - `market`
 - `inbox`
+- `inbox`
+- `market`
 
 Each zone owns its local `layout.tsx`, `page.tsx`, tests, and page-specific subfolder.
 

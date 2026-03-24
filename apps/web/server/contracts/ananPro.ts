@@ -28,6 +28,7 @@ export const ananProThreadSummarySchema = z.object({
 export const sendAnanProMessageInputSchema = z.object({
   message: z.string().trim().min(1),
   threadId: z.string().min(1).optional(),
+  startNewThread: z.boolean().optional(),
   inputMode: ananProInputModeSchema.optional(),
   streamSessionId: z.string().min(1).optional(),
   regenerate: z.boolean().optional(),

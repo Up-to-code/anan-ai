@@ -33,7 +33,7 @@ export default function OrganizationSettingsWorkspace({
   }
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-1">
         <h2 className="text-xl font-black tracking-tight text-slate-950">بيانات المنظمة</h2>
         <p className="text-sm font-medium text-slate-500">

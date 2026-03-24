@@ -1,5 +1,4 @@
-import Navbar from "@/components/shared/Navbar";
-import Footer from "@/components/shared/Footer";
+import { Footer, Navbar } from "@/app/(public)/public";
 import PublicConvexProvider from "@/app/(public)/PublicConvexProvider";
 
 export default function PublicLayout({

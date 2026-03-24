@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
-import PageHero from "@/components/shared/PageHero";
-import Section from "@/components/shared/Section";
-import SectionLabel from "@/components/shared/SectionLabel";
+import { PageHero, Section, SectionLabel } from "@/app/(public)/public";
 
 export const metadata: Metadata = {
   title: "المدونة والتحديثات | عنان",
@@ -34,6 +32,35 @@ const BLOG_POSTS = [
   },
 ];
 
+type BlogPostSummary = (typeof BLOG_POSTS)[number];
+
+function BlogPostCard({ post }: { post: BlogPostSummary }) {
+  return (
+    <Link href={`/blog/${post.slug}`} className="group block focus:outline-none focus-visible:ring-4 ring-blue-600 ring-offset-4">
+      <article className="border-2 border-slate-100 bg-white p-10 h-full flex flex-col space-y-8 transition-colors group-hover:border-blue-600">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 bg-blue-50 px-3 py-1">
+            {post.category}
+          </span>
+          <BookOpen className="h-5 w-5 text-slate-300 group-hover:text-blue-600 transition-colors" />
+        </div>
+        <div className="flex-1 space-y-4">
+          <h2 className="text-2xl font-black text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-3 leading-snug">
+            {post.title}
+          </h2>
+          <p className="text-slate-500 font-bold leading-relaxed line-clamp-3">{post.excerpt}</p>
+        </div>
+        <div className="pt-6 border-t border-slate-100 flex items-center justify-between mt-auto">
+          <span className="text-xs font-black uppercase text-slate-400">{post.date}</span>
+          <span className="text-xs font-black uppercase text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+            اقرأ المزيد
+          </span>
+        </div>
+      </article>
+    </Link>
+  );
+}
+
 export default function BlogIndexPage() {
   return (
     <main>
@@ -61,30 +88,7 @@ export default function BlogIndexPage() {
       <Section className="py-24">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
           {BLOG_POSTS.map((post) => (
-            <Link href={`/blog/${post.slug}`} key={post.slug} className="group block focus:outline-none focus-visible:ring-4 ring-blue-600 ring-offset-4">
-              <article className="border-2 border-slate-100 bg-white p-10 h-full flex flex-col space-y-8 transition-colors group-hover:border-blue-600">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 bg-blue-50 px-3 py-1">
-                    {post.category}
-                  </span>
-                  <BookOpen className="h-5 w-5 text-slate-300 group-hover:text-blue-600 transition-colors" />
-                </div>
-                <div className="flex-1 space-y-4">
-                  <h2 className="text-2xl font-black text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-3 leading-snug">
-                    {post.title}
-                  </h2>
-                  <p className="text-slate-500 font-bold leading-relaxed line-clamp-3">
-                    {post.excerpt}
-                  </p>
-                </div>
-                <div className="pt-6 border-t border-slate-100 flex items-center justify-between mt-auto">
-                  <span className="text-xs font-black uppercase text-slate-400">{post.date}</span>
-                  <span className="text-xs font-black uppercase text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
-                    اقرأ المزيد 
-                  </span>
-                </div>
-              </article>
-            </Link>
+            <BlogPostCard key={post.slug} post={post} />
           ))}
         </div>
       </Section>

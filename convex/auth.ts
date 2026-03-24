@@ -42,7 +42,6 @@ function deriveUsername(args: { email?: string | null; name?: string | null; aut
 async function syncUserProfile(ctx: any, userId: any) {
   const user = await ctx.db.get(userId);
   if (!user) return;
-
   const authUserId = String(userId);
   const existingByAuth = await getProfileByAuthUserId(ctx, authUserId);
   const existingByEmail =
@@ -52,13 +51,8 @@ async function syncUserProfile(ctx: any, userId: any) {
           .withIndex("email", (q: any) => q.eq("email", user.email))
           .first()
       : null;
-
   const now = Date.now();
-  const username = existingByAuth?.username ?? existingByEmail?.username ?? deriveUsername({
-    email: user.email,
-    name: user.name ?? user.displayName ?? null,
-    authUserId,
-  });
+  const username = existingByAuth?.username ?? existingByEmail?.username ?? deriveUsername({ email: user.email, name: user.name ?? user.displayName ?? null, authUserId });
   const patch = {
     authUserId,
     email: user.email,
@@ -69,13 +63,11 @@ async function syncUserProfile(ctx: any, userId: any) {
     createdAt: existingByAuth?.createdAt ?? existingByEmail?.createdAt ?? now,
     updatedAt: now,
   };
-
   const target = existingByAuth ?? existingByEmail;
   if (target) {
     await ctx.db.patch(target._id, patch);
     return;
   }
-
   await ctx.db.insert("userProfiles", {
     ...patch,
     role: "user",

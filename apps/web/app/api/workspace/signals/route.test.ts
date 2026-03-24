@@ -9,11 +9,11 @@ const { getInboxUnreadSummaryForCurrentUser } = vi.hoisted(() => ({
   getInboxUnreadSummaryForCurrentUser: vi.fn(),
 }));
 
-vi.mock("@/server/domains/notifications/service", () => ({
+vi.mock("@/server/domains/workspace/notifications/service", () => ({
   getWorkspaceNotificationSummary,
 }));
 
-vi.mock("@/server/domains/inbox/service", () => ({
+vi.mock("@/server/domains/workspace/inbox/service", () => ({
   getInboxUnreadSummaryForCurrentUser,
 }));
 

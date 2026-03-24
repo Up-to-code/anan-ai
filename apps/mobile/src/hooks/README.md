@@ -1,6 +1,6 @@
 # Hooks
 
-Mobile hooks own data fetching and local orchestration for the buyer feed.
+Mobile hooks orchestrate client-side buyer state while keeping feature components presentational.
 
-- `usePropertyFeed` resolves Convex feed data with a mock fallback.
-- `usePropertyAssistant` coordinates typed AI responses and handoff actions for the active property.
+- `useBuyerAssistant.ts` manages the guest-mode chat timeline and deterministic assistant replies.
+- `usePropertySearch.ts` manages search filters and list-ready property results.

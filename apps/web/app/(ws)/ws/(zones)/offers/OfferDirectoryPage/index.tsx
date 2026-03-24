@@ -1,164 +1,248 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { MessageCircle, UserPlus } from "lucide-react";
-import type { OffersDirectoryProfile } from "@/server/contracts/organizations";
+import Link from "next/link";
+import { Building2, Briefcase, UserRound } from "lucide-react";
+import type { OfferOrganizationSummary, OffersDirectoryProfile } from "@/server/contracts/organizations";
 import OfferPaginationNav from "../OfferPaginationNav";
+import { cn } from "@/lib/utils";
 
-/**
- * WHY:   Broker/developer tabs should expose a real collaboration directory instead of passive summary cards only.
- * WHAT:  Renders paginated directory cards with invite and direct-message actions.
- * HOW:   Uses the existing workspace invite and inbox APIs so the route stays server-loaded while the card actions stay interactive.
- */
-export default function OfferDirectoryPage({
-  title,
-  description,
-  profiles,
-  totalItems,
-  page,
-  pageCount,
-  hasPreviousPage,
-  hasNextPage,
-  routeBase,
-}: {
-  title: string;
-  description: string;
-  profiles: OffersDirectoryProfile[];
+export type DirectoryEntityFilter = "businessPersons" | "organizationPeople";
+
+type DirectoryPagination = {
   totalItems: number;
   page: number;
   pageCount: number;
   hasPreviousPage: boolean;
   hasNextPage: boolean;
-  routeBase: string;
+};
+
+type DirectoryPersonCard = {
+  id: string;
+  avatarUrl: string | null;
+  avatarLabel: string;
+  displayName: string;
+  organizationName: string;
+  role: "broker" | "developer";
+  href: string | null;
+};
+
+type DirectoryOrganizationCard = {
+  id: string;
+  logoUrl: string | null;
+  avatarLabel: string;
+  displayName: string;
+  offerCount: number;
+  href: string;
+};
+
+function DirectoryPersonCardView({ person }: { person: DirectoryPersonCard }) {
+  const content = (
+    <>
+      <div className="flex items-start gap-3">
+        {person.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={person.avatarUrl} alt={person.displayName} className="h-12 w-12 rounded-full border border-slate-200 object-cover" />
+        ) : (
+          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-sm font-bold text-slate-700">
+            {person.avatarLabel}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-base font-semibold text-slate-900">{person.displayName}</h2>
+          <p className="mt-1 truncate text-sm text-slate-600">{person.organizationName}</p>
+        </div>
+      </div>
+      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+          <UserRound className="h-3.5 w-3.5" />
+          {person.role === "broker" ? "وسيط" : "مطور"}
+        </div>
+        <span className="text-xs font-medium text-slate-700">{person.href?.includes("/ws/inbox/") ? "محادثة" : "الملف"}</span>
+      </div>
+    </>
+  );
+
+  if (person.href) {
+    return (
+      <Link href={person.href} className="rounded-lg border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300 hover:bg-slate-50">
+        {content}
+      </Link>
+    );
+  }
+
+  return <article className="rounded-lg border border-slate-200 bg-white p-4">{content}</article>;
+}
+
+function DirectoryOrganizationCardView({
+  organization,
+  type,
+}: {
+  organization: DirectoryOrganizationCard;
+  type: "broker" | "developer";
 }) {
-  const router = useRouter();
-  const [status, setStatus] = useState<string | null>(null);
-  const [busyEmail, setBusyEmail] = useState<string | null>(null);
+  return (
+    <Link href={organization.href} className="rounded-lg border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300 hover:bg-slate-50">
+      <div className="flex items-start gap-3">
+        {organization.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={organization.logoUrl} alt={organization.displayName} className="h-12 w-12 rounded-md border border-slate-200 object-cover p-1" />
+        ) : (
+          <div className="flex h-12 w-12 items-center justify-center rounded-md border border-slate-200 bg-slate-100 text-sm font-bold text-slate-700">
+            {organization.avatarLabel}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-base font-semibold text-slate-900">{organization.displayName}</h2>
+          <p className="mt-1 text-sm text-slate-600">{type === "broker" ? "شركة وساطة" : "شركة تطوير"}</p>
+        </div>
+      </div>
+      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+          <Building2 className="h-3.5 w-3.5" />
+          جهة عمل
+        </div>
+        <div className="inline-flex items-center gap-1 text-xs font-medium text-slate-700">
+          <Briefcase className="h-3.5 w-3.5" />
+          {organization.offerCount} عروض
+        </div>
+      </div>
+    </Link>
+  );
+}
 
-  async function handleInvite(email: string) {
-    setBusyEmail(email);
-    setStatus("جاري إرسال الدعوة...");
+function avatarLabelFromName(name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) return "؟";
+  return [...trimmed].slice(0, 1).join("").toUpperCase();
+}
 
-    const response = await fetch("/api/workspace/team-invites", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, role: "member" }),
-    });
-    const payload = response.ok ? null : ((await response.json()) as { message?: string });
+export function mapDirectoryPeopleToCards(people: OffersDirectoryProfile[]): DirectoryPersonCard[] {
+  return people.map((person) => ({
+    id: person.id,
+    avatarUrl: person.image ?? null,
+    avatarLabel: avatarLabelFromName(person.name),
+    displayName: person.name,
+    organizationName: person.organizationName,
+    role: person.role,
+    href: person.conversationId
+      ? `/ws/inbox/${person.conversationId}`
+      : person.organizationSlug
+        ? `/ws/offers/directory/${person.role}/${person.organizationSlug}`
+        : null,
+  }));
+}
 
-    if (!response.ok) {
-      setStatus(payload?.message ?? "تعذر إرسال الدعوة.");
-      setBusyEmail(null);
-      return;
-    }
+export function mapDirectoryOrganizationsToCards(
+  organizations: OfferOrganizationSummary[],
+  type: "broker" | "developer",
+): DirectoryOrganizationCard[] {
+  return organizations.map((organization) => ({
+    id: organization.id,
+    logoUrl: organization.logo ?? null,
+    avatarLabel: avatarLabelFromName(organization.name),
+    displayName: organization.name,
+    offerCount: organization.offerCount,
+    href: `/ws/offers/directory/${type}/${organization.slug}`,
+  }));
+}
 
-    setStatus("تم إرسال الدعوة. ستظهر للجهة المستهدفة داخل البريد الوارد.");
-    setBusyEmail(null);
-    router.refresh();
-  }
+/**
+ * WHY:   Offer collaboration needs one practical directory where users can quickly switch between people and organizations.
+ * WHAT:  Renders a role-scoped directory with entity filters for business people vs organizations.
+ * HOW:   Receives pre-paginated collections from the route and swaps the rendered grid based on local filter state.
+ */
+export default function OfferDirectoryPage({
+  title,
+  description,
+  people,
+  organizations,
+  peoplePagination,
+  organizationsPagination,
+  routeBase,
+  initialFilter = "businessPersons",
+}: {
+  title: string;
+  description: string;
+  people: OffersDirectoryProfile[];
+  organizations: OfferOrganizationSummary[];
+  peoplePagination: DirectoryPagination;
+  organizationsPagination: DirectoryPagination;
+  routeBase: string;
+  initialFilter?: DirectoryEntityFilter;
+}) {
+  const [activeFilter, setActiveFilter] = useState<DirectoryEntityFilter>(initialFilter);
 
-  async function handleMessage(targetUserId: string, conversationId?: string | null) {
-    if (conversationId) {
-      router.push(`/ws/inbox/${conversationId}`);
-      return;
-    }
+  const type = routeBase.includes("brokers") ? "broker" : "developer";
+  const peopleCards = mapDirectoryPeopleToCards(people);
+  const organizationCards = mapDirectoryOrganizationsToCards(organizations, type);
 
-    setStatus("جاري فتح المحادثة...");
-    const response = await fetch("/api/workspace/inbox", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ intent: "resolve", targetUserId }),
-    });
-
-    if (!response.ok) {
-      setStatus("تعذر فتح المحادثة.");
-      return;
-    }
-
-    const payload = (await response.json()) as { conversationId: string };
-    router.push(`/ws/inbox/${payload.conversationId}`);
-  }
+  const cards = activeFilter === "businessPersons" ? peopleCards : organizationCards;
+  const pagination = activeFilter === "businessPersons" ? peoplePagination : organizationsPagination;
 
   return (
     <div className="flex min-h-full flex-col pb-24">
-      <div className="grid gap-6 px-6 py-6 lg:px-8 lg:py-8">
-        <section className="border border-slate-200 bg-white p-6 text-right">
-          <h1 className="text-2xl font-black text-slate-950">{title}</h1>
-          <p className="mt-3 max-w-3xl text-sm font-medium leading-7 text-slate-600">{description}</p>
-          <div className="mt-4 text-xs font-black tracking-[0.18em] text-slate-400">
-            {totalItems} ملف مرئي في الدليل
-          </div>
-          {status ? <div className="mt-3 text-sm font-medium text-slate-600">{status}</div> : null}
-        </section>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {profiles.map((profile) => (
-            <article key={profile.id} className="border border-slate-200 bg-white p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-[10px] font-black tracking-[0.18em] text-slate-400">
-                    {profile.role === "broker" ? "وسيط" : "مطور"}
-                  </div>
-                  <h2 className="mt-1 truncate text-lg font-black text-slate-950">{profile.name}</h2>
-                  <div className="mt-1 text-xs font-bold text-blue-700">{profile.organizationName}</div>
-                </div>
-                <div className="border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black tracking-[0.16em] text-slate-600">
-                  {profile.membershipState === "member"
-                    ? "عضو"
-                    : profile.membershipState === "pending-invite"
-                      ? "دعوة معلقة"
-                      : "متاح"}
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-2 text-sm">
-                <div className="font-medium text-slate-700" dir="ltr">{profile.email}</div>
-                {profile.username ? (
-                  <div className="text-xs font-black tracking-[0.16em] text-slate-400" dir="ltr">
-                    @{profile.username}
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="mt-5 flex flex-wrap gap-2">
-                {profile.membershipState === "not-member" ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleInvite(profile.email)}
-                    disabled={busyEmail === profile.email}
-                    className="inline-flex items-center gap-2 border border-slate-950 bg-slate-950 px-4 py-2 text-[10px] font-black tracking-[0.18em] text-white transition hover:border-blue-600 hover:bg-blue-600 disabled:opacity-60"
-                  >
-                    <UserPlus className="h-3.5 w-3.5" />
-                    دعوة
-                  </button>
-                ) : null}
-
-                {profile.canMessage ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleMessage(profile.authUserId, profile.conversationId)}
-                    className="inline-flex items-center gap-2 border border-slate-200 bg-white px-4 py-2 text-[10px] font-black tracking-[0.18em] text-slate-700 transition hover:border-blue-200 hover:text-blue-700"
-                  >
-                    <MessageCircle className="h-3.5 w-3.5" />
-                    رسالة
-                  </button>
-                ) : null}
-              </div>
-            </article>
-          ))}
+      <div className="flex flex-col gap-6 px-6 py-8 lg:px-10 lg:py-10">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-black tracking-tight text-slate-950">{title}</h1>
+          <p className="max-w-3xl text-sm leading-relaxed text-slate-600">
+            {description}
+          </p>
         </div>
 
-        {profiles.length === 0 ? (
-          <div className="border border-dashed border-slate-300 bg-slate-50 p-16 text-center text-sm font-bold text-slate-500">
-            لا توجد حسابات مرئية ضمن هذا التصنيف حالياً.
+        <div className="flex flex-wrap gap-2" data-slot="directory-filters">
+          <button
+            type="button"
+            onClick={() => setActiveFilter("businessPersons")}
+            className={cn(
+              "rounded-md border px-3 py-2 text-sm font-semibold transition-colors",
+              activeFilter === "businessPersons"
+                ? "border-slate-900 bg-slate-900 text-white"
+                : "border-slate-300 bg-white text-slate-700 hover:border-slate-400",
+            )}
+          >
+            Business persons
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter("organizationPeople")}
+            className={cn(
+              "rounded-md border px-3 py-2 text-sm font-semibold transition-colors",
+              activeFilter === "organizationPeople"
+                ? "border-slate-900 bg-slate-900 text-white"
+                : "border-slate-300 bg-white text-slate-700 hover:border-slate-400",
+            )}
+          >
+            People in companies or organizations
+          </button>
+        </div>
+
+        <div className="text-xs font-semibold text-slate-500">
+          {pagination.totalItems} نتائج
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-slot="directory-grid">
+          {activeFilter === "businessPersons" &&
+            peopleCards.map((person) => <DirectoryPersonCardView key={person.id} person={person} />)}
+
+          {activeFilter === "organizationPeople" &&
+            organizationCards.map((organization) => (
+              <DirectoryOrganizationCardView key={organization.id} organization={organization} type={type} />
+            ))}
+        </div>
+
+        {cards.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-16 text-center text-sm font-semibold text-slate-600">
+            {activeFilter === "businessPersons"
+              ? "لا توجد ملفات أشخاص متاحة ضمن هذا التصنيف."
+              : "لا توجد جهات متاحة ضمن هذا التصنيف."}
           </div>
         ) : (
           <OfferPaginationNav
-            page={page}
-            pageCount={pageCount}
-            hasPreviousPage={hasPreviousPage}
-            hasNextPage={hasNextPage}
+            page={pagination.page}
+            pageCount={pagination.pageCount}
+            hasPreviousPage={pagination.hasPreviousPage}
+            hasNextPage={pagination.hasNextPage}
             routeBase={routeBase}
           />
         )}

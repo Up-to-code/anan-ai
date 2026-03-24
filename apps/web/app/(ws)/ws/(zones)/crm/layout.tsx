@@ -5,11 +5,6 @@ import CrmRouteTabs from "./CrmRouteTabs";
 import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
 import { buildComplianceBanner } from "../../_lib/complianceBanner";
 
-/**
- * WHY:   CRM now uses the unified workspace shell - no more separate zone.
- * WHAT:  Wraps the CRM route with the main workspace layout.
- * HOW:   Loads workspace chrome data once and mounts CRM tabs inside the shared shell.
- */
 export default async function CrmZoneLayout({
   children,
 }: {

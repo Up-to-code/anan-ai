@@ -1,5 +1,5 @@
-import { getWorkspaceNotificationSummary } from "@/server/domains/notifications/service";
-import { getInboxUnreadSummaryForCurrentUser } from "@/server/domains/inbox/service";
+import { getWorkspaceNotificationSummary } from "@/server/domains/workspace/notifications/service";
+import { getInboxUnreadSummaryForCurrentUser } from "@/server/domains/workspace/inbox/service";
 import { toErrorResponse } from "@/server/contracts/errors";
 
 /**

@@ -100,7 +100,7 @@ export default async function BrokerDetailPage({ params }: BrokerDetailPageProps
             <div className="border border-slate-200 bg-white p-6">
               <h4 className="mb-4 text-sm font-black uppercase tracking-wider text-slate-900">الحالة</h4>
               <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-none bg-emerald-500" />
+                <div className="h-3 w-3 rounded-full bg-emerald-500" />
                 <span className="text-sm font-bold text-slate-700">{broker.statusLabel}</span>
               </div>
             </div>
@@ -120,14 +120,14 @@ export default async function BrokerDetailPage({ params }: BrokerDetailPageProps
             <div className="divide-y divide-slate-100">
               {memberInvites.map((invite) => (
                 <div key={invite.id} className="flex items-center gap-4 px-6 py-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-none bg-blue-100 text-sm font-black text-blue-700">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-sm font-black text-blue-700">
                     {invite.email.slice(0, 1).toUpperCase()}
                   </div>
                   <div className="flex-1">
                     <div className="font-bold text-slate-900">{invite.email}</div>
                     <div className="text-xs text-slate-500">تنتهي في {invite.expiresLabel}</div>
                   </div>
-                  <div className="border border-slate-200 px-2 py-1 text-xs font-black uppercase tracking-wider">
+                  <div className="rounded-md border border-slate-200 px-2 py-1 text-xs font-black uppercase tracking-wider">
                     {invite.status}
                   </div>
                 </div>

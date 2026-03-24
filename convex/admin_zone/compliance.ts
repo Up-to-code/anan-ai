@@ -1,6 +1,7 @@
 import { mutation, query } from "../_generated/server";
 import { ConvexError, v } from "convex/values";
 import { requireRole } from "../_core/security/accessPolicy";
+import { DEFAULT_ENFORCEMENT, DEFAULT_KSA_RULESETS, DEFAULT_KSA_SOURCES } from "./compliance/defaults";
 
 const requirementValidator = v.object({
   id: v.string(),
@@ -37,123 +38,68 @@ const rulesetPayloadValidator = {
   enforcement: enforcementValidator,
 };
 
-const DEFAULT_KSA_RULESETS: Array<{
+type RulesetPayload = {
   countryCode: string;
-  countryLabel: string;
+  countryLabel?: string;
   orgType: "broker" | "red";
+  status: "active" | "draft" | "inactive";
   requirements: Array<{ id: string; label: string; required: boolean; note?: string }>;
-}> = [
-  {
-    countryCode: "SA",
-    countryLabel: "المملكة العربية السعودية",
-    orgType: "broker" as const,
-    requirements: [
-      {
-        id: "broker-fal-license",
-        label: "رخصة فال للوساطة العقارية",
-        required: true,
-        note: "المصدر الرسمي لخدمات الوساطة العقارية في السعودية.",
-      },
-      {
-        id: "broker-cr",
-        label: "سجل تجاري بنشاط وساطة عقارية",
-        required: false,
-        note: "مستند داعم شائع ضمن متطلبات الجهات التنظيمية.",
-      },
-      {
-        id: "broker-identity",
-        label: "هوية وطنية للمدير المسؤول أو المفوض",
-        required: false,
-        note: "مستند داعم لإثبات الصفة القانونية.",
-      },
-    ],
-  },
-  {
-    countryCode: "SA",
-    countryLabel: "المملكة العربية السعودية",
-    orgType: "red" as const,
-    requirements: [
-      {
-        id: "dev-cr",
-        label: "سجل تجاري بنشاط التطوير العقاري",
-        required: true,
-        note: "يجب أن يطابق النشاط العقاري المسجل.",
-      },
-      {
-        id: "dev-developer-certificate",
-        label: "شهادة مطور عقاري (حسب الجهة المختصة)",
-        required: true,
-        note: "قد تطلبها جهات التأهيل حسب المنطقة.",
-      },
-      {
-        id: "dev-wafi-license",
-        label: "رخصة وافي للبيع على الخارطة (إن وجدت)",
-        required: false,
-        note: "عند تقديم مشاريع بيع على الخارطة.",
-      },
-      {
-        id: "dev-zakat",
-        label: "شهادة الزكاة والضريبة",
-        required: false,
-        note: "مستند داعم للامتثال المالي.",
-      },
-      {
-        id: "dev-gosi",
-        label: "شهادة التأمينات الاجتماعية (GOSI)",
-        required: false,
-        note: "قد يطلب لإثبات الالتزام بالموارد البشرية.",
-      },
-      {
-        id: "dev-saudization",
-        label: "شهادة نطاقات (نسبة التوطين)",
-        required: false,
-        note: "مستند داعم للامتثال للموارد البشرية.",
-      },
-      {
-        id: "dev-chamber",
-        label: "عضوية الغرفة التجارية",
-        required: false,
-        note: "مستند داعم شائع في الطلبات المؤسسية.",
-      },
-      {
-        id: "dev-articles",
-        label: "عقد التأسيس أو النظام الأساسي",
-        required: false,
-        note: "لإثبات هيكل الشركة وصلاحياتها.",
-      },
-    ],
-  },
-];
-
-const DEFAULT_KSA_SOURCES = [
-  {
-    id: "rega-fal",
-    label: "منصة فال للوساطة العقارية (هيئة العقار)",
-    url: "https://rega.gov.sa/rega-services/platforms/fal-real-estate-brokerage/",
-  },
-  {
-    id: "rcmc-qualification",
-    label: "تأهيل المطور العقاري (RCMC)",
-    url: "https://www.rcmc.gov.sa/developer-qualification",
-  },
-  {
-    id: "balady-qualification",
-    label: "تأهيل المطور العقاري (بلدي/إتمام)",
-    url: "https://balady.gov.sa/ar/services/%D8%AA%D8%A3%D9%87%D9%8A%D9%84-%D8%A7%D9%84%D9%85%D8%B7%D9%88%D8%B1-%D8%A7%D9%84%D8%B9%D9%82%D8%A7%D8%B1%D9%8A",
-  },
-] as const;
-
-const DEFAULT_ENFORCEMENT = {
-  blockPublish: true,
-  hideUnverified: true,
-  showBanner: true,
-  requireOrgVerification: true,
-  requireListingVerification: true,
-  bannerTitle: "التوثيق مطلوب قبل النشر",
-  bannerBody: "يرجى إكمال مستندات التحقق قبل نشر العقارات أو عرضها للعملاء.",
-  bannerCtaLabel: "إكمال التوثيق",
-  bannerCtaHref: "/ws?onboarding=verification",
+  sources: Array<{ id: string; label: string; url: string }>;
+  enforcement: {
+    blockPublish: boolean;
+    hideUnverified: boolean;
+    showBanner: boolean;
+    requireOrgVerification: boolean;
+    requireListingVerification: boolean;
+    bannerTitle?: string;
+    bannerBody?: string;
+    bannerCtaLabel?: string;
+    bannerCtaHref?: string;
+  };
 };
+
+function toRulesetPayload(args: RulesetPayload) {
+  return {
+    countryCode: args.countryCode,
+    countryLabel: args.countryLabel,
+    orgType: args.orgType,
+    status: args.status,
+    requirements: args.requirements,
+    sources: args.sources,
+    enforcement: args.enforcement,
+  } as const;
+}
+
+async function updateRuleset(ctx: any, args: RulesetPayload & { id: any }, now: number) {
+  const existing = await ctx.db.get(args.id);
+  if (!existing) {
+    throw new ConvexError({ code: "NOT_FOUND", message: "Ruleset not found" });
+  }
+
+  const version = (existing.version ?? 0) + 1;
+  await ctx.db.patch(args.id, {
+    ...toRulesetPayload(args),
+    version,
+    updatedAt: now,
+  });
+  return { id: args.id, version };
+}
+
+async function createRuleset(ctx: any, args: RulesetPayload, now: number) {
+  const existingByCountry = await ctx.db
+    .query("complianceRulesets")
+    .withIndex("country_org", (q: any) => q.eq("countryCode", args.countryCode).eq("orgType", args.orgType))
+    .collect();
+  const maxVersion = existingByCountry.reduce((max: number, item: { version?: number }) => Math.max(max, item.version ?? 0), 0);
+  const version = maxVersion + 1;
+  const id = await ctx.db.insert("complianceRulesets", {
+    ...toRulesetPayload(args),
+    version,
+    createdAt: now,
+    updatedAt: now,
+  });
+  return { id, version };
+}
 
 async function deactivateOtherRulesets(ctx: any, args: { countryCode: string; orgType: "broker" | "red"; exceptId: any }) {
   const siblings = await ctx.db
@@ -207,66 +153,17 @@ export const saveComplianceRuleset = mutation({
   handler: async (ctx, args) => {
     await requireRole(ctx, ["admin"]);
     const now = Date.now();
-
-    if (args.id) {
-      const existing = await ctx.db.get(args.id);
-      if (!existing) {
-        throw new ConvexError({ code: "NOT_FOUND", message: "Ruleset not found" });
-      }
-
-      const nextVersion = (existing.version ?? 0) + 1;
-      await ctx.db.patch(args.id, {
-        countryCode: args.countryCode,
-        countryLabel: args.countryLabel,
-        orgType: args.orgType,
-        status: args.status,
-        requirements: args.requirements,
-        sources: args.sources,
-        enforcement: args.enforcement,
-        version: nextVersion,
-        updatedAt: now,
-      });
-
-      if (args.status === "active") {
-        await deactivateOtherRulesets(ctx, {
-          countryCode: args.countryCode,
-          orgType: args.orgType,
-          exceptId: args.id,
-        });
-      }
-
-      return { ok: true, id: args.id, version: nextVersion };
-    }
-
-    const existingByCountry = await ctx.db
-      .query("complianceRulesets")
-      .withIndex("country_org", (q) => q.eq("countryCode", args.countryCode).eq("orgType", args.orgType))
-      .collect();
-    const maxVersion = existingByCountry.reduce((max, item) => Math.max(max, item.version ?? 0), 0);
-    const version = maxVersion + 1;
-
-    const id = await ctx.db.insert("complianceRulesets", {
-      countryCode: args.countryCode,
-      countryLabel: args.countryLabel,
-      orgType: args.orgType,
-      status: args.status,
-      requirements: args.requirements,
-      sources: args.sources,
-      enforcement: args.enforcement,
-      version,
-      createdAt: now,
-      updatedAt: now,
-    });
+    const result = args.id ? await updateRuleset(ctx, args as RulesetPayload & { id: any }, now) : await createRuleset(ctx, args, now);
 
     if (args.status === "active") {
       await deactivateOtherRulesets(ctx, {
         countryCode: args.countryCode,
         orgType: args.orgType,
-        exceptId: id,
+        exceptId: result.id,
       });
     }
 
-    return { ok: true, id, version };
+    return { ok: true, ...result };
   },
 });
 

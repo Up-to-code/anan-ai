@@ -3,7 +3,7 @@ import {
   registerWorkspacePushSubscription,
   removeWorkspacePushSubscription,
   updateWorkspaceNotificationPreferences,
-} from "@/server/domains/notifications/service";
+} from "@/server/domains/workspace/notifications/service";
 import { pushSubscriptionInputSchema } from "@/server/contracts/notifications";
 import { DomainError, toErrorResponse } from "@/server/contracts/errors";
 import { toInvalidJsonResponse } from "@/app/api/_shared/errors";

@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, expect, it, vi } from "vitest";
 
 const { redirect, getOptionalSessionContext, getAuthorizationPromptForCurrentUser, approveAuthorizationForCurrentUser } = vi.hoisted(() => ({
   redirect: vi.fn((destination: string) => {
@@ -18,12 +18,12 @@ vi.mock("@/server/auth/session", () => ({
   getOptionalSessionContext,
 }));
 
-vi.mock("@/server/domains/oauth/service", () => ({
+vi.mock("@/server/domains/auth/oauth/service", () => ({
   getAuthorizationPromptForCurrentUser,
   approveAuthorizationForCurrentUser,
 }));
 
-vi.mock("@/components/oauth/ConsentAutoSubmit", () => ({
+vi.mock("./_components/ConsentAutoSubmit", () => ({
   default: ({
     children,
     approveLabel,
@@ -33,8 +33,8 @@ vi.mock("@/components/oauth/ConsentAutoSubmit", () => ({
   }) => <form><span>{approveLabel}</span>{children}</form>,
 }));
 
-vi.mock("@/components/shared/PageHero", () => ({
-  default: ({
+vi.mock("@/app/(public)/public", () => ({
+  PageHero: ({
     title,
     description,
   }: {
@@ -46,99 +46,94 @@ vi.mock("@/components/shared/PageHero", () => ({
       <div>{description}</div>
     </div>
   ),
-}));
-
-vi.mock("@/components/shared/Section", () => ({
-  default: ({ children }: { children?: React.ReactNode }) => <section>{children}</section>,
+  Section: ({ children }: { children?: React.ReactNode }) => <section>{children}</section>,
 }));
 
 import OAuthAuthorizePage from "./page";
 
-describe("/oauth/authorize page", () => {
-  beforeEach(() => {
-    redirect.mockClear();
-    getOptionalSessionContext.mockReset();
-    getAuthorizationPromptForCurrentUser.mockReset();
-    approveAuthorizationForCurrentUser.mockReset();
-  });
+beforeEach(() => {
+  redirect.mockClear();
+  getOptionalSessionContext.mockReset();
+  getAuthorizationPromptForCurrentUser.mockReset();
+  approveAuthorizationForCurrentUser.mockReset();
+});
 
-  it("redirects unauthenticated users to sign in with the authorize flow as returnTo", async () => {
-    getOptionalSessionContext.mockResolvedValue(null);
+it("redirects unauthenticated users to sign in with the authorize flow as returnTo", async () => {
+  getOptionalSessionContext.mockResolvedValue(null);
 
-    await expect(
-      OAuthAuthorizePage({
-        searchParams: Promise.resolve({ flow: "flow-123" }),
-      }),
-    ).rejects.toThrow(
-      `NEXT_REDIRECT:/signin?returnTo=${encodeURIComponent("/oauth/authorize?flow=flow-123")}`,
-    );
-  });
-
-  it("skips the authorization screen when the session is already authorized", async () => {
-    getOptionalSessionContext.mockResolvedValue({
-      token: "session-token",
-      context: { userId: "user-1" },
-    });
-    getAuthorizationPromptForCurrentUser.mockResolvedValue({
-      flowId: "flow-123",
-      redirectUri: "https://example.com/callback",
-      state: "state-1",
-      offlineAccess: false,
-      requiresConsent: false,
-      existingAuthorization: { id: "auth-1" },
-      client: {
-        name: "Partner App",
-        publisherName: "Partner",
-      },
-      requestedScopes: [],
-    });
-    approveAuthorizationForCurrentUser.mockResolvedValue({
-      redirectUrl: "https://example.com/callback?code=abc",
-    });
-
-    await expect(
-      OAuthAuthorizePage({
-        searchParams: Promise.resolve({ flow: "flow-123" }),
-      }),
-    ).rejects.toThrow("NEXT_REDIRECT:https://example.com/callback?code=abc");
-
-    expect(approveAuthorizationForCurrentUser).toHaveBeenCalledWith("flow-123");
-  });
-
-  it("renders the authorization page when new consent is required", async () => {
-    getOptionalSessionContext.mockResolvedValue({
-      token: "session-token",
-      context: { userId: "user-1" },
-    });
-    getAuthorizationPromptForCurrentUser.mockResolvedValue({
-      flowId: "flow-123",
-      redirectUri: "https://example.com/callback",
-      state: "state-1",
-      offlineAccess: false,
-      requiresConsent: true,
-      existingAuthorization: null,
-      client: {
-        name: "Partner App",
-        publisherName: "Partner",
-      },
-      requestedScopes: [
-        {
-          id: "profile:read",
-          label: "قراءة الملف",
-          newlyRequested: true,
-        },
-      ],
-    });
-
-    const element = await OAuthAuthorizePage({
+  await expect(
+    OAuthAuthorizePage({
       searchParams: Promise.resolve({ flow: "flow-123" }),
-    });
-    const markup = renderToStaticMarkup(element);
+    }),
+  ).rejects.toThrow(
+    `NEXT_REDIRECT:/signin?returnTo=${encodeURIComponent("/oauth/authorize?flow=flow-123")}`,
+  );
+});
 
-    expect(markup).toContain("السماح لتطبيق Partner App");
-    expect(markup).toContain("السماح للتطبيق");
-    expect(markup).toContain("name=\"flowId\"");
-    expect(markup).not.toContain("name=\"redirectUri\"");
-    expect(markup).not.toContain("name=\"state\"");
+it("skips the authorization screen when the session is already authorized", async () => {
+  getOptionalSessionContext.mockResolvedValue({
+    token: "session-token",
+    context: { userId: "user-1" },
   });
+  getAuthorizationPromptForCurrentUser.mockResolvedValue({
+    flowId: "flow-123",
+    redirectUri: "https://example.com/callback",
+    state: "state-1",
+    offlineAccess: false,
+    requiresConsent: false,
+    existingAuthorization: { id: "auth-1" },
+    client: {
+      name: "Partner App",
+      publisherName: "Partner",
+    },
+    requestedScopes: [],
+  });
+  approveAuthorizationForCurrentUser.mockResolvedValue({
+    redirectUrl: "https://example.com/callback?code=abc",
+  });
+
+  await expect(
+    OAuthAuthorizePage({
+      searchParams: Promise.resolve({ flow: "flow-123" }),
+    }),
+  ).rejects.toThrow("NEXT_REDIRECT:https://example.com/callback?code=abc");
+
+  expect(approveAuthorizationForCurrentUser).toHaveBeenCalledWith("flow-123");
+});
+
+it("renders the authorization page when new consent is required", async () => {
+  getOptionalSessionContext.mockResolvedValue({
+    token: "session-token",
+    context: { userId: "user-1" },
+  });
+  getAuthorizationPromptForCurrentUser.mockResolvedValue({
+    flowId: "flow-123",
+    redirectUri: "https://example.com/callback",
+    state: "state-1",
+    offlineAccess: false,
+    requiresConsent: true,
+    existingAuthorization: null,
+    client: {
+      name: "Partner App",
+      publisherName: "Partner",
+    },
+    requestedScopes: [
+      {
+        id: "profile:read",
+        label: "قراءة الملف",
+        newlyRequested: true,
+      },
+    ],
+  });
+
+  const element = await OAuthAuthorizePage({
+    searchParams: Promise.resolve({ flow: "flow-123" }),
+  });
+  const markup = renderToStaticMarkup(element);
+
+  expect(markup).toContain("السماح لتطبيق Partner App");
+  expect(markup).toContain("السماح للتطبيق");
+  expect(markup).toContain("name=\"flowId\"");
+  expect(markup).not.toContain("name=\"redirectUri\"");
+  expect(markup).not.toContain("name=\"state\"");
 });

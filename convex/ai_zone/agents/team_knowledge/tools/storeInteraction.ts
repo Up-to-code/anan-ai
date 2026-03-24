@@ -9,7 +9,7 @@ import { tool, zodSchema } from "ai";
 import type { Tool } from "ai";
 import { z } from "zod";
 import type { ActionCtx } from "../../../../_generated/server";
-import { internalRefs } from "../../../../shared_logic/lib/generatedApiRefs";
+import { internal } from "../../../../_generated/api";
 import type { AgentRuntimeContext } from "../../types";
 
 export function storeInteraction(ctx: ActionCtx, runtime: AgentRuntimeContext): Tool {
@@ -24,7 +24,7 @@ export function storeInteraction(ctx: ActionCtx, runtime: AgentRuntimeContext): 
     })),
     execute: async (args): Promise<unknown> => {
       return (await ctx.runMutation(
-        internalRefs["shared_logic/memory/repository"].storeInteractionInternal,
+        internal.shared_logic.memory.repository.storeInteractionInternal,
         {
           userId: runtime.userId,
           threadId: runtime.threadId,

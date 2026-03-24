@@ -35,6 +35,16 @@ export function getBackoffWithJitter(attempt: number, policy: RetryPolicy): numb
   return Math.max(0, Math.round(jittered));
 }
 
+function shouldRetryAttempt(error: unknown, attempt: number, policy: RetryPolicy): boolean {
+  const hasMoreAttempts = attempt + 1 < policy.maxAttempts;
+  return hasMoreAttempts && isRetryableError(error);
+}
+
+function getRetryDelayOrThrow(error: unknown, attempt: number, policy: RetryPolicy) {
+  if (!shouldRetryAttempt(error, attempt, policy)) throw error;
+  return getBackoffWithJitter(attempt, policy);
+}
+
 export async function withRetry<T>(
   fn: (attempt: number) => Promise<T>,
   policy: RetryPolicy = HTTP_RETRY_POLICY,
@@ -46,9 +56,7 @@ export async function withRetry<T>(
       return await fn(attempt);
     } catch (error) {
       lastError = error;
-      const hasMoreAttempts = attempt + 1 < policy.maxAttempts;
-      if (!hasMoreAttempts || !isRetryableError(error)) throw error;
-      const delay = getBackoffWithJitter(attempt, policy);
+      const delay = getRetryDelayOrThrow(error, attempt, policy);
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }

@@ -1,8 +1,8 @@
 import { WorkflowManager } from "@convex-dev/workflow";
+import type { WorkflowId } from "@convex-dev/workflow";
 import { v } from "convex/values";
 import { internalAction } from "../_generated/server";
-import { components } from "../_generated/api";
-import { internalRefs } from "./lib/generatedApiRefs";
+import { api, components, internal } from "../_generated/api";
 import { WORKFLOW_RETRY_POLICY } from "./lib/retry";
 
 export const workspaceWorkflow = new WorkflowManager(components.workflow as never, {
@@ -24,12 +24,12 @@ export const notificationWorkflow = workspaceWorkflow.define({
   returns: v.null(),
   handler: async (step, { notificationId }) => {
     const result = await step.runAction(
-      internalRefs["shared_logic/notificationsNode"].sendBrowserPush,
+      api.shared_logic.notificationsNode.sendBrowserPush,
       { notificationId },
       { name: "browserPush" },
     );
 
-    await step.runMutation(internalRefs["shared_logic/notifications"]._markNotificationDelivered, {
+    await step.runMutation(internal.shared_logic.notifications._markNotificationDelivered, {
       notificationId,
       status: result.status,
       error: result.reason,
@@ -43,10 +43,10 @@ export const startNotificationWorkflow = internalAction({
   args: {
     notificationId: v.id("workspaceNotifications"),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<WorkflowId> => {
     return workspaceWorkflow.start(
       ctx,
-      internalRefs["shared_logic/workspaceWorkflows"].notificationWorkflow as never,
+      internal.shared_logic.workspaceWorkflows.notificationWorkflow as never,
       args as never,
     );
   },

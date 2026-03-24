@@ -9,7 +9,7 @@ import { tool, zodSchema } from "ai";
 import type { Tool } from "ai";
 import { z } from "zod";
 import type { ActionCtx } from "../../../../_generated/server";
-import { apiRefs } from "../../../../shared_logic/lib/generatedApiRefs";
+import { api } from "../../../../_generated/api";
 import type { AgentRuntimeContext } from "../../types";
 
 export function getBankBundles(ctx: ActionCtx, _runtime: AgentRuntimeContext): Tool {
@@ -17,7 +17,7 @@ export function getBankBundles(ctx: ActionCtx, _runtime: AgentRuntimeContext): T
     description: "Fetch bank financing bundles (products) for comparison.",
     inputSchema: zodSchema(z.object({ bankId: z.string().optional() })),
     execute: async ({ bankId }): Promise<unknown> => {
-      return (await ctx.runQuery(apiRefs["shared_logic/banks/queries"].getBundles, {
+      return (await ctx.runQuery(api.shared_logic.banks.queries.getBundles, {
         bankId: bankId as any,
       })) as unknown;
     },

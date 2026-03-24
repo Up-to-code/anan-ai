@@ -1,121 +1,229 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import type {
-  AnanProInputMode,
-  AnanProStreamStageEvent,
-  AnanProThread,
-} from "@/server/contracts/ananPro";
-import type { AIMotionState } from "@/app/(ws)/ws/_components/AIMotion";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Id } from "@convex/dataModel";
+import { useQuery } from "convex/react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { api } from "@/lib/convexApi";
+import type { AnanProInputMode, AnanProStreamStageEvent, AnanProThread } from "@/server/contracts/ananPro";
 import {
-  getAssistantThread,
   getVoiceUploadUrl,
   transcribeVoiceFromStorage,
 } from "./actions";
+import {
+  buildWorkspaceAssistantHref,
+  getAssistantMotionState,
+  getAssistantStageLabel,
+  normalizeAssistantTeamLabel,
+} from "./useWorkspaceAssistant.shared";
+import { useWorkspaceAssistantSend } from "./useWorkspaceAssistantSend";
 import { useVoiceRecorder } from "./useVoiceRecorder";
+
+const assistantApi = api.ai_zone.assistantWorkspace;
+
+export type AssistantInitialRouteState = {
+  requestedThreadId: string | null;
+  unavailableThreadId: string | null;
+};
 
 type UseWorkspaceAssistantParams = {
   initialThread: AnanProThread | null;
-  initialSelectedThreadId: string | null;
+  initialRouteState: AssistantInitialRouteState;
 };
 
-function updateThreadUrl(threadId: string | null, options?: { newThread?: boolean }) {
-  if (typeof window === "undefined") return;
+type LiveAssistantThreadSummary = {
+  _id: string;
+  title?: string | null;
+};
 
-  const url = new URL(window.location.href);
-  if (threadId) {
-    url.searchParams.set("threadId", threadId);
-    url.searchParams.delete("newThread");
-  } else {
-    url.searchParams.delete("threadId");
-    if (options?.newThread === true) {
-      url.searchParams.set("newThread", "1");
-    } else if (options?.newThread === false) {
-      url.searchParams.delete("newThread");
-    }
+type LiveAssistantMessage = {
+  _id: string;
+  role: "user" | "assistant";
+  content: string;
+  metadata?: {
+    uiTurn?: unknown;
+    meta?: unknown;
+    inputMode?: AnanProInputMode;
+  };
+  createdAt: number;
+};
+
+function mapLiveAssistantMessages(messages: LiveAssistantMessage[]) {
+  return messages.map((message) => ({
+    id: String(message._id),
+    role: message.role,
+    content: message.content,
+    uiTurn: message.metadata?.uiTurn,
+    meta: message.metadata?.meta,
+    inputMode: message.metadata?.inputMode,
+    createdAt: message.createdAt,
+  }));
+}
+
+function buildLiveAssistantThread(
+  summary: LiveAssistantThreadSummary | null | undefined,
+  messages: LiveAssistantMessage[] | undefined,
+): AnanProThread | null | undefined {
+  if (summary === undefined || messages === undefined) {
+    return undefined;
   }
 
-  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
-}
-
-function notifyAssistantThreadsChanged() {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent("workspace-assistant-threads:changed"));
-}
-
-type AssistantStreamEvent =
-  | { event: "thread"; data: { threadId: string; title?: string | null } }
-  | { event: "delta"; data: { text: string } }
-  | {
-      event: "meta";
-      data: {
-        type?: string;
-        stage?: AnanProStreamStageEvent;
-        meta?: unknown;
-        lifecycle?: {
-          sessionId?: string;
-          status?: "running" | "completed" | "failed" | "cancelled";
-          details?: unknown;
-          timestamp?: number;
-        };
-      };
-    }
-  | { event: "done"; data: { thread: AnanProThread } }
-  | { event: "error"; data: { message?: string; code?: string; status?: number } };
-
-function parseSseChunk(rawChunk: string): AssistantStreamEvent | null {
-  const lines = rawChunk
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-  if (lines.length === 0) return null;
-
-  const eventLine = lines.find((line) => line.startsWith("event:"));
-  const dataLine = lines.find((line) => line.startsWith("data:"));
-  if (!eventLine || !dataLine) return null;
-
-  const event = eventLine.slice("event:".length).trim();
-  const dataJson = dataLine.slice("data:".length).trim();
-  try {
-    const data = JSON.parse(dataJson) as unknown;
-    if (event === "thread") return { event, data: data as { threadId: string; title?: string | null } };
-    if (event === "delta") return { event, data: data as { text: string } };
-    if (event === "meta") {
-      return {
-        event,
-        data: data as {
-          type?: string;
-          stage?: AnanProStreamStageEvent;
-          meta?: unknown;
-          lifecycle?: {
-            sessionId?: string;
-            status?: "running" | "completed" | "failed" | "cancelled";
-            details?: unknown;
-            timestamp?: number;
-          };
-        },
-      };
-    }
-    if (event === "done") return { event, data: data as { thread: AnanProThread } };
-    if (event === "error") return { event, data: data as { message?: string } };
-  } catch {
+  if (!summary?._id) {
     return null;
   }
 
-  return null;
+  return {
+    id: String(summary._id),
+    title: summary.title ?? null,
+    messages: mapLiveAssistantMessages(messages),
+  };
+}
+
+function isIncomingMessageWeaker(args: {
+  currentMessage: AnanProThread["messages"][number];
+  incomingMessage: AnanProThread["messages"][number] | undefined;
+}) {
+  if (!args.incomingMessage) {
+    return true;
+  }
+
+  if ((args.currentMessage.content?.length ?? 0) > (args.incomingMessage.content?.length ?? 0)) {
+    return true;
+  }
+
+  if (args.currentMessage.uiTurn && !args.incomingMessage.uiTurn) {
+    return true;
+  }
+
+  if (args.currentMessage.meta && !args.incomingMessage.meta) {
+    return true;
+  }
+
+  if (args.currentMessage.inputMode && !args.incomingMessage.inputMode) {
+    return true;
+  }
+
+  return false;
+}
+
+export function isIncomingThreadWeaker(args: {
+  currentThread: AnanProThread | null;
+  incomingThread: AnanProThread | null;
+}) {
+  const currentThread = args.currentThread;
+  const incomingThread = args.incomingThread;
+  if (!currentThread) {
+    return false;
+  }
+
+  if (!incomingThread) {
+    return currentThread.messages.length > 0;
+  }
+
+  if ((currentThread.title?.trim()?.length ?? 0) > (incomingThread.title?.trim()?.length ?? 0)) {
+    return true;
+  }
+
+  if (currentThread.messages.length > incomingThread.messages.length) {
+    return true;
+  }
+
+  return currentThread.messages.some((message, index) =>
+    isIncomingMessageWeaker({
+      currentMessage: message,
+      incomingMessage: incomingThread.messages[index],
+    }),
+  );
+}
+
+export function shouldPreserveLocalThreadWhileRouteSyncs(args: {
+  pendingRouteThreadId: string | null;
+  routeThreadId: string | null;
+  selectedThreadId: string | null;
+  currentThread: AnanProThread | null;
+}) {
+  if (!args.pendingRouteThreadId) {
+    return false;
+  }
+
+  if (args.routeThreadId === args.pendingRouteThreadId) {
+    return false;
+  }
+
+  return (
+    args.selectedThreadId === args.pendingRouteThreadId ||
+    args.currentThread?.id === args.pendingRouteThreadId
+  );
+}
+
+export function shouldKeepLocalThreadSnapshot(args: {
+  currentThread: AnanProThread | null;
+  incomingThread: AnanProThread | null;
+  routeThreadId: string | null;
+  nextSelectedThreadId: string | null;
+  activeStreamSessionId: string | null;
+}) {
+  if (!args.routeThreadId || args.nextSelectedThreadId !== args.routeThreadId) {
+    return false;
+  }
+
+  const currentThread = args.currentThread;
+  if (!currentThread || currentThread.id !== args.routeThreadId) {
+    return false;
+  }
+
+  const currentMessageCount = currentThread.messages.length;
+  const incomingMessageCount = args.incomingThread?.messages.length ?? 0;
+  if (currentMessageCount === 0) {
+    return false;
+  }
+
+  if (isIncomingThreadWeaker({
+    currentThread,
+    incomingThread: args.incomingThread,
+  })) {
+    return true;
+  }
+
+  if (args.activeStreamSessionId) {
+    return currentMessageCount >= incomingMessageCount;
+  }
+
+  return currentMessageCount > incomingMessageCount;
+}
+
+export function shouldPreserveOptimisticDraftThread(args: {
+  routeThreadId: string | null;
+  selectedThreadId: string | null;
+  currentThread: AnanProThread | null;
+  activeStreamSessionId: string | null;
+}) {
+  return (
+    !args.routeThreadId &&
+    !args.selectedThreadId &&
+    Boolean(args.activeStreamSessionId) &&
+    Boolean(args.currentThread?.messages.length)
+  );
 }
 
 /**
  * WHY:   The workspace assistant needs one local state machine for thread selection, optimistic replies, and list refreshes.
  * WHAT:  Exposes thread state plus actions to select a thread, start a fresh one, and send messages through the Anan Workspace API.
- * HOW:   Uses optimistic local updates for message sends, re-fetches the durable thread list after changes, and mirrors the active thread in the URL query string.
+ * HOW:   Uses optimistic local updates for sends, hydrates the active thread through live Convex queries, and mirrors selection in the URL without forcing App Router refreshes.
  */
 export function useWorkspaceAssistant({
   initialThread,
-  initialSelectedThreadId,
+  initialRouteState,
 }: UseWorkspaceAssistantParams) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [thread, setThread] = useState<AnanProThread | null>(initialThread);
-  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(initialSelectedThreadId ?? initialThread?.id ?? null);
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(
+    initialThread?.id ?? (initialRouteState.unavailableThreadId ? null : initialRouteState.requestedThreadId),
+  );
+  const [unavailableThreadId, setUnavailableThreadId] = useState<string | null>(
+    initialRouteState.unavailableThreadId,
+  );
   const [value, setValue] = useState("");
   const [sendError, setSendError] = useState<string | null>(null);
   const [streamStage, setStreamStage] = useState<AnanProStreamStageEvent | null>(null);
@@ -125,14 +233,32 @@ export function useWorkspaceAssistant({
   const [completedTeamIds, setCompletedTeamIds] = useState<string[]>([]);
   const [activeStreamSessionId, setActiveStreamSessionId] = useState<string | null>(null);
   const [isStoppingStream, setIsStoppingStream] = useState(false);
-  const [isLoadingThread, setIsLoadingThread] = useState(false);
-  const [isPending, startTransition] = useTransition();
   const stopRequestedRef = useRef(false);
+  const latestAssistantHrefRef = useRef("");
+  const pendingRouteThreadIdRef = useRef<string | null>(null);
+  const lastResolvedLiveThreadIdRef = useRef<string | null>(initialThread?.id ?? null);
+  const routeThreadId = pathname === "/ws" ? searchParams.get("threadId") : null;
+  const hasLegacyDraftParam = pathname === "/ws" && searchParams.get("newThread") === "1";
+  const shouldStartNewThread = !selectedThreadId && pathname === "/ws" && !routeThreadId;
 
-  useEffect(() => {
-    const nextSelectedThreadId = initialSelectedThreadId ?? initialThread?.id ?? null;
-    setThread(initialThread);
-    setSelectedThreadId(nextSelectedThreadId);
+  const liveThreadSummary = useQuery(
+    assistantApi.getThreadById,
+    selectedThreadId ? { threadId: selectedThreadId as Id<"assistantThreads"> } : "skip",
+  );
+  const liveThreadMessages = useQuery(
+    assistantApi.listMessages,
+    selectedThreadId ? { threadId: selectedThreadId as Id<"assistantThreads"> } : "skip",
+  );
+  const liveThread = useMemo(
+    () =>
+      buildLiveAssistantThread(
+        liveThreadSummary as LiveAssistantThreadSummary | null | undefined,
+        liveThreadMessages as LiveAssistantMessage[] | undefined,
+      ),
+    [liveThreadMessages, liveThreadSummary],
+  );
+
+  const resetEphemeralAssistantState = useCallback(() => {
     setStreamStage(null);
     setStageHistory([]);
     setStreamLifecycleStatus(null);
@@ -143,291 +269,221 @@ export function useWorkspaceAssistant({
     stopRequestedRef.current = false;
     setSendError(null);
     setValue("");
-  }, [initialSelectedThreadId, initialThread]);
+  }, []);
+
+  const replaceAssistantRoute = useCallback((
+    threadId: string | null,
+    options?: { history?: "push" | "replace" },
+  ) => {
+    if (pathname !== "/ws") return;
+    if (typeof window === "undefined") return;
+
+    const hash = window.location.hash;
+    const currentHref = latestAssistantHrefRef.current || buildWorkspaceAssistantHref({
+      pathname,
+      search: searchParams.toString(),
+      hash,
+      threadId: routeThreadId,
+    });
+    const nextHref = buildWorkspaceAssistantHref({
+      pathname,
+      search: searchParams.toString(),
+      hash,
+      threadId,
+    });
+
+    if (nextHref === currentHref) return;
+    latestAssistantHrefRef.current = nextHref;
+    pendingRouteThreadIdRef.current = threadId;
+    if (options?.history === "push") {
+      window.history.pushState(null, "", nextHref);
+      return;
+    }
+    window.history.replaceState(null, "", nextHref);
+  }, [pathname, routeThreadId, searchParams]);
 
   useEffect(() => {
-    if (initialThread?.id && !initialSelectedThreadId) {
-      updateThreadUrl(initialThread.id);
+    if (pathname !== "/ws") {
+      latestAssistantHrefRef.current = "";
+      return;
     }
-  }, [initialSelectedThreadId, initialThread?.id]);
 
-  const sendWithOptimisticUpdate = useCallback(
-    (
-      nextMessage: string,
-      inputMode?: AnanProInputMode,
-      options?: { regenerate?: boolean; regenerateMessageId?: string },
-    ) => {
-      const previousThread = thread;
-      const assistantMessageId = `stream-assistant-${Date.now()}`;
-      const streamSessionId = typeof crypto !== "undefined" ? crypto.randomUUID() : `${Date.now()}`;
-      const optimisticThread: AnanProThread = previousThread ?? {
-        id: "",
-        title: null,
-        messages: [],
-      };
+    const hash = typeof window === "undefined" ? "" : window.location.hash;
+    latestAssistantHrefRef.current = buildWorkspaceAssistantHref({
+      pathname,
+      search: searchParams.toString(),
+      hash,
+      threadId: routeThreadId,
+    });
+  }, [pathname, routeThreadId, searchParams]);
 
-      startTransition(async () => {
-        setStreamStage(null);
-        setStageHistory([]);
-        setStreamLifecycleStatus("running");
-        setActiveTeamId(null);
-        setCompletedTeamIds([]);
-        setActiveStreamSessionId(streamSessionId);
-        setIsStoppingStream(false);
-        stopRequestedRef.current = false;
+  useEffect(() => {
+    if (pathname !== "/ws" || !hasLegacyDraftParam || routeThreadId) {
+      return;
+    }
+    replaceAssistantRoute(null);
+  }, [hasLegacyDraftParam, pathname, replaceAssistantRoute, routeThreadId]);
 
-        setThread({
-          ...optimisticThread,
-          messages: options?.regenerate
-            ? [
-                ...optimisticThread.messages,
-                {
-                  id: assistantMessageId,
-                  role: "assistant",
-                  content: "",
-                  createdAt: Date.now() + 1,
-                },
-              ]
-            : [
-                ...optimisticThread.messages,
-                {
-                  id: `optimistic-${Date.now()}`,
-                  role: "user",
-                  content: nextMessage,
-                  inputMode,
-                  createdAt: Date.now(),
-                },
-                {
-                  id: assistantMessageId,
-                  role: "assistant",
-                  content: "",
-                  createdAt: Date.now() + 1,
-                },
-              ],
-        });
+  useEffect(() => {
+    if (
+      pendingRouteThreadIdRef.current &&
+      routeThreadId === pendingRouteThreadIdRef.current
+    ) {
+      pendingRouteThreadIdRef.current = null;
+    }
+  }, [routeThreadId]);
 
-        try {
-          const response = await fetch("/api/workspace/anan-pro?stream=1", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(
-              previousThread?.id
-                ? {
-                    message: nextMessage,
-                    threadId: previousThread.id,
-                    inputMode,
-                    streamSessionId,
-                    regenerate: options?.regenerate,
-                    regenerateMessageId: options?.regenerateMessageId,
-                  }
-                : {
-                    message: nextMessage,
-                    inputMode,
-                    streamSessionId,
-                    regenerate: options?.regenerate,
-                    regenerateMessageId: options?.regenerateMessageId,
-                  },
-            ),
-          });
+  useEffect(() => {
+    if (pathname !== "/ws" || !routeThreadId || unavailableThreadId !== routeThreadId) {
+      return;
+    }
+    replaceAssistantRoute(null);
+  }, [pathname, replaceAssistantRoute, routeThreadId, unavailableThreadId]);
 
-          if (!response.ok || !response.body) {
-            throw new Error("تعذر إرسال الرسالة.");
-          }
+  useEffect(() => {
+    if (shouldPreserveLocalThreadWhileRouteSyncs({
+      pendingRouteThreadId: pendingRouteThreadIdRef.current,
+      routeThreadId,
+      selectedThreadId,
+      currentThread: thread,
+    })) {
+      return;
+    }
 
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let buffer = "";
-          let assembledAssistantText = "";
-          let streamMeta: unknown;
-          let didFinish = false;
+    if (shouldPreserveOptimisticDraftThread({
+      routeThreadId,
+      selectedThreadId,
+      currentThread: thread,
+      activeStreamSessionId,
+    })) {
+      return;
+    }
 
-          while (true) {
-            const { value, done } = await reader.read();
-            if (done) break;
+    if (!routeThreadId) {
+      if (selectedThreadId !== null || thread !== null) {
+        setThread(null);
+        setSelectedThreadId(null);
+        resetEphemeralAssistantState();
+        return;
+      }
+      return;
+    }
 
-            buffer += decoder.decode(value, { stream: true });
-            let separatorIndex = buffer.indexOf("\n\n");
+    if (unavailableThreadId === routeThreadId) {
+      if (selectedThreadId !== null || thread !== null) {
+        setThread(null);
+        setSelectedThreadId(null);
+        resetEphemeralAssistantState();
+      }
+      return;
+    }
 
-            while (separatorIndex !== -1) {
-              const chunk = buffer.slice(0, separatorIndex);
-              buffer = buffer.slice(separatorIndex + 2);
+    if (routeThreadId === selectedThreadId) {
+      return;
+    }
 
-              const event = parseSseChunk(chunk);
-              if (!event) {
-                separatorIndex = buffer.indexOf("\n\n");
-                continue;
-              }
+    setUnavailableThreadId(null);
+    setThread((current) => (current?.id === routeThreadId ? current : null));
+    setSelectedThreadId(routeThreadId);
+    resetEphemeralAssistantState();
+  }, [
+    activeStreamSessionId,
+    resetEphemeralAssistantState,
+    routeThreadId,
+    selectedThreadId,
+    thread,
+    unavailableThreadId,
+  ]);
 
-              if (event.event === "thread") {
-                setSelectedThreadId(event.data.threadId);
-                updateThreadUrl(event.data.threadId);
-              }
+  useEffect(() => {
+    if (!selectedThreadId || liveThread === undefined) {
+      return;
+    }
 
-              if (event.event === "delta") {
-                assembledAssistantText += event.data.text ?? "";
-                setThread((current) => {
-                  const source = current ?? optimisticThread;
-                  return {
-                    ...source,
-                    messages: source.messages.map((message) =>
-                      message.id === assistantMessageId
-                        ? {
-                            ...message,
-                            content: assembledAssistantText,
-                            meta: streamMeta,
-                          }
-                        : message,
-                    ),
-                  };
-                });
-              }
+    if (liveThread?.id === selectedThreadId) {
+      lastResolvedLiveThreadIdRef.current = selectedThreadId;
+      setUnavailableThreadId(null);
+    }
 
-              if (event.event === "meta") {
-                if (event.data.type === "stage" && event.data.stage) {
-                  setStreamStage(event.data.stage);
-                  setStageHistory((current) =>
-                    current.some((stage) => stage.seq === event.data.stage?.seq)
-                      ? current
-                      : [...current, event.data.stage!],
-                  );
-                  if (event.data.stage.phase === "team_started" && event.data.stage.teamId) {
-                    setActiveTeamId(event.data.stage.teamId);
-                  }
-                  if (event.data.stage.phase === "team_done" && event.data.stage.teamId) {
-                    setCompletedTeamIds((current) =>
-                      current.includes(event.data.stage.teamId!)
-                        ? current
-                        : [...current, event.data.stage.teamId!],
-                    );
-                    setActiveTeamId((current) =>
-                      current === event.data.stage.teamId ? null : current,
-                    );
-                  }
-                }
-                if (event.data.type === "lifecycle" && event.data.lifecycle?.status) {
-                  setStreamLifecycleStatus(event.data.lifecycle.status);
-                }
-                if (event.data.type === "assistant_meta") {
-                  streamMeta = event.data.meta;
-                }
-                setThread((current) => {
-                  const source = current ?? optimisticThread;
-                  return {
-                    ...source,
-                    messages: source.messages.map((message) =>
-                      message.id === assistantMessageId
-                        ? {
-                            ...message,
-                            meta: streamMeta,
-                          }
-                        : message,
-                    ),
-                  };
-                });
-              }
+    if (shouldKeepLocalThreadSnapshot({
+      currentThread: thread,
+      incomingThread: liveThread,
+      routeThreadId: routeThreadId ?? selectedThreadId,
+      nextSelectedThreadId: selectedThreadId,
+      activeStreamSessionId,
+    })) {
+      return;
+    }
 
-              if (event.event === "error") {
-                throw new Error(event.data?.message || "تعذر إرسال الرسالة.");
-              }
+    setThread(liveThread);
+  }, [
+    activeStreamSessionId,
+    liveThread,
+    routeThreadId,
+    selectedThreadId,
+    thread,
+  ]);
 
-              if (event.event === "done") {
-                didFinish = true;
-                setStreamStage(null);
-                setActiveTeamId(null);
-                setCompletedTeamIds([]);
-                setStreamLifecycleStatus("completed");
-                setThread(event.data.thread);
-                setSelectedThreadId(event.data.thread.id);
-                updateThreadUrl(event.data.thread.id);
-                notifyAssistantThreadsChanged();
-              }
+  useEffect(() => {
+    if (
+      !selectedThreadId ||
+      liveThread !== null ||
+      routeThreadId !== selectedThreadId ||
+      activeStreamSessionId
+    ) {
+      return;
+    }
 
-              separatorIndex = buffer.indexOf("\n\n");
-            }
-          }
+    setUnavailableThreadId(selectedThreadId);
+    setThread(null);
+    setSelectedThreadId(null);
+    resetEphemeralAssistantState();
+  }, [
+    activeStreamSessionId,
+    liveThread,
+    resetEphemeralAssistantState,
+    routeThreadId,
+    selectedThreadId,
+  ]);
 
-          if (!didFinish && !stopRequestedRef.current) {
-            throw new Error("لم يكتمل بث الرد. حاول مرة أخرى.");
-          }
-        } catch (error) {
-          setStreamStage(null);
-          setActiveTeamId(null);
-          setCompletedTeamIds([]);
+  const isLoadingThread =
+    Boolean(selectedThreadId) &&
+    liveThread === undefined &&
+    lastResolvedLiveThreadIdRef.current !== selectedThreadId &&
+    thread?.id !== selectedThreadId;
+  const isSending = activeStreamSessionId !== null || streamLifecycleStatus === "running";
 
-          if (stopRequestedRef.current) {
-            setStreamLifecycleStatus("cancelled");
-          } else {
-            setThread(previousThread);
-            setSendError(error instanceof Error ? error.message : "تعذر إرسال الرسالة.");
-          }
-        } finally {
-          setActiveStreamSessionId(null);
-          setIsStoppingStream(false);
-          stopRequestedRef.current = false;
-        }
-      });
-    },
-    [thread],
-  );
+  const sendWithOptimisticUpdate = useWorkspaceAssistantSend({
+    thread,
+    shouldStartNewThread,
+    setThread,
+    setSelectedThreadId,
+    setSendError,
+    setStreamStage,
+    setStageHistory,
+    setStreamLifecycleStatus,
+    setActiveTeamId,
+    setCompletedTeamIds,
+    setActiveStreamSessionId,
+    setIsStoppingStream,
+    replaceThreadRoute: replaceAssistantRoute,
+    stopRequestedRef,
+  });
 
   const voiceRecorder = useVoiceRecorder({
     getUploadUrl: getVoiceUploadUrl,
     transcribeFromStorage: transcribeVoiceFromStorage,
     maxDurationMs: 300_000,
-    disabled: isPending || isLoadingThread,
+    disabled: isSending || isLoadingThread,
     onTranscriptReady: async (transcript) => {
       setSendError(null);
+      setUnavailableThreadId(null);
       sendWithOptimisticUpdate(transcript, "voice");
     },
     onError: (message) => {
       setSendError(message);
     },
   });
-
-  const handleSelectThread = (threadId: string) => {
-    if (threadId === selectedThreadId || isLoadingThread) {
-      return;
-    }
-
-    setSendError(null);
-    setSelectedThreadId(threadId);
-    setIsLoadingThread(true);
-
-    startTransition(async () => {
-      try {
-        const result = await getAssistantThread(threadId);
-        if (!result.ok) {
-          throw new Error(result.error.message || "تعذر تحميل المحادثة.");
-        }
-
-        const nextThread = result.data;
-        setThread(nextThread);
-        setSelectedThreadId(nextThread?.id ?? null);
-        setStageHistory([]);
-        setStreamLifecycleStatus(null);
-        updateThreadUrl(nextThread?.id ?? null);
-      } catch (error) {
-        setThread(null);
-        setSelectedThreadId(null);
-        setStageHistory([]);
-        setStreamLifecycleStatus(null);
-        setSendError(error instanceof Error ? error.message : "تعذر تحميل المحادثة.");
-        updateThreadUrl(null, { newThread: false });
-      } finally {
-        setIsLoadingThread(false);
-      }
-    });
-  };
-
-  const handleCreateThread = () => {
-    setThread(null);
-    setSelectedThreadId(null);
-    setStageHistory([]);
-    setStreamLifecycleStatus(null);
-    setValue("");
-    setSendError(null);
-    updateThreadUrl(null, { newThread: true });
-  };
 
   const handleStopStreaming = useCallback(async () => {
     if (!activeStreamSessionId || isStoppingStream) {
@@ -451,8 +507,16 @@ export function useWorkspaceAssistant({
     }
   }, [activeStreamSessionId, isStoppingStream]);
 
+  const handleResetUnavailableThread = useCallback(() => {
+    setUnavailableThreadId(null);
+    setThread(null);
+    setSelectedThreadId(null);
+    resetEphemeralAssistantState();
+    replaceAssistantRoute(null);
+  }, [replaceAssistantRoute, resetEphemeralAssistantState]);
+
   const handleRegenerate = useCallback(() => {
-    if (!thread || isPending || isLoadingThread) return;
+    if (!thread || isSending || isLoadingThread) return;
     const targetUserMessage = [...thread.messages].reverse().find((message) => message.role === "user");
     if (!targetUserMessage?.content?.trim()) return;
     setSendError(null);
@@ -460,11 +524,11 @@ export function useWorkspaceAssistant({
       regenerate: true,
       regenerateMessageId: targetUserMessage.id,
     });
-  }, [isLoadingThread, isPending, sendWithOptimisticUpdate, thread]);
+  }, [isLoadingThread, isSending, sendWithOptimisticUpdate, thread]);
 
   const handleSend = (message?: string, inputMode?: AnanProInputMode) => {
     const nextMessage = (message ?? value).trim();
-    if (!nextMessage || isPending || isLoadingThread) {
+    if (!nextMessage || isSending || isLoadingThread) {
       return;
     }
 
@@ -472,82 +536,25 @@ export function useWorkspaceAssistant({
       setValue("");
     }
     setSendError(null);
+    setUnavailableThreadId(null);
     sendWithOptimisticUpdate(nextMessage, inputMode);
   };
 
-  const assistantMotionState: AIMotionState = (() => {
-    if (!isPending || !streamStage) return "idle";
-    switch (streamStage.phase) {
-      case "intent_started":
-      case "intent_done":
-      case "merge_started":
-      case "merge_done":
-        return "thinking";
-      case "team_started":
-      case "team_done":
-        return "agent";
-      case "action_started":
-      case "action_done":
-        return "tool";
-      case "persist_started":
-      case "persist_done":
-        return "syncing";
-      default:
-        return "thinking";
-    }
-  })();
+  const assistantMotionState = getAssistantMotionState(isSending, streamStage);
+  const stageLabel = getAssistantStageLabel(isSending, streamStage, streamLifecycleStatus);
 
-  const stageLabel = (() => {
-    if (streamLifecycleStatus === "cancelled") {
-      return "تم إيقاف التوليد.";
-    }
-    if (!isPending || !streamStage) return "anan workspace يجهز الخطوة التالية...";
-    const team = streamStage.teamId?.replace("team_workspace_", "");
-    switch (streamStage.phase) {
-      case "intent_started":
-        return "جاري تحليل الطلب وتحديد الفريق المناسب...";
-      case "intent_done":
-        return team ? `تم تحديد المسارات: ${team}` : "تم تحديد مسار التنفيذ.";
-      case "team_started":
-        return team ? `فريق ${team} يعمل الآن...` : "الفريق يعمل الآن...";
-      case "team_done":
-        return streamStage.status === "failed"
-          ? "انتهت مهمة فريق مع تعذر جزئي، نكمل الدمج..."
-          : "تم إنهاء معالجة الفريق.";
-      case "merge_started":
-        return "جاري دمج نتائج الفرق...";
-      case "merge_done":
-        return "تم تجهيز الرد الأولي.";
-      case "action_started":
-        return "جاري تنفيذ الإجراء المطلوب...";
-      case "action_done":
-        return streamStage.status === "failed" ? "تعذر تنفيذ الإجراء." : "تم تنفيذ الإجراء.";
-      case "persist_started":
-        return "جاري حفظ المحادثة...";
-      case "persist_done":
-        return "اكتمل حفظ المحادثة.";
-      default:
-        return "anan workspace يجهز الخطوة التالية...";
-    }
-  })();
-
-  const normalizeTeamLabel = (teamId: string) =>
-    teamId.replace("team_workspace_", "").replaceAll("_", " ");
-
-  const activeTeamLabel = activeTeamId ? normalizeTeamLabel(activeTeamId) : null;
-  const completedTeamLabels = completedTeamIds.map(normalizeTeamLabel);
-  const canRegenerate = Boolean(thread?.messages.some((message) => message.role === "user")) && !isPending && !isLoadingThread;
+  const activeTeamLabel = activeTeamId ? normalizeAssistantTeamLabel(activeTeamId) : null;
+  const completedTeamLabels = completedTeamIds.map(normalizeAssistantTeamLabel);
+  const canRegenerate = Boolean(thread?.messages.some((message) => message.role === "user")) && !isSending && !isLoadingThread;
 
   return {
-    activeThreadId: selectedThreadId,
-    handleCreateThread,
     handleRegenerate,
-    handleSelectThread,
+    handleResetUnavailableThread,
     handleSend,
     handleStopStreaming,
     isLoadingThread,
     isStoppingStream,
-    isSending: isPending,
+    isSending,
     isVoiceRecording: voiceRecorder.isRecording,
     isVoiceTranscribing: voiceRecorder.isTranscribing,
     voiceProcessingPhase: voiceRecorder.processingPhase,
@@ -564,6 +571,7 @@ export function useWorkspaceAssistant({
     sendError,
     setValue,
     thread,
+    unavailableThreadId,
     value,
   };
 }

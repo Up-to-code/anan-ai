@@ -1,7 +1,4 @@
 import Link from "next/link";
-import BrandVectorPanel from "../WorkspaceBrand/BrandVectorPanel";
-import type { BrokerPresence } from "./BrokerPresenceChip";
-import BrokerPresenceChip from "./BrokerPresenceChip";
 import { cn } from "@/lib/utils";
 
 type PropertyCardSpec = {
@@ -11,8 +8,8 @@ type PropertyCardSpec = {
 
 /**
  * WHY:   Multiple workspace zones need one reusable real-estate card instead of bespoke text blocks.
- * WHAT:  Renders an image-first property card with specs, summary, and optional broker presence chips.
- * HOW:   Defaults to a branded vector media panel while keeping a photo fallback path for identity-heavy cases.
+ * WHAT:  Renders a clean, minimal property card with image, key info, specs, and optional footer.
+ * HOW:   Uses a simple photo hero with smooth hover transitions and a tight content layout.
  */
 export default function PropertyCard({
   href,
@@ -22,9 +19,8 @@ export default function PropertyCard({
   priceLabel,
   summary,
   specs,
-  brokers,
   footer,
-  mediaMode = "brand",
+  publicationBadge,
   density = "compact",
 }: {
   href?: string;
@@ -34,76 +30,69 @@ export default function PropertyCard({
   priceLabel: string;
   summary: string;
   specs: PropertyCardSpec[];
-  brokers?: BrokerPresence[];
   footer?: React.ReactNode;
-  mediaMode?: "brand" | "photo";
+  publicationBadge?: React.ReactNode;
   density?: "compact" | "detail" | "flexible";
 }) {
-  const accent =
-    brokers && brokers.some((broker) => broker.state === "client-linked")
-      ? "blue"
-      : brokers && brokers.some((broker) => broker.state === "qualified")
-        ? "emerald"
-        : "slate";
-
-  const widthClass = density === "flexible"
-    ? "w-full min-w-[300px]"
-    : density === "detail"
-      ? "w-full max-w-[340px]"
-      : "w-full max-w-[300px]";
-
   const Content = (
     <article
       className={cn(
-        "group relative border border-slate-200 bg-white transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:border-blue-600 hover:bg-slate-50 active:scale-[0.98] overflow-hidden",
-        widthClass
+        "group overflow-hidden rounded-lg border border-slate-200/60 bg-white shadow-sm transition-all duration-500 hover:shadow-md hover:border-slate-300",
+        density === "flexible" ? "w-full" : density === "detail" ? "w-full max-w-sm" : "w-full max-w-xs",
       )}
     >
-      <div className="overflow-hidden">
-        <div className="transition-transform duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-110">
-          <BrandVectorPanel
-            title={title}
-            subtitle={location}
-            accent={accent}
-            imageSrc={image}
-            imageAlt={title}
-            imageMode={mediaMode === "photo" ? "photo" : "vector"}
-            size={density === "flexible" ? "large" : "default"}
-          />
+      {/* Hero image with smooth zoom */}
+      <div className="relative h-44 overflow-hidden bg-slate-100">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={image}
+          alt={title}
+          className="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60" />
+
+        {/* Price pill - floating slightly */}
+        <div className="absolute bottom-3 right-3 rounded-lg bg-white/95 px-3 py-1.5 text-xs font-bold text-slate-900 shadow-sm backdrop-blur-sm">
+          {priceLabel}
         </div>
+
+        {/* Publication badge */}
+        {publicationBadge ? (
+          <div className="absolute top-3 right-3">{publicationBadge}</div>
+        ) : null}
       </div>
 
-      <div className="grid gap-6 p-6">
-        <div className="grid grid-cols-[1fr_auto] items-start gap-4">
-          <p className="text-sm font-medium leading-relaxed text-slate-600 line-clamp-2 text-right">{summary}</p>
-          <div className="shrink-0 border-2 border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-black text-white shadow-none">{priceLabel}</div>
+      {/* Content area */}
+      <div className="space-y-4 p-5">
+        <div className="text-right">
+          <h2 className="text-base font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">{title}</h2>
+          <p className="mt-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{location}</p>
         </div>
 
-        <div className="grid grid-cols-4 gap-px border border-slate-100 bg-slate-50">
-          {specs.map((spec) => (
-            <div key={spec.label} className="bg-white px-2 py-3 text-center transition-colors duration-500 group-hover:bg-white">
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 group-hover:text-blue-600 transition-colors duration-500">{spec.label}</div>
-              <div className="mt-1 text-xs font-black text-slate-950">{spec.value}</div>
+        <p className="line-clamp-2 text-xs leading-relaxed text-slate-500 text-right font-medium">
+          {summary}
+        </p>
+
+        {/* Specs row - very minimal */}
+        <div className="flex items-center justify-between rounded-lg bg-slate-50/80 p-2 text-right">
+          {specs.slice(0, 4).map((spec) => (
+            <div key={spec.label} className="px-2">
+              <div className="text-[9px] font-bold text-slate-400">{spec.label}</div>
+              <div className="text-[11px] font-bold text-slate-700">{spec.value}</div>
             </div>
           ))}
         </div>
 
-        {brokers && brokers.length > 0 ? (
-          <div className="grid grid-cols-2 gap-2">
-            {brokers.map((broker) => (
-              <BrokerPresenceChip key={broker.id} broker={broker} />
-            ))}
+        {/* Action footer */}
+        {footer ? (
+          <div className="pt-3 border-t border-slate-100">
+            {footer}
           </div>
         ) : null}
-
-        {footer ? <div className="border-t border-slate-50 pt-4">{footer}</div> : null}
       </div>
     </article>
   );
 
-  if (!href) {
-    return Content;
-  }
-
-  return <Link href={href}>{Content}</Link>;
+  if (!href) return Content;
+  return <Link href={href} className="block">{Content}</Link>;
 }

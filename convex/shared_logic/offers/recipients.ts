@@ -35,6 +35,37 @@ async function findRedByField(
     .first();
 }
 
+function toResolvedRecipient(args: { toBrokerId?: Id<"brokers">; toREDId?: Id<"RED"> }): ResolvedOfferRecipient {
+  return { toBrokerId: args.toBrokerId, toREDId: args.toREDId };
+}
+
+async function findRecipientByContact(
+  ctx: MutationCtx,
+  field: "contactEmail" | "phone",
+  value: string,
+): Promise<ResolvedOfferRecipient> {
+  const broker = await findBrokerByField(ctx, field, value);
+  if (broker) {
+    return toResolvedRecipient({ toBrokerId: broker._id });
+  }
+  const red = await findRedByField(ctx, field, value);
+  if (red) {
+    return toResolvedRecipient({ toREDId: red._id });
+  }
+  return toResolvedRecipient({});
+}
+
+async function findRecipientByAuthUser(ctx: MutationCtx, recipientAuthUserId: string) {
+  const profile = await findProfileByAuthUserId(ctx, recipientAuthUserId);
+  if (profile?.brokerId) {
+    return toResolvedRecipient({ toBrokerId: profile.brokerId });
+  }
+  if (profile?.REDId) {
+    return toResolvedRecipient({ toREDId: profile.REDId });
+  }
+  return toResolvedRecipient({});
+}
+
 /**
  * WHY:   Private offers support recipient lookup by explicit ids, email, or phone.
  * WHAT:  Resolves the target broker/RED recipient ids for offer creation.
@@ -51,45 +82,27 @@ export async function resolveOfferRecipient(
     recipientPhone?: string;
   },
 ): Promise<ResolvedOfferRecipient> {
-  let toBrokerId = args.toBrokerId;
-  let toREDId = args.toREDId;
-
-  if ((args.visibility ?? "private") !== "private" || toBrokerId || toREDId) {
-    return { toBrokerId, toREDId };
+  if ((args.visibility ?? "private") !== "private" || args.toBrokerId || args.toREDId) {
+    return toResolvedRecipient({ toBrokerId: args.toBrokerId, toREDId: args.toREDId });
   }
 
   if (args.recipientAuthUserId) {
-    const profile = await findProfileByAuthUserId(ctx, args.recipientAuthUserId);
-    if (profile?.brokerId) {
-      toBrokerId = profile.brokerId;
-    } else if (profile?.REDId) {
-      toREDId = profile.REDId;
-    }
-
-    if (toBrokerId || toREDId) {
-      return { toBrokerId, toREDId };
+    const recipientFromProfile = await findRecipientByAuthUser(ctx, args.recipientAuthUserId);
+    if (recipientFromProfile.toBrokerId || recipientFromProfile.toREDId) {
+      return recipientFromProfile;
     }
   }
 
   if (args.recipientEmail) {
-    const broker = await findBrokerByField(ctx, "contactEmail", args.recipientEmail);
-    if (broker) {
-      toBrokerId = broker._id;
-    } else {
-      const red = await findRedByField(ctx, "contactEmail", args.recipientEmail);
-      if (red) toREDId = red._id;
+    const recipientFromEmail = await findRecipientByContact(ctx, "contactEmail", args.recipientEmail);
+    if (recipientFromEmail.toBrokerId || recipientFromEmail.toREDId) {
+      return recipientFromEmail;
     }
   }
 
-  if (!toBrokerId && !toREDId && args.recipientPhone) {
-    const broker = await findBrokerByField(ctx, "phone", args.recipientPhone);
-    if (broker) {
-      toBrokerId = broker._id;
-    } else {
-      const red = await findRedByField(ctx, "phone", args.recipientPhone);
-      if (red) toREDId = red._id;
-    }
+  if (args.recipientPhone) {
+    return findRecipientByContact(ctx, "phone", args.recipientPhone);
   }
 
-  return { toBrokerId, toREDId };
+  return toResolvedRecipient({});
 }

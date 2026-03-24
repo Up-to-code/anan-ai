@@ -49,6 +49,73 @@ export interface MergeResult {
     mergeTokens: { inputTokens: number; outputTokens: number };
 }
 
+const ZERO_TOKENS = { inputTokens: 0, outputTokens: 0 } as const;
+
+function stripAgentPrefix(output: string) {
+  return output.replace(/^\[anan_\w+\]\n/, "");
+}
+
+function buildMergePrompt(prompt: string, successOutputs: string[], hasFailures: boolean) {
+  return `You are merging results from multiple AI agents into one coherent Arabic response.
+User's original question: "${prompt}"
+
+Agent outputs:
+${successOutputs.join("\n\n---\n\n")}
+
+Merge these into a single, natural Arabic response. Do not mention the agents.
+${hasFailures ? `Note: ${FALLBACK_MESSAGES.partialFailure}` : ""}`;
+}
+
+function resolveMergeModel(orchestratorId: OrchestratorId, modelOverride?: string) {
+  return {
+    model: getChatModel(modelOverride, orchestratorId),
+    modelName: modelOverride ?? getAgentLLMConfigSafe(orchestratorId)?.model ?? "unknown",
+  };
+}
+
+function toMergeUsage(usage: any) {
+  return {
+    inputTokens: usage?.promptTokens ?? usage?.inputTokens ?? 0,
+    outputTokens: usage?.completionTokens ?? usage?.outputTokens ?? 0,
+  };
+}
+
+function buildFallbackMergedText(successOutputs: string[], hasFailures: boolean) {
+  let text = successOutputs.map(stripAgentPrefix).join("\n\n");
+  if (hasFailures) text += `\n\n${FALLBACK_MESSAGES.partialFailure}`;
+  return text;
+}
+
+async function mergeWithLlm(input: MergeInput) {
+  const orchestratorId = input.orchestratorId ?? "anan";
+  const { model, modelName } = resolveMergeModel(orchestratorId, input.modelOverride);
+  const mergeResult = await cachedGenerateText(
+    input.ctx,
+    {
+      model: model as any,
+      prompt: buildMergePrompt(input.prompt, input.successOutputs, input.hasFailures),
+      temperature: 0.3,
+    },
+    {
+      modelName,
+      tags: [
+        "merge",
+        orchestratorId === "anan_workspace"
+          ? "anan_workspace_orchestrator"
+          : "anan_orchestrator",
+      ],
+      metadata: {
+        outputsCount: input.successOutputs.length,
+        hasFailures: input.hasFailures,
+      },
+    },
+  );
+  return {
+    text: mergeResult.text,
+    mergeTokens: toMergeUsage((mergeResult as any).usage),
+  };
+}
+
 /**
  * mergeResults — Combines multiple agent outputs into one coherent response.
  *
@@ -64,77 +131,19 @@ export interface MergeResult {
  * @returns MergeResult with final text and token usage
  */
 export async function mergeResults(input: MergeInput): Promise<MergeResult> {
-    const { ctx, prompt, successOutputs, hasFailures, modelOverride } = input;
-    const orchestratorId = input.orchestratorId ?? "anan";
-
-    // Case 1: No successful outputs
-    if (successOutputs.length === 0) {
-        return {
-            text: FALLBACK_MESSAGES.totalFailure,
-            mergeTokens: { inputTokens: 0, outputTokens: 0 },
-        };
+    if (input.successOutputs.length === 0) {
+      return { text: FALLBACK_MESSAGES.totalFailure, mergeTokens: { ...ZERO_TOKENS } };
     }
-
-    // Case 2: Single output — use directly (strip agent name prefix)
-    if (successOutputs.length === 1) {
-        return {
-            text: successOutputs[0].replace(/^\[anan_\w+\]\n/, ""),
-            mergeTokens: { inputTokens: 0, outputTokens: 0 },
-        };
+    if (input.successOutputs.length === 1) {
+      return { text: stripAgentPrefix(input.successOutputs[0]), mergeTokens: { ...ZERO_TOKENS } };
     }
-
-    // Case 3: Multiple outputs — merge with LLM
     try {
-        const model = getChatModel(modelOverride, orchestratorId);
-        const modelName =
-            modelOverride ?? getAgentLLMConfigSafe(orchestratorId)?.model ?? "unknown";
-        const mergeResult = await cachedGenerateText(
-            ctx,
-            {
-                model: model as any,
-                prompt: `You are merging results from multiple AI agents into one coherent Arabic response.
-User's original question: "${prompt}"
-
-Agent outputs:
-${successOutputs.join("\n\n---\n\n")}
-
-Merge these into a single, natural Arabic response. Do not mention the agents.
-${hasFailures ? `Note: ${FALLBACK_MESSAGES.partialFailure}` : ""}`,
-                temperature: 0.3,
-            },
-            {
-                modelName,
-                tags: [
-                    "merge",
-                    orchestratorId === "anan_workspace"
-                        ? "anan_workspace_orchestrator"
-                        : "anan_orchestrator",
-                ],
-                metadata: {
-                    outputsCount: successOutputs.length,
-                    hasFailures,
-                },
-            },
-        );
-
-        const usage = mergeResult.usage as any;
-        return {
-            text: mergeResult.text,
-            mergeTokens: {
-                inputTokens: usage?.promptTokens ?? usage?.inputTokens ?? 0,
-                outputTokens: usage?.completionTokens ?? usage?.outputTokens ?? 0,
-            },
-        };
+      return await mergeWithLlm(input);
     } catch {
-        // Case 4: Merge failed — concatenate as fallback
-        let text = successOutputs
-            .map((o) => o.replace(/^\[anan_\w+\]\n/, ""))
-            .join("\n\n");
-        if (hasFailures) text += `\n\n${FALLBACK_MESSAGES.partialFailure}`;
-        return {
-            text,
-            mergeTokens: { inputTokens: 0, outputTokens: 0 },
-        };
+      return {
+        text: buildFallbackMergedText(input.successOutputs, input.hasFailures),
+        mergeTokens: { ...ZERO_TOKENS },
+      };
     }
 }
 
@@ -149,28 +158,26 @@ ${hasFailures ? `Note: ${FALLBACK_MESSAGES.partialFailure}` : ""}`,
  * @returns Structured collection of results, outputs, totals, and failure flag
  */
 export function collectResults(settled: PromiseSettledResult<AnanAgentResult>[]) {
-    const agentResults: AnanAgentResult[] = [];
-    const successOutputs: string[] = [];
-    let totalInput = 0;
-    let totalOutput = 0;
-    let hasFailures = false;
-
+    const aggregate = {
+      agentResults: [] as AnanAgentResult[],
+      successOutputs: [] as string[],
+      totalInput: 0,
+      totalOutput: 0,
+      hasFailures: false,
+    };
     for (const result of settled) {
-        if (result.status === "fulfilled") {
-            agentResults.push(result.value);
-            if (result.value.ok && result.value.output) {
-                successOutputs.push(
-                    `[${result.value.agentName}]\n${result.value.output}`,
-                );
-            } else {
-                hasFailures = true;
-            }
-            totalInput += result.value.tokenUsage.inputTokens;
-            totalOutput += result.value.tokenUsage.outputTokens;
-        } else {
-            hasFailures = true;
-        }
+      if (result.status !== "fulfilled") {
+        aggregate.hasFailures = true;
+        continue;
+      }
+      aggregate.agentResults.push(result.value);
+      if (result.value.ok && result.value.output) {
+        aggregate.successOutputs.push(`[${result.value.agentName}]\n${result.value.output}`);
+      } else {
+        aggregate.hasFailures = true;
+      }
+      aggregate.totalInput += result.value.tokenUsage.inputTokens;
+      aggregate.totalOutput += result.value.tokenUsage.outputTokens;
     }
-
-    return { agentResults, successOutputs, totalInput, totalOutput, hasFailures };
+    return aggregate;
 }

@@ -1,13 +1,13 @@
 import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
 import schema from "../../schema";
-import { apiRefs } from "../lib/generatedApiRefs";
+import { api } from "../../_generated/api";
 import { modules } from "../../test.setup";
 
 describe("content service", () => {
   it("getBySlug returns null when page does not exist", async () => {
     const t = convexTest(schema, modules);
-    const result = await t.query(apiRefs["shared_logic/content/queries"].getBySlug as never, {
+    const result = await t.query(api.shared_logic.content.queries.getBySlug as never, {
       slug: "nonexistent-page",
     } as never);
     expect(result).toBeNull();
@@ -22,7 +22,7 @@ describe("content service", () => {
         content: "How to get a loan",
       });
     });
-    const page = await t.query(apiRefs["shared_logic/content/queries"].getBySlug as never, { slug: "loan-guide" } as never);
+    const page = await t.query(api.shared_logic.content.queries.getBySlug as never, { slug: "loan-guide" } as never);
     expect(page).not.toBeNull();
     expect((page as { title?: string })?.title).toBe("Loan Guide");
     expect((page as { slug?: string })?.slug).toBe("loan-guide");
@@ -30,7 +30,7 @@ describe("content service", () => {
 
   it("list returns empty array when no pages", async () => {
     const t = convexTest(schema, modules);
-    const result = await t.query(apiRefs["shared_logic/content/queries"].list as never, {} as never);
+    const result = await t.query(api.shared_logic.content.queries.list as never, {} as never);
     expect(result).toEqual([]);
   });
 });

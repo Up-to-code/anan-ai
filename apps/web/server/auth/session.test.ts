@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { expect, it, vi } from "vitest";
 import { DomainError } from "@/server/contracts/errors";
 
 const { convexAuthNextjsToken } = vi.hoisted(() => ({
@@ -17,47 +17,45 @@ function createJwtWithExp(expSeconds: number) {
   return `${header}.${payload}.signature`;
 }
 
-describe("web auth session resolver", () => {
-  it("treats clearly expired NoAuthProvider tokens as logged out", async () => {
-    const expiredToken = createJwtWithExp(Math.floor((Date.now() - (60 * 1000)) / 1000));
-    const dependencies = {
-      getToken: vi.fn(async () => expiredToken),
-      sessionsRepository: {
-        getCurrent: vi.fn(async () => {
-          throw new Error(JSON.stringify({
-            code: "NoAuthProvider",
-            message: "No auth provider found matching the given token",
-          }));
-        }),
-      },
-      profilesRepository: {
-        getCurrent: vi.fn(async () => null),
-      },
-    };
+it("treats clearly expired NoAuthProvider tokens as logged out", async () => {
+  const expiredToken = createJwtWithExp(Math.floor((Date.now() - (60 * 1000)) / 1000));
+  const dependencies = {
+    getToken: vi.fn(async () => expiredToken),
+    sessionsRepository: {
+      getCurrent: vi.fn(async () => {
+        throw new Error(JSON.stringify({
+          code: "NoAuthProvider",
+          message: "No auth provider found matching the given token",
+        }));
+      }),
+    },
+    profilesRepository: {
+      getCurrent: vi.fn(async () => null),
+    },
+  };
 
-    await expect(getOptionalSessionContext(dependencies as never)).resolves.toBeNull();
-  });
+  await expect(getOptionalSessionContext(dependencies as never)).resolves.toBeNull();
+});
 
-  it("surfaces provider mismatches for active tokens as AUTH_CONFIGURATION_ERROR", async () => {
-    const activeToken = createJwtWithExp(Math.floor((Date.now() + (60 * 60 * 1000)) / 1000));
-    const dependencies = {
-      getToken: vi.fn(async () => activeToken),
-      sessionsRepository: {
-        getCurrent: vi.fn(async () => {
-          throw new Error(JSON.stringify({
-            code: "NoAuthProvider",
-            message: "No auth provider found matching the given token",
-          }));
-        }),
-      },
-      profilesRepository: {
-        getCurrent: vi.fn(async () => null),
-      },
-    };
+it("surfaces provider mismatches for active tokens as AUTH_CONFIGURATION_ERROR", async () => {
+  const activeToken = createJwtWithExp(Math.floor((Date.now() + (60 * 60 * 1000)) / 1000));
+  const dependencies = {
+    getToken: vi.fn(async () => activeToken),
+    sessionsRepository: {
+      getCurrent: vi.fn(async () => {
+        throw new Error(JSON.stringify({
+          code: "NoAuthProvider",
+          message: "No auth provider found matching the given token",
+        }));
+      }),
+    },
+    profilesRepository: {
+      getCurrent: vi.fn(async () => null),
+    },
+  };
 
-    await expect(getOptionalSessionContext(dependencies as never)).rejects.toMatchObject<Partial<DomainError>>({
-      code: "AUTH_CONFIGURATION_ERROR",
-      status: 503,
-    });
+  await expect(getOptionalSessionContext(dependencies as never)).rejects.toMatchObject<Partial<DomainError>>({
+    code: "AUTH_CONFIGURATION_ERROR",
+    status: 503,
   });
 });
