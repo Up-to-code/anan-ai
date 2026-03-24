@@ -7,9 +7,42 @@ const { mockOrchestrateDefault, mockOrchestrateWorkspace, mockResolveWorkspaceAg
   mockResolveWorkspaceAgUiTurn: vi.fn(() => null),
 }));
 
+const mockedApi = vi.hoisted(() => ({
+  api: {
+    ai_zone: {
+      assistant: { getThread: Symbol("assistant.getThread") },
+      assistantWorkspace: {
+        createThread: Symbol("assistantWorkspace.createThread"),
+        getThread: Symbol("assistantWorkspace.getThread"),
+        listMessages: Symbol("assistantWorkspace.listMessages"),
+      },
+    },
+    shared_logic: {
+      knowledge: {
+        index: {
+          retrieveCompanyKnowledge: Symbol("knowledge.retrieveCompanyKnowledge"),
+        },
+      },
+      subscriptions: {
+        index: {
+          getAssistantEntitlement: Symbol("subscriptions.getAssistantEntitlement"),
+          getAssistantEntitlementSafe: Symbol("subscriptions.getAssistantEntitlementSafe"),
+        },
+      },
+    },
+  },
+  internal: {
+    ai_zone: {
+      assistant: { _saveConversationStep: Symbol("assistant._saveConversationStep") },
+      assistantWorkspace: { _saveConversationStep: Symbol("assistantWorkspace._saveConversationStep") },
+    },
+  },
+}));
+
 vi.mock("../agents/anan", () => ({ orchestrate: mockOrchestrateDefault }));
 vi.mock("../agents/anan_workspace", () => ({ orchestrate: mockOrchestrateWorkspace }));
 vi.mock("./agUi", () => ({ resolveWorkspaceAgUiTurn: mockResolveWorkspaceAgUiTurn }));
+vi.mock("../../_generated/api", () => mockedApi);
 
 function resetAssistantMocks() {
   mockOrchestrateDefault.mockClear();
@@ -18,44 +51,70 @@ function resetAssistantMocks() {
 }
 
 function createHandleMessageCtx() {
-  let call = 0;
-  const runQuery = vi.fn(async () => {
-    call += 1;
-    if (call === 1) {
-      return { thread: { _id: "thread_123" }, owner: { userId: "user_1", ownerType: "broker", ownerBrokerId: "broker_1" } };
+  const runQuery = vi.fn(async (ref: unknown) => {
+    if (
+      ref === mockedApi.api.ai_zone.assistantWorkspace.getThread ||
+      ref === mockedApi.api.ai_zone.assistant.getThread
+    ) {
+      return {
+        thread: { _id: "thread_123" },
+        owner: { userId: "user_1", ownerType: "broker", ownerBrokerId: "broker_1" },
+      };
     }
-    if (call === 2) return { mode: "qa" };
-    return [];
+    if (
+      ref === mockedApi.api.shared_logic.subscriptions.index.getAssistantEntitlement ||
+      ref === mockedApi.api.shared_logic.subscriptions.index.getAssistantEntitlementSafe
+    ) {
+      return { mode: "qa" };
+    }
+    if (ref === mockedApi.api.ai_zone.assistantWorkspace.listMessages) {
+      return [];
+    }
+    if (ref === mockedApi.api.shared_logic.knowledge.index.retrieveCompanyKnowledge) {
+      return [];
+    }
+    throw new Error("Unexpected query ref");
   });
-  const runMutation = vi.fn(async () => ({ threadId: "thread_123", assistantMessageId: "assistant_message_1" }));
+
+  const runMutation = vi.fn(async () => ({
+    threadId: "thread_123",
+    assistantMessageId: "assistant_message_1",
+  }));
+
   return { runQuery, runMutation };
 }
 
 function createFreshThreadHandleMessageCtx() {
-  let call = 0;
+  let queryCall = 0;
   let mutationCall = 0;
-  const runQuery = vi.fn(async (...args: unknown[]) => {
-    call += 1;
-    if (call === 1) {
-      return { thread: { _id: "legacy_thread" }, owner: { userId: "user_1", ownerType: "broker", ownerBrokerId: "broker_1" } };
+
+  const runQuery = vi.fn(async (_ref: unknown, args?: unknown) => {
+    queryCall += 1;
+    if (queryCall === 1) {
+      return {
+        thread: { _id: "legacy_thread" },
+        owner: { userId: "user_1", ownerType: "broker", ownerBrokerId: "broker_1" },
+      };
     }
-    if (call === 2) return { mode: "qa" };
-    if (call === 3) {
-      const payload = args[1] as { threadId?: string } | undefined;
-      expect(payload?.threadId).toBe("fresh_thread");
+    if (queryCall === 2) {
+      return { mode: "qa" };
+    }
+    if (queryCall === 3) {
+      expect(args).toEqual({ threadId: "fresh_thread" });
       return [];
     }
     return [];
   });
-  const runMutation = vi.fn(async (...args: unknown[]) => {
+
+  const runMutation = vi.fn(async (_ref: unknown, args?: unknown) => {
     mutationCall += 1;
     if (mutationCall === 1) {
-      const payload = args[1] as { title?: string } | undefined;
-      expect(payload?.title).toBe("ابدأ محادثة جديدة");
+      expect(args).toEqual({ title: "ابدأ محادثة جديدة" });
       return { threadId: "fresh_thread" };
     }
     return { threadId: "fresh_thread", assistantMessageId: "assistant_message_1" };
   });
+
   return { runQuery, runMutation };
 }
 
@@ -74,10 +133,22 @@ function registerWorkspaceAssistantTest() {
     expect(ctx.runMutation).toHaveBeenCalledTimes(1);
 
     const [, workspacePayload] = (ctx.runMutation as any).mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(workspacePayload).toEqual(expect.objectContaining({ threadId: "thread_123", userId: "user_1", ownerType: "broker", ownerBrokerId: "broker_1", userMessage: "أضف عقار جديد", assistantMessage: expect.stringContaining("workspace orchestrator output"), mode: "qa" }));
+    expect(workspacePayload).toEqual(expect.objectContaining({
+      threadId: "thread_123",
+      userId: "user_1",
+      ownerType: "broker",
+      ownerBrokerId: "broker_1",
+      userMessage: "أضف عقار جديد",
+      assistantMessage: expect.stringContaining("workspace orchestrator output"),
+      mode: "qa",
+    }));
     expect(workspacePayload.assistantKind).toBeUndefined();
     expect(workspacePayload.orchestratorName).toBeUndefined();
-    expect(result).toEqual(expect.objectContaining({ ok: true, threadId: "thread_123", output: expect.stringContaining("workspace orchestrator output") }));
+    expect(result).toEqual(expect.objectContaining({
+      ok: true,
+      threadId: "thread_123",
+      output: expect.stringContaining("workspace orchestrator output"),
+    }));
   });
 }
 
@@ -91,20 +162,79 @@ function registerDefaultAssistantTest() {
     expect(ctx.runMutation).toHaveBeenCalledTimes(1);
 
     const [, defaultPayload] = (ctx.runMutation as any).mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(defaultPayload).toEqual(expect.objectContaining({ threadId: "thread_123", userId: "user_1", ownerType: "broker", ownerBrokerId: "broker_1", userMessage: "hello", assistantMessage: "default orchestrator output", mode: "qa" }));
+    expect(defaultPayload).toEqual(expect.objectContaining({
+      threadId: "thread_123",
+      userId: "user_1",
+      ownerType: "broker",
+      ownerBrokerId: "broker_1",
+      userMessage: "hello",
+      assistantMessage: "default orchestrator output",
+      mode: "qa",
+    }));
     expect(defaultPayload.assistantKind).toBeUndefined();
     expect(defaultPayload.orchestratorName).toBeUndefined();
-    expect(result).toEqual(expect.objectContaining({ ok: true, threadId: "thread_123", output: "default orchestrator output" }));
+    expect(result).toEqual(expect.objectContaining({
+      ok: true,
+      threadId: "thread_123",
+      output: "default orchestrator output",
+    }));
   });
 }
 
 function registerVoiceMetadataTest() {
   it("persists voice input mode metadata when provided", async () => {
     const ctx = createHandleMessageCtx();
-    await handleAssistantMessage(ctx as any, { message: "رسالة صوتية", assistantKind: "anan_workspace", inputMode: "voice" });
+    await handleAssistantMessage(ctx as any, {
+      message: "رسالة صوتية",
+      assistantKind: "anan_workspace",
+      inputMode: "voice",
+    });
 
     const [, payload] = (ctx.runMutation as any).mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(payload).toEqual(expect.objectContaining({ userMessageMetadata: { inputMode: "voice" } }));
+    expect(payload).toEqual(expect.objectContaining({
+      userMessageMetadata: { inputMode: "voice" },
+    }));
+  });
+
+  it("uses safe entitlement lookup for public assistant guest sessions", async () => {
+    const ctx = createHandleMessageCtx();
+    const publicSaveMutation = Symbol("assistantPublic._saveConversationStep");
+
+    const result = await handleAssistantMessage(ctx as any, {
+      message: "hello from public",
+      assistantKind: "anan_main_public",
+      ownerOverride: {
+        userId: "channel:main_assistant_web:guest_1",
+        ownerType: "user",
+      },
+      saveConversationStepMutationOverride: publicSaveMutation,
+    });
+
+    expect(ctx.runQuery).toHaveBeenCalledWith(
+      mockedApi.api.shared_logic.subscriptions.index.getAssistantEntitlementSafe,
+      {},
+    );
+    expect(ctx.runQuery).not.toHaveBeenCalledWith(
+      mockedApi.api.shared_logic.subscriptions.index.getAssistantEntitlement,
+      {},
+    );
+
+    const [mutationRef, payload] = (ctx.runMutation as any).mock.calls[0] as [
+      unknown,
+      Record<string, unknown>,
+    ];
+    expect(mutationRef).toBe(publicSaveMutation);
+    expect(payload).toEqual(expect.objectContaining({
+      userId: "channel:main_assistant_web:guest_1",
+      ownerType: "user",
+      userMessage: "hello from public",
+      mode: "qa",
+    }));
+
+    expect(result).toEqual(expect.objectContaining({
+      ok: true,
+      output: "default orchestrator output",
+    }));
   });
 }
 
@@ -144,13 +274,52 @@ function registerHandleAssistantMessageSuite() {
   registerFreshWorkspaceThreadTest();
 }
 
-type ThreadRow = { _id: string; userId: string; scope?: string; ownerType: string; ownerBrokerId: string; assistantKind: string; updatedAt: number };
-type MessageRow = { _id: string; threadId: string; role: string; content: string; mode: string; createdAt: number };
+type ThreadRow = {
+  _id: string;
+  userId: string;
+  scope?: string;
+  ownerType: string;
+  ownerBrokerId: string;
+  assistantKind: string;
+  updatedAt: number;
+};
+
+type MessageRow = {
+  _id: string;
+  threadId: string;
+  role: string;
+  content: string;
+  mode: string;
+  createdAt: number;
+};
 
 const threadRows: ThreadRow[] = [
-  { _id: "legacy-thread", userId: "user_1", ownerType: "broker", ownerBrokerId: "broker_1", assistantKind: "anan_workspace", updatedAt: 10 },
-  { _id: "org-thread", userId: "user_2", scope: "organization", ownerType: "broker", ownerBrokerId: "broker_1", assistantKind: "anan_workspace", updatedAt: 20 },
-  { _id: "foreign-org-thread", userId: "user_9", scope: "organization", ownerType: "broker", ownerBrokerId: "broker_2", assistantKind: "anan_workspace", updatedAt: 30 },
+  {
+    _id: "legacy-thread",
+    userId: "user_1",
+    ownerType: "broker",
+    ownerBrokerId: "broker_1",
+    assistantKind: "anan_workspace",
+    updatedAt: 10,
+  },
+  {
+    _id: "org-thread",
+    userId: "user_2",
+    scope: "organization",
+    ownerType: "broker",
+    ownerBrokerId: "broker_1",
+    assistantKind: "anan_workspace",
+    updatedAt: 20,
+  },
+  {
+    _id: "foreign-org-thread",
+    userId: "user_9",
+    scope: "organization",
+    ownerType: "broker",
+    ownerBrokerId: "broker_2",
+    assistantKind: "anan_workspace",
+    updatedAt: 30,
+  },
 ];
 
 const messageRows: MessageRow[] = [
@@ -162,9 +331,19 @@ function createIndexedQuery(items: Array<Record<string, unknown>>) {
   return {
     withIndex: (_index: string, selector: (q: { eq: (field: string, value: unknown) => unknown }) => unknown) => {
       const filters: Array<{ field: string; value: unknown }> = [];
-      const q = { eq: (field: string, value: unknown) => { filters.push({ field, value }); return q; } };
+      const q = {
+        eq: (field: string, value: unknown) => {
+          filters.push({ field, value });
+          return q;
+        },
+      };
       selector(q);
-      return { collect: async () => items.filter((item) => filters.every(({ field, value }) => String(item[field]) === String(value))) };
+      return {
+        collect: async () =>
+          items.filter((item) =>
+            filters.every(({ field, value }) => String(item[field]) === String(value)),
+          ),
+      };
     },
   };
 }
@@ -182,7 +361,11 @@ function createQueryCtx() {
   };
 }
 
-const owner = { userId: "user_1", ownerType: "broker" as const, ownerBrokerId: "broker_1" as any };
+const owner = {
+  userId: "user_1",
+  ownerType: "broker" as const,
+  ownerBrokerId: "broker_1" as any,
+};
 
 function registerLatestThreadScopeTest() {
   it("prefers organization-scoped workspace thread when available", async () => {

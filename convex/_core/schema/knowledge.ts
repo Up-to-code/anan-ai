@@ -68,6 +68,33 @@ const knowledgeTables = {
         .index("userId_and_key", ["userId", "key"])
         .index("expiresAt", ["expiresAt"]),
 
+    buyerChannelStates: defineTable({
+        channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
+        userId: v.string(),
+        threadId: v.optional(v.id("assistantThreads")),
+        state: v.union(
+            v.literal("idle"),
+            v.literal("search_results"),
+            v.literal("property_selected"),
+            v.literal("handoff_ready"),
+        ),
+        selectedPropertyId: v.optional(v.id("properties")),
+        lastResultPropertyIds: v.array(v.id("properties")),
+        lastSearchQuery: v.optional(v.string()),
+        qualification: v.optional(v.object({
+            monthlySalary: v.optional(v.number()),
+            downPayment: v.optional(v.number()),
+            preferredYears: v.optional(v.number()),
+            employmentStatus: v.optional(v.string()),
+            notes: v.optional(v.string()),
+        })),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    })
+        .index("channel_userId", ["channel", "userId"])
+        .index("state", ["state"])
+        .index("updatedAt", ["updatedAt"]),
+
     /** Entity relationships for knowledge graph. */
     entityRelations: defineTable({
         fromType: v.string(),
@@ -97,6 +124,7 @@ const knowledgeTables = {
                 v.literal("default"),
                 v.literal("anan_workspace"),
                 v.literal("anan_pro"),
+                v.literal("anan_main_public"),
             ),
         ),
         title: v.optional(v.string()),

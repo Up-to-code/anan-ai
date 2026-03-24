@@ -13,7 +13,7 @@ const authTables = {
   ...convexAuthTables,
   channelSessions: defineTable({
     authUserId: v.string(),
-    channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
+    channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web"), v.literal("main_assistant_web")),
     sessionToken: v.string(),
     expiresAt: v.number(), // epoch ms
     metadata: v.optional(
@@ -24,6 +24,24 @@ const authTables = {
   })
     .index("authUserId_channel", ["authUserId", "channel"])
     .index("expiresAt", ["expiresAt"]),
+  channelMessageReceipts: defineTable({
+    channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web"), v.literal("main_assistant_web")),
+    messageId: v.string(),
+    status: v.union(
+      v.literal("processing"),
+      v.literal("processed"),
+      v.literal("failed"),
+    ),
+    userId: v.optional(v.string()),
+    threadId: v.optional(v.id("assistantThreads")),
+    replyMessageIds: v.optional(v.array(v.string())),
+    createdAt: v.number(),
+    processedAt: v.optional(v.number()),
+    failureCode: v.optional(v.string()),
+  })
+    .index("channel_messageId", ["channel", "messageId"])
+    .index("status", ["status"])
+    .index("createdAt", ["createdAt"]),
   oauthClients: defineTable({
     clientId: v.string(),
     clientSecretHash: v.optional(v.string()),

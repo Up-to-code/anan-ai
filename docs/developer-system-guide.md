@@ -17,6 +17,7 @@ The practical rule is:
 - UI surfaces render and orchestrate user interaction
 - `web/server/` owns web-specific service boundaries
 - Convex owns persistence, shared capabilities, and AI entrypoints
+- `packages/*` owns stable shared systems that are meant to travel across surfaces or projects
 
 ## How To Think About The Architecture
 
@@ -146,6 +147,46 @@ Typical path:
 
 ## Where To Put New Code
 
+### Decide whether code should become a package
+
+Use this rule:
+
+- move code to `packages/*` only when it is already reused across apps/projects, or when it is intentionally being designed as a stable public surface
+- do not package code only because a folder is large; first ask whether the real fix is a better local feature structure
+
+Use `@anan/ag-ui` as the model extraction:
+
+- package the generic reusable core
+- keep app-specific behavior behind adapter entrypoints
+- leave thin local wrappers where a host still needs its own contract shape
+
+### Packaging readiness checklist
+
+Before opening a package extraction:
+
+- confirm the module is reused, or clearly intended for reuse, beyond one surface
+- confirm the public entrypoints and ownership are stable enough to document
+- confirm README/examples are justified and maintainable
+- confirm the package can be typechecked and tested independently
+- confirm app-only dependencies can be isolated behind adapters instead of leaking into the core API
+
+If any of those are missing, prefer one of these instead:
+
+- `refactor locally`
+- `keep zone-local`
+- `promote to app-wide shared folder`
+
+### Destination buckets for heavy modules
+
+When auditing heavy code, place each module in one bucket:
+
+- `package now`
+  Cross-surface or cross-project system with stable public API
+- `refactor locally`
+  Heavy but still owned by one app or one surface; improve structure without packaging
+- `keep zone-local`
+  Closely tied to one route, workspace subsystem, or backend zone
+
 ### Add a new workspace page
 
 Put code in:
@@ -190,6 +231,27 @@ Put code in:
 - `convex/admin_zone/...` for the projection or mutation
 - `admin/admin_zone/api/...` for admin app data loaders
 - `admin/admin_zone/pages/...` for page-level rendering
+
+### Current packaging audit decisions
+
+Current repo guidance from the packaging audit is:
+
+- `packages/ag-ui`
+  Keep as the model extraction and source of truth for UI systems that are meant to travel
+- `apps/web/components/shared/Sidebar`
+  Possible future package candidate only if reuse expands beyond the web workspace
+- `apps/web/app/(ws)/ws/_components/AIMotion`
+  Possible future package candidate only if reuse expands beyond the web workspace
+- `apps/web/app/(ws)/ws/_components/ZoneShell`
+  Keep local for now; improve locally rather than package
+- `apps/web/app/(ws)/ws/_components/WorkspaceBrand`
+  Keep local for now; improve locally rather than package
+- `apps/web/app/(ws)/ws/_components/OrganizationOnboarding`
+  Keep local for now; improve locally rather than package
+- `apps/web/app/(ws)/ws/_components/Visuals`
+  Keep local for now; improve locally rather than package
+- `convex/ai_zone`
+  Keep zone-local unless a host-agnostic SDK or protocol emerges; its current value is backend orchestration, not cross-surface packaging
 
 ## Local Development
 
@@ -275,6 +337,16 @@ Tests are most valuable for:
 - unread counters
 - offer acceptance/apply flows
 - assistant message persistence
+
+### Verification for package extractions
+
+Every future package extraction should include:
+
+- package-only typecheck
+- focused consumer-app typecheck
+- import smoke test from the consuming app
+- docs/example usage that matches real exports
+- at least one override or extensibility test when the package exposes adapters, registries, or pluggable surfaces
 
 ## Known Hotspots
 

@@ -8,7 +8,7 @@ export type AssistantOwner = {
   ownerREDId?: Id<"RED">;
 };
 
-export type AssistantKind = "default" | "anan_workspace" | "anan_pro";
+export type AssistantKind = "default" | "anan_workspace" | "anan_pro" | "anan_main_public";
 export type ThreadScope = "user" | "organization";
 
 export type WorkspaceProjectFields = {
@@ -49,4 +49,3 @@ export const FIELD_QUESTION_MAP: Record<WorkspaceProjectFieldKey, string> = {
   bathrooms: "كم عدد الحمامات؟",
   description: "اكتب وصفاً مختصراً للمشروع.",
 };
-

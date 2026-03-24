@@ -7,11 +7,12 @@
  */
 
 export type { AssistantOwner } from "./assistantService/types";
-
 export { resolveAssistantOwner, resolveAssistantOwnerSafe } from "./assistantService/owner";
+export { createAssistantThread, saveConversationStep } from "./assistantService/persistence";
 
 export {
   getAccessibleThread,
+  getAccessibleThread as getThreadById,
   getLatestThread,
   getMessageContent,
   listRecentThreads,
@@ -19,5 +20,3 @@ export {
 } from "./assistantService/threads";
 
 export { handleAssistantMessage } from "./assistantService/handleAssistantMessage";
-
-export { createAssistantThread, saveConversationStep } from "./assistantService/persistence";

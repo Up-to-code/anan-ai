@@ -1,12 +1,13 @@
 import type { ActionCtx } from "../../../_generated/server";
 import type { Doc, Id } from "../../../_generated/dataModel";
+import { ConvexError } from "convex/values";
 import { api, internal } from "../../../_generated/api";
 import { orchestrate } from "../../agents/anan";
 import { orchestrate as orchestrateWorkspace } from "../../agents/anan_workspace";
 import type { WorkspaceStructuredOutput } from "../../agents/anan_workspace/types";
 import { resolveWorkspaceAgUiTurn } from "../agUi";
-import type { AssistantKind, WorkspaceProjectActionState } from "./types";
-import { isWorkspaceKind } from "./utils";
+import type { AssistantKind, AssistantOwner, WorkspaceProjectActionState } from "./types";
+import { isPublicAssistantKind, isWorkspaceKind } from "./utils";
 import { getLatestWorkspaceActionState } from "./workspaceContext";
 import { normalizeWorkspaceStructuredOutput, buildProjectQuestions } from "./workspaceParsing";
 import { maybeAutoCreateDraftAndAnnotate, resolveWorkspaceProjectActionState } from "./workspaceProjectAction";
@@ -32,6 +33,9 @@ export async function handleAssistantMessage(
     orchestratorName?: string;
     promptPrefix?: string;
     streamSessionId?: string;
+    ownerOverride?: AssistantOwner;
+    initialThreadOverride?: Doc<"assistantThreads"> | null;
+    saveConversationStepMutationOverride?: unknown;
   }
 ): Promise<{
   ok: true;
@@ -43,12 +47,26 @@ export async function handleAssistantMessage(
   const isWorkspaceAssistant = isWorkspaceKind(args.assistantKind);
 
   // 1. Resolve thread & owner via query
-  const { thread, owner } = await ctx.runQuery(
-    isWorkspaceAssistant
-      ? api.ai_zone.assistantWorkspace.getThread
-      : api.ai_zone.assistant.getThread,
-    {}
-  );
+  let thread = args.initialThreadOverride ?? null;
+  let owner = args.ownerOverride;
+
+  if (!owner) {
+    const resolved = await ctx.runQuery(
+      isWorkspaceAssistant
+        ? api.ai_zone.assistantWorkspace.getThread
+        : api.ai_zone.assistant.getThread,
+      {}
+    );
+    thread = resolved.thread;
+    owner = resolved.owner;
+  }
+
+  if (!owner) {
+    throw new ConvexError({
+      code: "UNAUTHORIZED",
+      message: "Assistant owner could not be resolved.",
+    });
+  }
 
   // Patch owner into stream controls now that we have it.
   const workspaceStream = createWorkspaceStreamControls({
@@ -70,7 +88,9 @@ export async function handleAssistantMessage(
 
   // 2. Get entitlement (determines qa vs action mode)
   const entitlement = await ctx.runQuery(
-    api.shared_logic.subscriptions.index.getAssistantEntitlement,
+    isPublicAssistantKind(args.assistantKind)
+      ? api.shared_logic.subscriptions.index.getAssistantEntitlementSafe
+      : api.shared_logic.subscriptions.index.getAssistantEntitlement,
     {}
   );
   const mode = entitlement.mode;
@@ -257,12 +277,14 @@ export async function handleAssistantMessage(
   }
 
   const saveConversationStepMutation = isWorkspaceAssistant
-    ? internal.ai_zone.assistantWorkspace._saveConversationStep
-    : internal.ai_zone.assistant._saveConversationStep;
+    ? (args.saveConversationStepMutationOverride ??
+      internal.ai_zone.assistantWorkspace._saveConversationStep)
+    : (args.saveConversationStepMutationOverride ??
+      internal.ai_zone.assistant._saveConversationStep);
 
   // 7. Persist the conversation step
   await workspaceStream.emitStage("persist_started", { status: "running" });
-  const saved = await ctx.runMutation(saveConversationStepMutation, {
+  const saved = await ctx.runMutation(saveConversationStepMutation as any, {
     threadId: activeThreadId,
     userId: owner.userId,
     ownerType: owner.ownerType,

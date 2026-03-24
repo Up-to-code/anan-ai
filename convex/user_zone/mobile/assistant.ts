@@ -260,8 +260,9 @@ export function buildQualificationNotes(
   message: string,
   qualification: AssistantResponseParams["qualification"] | undefined,
   propertyTitle: string,
+  channelLabel = "Mobile AI",
 ) {
-  const chunks = [`Mobile AI handoff for ${propertyTitle}`, `User request: ${message}`];
+  const chunks = [`${channelLabel} handoff for ${propertyTitle}`, `User request: ${message}`];
   if (qualification?.monthlySalary !== undefined) chunks.push(`Salary: ${qualification.monthlySalary}`);
   if (qualification?.downPayment !== undefined) chunks.push(`Down payment: ${qualification.downPayment}`);
   if (qualification?.preferredYears !== undefined) chunks.push(`Preferred years: ${qualification.preferredYears}`);

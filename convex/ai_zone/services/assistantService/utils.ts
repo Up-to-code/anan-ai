@@ -13,3 +13,6 @@ export function isWorkspaceKind(kind?: AssistantKind): boolean {
   return kind === "anan_workspace" || kind === "anan_pro";
 }
 
+export function isPublicAssistantKind(kind?: AssistantKind): boolean {
+  return kind === "anan_main_public";
+}

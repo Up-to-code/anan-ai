@@ -26,7 +26,14 @@ This chapter defines the **required folder contract** for any channel added unde
 
 And it documents the WhatsApp pipeline:
 
-`convex/http.ts` route → webhook handler → preprocess pipeline → internal action → send reply.
+`convex/http.ts` route → webhook handler → preprocess pipeline → `user_zone/whatsapp` action → send reply.
+
+Current WhatsApp architecture in this repo:
+
+- ingress stays in `convex/ai_zone/channels/whatsapp/*`
+- deterministic buyer logic lives in `convex/user_zone/whatsapp/*`
+- transcripts still persist into `assistantThreads` and `assistantMessages`
+- webhook retries are deduped via `channelMessageReceipts`
 
 ---
 
@@ -67,6 +74,18 @@ Rules:
 2. Store and check “processed message ids” before generating replies (the storage location depends on the channel design).
 3. If a message is a duplicate, return 200 “received” and do not reply again.
 
+The current WhatsApp buyer flow stores these receipts in `channelMessageReceipts` and keeps buyer turn context in `buyerChannelStates`.
+
+### Signature verification
+
+Meta signs webhook POST requests.
+
+Rules:
+
+1. Validate `x-hub-signature-256` against the raw request body before parsing.
+2. Use `WHATSAPP_APP_SECRET` for HMAC verification.
+3. Reject unsigned or mismatched payloads with `401`.
+
 ### Error handling + user fallback
 
 Channel systems must degrade safely:
@@ -86,6 +105,8 @@ Channel systems must degrade safely:
 It may:
 
 - parse/validate,
+- verify signatures,
+- claim a dedupe receipt,
 - ensure the channel user record exists,
 - run preprocess pipelines,
 - call a single internal action/mutation for real work,
@@ -101,6 +122,7 @@ It may:
 - Transport client: `convex/ai_zone/channels/whatsapp/service.ts`
 - Preprocess: `convex/ai_zone/channels/whatsapp/preprocess/*`
 - Rules: `convex/ai_zone/channels/rules/*`
+- Deterministic buyer flow: `convex/user_zone/whatsapp/*`
 
 ---
 
@@ -110,4 +132,3 @@ It may:
 - Writing handlers that are not safe under retries.
 - Mixing “vendor transport” logic with orchestration logic (service boundary violation).
 - Treating channels as “just another frontend” instead of an ingress system that must survive partial failures.
-

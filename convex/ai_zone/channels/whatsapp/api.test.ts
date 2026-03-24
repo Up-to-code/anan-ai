@@ -23,7 +23,7 @@ it("extracts text message", () => {
   expect(events).toHaveLength(1);
   expect(events[0].from).toBe("user1");
   expect(events[0].text).toBe("Hello");
-  expect(events[0].mediaType).toBe("text");
+  expect(events[0].messageType).toBe("text");
 });
 
 it("extracts voice message", () => {
@@ -44,7 +44,7 @@ it("extracts voice message", () => {
   const events = extractWebhookEvents(body);
   expect(events).toHaveLength(1);
   expect(events[0].text).toContain("voice");
-  expect(events[0].mediaType).toBe("audio");
+  expect(events[0].messageType).toBe("audio");
 });
 
 it("extracts image with caption", () => {
@@ -70,7 +70,7 @@ it("extracts image with caption", () => {
   });
   const events = extractWebhookEvents(body);
   expect(events[0].text).toContain("My photo");
-  expect(events[0].mediaType).toBe("image");
+  expect(events[0].messageType).toBe("image");
 });
 
 it("returns empty for invalid json", () => {
@@ -101,7 +101,7 @@ it("extracts document with caption", () => {
   });
   const events = extractWebhookEvents(body);
   expect(events[0].text).toContain("Contract");
-  expect(events[0].mediaType).toBe("document");
+  expect(events[0].messageType).toBe("document");
 });
 
 it("extracts video message", () => {
@@ -121,5 +121,63 @@ it("extracts video message", () => {
   });
   const events = extractWebhookEvents(body);
   expect(events[0].text).toContain("video");
-  expect(events[0].mediaType).toBe("video");
+  expect(events[0].messageType).toBe("video");
+});
+
+it("extracts interactive button reply", () => {
+  const body = JSON.stringify({
+    entry: [
+      {
+        changes: [
+          {
+            value: {
+              metadata: { phone_number_id: "123" },
+              messages: [
+                {
+                  from: "u1",
+                  type: "interactive",
+                  interactive: {
+                    button_reply: { id: "property_action:finance", title: "تمويل" },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  });
+  const events = extractWebhookEvents(body);
+  expect(events[0].messageType).toBe("interactive_button_reply");
+  expect(events[0].interactiveReplyId).toBe("property_action:finance");
+  expect(events[0].interactiveReplyTitle).toBe("تمويل");
+});
+
+it("extracts interactive list reply", () => {
+  const body = JSON.stringify({
+    entry: [
+      {
+        changes: [
+          {
+            value: {
+              metadata: { phone_number_id: "123" },
+              messages: [
+                {
+                  from: "u1",
+                  type: "interactive",
+                  interactive: {
+                    list_reply: { id: "select_property:abc", title: "شقة الرياض" },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  });
+  const events = extractWebhookEvents(body);
+  expect(events[0].messageType).toBe("interactive_list_reply");
+  expect(events[0].interactiveReplyId).toBe("select_property:abc");
+  expect(events[0].interactiveReplyTitle).toBe("شقة الرياض");
 });

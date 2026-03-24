@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { WorkspaceProject } from "../../projectTypes";
-import { AgPropertyForm } from "@/app/(ws)/ws/public";
-import { AgDeleteConfirmModal } from "@/app/(ws)/ws/public";
+import { AgDeleteConfirmModal, AgPropertyForm } from "@/app/(ws)/ws/public";
 
 function toInitialData(project: WorkspaceProject) {
   return {

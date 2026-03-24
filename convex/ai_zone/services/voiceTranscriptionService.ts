@@ -115,8 +115,11 @@ async function pollTranscriptResult(apiKey: string, transcriptId: string) {
 export async function transcribeStoredVoiceNote(
   ctx: ActionCtx,
   storageId: Id<"_storage">,
+  options?: { skipAuthorization?: boolean },
 ): Promise<{ text: string; languageCode?: string }> {
-  await ctx.runQuery(api.ai_zone.assistantWorkspace.getThread, {});
+  if (!options?.skipAuthorization) {
+    await ctx.runQuery(api.ai_zone.assistantWorkspace.getThread, {});
+  }
   const storageUrl = await resolveVoiceStorageUrl(ctx, storageId);
   const apiKey = getAssemblyAiApiKey();
   const transcriptId = await createTranscript(apiKey, storageUrl);

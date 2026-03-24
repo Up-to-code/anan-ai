@@ -8,8 +8,17 @@ export interface ExtractedMessage {
   text: string;
   phoneNumberId?: string;
   displayName?: string;
-  mediaType?: "text" | "image" | "audio" | "video" | "document";
+  messageType:
+    | "text"
+    | "image"
+    | "audio"
+    | "video"
+    | "document"
+    | "interactive_button_reply"
+    | "interactive_list_reply";
   mediaId?: string;
+  interactiveReplyId?: string;
+  interactiveReplyTitle?: string;
 }
 
 interface WebhookMessage {
@@ -22,6 +31,10 @@ interface WebhookMessage {
   voice?: { id?: string };
   video?: { id?: string; caption?: string };
   document?: { id?: string; filename?: string; caption?: string };
+  interactive?: {
+    button_reply?: { id?: string; title?: string };
+    list_reply?: { id?: string; title?: string; description?: string };
+  };
 }
 
 type WebhookValue = {
@@ -64,12 +77,42 @@ function toExtractedMessage(
   message: WebhookMessage,
   base: Pick<ExtractedMessage, "from" | "messageId" | "phoneNumberId" | "displayName">,
 ): ExtractedMessage | null {
-  if (message.text?.body) return { ...base, text: message.text.body, mediaType: "text" };
-  if (message.image) return { ...base, text: buildImageText(message), mediaType: "image", mediaId: message.image.id };
-  if (message.audio) return { ...base, text: "User sent an audio message.", mediaType: "audio", mediaId: message.audio.id };
-  if (message.voice) return { ...base, text: "User sent a voice message.", mediaType: "audio", mediaId: message.voice.id };
-  if (message.video) return { ...base, text: buildVideoText(message), mediaType: "video", mediaId: message.video.id };
-  if (message.document) return { ...base, text: buildDocumentText(message), mediaType: "document", mediaId: message.document.id };
+  if (message.text?.body) {
+    return { ...base, text: message.text.body, messageType: "text" };
+  }
+  if (message.interactive?.button_reply) {
+    return {
+      ...base,
+      text: message.interactive.button_reply.title ?? "",
+      messageType: "interactive_button_reply",
+      interactiveReplyId: message.interactive.button_reply.id,
+      interactiveReplyTitle: message.interactive.button_reply.title,
+    };
+  }
+  if (message.interactive?.list_reply) {
+    return {
+      ...base,
+      text: message.interactive.list_reply.title ?? "",
+      messageType: "interactive_list_reply",
+      interactiveReplyId: message.interactive.list_reply.id,
+      interactiveReplyTitle: message.interactive.list_reply.title,
+    };
+  }
+  if (message.image) {
+    return { ...base, text: buildImageText(message), messageType: "image", mediaId: message.image.id };
+  }
+  if (message.audio) {
+    return { ...base, text: "User sent an audio message.", messageType: "audio", mediaId: message.audio.id };
+  }
+  if (message.voice) {
+    return { ...base, text: "User sent a voice message.", messageType: "audio", mediaId: message.voice.id };
+  }
+  if (message.video) {
+    return { ...base, text: buildVideoText(message), messageType: "video", mediaId: message.video.id };
+  }
+  if (message.document) {
+    return { ...base, text: buildDocumentText(message), messageType: "document", mediaId: message.document.id };
+  }
   return null;
 }
 
@@ -82,7 +125,8 @@ function extractEventsFromValue(value?: WebhookValue) {
     phoneNumberId: value.metadata?.phone_number_id ?? "",
     displayName: contact?.profile?.name ?? "",
   };
-  return value.messages.flatMap((message: WebhookMessage) => {
+
+  return value.messages.flatMap((message) => {
     const extracted = toExtractedMessage(message, {
       ...base,
       from: message.from ?? "",
