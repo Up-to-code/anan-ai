@@ -78,7 +78,6 @@ export default function InboxWorkspaceClient({
 
     startUserIdToResolveRef.current = null;
     startTransition(() => {
-      router.replace("/ws/inbox");
       void handleStartConversation(startUserIdToResolve).finally(() => {
         setIsResolvingStartConversation(false);
       });

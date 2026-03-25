@@ -1,5 +1,4 @@
-import InboxWorkspaceClient from "../InboxPage/InboxWorkspaceClient";
-import { loadInboxWorkspaceClientProps } from "../InboxPage/loaders";
+import { redirect } from "next/navigation";
 
 export default async function InboxConversationPage({
   params,
@@ -7,5 +6,5 @@ export default async function InboxConversationPage({
   params: { conversationId: string } | Promise<{ conversationId: string }>;
 }) {
   const { conversationId } = await Promise.resolve(params);
-  return <InboxWorkspaceClient {...await loadInboxWorkspaceClientProps({ conversationId, routeHref: `/ws/inbox/${conversationId}` })} />;
+  redirect(`/ws/inbox?conversationId=${encodeURIComponent(conversationId)}`);
 }

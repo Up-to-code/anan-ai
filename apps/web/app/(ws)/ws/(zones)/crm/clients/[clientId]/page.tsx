@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import ClientDetailPage from "../../ClientDetailPage";
 import { requireWorkspaceData } from "../../../../_lib/workspaceData";
-import { getWorkspaceCrmZone } from "@/server/ws/zones";
+import { getWorkspaceCrmZone, getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapDealToCrmClientRecord } from "../../crmViewModel";
 
 type WorkspaceCrmClientDetailRouteProps = {
@@ -25,9 +25,11 @@ export default async function WorkspaceCrmClientDetailRoute({
   const audience = workspace.audience;
   const ownerContext = workspace.ownerContext ?? null;
   const crmZone = getWorkspaceCrmZone(audience, ownerContext);
+  const propertyZone = getWorkspacePropertyZone(audience, ownerContext);
   const deals = await crmZone.listDeals();
   const deal = deals.find((entry) => entry.id === clientId) ?? null;
-  const client = deal ? mapDealToCrmClientRecord(deal) : null;
+  const property = deal?.propertyId ? await propertyZone.getProperty(deal.propertyId) : null;
+  const client = deal ? mapDealToCrmClientRecord(deal, property) : null;
 
   if (!client) {
     notFound();

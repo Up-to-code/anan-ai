@@ -31,14 +31,14 @@ function SettingsTabLink({
       href={href}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "group inline-flex items-center gap-2 border-b-2 px-1 pb-4 text-sm font-black tracking-wide transition-all",
+        "group inline-flex items-center gap-2 border-b-2 px-1 pb-3 text-sm font-medium transition-colors",
         isActive
-          ? "border-blue-600 text-blue-600"
-          : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
+          ? "border-slate-950 text-slate-950"
+          : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800"
       )}
     >
       {Icon ? (
-        <Icon className={cn("h-4 w-4", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-500")} />
+        <Icon className={cn("h-4 w-4", isActive ? "text-slate-950" : "text-slate-400 group-hover:text-slate-600")} />
       ) : null}
       {tab.label}
     </Link>

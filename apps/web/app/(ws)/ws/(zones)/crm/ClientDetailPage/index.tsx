@@ -82,16 +82,16 @@ export default function ClientDetailPage({
   return (
     <div className="flex min-h-full flex-col">
       <ZonePageIntro
-        eyebrow="إدارة العملاء"
+        eyebrow="إدارة الصفقات"
         title={client.name}
         description={client.notes}
         actions={
           <Link
             href="/ws/crm"
-            className="inline-flex items-center gap-2 border border-slate-200 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700 transition hover:border-slate-400"
+            className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
           >
             <ArrowRight className="h-3.5 w-3.5" />
-            العودة للخط
+            العودة للصفقات
           </Link>
         }
       />
@@ -124,7 +124,7 @@ export default function ClientDetailPage({
               image={client.project.image}
               title={client.project.title}
               location={client.project.location}
-              priceLabel={client.budgetLabel}
+              priceLabel={client.project.priceLabel}
               summary={client.preference}
               specs={[
                 { label: "المرحلة", value: stageLabel },

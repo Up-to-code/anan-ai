@@ -21,12 +21,26 @@ const listDeals = vi.fn(async () => [
     notes: "لا توجد ملاحظات بعد.",
   },
 ]);
+const getProperty = vi.fn(async () => ({
+  _id: "property-1",
+  title: "مالقا ريزيدنس",
+  address: "الرياض",
+  location: "الملقا، الرياض",
+  description: "مشروع جاهز",
+  price: 1950000,
+  beds: 4,
+  baths: 4,
+  media: [{ key: "file-1", url: "https://images.unsplash.com/photo-crm", name: "cover.jpg" }],
+}));
 
 vi.mock("@/server/ws/zones", () => ({
   getWorkspaceCrmZone: vi.fn(() => ({
     listDeals,
     updateDealStage: vi.fn(async () => undefined),
     createDeal: vi.fn(async () => "deal-2"),
+  })),
+  getWorkspacePropertyZone: vi.fn(() => ({
+    getProperty,
   })),
 }));
 
@@ -37,8 +51,9 @@ describe("/ws/crm page", () => {
     const element = await WorkspaceCrmRoute();
     const markup = renderToStaticMarkup(element);
 
-    expect(markup).toContain("خط الأنابيب");
+    expect(markup).toContain("الصفقات");
     expect(markup).toContain("منى الغامدي");
+    expect(markup).toContain("مالقا ريزيدنس");
     expect(listDeals).toHaveBeenCalled();
     expect(markup).not.toContain("<select");
   });

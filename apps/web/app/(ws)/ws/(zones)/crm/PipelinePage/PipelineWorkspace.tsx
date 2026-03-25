@@ -158,9 +158,9 @@ function PipelineWorkspaceView({ state, isPending, canCreate, onCreateClick, onD
   return (
     <div className="flex min-h-full flex-col">
       <ZonePageIntro
-        eyebrow="إدارة العملاء"
-        title="خط الأنابيب"
-        description="بطاقات الأشخاص تمثل الصفقات الحقيقية في CRM، مع تحريك المراحل من نفس المصدر."
+        eyebrow="إدارة الصفقات"
+        title="الصفقات"
+        description=""
         actions={<PipelineCreateClientActions draftName={state.draftName} isPending={isPending} canCreate={canCreate} onDraftNameChange={state.setDraftName} onCreateClick={onCreateClick} />}
       />
       <PipelineWorkspaceBoard state={state} isPending={isPending} onDropStage={onDropStage} onSaveFollowUp={onSaveFollowUp} />

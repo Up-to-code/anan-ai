@@ -14,6 +14,8 @@ export default async function MarketOpportunitiesRoute({
     city?: string | string[];
     area?: string | string[];
     query?: string | string[];
+    dateFrom?: string | string[];
+    dateTo?: string | string[];
     windowDays?: string | string[];
   }>;
 }) {
@@ -24,9 +26,8 @@ export default async function MarketOpportunitiesRoute({
       model={model}
       actionPath="/ws/market/opportunities"
       intro={{
-        eyebrow: "ذكاء السوق",
-        title: "جدول الفرص",
-        description: "ترتيب شفاف للفرص الحالية بحسب فجوة الطلب والمخزون ونقطة البيع الأوضح داخل كل مدينة وحي.",
+        title: "نتائج السوق",
+        description: "قراءة عملية للفرص الحالية خلال الفترة المختارة مع ربطها بآخر بحث محفوظ يطابق نفس النطاق.",
       }}
     >
       <OpportunitiesTab model={model} />

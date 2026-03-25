@@ -1,7 +1,7 @@
 import ClientsPage from "../ClientsPage";
 import { requireWorkspaceData } from "../../../_lib/workspaceData";
-import { getWorkspaceCrmZone } from "@/server/ws/zones";
-import { mapDealToCrmClientRecord } from "../crmViewModel";
+import { getWorkspaceCrmZone, getWorkspacePropertyZone } from "@/server/ws/zones";
+import { loadCrmPropertyMap, mapDealToCrmClientRecord } from "../crmViewModel";
 
 /**
  * WHY:   The CRM zone needs a flat client index alongside the pipeline board.
@@ -11,5 +11,9 @@ import { mapDealToCrmClientRecord } from "../crmViewModel";
 export default async function WorkspaceCrmClientsRoute() {
   const workspace = await requireWorkspaceData("/ws/crm/clients");
   const deals = await getWorkspaceCrmZone(workspace.audience, workspace.ownerContext).listDeals();
-  return <ClientsPage clients={deals.map(mapDealToCrmClientRecord)} />;
+  const propertyMap = await loadCrmPropertyMap(
+    deals,
+    getWorkspacePropertyZone(workspace.audience, workspace.ownerContext).getProperty,
+  );
+  return <ClientsPage clients={deals.map((deal) => mapDealToCrmClientRecord(deal, propertyMap.get(deal.propertyId ?? "") ?? null))} />;
 }

@@ -49,7 +49,7 @@ describe("/ws/projects page", () => {
     const element = await WorkspaceProjectsRoute();
     const markup = renderToStaticMarkup(element);
 
-    expect(markup).toContain("محفظة المشاريع");
+    expect(markup).toContain("المشاريع");
     expect(markup).toContain("مالقا ريزيدنس");
     expect(listProperties).toHaveBeenCalledWith({
       paginationOpts: { cursor: null, numItems: 100 },

@@ -12,13 +12,13 @@ import {
   matchesScope,
   matchesTextQuery,
   normalizeSearchText,
-  normalizeWindowDays,
   pickTopEntry,
+  resolveMarketDateRange,
 } from "./utils";
 
 /**
  * WHY:   The Convex query should stay thin and delegate all market-specific calculations to one pure helper.
- * WHAT:  Builds the full market snapshot for the requested Saudi city/area scope and lookback window.
+ * WHAT:  Builds the full market snapshot for the requested Saudi city/area scope and date range.
  * HOW:   Normalizes raw rows, aggregates city/area stats, applies the requested scope and free-text filter, then derives selling points, keywords, opportunities, charts, and latest research.
  */
 export function buildMarketSnapshot(args: {
@@ -30,11 +30,11 @@ export function buildMarketSnapshot(args: {
   const normalizedCity = normalizeSaudiCity(args.filters?.city);
   const normalizedArea = normalizedCity ? normalizeMarketArea(args.filters?.area) : undefined;
   const queryText = normalizeSearchText(args.filters?.query);
-  const windowDays = normalizeWindowDays(args.filters?.windowDays);
+  const dateRange = resolveMarketDateRange(args.filters);
 
   const properties = normalizeProperties(args.properties);
-  const researchRows = normalizeResearchRows(args.researchRows, windowDays);
-  const searchSignals = normalizeSearchSignals(args.searchLogs, windowDays);
+  const researchRows = normalizeResearchRows(args.researchRows, dateRange);
+  const searchSignals = normalizeSearchSignals(args.searchLogs, dateRange);
   const { cityAggregates, areaAggregates, availableCities } = aggregateCitiesAndAreas({
     properties,
     researchRows,
@@ -114,6 +114,7 @@ export function buildMarketSnapshot(args: {
 
   const keywordInsights = buildKeywordInsights({
     researchRows: scopedResearchRows,
+    searchSignals: scopedSearchSignals,
     city: normalizedCity,
     area: normalizedArea,
     queryText,
@@ -139,7 +140,9 @@ export function buildMarketSnapshot(args: {
       city: normalizedCity ?? "",
       area: normalizedArea ?? "",
       query: args.filters?.query?.trim() ?? "",
-      windowDays,
+      dateFrom: dateRange.dateFrom,
+      dateTo: dateRange.dateTo,
+      windowDays: dateRange.windowDays,
     },
     availableCities,
     availableAreas,
@@ -168,4 +171,3 @@ export function buildMarketSnapshot(args: {
     }),
   };
 }
-

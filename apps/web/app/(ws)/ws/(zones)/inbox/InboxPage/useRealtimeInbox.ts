@@ -1,7 +1,6 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/lib/convexApi";
 import type { ConversationDetail, ConversationSummary, UserConversationTarget } from "@/server/contracts/inbox";
@@ -28,7 +27,6 @@ export function useRealtimeInbox({
   initialSelectedConversationId,
   hasConversationRoute,
 }: UseRealtimeInboxArgs): UseRealtimeInboxResult {
-  const router = useRouter();
   const [activeConversationId, setActiveConversationId] = useState<string | null>(
     initialSelectedConversationId ?? initialConversation?.id ?? null,
   );
@@ -79,6 +77,22 @@ export function useRealtimeInbox({
     }
   }, [initialSelectedConversationId]);
 
+  const syncConversationUrl = (conversationId: string | null, method: "push" | "replace" = "push") => {
+    if (typeof window === "undefined") return;
+    const nextUrl = new URL(window.location.href);
+    if (conversationId) {
+      nextUrl.searchParams.set("conversationId", conversationId);
+    } else {
+      nextUrl.searchParams.delete("conversationId");
+    }
+    const nextHref = `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
+    if (method === "replace") {
+      window.history.replaceState(null, "", nextHref);
+      return;
+    }
+    window.history.pushState(null, "", nextHref);
+  };
+
   useEffect(() => {
     if (hasConversationRoute || conversations.length === 0) {
       return;
@@ -92,17 +106,14 @@ export function useRealtimeInbox({
     if (activeConversationId !== nextConversationId) {
       setActiveConversationId(nextConversationId);
     }
-
-    router.replace(`/ws/inbox/${nextConversationId}`);
-  }, [activeConversationId, conversations, hasConversationRoute, router]);
+  }, [activeConversationId, conversations, hasConversationRoute]);
 
   useEffect(() => {
     if (!activeConversationId || conversations.length > 0) {
       return;
     }
-
-    router.replace("/ws/inbox");
-  }, [activeConversationId, conversations.length, router]);
+    syncConversationUrl(null, "replace");
+  }, [activeConversationId, conversations.length]);
 
   useEffect(() => {
     if (!hasConversationRoute && conversation && !activeConversationId) {
@@ -126,13 +137,25 @@ export function useRealtimeInbox({
     const nextConversationId = conversations[0]?.id ?? null;
     setActiveConversationId(nextConversationId);
 
-    if (nextConversationId) {
-      router.replace(`/ws/inbox/${nextConversationId}`);
-      return;
-    }
+    syncConversationUrl(nextConversationId, "replace");
+  }, [activeConversationId, conversations]);
 
-    router.replace("/ws/inbox");
-  }, [activeConversationId, conversations, router]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const nextConversationId = params.get("conversationId");
+      if (nextConversationId) {
+        setActiveConversationId(nextConversationId);
+        return;
+      }
+      setActiveConversationId(conversations[0]?.id ?? null);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [conversations]);
 
   useEffect(() => {
     if (!activeConversationId || !conversation || conversation.unreadCount === 0) {
@@ -165,7 +188,7 @@ export function useRealtimeInbox({
 
   const handleSelectConversation = (conversationId: string) => {
     setActiveConversationId(conversationId);
-    router.push(`/ws/inbox/${conversationId}`);
+    syncConversationUrl(conversationId);
   };
 
   const handleStartConversation = async (targetUserId: string) => {
@@ -173,7 +196,7 @@ export function useRealtimeInbox({
     const conversationId = await resolveConversation({ targetUserId });
     setSearch("");
     setActiveConversationId(conversationId);
-    router.push(`/ws/inbox/${conversationId}`);
+    syncConversationUrl(conversationId);
   };
 
   const handleSendMessage = async (body: string) => {

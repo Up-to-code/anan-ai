@@ -14,6 +14,8 @@ export default async function MarketCitiesRoute({
     city?: string | string[];
     area?: string | string[];
     query?: string | string[];
+    dateFrom?: string | string[];
+    dateTo?: string | string[];
     windowDays?: string | string[];
   }>;
 }) {
@@ -24,9 +26,8 @@ export default async function MarketCitiesRoute({
       model={model}
       actionPath="/ws/market/cities"
       intro={{
-        eyebrow: "ذكاء السوق",
-        title: "جدول المدن",
-        description: "ترتيب واضح للمدن بحسب إشارات الطلب والأبحاث والمخزون داخل نفس النطاق، بدون صفحة تمهيدية منفصلة.",
+        title: "تحليل المدن",
+        description: "مقارنة مباشرة بين المدن داخل النطاق الحالي مع عبارات بحث محفوظة تساعد على قراءة الحركة في كل مدينة.",
       }}
     >
       <CitiesTab model={model} />

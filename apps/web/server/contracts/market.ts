@@ -1,6 +1,18 @@
 import { z } from "zod";
 
 export const marketWindowDaysSchema = z.union([z.literal(30), z.literal(90), z.literal(180)]);
+const marketDatePattern = /^\d{4}-\d{2}-\d{2}$/;
+
+function isValidMarketDate(value: string): boolean {
+  if (!marketDatePattern.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+const marketDateSchema = z
+  .string()
+  .regex(marketDatePattern, "Expected YYYY-MM-DD")
+  .refine((value) => isValidMarketDate(value), "Invalid calendar date");
 
 const optionalMarketTextFilterSchema = z.preprocess((value) => {
   if (typeof value !== "string") {
@@ -20,7 +32,25 @@ export const marketFiltersSchema = z.object({
   city: optionalMarketTextFilterSchema,
   area: optionalMarketTextFilterSchema,
   query: optionalMarketTextFilterSchema,
+  dateFrom: marketDateSchema.optional(),
+  dateTo: marketDateSchema.optional(),
   windowDays: marketWindowDaysSchema.optional(),
+}).superRefine((value, ctx) => {
+  if (Boolean(value.dateFrom) !== Boolean(value.dateTo)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Both dateFrom and dateTo are required together",
+      path: [value.dateFrom ? "dateTo" : "dateFrom"],
+    });
+  }
+
+  if (value.dateFrom && value.dateTo && value.dateFrom > value.dateTo) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "dateFrom must be on or before dateTo",
+      path: ["dateFrom"],
+    });
+  }
 });
 
 export type MarketFilters = z.infer<typeof marketFiltersSchema>;
@@ -29,6 +59,12 @@ export type MarketKeywordItem = {
   label: string;
   count: number;
   source: "query" | "feature" | "derived_topic";
+};
+
+export type MarketKeywordHelperItem = {
+  label: string;
+  count: number;
+  source: "research_query" | "research_term" | "search_log";
 };
 
 export type MarketOpportunityItem = {
@@ -55,7 +91,9 @@ export type MarketSnapshot = {
     city: string;
     area: string;
     query: string;
-    windowDays: 30 | 90 | 180;
+    dateFrom: string;
+    dateTo: string;
+    windowDays?: 30 | 90 | 180;
   };
   availableCities: string[];
   availableAreas: string[];
@@ -89,6 +127,7 @@ export type MarketSnapshot = {
     source: "features" | "derived_configuration";
   }>;
   keywordInsights: {
+    relatedSearches: MarketKeywordHelperItem[];
     topKeywords: MarketKeywordItem[];
     topTopics: MarketKeywordItem[];
     mostResearchedLabel: string | null;

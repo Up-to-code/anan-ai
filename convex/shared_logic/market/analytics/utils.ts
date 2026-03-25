@@ -1,4 +1,4 @@
-import { KeywordCounts, RawProperty } from "./types";
+import { KeywordCounts, MarketDateRange, RawProperty } from "./types";
 
 const KEYWORD_STOPWORDS = new Set([
   "عقار",
@@ -45,6 +45,46 @@ const KEYWORD_STOPWORDS = new Set([
 export function normalizeWindowDays(value?: number): 30 | 90 | 180 {
   if (value === 30 || value === 180) return value;
   return 90;
+}
+
+function toUtcDateString(timestamp: number): string {
+  return new Date(timestamp).toISOString().slice(0, 10);
+}
+
+function parseUtcDateStart(value: string): number {
+  return new Date(`${value}T00:00:00.000Z`).getTime();
+}
+
+function parseUtcDateEnd(value: string): number {
+  return new Date(`${value}T23:59:59.999Z`).getTime();
+}
+
+export function resolveMarketDateRange(filters?: {
+  dateFrom?: string;
+  dateTo?: string;
+  windowDays?: number;
+}): MarketDateRange {
+  if (filters?.dateFrom && filters.dateTo) {
+    return {
+      dateFrom: filters.dateFrom,
+      dateTo: filters.dateTo,
+      startMs: parseUtcDateStart(filters.dateFrom),
+      endMs: parseUtcDateEnd(filters.dateTo),
+    };
+  }
+
+  const windowDays = normalizeWindowDays(filters?.windowDays);
+  const end = new Date();
+  const endMs = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate(), 23, 59, 59, 999);
+  const startMs = endMs - (windowDays - 1) * 24 * 60 * 60 * 1000;
+
+  return {
+    dateFrom: toUtcDateString(startMs),
+    dateTo: toUtcDateString(endMs),
+    startMs,
+    endMs,
+    windowDays,
+  };
 }
 
 export function isActiveProperty(property: RawProperty): boolean {
@@ -135,4 +175,3 @@ export function createKeywordCounts(): KeywordCounts {
     derived: new Map<string, number>(),
   };
 }
-

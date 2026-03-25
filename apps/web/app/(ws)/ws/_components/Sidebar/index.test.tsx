@@ -59,6 +59,8 @@ it("shows the projects navigation entry for developer roles", () => {
   expect(markup).toContain("/ws/offers");
   expect(markup).toContain("/ws/crm");
   expect(markup).toContain("/ws/inbox");
+  expect(markup.indexOf("/ws/inbox")).toBeLessThan(markup.indexOf("/ws/crm"));
+  expect(markup.indexOf("/ws/crm")).toBeLessThan(markup.indexOf("/ws/projects"));
   expect(markup).toContain("data-slot=\"workspace-sidebar-desktop\"");
   expect(markup).not.toContain("Alpha Dev");
   expect(markup).toContain("المحادثات");
@@ -151,7 +153,7 @@ it("highlights an assistant thread only when the URL threadId is valid", () => {
   );
 
   expect(markup).toContain("/ws?threadId=thread-2");
-  expect(markup).toContain("border-blue-500/20 bg-blue-500/10");
+  expect(markup).toContain("bg-white/[0.06]");
 });
 
 it("does not highlight any thread when threadId is missing or invalid", () => {

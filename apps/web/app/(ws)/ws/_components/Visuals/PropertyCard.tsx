@@ -9,7 +9,7 @@ type PropertyCardSpec = {
 /**
  * WHY:   Multiple workspace zones need one reusable real-estate card instead of bespoke text blocks.
  * WHAT:  Renders a clean, minimal property card with image, key info, specs, and optional footer.
- * HOW:   Uses a simple photo hero with smooth hover transitions and a tight content layout.
+ * HOW:   Uses a simple photo hero with a tighter layout that keeps attention on the item itself.
  */
 export default function PropertyCard({
   href,
@@ -34,65 +34,47 @@ export default function PropertyCard({
   publicationBadge?: React.ReactNode;
   density?: "compact" | "detail" | "flexible";
 }) {
-  const Content = (
+  const content = (
     <article
       className={cn(
-        "group overflow-hidden rounded-lg border border-slate-200/60 bg-white shadow-sm transition-all duration-500 hover:shadow-md hover:border-slate-300",
+        "overflow-hidden rounded-lg border border-slate-200 bg-white transition-colors hover:border-slate-300",
         density === "flexible" ? "w-full" : density === "detail" ? "w-full max-w-sm" : "w-full max-w-xs",
       )}
     >
-      {/* Hero image with smooth zoom */}
-      <div className="relative h-44 overflow-hidden bg-slate-100">
+      <div className="h-44 overflow-hidden bg-slate-100">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={image}
-          alt={title}
-          className="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60" />
-
-        {/* Price pill - floating slightly */}
-        <div className="absolute bottom-3 right-3 rounded-lg bg-white/95 px-3 py-1.5 text-xs font-bold text-slate-900 shadow-sm backdrop-blur-sm">
-          {priceLabel}
-        </div>
-
-        {/* Publication badge */}
-        {publicationBadge ? (
-          <div className="absolute top-3 right-3">{publicationBadge}</div>
-        ) : null}
+        <img src={image} alt={title} className="h-full w-full object-cover" />
       </div>
 
-      {/* Content area */}
-      <div className="space-y-4 p-5">
-        <div className="text-right">
-          <h2 className="text-base font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">{title}</h2>
-          <p className="mt-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{location}</p>
+      <div className="space-y-4 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 text-right">
+            <h2 className="truncate text-base font-semibold leading-tight text-slate-900">{title}</h2>
+            <p className="mt-1 text-sm text-slate-500">{location}</p>
+          </div>
+          <div className="shrink-0 text-sm font-semibold text-slate-900">{priceLabel}</div>
         </div>
 
-        <p className="line-clamp-2 text-xs leading-relaxed text-slate-500 text-right font-medium">
-          {summary}
-        </p>
+        {summary ? <p className="line-clamp-2 text-sm leading-6 text-slate-600">{summary}</p> : null}
 
-        {/* Specs row - very minimal */}
-        <div className="flex items-center justify-between rounded-lg bg-slate-50/80 p-2 text-right">
-          {specs.slice(0, 4).map((spec) => (
-            <div key={spec.label} className="px-2">
-              <div className="text-[9px] font-bold text-slate-400">{spec.label}</div>
-              <div className="text-[11px] font-bold text-slate-700">{spec.value}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Action footer */}
-        {footer ? (
-          <div className="pt-3 border-t border-slate-100">
-            {footer}
+        {specs.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3 text-right sm:grid-cols-4">
+            {specs.slice(0, 4).map((spec) => (
+              <div key={spec.label}>
+                <div className="text-[11px] text-slate-500">{spec.label}</div>
+                <div className="mt-1 text-sm font-medium text-slate-800">{spec.value}</div>
+              </div>
+            ))}
           </div>
         ) : null}
+
+        {publicationBadge ? <div className="text-xs text-slate-500">{publicationBadge}</div> : null}
+
+        {footer ? <div className="border-t border-slate-100 pt-3">{footer}</div> : null}
       </div>
     </article>
   );
 
-  if (!href) return Content;
-  return <Link href={href} className="block">{Content}</Link>;
+  if (!href) return content;
+  return <Link href={href} className="block">{content}</Link>;
 }

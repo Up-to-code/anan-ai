@@ -5,7 +5,6 @@ import SettingsHeader from "./_components/SettingsHeader";
 import ApiKeysWorkspace from "./_components/ApiKeysWorkspace";
 import InviteMemberForm from "./_components/InviteMemberForm";
 import OrganizationSettingsWorkspace from "./_components/OrganizationSettingsWorkspace";
-import SettingsSummary from "./_components/SettingsSummary";
 import SettingsTabs from "./_components/SettingsTabs";
 import MembersWorkspace from "./_components/MembersWorkspace";
 
@@ -32,14 +31,7 @@ function OrganizationTabSection({
   canManage: boolean;
 }) {
   return (
-    <div className="space-y-6 animate-in fade-in-50 duration-300">
-      <SettingsSummary
-        items={[
-          { label: "المنظمة", value: organization?.name ?? "بدون منظمة" },
-          { label: "المعرف", value: organization?.slug ?? "غير متوفر" },
-          { label: "الحالة", value: organization?.status === "active" ? "نشط" : "غير متوفر" },
-        ]}
-      />
+    <div className="animate-in fade-in-50 duration-300">
       <OrganizationSettingsWorkspace organization={organization} canManage={canManage} />
     </div>
   );
@@ -54,13 +46,9 @@ function MembersTabSection(args: {
 }) {
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-300">
-      <SettingsSummary
-        items={[
-          { label: "الأعضاء", value: args.members.length },
-          { label: "الدعوات", value: args.invites.length },
-          { label: "صلاحيتك", value: args.roleLabel },
-        ]}
-      />
+      <div className="text-sm text-slate-500">
+        {args.members.length} أعضاء، {args.invites.length} دعوات، وصلاحيتك الحالية: {args.roleLabel}
+      </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
         <MembersWorkspace initialMembers={args.members} invites={args.invites} canManage={args.canManage} />
         <InviteMemberForm canManage={args.canManage} hasOrganization={args.hasOrganization} />
@@ -74,16 +62,11 @@ function ApiKeysTabSection(args: {
   canManage: boolean;
   hasOrganization: boolean;
 }) {
-  const activeKeyCount = args.initialKeys.filter((key) => key.status === "active").length;
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-300">
-      <SettingsSummary
-        items={[
-          { label: "المفاتيح النشطة", value: activeKeyCount },
-          { label: "إجمالي المفاتيح", value: args.initialKeys.length },
-          { label: "صلاحية الإدارة", value: args.canManage ? "متاحة" : "مطلوبة" },
-        ]}
-      />
+      <div className="text-sm text-slate-500">
+        {args.initialKeys.length} مفاتيح محفوظة. {args.canManage ? "يمكنك إدارة المفاتيح من هنا." : "تحتاج صلاحية إدارة للوصول الكامل."}
+      </div>
       <ApiKeysWorkspace
         initialKeys={args.initialKeys}
         canManage={args.canManage}
@@ -119,8 +102,8 @@ export default async function WorkspaceSettingsPage(props: {
   return (
     <div className="space-y-8 p-6 lg:p-10">
       <SettingsHeader
-        title="إعدادات المنظمة"
-        description="إدارة الأعضاء، الدعوات، والأدوار من داخل مساحة العمل."
+        title="الإعدادات"
+        description="بيانات المنظمة والأعضاء ومفاتيح الربط."
       />
 
       <SettingsTabs tabs={settingsTabs} defaultTab="org" />

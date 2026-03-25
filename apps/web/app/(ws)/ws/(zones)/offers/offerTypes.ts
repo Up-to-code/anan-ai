@@ -4,12 +4,25 @@ export type OfferMarketplaceItem = {
   id: string;
   title: string;
   kind: "developer" | "broker" | "client" | "inbox";
+  source: "marketplace" | "received" | "sent";
   image: string;
   location: string;
   priceLabel: string;
   propertyType: string;
   ownerLabel: string;
   summary: string;
+  linkedProperty: {
+    id: string;
+    title: string;
+    image: string;
+    location: string;
+    askingPriceLabel: string | null;
+  } | null;
+  fallbackDetails: {
+    averagePriceLabel: string | null;
+    locationLabel: string;
+    propertyLabel: string;
+  } | null;
   project: {
     id: string;
     title: string;

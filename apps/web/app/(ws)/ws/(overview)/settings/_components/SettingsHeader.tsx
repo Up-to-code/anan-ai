@@ -6,17 +6,14 @@
 export default function SettingsHeader({
   title,
   description,
-  eyebrow = "الإعدادات العامة",
 }: {
   title: string;
   description: string;
-  eyebrow?: string;
 }) {
   return (
-    <header className="space-y-2">
-      <div className="text-xs font-bold tracking-wide text-slate-500">{eyebrow}</div>
-      <h1 className="text-3xl font-black tracking-tight text-slate-950 lg:text-4xl">{title}</h1>
-      <p className="max-w-2xl text-sm font-medium leading-relaxed text-slate-500">{description}</p>
+    <header className="space-y-1">
+      <h1 className="text-xl font-semibold text-slate-950">{title}</h1>
+      <p className="max-w-2xl text-sm text-slate-500">{description}</p>
     </header>
   );
 }

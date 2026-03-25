@@ -1,5 +1,17 @@
-import { KeywordCounts, MarketSnapshotResult, NormalizedResearch } from "./types";
-import { createKeywordCounts, incrementCount, matchesScope, matchesTextQuery, tokenizeKeywordText } from "./utils";
+import {
+  KeywordCounts,
+  MarketSnapshotResult,
+  NormalizedResearch,
+  NormalizedSearchSignal,
+} from "./types";
+import {
+  createKeywordCounts,
+  incrementCount,
+  matchesScope,
+  matchesTextQuery,
+  normalizeSearchText,
+  tokenizeKeywordText,
+} from "./utils";
 
 function buildExcludedPhrases(city?: string, area?: string) {
   const excludedPhrases = new Set<string>();
@@ -48,17 +60,50 @@ function toSortedItems(
     .slice(0, 12);
 }
 
+function addHelperQuery(
+  counts: Map<string, { count: number; source: "research_query" | "research_term" | "search_log" }>,
+  value: string | undefined,
+  source: "research_query" | "research_term" | "search_log",
+  excludedPhrases: Set<string>,
+) {
+  const normalized = normalizeSearchText(value);
+  if (!normalized || excludedPhrases.has(normalized)) return;
+
+  const existing = counts.get(normalized);
+  counts.set(normalized, {
+    count: (existing?.count ?? 0) + 1,
+    source: existing?.source ?? source,
+  });
+}
+
+/**
+ * WHY:   The market research view needs both atomic keyword trends and reusable search phrases.
+ * WHAT:  Derives saved-data keyword insights plus related-search helper phrases for the selected scope.
+ * HOW:   Mixes research queries, research search terms, findings, and saved search logs, then filters them through the same scope/query rules.
+ */
 export function buildKeywordInsights(args: {
   researchRows: NormalizedResearch[];
+  searchSignals: NormalizedSearchSignal[];
   city?: string;
   area?: string;
   queryText: string;
 }): MarketSnapshotResult["keywordInsights"] {
   const excludedPhrases = buildExcludedPhrases(args.city, args.area);
   const counts: KeywordCounts = createKeywordCounts();
+  const helperQueries = new Map<string, { count: number; source: "research_query" | "research_term" | "search_log" }>();
+
   for (const research of args.researchRows) {
     collectQueryKeywordCounts(counts, research, excludedPhrases);
     collectFindingKeywordCounts(counts, research, args);
+    addHelperQuery(helperQueries, research.query, "research_query", excludedPhrases);
+    for (const term of research.searchTerms) {
+      addHelperQuery(helperQueries, term, "research_term", excludedPhrases);
+    }
+  }
+
+  for (const signal of args.searchSignals) {
+    if (!matchesScope({ targetCity: args.city, targetArea: args.area, city: signal.city, area: signal.area })) continue;
+    addHelperQuery(helperQueries, signal.query, "search_log", excludedPhrases);
   }
 
   const topKeywords = toSortedItems(
@@ -74,9 +119,16 @@ export function buildKeywordInsights(args: {
     args.queryText,
   );
 
+  const relatedSearches = Array.from(helperQueries.entries())
+    .map(([label, value]) => ({ label, count: value.count, source: value.source }))
+    .filter((item) => matchesTextQuery(args.queryText, item.label))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "ar"))
+    .slice(0, 12);
+
   return {
+    relatedSearches,
     topKeywords,
     topTopics,
-    mostResearchedLabel: topKeywords[0]?.label ?? topTopics[0]?.label ?? null,
+    mostResearchedLabel: relatedSearches[0]?.label ?? topKeywords[0]?.label ?? topTopics[0]?.label ?? null,
   };
 }

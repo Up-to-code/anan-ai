@@ -29,7 +29,7 @@ export default function PersonCard({
   compact?: boolean;
 }) {
   return (
-    <article className={`rounded-lg border border-slate-200 bg-white ${compact ? "w-full max-w-[300px]" : "w-full max-w-[340px]"}`}>
+    <article className={`rounded-lg border border-slate-200 bg-white ${compact ? "w-full max-w-[320px]" : "w-full max-w-[360px]"}`}>
       <div className="space-y-4 p-4">
         <div className="flex items-start gap-3">
           <div className="relative shrink-0">
@@ -49,42 +49,38 @@ export default function PersonCard({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="truncate text-base font-black text-slate-950">{person.name}</h3>
+              <h3 className="truncate text-base font-semibold text-slate-950">{person.name}</h3>
               {person.badges?.includes("vip") ? (
-                <span className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[9px] font-black tracking-[0.16em] text-amber-700">
+                <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
                   VIP
                 </span>
               ) : null}
             </div>
-            <div className="mt-1 text-xs font-bold text-slate-500">
+            <div className="mt-1 text-sm text-slate-500">
               {person.title ?? (person.type === "broker" ? "وسيط معتمد" : "عميل نشط")}
             </div>
-            {person.location ? <div className="mt-1 text-[11px] font-medium text-blue-700">{person.location}</div> : null}
+            {person.location ? <div className="mt-1 text-sm text-slate-600">{person.location}</div> : null}
           </div>
         </div>
 
-        <p className="text-sm font-medium leading-6 text-slate-600">{person.summary}</p>
+        <p className="text-sm leading-6 text-slate-600">{person.summary}</p>
 
-        <div className="grid gap-2">
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-            <div className="text-[10px] font-black tracking-[0.18em] text-slate-400">الارتباط</div>
-            <div className="mt-1 text-sm font-black text-slate-950">
+        <div className="space-y-3 border-t border-slate-100 pt-3">
+          <div>
+            <div className="text-[11px] text-slate-500">الارتباط</div>
+            <div className="mt-1 text-sm font-medium text-slate-900">
               {person.relation?.project?.title ?? "بدون مشروع"}
             </div>
-            <div className="mt-1 text-[11px] font-medium text-slate-500">
-              {person.relation?.unit?.label ?? "على مستوى المشروع"}
-            </div>
+            <div className="mt-1 text-sm text-slate-500">{person.relation?.unit?.label ?? "على مستوى المشروع"}</div>
           </div>
-          <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2">
+          <div className="flex items-center justify-between gap-3 text-sm">
             <div>
-              <div className="text-[10px] font-black tracking-[0.18em] text-slate-400">الحالة</div>
-              <div className="mt-1 text-sm font-black text-blue-700">{person.stageLabel ?? "قيد المتابعة"}</div>
+              <div className="text-[11px] text-slate-500">الحالة</div>
+              <div className="mt-1 font-medium text-slate-900">{person.stageLabel ?? "قيد المتابعة"}</div>
             </div>
-            <div className="flex items-center gap-1 text-emerald-600">
+            <div className="flex items-center gap-1 text-slate-500">
               <CheckCircle2 className="h-4 w-4" />
-              <span className="text-[10px] font-black tracking-[0.16em]">
-                {person.type === "broker" ? "وسيط" : "عميل"}
-              </span>
+              <span>{person.type === "broker" ? "وسيط" : "عميل"}</span>
             </div>
           </div>
         </div>

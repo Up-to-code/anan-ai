@@ -14,18 +14,19 @@ vi.mock("../../_lib/workspaceData", () => ({
   getLayoutSidebarData,
 }));
 
+vi.mock("../../_components/WorkspaceShell", () => ({
+  default: ({ children }: { children: React.ReactNode }) => (
+    <div data-slot="workspace-shell">
+      <div data-slot="workspace-sidebar-desktop" />
+      {children}
+    </div>
+  ),
+}));
+
 vi.mock("next/navigation", () => ({
   redirect,
   usePathname,
   useSearchParams,
-}));
-
-const { useWorkspaceSignalCounts } = vi.hoisted(() => ({
-  useWorkspaceSignalCounts: vi.fn(() => ({ notificationCount: 0, inboxCount: 0 })),
-}));
-
-vi.mock("../inbox/InboxPage/useRealtimeInbox", () => ({
-  useWorkspaceSignalCounts,
 }));
 
 const { getComplianceRulesetForCurrentOrg } = vi.hoisted(() => ({
@@ -76,10 +77,10 @@ describe("/ws/market layout", () => {
     expect(markup).toContain("data-slot=\"market-shell\"");
     expect(markup).toContain("data-slot=\"workspace-shell\"");
     expect(markup).toContain("data-slot=\"workspace-sidebar-desktop\"");
+    expect(markup).toContain("الملخص");
     expect(markup).toContain("المدن");
-    expect(markup).toContain("الأحياء");
-    expect(markup).toContain("الفرص");
-    expect(markup).toContain("البحث والكلمات");
-    expect(markup).toContain("نظرة عامة");
+    expect(markup).toContain("المناطق الساخنة");
+    expect(markup).toContain("نتائج السوق");
+    expect(markup).toContain("مساعد الكلمات");
   });
 });

@@ -9,6 +9,7 @@ export type CrmProjectReference = {
   title: string;
   image: string;
   location: string;
+  priceLabel: string;
 };
 
 export type CrmClientRecord = {

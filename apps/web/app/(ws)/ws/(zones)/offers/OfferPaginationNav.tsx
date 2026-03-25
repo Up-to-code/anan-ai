@@ -9,7 +9,15 @@ type OfferPaginationNavProps = {
 };
 
 function buildPageHref(routeBase: string, page: number) {
-  return page <= 1 ? routeBase : `${routeBase}?page=${page}`;
+  const [pathname, queryString = ""] = routeBase.split("?");
+  const params = new URLSearchParams(queryString);
+  if (page <= 1) {
+    params.delete("page");
+  } else {
+    params.set("page", String(page));
+  }
+  const nextQuery = params.toString();
+  return nextQuery ? `${pathname}?${nextQuery}` : pathname;
 }
 
 function PagerButton({

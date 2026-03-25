@@ -2,7 +2,17 @@ export type MarketFiltersInput = {
   city?: string;
   area?: string;
   query?: string;
+  dateFrom?: string;
+  dateTo?: string;
   windowDays?: number;
+};
+
+export type MarketDateRange = {
+  dateFrom: string;
+  dateTo: string;
+  startMs: number;
+  endMs: number;
+  windowDays?: 30 | 90 | 180;
 };
 
 export type MarketSnapshotResult = {
@@ -10,7 +20,9 @@ export type MarketSnapshotResult = {
     city: string;
     area: string;
     query: string;
-    windowDays: 30 | 90 | 180;
+    dateFrom: string;
+    dateTo: string;
+    windowDays?: 30 | 90 | 180;
   };
   availableCities: string[];
   availableAreas: string[];
@@ -44,6 +56,11 @@ export type MarketSnapshotResult = {
     source: "features" | "derived_configuration";
   }>;
   keywordInsights: {
+    relatedSearches: Array<{
+      label: string;
+      count: number;
+      source: "research_query" | "research_term" | "search_log";
+    }>;
     topKeywords: Array<{
       label: string;
       count: number;
@@ -202,4 +219,3 @@ export type KeywordCounts = {
   feature: Map<string, number>;
   derived: Map<string, number>;
 };
-

@@ -9,9 +9,8 @@ export default function CrmRouteTabs() {
   return (
     <RouteTabBar
       tabs={[
-        { href: "/ws/crm", label: "خط الأنابيب" },
+        { href: "/ws/crm", label: "الصفقات" },
         { href: "/ws/crm/clients", label: "العملاء" },
-        { href: "/ws/crm/brokers", label: "الوسطاء" },
       ]}
     />
   );

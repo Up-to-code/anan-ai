@@ -51,7 +51,8 @@ describe("/ws/offers page", () => {
     });
     const markup = renderToStaticMarkup(element);
 
-    expect(markup).toContain("عرض تطويري مفتوح");
+    expect(markup).toContain("العروض");
+    expect(markup).toContain("عرض مطور مفتوح");
     expect(getSnapshot).toHaveBeenCalled();
     expect(markup).toContain("مالقا ريزيدنس");
     expect(markup).toContain("صفحة 1 من 1");

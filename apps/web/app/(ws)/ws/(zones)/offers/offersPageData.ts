@@ -5,7 +5,10 @@ export const OFFER_PROFILES_PAGE_SIZE = 9;
 
 export type OffersPageSearchParams = {
   page?: string | string[];
+  tab?: string | string[];
 };
+
+export type OffersTabKey = "all" | "received" | "sent";
 
 export type PaginatedCollection<T> = {
   items: T[];
@@ -42,6 +45,12 @@ function pickString(value?: string | string[]) {
   return value;
 }
 
+export function resolveOffersTab(searchParams: OffersPageSearchParams): OffersTabKey {
+  const tab = pickString(searchParams.tab);
+  if (tab === "received" || tab === "sent") return tab;
+  return "all";
+}
+
 function parsePriceLabel(priceLabel: string) {
   const normalized = Number(priceLabel.replace(/[^\d.]/g, ""));
   return Number.isFinite(normalized) ? normalized : 0;
@@ -51,6 +60,33 @@ function formatPrice(value: number) {
   return `${new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 0,
   }).format(value)} ر.س`;
+}
+
+export function withOfferFallbackContext(items: OfferMarketplaceItem[]) {
+  const groups = new Map<string, OfferMarketplaceItem[]>();
+  items.forEach((item) => {
+    const key = `${item.kind}:${item.ownerLabel}`;
+    const current = groups.get(key) ?? [];
+    current.push(item);
+    groups.set(key, current);
+  });
+
+  return items.map((item) => {
+    const group = groups.get(`${item.kind}:${item.ownerLabel}`) ?? [];
+    const totalPrice = group.reduce((sum, entry) => sum + parsePriceLabel(entry.priceLabel), 0);
+    const averagePriceLabel = group.length > 0 ? formatPrice(totalPrice / group.length) : null;
+
+    return {
+      ...item,
+      fallbackDetails: item.linkedProperty
+        ? null
+        : {
+            averagePriceLabel,
+            locationLabel: item.location,
+            propertyLabel: item.project.title,
+          },
+    };
+  });
 }
 
 function groupItemsBySender(items: OfferMarketplaceItem[], kind: "developer" | "broker"): SenderGroup[] {

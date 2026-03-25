@@ -36,6 +36,22 @@ describe("BrandWorkspaceTabs", () => {
     );
 
     expect(markup).toContain("صندوق الربط");
-    expect(markup).toContain("bg-blue-50");
+    expect(markup).toContain("border-slate-950 text-slate-950");
+  });
+
+  it("supports exact-match tabs without activating them on child routes", () => {
+    usePathname.mockReturnValue("/ws/market/cities");
+
+    const markup = renderToStaticMarkup(
+      <BrandWorkspaceTabs
+        tabs={[
+          { href: "/ws/market", label: "الملخص", exact: true },
+          { href: "/ws/market/cities", label: "المدن" },
+        ]}
+      />,
+    );
+
+    expect(markup).toContain("الملخص");
+    expect(markup).toContain("المدن");
   });
 });

@@ -2,7 +2,14 @@ import OfferOverviewPage from "./OfferOverviewPage";
 import { requireWorkspaceData } from "../../_lib/workspaceData";
 import { getWorkspaceOffersZone } from "@/server/ws/zones";
 import { mapOfferToMarketplaceItem } from "./offerViewModel";
-import { OFFERS_PAGE_SIZE, paginateItems, resolvePage, type OffersPageSearchParams } from "./offersPageData";
+import {
+  OFFERS_PAGE_SIZE,
+  paginateItems,
+  resolveOffersTab,
+  resolvePage,
+  type OffersPageSearchParams,
+  withOfferFallbackContext,
+} from "./offersPageData";
 
 
 /**
@@ -17,9 +24,17 @@ export default async function WorkspaceOffersRoute({
 }) {
   const workspace = await requireWorkspaceData("/ws/offers");
   const snapshot = await getWorkspaceOffersZone(workspace.audience, workspace.ownerContext).getSnapshot();
-  const items = [...snapshot.marketplace, ...snapshot.received, ...snapshot.sent].map(mapOfferToMarketplaceItem);
-  const page = resolvePage(await searchParams);
-  const paginatedItems = paginateItems(items, page, OFFERS_PAGE_SIZE);
+  const resolvedSearchParams = await searchParams;
+  const selectedTab = resolveOffersTab(resolvedSearchParams);
+  const items = withOfferFallbackContext([
+    ...snapshot.marketplace.map((offer) => mapOfferToMarketplaceItem(offer, "marketplace")),
+    ...snapshot.received.map((offer) => mapOfferToMarketplaceItem(offer, "received")),
+    ...snapshot.sent.map((offer) => mapOfferToMarketplaceItem(offer, "sent")),
+  ]);
+  const filteredItems =
+    selectedTab === "all" ? items : items.filter((item) => item.source === selectedTab);
+  const page = resolvePage(resolvedSearchParams);
+  const paginatedItems = paginateItems(filteredItems, page, OFFERS_PAGE_SIZE);
 
   return (
     <OfferOverviewPage
@@ -29,7 +44,8 @@ export default async function WorkspaceOffersRoute({
       pageCount={paginatedItems.pageCount}
       hasPreviousPage={paginatedItems.hasPreviousPage}
       hasNextPage={paginatedItems.hasNextPage}
-      routeBase="/ws/offers"
+      routeBase={selectedTab === "all" ? "/ws/offers" : `/ws/offers?tab=${selectedTab}`}
+      selectedTab={selectedTab}
     />
   );
 }

@@ -24,7 +24,7 @@ export default async function WorkspaceOverviewLayout({
     name: primaryOrganization.name,
     type: primaryOrganization.type,
     status: primaryOrganization.status,
-    zoneLabel: "لوحة العمل",
+    zoneLabel: "نظرة عامة",
   });
   const complianceBanner = buildComplianceBanner(primaryOrganization, complianceRuleset);
 

@@ -28,7 +28,7 @@ it("rejects workspaces without market access", async () => {
 it("validates filters and returns the repository snapshot", async () => {
   const repository = {
     getSnapshot: vi.fn(async () => ({
-      filters: { city: "الرياض", area: "", query: "استثماري", windowDays: 90 as const },
+      filters: { city: "الرياض", area: "", query: "استثماري", dateFrom: "2026-03-01", dateTo: "2026-03-25" },
       availableCities: ["الرياض"],
       availableAreas: [],
       headline: {
@@ -42,7 +42,7 @@ it("validates filters and returns the repository snapshot", async () => {
       topCities: [],
       topAreas: [],
       sellingPoints: [],
-      keywordInsights: { topKeywords: [], topTopics: [], mostResearchedLabel: null },
+      keywordInsights: { relatedSearches: [], topKeywords: [], topTopics: [], mostResearchedLabel: null },
       opportunities: [],
       chartSeries: { cityDemand: [], areaDemand: [], keywordCounts: [] },
       latestUpdate: null,
@@ -51,23 +51,23 @@ it("validates filters and returns the repository snapshot", async () => {
 
   await expect(
     getWorkspaceMarketSnapshot(
-      { city: "الرياض", query: "استثماري", windowDays: 90 },
+      { city: "الرياض", query: "استثماري", dateFrom: "2026-03-01", dateTo: "2026-03-25" },
       {
         getWorkspaceBehavior: vi.fn(async () => ({ capabilities: { canAccessMarket: true } })),
         repository,
       },
     ),
   ).resolves.toMatchObject({
-    filters: { city: "الرياض", query: "استثماري", windowDays: 90 },
+    filters: { city: "الرياض", query: "استثماري", dateFrom: "2026-03-01", dateTo: "2026-03-25" },
   });
 
-  expect(repository.getSnapshot).toHaveBeenCalledWith({ city: "الرياض", query: "استثماري", windowDays: 90 });
+  expect(repository.getSnapshot).toHaveBeenCalledWith({ city: "الرياض", query: "استثماري", dateFrom: "2026-03-01", dateTo: "2026-03-25" });
 });
 
 it("normalizes blank text filters before validating", async () => {
   const repository = {
     getSnapshot: vi.fn(async () => ({
-      filters: { city: "", area: "", query: "", windowDays: 90 as const },
+      filters: { city: "", area: "", query: "", dateFrom: "2026-03-01", dateTo: "2026-03-25", windowDays: 90 as const },
       availableCities: [],
       availableAreas: [],
       headline: {
@@ -81,7 +81,7 @@ it("normalizes blank text filters before validating", async () => {
       topCities: [],
       topAreas: [],
       sellingPoints: [],
-      keywordInsights: { topKeywords: [], topTopics: [], mostResearchedLabel: null },
+      keywordInsights: { relatedSearches: [], topKeywords: [], topTopics: [], mostResearchedLabel: null },
       opportunities: [],
       chartSeries: { cityDemand: [], areaDemand: [], keywordCounts: [] },
       latestUpdate: null,
@@ -97,4 +97,19 @@ it("normalizes blank text filters before validating", async () => {
   );
 
   expect(repository.getSnapshot).toHaveBeenCalledWith({ windowDays: 90 });
+});
+
+it("rejects incomplete or reversed exact date ranges", async () => {
+  const dependencies = {
+    getWorkspaceBehavior: vi.fn(async () => ({ capabilities: { canAccessMarket: true } })),
+    repository: { getSnapshot: vi.fn() },
+  };
+
+  await expect(
+    getWorkspaceMarketSnapshot({ dateFrom: "2026-03-10" }, dependencies),
+  ).rejects.toThrowError();
+
+  await expect(
+    getWorkspaceMarketSnapshot({ dateFrom: "2026-03-25", dateTo: "2026-03-01" }, dependencies),
+  ).rejects.toThrowError();
 });

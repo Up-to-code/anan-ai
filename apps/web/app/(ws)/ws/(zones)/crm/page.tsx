@@ -1,14 +1,16 @@
 import CrmPage from "./CrmPage";
 import { requireWorkspaceData } from "../../_lib/workspaceData";
-import { getWorkspaceCrmZone } from "@/server/ws/zones";
-import { mapDealToCrmClientRecord } from "./crmViewModel";
+import { getWorkspaceCrmZone, getWorkspacePropertyZone } from "@/server/ws/zones";
+import { loadCrmPropertyMap, mapDealToCrmClientRecord } from "./crmViewModel";
 
 export default async function WorkspaceCrmRoute() {
   const workspace = await requireWorkspaceData("/ws/crm");
   const audience = workspace.audience;
   const ownerContext = workspace.ownerContext ?? null;
   const crmZone = getWorkspaceCrmZone(audience, ownerContext);
+  const propertyZone = getWorkspacePropertyZone(audience, ownerContext);
   const deals = await crmZone.listDeals();
+  const propertyMap = await loadCrmPropertyMap(deals, propertyZone.getProperty);
 
   async function updateStage(input: { dealId: string; stage: "new" | "contacted" | "negotiation" | "won" | "lost" }) {
     "use server";
@@ -31,7 +33,7 @@ export default async function WorkspaceCrmRoute() {
 
   return (
     <CrmPage
-      clients={deals.map(mapDealToCrmClientRecord)}
+      clients={deals.map((deal) => mapDealToCrmClientRecord(deal, propertyMap.get(deal.propertyId ?? "") ?? null))}
       onStageChange={updateStage}
       onFollowUpChange={updateFollowUp}
       onCreateClient={createQuickClient}

@@ -4,6 +4,10 @@ import schema from "../schema";
 import { api } from "../_generated/api";
 import { modules } from "../test.setup";
 
+function toDateString(timestamp: number): string {
+  return new Date(timestamp).toISOString().slice(0, 10);
+}
+
 async function seedRichProperties(ctx: any) {
   await ctx.db.insert("properties", { title: "شقة عائلية", address: "الملقا، الرياض", price: 1400000, beds: 3, baths: 3, description: "وحدة شمال الرياض", location: "الرياض", area: "الملقا", publicationState: "published", status: "available" });
   await ctx.db.insert("properties", { title: "فيلا مستقلة", address: "حطين، الرياض", price: 2600000, beds: 4, baths: 5, description: "فيلا شمال الرياض", location: "الرياض", area: "حطين", publicationState: "published", status: "available" });
@@ -76,15 +80,24 @@ function registerRichRankingTest() {
     const t = convexTest(schema, modules);
     await seedRichMarketScenario(t);
 
-    const snapshot = (await t.query(api.shared_logic.market.getMarketSnapshot as never, { city: "الرياض", area: "الملقا", windowDays: 90 } as never)) as any;
+    const today = toDateString(Date.now());
+    const snapshot = (await t.query(api.shared_logic.market.getMarketSnapshot as never, {
+      city: "الرياض",
+      area: "الملقا",
+      dateFrom: today,
+      dateTo: today,
+    } as never)) as any;
 
     expect(snapshot.filters.city).toBe("الرياض");
     expect(snapshot.filters.area).toBe("الملقا");
+    expect(snapshot.filters.dateFrom).toBe(today);
+    expect(snapshot.filters.windowDays).toBeUndefined();
     expect(snapshot.topCities[0]?.city).toBe("الرياض");
     expect(snapshot.topAreas[0]?.area).toBe("الملقا");
     expect(snapshot.headline.inventoryCount).toBe(1);
     expect(snapshot.sellingPoints[0]?.label).toBe("مواقف خاصة");
     expect(snapshot.keywordInsights.mostResearchedLabel).toBeTruthy();
+    expect(snapshot.keywordInsights.relatedSearches.length).toBeGreaterThan(0);
     expect(snapshot.opportunities[0]?.area).toBe("الملقا");
     expect(snapshot.chartSeries.cityDemand.length).toBeGreaterThan(0);
     expect(snapshot.latestUpdate?.query).toContain("الملقا");
@@ -110,9 +123,28 @@ function registerSparseFallbackTest() {
   });
 }
 
+function registerCurrentStockDateRangeTest() {
+  it("keeps current inventory visible even when the selected date range has no demand signals", async () => {
+    const t = convexTest(schema, modules);
+    await seedRichMarketScenario(t);
+
+    const snapshot = (await t.query(api.shared_logic.market.getMarketSnapshot as never, {
+      city: "الرياض",
+      area: "الملقا",
+      dateFrom: "2020-01-01",
+      dateTo: "2020-01-31",
+    } as never)) as any;
+
+    expect(snapshot.headline.inventoryCount).toBe(1);
+    expect(snapshot.headline.demandSignals).toBe(0);
+    expect(snapshot.headline.researchRuns).toBe(0);
+  });
+}
+
 function registerMarketSnapshotTests() {
   registerRichRankingTest();
   registerSparseFallbackTest();
+  registerCurrentStockDateRangeTest();
 }
 
 describe("shared market snapshot", registerMarketSnapshotTests);

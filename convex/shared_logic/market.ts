@@ -18,6 +18,12 @@ const marketKeywordValidator = v.object({
   source: v.union(v.literal("query"), v.literal("feature"), v.literal("derived_topic")),
 });
 
+const marketKeywordHelperValidator = v.object({
+  label: v.string(),
+  count: v.number(),
+  source: v.union(v.literal("research_query"), v.literal("research_term"), v.literal("search_log")),
+});
+
 const marketOpportunityValidator = v.object({
   city: v.string(),
   area: v.string(),
@@ -42,7 +48,9 @@ const marketSnapshotValidator = v.object({
     city: v.string(),
     area: v.string(),
     query: v.string(),
-    windowDays: v.union(v.literal(30), v.literal(90), v.literal(180)),
+    dateFrom: v.string(),
+    dateTo: v.string(),
+    windowDays: v.optional(v.union(v.literal(30), v.literal(90), v.literal(180))),
   }),
   availableCities: v.array(v.string()),
   availableAreas: v.array(v.string()),
@@ -82,6 +90,7 @@ const marketSnapshotValidator = v.object({
     }),
   ),
   keywordInsights: v.object({
+    relatedSearches: v.array(marketKeywordHelperValidator),
     topKeywords: v.array(marketKeywordValidator),
     topTopics: v.array(marketKeywordValidator),
     mostResearchedLabel: v.union(v.string(), v.null()),
@@ -114,6 +123,8 @@ export const getMarketSnapshot = query({
     city: v.optional(v.string()),
     area: v.optional(v.string()),
     query: v.optional(v.string()),
+    dateFrom: v.optional(v.string()),
+    dateTo: v.optional(v.string()),
     windowDays: v.optional(v.union(v.literal(30), v.literal(90), v.literal(180))),
   },
   returns: marketSnapshotValidator,

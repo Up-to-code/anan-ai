@@ -9,10 +9,11 @@ export default function MarketRouteTabs() {
   return (
     <RouteTabBar
       tabs={[
+        { href: "/ws/market", label: "الملخص", exact: true },
         { href: "/ws/market/cities", label: "المدن" },
-        { href: "/ws/market/areas", label: "الأحياء" },
-        { href: "/ws/market/opportunities", label: "الفرص" },
-        { href: "/ws/market/research", label: "البحث والكلمات" },
+        { href: "/ws/market/areas", label: "المناطق الساخنة" },
+        { href: "/ws/market/opportunities", label: "نتائج السوق" },
+        { href: "/ws/market/research", label: "مساعد الكلمات" },
       ]}
     />
   );
