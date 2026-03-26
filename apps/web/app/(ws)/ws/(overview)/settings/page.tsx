@@ -3,7 +3,6 @@ import { listCurrentOrganizationApiKeysForCurrentUser } from "@/server/domains/a
 import type { OrganizationApiKeySummary } from "@/server/contracts/organizationApiKeys";
 import SettingsHeader from "./_components/SettingsHeader";
 import ApiKeysWorkspace from "./_components/ApiKeysWorkspace";
-import InviteMemberForm from "./_components/InviteMemberForm";
 import OrganizationSettingsWorkspace from "./_components/OrganizationSettingsWorkspace";
 import SettingsTabs from "./_components/SettingsTabs";
 import MembersWorkspace from "./_components/MembersWorkspace";
@@ -38,6 +37,7 @@ function OrganizationTabSection({
 }
 
 function MembersTabSection(args: {
+  organization: Awaited<ReturnType<typeof getWorkspaceOrganizationTeam>>["organization"];
   members: Awaited<ReturnType<typeof getWorkspaceOrganizationTeam>>["members"];
   invites: Awaited<ReturnType<typeof getWorkspaceOrganizationTeam>>["invites"];
   canManage: boolean;
@@ -55,6 +55,7 @@ function MembersTabSection(args: {
           invites={args.invites}
           canManage={args.canManage}
           hasOrganization={args.hasOrganization}
+          organizationType={args.organization?.type}
         />
       </div>
     </div>
@@ -122,6 +123,7 @@ export default async function WorkspaceSettingsPage(props: {
         />
       ) : (
         <MembersTabSection
+          organization={organization}
           members={members}
           invites={invites}
           canManage={canManage}

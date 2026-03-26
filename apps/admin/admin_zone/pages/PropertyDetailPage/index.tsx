@@ -40,15 +40,21 @@ export default function PropertyDetailPage({ propertyId }: PropertyDetailPagePro
         />
       }
     >
-      <WorkspacePanel className="space-y-4">
-        <div className="flex flex-wrap items-center gap-3">
+      <WorkspacePanel className="p-8 space-y-6">
+        <div className="flex flex-wrap items-center gap-3 pb-6 border-b border-border/20">
           <StatusBadge value={property.publicationStatus} />
           <StatusBadge value={property.inventoryStatus} />
         </div>
         <KeyValueGrid
           items={[
-            { label: "المشروع", value: <Link href={`/sales/projects/${property.projectId}`} className="text-slate-900 underline-offset-2 hover:underline">{property.projectName}</Link> },
-            { label: "المنظمة", value: <Link href={`/organizations/${property.organizationId}`} className="text-slate-900 underline-offset-2 hover:underline">{property.organizationName}</Link> },
+            { 
+              label: "المشروع", 
+              value: <Link href={`/sales/projects/${property.projectId}`} className="font-black text-foreground hover:text-primary transition-colors underline decoration-primary/20 underline-offset-4">{property.projectName}</Link> 
+            },
+            { 
+              label: "المنظمة", 
+              value: <Link href={`/organizations/${property.organizationId}`} className="font-black text-foreground hover:text-primary transition-colors underline decoration-primary/20 underline-offset-4">{property.organizationName}</Link> 
+            },
             { label: "النوع", value: property.type },
             { label: "المدينة", value: property.city },
             { label: "السعر", value: formatCurrency(property.price) },

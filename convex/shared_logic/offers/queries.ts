@@ -83,6 +83,7 @@ async function buildOfferLiveState(
     isRecipient,
     canEditDraft: isOwner && (offer.publicationState ?? "draft") === "draft" && offer.status === "pending",
     canPublish: isOwner && (offer.publicationState ?? "draft") === "draft" && offer.status === "pending",
+    canArchive: isOwner && (offer.publicationState ?? "draft") !== "archived" && offer.status === "pending",
     canRespond: isRecipient && (offer.publicationState ?? "draft") === "published" && offer.status === "pending",
   };
 }
@@ -120,7 +121,7 @@ export async function listSentOffersService(ctx: QueryCtx) {
       .collect();
   }
 
-  return Promise.all(results.map((offer) => attachProperty(ctx, offer)));
+  return Promise.all(results.filter((offer) => offer.publicationState !== "archived").map((offer) => attachProperty(ctx, offer)));
 }
 
 /**

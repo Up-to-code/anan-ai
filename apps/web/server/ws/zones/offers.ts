@@ -1,5 +1,6 @@
 import {
   applyToBrokerOffer,
+  archiveBrokerOffer,
   createBrokerOfferDraft,
   createBrokerOffer,
   getBrokerOfferLiveState,
@@ -13,6 +14,7 @@ import type { WorkspaceAudience, WorkspaceOwnerContext } from "@/server/contract
 import { convexOffersRepository } from "@/server/infrastructure/convex/offersRepository";
 import {
   applyToRedOffer,
+  archiveRedOffer,
   createRedOfferDraft,
   createRedOffer,
   getRedOfferLiveState,
@@ -43,6 +45,8 @@ export function getWorkspaceOffersZone(
         publishBrokerConversationOffer(input, { requireBroker: requireSession, repository: convexOffersRepository }),
       updateOfferDraft: (input: Parameters<typeof updateBrokerOfferDraft>[0]) =>
         updateBrokerOfferDraft(input, { requireBroker: requireSession, repository: convexOffersRepository }),
+      archiveOffer: (input: Parameters<typeof archiveBrokerOffer>[0]) =>
+        archiveBrokerOffer(input, { requireBroker: requireSession, repository: convexOffersRepository }),
       getOfferLiveState: (offerId: string) =>
         getBrokerOfferLiveState(offerId, { requireBroker: requireSession, repository: convexOffersRepository }),
       respondToOffer: (input: Parameters<typeof respondToBrokerOffer>[0]) =>
@@ -65,6 +69,8 @@ export function getWorkspaceOffersZone(
         publishRedConversationOffer(input, { requireDeveloper: requireSession, repository: convexOffersRepository }),
       updateOfferDraft: (input: Parameters<typeof updateRedOfferDraft>[0]) =>
         updateRedOfferDraft(input, { requireDeveloper: requireSession, repository: convexOffersRepository }),
+      archiveOffer: (input: Parameters<typeof archiveRedOffer>[0]) =>
+        archiveRedOffer(input, { requireDeveloper: requireSession, repository: convexOffersRepository }),
       getOfferLiveState: (offerId: string) =>
         getRedOfferLiveState(offerId, { requireDeveloper: requireSession, repository: convexOffersRepository }),
       respondToOffer: (input: Parameters<typeof respondToRedOffer>[0]) =>

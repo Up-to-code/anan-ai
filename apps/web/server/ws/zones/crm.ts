@@ -1,7 +1,9 @@
 import {
   addBrokerDealDocument,
+  archiveBrokerDeal,
   createBrokerDeal,
   listBrokerDeals,
+  updateBrokerDeal,
   updateBrokerDealFollowUp,
   updateBrokerDealNotes,
   updateBrokerDealStage,
@@ -12,8 +14,10 @@ import { convexCrmRepository } from "@/server/infrastructure/convex/crmRepositor
 import { convexRedZoneRepository } from "@/server/infrastructure/convex/redZoneRepository";
 import {
   addRedDealDocument,
+  archiveRedDeal,
   createRedDeal,
   listRedDeals,
+  updateRedDeal,
   updateRedDealFollowUp,
   updateRedDealNotes,
   updateRedDealStage,
@@ -46,6 +50,12 @@ export function getWorkspaceCrmZone(
           crmRepository: convexCrmRepository,
           propertiesRepository: convexBrokerZoneRepository,
         }),
+      updateDeal: (input: Parameters<typeof updateBrokerDeal>[0]) =>
+        updateBrokerDeal(input, {
+          requireBroker: requireSession,
+          crmRepository: convexCrmRepository,
+          propertiesRepository: convexBrokerZoneRepository,
+        }),
       updateDealStage: (input: Parameters<typeof updateBrokerDealStage>[0]) =>
         updateBrokerDealStage(input, {
           requireBroker: requireSession,
@@ -70,6 +80,12 @@ export function getWorkspaceCrmZone(
           crmRepository: convexCrmRepository,
           propertiesRepository: convexBrokerZoneRepository,
         }),
+      archiveDeal: (input: Parameters<typeof archiveBrokerDeal>[0]) =>
+        archiveBrokerDeal(input, {
+          requireBroker: requireSession,
+          crmRepository: convexCrmRepository,
+          propertiesRepository: convexBrokerZoneRepository,
+        }),
     };
   }
 
@@ -83,6 +99,12 @@ export function getWorkspaceCrmZone(
         }),
       createDeal: (input: Parameters<typeof createRedDeal>[0]) =>
         createRedDeal(input, {
+          requireDeveloper: requireSession,
+          crmRepository: convexCrmRepository,
+          propertiesRepository: convexRedZoneRepository,
+        }),
+      updateDeal: (input: Parameters<typeof updateRedDeal>[0]) =>
+        updateRedDeal(input, {
           requireDeveloper: requireSession,
           crmRepository: convexCrmRepository,
           propertiesRepository: convexRedZoneRepository,
@@ -107,6 +129,12 @@ export function getWorkspaceCrmZone(
         }),
       addDealDocument: (input: Parameters<typeof addRedDealDocument>[0]) =>
         addRedDealDocument(input, {
+          requireDeveloper: requireSession,
+          crmRepository: convexCrmRepository,
+          propertiesRepository: convexRedZoneRepository,
+        }),
+      archiveDeal: (input: Parameters<typeof archiveRedDeal>[0]) =>
+        archiveRedDeal(input, {
           requireDeveloper: requireSession,
           crmRepository: convexCrmRepository,
           propertiesRepository: convexRedZoneRepository,

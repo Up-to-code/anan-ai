@@ -2,6 +2,7 @@ import { requireDeveloperSession } from "@/server/auth/guards";
 import type { ResolvedSession } from "@/server/auth/session";
 import {
   applyToOfferInputSchema,
+  archiveOfferInputSchema,
   createOfferInputSchema,
   type OfferActionResult,
   type OfferLiveState,
@@ -9,6 +10,7 @@ import {
   publishOfferInputSchema,
   respondToOfferInputSchema,
   type ApplyToOfferInput,
+  type ArchiveOfferInput,
   type CreateOfferInput,
   type OffersSnapshot,
   type PublishConversationOfferInput,
@@ -98,6 +100,13 @@ export async function updateRedOfferDraft(
   dependencies: RedOffersDependencies = defaultDependencies,
 ): Promise<{ ok: true }> {
   const session = await dependencies.requireDeveloper();
+  const liveState = await dependencies.repository.getOfferLiveState({ offerId: input.id }, session.token);
+  if (!liveState) {
+    throw new DomainError({ code: "NOT_FOUND", message: "Offer not found", status: 404 });
+  }
+  if (!liveState.isOwner || !liveState.canEditDraft) {
+    throw new DomainError({ code: "FORBIDDEN", message: "Only owner-editable drafts can be updated", status: 403 });
+  }
   return dependencies.repository.updateDraft(parseOrThrow(updateOfferDraftInputSchema.safeParse(input)), session.token);
 }
 
@@ -123,4 +132,25 @@ export async function applyToRedOffer(
 ): Promise<OfferActionResult> {
   const session = await dependencies.requireDeveloper();
   return dependencies.repository.apply(parseOrThrow(applyToOfferInputSchema.safeParse(input)), session.token);
+}
+
+/**
+ * WHY:   Developer workspaces need a soft archive path for owned pending offers without exposing hard deletes.
+ * WHAT:  Archives one developer-owned pending offer.
+ * HOW:   Validates the payload, confirms the current caller owns an archivable live offer, then delegates the state change to the repository.
+ */
+export async function archiveRedOffer(
+  input: ArchiveOfferInput,
+  dependencies: RedOffersDependencies = defaultDependencies,
+): Promise<{ ok: true }> {
+  const session = await dependencies.requireDeveloper();
+  const parsed = parseOrThrow(archiveOfferInputSchema.safeParse(input));
+  const liveState = await dependencies.repository.getOfferLiveState({ offerId: parsed.id }, session.token);
+  if (!liveState) {
+    throw new DomainError({ code: "NOT_FOUND", message: "Offer not found", status: 404 });
+  }
+  if (!liveState.isOwner || !liveState.canArchive) {
+    throw new DomainError({ code: "FORBIDDEN", message: "Only owner-controlled pending offers can be archived", status: 403 });
+  }
+  return dependencies.repository.archive(parsed, session.token);
 }

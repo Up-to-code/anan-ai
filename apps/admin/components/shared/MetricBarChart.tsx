@@ -42,24 +42,24 @@ export default function MetricBarChart({
             margin={horizontal ? { top: 0, right: 12, left: 30, bottom: 0 } : { top: 8, right: 12, left: 0, bottom: 8 }}
             barGap={8}
           >
-            <CartesianGrid stroke="#c4c4c4" vertical={false} />
+            <CartesianGrid stroke="var(--border)" vertical={false} />
             {horizontal ? (
               <>
-                <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
-                <YAxis type="category" dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 12 }} width={112} />
+                <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontWeight: "bold" }} />
+                <YAxis type="category" dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontWeight: "bold" }} width={112} />
               </>
             ) : (
               <>
-                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
-                <YAxis tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 12 }} width={40} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontWeight: "bold" }} />
+                <YAxis tickLine={false} axisLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontWeight: "bold" }} width={40} />
               </>
             )}
             <Tooltip
               contentStyle={{
-                borderRadius: 8,
-                border: "1px solid #c4c4c4",
-                backgroundColor: "#ffffff",
-                boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
+                borderRadius: 16,
+                border: "1px solid var(--border)",
+                backgroundColor: "var(--card)",
+                boxShadow: "0 10px 30px -10px rgba(0, 0, 0, 0.1)",
               }}
               formatter={(value, name) => {
                 return [formatChartNumber(value as number | string), String(name ?? "")];
@@ -71,7 +71,7 @@ export default function MetricBarChart({
                 dataKey={item.dataKey}
                 name={item.label}
                 fill={item.color}
-                radius={horizontal ? [0, 8, 8, 0] : [8, 8, 0, 0]}
+                radius={horizontal ? [0, 4, 4, 0] : [4, 4, 0, 0]}
                 maxBarSize={horizontal ? 24 : 36}
               />
             ))}

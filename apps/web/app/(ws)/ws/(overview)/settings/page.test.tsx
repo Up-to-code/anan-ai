@@ -41,14 +41,20 @@ vi.mock("./_components/OrganizationSettingsWorkspace", () => ({
 }));
 
 vi.mock("./_components/MembersWorkspace", () => ({
-  default: () => <div>MEMBERS-WORKSPACE</div>,
+  default: ({
+    initialMembers,
+    invites,
+    canManage,
+    organizationType,
+  }: {
+    initialMembers: Array<unknown>;
+    invites: Array<unknown>;
+    canManage: boolean;
+    organizationType?: string;
+  }) => <div>{`MEMBERS-WORKSPACE:${initialMembers.length}:${invites.length}:${canManage}:${organizationType ?? "none"}`}</div>,
 }));
 vi.mock("./_components/ApiKeysWorkspace", () => ({
   default: () => <div>API-KEYS-WORKSPACE</div>,
-}));
-
-vi.mock("./_components/InviteMemberForm", () => ({
-  default: () => <div>INVITE-MEMBER-FORM</div>,
 }));
 
 import WorkspaceSettingsPage from "./page";
@@ -57,7 +63,7 @@ beforeEach(() => {
   getWorkspaceOrganizationTeam.mockReset();
   listCurrentOrganizationApiKeysForCurrentUser.mockReset();
   getWorkspaceOrganizationTeam.mockResolvedValue({
-    organization: { name: "منظمة ألف", slug: "alpha", status: "active" },
+    organization: { name: "منظمة ألف", slug: "alpha", status: "active", type: "broker" },
     members: [
       {
         id: "member-1",
@@ -103,8 +109,7 @@ it("renders members tab content when tab is members", async () => {
   const element = await WorkspaceSettingsPage({ searchParams: Promise.resolve({ tab: "members" }) });
   const markup = renderToStaticMarkup(element);
 
-  expect(markup).toContain("MEMBERS-WORKSPACE");
-  expect(markup).toContain("INVITE-MEMBER-FORM");
+  expect(markup).toContain("MEMBERS-WORKSPACE:1:1:true:broker");
   expect(markup).not.toContain("ORG-WORKSPACE");
 });
 

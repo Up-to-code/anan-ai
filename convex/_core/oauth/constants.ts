@@ -1,41 +1,21 @@
+import {
+  OAUTH_SCOPE_CATALOG,
+  OAUTH_SCOPE_IDS,
+  type OrganizationOAuthScopeId,
+} from "../../../shared/auth/organizationPermissions";
+
 /**
  * WHY:   OAuth scopes and token lifetimes must stay centralized to keep auth behavior consistent.
  * WHAT:  Defines the supported v1 delegated scopes, display labels, and security-related TTLs.
  * HOW:   Shared by HTTP handlers, consent UI queries, token issuance, and delegated resource guards.
  */
-export const OAUTH_SCOPE_REGISTRY = [
-  "openid",
-  "profile",
-  "email",
-  "offline_access",
-  "clients:read",
-  "clients:create",
-  "clients:update_own",
-  "clients:read_own",
-  "properties:read",
-  "properties:create_own",
-  "properties:update_own",
-  "properties:delete_own",
-  "properties:read_own",
-] as const;
+export const OAUTH_SCOPE_REGISTRY = OAUTH_SCOPE_IDS;
 
-export type OAuthScope = (typeof OAUTH_SCOPE_REGISTRY)[number];
+export type OAuthScope = OrganizationOAuthScopeId;
 
-export const OAUTH_SCOPE_LABELS: Record<OAuthScope, string> = {
-  openid: "Confirm your Anan identity",
-  profile: "Read your basic profile information",
-  email: "Read your verified email address",
-  offline_access: "Stay connected when you are not actively using Anan",
-  "clients:read": "Read client records you can access",
-  "clients:create": "Create clients on your behalf",
-  "clients:update_own": "Update clients that belong to your account",
-  "clients:read_own": "Read clients that belong to your account",
-  "properties:read": "Read properties you can access",
-  "properties:create_own": "Create properties that belong to your account",
-  "properties:update_own": "Update properties that belong to your account",
-  "properties:delete_own": "Delete properties that belong to your account",
-  "properties:read_own": "Read properties that belong to your account",
-};
+export const OAUTH_SCOPE_LABELS: Record<OAuthScope, string> = Object.fromEntries(
+  OAUTH_SCOPE_CATALOG.map((scope) => [scope.id, scope.label]),
+) as Record<OAuthScope, string>;
 
 export const OAUTH_CONSENT_VERSION = 1;
 export const AUTHORIZATION_CODE_TTL_MS = 10 * 60 * 1000;

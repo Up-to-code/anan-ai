@@ -65,18 +65,18 @@ export default function ProjectsPageClient({ projects }: ProjectsPageClientProps
 
       <DataTable headers={["المشروع", "المنظمة", "المرحلة", "الوصول للمساعد", "العقارات", "آخر تحديث"]}>
         {filteredProjects.map((project) => (
-          <tr key={project.id} className="border-b border-border last:border-b-0">
-            <td className="px-4 py-3">
-              <Link href={`/sales/projects/${project.id}`} className="font-medium text-slate-900 hover:text-blue-600">
+          <tr key={project.id} className="group transition-colors hover:bg-muted/5">
+            <td className="px-5 py-4">
+              <Link href={`/sales/projects/${project.id}`} className="block font-black tracking-tight text-foreground hover:text-primary transition-colors">
                 {project.name}
               </Link>
-              <div className="mt-1 text-xs text-slate-500">{project.city}</div>
+              <div className="mt-1 text-[11px] font-bold text-muted-foreground/50">{project.city}</div>
             </td>
-            <td className="px-4 py-3 text-sm text-slate-600">{project.organizationName}</td>
-            <td className="px-4 py-3"><StatusBadge value={project.stage} /></td>
-            <td className="px-4 py-3 text-sm text-slate-600">{project.assistantEnabled ? "مفعّل" : "غير مفعّل"}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{formatNumber(project.propertyCount)}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{formatDateTime(project.updatedAt)}</td>
+            <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">{project.organizationName}</td>
+            <td className="px-5 py-4"><StatusBadge value={project.stage} /></td>
+            <td className="px-5 py-4 text-[13px] font-black tracking-tight text-foreground">{project.assistantEnabled ? "مفعّل" : "موارد داخلية"}</td>
+            <td className="px-5 py-4 text-[13px] font-black tracking-tight text-foreground">{formatNumber(project.propertyCount)}</td>
+            <td className="px-5 py-4 text-[11px] font-black uppercase tracking-widest text-muted-foreground/40">{formatDateTime(project.updatedAt)}</td>
           </tr>
         ))}
       </DataTable>

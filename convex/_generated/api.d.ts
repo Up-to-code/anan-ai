@@ -289,6 +289,7 @@ import type * as shared_logic_offers_access from "../shared_logic/offers/access.
 import type * as shared_logic_offers_index from "../shared_logic/offers/index.js";
 import type * as shared_logic_offers_mutations from "../shared_logic/offers/mutations.js";
 import type * as shared_logic_offers_mutations_apply from "../shared_logic/offers/mutations/apply.js";
+import type * as shared_logic_offers_mutations_archive from "../shared_logic/offers/mutations/archive.js";
 import type * as shared_logic_offers_mutations_create from "../shared_logic/offers/mutations/create.js";
 import type * as shared_logic_offers_mutations_drafts from "../shared_logic/offers/mutations/drafts.js";
 import type * as shared_logic_offers_mutations_index from "../shared_logic/offers/mutations/index.js";
@@ -613,6 +614,7 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/offers/index": typeof shared_logic_offers_index;
   "shared_logic/offers/mutations": typeof shared_logic_offers_mutations;
   "shared_logic/offers/mutations/apply": typeof shared_logic_offers_mutations_apply;
+  "shared_logic/offers/mutations/archive": typeof shared_logic_offers_mutations_archive;
   "shared_logic/offers/mutations/create": typeof shared_logic_offers_mutations_create;
   "shared_logic/offers/mutations/drafts": typeof shared_logic_offers_mutations_drafts;
   "shared_logic/offers/mutations/index": typeof shared_logic_offers_mutations_index;

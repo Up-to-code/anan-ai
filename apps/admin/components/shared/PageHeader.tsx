@@ -9,9 +9,9 @@ type PageHeaderProps = {
 };
 
 /**
- * WHY:   The rebuilt admin should use straightforward page headers instead of decorative dashboard hero copy.
- * WHAT:  Renders a simple title row with optional supporting text and actions.
- * HOW:   Shows the eyebrow only when it adds meaning beyond the title and keeps the hierarchy text-first.
+ * WHY:   The Nexus PageHeader needs high-contrast typography and minimalist spacing.
+ * WHAT:  Modernizes the title section with Cairo font weights and premium tracking.
+ * HOW:   Uses font-black for titles and tracking-widest for eyebrows to match the Nexus HUD.
  */
 export default function PageHeader({
   eyebrow,
@@ -21,13 +21,21 @@ export default function PageHeader({
   actions,
 }: PageHeaderProps) {
   return (
-    <header className={cn("flex flex-col gap-3 border-b border-border pb-4 lg:flex-row lg:items-end lg:justify-between", className)}>
-      <div className="space-y-2">
-        {eyebrow && eyebrow !== title ? <div className="text-xs font-medium text-slate-500">{eyebrow}</div> : null}
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h1>
-        {description ? <div className="max-w-3xl text-sm leading-6 text-slate-600">{description}</div> : null}
+    <header className={cn("flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between pb-8", className)}>
+      <div className="space-y-2 text-right">
+        {eyebrow && eyebrow !== title ? (
+          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 leading-none">
+            {eyebrow}
+          </div>
+        ) : null}
+        <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-slate-50">{title}</h1>
+        {description ? (
+          <div className="max-w-3xl text-[14px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
+            {description}
+          </div>
+        ) : null}
       </div>
-      {actions ? <div className="flex shrink-0">{actions}</div> : null}
+      {actions ? <div className="flex shrink-0 items-center">{actions}</div> : null}
     </header>
   );
 }

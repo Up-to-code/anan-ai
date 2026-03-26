@@ -3,15 +3,24 @@ import { mutation, query } from "../../../_generated/server";
 import { auditLog } from "../../../auditLog";
 import { findProfileByAuthUserId, type OwnerContext } from "./core";
 import { requireManagerAccess } from "./membership";
+import {
+  ORGANIZATION_API_KEY_ACTIONS,
+  ORGANIZATION_API_KEY_RESOURCES,
+  type OrganizationApiKeyAction,
+  type OrganizationApiKeyResource,
+} from "../../../../shared/auth/organizationPermissions";
+
+const [firstApiKeyResource, ...restApiKeyResources] = ORGANIZATION_API_KEY_RESOURCES;
+const [firstApiKeyAction, ...restApiKeyActions] = ORGANIZATION_API_KEY_ACTIONS;
 
 const apiKeyPermissionValidator = v.object({
-  resource: v.union(v.literal("clients"), v.literal("properties")),
-  action: v.union(v.literal("read"), v.literal("create"), v.literal("update"), v.literal("delete")),
+  resource: v.union(v.literal(firstApiKeyResource), ...restApiKeyResources.map((resource) => v.literal(resource))),
+  action: v.union(v.literal(firstApiKeyAction), ...restApiKeyActions.map((action) => v.literal(action))),
 });
 
 type ApiKeyPermission = {
-  resource: "clients" | "properties";
-  action: "read" | "create" | "update" | "delete";
+  resource: OrganizationApiKeyResource;
+  action: OrganizationApiKeyAction;
 };
 
 function permissionKey(permission: ApiKeyPermission) {
@@ -75,7 +84,7 @@ async function getApiKeyBySecretHashOrThrow(ctx: any, secretHash: string) {
   return apiKey;
 }
 
-function requireApiKeyPermission(apiKey: any, resource: "clients" | "properties", action: "read" | "create" | "update" | "delete") {
+function requireApiKeyPermission(apiKey: any, resource: OrganizationApiKeyResource, action: OrganizationApiKeyAction) {
   const granted = new Set((apiKey.permissions ?? []).map((permission: any) => permissionKey(permission)));
   if (!granted.has(permissionKey({ resource, action }))) {
     throw new ConvexError({ code: "FORBIDDEN", message: `Missing API key permission: ${resource}:${action}` });

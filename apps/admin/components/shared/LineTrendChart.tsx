@@ -35,15 +35,15 @@ export default function LineTrendChart({
       <div style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
-            <CartesianGrid stroke="#c4c4c4" vertical={false} />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
-            <YAxis tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 12 }} width={40} />
+            <CartesianGrid stroke="var(--border)" vertical={false} />
+            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontWeight: "bold" }} />
+            <YAxis tickLine={false} axisLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontWeight: "bold" }} width={40} />
             <Tooltip
               contentStyle={{
-                borderRadius: 8,
-                border: "1px solid #c4c4c4",
-                backgroundColor: "#ffffff",
-                boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
+                borderRadius: 16,
+                border: "1px solid var(--border)",
+                backgroundColor: "var(--card)",
+                boxShadow: "0 10px 30px -10px rgba(0, 0, 0, 0.1)",
               }}
               formatter={(value, name) => {
                 return [formatChartNumber(value as number | string), String(name ?? "")];

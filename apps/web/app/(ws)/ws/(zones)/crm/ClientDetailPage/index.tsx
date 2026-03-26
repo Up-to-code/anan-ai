@@ -72,10 +72,12 @@ export default function ClientDetailPage({
   client,
   nowTimestamp,
   onFollowUpSubmit,
+  editHref,
 }: {
   client: CrmClientRecord;
   nowTimestamp: number;
   onFollowUpSubmit?: (formData: FormData) => Promise<void>;
+  editHref?: string;
 }) {
   const stageLabel = STAGE_LABELS[client.stage] ?? client.stage;
   const followUpStatus = getFollowUpStatus(client.nextFollowUpAt, nowTimestamp);
@@ -88,13 +90,23 @@ export default function ClientDetailPage({
           <h1 className="text-2xl font-black tracking-tight text-foreground">{client.name}</h1>
           <p className="max-w-xl text-[13px] font-medium text-muted-foreground leading-relaxed">{client.notes}</p>
         </div>
-        <Link
-          href="/ws/crm"
-          className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-5 text-[13px] font-bold text-foreground transition hover:border-foreground/30 hover:bg-muted/10"
-        >
-          <ArrowRight className="h-4 w-4" />
-          العودة للصفقات
-        </Link>
+        <div className="flex items-center gap-3">
+          {editHref ? (
+            <Link
+              href={editHref}
+              className="inline-flex h-11 items-center rounded-xl border border-border bg-card px-5 text-[13px] font-bold text-foreground transition hover:border-foreground/30 hover:bg-muted/10"
+            >
+              تعديل الصفقة
+            </Link>
+          ) : null}
+          <Link
+            href="/ws/crm"
+            className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-5 text-[13px] font-bold text-foreground transition hover:border-foreground/30 hover:bg-muted/10"
+          >
+            <ArrowRight className="h-4 w-4" />
+            العودة للصفقات
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-6 px-6 py-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8 lg:py-8">

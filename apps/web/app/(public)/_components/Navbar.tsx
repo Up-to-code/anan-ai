@@ -19,19 +19,20 @@ export default function Navbar() {
                     </Link>
                     <div className="hidden lg:flex items-center gap-10">
                         <Link href="/" className="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest dark:text-slate-400 dark:hover:text-blue-400">الرئيسية</Link>
-                        <Link href="/developer" className="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest dark:text-slate-400 dark:hover:text-blue-400">المطورون</Link>
-                        <Link href="/broker" className="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest dark:text-slate-400 dark:hover:text-blue-400">الوسطاء</Link>
-                        <Link href="/about" className="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest dark:text-slate-400 dark:hover:text-blue-400">عن عنان</Link>
+                        <Link href="/developer" className="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest dark:text-slate-400 dark:hover:text-blue-400">مساحة المطورين</Link>
+                        <Link href="/broker" className="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest dark:text-slate-400 dark:hover:text-blue-400">مساحة الوسطاء</Link>
+                        <Link href="/about" className="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest dark:text-slate-400 dark:hover:text-blue-400">عن الشركة</Link>
+                        <Link href="/contact" className="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest dark:text-slate-400 dark:hover:text-blue-400">تواصل</Link>
                     </div>
                 </div>
                 <div className="flex items-center gap-4 sm:gap-8">
                     <ThemeToggle className="h-10 w-10 rounded-lg border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800" />
-                    <Link href="/signin" className="hidden sm:block text-xs font-bold text-slate-900 uppercase tracking-widest hover:text-blue-600 transition-colors dark:text-slate-100 dark:hover:text-blue-400">دخول</Link>
+                    <Link href="/signin" className="hidden sm:block text-xs font-bold text-slate-900 uppercase tracking-widest hover:text-blue-600 transition-colors dark:text-slate-100 dark:hover:text-blue-400">دخول المساحة</Link>
                     <Link
                         href="/signin"
                         className="rounded-lg border-none bg-blue-600 px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-blue-700 active:scale-95 sm:px-10 sm:text-xs"
                     >
-                        ابدأ الآن
+                        ابدأ من هنا
                     </Link>
                 </div>
             </div>

@@ -39,6 +39,10 @@ export const updateOfferDraftInputSchema = z.object({
   attachments: z.array(uploadedFileReferenceSchema).optional(),
 });
 
+export const archiveOfferInputSchema = z.object({
+  id: z.string().min(1),
+});
+
 export const respondToOfferInputSchema = z.object({
   id: z.string().min(1),
   status: offerStatusSchema.exclude(["pending"]),
@@ -84,6 +88,7 @@ export type OfferLiveState = OfferSummary & {
   isRecipient: boolean;
   canEditDraft: boolean;
   canPublish: boolean;
+  canArchive: boolean;
   canRespond: boolean;
 };
 
@@ -113,5 +118,6 @@ export type CreateOfferInput = z.infer<typeof createOfferInputSchema>;
 export type PublishOfferInput = z.infer<typeof publishOfferInputSchema>;
 export type PublishConversationOfferInput = z.infer<typeof publishConversationOfferInputSchema>;
 export type UpdateOfferDraftInput = z.infer<typeof updateOfferDraftInputSchema>;
+export type ArchiveOfferInput = z.infer<typeof archiveOfferInputSchema>;
 export type RespondToOfferInput = z.infer<typeof respondToOfferInputSchema>;
 export type ApplyToOfferInput = z.infer<typeof applyToOfferInputSchema>;

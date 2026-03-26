@@ -67,7 +67,7 @@ export default function AboutPage() {
                         >
                             عن عنان <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400">
-                                رؤية عقارية تقنية
+                                شركة تبني مساحة عمل أوضح
                             </span>
                         </motion.h1>
 
@@ -76,7 +76,7 @@ export default function AboutPage() {
                             className="max-w-3xl mx-auto space-y-8 text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300 md:text-2xl"
                         >
                             <p>
-                                نحن نبني البنية التحتية الرقمية لمستقبل العقار في المملكة العربية السعودية، متمشين مع رؤية ٢٠٣٠ لتحويل القطاع إلى منظومة ذكية وشفافة.
+                                عنان هي الصفحة العامة لمساحة عمل تجمع المطورين والوسطاء حول أدوات أوضح، متابعة أسهل، وتعريف مباشر بما تفعله الشركة ولماذا توجد.
                             </p>
                         </motion.div>
 
@@ -102,19 +102,19 @@ export default function AboutPage() {
                             {
                                 icon: Target,
                                 title: "مهمتنا",
-                                description: "تمكين المطورين والوسطاء من خلال أدوات استخبارات سوقية تعتمد على الذكاء الاصطناعي والمحاكاة اللحظية للطلب.",
+                                description: "تبسيط العمل بين المطورين والوسطاء عبر مساحة واحدة تجعل التواصل والمعلومات والمهام أقرب وأسهل.",
                                 className: "hover:scale-[1.02] transition-transform duration-500"
                             },
                             {
                                 icon: Shield,
                                 title: "قيمنا",
-                                description: "الشفافية المطلقة، السرية المؤسسية، والامتثال الكامل للأنظمة التشريعية لالهيئة العامة للعقار.",
+                                description: "الوضوح، التنظيم، والموثوقية في كل جزء من الواجهة العامة ومساحة العمل الداخلية.",
                                 className: "hover:scale-[1.02] transition-transform duration-500"
                             },
                             {
                                 icon: Users,
-                                title: "النظام البيئي",
-                                description: "ربط جميع أطراف العملية العقارية في منصة واحدة تضمن كفاءة التنفيذ وسرعة الإغلاق.",
+                                title: "أسلوب العمل",
+                                description: "نبني صفحات عامة تشرح المنتج، ومساحة داخلية تساعد الفرق على تنفيذ العمل اليومي من دون تشتيت.",
                                 className: "hover:scale-[1.02] transition-transform duration-500"
                             },
                         ]}
@@ -134,17 +134,17 @@ export default function AboutPage() {
                 >
                     <div className="space-y-8">
                         <h2 className="text-5xl font-black leading-tight tracking-tight text-slate-900 dark:text-slate-100">
-                            رؤية عام <br />
-                            <span className="text-blue-600">٢٠٣٠</span>
+                            لماذا <br />
+                            <span className="text-blue-600">هذه المساحة</span>
                         </h2>
                         <div className="w-20 h-2 bg-blue-600" />
                     </div>
                     <div className="space-y-8 text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300">
                         <p>
-                            تساهم عنان في تسريع التحول الرقمي للقطاع العقاري السعودي من خلال أتمتة عمليات البحث والتمويل والتعاقد. نحن لا نوفر مجرد تطبيق، بل نبني بروتوكولاً للتعاملات الكبرى.
+                            بدأنا من ملاحظة بسيطة: الفرق تحتاج إلى مساحة عمل تتكلم بلغتها، وتعرض ما يهمها بوضوح، وتساعدها على التحرك من دون فوضى أو ازدواجية بين الأدوات.
                         </p>
                         <p className="text-lg opacity-80">
-                            من خلال مكاتبنا في الرياض، نعمل جنباً إلى جنب مع شركائنا لضمان توفير تدفقات بيانات دقيقة تساعد في استقرار السوق ونموه.
+                            لذلك صممنا عنان لتكون واجهة عامة تعرف بالشركة، ثم مساحة عمل تساعد المطورين والوسطاء على متابعة ما يحدث فعلاً داخل المنتج.
                         </p>
                     </div>
                 </motion.div>
@@ -163,10 +163,10 @@ export default function AboutPage() {
                         valueClassName="text-6xl font-black text-blue-600 tracking-tighter"
                         labelClassName="block text-xs font-black uppercase tracking-[0.2em] text-slate-400"
                         items={[
-                            { value: "٢٠٣٠", label: "رؤية التحول" },
-                            { value: "٩٩.٩٪", label: "دقة البيانات" },
-                            { value: "٢٤/٧", label: "ذكاء تشغيلي" },
-                            { value: "١٠٠٪", label: "امتثال سعودي" },
+                            { value: "١", label: "مساحة موحدة" },
+                            { value: "٢", label: "فئتان أساسيتان" },
+                            { value: "٢٤/٧", label: "وصول مستمر" },
+                            { value: "واضح", label: "من أول زيارة" },
                         ]}
                     />
                 </motion.div>
@@ -183,8 +183,8 @@ export default function AboutPage() {
                         viewport={{ once: true }}
                         className="text-5xl md:text-7xl font-black text-white leading-tight"
                     >
-                        الالتزام <br />
-                        <span className="text-blue-500">بالرؤية الوطنية</span>
+                        كيف نعرّف <br />
+                        <span className="text-blue-500">أنفسنا اليوم</span>
                     </motion.h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-16 text-slate-400 font-bold leading-relaxed text-xl">
@@ -194,7 +194,7 @@ export default function AboutPage() {
                             viewport={{ once: true }}
                             transition={{ delay: 0.2 }}
                         >
-                            نحن في عنان لسنا مجرد مزود للخدمات التقنية، نحن شريك استراتيجي في رحلة التحول الرقمي للقطاع العقاري. نؤمن بأن الشفافية هي مفتاح النمو، ولذلك نوفر أدوات تضمن وصول المعلومة الصحيحة في الوقت المناسب لكل طرف.
+                            عنان ليست مجرد صفحة هبوط، وليست مجرد أداة داخلية. هي نقطة بداية تشرح من نحن، ثم توجه المطورين والوسطاء إلى مساحة عمل تساعدهم على التنظيم والمتابعة والتعاون.
                         </motion.p>
                         <motion.p
                             initial={{ opacity: 0, y: 20 }}
@@ -202,7 +202,7 @@ export default function AboutPage() {
                             viewport={{ once: true }}
                             transition={{ delay: 0.3 }}
                         >
-                            بحلول عام ٢٠٣٠، نهدف لأن تكون بنية عنان التحتية هي المعيار الذهبي لجميع عمليات الربط والتعاقد العقاري المؤسسي في المملكة العربية السعودية، مدعومة بأحدث ما توصل إليه العلم في مجال الذكاء الاصطناعي السيادي.
+                            هذا هو الأساس الذي نبني عليه: منتج واضح، رسالة واضحة، وتجربة عامة لا تبالغ في الوعود بل تشرح القيمة الحقيقية للمساحة التي نقدمها.
                         </motion.p>
                     </div>
 
@@ -214,10 +214,10 @@ export default function AboutPage() {
                         className="pt-16 mt-16 border-t border-slate-800/50 flex flex-wrap justify-start gap-6"
                     >
                         <ButtonLink href="/contact" variant="primary" className="px-12 py-4">
-                            ابدأ الشراكة
+                            تحدث مع الفريق
                         </ButtonLink>
                         <ButtonLink href="/developer" variant="outline" className="px-8 py-4 border-slate-700 text-slate-400 hover:text-white hover:border-blue-500 transition-colors !bg-transparent">
-                            المطورون
+                            مساحة المطورين
                         </ButtonLink>
                     </motion.div>
                 </div>

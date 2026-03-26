@@ -2,9 +2,11 @@ import { assertBrokerSession, requireBrokerSession } from "@/server/auth/guards"
 import type { ResolvedSession } from "@/server/auth/session";
 import {
   addDealDocumentInputSchema,
+  archiveDealInputSchema,
   createDealInputSchema,
   type DealSummary,
   propertyDealsInputSchema,
+  updateDealInputSchema,
   updateDealFollowUpInputSchema,
   updateDealNotesInputSchema,
   updateDealStageInputSchema,
@@ -115,6 +117,27 @@ export async function updateBrokerDealStage(
   await dependencies.crmRepository.updateStage({ ...parsed.data, lastUpdatedBy: authUserId });
 }
 
+/**
+ * WHY:   Broker CRM edit screens need one owner-checked path for full deal updates.
+ * WHAT:  Updates the mutable fields of one broker-owned deal.
+ * HOW:   Validates payload shape, confirms deal ownership, validates any linked property, then persists through the repository.
+ */
+export async function updateBrokerDeal(
+  input: unknown,
+  dependencies: BrokerCrmDependencies = defaultDependencies,
+): Promise<void> {
+  const parsed = updateDealInputSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError({ code: "INVALID_ARGUMENT", message: parsed.error.issues[0]?.message ?? "Invalid deal payload", status: 400 });
+  }
+  await requireOwnedDeal(parsed.data.dealId, dependencies);
+  if (parsed.data.propertyId) {
+    await requireOwnedProperty(parsed.data.propertyId, dependencies);
+  }
+  const { authUserId } = await requireBrokerOwner(dependencies);
+  await dependencies.crmRepository.update({ ...parsed.data, lastUpdatedBy: authUserId });
+}
+
 export async function updateBrokerDealNotes(
   input: unknown,
   dependencies: BrokerCrmDependencies = defaultDependencies,
@@ -152,4 +175,26 @@ export async function addBrokerDealDocument(
   await requireOwnedDeal(parsed.data.dealId, dependencies);
   const { authUserId } = await requireBrokerOwner(dependencies);
   await dependencies.crmRepository.addDocument({ ...parsed.data, lastUpdatedBy: authUserId });
+}
+
+/**
+ * WHY:   Broker CRM should archive deals without destructive deletes so historical reporting stays intact.
+ * WHAT:  Soft-archives one broker-owned deal.
+ * HOW:   Verifies ownership first, then stores archive metadata through the repository.
+ */
+export async function archiveBrokerDeal(
+  input: unknown,
+  dependencies: BrokerCrmDependencies = defaultDependencies,
+): Promise<void> {
+  const parsed = archiveDealInputSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError({ code: "INVALID_ARGUMENT", message: parsed.error.issues[0]?.message ?? "Invalid archive payload", status: 400 });
+  }
+  await requireOwnedDeal(parsed.data.dealId, dependencies);
+  const { authUserId } = await requireBrokerOwner(dependencies);
+  await dependencies.crmRepository.archive({
+    ...parsed.data,
+    archivedAt: Date.now(),
+    lastUpdatedBy: authUserId,
+  });
 }

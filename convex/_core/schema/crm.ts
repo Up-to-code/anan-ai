@@ -50,6 +50,8 @@ const crmTables = {
         documentIds: v.optional(v.array(v.id("_storage"))),
         documents: v.optional(uploadedFileReferenceListValidator),
         lastUpdatedBy: v.optional(v.string()),
+        archivedAt: v.optional(v.number()),
+        archivedBy: v.optional(v.string()),
     })
         .index("REDId", ["REDId"])
         .index("brokerId", ["brokerId"])

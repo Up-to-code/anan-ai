@@ -38,19 +38,25 @@ export default function BankProductDetailPage({ bankId, productId }: BankProduct
         />
       }
     >
-      <WorkspacePanel className="space-y-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <StatusBadge value={product.assistantEnabled ? "active" : "inactive"} />
-          <StatusBadge value={bank.status} />
+      <WorkspacePanel className="rounded-3xl p-10 space-y-10 border-border/30 bg-card/50 shadow-sm">
+        <div className="flex items-center justify-between pb-8 border-b border-border/10">
+          <div className="space-y-3">
+            <h3 className="text-4xl font-black tracking-tighter text-foreground decoration-primary/20 underline decoration-8 underline-offset-8 decoration-skip-ink-none">{product.name}</h3>
+            <p className="text-[13px] font-bold text-muted-foreground/40 uppercase tracking-widest">Product ID: {product.id}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <StatusBadge value={product.assistantEnabled ? "active" : "inactive"} />
+            <StatusBadge value={bank.status} />
+          </div>
         </div>
+
         <KeyValueGrid
           items={[
-            { label: "البنك", value: bank.name },
-            { label: "سبب الاستخدام", value: product.reason },
-            { label: "الفائدة السنوية", value: `${product.apr}%` },
-            { label: "مدة التمويل", value: `${product.termYears} سنة` },
-            { label: "الوصول للمساعد", value: product.assistantEnabled ? "متاح" : "غير متاح" },
-            { label: "المعرّف", value: product.id },
+            { label: "البنك الشريك", value: <span className="font-black text-foreground">{bank.name}</span> },
+            { label: "سبب التفضيل", value: <span className="font-bold text-muted-foreground/80">{product.reason}</span> },
+            { label: "الفائدة السنوية", value: <span className="font-black text-primary">{product.apr}%</span> },
+            { label: "مدة التمويل", value: <span className="font-black text-foreground">{product.termYears} سنة</span> },
+            { label: "المعرّف التقني", value: <span className="font-mono text-[11px] text-muted-foreground/50">{product.id}</span> },
           ]}
           columns={3}
         />

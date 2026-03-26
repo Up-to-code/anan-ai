@@ -1,17 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 import { Dialog } from "@base-ui/react/dialog";
 import { Plus, X } from "lucide-react";
+import type { OrganizationSummary } from "@/server/contracts/organizations";
 import InviteMemberForm from "./InviteMemberForm";
+import OrganizationMemberCard from "../../../_components/Visuals/OrganizationMemberCard";
 import type { OrganizationInviteDisplay, OrganizationMemberDisplay } from "../../../_lib/entities";
-
-const roleLabels: Record<OrganizationMemberDisplay["role"], string> = {
-  manager: "مدير",
-  member: "عضو",
-  viewer: "مشاهد",
-};
+import { getOrganizationMemberRoleLabel } from "../../../_lib/organizationMembers";
+import { cn } from "@/lib/utils";
 
 const roles = ["manager", "member", "viewer"] as const;
 
@@ -25,21 +22,6 @@ function StatusNotice({ status }: { status: string | null }) {
     <div className="rounded-xl border border-border bg-muted/50 px-4 py-3 text-[13px] font-bold text-foreground">
       {status}
     </div>
-  );
-}
-
-function MemberStatusPill({ label }: { label: string }) {
-  return (
-    <span
-      className={cn(
-        "rounded-full border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest",
-        label === "نشط"
-          ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400"
-          : "border-border bg-muted text-muted-foreground",
-      )}
-    >
-      {label}
-    </span>
   );
 }
 
@@ -57,35 +39,40 @@ function MemberRoleButtons(args: {
           disabled={!args.canManage}
           onClick={() => args.onRoleChange(args.member, role)}
           className={cn(
-            "rounded-xl border px-3 py-1.5 text-[11px] font-black tracking-widest uppercase transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "rounded-xl border px-3 py-1.5 text-[11px] font-black uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             args.member.role === role
               ? "border-foreground bg-foreground text-background shadow-sm"
               : "border-border bg-background text-muted-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50",
           )}
         >
-          {roleLabels[role]}
+          {getOrganizationMemberRoleLabel(role)}
         </button>
       ))}
     </div>
   );
 }
 
-function MemberRow(args: {
+function MemberCard(args: {
   member: OrganizationMemberDisplay;
   canManage: boolean;
+  organizationType: OrganizationSummary["type"] | null | undefined;
   onRoleChange: (member: OrganizationMemberDisplay, role: OrganizationMemberDisplay["role"]) => Promise<void>;
 }) {
   return (
-    <article className="flex flex-col gap-4 border-b border-border py-4 transition-colors last:border-0 hover:bg-muted/30 md:flex-row md:items-center md:justify-between px-4">
-      <div className="min-w-0">
-        <div className="truncate text-[14px] font-bold text-foreground">{args.member.name}</div>
-        <div className="mt-1 truncate text-[12px] font-medium text-muted-foreground" dir="ltr">{args.member.email}</div>
-      </div>
-      <div className="flex flex-wrap items-center gap-4">
-        <MemberStatusPill label={args.member.statusLabel} />
-        <MemberRoleButtons member={args.member} canManage={args.canManage} onRoleChange={args.onRoleChange} />
-      </div>
-    </article>
+    <OrganizationMemberCard
+      member={args.member}
+      organizationType={args.organizationType}
+      footer={
+        args.canManage ? (
+          <div className="space-y-2">
+            <div className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+              إدارة الدور
+            </div>
+            <MemberRoleButtons member={args.member} canManage={args.canManage} onRoleChange={args.onRoleChange} />
+          </div>
+        ) : null
+      }
+    />
   );
 }
 
@@ -95,20 +82,22 @@ function InviteRow(args: {
   onCancelInvite: (invite: OrganizationInviteDisplay) => Promise<void>;
 }) {
   return (
-    <article className="flex flex-col gap-4 border-b border-border py-4 transition-colors last:border-0 hover:bg-muted/30 md:flex-row md:items-center md:justify-between px-4">
+    <article className="flex flex-col gap-4 border-b border-border px-4 py-4 transition-colors last:border-0 hover:bg-muted/30 md:flex-row md:items-center md:justify-between">
       <div className="min-w-0">
-        <div className="truncate text-[14px] font-bold text-foreground" dir="ltr">{args.invite.email}</div>
+        <div className="truncate text-[14px] font-bold text-foreground" dir="ltr">
+          {args.invite.email}
+        </div>
         <div className="mt-1 text-[12px] font-medium text-muted-foreground">تنتهي {args.invite.expiresLabel}</div>
       </div>
       <div className="flex flex-wrap items-center gap-4">
         <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400">
-          {roleLabels[args.invite.role]}
+          {getOrganizationMemberRoleLabel(args.invite.role)}
         </span>
         {args.canManage ? (
           <button
             type="button"
             onClick={() => args.onCancelInvite(args.invite)}
-            className="rounded-xl border border-red-500/30 bg-background px-3 py-1.5 text-[11px] font-black tracking-widest uppercase text-red-600 shadow-sm transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 dark:hover:bg-red-500/10"
+            className="rounded-xl border border-red-500/30 bg-background px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-red-600 shadow-sm transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 dark:hover:bg-red-500/10"
           >
             إلغاء الدعوة
           </button>
@@ -120,19 +109,21 @@ function InviteRow(args: {
 
 /**
  * WHY:   Organization members need a practical management surface before backend role-mutation support is added.
- * WHAT:  Renders current members plus pending invites and supports local-only role reassignment in the UI.
- * HOW:   Starts from server-rendered data and keeps demo role changes entirely in local state.
+ * WHAT:  Renders current members as reusable cards plus pending invites and supports local-only role reassignment in the UI.
+ * HOW:   Starts from server-rendered data, reuses the shared organization member card, and keeps invite operations unchanged.
  */
 export default function MembersWorkspace({
   initialMembers,
   invites,
   canManage,
   hasOrganization,
+  organizationType,
 }: {
   initialMembers: OrganizationMemberDisplay[];
   invites: OrganizationInviteDisplay[];
   canManage: boolean;
   hasOrganization: boolean;
+  organizationType: OrganizationSummary["type"] | null | undefined;
 }) {
   const [members, setMembers] = useState(initialMembers);
   const [pendingInvites, setPendingInvites] = useState(invites);
@@ -153,7 +144,7 @@ export default function MembersWorkspace({
       return;
     }
     setMembers((current) => current.map((entry) => (entry.id === member.id ? { ...entry, role } : entry)));
-    setStatus(`تم تغيير دور ${member.name} إلى ${roleLabels[role]}.`);
+    setStatus(`تم تغيير دور ${member.name} إلى ${getOrganizationMemberRoleLabel(role)}.`);
     queueStatusClear(setStatus);
   };
 
@@ -177,11 +168,9 @@ export default function MembersWorkspace({
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
           <h2 className="text-lg font-bold text-foreground">أعضاء المنظمة ({members.length})</h2>
-          <p className="text-[13px] font-medium text-muted-foreground">
-            إدارة الأدوار والصلاحيات للأعضاء الحاليين.
-          </p>
+          <p className="text-[13px] font-medium text-muted-foreground">إدارة الأدوار والصلاحيات للأعضاء الحاليين.</p>
         </div>
-        {canManage && (
+        {canManage ? (
           <Dialog.Root open={isInviteOpen} onOpenChange={setIsInviteOpen}>
             <Dialog.Trigger className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-foreground px-4 text-[13px] font-bold text-background transition-colors hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
               <Plus className="h-4 w-4" />
@@ -204,13 +193,19 @@ export default function MembersWorkspace({
               </Dialog.Popup>
             </Dialog.Portal>
           </Dialog.Root>
-        )}
+        ) : null}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-        <div className="flex flex-col">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {members.map((member) => (
-            <MemberRow key={member.id} member={member} canManage={canManage} onRoleChange={handleRoleChange} />
+            <MemberCard
+              key={member.id}
+              member={member}
+              canManage={canManage}
+              organizationType={organizationType}
+              onRoleChange={handleRoleChange}
+            />
           ))}
         </div>
       </div>

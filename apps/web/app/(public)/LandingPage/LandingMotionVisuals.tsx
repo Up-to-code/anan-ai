@@ -132,15 +132,15 @@ export function HeroBrandNetworkVisual() {
 }
 
 /**
- * WHY:   Investor-facing sections need a distinct motion visual to anchor the narrative.
- * WHAT:  Displays the buyer intelligence vector with animated connection lines.
+ * WHY:   The landing page needs a distinct explanatory visual to anchor the overview section.
+ * WHAT:  Displays the buyer-intelligence vector with animated connection lines.
  * HOW:   Wraps the static SVG in MotionVector with a ConnectionOverlay.
  */
 export function BuyerIntelligenceVisual() {
   return (
     <MotionVector
       src="/vectors/landing/anan_landing_buyers_flow_v3.svg"
-      alt="مسار المستثمر والتمويل"
+      alt="مسار التعريف بالمنصة"
       overlay={
         <ConnectionOverlay
           viewBoxWidth={520}

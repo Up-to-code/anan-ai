@@ -4,7 +4,7 @@ import { PageHero, Section } from "@/app/(public)/public";
 
 const TRUST_SIGNALS = [
   { icon: ShieldCheck, label: "تشفير مؤسسي" },
-  { icon: Gavel, label: "امتثال قانوني" },
+  { icon: Gavel, label: "شروط واضحة" },
 ];
 
 type SigninPageViewProps = {
@@ -25,12 +25,12 @@ export default function SigninPageView({ redirectTo }: SigninPageViewProps) {
                 </div>
               </div>
             )}
-            title="دخول النظام المؤسسي"
+            title="دخول مساحة العمل"
             titleTag="h1"
             titleClassName="text-4xl font-black uppercase tracking-tight text-slate-900 dark:text-slate-100"
             description={(
               <p className="font-bold text-slate-500 dark:text-slate-300">
-                وصول آمن للمطورين والوسطاء المعتمدين في المملكة العربية السعودية.
+                وصول آمن إلى مساحة عنان للمطورين والوسطاء.
               </p>
             )}
             descriptionClassName=""
@@ -47,7 +47,7 @@ export default function SigninPageView({ redirectTo }: SigninPageViewProps) {
                     <a href="/terms" className="text-blue-600 hover:underline focus-visible:underline">اتفاقية الاستخدام</a>
                     {" "}و{" "}
                     <a href="/policy" className="text-blue-600 hover:underline focus-visible:underline">سياسة الخصوصية</a>
-                    {" "}السعودية.
+                    {" "}الخاصة بالمنصة.
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-8 border-t border-slate-100 pt-12 dark:border-slate-800">

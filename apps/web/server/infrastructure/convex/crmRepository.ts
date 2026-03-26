@@ -2,9 +2,11 @@ import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { apiUnsafe } from "@/lib/convexApi";
 import type {
   AddDealDocumentInput,
+  ArchiveDealInput,
   CreateDealInput,
   DealDetail,
   DealSummary,
+  UpdateDealInput,
   UpdateDealFollowUpInput,
   UpdateDealNotesInput,
   UpdateDealStageInput,
@@ -16,9 +18,11 @@ type CrmApiRefs = {
   listDealsByPropertyId: unknown;
   getDealById: unknown;
   createDeal: unknown;
+  updateDeal: unknown;
   updateDealStage: unknown;
   updateDealFollowUp: unknown;
   updateDealNotes: unknown;
+  archiveDeal: unknown;
   addDealDocument: unknown;
 };
 
@@ -37,9 +41,11 @@ export type CrmRepository = {
     lastUpdatedBy: string;
     input: CreateDealInput;
   }): Promise<string>;
+  update(args: { lastUpdatedBy: string } & UpdateDealInput): Promise<void>;
   updateStage(args: { lastUpdatedBy: string } & UpdateDealStageInput): Promise<void>;
   updateFollowUp(args: { lastUpdatedBy: string } & UpdateDealFollowUpInput): Promise<void>;
   updateNotes(args: { lastUpdatedBy: string } & UpdateDealNotesInput): Promise<void>;
+  archive(args: { archivedAt: number; lastUpdatedBy: string } & ArchiveDealInput): Promise<void>;
   addDocument(args: { lastUpdatedBy: string } & AddDealDocumentInput): Promise<void>;
 };
 
@@ -96,6 +102,22 @@ export const convexCrmRepository: CrmRepository = {
     } as never) as Promise<string>;
   },
 
+  async update({ lastUpdatedBy, dealId, title, description, value, nextFollowUpAt, stage, contactName, contactPhone, propertyId, notes }) {
+    await fetchMutation(crmApi.updateDeal as never, {
+      dealId: dealId as never,
+      title,
+      description,
+      value,
+      nextFollowUpAt,
+      stage,
+      contactName,
+      contactPhone,
+      propertyId: propertyId as never,
+      notes,
+      lastUpdatedBy,
+    } as never);
+  },
+
   async updateStage({ lastUpdatedBy, dealId, stage }) {
     await fetchMutation(crmApi.updateDealStage as never, {
       dealId: dealId as never,
@@ -116,6 +138,15 @@ export const convexCrmRepository: CrmRepository = {
     await fetchMutation(crmApi.updateDealNotes as never, {
       dealId: dealId as never,
       notes,
+      lastUpdatedBy,
+    } as never);
+  },
+
+  async archive({ archivedAt, lastUpdatedBy, dealId }) {
+    await fetchMutation(crmApi.archiveDeal as never, {
+      dealId: dealId as never,
+      archivedAt,
+      archivedBy: lastUpdatedBy,
       lastUpdatedBy,
     } as never);
   },

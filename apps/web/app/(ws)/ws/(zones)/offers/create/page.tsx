@@ -46,5 +46,10 @@ export default async function CreateOfferPage() {
     const query = buildOfferRedirectQuery(result);
     return { redirectTo: `/ws/offers/${result.offerId}${query ? `?${query}` : ""}` };
   }
-  return <CreateOfferForm properties={properties.page.map(mapPropertyToOfferOption)} onSubmit={createOffer} />;
+  return (
+    <CreateOfferForm
+      properties={properties.page.map(mapPropertyToOfferOption)}
+      onSubmit={createOffer}
+    />
+  );
 }

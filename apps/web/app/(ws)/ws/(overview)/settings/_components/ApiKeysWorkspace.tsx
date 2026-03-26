@@ -3,25 +3,44 @@
 import { Dialog } from "@base-ui/react/dialog";
 import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import { Eye, FilePenLine, Home, KeyRound, PlusCircle, Trash2, Users, Plus, X, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  ORGANIZATION_API_KEY_ACTION_CATALOG,
+  ORGANIZATION_API_KEY_RESOURCE_CATALOG,
+  type OrganizationApiKeyAction,
+  type OrganizationApiKeyResource,
+} from "@/lib/auth/organizationPermissions";
 import type {
   OrganizationApiKeyPermission,
   OrganizationApiKeySecretResult,
   OrganizationApiKeySummary,
 } from "@/server/contracts/organizationApiKeys";
 
-const permissionCatalog = [
-  { resource: "clients", label: "العملاء", icon: Users },
-  { resource: "properties", label: "العقارات", icon: Home },
-] as const;
+const resourceIcons: Record<OrganizationApiKeyResource, LucideIcon> = {
+  clients: Users,
+  properties: Home,
+};
 
-const actionCatalog = [
-  { action: "read", label: "قراءة", icon: Eye },
-  { action: "create", label: "إنشاء", icon: PlusCircle },
-  { action: "update", label: "تحديث", icon: FilePenLine },
-  { action: "delete", label: "حذف", icon: Trash2 },
-] as const;
+const actionIcons: Record<OrganizationApiKeyAction, LucideIcon> = {
+  read: Eye,
+  create: PlusCircle,
+  update: FilePenLine,
+  delete: Trash2,
+};
+
+const permissionCatalog = ORGANIZATION_API_KEY_RESOURCE_CATALOG.map((entry) => ({
+  ...entry,
+  label: entry.arabicLabel,
+  icon: resourceIcons[entry.resource],
+}));
+
+const actionCatalog = ORGANIZATION_API_KEY_ACTION_CATALOG.map((entry) => ({
+  ...entry,
+  label: entry.arabicLabel,
+  icon: actionIcons[entry.action],
+}));
 
 function permissionKey(permission: OrganizationApiKeyPermission) {
   return `${permission.resource}:${permission.action}`;

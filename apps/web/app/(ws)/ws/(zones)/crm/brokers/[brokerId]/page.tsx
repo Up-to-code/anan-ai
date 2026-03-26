@@ -2,12 +2,42 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Mail, Users } from "lucide-react";
 import ZonePageIntro from "../../../../_components/ZoneShell/ZonePageIntro";
+import OrganizationMemberCard from "../../../../_components/Visuals/OrganizationMemberCard";
+import { getOrganizationMemberRoleLabel } from "../../../../_lib/organizationMembers";
 import { getWorkspaceOrganizationTeam } from "../../../../_lib/organizationTeam";
 
 interface BrokerDetailPageProps {
   params: Promise<{
     brokerId: string;
   }>;
+}
+
+function MemberSummaryActions({
+  memberAuthUserId,
+  currentAuthUserId,
+}: {
+  memberAuthUserId: string;
+  currentAuthUserId: string;
+}) {
+  const canMessage = memberAuthUserId !== currentAuthUserId;
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      {canMessage ? (
+        <Link
+          href={`/ws/inbox?startUserId=${encodeURIComponent(memberAuthUserId)}`}
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-black tracking-[0.18em] text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-blue-500 dark:hover:bg-blue-500/10 dark:hover:text-blue-300"
+        >
+          <Mail className="h-4 w-4" />
+          رسالة
+        </Link>
+      ) : (
+        <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+          هذا أنت
+        </span>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -17,7 +47,7 @@ interface BrokerDetailPageProps {
  */
 export default async function BrokerDetailPage({ params }: BrokerDetailPageProps) {
   const { brokerId } = await params;
-  const { organization, members, invites } = await getWorkspaceOrganizationTeam();
+  const { organization, members, invites, authUserId } = await getWorkspaceOrganizationTeam();
   const broker = members.find((member) => member.id === brokerId) ?? null;
 
   if (!broker) {
@@ -31,7 +61,7 @@ export default async function BrokerDetailPage({ params }: BrokerDetailPageProps
       <ZonePageIntro
         eyebrow="ملف الوسيط"
         title={broker.name}
-        description={`${broker.role} داخل ${organization?.name ?? "المنظمة الحالية"}`}
+        description={`${getOrganizationMemberRoleLabel(broker.role)} داخل ${organization?.name ?? "المنظمة الحالية"}`}
         actions={
           <Link
             href="/ws/crm/brokers"
@@ -46,35 +76,19 @@ export default async function BrokerDetailPage({ params }: BrokerDetailPageProps
       <div className="space-y-8 px-6 py-6 lg:px-8 lg:py-8">
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
-            <div className="border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
-              <div className="flex items-start gap-6">
-                <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden bg-slate-100 text-3xl font-black text-slate-400 dark:bg-slate-800 dark:text-slate-200">
-                  {broker.name.slice(0, 1)}
-                </div>
-                <div className="flex-1">
-                  <div className="mb-2 flex items-center gap-3">
-                    <h3 className="text-2xl font-black text-slate-950 dark:text-slate-100">{broker.name}</h3>
-                  </div>
-                  <p className="mb-3 text-sm font-bold text-blue-600">{broker.role}</p>
-                  <div className="flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-400">
-                    <span>{broker.email}</span>
-                    <span>{broker.statusLabel}</span>
-                  </div>
-                </div>
-              </div>
+            <OrganizationMemberCard
+              member={broker}
+              organizationType={organization?.type}
+              className="h-full"
+              footer={(
+                <MemberSummaryActions
+                  memberAuthUserId={broker.authUserId}
+                  currentAuthUserId={authUserId}
+                />
+              )}
+            />
 
-              <div className="mt-6 flex gap-3 border-t border-slate-100 pt-6 dark:border-slate-800">
-                <Link
-                  href="/ws/inbox"
-                  className="flex-1 inline-flex items-center justify-center gap-2 border border-slate-200 bg-white px-4 py-3 text-xs font-black tracking-[0.18em] text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-blue-500 dark:hover:bg-blue-500/10 dark:hover:text-blue-300"
-                >
-                  <Mail className="h-4 w-4" />
-                  رسالة
-                </Link>
-              </div>
-            </div>
-
-            <div className="border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
               <h4 className="mb-4 text-sm font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">الوصول الفعلي</h4>
               <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
                 هذا الملف يعتمد على عضوية المنظمة الحقيقية. ربط المشاريع والعملاء يتم من المشاريع والعروض وCRM الفعلي،
@@ -84,7 +98,7 @@ export default async function BrokerDetailPage({ params }: BrokerDetailPageProps
           </div>
 
           <div className="space-y-6">
-            <div className="border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
               <h4 className="mb-4 text-sm font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">إحصائيات</h4>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -97,7 +111,7 @@ export default async function BrokerDetailPage({ params }: BrokerDetailPageProps
               </div>
             </div>
 
-            <div className="border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
               <h4 className="mb-4 text-sm font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">الحالة</h4>
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 rounded-full bg-emerald-500" />
@@ -107,7 +121,7 @@ export default async function BrokerDetailPage({ params }: BrokerDetailPageProps
           </div>
         </div>
 
-        <div className="border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
           <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
             <h4 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">
               الدعوات ({memberInvites.length})

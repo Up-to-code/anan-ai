@@ -17,6 +17,19 @@ type PropertyOption = {
 
 type CreateOfferFormProps = {
   properties: PropertyOption[];
+  pageTitle?: string;
+  pageDescription?: string;
+  submitLabel?: string;
+  allowVisibilityChange?: boolean;
+  backHref?: string;
+  initialData?: {
+    propertyId: string;
+    title: string;
+    description: string;
+    price: string;
+    visibility: "public" | "private";
+    attachments: UploadedFileReference[];
+  };
   onSubmit: (data: {
     propertyId: string;
     title: string;
@@ -25,13 +38,25 @@ type CreateOfferFormProps = {
     visibility: "public" | "private";
     attachments: UploadedFileReference[];
   }) => Promise<{ redirectTo: string }>;
+  onArchive?: () => Promise<{ redirectTo: string }>;
 };
 
-export default function CreateOfferForm({ properties, onSubmit }: CreateOfferFormProps) {
+export default function CreateOfferForm({
+  properties,
+  pageTitle = "إنشاء عرض جديد",
+  pageDescription = "قم بتخصيص عرضك العقاري ورفعه للمنصة بخطوات بسيطة.",
+  submitLabel = "حفظ ونشر العرض",
+  allowVisibilityChange = true,
+  backHref = "/ws/offers",
+  initialData,
+  onSubmit,
+  onArchive,
+}: CreateOfferFormProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [pending, startTransition] = useTransition();
-  const [attachments, setAttachments] = useState<UploadedFileReference[]>([]);
+  const [archivePending, startArchiveTransition] = useTransition();
+  const [attachments, setAttachments] = useState<UploadedFileReference[]>(initialData?.attachments ?? []);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<{
     propertyId: string;
@@ -40,11 +65,11 @@ export default function CreateOfferForm({ properties, onSubmit }: CreateOfferFor
     price: string;
     visibility: "public" | "private";
   }>({
-    propertyId: properties[0]?.id ?? "",
-    title: "",
-    description: "",
-    price: properties[0]?.expectedPrice ?? "",
-    visibility: "public",
+    propertyId: initialData?.propertyId ?? properties[0]?.id ?? "",
+    title: initialData?.title ?? "",
+    description: initialData?.description ?? "",
+    price: initialData?.price ?? properties[0]?.expectedPrice ?? "",
+    visibility: initialData?.visibility ?? "public",
   });
   const { startUpload, isUploading } = useUploadThing("offerAttachments");
 
@@ -71,12 +96,12 @@ export default function CreateOfferForm({ properties, onSubmit }: CreateOfferFor
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 py-12 lg:px-10 lg:py-16">
         <header className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between rounded-3xl border border-border bg-card p-6 md:p-8 shadow-xl shadow-black/[0.02]">
           <div className="space-y-1 text-right">
-            <h1 className="text-2xl font-black tracking-tight text-foreground">إنشاء عرض جديد</h1>
-            <p className="text-[14px] font-medium text-muted-foreground">قم بتخصيص عرضك العقاري ورفعه للمنصة بخطوات بسيطة.</p>
+            <h1 className="text-2xl font-black tracking-tight text-foreground">{pageTitle}</h1>
+            <p className="text-[14px] font-medium text-muted-foreground">{pageDescription}</p>
           </div>
           <button
             type="button"
-            onClick={() => router.push("/ws/offers")}
+            onClick={() => router.push(backHref)}
             className="group inline-flex items-center gap-2 rounded-2xl border border-border bg-muted/10 px-6 py-3.5 text-[13px] font-black uppercase tracking-[0.2em] text-foreground transition-all hover:bg-muted active:scale-95"
           >
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -177,26 +202,33 @@ export default function CreateOfferForm({ properties, onSubmit }: CreateOfferFor
                       className="w-full rounded-2xl border border-border/40 bg-muted/10 px-5 py-4 text-[15px] font-bold text-foreground outline-none transition-all focus:border-foreground/20 focus:bg-muted/20"
                     />
                   </div>
-                  <div>
-                    <label className="mb-3 block text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">ظهور العرض</label>
-                    <div className="grid grid-cols-2 gap-2 rounded-2xl bg-muted/20 p-1.5 border border-border/40">
-                      {(["public", "private"] as const).map((mode) => (
-                        <button
-                          key={mode}
-                          type="button"
-                          onClick={() => setForm((current) => ({ ...current, visibility: mode }))}
-                          className={cn(
-                            "rounded-xl py-3 text-[11px] font-black uppercase tracking-widest transition-all",
-                            form.visibility === mode
-                              ? "bg-foreground text-background shadow-md"
-                              : "text-muted-foreground hover:bg-muted/50"
-                          )}
-                        >
-                          {mode === "public" ? "عام" : "خاص"}
-                        </button>
-                      ))}
+                  {allowVisibilityChange ? (
+                    <div>
+                      <label className="mb-3 block text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">ظهور العرض</label>
+                      <div className="grid grid-cols-2 gap-2 rounded-2xl bg-muted/20 p-1.5 border border-border/40">
+                        {(["public", "private"] as const).map((mode) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => setForm((current) => ({ ...current, visibility: mode }))}
+                            className={cn(
+                              "rounded-xl py-3 text-[11px] font-black uppercase tracking-widest transition-all",
+                              form.visibility === mode
+                                ? "bg-foreground text-background shadow-md"
+                                : "text-muted-foreground hover:bg-muted/50"
+                            )}
+                          >
+                            {mode === "public" ? "عام" : "خاص"}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="rounded-2xl border border-border/40 bg-muted/10 px-5 py-4">
+                      <div className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">ظهور العرض</div>
+                      <div className="mt-2 text-[14px] font-bold text-foreground">{form.visibility === "public" ? "عام" : "خاص"}</div>
+                    </div>
+                  )}
                 </div>
               </section>
 
@@ -222,16 +254,24 @@ export default function CreateOfferForm({ properties, onSubmit }: CreateOfferFor
                 {attachments.length > 0 && (
                   <div className="mt-6 space-y-2">
                     {attachments.map((attachment) => (
-                      <a
-                        key={attachment.key}
-                        href={attachment.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center justify-between rounded-xl border border-border/40 bg-muted/10 px-4 py-3 text-[13px] font-bold text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
-                      >
-                        <span className="truncate">{attachment.name}</span>
-                        <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                      </a>
+                      <div key={attachment.key} className="flex items-center gap-2">
+                        <a
+                          href={attachment.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex flex-1 items-center justify-between rounded-xl border border-border/40 bg-muted/10 px-4 py-3 text-[13px] font-bold text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                        >
+                          <span className="truncate">{attachment.name}</span>
+                          <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setAttachments((current) => current.filter((entry) => entry.key !== attachment.key))}
+                          className="rounded-xl border border-border/40 px-3 py-3 text-[11px] font-black uppercase tracking-widest text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                        >
+                          حذف
+                        </button>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -246,13 +286,35 @@ export default function CreateOfferForm({ properties, onSubmit }: CreateOfferFor
           ) : null}
 
           <div className="flex items-center justify-end pt-4">
-            <button
-              type="submit"
-              disabled={pending}
-              className="w-full md:w-auto min-w-[240px] rounded-3xl bg-foreground px-10 py-5 text-[15px] font-black uppercase tracking-[0.2em] text-background shadow-2xl shadow-black/20 transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
-            >
-              {pending ? "جارٍ الحفظ..." : "حفظ ونشر العرض"}
-            </button>
+            <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row">
+              {onArchive ? (
+                <button
+                  type="button"
+                  disabled={archivePending}
+                  onClick={() => {
+                    setError(null);
+                    startArchiveTransition(async () => {
+                      try {
+                        const result = await onArchive();
+                        router.push(result.redirectTo);
+                      } catch (archiveError) {
+                        setError(archiveError instanceof Error ? archiveError.message : "تعذر أرشفة العرض الآن.");
+                      }
+                    });
+                  }}
+                  className="min-w-[200px] rounded-3xl border border-rose-500/30 px-8 py-5 text-[13px] font-black uppercase tracking-[0.2em] text-rose-600 transition-all hover:bg-rose-50 active:scale-95 disabled:opacity-50"
+                >
+                  {archivePending ? "جارٍ الأرشفة..." : "أرشفة العرض"}
+                </button>
+              ) : null}
+              <button
+                type="submit"
+                disabled={pending}
+                className="w-full md:w-auto min-w-[240px] rounded-3xl bg-foreground px-10 py-5 text-[15px] font-black uppercase tracking-[0.2em] text-background shadow-2xl shadow-black/20 transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+              >
+                {pending ? "جارٍ الحفظ..." : submitLabel}
+              </button>
+            </div>
           </div>
         </form>
       </div>

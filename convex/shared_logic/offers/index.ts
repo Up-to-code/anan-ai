@@ -1,4 +1,5 @@
 export {
+  archiveOfferService,
   applyToOfferService,
   createOfferDraftService,
   createOfferService,

@@ -1,4 +1,5 @@
 import EmptyState from "@/components/shared/EmptyState";
+import Link from "next/link";
 import KeyValueGrid from "@/components/shared/KeyValueGrid";
 import PageActions from "@/components/shared/PageActions";
 import SectionScaffold from "@/components/shared/SectionScaffold";
@@ -44,10 +45,10 @@ export default function UserDetailPage({ userId, userKey }: UserDetailPageProps)
         />
       }
     >
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_320px]">
-        <div className="space-y-6">
-          <WorkspacePanel className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1.35fr)_340px]">
+        <div className="space-y-8">
+          <WorkspacePanel className="p-8 space-y-6">
+            <div className="flex flex-wrap items-center gap-3 pb-6 border-b border-border/20">
               <StatusBadge value={user.status} />
               <StatusBadge value={user.verificationStatus} />
             </div>
@@ -61,34 +62,36 @@ export default function UserDetailPage({ userId, userKey }: UserDetailPageProps)
             />
           </WorkspacePanel>
 
-          <WorkspacePanel className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-900">العروض المرتبطة</h2>
+          <WorkspacePanel className="p-8 space-y-6">
+            <h2 className="text-xl font-black tracking-tight text-foreground underline decoration-primary/20 decoration-4 underline-offset-8">العروض المرتبطة</h2>
             {relatedOffers.length > 0 ? (
-              <div className="space-y-3">
+              <div className="grid gap-4 md:grid-cols-2">
                 {relatedOffers.map((offer) => (
-                  <div key={offer.id} className="rounded-[8px] border border-border bg-slate-50 px-4 py-3">
-                    <div className="font-medium text-slate-900">{offer.title}</div>
-                    <div className="mt-1 text-sm text-slate-500">{offer.projectName}</div>
-                  </div>
+                  <Link key={offer.id} href={`/offers/${offer.id}`} className="group block rounded-2xl border border-border/30 bg-muted/5 p-6 transition-all hover:bg-muted/10 hover:border-primary/30">
+                    <div className="space-y-2">
+                      <div className="text-lg font-black tracking-tight text-foreground group-hover:text-primary transition-colors">{offer.title}</div>
+                      <div className="text-[13px] font-bold text-muted-foreground/60">{offer.projectName}</div>
+                    </div>
+                  </Link>
                 ))}
               </div>
             ) : (
-              <div className="text-sm text-slate-500">لا توجد عروض مرتبطة بهذا المستخدم في بيانات mock.</div>
+              <div className="rounded-2xl border border-dashed border-border/40 bg-muted/5 p-12 text-center text-sm font-bold text-muted-foreground/40">لا توجد عروض مرتبطة بهذا المستخدم في بيانات mock.</div>
             )}
           </WorkspacePanel>
         </div>
 
-        <div className="space-y-6">
-          <WorkspacePanel className="space-y-4">
-            <h2 className="text-base font-semibold text-slate-900">الصلاحيات</h2>
+        <div className="space-y-8">
+          <WorkspacePanel className="p-8 space-y-6">
+            <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground/40">الصلاحيات</h2>
             <div className="space-y-3">
               {[
                 { label: "وصول لوحة الإدارة", status: user.role === "admin" ? "approved" : "pending" },
                 { label: "إدارة العروض", status: user.role === "broker" || user.role === "admin" ? "approved" : "pending" },
                 { label: "التحقق اليدوي", status: user.role === "admin" ? "approved" : "rejected" },
               ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between rounded-[8px] border border-border bg-white px-4 py-3">
-                  <span className="text-sm text-slate-700">{item.label}</span>
+                <div key={item.label} className="flex items-center justify-between rounded-xl border border-border/30 bg-card p-4 shadow-sm group hover:border-border transition-colors">
+                  <span className="text-[13px] font-bold text-muted-foreground/70">{item.label}</span>
                   <StatusBadge value={item.status} />
                 </div>
               ))}

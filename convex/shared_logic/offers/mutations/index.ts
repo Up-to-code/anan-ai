@@ -1,3 +1,4 @@
+export { archiveOfferService } from "./archive";
 export { applyToOfferService } from "./apply";
 export { createOfferDraftService, createOfferService } from "./create";
 export { updateOfferDraftService } from "./drafts";

@@ -38,42 +38,70 @@ export default function KnowledgeSettingsClient({ items }: KnowledgeSettingsClie
   return (
     <SectionScaffold
       eyebrow="إعدادات الذكاء"
-      title="قاعدة المعرفة"
-      description="مراجعة إضافات المعرفة المقترحة قبل قبولها أو رفضها بشريًا."
+      title="مستودع المعرفة"
+      description="مراجعة وتدقيق إضافات المعرفة المقترحة لضمان دقة استجابات الوكلاء."
       tabs={aiSettingsTabs}
-      actions={<PageActions actions={[{ label: "إضافة عنصر", href: "/ai-settings/knowledge/new" }]} />}
+      actions={<PageActions actions={[{ label: "إضافة مصدر", href: "/ai-settings/knowledge/new" }]} />}
     >
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid gap-8 xl:grid-cols-3">
         {[
-          { key: "pending", title: "بانتظار القرار", items: grouped.pending },
-          { key: "accepted", title: "المعرفة المقبولة", items: grouped.accepted },
-          { key: "rejected", title: "المعرفة المرفوضة", items: grouped.rejected },
+          { key: "pending", title: "مراجعة معلقة", items: grouped.pending, color: "primary" },
+          { key: "accepted", title: "معرفة معتمدة", items: grouped.accepted, color: "emerald-500" },
+          { key: "rejected", title: "معرفة مرفوضة", items: grouped.rejected, color: "rose-500" },
         ].map((column) => (
-          <WorkspacePanel key={column.key} className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-900">{column.title}</h2>
-            <div className="space-y-3">
+          <WorkspacePanel key={column.key} className="rounded-3xl p-8 flex flex-col gap-8 border-border/30 bg-card/60 shadow-sm self-start">
+            <div className="space-y-1.5 px-2">
+              <h2 className="text-2xl font-black tracking-tight text-foreground">{column.title}</h2>
+              <p className="text-[12px] font-heavy text-muted-foreground/30 uppercase tracking-widest">{column.items.length} items</p>
+            </div>
+            
+            <div className="grid gap-4">
               {column.items.map((item) => (
-                <div key={item.id} className="rounded-[8px] border border-border bg-slate-50 px-4 py-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <Link href={`/ai-settings/knowledge/${item.id}`} className="font-medium text-slate-900 hover:underline">
-                      {item.title}
-                    </Link>
+                <div key={item.id} className="group relative overflow-hidden rounded-[24px] border border-border/20 bg-background p-6 transition-all hover:shadow-xl hover:border-primary/20">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1.5">
+                      <Link href={`/ai-settings/knowledge/${item.id}`} className="block text-[15px] font-black tracking-tight text-foreground group-hover:text-primary transition-colors">
+                        {item.title}
+                      </Link>
+                      <div className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/40">{item.source} <span className="mx-1">•</span> {item.submittedBy}</div>
+                    </div>
                     <StatusBadge value={item.status} />
                   </div>
-                  <div className="mt-1 text-sm text-slate-500">{item.source} · {item.submittedBy}</div>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{item.summary}</p>
-                  {item.status === "pending" ? (
-                    <div className="mt-4 flex gap-3">
-                      <Button onClick={() => updateStatus(item.id, "accepted")}>قبول</Button>
-                      <Button variant="outline" onClick={() => updateStatus(item.id, "rejected")}>رفض</Button>
+                  <p className="mt-4 text-[13px] font-bold leading-relaxed text-muted-foreground/60 line-clamp-2">{item.summary}</p>
+                  
+                  {item.status === "pending" && (
+                    <div className="mt-6 flex gap-3">
+                      <Button 
+                        size="sm" 
+                        onClick={() => updateStatus(item.id, "accepted")}
+                        className="flex-1 rounded-xl font-black uppercase text-[10px] tracking-widest px-4 h-10 shadow-lg shadow-primary/10"
+                      >
+                        اعتماد
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => updateStatus(item.id, "rejected")}
+                        className="flex-1 rounded-xl font-black uppercase text-[10px] tracking-widest px-4 h-10 border-border/40"
+                      >
+                        رفض
+                      </Button>
                     </div>
-                  ) : null}
-                  <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-600">
-                    <Link href={`/ai-settings/knowledge/${item.id}/edit`} className="underline-offset-2 hover:underline">تعديل</Link>
-                    <Link href={`/ai-settings/knowledge/${item.id}/delete`} className="underline-offset-2 hover:underline">حذف</Link>
+                  )}
+                  
+                  <div className="mt-6 flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/30 border-t border-border/5 pt-5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Link href={`/ai-settings/knowledge/${item.id}/edit`} className="hover:text-primary transition-colors">تعديل</Link>
+                    <Link href={`/ai-settings/knowledge/${item.id}/delete`} className="hover:text-rose-500 transition-colors">حذف</Link>
                   </div>
                 </div>
               ))}
+              {column.items.length === 0 && (
+                <div className="py-16 flex flex-col items-center justify-center text-center px-6 rounded-3xl border-2 border-dashed border-border/10 bg-muted/5">
+                  <div className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/20 leading-relaxed max-w-[140px]">
+                    لا توجد عناصر في هذا الطابور حاليًا
+                  </div>
+                </div>
+              )}
             </div>
           </WorkspacePanel>
         ))}

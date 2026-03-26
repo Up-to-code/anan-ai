@@ -27,11 +27,11 @@ export default function Footer() {
                             </Link>
                             <div className="space-y-1">
                                 <div className="text-[10px] font-black uppercase tracking-widest text-blue-400">ANAN</div>
-                                <div className="text-sm font-black text-white leading-[1.1]">البنية العقارية الذكية</div>
+                                <div className="text-sm font-black text-white leading-[1.1]">مساحة العمل للمطورين والوسطاء</div>
                             </div>
                         </div>
                         <p className="text-slate-400 font-bold text-sm leading-relaxed max-w-xs">
-                            البنية التحتية الذكية للعقار السيادي السعودي. الدقة المهنية في خدمة التقنية.
+                            منصة عمل موحدة تساعد الفرق على التعاون، متابعة العمليات اليومية، وفهم المنتج من نقطة واحدة واضحة.
                         </p>
                     </div>
 
@@ -40,12 +40,12 @@ export default function Footer() {
                         <div className="space-y-6">
                             <h4 className="text-white font-black text-[10px] uppercase tracking-widest">المنصة</h4>
                             <ul className="space-y-3">
-                                <li><Link href="/developer" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">المطورون</Link></li>
-                                <li><Link href="/broker" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">الوسطاء</Link></li>
-                                <li><Link href="/investor" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">المستثمرون</Link></li>
+                                <li><Link href="/developer" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">مساحة المطورين</Link></li>
+                                <li><Link href="/broker" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">مساحة الوسطاء</Link></li>
+                                <li><Link href="/about" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">عن الشركة</Link></li>
                                 <li><Link href="/pricing" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">الباقات</Link></li>
-                                <li><Link href="/partnerships" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">الشراكات</Link></li>
-                                <li><Link href="/about" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">عن عنان</Link></li>
+                                <li><Link href="/partnerships" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">التعاونات</Link></li>
+                                <li><Link href="/docs" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">التوثيق</Link></li>
                                 <li><Link href="/contact" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">اتصل بنا</Link></li>
                             </ul>
                         </div>
@@ -73,7 +73,7 @@ export default function Footer() {
                 {/* Bottom Section: Tagline (Left) | Copyright (Right) */}
                 <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                        الدقة هي ثمن الريادة في السوق العقاري السعودي.
+                        مساحة واحدة للعمل الواضح والتواصل المنظم.
                     </p>
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 opacity-60 transition-opacity hover:opacity-100 dark:text-slate-400">
                         © ٢٠٢٥ شركة عنان للحلول الرقمية. جميع الحقوق محفوظة.

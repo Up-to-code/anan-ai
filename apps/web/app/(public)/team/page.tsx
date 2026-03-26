@@ -5,15 +5,15 @@ import { ButtonLink, PageHero, Section, SectionLabel } from "@/app/(public)/publ
 const teamRoles = [
   {
     icon: User,
-    title: "الرئيس التنفيذي",
-    subtitle: "المدير التنفيذي (CEO)",
-    description: "قيادة الرؤية الاستراتيجية وتوجيه فريق العمل نحو بناء مستقبل العقار في المملكة.",
+    title: "قيادة المنتج",
+    subtitle: "اتجاه المنصة",
+    description: "تحديد كيف يجب أن تبدو الصفحة العامة ومساحة العمل حتى تكون القيمة واضحة من أول زيارة.",
   },
   {
     icon: Code2,
     title: "أحمد منصور",
-    subtitle: "المدير التقني (CTO)",
-    description: "خبرة تزيد عن ١٠ سنوات في بناء الأنظمة الموزعة والذكاء الاصطناعي المؤسسي.",
+    subtitle: "القيادة التقنية",
+    description: "بناء التجربة التقنية التي تجمع بين الوضوح في الواجهة والاعتماد على نظام منتج قابل للتوسع.",
   },
 ] as const;
 
@@ -29,17 +29,17 @@ function TeamHeroSection() {
             iconClassName="h-5 w-5 text-blue-600"
             textClassName="text-xs font-black uppercase tracking-widest text-blue-900 dark:text-blue-200"
           >
-            فريق عنان المؤسسي
+            فريق عنان
           </SectionLabel>
         }
         title={
           <>
             الخبرة خلف <br />
-            <span className="text-blue-600">البنية التحتية</span>
+            <span className="text-blue-600">مساحة العمل</span>
           </>
         }
         titleClassName="text-6xl font-black uppercase text-slate-900 dark:text-slate-100"
-        description={<p>نجتمع في عنان كمجموعة من المهندسين وخبراء العقار السعوديين لبناء حلول تقنية تغير وجه القطاع في المملكة.</p>}
+        description={<p>نبني في عنان شركة ومنتجاً يركزان على الوضوح، التنظيم، وتجربة عمل أفضل للمطورين والوسطاء.</p>}
         descriptionClassName="max-w-2xl text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300"
       />
     </Section>
@@ -68,11 +68,11 @@ function TeamJoinSection() {
       <div className="max-w-2xl mx-auto space-y-8">
         <h2 className="text-4xl font-black uppercase text-slate-900 dark:text-slate-100">انضم إلى القادة</h2>
         <p className="text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300">
-          نبني الجيل القادم من البنية العقارية، ونبحث دائمًا عن العقول الطموحة لمشاركتنا هذه الرحلة.
+          نبني منتجاً ومساحة عمل أوضح، ونبحث دائماً عن أشخاص يحبون تحويل التعقيد إلى تجربة مفهومة وقابلة للاستخدام.
         </p>
         <div className="pt-6">
           <ButtonLink href="/contact" variant="primary" className="px-10 py-5">
-            ابحث عن وظيفة
+            تحدث معنا
           </ButtonLink>
         </div>
       </div>

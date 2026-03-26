@@ -55,16 +55,18 @@ export default function OffersPageClient({ offers }: OffersPageClientProps) {
       </div>
       <DataTable headers={["العرض", "المنظمة", "المرسل", "المشروع", "الحالة", "القيمة", "التاريخ"]}>
         {filteredOffers.map((offer) => (
-          <tr key={offer.id} className="border-b border-border last:border-b-0">
-            <td className="px-4 py-3">
-              <Link href={`/offers/${offer.id}`} className="font-medium text-slate-900 hover:text-blue-600">{offer.title}</Link>
+          <tr key={offer.id} className="group transition-colors hover:bg-muted/5">
+            <td className="px-5 py-4">
+              <Link href={`/offers/${offer.id}`} className="block font-black tracking-tight text-foreground hover:text-primary transition-colors">
+                {offer.title}
+              </Link>
             </td>
-            <td className="px-4 py-3 text-sm text-slate-600">{offer.organizationName}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{offer.submittedBy}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{offer.projectName}</td>
-            <td className="px-4 py-3"><StatusBadge value={offer.status} /></td>
-            <td className="px-4 py-3 text-sm text-slate-600">{formatCurrency(offer.amount)}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{formatDateTime(offer.createdAt)}</td>
+            <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">{offer.organizationName}</td>
+            <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">{offer.submittedBy}</td>
+            <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">{offer.projectName}</td>
+            <td className="px-5 py-4"><StatusBadge value={offer.status} /></td>
+            <td className="px-5 py-4 text-[13px] font-black tracking-tight text-foreground">{formatCurrency(offer.amount)}</td>
+            <td className="px-5 py-4 text-[11px] font-black uppercase tracking-widest text-muted-foreground/40">{formatDateTime(offer.createdAt)}</td>
           </tr>
         ))}
       </DataTable>

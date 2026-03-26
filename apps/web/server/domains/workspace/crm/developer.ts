@@ -2,9 +2,11 @@ import { assertDeveloperSession, requireDeveloperSession } from "@/server/auth/g
 import type { ResolvedSession } from "@/server/auth/session";
 import {
   addDealDocumentInputSchema,
+  archiveDealInputSchema,
   createDealInputSchema,
   type DealSummary,
   propertyDealsInputSchema,
+  updateDealInputSchema,
   updateDealFollowUpInputSchema,
   updateDealNotesInputSchema,
   updateDealStageInputSchema,
@@ -109,6 +111,27 @@ export async function updateRedDealStage(
   await dependencies.crmRepository.updateStage({ ...parsed.data, lastUpdatedBy: authUserId });
 }
 
+/**
+ * WHY:   Developer CRM edit screens need one owner-checked path for full deal updates.
+ * WHAT:  Updates the mutable fields of one developer-owned deal.
+ * HOW:   Validates payload shape, confirms deal ownership, validates any linked property, then persists through the repository.
+ */
+export async function updateRedDeal(
+  input: unknown,
+  dependencies: RedCrmDependencies = defaultDependencies,
+): Promise<void> {
+  const parsed = updateDealInputSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError({ code: "INVALID_ARGUMENT", message: parsed.error.issues[0]?.message ?? "Invalid deal payload", status: 400 });
+  }
+  await requireOwnedDeal(parsed.data.dealId, dependencies);
+  if (parsed.data.propertyId) {
+    await requireOwnedProperty(parsed.data.propertyId, dependencies);
+  }
+  const { authUserId } = await requireRedOwner(dependencies);
+  await dependencies.crmRepository.update({ ...parsed.data, lastUpdatedBy: authUserId });
+}
+
 export async function updateRedDealNotes(
   input: unknown,
   dependencies: RedCrmDependencies = defaultDependencies,
@@ -146,4 +169,26 @@ export async function addRedDealDocument(
   await requireOwnedDeal(parsed.data.dealId, dependencies);
   const { authUserId } = await requireRedOwner(dependencies);
   await dependencies.crmRepository.addDocument({ ...parsed.data, lastUpdatedBy: authUserId });
+}
+
+/**
+ * WHY:   Developer CRM should archive deals without destructive deletes so historical reporting stays intact.
+ * WHAT:  Soft-archives one developer-owned deal.
+ * HOW:   Verifies ownership first, then stores archive metadata through the repository.
+ */
+export async function archiveRedDeal(
+  input: unknown,
+  dependencies: RedCrmDependencies = defaultDependencies,
+): Promise<void> {
+  const parsed = archiveDealInputSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError({ code: "INVALID_ARGUMENT", message: parsed.error.issues[0]?.message ?? "Invalid archive payload", status: 400 });
+  }
+  await requireOwnedDeal(parsed.data.dealId, dependencies);
+  const { authUserId } = await requireRedOwner(dependencies);
+  await dependencies.crmRepository.archive({
+    ...parsed.data,
+    archivedAt: Date.now(),
+    lastUpdatedBy: authUserId,
+  });
 }

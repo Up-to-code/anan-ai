@@ -1,4 +1,5 @@
 import { Users2, Percent, Wallet, Zap } from "lucide-react";
+import type { Metadata } from "next";
 import {
   ActionRow,
   ButtonLink,
@@ -8,6 +9,11 @@ import {
   Section,
   SectionLabel,
 } from "@/app/(public)/public";
+
+export const metadata: Metadata = {
+  title: "مساحة الوسطاء | عنان",
+  description: "تعرف على مساحة الوسطاء في عنان: متابعة أوضح، تعاون أفضل مع المطورين، وتجربة عمل يومية منظمة.",
+};
 
 /**
  * WHY:   Brokers need a dedicated public entry page describing collaboration and offers.
@@ -28,19 +34,19 @@ export default function BrokerPage() {
                             iconClassName="h-5 w-5 text-blue-500"
                             textClassName="text-xs font-black uppercase tracking-widest text-white"
                         >
-                            سوق تعاون الوسطاء - المملكة
+                            مساحة الوسطاء
                         </SectionLabel>
                     }
-                    title={<>شارك العروض.. <br /><span className="text-blue-600">ضاعف صفقاتك في الرياض</span></>}
+                    title={<>مساحة تجعل <br /><span className="text-blue-600">عمل الوسيط أوضح</span></>}
                     titleClassName="text-6xl font-black leading-tight text-slate-900 dark:text-slate-100"
                     description={
-                        <p>منصة الربط الموثوقة للوسطاء العقاريين المعتمدين في المملكة. اربط احتياجات عملائك بأفضل العروض المتاحة في السوق السعودي فوراً.</p>
+                        <p>هذه الصفحة تشرح كيف تساعد عنان الوسطاء على متابعة العمل اليومي، الوصول إلى ما يحتاجونه بسرعة، والتنسيق مع المطورين داخل مساحة منظمة.</p>
                     }
                     descriptionClassName="max-w-xl text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300"
                     actions={
                         <ActionRow className="flex flex-col sm:flex-row gap-8 pt-6">
-                            <ButtonLink href="/signin" variant="dark">دخول لوحة التعاون</ButtonLink>
-                            <ButtonLink href="/terms" variant="outline">عرض الشروط والأحكام</ButtonLink>
+                            <ButtonLink href="/signin" variant="dark">دخول مساحة الوسطاء</ButtonLink>
+                            <ButtonLink href="/about" variant="outline">اعرف كيف نعمل</ButtonLink>
                         </ActionRow>
                     }
                     visual={
@@ -52,26 +58,26 @@ export default function BrokerPage() {
                                             <Users2 className="h-6 w-6 text-slate-400 dark:text-slate-500" />
                                         </div>
                                         <div>
-                                            <span className="block text-sm font-black leading-none text-slate-900 dark:text-slate-100">Broker RIYADH</span>
-                                            <span className="mt-2 block text-[10px] uppercase tracking-tight text-slate-400 dark:text-slate-500">Demand: Luxury Villa</span>
+                                            <span className="block text-sm font-black leading-none text-slate-900 dark:text-slate-100">Broker Workspace</span>
+                                            <span className="mt-2 block text-[10px] uppercase tracking-tight text-slate-400 dark:text-slate-500">Daily follow-up</span>
                                         </div>
                                     </div>
                                     <div className="h-10 w-10 bg-blue-600 flex items-center justify-center font-black text-white text-[10px]">
-                                        KSA
+                                        WS
                                     </div>
                                     <div className="flex items-center gap-6">
                                         <div className="flex h-12 w-12 items-center justify-center bg-slate-100 dark:bg-slate-900">
                                             <Users2 className="h-6 w-6 text-slate-400 dark:text-slate-500" />
                                         </div>
                                         <div>
-                                            <span className="block text-sm font-black leading-none text-slate-900 dark:text-slate-100">Broker JEDDAH</span>
-                                            <span className="mt-2 block text-[10px] uppercase tracking-tight text-slate-400 dark:text-slate-500">Offer: Available</span>
+                                            <span className="block text-sm font-black leading-none text-slate-900 dark:text-slate-100">Shared Context</span>
+                                            <span className="mt-2 block text-[10px] uppercase tracking-tight text-slate-400 dark:text-slate-500">With developers</span>
                                         </div>
                                     </div>
                                 </div>
                                 <Card
-                                    title="الربط الفوري نشط"
-                                    description="يتم الآن مطابقة العروض والطلبات في شبكة المملكة."
+                                    title="المساحة نشطة"
+                                    description="واجهة واحدة للمتابعة، التواصل، وفهم ما يحتاجه الوسيط الآن."
                                     variant="accent"
                                 />
                             </div>
@@ -86,24 +92,24 @@ export default function BrokerPage() {
                         <div className="h-16 w-16 bg-blue-600/10 flex items-center justify-center mr-auto ml-0">
                             <Zap className="h-8 w-8 text-blue-600" />
                         </div>
-                        <h2 className="text-5xl font-black uppercase leading-tight text-slate-900 dark:text-slate-100">محرك المطابقة السعودي</h2>
+                        <h2 className="text-5xl font-black uppercase leading-tight text-slate-900 dark:text-slate-100">عمل يومي أقل تعقيداً</h2>
                         <p className="text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300">
-                            خوارزميات متجذرة في الذكاء الاصطناعي تقوم بتحليل طلباتك ومقارنتها فوراً بآلاف العروض المتاحة في السوق السعودي، لتوصلك بالشريك المناسب في ثوانٍ.
+                            عنان لا تقدم للوسيط صفحة تسويقية فقط، بل تشرح له كيف تبدو المساحة التي تساعده على مراجعة التفاصيل، متابعة الحالات، ومعرفة الخطوة التالية بوضوح.
                         </p>
-                        <ButtonLink href="/faq" variant="ghost">كيف يعمل النظام الموحد؟</ButtonLink>
+                        <ButtonLink href="/faq" variant="ghost">كيف تعمل المساحة؟</ButtonLink>
                     </div>
                     <FeatureCardGrid
                         className="grid grid-cols-1 sm:grid-cols-2 gap-8"
                         items={[
                             {
                                 icon: Percent,
-                                title: "عمولة مضمونة",
-                                description: "نظام تقني يضمن حقوق جميع الأطراف في الصفقات المشتركة داخل المملكة.",
+                                title: "وضوح في المتابعة",
+                                description: "المعلومة المهمة تظهر في الواجهة نفسها بدلاً من أن تضيع بين الرسائل والملاحظات.",
                             },
                             {
                                 icon: Wallet,
-                                title: "مشاريع حصرية",
-                                description: "وصول مباشر لمشاريع كبار المطورين في الرياض وجدة غير المتاحة للعامة.",
+                                title: "تعاون أقرب",
+                                description: "الوصول إلى سياق المشروع أو الجهة المرتبطة به يصبح أسرع وأسهل داخل مساحة موحدة.",
                             },
                         ]}
                     />
@@ -117,20 +123,20 @@ export default function BrokerPage() {
                             className="inline-flex"
                             textClassName="text-xs font-black text-blue-600 uppercase tracking-widest"
                         >
-                            الثقة والالتزام
+                            ما الذي تقدمه
                         </SectionLabel>
-                        <h2 className="text-4xl font-black uppercase leading-snug text-slate-900 dark:text-slate-100">شبكة الوسطاء <br /> الموثقين في المملكة</h2>
+                        <h2 className="text-4xl font-black uppercase leading-snug text-slate-900 dark:text-slate-100">مساحة الوسطاء <br /> في نقاط بسيطة</h2>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-16 text-right">
                         <div className="space-y-6 border-2 border-slate-100 bg-white p-10 dark:border-slate-800 dark:bg-slate-950">
                             <div className="h-12 w-12 bg-blue-600 text-white flex items-center justify-center font-black text-xl">01</div>
-                            <h3 className="text-xl font-black uppercase text-slate-900 dark:text-slate-100">توثيق الهوية العقارية</h3>
-                            <p className="font-bold leading-relaxed text-slate-500 dark:text-slate-300">لا يسمح بدخول النظام إلا للوسطاء المسجلين والمرخصين رسمياً، لضمان بيئة عمل احترافية وآمنة.</p>
+                            <h3 className="text-xl font-black uppercase text-slate-900 dark:text-slate-100">رؤية أوضح للعمل</h3>
+                            <p className="font-bold leading-relaxed text-slate-500 dark:text-slate-300">الواجهة تساعد الوسيط على قراءة الوضع الحالي بسرعة من دون تحميله طبقات زائدة من اللغة التسويقية.</p>
                         </div>
                         <div className="space-y-6 border-2 border-slate-100 bg-white p-10 dark:border-slate-800 dark:bg-slate-950">
                             <div className="h-12 w-12 bg-blue-600 text-white flex items-center justify-center font-black text-xl">02</div>
-                            <h3 className="text-xl font-black uppercase text-slate-900 dark:text-slate-100">نظام السمعة التقني</h3>
-                            <p className="font-bold leading-relaxed text-slate-500 dark:text-slate-300">تقوم المنظومة بتقييم أداء الربط وسرعة الاستجابة لضمان جودة التعاملات داخل الشبكة.</p>
+                            <h3 className="text-xl font-black uppercase text-slate-900 dark:text-slate-100">تواصل أسهل مع المطورين</h3>
+                            <p className="font-bold leading-relaxed text-slate-500 dark:text-slate-300">المساحة تشرح العلاقة بين الأطراف بشكل عملي يركز على التعاون والفهم المشترك.</p>
                         </div>
                     </div>
                 </div>
@@ -145,12 +151,12 @@ export default function BrokerPage() {
                 </div>
 
                 <div className="max-w-4xl mx-auto space-y-12 relative z-10 text-white">
-                    <h2 className="text-6xl font-black uppercase leading-tight">انضم إلى مجتمع <br /> الوسطاء الأذكى</h2>
+                    <h2 className="text-6xl font-black uppercase leading-tight">ادخل إلى مساحة <br /> الوسطاء</h2>
                     <p className="text-xl font-bold opacity-80 max-w-xl mx-auto leading-relaxed">
-                        كن جزءاً من البنية التحتية لعنان وابدأ في توسيع نطاق صفقاتك العقارية في جميع مدن المملكة.
+                        إذا كنت تبحث عن تجربة أبسط وأوضح للعمل اليومي، فهذه الصفحة هي البداية قبل الدخول إلى المساحة.
                     </p>
                     <ActionRow className="flex flex-col sm:flex-row gap-8 justify-center pt-8">
-                        <ButtonLink href="/signin" variant="white" className="border-none shadow-none px-12 py-5">انضم للشبكة</ButtonLink>
+                        <ButtonLink href="/signin" variant="white" className="border-none shadow-none px-12 py-5">دخول المساحة</ButtonLink>
                         <ButtonLink href="/terms" variant="outline" className="border-white text-white hover:bg-white/10 px-12 py-5">شروط الاستخدام</ButtonLink>
                     </ActionRow>
                 </div>

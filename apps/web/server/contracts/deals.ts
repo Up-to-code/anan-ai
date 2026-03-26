@@ -19,6 +19,11 @@ export const createDealInputSchema = z.object({
   propertyId: z.string().optional(),
 });
 
+export const updateDealInputSchema = createDealInputSchema.extend({
+  dealId: z.string(),
+  notes: z.string().optional(),
+});
+
 export const updateDealStageInputSchema = z.object({
   dealId: z.string(),
   stage: dealStageSchema,
@@ -43,12 +48,18 @@ export const propertyDealsInputSchema = z.object({
   propertyId: z.string(),
 });
 
+export const archiveDealInputSchema = z.object({
+  dealId: z.string(),
+});
+
 export type CreateDealInput = z.infer<typeof createDealInputSchema>;
+export type UpdateDealInput = z.infer<typeof updateDealInputSchema>;
 export type UpdateDealStageInput = z.infer<typeof updateDealStageInputSchema>;
 export type UpdateDealNotesInput = z.infer<typeof updateDealNotesInputSchema>;
 export type UpdateDealFollowUpInput = z.infer<typeof updateDealFollowUpInputSchema>;
 export type AddDealDocumentInput = z.infer<typeof addDealDocumentInputSchema>;
 export type PropertyDealsInput = z.infer<typeof propertyDealsInputSchema>;
+export type ArchiveDealInput = z.infer<typeof archiveDealInputSchema>;
 
 export type DealSummary = {
   id: string;

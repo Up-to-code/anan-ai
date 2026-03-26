@@ -32,23 +32,56 @@ export default function ProfileSettingsClient({ initialProfile }: ProfileSetting
   }
 
   return (
-    <SectionScaffold eyebrow="الإعدادات" title="الملف الشخصي" description="تحرير بيانات المشرف داخل الواجهة التجريبية." tabs={settingsTabs}>
-      <WorkspacePanel className="space-y-4">
-        <FormField label="الاسم">
-          <AdminInput value={profile.name} onChange={(event) => updateField("name", event.target.value)} />
-        </FormField>
-        <FormField label="المسمى الوظيفي">
-          <AdminInput value={profile.title} onChange={(event) => updateField("title", event.target.value)} />
-        </FormField>
-        <FormField label="البريد الإلكتروني">
-          <AdminInput value={profile.email} onChange={(event) => updateField("email", event.target.value)} />
-        </FormField>
-        <FormField label="رقم الهاتف">
-          <AdminInput value={profile.phone} onChange={(event) => updateField("phone", event.target.value)} />
-        </FormField>
-        <div className="flex items-center gap-3">
-          <Button onClick={() => setSaved(true)}>حفظ التغييرات</Button>
-          {saved ? <span className="text-sm text-emerald-700">تم حفظ القيم محليًا داخل الواجهة التجريبية.</span> : null}
+    <SectionScaffold eyebrow="الإعدادات" title="الملف الشخصي" description="إدارة بياناتك الشخصية وتفضيلات الدخول داخل النظام." tabs={settingsTabs}>
+      <WorkspacePanel className="rounded-3xl p-10 space-y-10 border-border/30 bg-card/50 shadow-sm">
+        <div className="pb-8 border-b border-border/10">
+          <h3 className="text-2xl font-black tracking-tight text-foreground">البيانات الشخصية</h3>
+          <p className="text-[13px] font-bold text-muted-foreground/40 uppercase tracking-widest">Personal Identification</p>
+        </div>
+
+        <div className="grid gap-8 md:grid-cols-2">
+          <FormField label="الاسم الكامل" className="font-black text-xs uppercase tracking-widest text-muted-foreground/50">
+            <AdminInput 
+              value={profile.name} 
+              onChange={(event) => updateField("name", event.target.value)} 
+              className="rounded-xl border-border/40 bg-background font-black h-12 px-5"
+            />
+          </FormField>
+          <FormField label="المسمى الوظيفي" className="font-black text-xs uppercase tracking-widest text-muted-foreground/50">
+            <AdminInput 
+              value={profile.title} 
+              onChange={(event) => updateField("title", event.target.value)} 
+              className="rounded-xl border-border/40 bg-background font-black h-12 px-5"
+            />
+          </FormField>
+          <FormField label="البريد الإلكتروني" className="font-black text-xs uppercase tracking-widest text-muted-foreground/50">
+            <AdminInput 
+              value={profile.email} 
+              onChange={(event) => updateField("email", event.target.value)} 
+              className="rounded-xl border-border/40 bg-background font-black h-12 px-5 text-primary"
+            />
+          </FormField>
+          <FormField label="رقم الهاتف" className="font-black text-xs uppercase tracking-widest text-muted-foreground/50">
+            <AdminInput 
+              value={profile.phone} 
+              onChange={(event) => updateField("phone", event.target.value)} 
+              className="rounded-xl border-border/40 bg-background font-black h-12 px-5"
+            />
+          </FormField>
+        </div>
+
+        <div className="flex flex-col gap-6 pt-10 border-t border-border/5 sm:flex-row sm:items-center sm:justify-between">
+          <Button 
+            onClick={() => setSaved(true)} 
+            className="h-12 px-10 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-lg shadow-primary/20"
+          >
+            تحديث الملف الشخصي
+          </Button>
+          {saved && (
+            <div className="flex items-center gap-3 px-6 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              <span className="text-sm font-black text-emerald-600">تم حفظ البيانات بنجاح في الذاكرة المحلية.</span>
+            </div>
+          )}
         </div>
       </WorkspacePanel>
     </SectionScaffold>

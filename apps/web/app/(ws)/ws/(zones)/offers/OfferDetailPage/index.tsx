@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { OfferMarketplaceItem } from "../offerTypes";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle, Send, MapPin, Home, Bed, Bath, Ruler, DollarSign, User, Tag, MessageCircle, Building2, Paperclip } from "lucide-react";
+import { ArrowLeft, CheckCircle, Send, MapPin, Home, Bed, Bath, Ruler, DollarSign, User, Tag, MessageCircle, Building2, Paperclip, PencilLine, Archive } from "lucide-react";
 import type { OfferActionResult } from "@/server/contracts/offers";
 import {
   getLinkedProject,
@@ -17,13 +17,21 @@ export default function OfferDetailPage({
   offer,
   onApply,
   onMessage,
+  onArchive,
   canApply,
+  canEdit,
+  canArchive,
+  editHref,
   initialDeliveryFeedback = null,
 }: {
   offer: OfferMarketplaceItem;
   onApply: () => Promise<OfferActionResult>;
   onMessage: () => Promise<{ conversationId: string }>;
+  onArchive?: () => Promise<{ redirectTo: string }>;
   canApply: boolean;
+  canEdit?: boolean;
+  canArchive?: boolean;
+  editHref?: string | null;
   initialDeliveryFeedback?: DeliveryFeedback | null;
 }) {
   const router = useRouter();
@@ -31,7 +39,9 @@ export default function OfferDetailPage({
   const [applied, setApplied] = useState(false);
   const [deliveryFeedback, setDeliveryFeedback] = useState<DeliveryFeedback | null>(initialDeliveryFeedback);
   const [isMessaging, setIsMessaging] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
   const [messageError, setMessageError] = useState<string | null>(null);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
 
   const linkedProject = getLinkedProject(offer);
 
@@ -55,6 +65,20 @@ export default function OfferDetailPage({
     }
   };
 
+  const handleArchive = async () => {
+    if (!onArchive) return;
+    setArchiveError(null);
+    try {
+      setIsArchiving(true);
+      const result = await onArchive();
+      router.push(result.redirectTo);
+    } catch {
+      setArchiveError("تعذر أرشفة العرض الآن. حاول مرة أخرى.");
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
   return (
     <div className="flex min-h-full flex-col pb-32">
       <div className="px-6 py-6 lg:px-8 lg:py-8 grid gap-6">
@@ -69,6 +93,25 @@ export default function OfferDetailPage({
             العودة للسوق
           </button>
           <div className="flex gap-2 flex-wrap">
+            {canEdit && editHref ? (
+              <button
+                onClick={() => router.push(editHref)}
+                className="flex items-center gap-2 border border-slate-200 bg-white px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:border-blue-600 hover:text-blue-600 transition"
+              >
+                <PencilLine className="h-3.5 w-3.5" />
+                تعديل المسودة
+              </button>
+            ) : null}
+            {canArchive ? (
+              <button
+                onClick={() => void handleArchive()}
+                disabled={isArchiving}
+                className="flex items-center gap-2 border border-rose-200 bg-rose-50 px-5 py-3 text-xs font-black uppercase tracking-widest text-rose-700 hover:bg-rose-100 transition disabled:opacity-50"
+              >
+                <Archive className="h-3.5 w-3.5" />
+                {isArchiving ? "جارٍ الأرشفة" : "أرشفة العرض"}
+              </button>
+            ) : null}
             {canApply && !applied ? (
               <button
                 onClick={() => setShowApplyConfirm(true)}
@@ -107,6 +150,12 @@ export default function OfferDetailPage({
         {messageError ? (
           <div className="border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-bold text-rose-700">
             {messageError}
+          </div>
+        ) : null}
+
+        {archiveError ? (
+          <div className="border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-bold text-rose-700">
+            {archiveError}
           </div>
         ) : null}
 

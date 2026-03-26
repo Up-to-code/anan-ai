@@ -2,6 +2,7 @@ import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { apiUnsafe } from "@/lib/convexApi";
 import type {
   ApplyToOfferInput,
+  ArchiveOfferInput,
   CreateOfferInput,
   OfferActionResult,
   OfferLiveState,
@@ -21,6 +22,7 @@ type OffersApiRefs = {
   publishOffer: unknown;
   publishConversationOffer: unknown;
   updateOfferDraft: unknown;
+  archiveOffer: unknown;
   getOfferLiveState: unknown;
   updateOfferStatus: unknown;
   applyToOffer: unknown;
@@ -104,6 +106,7 @@ export type OffersRepository = {
   publish(input: PublishOfferInput, token?: string): Promise<{ ok: true }>;
   publishConversation(input: PublishConversationOfferInput, token?: string): Promise<OfferActionResult>;
   updateDraft(input: UpdateOfferDraftInput, token?: string): Promise<{ ok: true }>;
+  archive(input: ArchiveOfferInput, token?: string): Promise<{ ok: true }>;
   getOfferLiveState(input: { offerId: string }, token?: string): Promise<OfferLiveState | null>;
   respond(input: RespondToOfferInput, token?: string): Promise<void>;
   apply(input: ApplyToOfferInput, token?: string): Promise<OfferActionResult>;
@@ -154,6 +157,10 @@ export const convexOffersRepository: OffersRepository = {
 
   async updateDraft(input, token) {
     return fetchMutation(offersApi.updateOfferDraft as never, input as never, token ? { token } : undefined) as Promise<{ ok: true }>;
+  },
+
+  async archive(input, token) {
+    return fetchMutation(offersApi.archiveOffer as never, input as never, token ? { token } : undefined) as Promise<{ ok: true }>;
   },
 
   async getOfferLiveState(input, token) {

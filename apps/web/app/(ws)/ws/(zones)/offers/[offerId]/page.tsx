@@ -65,7 +65,8 @@ async function loadOfferDetailRouteData(offerId: string) {
   const ownerContext = workspace.ownerContext ?? null;
   const offersZone = getWorkspaceOffersZone(audience, ownerContext);
   const snapshot = await offersZone.getSnapshot();
-  return { audience, ownerContext, ...resolveOfferSnapshot({ snapshot, offerId }) };
+  const liveState = await offersZone.getOfferLiveState(offerId);
+  return { audience, ownerContext, liveState, ...resolveOfferSnapshot({ snapshot, offerId }) };
 }
 
 /**
@@ -79,7 +80,7 @@ export default async function WorkspaceOfferDetailRoute({
 }: WorkspaceOfferDetailRouteProps) {
   const { offerId } = await params;
   const resolvedSearchParams = await searchParams;
-  const { audience, ownerContext, sentOffer, receivedOffer, marketplaceOffer, offer } = await loadOfferDetailRouteData(offerId);
+  const { audience, ownerContext, sentOffer, receivedOffer, marketplaceOffer, liveState, offer } = await loadOfferDetailRouteData(offerId);
   if (!offer) {
     notFound();
   }
@@ -91,6 +92,11 @@ export default async function WorkspaceOfferDetailRoute({
     "use server";
     return bootstrapInboxOfferConversation({ offerId });
   }
+  async function archiveOffer() {
+    "use server";
+    await getWorkspaceOffersZone(audience, ownerContext).archiveOffer({ id: offerId });
+    return { redirectTo: "/ws/offers?tab=sent" };
+  }
   const initialDeliveryFeedback = buildDeliveryFeedback(resolvedSearchParams);
 
   return (
@@ -98,7 +104,11 @@ export default async function WorkspaceOfferDetailRoute({
       offer={offer}
       onApply={applyToOffer}
       onMessage={messageAboutOffer}
+      onArchive={archiveOffer}
       canApply={Boolean(marketplaceOffer && !sentOffer && !receivedOffer)}
+      canEdit={Boolean(liveState?.canEditDraft)}
+      canArchive={Boolean(liveState?.canArchive)}
+      editHref={liveState?.canEditDraft ? `/ws/offers/${offerId}/edit` : null}
       initialDeliveryFeedback={initialDeliveryFeedback}
     />
   );

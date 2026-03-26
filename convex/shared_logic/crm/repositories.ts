@@ -25,6 +25,10 @@ function mapDeal(deal: DealRecord) {
   };
 }
 
+function isActiveDeal(deal: DealRecord) {
+  return !deal.archivedAt;
+}
+
 export const listDealsByBrokerId = query({
   args: {
     brokerId: v.id("brokers"),
@@ -34,7 +38,7 @@ export const listDealsByBrokerId = query({
       .query("deals")
       .withIndex("brokerId", (q) => q.eq("brokerId", args.brokerId))
       .collect();
-    return deals.map(mapDeal);
+    return deals.filter(isActiveDeal).map(mapDeal);
   },
 });
 
@@ -47,7 +51,7 @@ export const listDealsByRedId = query({
       .query("deals")
       .withIndex("REDId", (q) => q.eq("REDId", args.REDId))
       .collect();
-    return deals.map(mapDeal);
+    return deals.filter(isActiveDeal).map(mapDeal);
   },
 });
 
@@ -62,7 +66,7 @@ export const listDealsByPropertyId = query({
       .collect();
 
     return Promise.all(
-      deals.map(async (deal) => {
+      deals.filter(isActiveDeal).map(async (deal) => {
         const [broker, red] = await Promise.all([
           deal.brokerId ? ctx.db.get(deal.brokerId) : Promise.resolve(null),
           deal.REDId ? ctx.db.get(deal.REDId) : Promise.resolve(null),
@@ -84,7 +88,7 @@ export const getDealById = query({
   },
   handler: async (ctx, args) => {
     const deal = await ctx.db.get(args.dealId);
-    return deal ? mapDeal(deal) : null;
+    return deal && isActiveDeal(deal) ? mapDeal(deal) : null;
   },
 });
 
@@ -122,6 +126,47 @@ export const createDeal = mutation({
       brokerId: args.brokerId,
       lastUpdatedBy: args.lastUpdatedBy,
     });
+  },
+});
+
+export const updateDeal = mutation({
+  args: {
+    dealId: v.id("deals"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    value: v.optional(v.number()),
+    nextFollowUpAt: v.optional(v.number()),
+    stage: v.union(
+      v.literal("new"),
+      v.literal("contacted"),
+      v.literal("negotiation"),
+      v.literal("won"),
+      v.literal("lost"),
+    ),
+    contactName: v.optional(v.string()),
+    contactPhone: v.optional(v.string()),
+    propertyId: v.optional(v.id("properties")),
+    notes: v.optional(v.string()),
+    lastUpdatedBy: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const deal = await ctx.db.get(args.dealId);
+    if (!deal || !isActiveDeal(deal)) {
+      throw new ConvexError({ code: "NOT_FOUND", message: "Deal not found" });
+    }
+    await ctx.db.patch(args.dealId, {
+      title: args.title,
+      description: args.description,
+      value: args.value,
+      nextFollowUpAt: args.nextFollowUpAt,
+      stage: args.stage,
+      contactName: args.contactName,
+      contactPhone: args.contactPhone,
+      propertyId: args.propertyId,
+      notes: args.notes,
+      lastUpdatedBy: args.lastUpdatedBy,
+    });
+    return { ok: true } as const;
   },
 });
 
@@ -182,6 +227,27 @@ export const updateDealNotes = mutation({
     }
     await ctx.db.patch(args.dealId, {
       notes: args.notes,
+      lastUpdatedBy: args.lastUpdatedBy,
+    });
+    return { ok: true } as const;
+  },
+});
+
+export const archiveDeal = mutation({
+  args: {
+    dealId: v.id("deals"),
+    archivedAt: v.number(),
+    archivedBy: v.string(),
+    lastUpdatedBy: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const deal = await ctx.db.get(args.dealId);
+    if (!deal || !isActiveDeal(deal)) {
+      throw new ConvexError({ code: "NOT_FOUND", message: "Deal not found" });
+    }
+    await ctx.db.patch(args.dealId, {
+      archivedAt: args.archivedAt,
+      archivedBy: args.archivedBy,
       lastUpdatedBy: args.lastUpdatedBy,
     });
     return { ok: true } as const;

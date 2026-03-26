@@ -2,6 +2,7 @@ import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { uploadedFileReferenceListValidator } from "./files";
 import {
+  archiveOfferService,
   applyToOfferService,
   createOfferDraftService,
   createOfferService,
@@ -79,6 +80,15 @@ export const updateOfferDraft = mutation({
   },
   handler: async (ctx, args) => {
     return await updateOfferDraftService(ctx, args);
+  },
+});
+
+export const archiveOffer = mutation({
+  args: {
+    id: v.id("offers"),
+  },
+  handler: async (ctx, args) => {
+    return await archiveOfferService(ctx, args);
   },
 });
 

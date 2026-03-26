@@ -14,18 +14,18 @@ type DataTableProps = {
  */
 export default function DataTable({ headers, children, className }: DataTableProps) {
   return (
-    <div className={cn("overflow-x-auto rounded-[8px] border border-border bg-white", className)}>
-      <table className="min-w-full border-collapse">
+    <div className={cn("overflow-x-auto rounded-3xl border border-border/40 bg-card shadow-sm", className)}>
+      <table className="min-w-full border-separate border-spacing-0">
         <thead>
-          <tr className="border-b border-border bg-slate-50">
+          <tr className="bg-muted/5">
             {headers.map((header) => (
-              <th key={header} className="px-4 py-3 text-right text-xs font-medium text-slate-500">
+              <th key={header} className="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/50 border-b border-border/20">
                 {header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody>{children}</tbody>
+        <tbody className="divide-y divide-border/20">{children}</tbody>
       </table>
     </div>
   );
