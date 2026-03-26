@@ -25,17 +25,18 @@ const capabilityIcons = {
 };
 
 /**
- * WHY:   Buyers should be able to start from a capability without typing the first prompt manually.
- * WHAT:  Renders the horizontal quick-launch rail for the assistant capabilities.
- * HOW:   Uses compact bordered chips with icon, label, and one short hint.
+ * WHY:   Buyers need quick-start actions without typing.
+ * WHAT:  Modernizes the quick-launch rail for the assistant capabilities.
+ * HOW:   Uses rounded-2xl chips, dark mode support, and high-contrast spacing to feel premium and clean.
  */
 export function CapabilityRail({ capabilities, onCapabilityPress }: CapabilityRailProps) {
   return (
-    <View className="border-b border-line bg-white py-3">
+    <View className="bg-slate-50 border-b border-slate-100 py-4 dark:bg-slate-950 dark:border-slate-800">
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, gap: 10 }}
+        contentContainerStyle={{ paddingHorizontal: 24, gap: 12 }}
+        style={{ direction: "rtl" }}
       >
         {capabilities.map((capability) => {
           const Icon = capabilityIcons[capability.id];
@@ -43,19 +44,23 @@ export function CapabilityRail({ capabilities, onCapabilityPress }: CapabilityRa
           return (
             <Pressable
               key={capability.id}
-              className="w-[132px] border border-line bg-panel px-3 py-3"
+              className="w-[140px] rounded-2xl bg-slate-100 px-4 py-4 transition-all active:scale-95 dark:bg-slate-800"
               onPress={() => onCapabilityPress(capability.id)}
             >
               <View className="flex-row-reverse items-center justify-between">
-                <View className="h-8 w-8 items-center justify-center border border-line bg-white">
-                  <Icon size={16} color="#2563EB" />
+                <View className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
+                  <Icon size={18} color="#2563EB" />
                 </View>
-                <AppText tone="label" className="text-[11px] text-brand">
+                <AppText tone="label" className="text-[12px] font-black uppercase tracking-widest text-primary">
                   {capability.label}
                 </AppText>
               </View>
-              <AppText className="mt-3 text-sm leading-5 text-ink">{capability.label}</AppText>
-              <AppText className="mt-1 text-xs leading-5 text-muted">{capability.hint}</AppText>
+              <AppText className="mt-4 text-[15px] font-cairo-black leading-tight text-slate-900 dark:text-slate-50 text-right">
+                {capability.label}
+              </AppText>
+              <AppText className="mt-1 text-[13px] font-medium leading-relaxed text-slate-500 dark:text-slate-400 text-right">
+                {capability.hint}
+              </AppText>
             </Pressable>
           );
         })}

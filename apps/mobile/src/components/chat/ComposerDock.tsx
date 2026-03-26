@@ -1,14 +1,5 @@
-import { useEffect } from "react";
-import { Mic, SendHorizonal } from "lucide-react-native";
+import { ArrowUp, Mic } from "lucide-react-native";
 import { Pressable, TextInput, View } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  withSequence,
-} from "react-native-reanimated";
-import { AppText } from "@/components/ui/AppText";
 
 type ComposerDockProps = {
   value: string;
@@ -16,64 +7,40 @@ type ComposerDockProps = {
   onSend: () => void;
 };
 
-/**
- * WHY:   The assistant home needs one durable composer that survives long threads and keyboard changes.
- * WHAT:  Renders a multiline input, send action, and voice-ready placeholder slot with motion.
- * HOW:   Keeps the layout flat and compact so the bottom dock remains legible above the keyboard.
- */
 export function ComposerDock({ value, onChange, onSend }: ComposerDockProps) {
-  const scale = useSharedValue(1);
-
-  useEffect(() => {
-    scale.value = withRepeat(
-      withSequence(
-        withTiming(1.05, { duration: 1000 }),
-        withTiming(1, { duration: 1000 })
-      ),
-      -1,
-      true
-    );
-  }, []);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const isTyping = value.trim().length > 0;
 
   return (
-    <View className="border-t border-line bg-white px-4 pt-3">
-      <View className="border border-line bg-panel px-3 py-3">
+    <View className="bg-transparent py-4 w-full">
+      <View 
+        className="flex-row-reverse items-center gap-3 rounded-[32px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 py-2"
+      >
+        {/* Right Icon (Mic) */}
+        <Pressable className="h-12 w-12 items-center justify-center rounded-full active:bg-slate-50 dark:active:bg-slate-800 transition-colors">
+          <Mic size={24} color="#64748B" />
+        </Pressable>
+
+        {/* Input Area */}
         <TextInput
           value={value}
           onChangeText={onChange}
-          multiline
-          maxLength={280}
-          placeholder="اكتب ما تبحث عنه أو اطلب تمويلاً أو مقارنة"
-          placeholderTextColor="#64748B"
-          style={{
-            minHeight: 48,
-            maxHeight: 112,
-            color: "#0F172A",
-            fontFamily: "Cairo_400Regular",
-            fontSize: 15,
-            textAlign: "right",
-            writingDirection: "rtl",
-          }}
+          multiline={false}
+          placeholder="كيف أقدر أساعدك اليوم؟"
+          placeholderTextColor="#94A3B8"
+          cursorColor="#2563EB"
+          className="flex-1 h-12 bg-transparent text-right font-cairo-medium text-[16px] text-slate-900 dark:text-slate-100"
+          style={{ writingDirection: 'rtl' }}
         />
-        <View className="mt-3 flex-row-reverse items-center justify-between">
-          <Pressable className="border border-line bg-white px-3 py-2">
-            <Animated.View className="flex-row-reverse items-center gap-2" style={animatedStyle}>
-              <Mic size={16} color="#64748B" />
-              <AppText className="text-xs text-muted">قريباً</AppText>
-            </Animated.View>
-          </Pressable>
-          <Pressable
-            onPress={onSend}
-            className="flex-row-reverse items-center gap-2 border border-brand bg-brand px-4 py-2"
-          >
-            <SendHorizonal size={16} color="#FFFFFF" />
-            <AppText className="text-sm font-cairo-bold text-white">إرسال</AppText>
-          </Pressable>
-        </View>
+
+        {/* Left Icon (Send Button) */}
+        <Pressable
+          onPress={isTyping ? onSend : undefined}
+          className={`h-12 w-12 items-center justify-center rounded-full transition-all ${
+            isTyping ? "bg-primary active:scale-95" : "bg-slate-100 dark:bg-slate-800"
+          }`}
+        >
+          <ArrowUp size={24} color={isTyping ? "#FFFFFF" : "#94A3B8"} strokeWidth={3} />
+        </Pressable>
       </View>
     </View>
   );

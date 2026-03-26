@@ -9,19 +9,38 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        background: "#FFFFFF",
+        foreground: "#0F172A",
+        primary: "#2563EB",
+        "primary-soft": "#DBEAFE",
+        card: "#FFFFFF",
+        "card-foreground": "#0F172A",
+        muted: "#F8FAFC",
+        "muted-foreground": "#64748B",
+        border: "#E2E8F0",
+        accent: "#F8F5EF",
+        "accent-foreground": "#0F172A",
+        success: "#0F766E",
+
+        // Legacy compat (if needed)
         brand: "#2563EB",
-        "brand-soft": "#DBEAFE",
         ink: "#0F172A",
         surface: "#FFFFFF",
         line: "#E2E8F0",
-        muted: "#64748B",
         panel: "#F8FAFC",
-        success: "#0F766E",
         sand: "#F8F5EF",
+      },
+      borderRadius: {
+        "3xl": "32px",
+        "2xl": "24px",
+        xl: "18px",
+        lg: "12px",
       },
       fontFamily: {
         cairo: ["Cairo_400Regular", "sans-serif"],
+        "cairo-medium": ["Cairo_500Medium", "sans-serif"],
         "cairo-bold": ["Cairo_700Bold", "sans-serif"],
+        "cairo-black": ["Cairo_900Black", "sans-serif"],
       },
       spacing: {
         4.5: "18px",

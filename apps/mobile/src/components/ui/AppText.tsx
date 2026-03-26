@@ -6,10 +6,10 @@ type AppTextProps = TextProps & {
 };
 
 const TONE_CLASS_NAMES: Record<NonNullable<AppTextProps["tone"]>, string> = {
-  body: "font-cairo text-base text-ink",
-  headline: "font-cairo-bold text-ink",
-  label: "font-cairo-bold text-xs text-muted",
-  muted: "font-cairo text-sm text-muted",
+  body: "font-cairo text-[15px] leading-relaxed text-foreground",
+  headline: "font-cairo-black text-2xl tracking-tighter text-foreground",
+  label: "font-cairo-bold text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60",
+  muted: "font-cairo-medium text-[13px] leading-relaxed text-muted-foreground/70",
 };
 
 /**
