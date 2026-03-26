@@ -47,9 +47,9 @@ type WorkspaceAssistantComposerProps = {
 };
 
 function resolvePlaceholder(audience: WorkspaceAudience) {
-  if (audience === "developer") return "اسأل عنان عن مشروع جديد أو اطلب تجهيز مسودة نشر...";
-  if (audience === "broker") return "اسأل عنان عن عقار جديد أو اطلب تحليل فرص السوق...";
-  return "اكتب رسالتك للمساعد الذكي...";
+  if (audience === "developer") return "اسأل عن تحليل السوق، تجهيز عرض سعر، أو نشر مشروع جديد...";
+  if (audience === "broker") return "اسأل عن تقييم عقار، مقارنة أداء الوسطاء، أو فرص السوق...";
+  return "اسأل عنان عن العقارات، السوق، أو العروض...";
 }
 
 function ComposerMicMeter({ levels }: { levels: number[] }) {
@@ -106,7 +106,7 @@ export default function WorkspaceAssistantComposer({
   );
 
   return (
-    <div className="w-full px-4" data-slot="chat-input-simplified">
+    <div className="w-full px-4 pb-[env(safe-area-inset-bottom)]" data-slot="chat-input-simplified">
       {localSendError ? (
         <div className="mb-4 rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-right text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 shadow-sm animate-in fade-in slide-in-from-bottom-2">
           {localSendError}
