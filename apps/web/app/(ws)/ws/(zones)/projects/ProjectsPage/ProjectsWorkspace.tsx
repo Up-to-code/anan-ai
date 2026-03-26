@@ -53,7 +53,7 @@ export default function ProjectsWorkspace({
         actions={
           <Link
             href="/ws/projects/create"
-            className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+            className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white"
           >
             <UploadCloud className="h-4 w-4" />
             إنشاء مشروع جديد
@@ -95,13 +95,13 @@ export default function ProjectsWorkspace({
                       type="button"
                       disabled={!onDeleteProject || isPending}
                       onClick={() => setDeleteTarget(project)}
-                      className="rounded-md border border-slate-200 p-2 text-slate-400 transition hover:border-red-300 hover:text-red-500 disabled:opacity-50"
+                      className="rounded-md border border-slate-200 p-2 text-slate-400 transition hover:border-red-300 hover:text-red-500 disabled:opacity-50 dark:border-slate-700 dark:text-slate-500 dark:hover:border-red-500/40 dark:hover:text-red-300"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                     <Link
                       href={`/ws/projects/${project.id}/edit`}
-                      className="rounded-md border border-slate-200 p-2 text-slate-400 transition hover:border-slate-400 hover:text-slate-600"
+                      className="rounded-md border border-slate-200 p-2 text-slate-400 transition hover:border-slate-400 hover:text-slate-600 dark:border-slate-700 dark:text-slate-500 dark:hover:border-slate-500 dark:hover:text-slate-200"
                     >
                       <Pencil className="h-4 w-4" />
                     </Link>
@@ -121,7 +121,7 @@ export default function ProjectsWorkspace({
                             });
                           })
                         }
-                        className="rounded-md border border-slate-900 bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
+                        className="rounded-md border border-slate-900 bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-800 disabled:opacity-50 dark:border-slate-100 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white"
                       >
                         نشر
                       </button>
@@ -129,7 +129,7 @@ export default function ProjectsWorkspace({
                   </div>
                   <Link
                     href={`/ws/projects/${project.id}`}
-                    className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-slate-300 hover:bg-slate-50"
+                    className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-900"
                   >
                     فتح المشروع
                   </Link>

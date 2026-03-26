@@ -17,7 +17,7 @@ export default async function WorkspaceOverviewLayout({
   const primaryOrganization = chrome.organizations[0];
 
   if (!primaryOrganization) {
-    return <div className="min-h-svh bg-white">{children}</div>;
+    return <div className="min-h-svh bg-background text-foreground">{children}</div>;
   }
 
   const organizationDisplay = getWorkspaceOrganizationDisplay({

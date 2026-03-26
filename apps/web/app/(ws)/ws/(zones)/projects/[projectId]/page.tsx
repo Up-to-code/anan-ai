@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import ProjectDetailPage from "../ProjectDetailPage";
 import { requireWorkspaceData } from "../../../_lib/workspaceData";
-import { getWorkspacePropertyZone } from "@/server/ws/zones";
-import { mapPropertyToWorkspaceProject } from "../projectViewModel";
+import { resolveWorkspaceProjectDetail } from "@/server/domains/workspace/properties/detail";
+import { mapPropertyToWorkspaceProjectDetail } from "../projectViewModel";
 
 type WorkspaceProjectDetailRouteProps = {
   params: Promise<{ projectId: string }>;
@@ -18,8 +18,14 @@ export default async function WorkspaceProjectDetailRoute({
 }: WorkspaceProjectDetailRouteProps) {
   const { projectId } = await params;
   const workspace = await requireWorkspaceData(`/ws/projects/${projectId}`);
-  const property = await getWorkspacePropertyZone(workspace.audience, workspace.ownerContext).getProperty({ id: projectId }).catch(() => null);
-  const project = property ? mapPropertyToWorkspaceProject(property) : null;
+  const resolved = await resolveWorkspaceProjectDetail({
+    projectId,
+    audience: workspace.audience,
+    ownerContext: workspace.ownerContext,
+  });
+  const project = resolved
+    ? mapPropertyToWorkspaceProjectDetail(resolved.property, resolved.accessMode)
+    : null;
 
   if (!project) {
     notFound();

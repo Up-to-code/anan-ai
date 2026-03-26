@@ -29,9 +29,9 @@ export default function ProfileWorkspace({
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-      <section className="border border-slate-200 bg-white p-6">
-        <h2 className="text-xl font-black text-slate-950">بيانات الحساب</h2>
-        <p className="mt-2 text-sm font-medium leading-7 text-slate-500">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+        <h2 className="text-xl font-black text-slate-950 dark:text-slate-100">بيانات الحساب</h2>
+        <p className="mt-2 text-sm font-medium leading-7 text-slate-500 dark:text-slate-400">
           عدل اسم الحساب واسم المستخدم الفريد الذي سيستخدم في البحث الداخلي.
         </p>
 
@@ -60,40 +60,40 @@ export default function ProfileWorkspace({
           }}
         >
           <div>
-            <label className="block text-xs font-black tracking-[0.18em] text-slate-500">الاسم</label>
+            <label className="block text-xs font-black tracking-[0.18em] text-slate-500 dark:text-slate-400">الاسم</label>
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
-              className="mt-2 w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-950 transition focus:bg-white focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-950 transition focus:bg-white focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:bg-slate-950 dark:focus-visible:border-blue-400 dark:focus-visible:ring-blue-500/30"
               name="name"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-black tracking-[0.18em] text-slate-500">اسم المستخدم</label>
+            <label className="block text-xs font-black tracking-[0.18em] text-slate-500 dark:text-slate-400">اسم المستخدم</label>
             <input
               value={username}
               onChange={(event) => setUsername(event.target.value)}
-              className="mt-2 w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-950 transition focus:bg-white focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-950 transition focus:bg-white focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:bg-slate-950 dark:focus-visible:border-blue-400 dark:focus-visible:ring-blue-500/30"
               name="username"
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
               dir="ltr"
             />
-            <p className="mt-2 text-xs font-medium text-slate-500">
+            <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
               استخدم الأحرف والأرقام والشرطة أو النقطة. هذا الحقل يستخدم في البحث الداخلي.
             </p>
           </div>
 
           <div>
-            <label className="block text-xs font-black tracking-[0.18em] text-slate-500">البريد الإلكتروني</label>
-            <div className="mt-2 border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700" dir="ltr">
+            <label className="block text-xs font-black tracking-[0.18em] text-slate-500 dark:text-slate-400">البريد الإلكتروني</label>
+            <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" dir="ltr">
               {initialProfile.email ?? fallbackEmail}
             </div>
           </div>
 
-          <label className="flex items-start gap-3 border border-slate-200 bg-slate-50 px-4 py-4">
+          <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-700 dark:bg-slate-900/70">
             <input
               type="checkbox"
               checked={showInOffersDirectory}
@@ -101,21 +101,21 @@ export default function ProfileWorkspace({
               className="mt-1 h-4 w-4 border-slate-300 text-blue-600"
             />
             <span>
-              <span className="block text-sm font-black text-slate-950">إظهار الحساب في دليل العروض</span>
-              <span className="mt-1 block text-xs font-medium leading-6 text-slate-500">
+              <span className="block text-sm font-black text-slate-950 dark:text-slate-100">إظهار الحساب في دليل العروض</span>
+              <span className="mt-1 block text-xs font-medium leading-6 text-slate-500 dark:text-slate-400">
                 مفعلة افتراضياً. عند إيقافها لن يظهر ملفك داخل تبويبات الوسطاء والمطورين في صفحة العروض.
               </span>
             </span>
           </label>
 
-          <div aria-live="polite" className="text-sm font-medium text-slate-600 min-h-6">
+          <div aria-live="polite" className="min-h-6 text-sm font-medium text-slate-600 dark:text-slate-300">
             {status}
           </div>
 
           <button
             type="submit"
             disabled={isSaving}
-            className="inline-flex items-center justify-center border border-slate-950 bg-slate-950 px-5 py-3 text-xs font-black tracking-[0.18em] text-white transition hover:border-blue-600 hover:bg-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex items-center justify-center rounded-xl border border-slate-950 bg-slate-950 px-5 py-3 text-xs font-black tracking-[0.18em] text-white transition hover:border-blue-600 hover:bg-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-100 dark:bg-slate-100 dark:text-slate-950 dark:hover:border-blue-400 dark:hover:bg-blue-400"
           >
             {isSaving ? "جاري الحفظ..." : "حفظ التعديلات"}
           </button>
@@ -123,27 +123,27 @@ export default function ProfileWorkspace({
       </section>
 
       <aside className="space-y-6">
-        <section className="border border-slate-200 bg-white p-6">
-          <h2 className="text-xl font-black text-slate-950">الأمان</h2>
-          <p className="mt-3 text-sm font-medium leading-7 text-slate-600">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+          <h2 className="text-xl font-black text-slate-950 dark:text-slate-100">الأمان</h2>
+          <p className="mt-3 text-sm font-medium leading-7 text-slate-600 dark:text-slate-300">
             تسجيل الدخول يتم عبر Google فقط في هذه المرحلة. لا توجد كلمة مرور محلية في عنان، ويمكنك إدارة التطبيقات المرتبطة من قسم الأمان.
           </p>
           <div className="mt-5 space-y-3">
-            <div className="border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
               مزود الدخول: Google
             </div>
             <Link
               href="/ws/me/security/apps"
-              className="inline-flex items-center justify-center border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 transition hover:border-blue-200 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 transition hover:border-blue-200 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-blue-400 dark:hover:text-blue-300"
             >
               التطبيقات المرتبطة
             </Link>
           </div>
         </section>
 
-        <section className="border border-slate-200 bg-white p-6">
-          <h2 className="text-xl font-black text-slate-950">الجلسة الحالية</h2>
-          <p className="mt-3 text-sm font-medium leading-7 text-slate-600">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+          <h2 className="text-xl font-black text-slate-950 dark:text-slate-100">الجلسة الحالية</h2>
+          <p className="mt-3 text-sm font-medium leading-7 text-slate-600 dark:text-slate-300">
             استخدم هذا الإجراء لتسجيل الخروج من مساحة العمل الحالية بأمان.
           </p>
           <div className="mt-5">

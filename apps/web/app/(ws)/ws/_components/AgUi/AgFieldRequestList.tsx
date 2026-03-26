@@ -17,13 +17,13 @@ export default function AgFieldRequestList({
 
   return (
     <div className="w-full max-w-[380px]">
-      <div className="text-[10px] font-black tracking-[0.22em] text-blue-700">جمع البيانات</div>
-      <p className="mt-1.5 text-sm font-bold leading-7 text-slate-900">{title}</p>
-      <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50/60 px-4 py-3 text-sm font-bold text-slate-800">
+      <div className="text-[10px] font-black tracking-[0.22em] text-[var(--workspace-highlight)]">جمع البيانات</div>
+      <p className="mt-1.5 text-sm font-bold leading-7 text-[var(--workspace-bubble-other-foreground)]">{title}</p>
+      <div className="mt-3 rounded-xl border border-[color:color-mix(in_srgb,var(--workspace-highlight)_35%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_12%,transparent)] px-4 py-3 text-sm font-bold text-[var(--workspace-bubble-other-foreground)]">
         {nextField}
       </div>
       {remainingCount > 0 ? (
-        <div className="mt-2 text-[11px] font-medium text-slate-400">
+        <div className="mt-2 text-[11px] font-medium text-[var(--workspace-muted)]">
           + {remainingCount} معلومات أخرى سنسألك عنها لاحقًا
         </div>
       ) : null}

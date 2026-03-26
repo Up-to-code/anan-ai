@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { RootFontFaces, rootFontClassName } from "@/lib/rootFonts";
+import ThemeProvider from "./theme-provider";
 
 export const metadata: Metadata = {
   title: "Anan - Coming Soon",
@@ -13,10 +14,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl">
-      <body className={rootFontClassName}>
-        <RootFontFaces />
-        {children}
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
+      <body className={`${rootFontClassName} bg-background text-foreground antialiased`}>
+        <ThemeProvider>
+          <RootFontFaces />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

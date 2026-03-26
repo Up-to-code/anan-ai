@@ -35,26 +35,26 @@ function BlogPostHeader({ post }: { post: StaticPost }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-6">
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 bg-blue-50 px-3 py-1">
+        <span className="bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
           {post.category}
         </span>
-        <span className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-2">
+        <span className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">
           <Calendar className="h-4 w-4" />
           {post.date}
         </span>
       </div>
-      <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight">{post.title}</h1>
+      <h1 className="text-4xl font-black leading-tight text-slate-900 dark:text-slate-100 md:text-5xl">{post.title}</h1>
     </div>
   );
 }
 
 function BlogShareActions() {
   return (
-    <div className="border-t-2 border-slate-100 pt-16 mt-16 text-center">
-      <h3 className="text-xl font-black text-slate-900 mb-6 uppercase">شارك هذا المقال</h3>
+    <div className="mt-16 border-t-2 border-slate-100 pt-16 text-center dark:border-slate-800">
+      <h3 className="mb-6 text-xl font-black uppercase text-slate-900 dark:text-slate-100">شارك هذا المقال</h3>
       <div className="flex justify-center gap-4">
-        <button type="button" className="h-12 w-12 bg-slate-50 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors text-slate-400 font-black text-xs uppercase tracking-widest">تويتر</button>
-        <button type="button" className="h-12 w-12 bg-slate-50 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors text-slate-400 font-black text-xs uppercase tracking-widest">لينكدإن</button>
+        <button type="button" className="flex h-12 w-12 items-center justify-center bg-slate-50 text-xs font-black uppercase tracking-widest text-slate-400 transition-colors hover:bg-blue-600 hover:text-white dark:bg-slate-900 dark:text-slate-500 dark:hover:bg-blue-500">تويتر</button>
+        <button type="button" className="flex h-12 w-12 items-center justify-center bg-slate-50 text-xs font-black uppercase tracking-widest text-slate-400 transition-colors hover:bg-blue-600 hover:text-white dark:bg-slate-900 dark:text-slate-500 dark:hover:bg-blue-500">لينكدإن</button>
       </div>
     </div>
   );
@@ -83,17 +83,17 @@ export default async function BlogPostPage({ params }: Props) {
   }
 
   return (
-    <main className="bg-white min-h-screen pt-40 pb-32">
+    <main className="min-h-screen bg-white pt-40 pb-32 dark:bg-slate-950">
       <Section className="max-w-3xl mx-auto space-y-16">
         <div className="space-y-8">
-          <Link href="/blog" className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-blue-600 transition-colors">
+          <Link href="/blog" className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 transition-colors hover:text-blue-600 dark:text-slate-500 dark:hover:text-blue-300">
             <ChevronRight className="h-4 w-4" />
             العودة للمدونة
           </Link>
           <BlogPostHeader post={post} />
         </div>
 
-        <article className="prose prose-slate prose-lg md:prose-xl text-slate-700 font-bold leading-relaxed whitespace-pre-line border-t-2 border-slate-100 pt-16">
+        <article className="prose prose-slate prose-lg whitespace-pre-line border-t-2 border-slate-100 pt-16 font-bold leading-relaxed text-slate-700 dark:prose-invert dark:border-slate-800 dark:text-slate-300 md:prose-xl">
           {post.content}
         </article>
 

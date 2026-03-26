@@ -60,25 +60,31 @@ export default function InboxCollaborationCard({
   metadata: CollaborationMetadata;
 }) {
   return (
-    <div className={`space-y-3 border px-4 py-4 ${isMe ? "border-white/20 bg-white/10" : "border-slate-200 bg-white"}`}>
+    <div
+      className={`space-y-4 rounded-[24px] border px-4 py-4 shadow-sm ${
+        isMe
+          ? "border-[color:color-mix(in_srgb,var(--workspace-border)_60%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-bubble-self)_84%,var(--workspace-panel))] text-[var(--workspace-bubble-self-foreground)]"
+          : "border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-panel)] text-[var(--workspace-bubble-other-foreground)]"
+      }`}
+    >
       <div className="space-y-1">
-        <div className={`text-xs font-bold ${isMe ? "text-blue-100" : "text-blue-700"}`}>{getCardLabel(metadata)}</div>
+        <div className={`text-[11px] font-black tracking-[0.18em] ${isMe ? "text-[var(--workspace-bubble-self-muted)]" : "text-[var(--workspace-highlight)]"}`}>{getCardLabel(metadata)}</div>
         <div className="text-sm font-black leading-6">{metadata.title}</div>
       </div>
-      <div className={`text-xs font-medium ${isMe ? "text-blue-100" : "text-slate-600"}`}>
+      <div className={`text-xs font-medium ${isMe ? "text-[var(--workspace-bubble-self-muted)]" : "text-[var(--workspace-bubble-other-muted)]"}`}>
         {metadata.actor.name}
         {metadata.actor.organizationName ? ` · ${metadata.actor.organizationName}` : ""}
       </div>
-      <div className={`text-sm font-medium leading-6 ${isMe ? "text-blue-50" : "text-slate-600"}`}>{metadata.summary}</div>
-      <div className={`text-xs font-bold ${isMe ? "text-white" : "text-slate-700"}`}>
+      <div className={`rounded-2xl border px-3 py-3 text-sm font-medium leading-6 ${isMe ? "border-[color:color-mix(in_srgb,var(--workspace-border)_52%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-bubble-self)_74%,var(--workspace-panel))] text-[var(--workspace-bubble-self-foreground)]" : "border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)] text-[var(--workspace-bubble-other-foreground)]"}`}>{metadata.summary}</div>
+      <div className={`text-xs font-bold ${isMe ? "text-[var(--workspace-bubble-self-foreground)]" : "text-[var(--workspace-bubble-other-foreground)]"}`}>
         {getMetaDetails(metadata)}
       </div>
       <a
         href={metadata.action.href}
         className={`inline-flex items-center gap-2 border px-3 py-2 text-xs font-bold transition ${
           isMe
-            ? "border-white/25 text-white hover:bg-white/10"
-            : "border-slate-200 text-slate-800 hover:border-blue-200 hover:text-blue-700"
+            ? "rounded-xl border-[color:color-mix(in_srgb,var(--workspace-border)_52%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-bubble-self)_74%,var(--workspace-panel))] text-[var(--workspace-bubble-self-foreground)] hover:brightness-110"
+            : "rounded-xl border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)] text-[var(--workspace-bubble-other-foreground)] hover:bg-[var(--workspace-accent-soft)] hover:text-[var(--workspace-highlight)]"
         }`}
       >
         <ArrowUpLeft className="h-3.5 w-3.5" />

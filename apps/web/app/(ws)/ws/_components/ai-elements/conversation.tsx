@@ -86,7 +86,7 @@ export const ConversationScrollButton = ({
     <Button
       aria-label="الانتقال إلى آخر الرسائل"
       className={cn(
-        "absolute left-1/2 -translate-x-1/2 rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg shadow-slate-900/10 transition-all hover:bg-slate-900 hover:text-white hover:shadow-xl hover:shadow-slate-900/20",
+        "absolute left-1/2 -translate-x-1/2 rounded-full border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-[var(--workspace-bubble-other-foreground)] shadow-lg shadow-black/10 transition-all hover:bg-[var(--workspace-elevated)] hover:text-[var(--workspace-bubble-other-foreground)] hover:shadow-xl hover:shadow-black/20",
         className,
       )}
       data-slot="conversation-scroll-button"

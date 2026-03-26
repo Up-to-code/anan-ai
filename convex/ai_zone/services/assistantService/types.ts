@@ -8,6 +8,14 @@ export type AssistantOwner = {
   ownerREDId?: Id<"RED">;
 };
 
+export type WorkspaceUploadedFileReference = {
+  key: string;
+  url: string;
+  name: string;
+  size?: number;
+  mime?: string;
+};
+
 export type AssistantKind = "default" | "anan_workspace" | "anan_pro" | "anan_main_public";
 export type ThreadScope = "user" | "organization";
 
@@ -27,6 +35,8 @@ export type WorkspaceProjectActionState = WorkspaceProjectActionCandidate & {
   projectId?: string;
   error?: string;
 };
+
+export type WorkspaceActionState = WorkspaceProjectActionState;
 
 export const WORKSPACE_KINDS: AssistantKind[] = ["anan_workspace", "anan_pro"];
 

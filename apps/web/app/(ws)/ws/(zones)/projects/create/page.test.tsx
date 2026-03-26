@@ -56,6 +56,15 @@ const formInput: ProjectFormData = {
   price: "3,200,000 ر.س",
   location: "الرياض",
   description: "تفاصيل المشروع",
+  shortDescription: "نبذة قصيرة",
+  amenitiesText: "مسبح، نادي",
+  hasParking: true,
+  parkingSpaces: "2",
+  coverImageKey: "file-1",
+  galleryDisplayMode: "fit",
+  galleryAspectRatio: "square",
+  privatePermitSummary: "تصريح للطرف المستلم فقط",
+  privatePermitFiles: [{ key: "permit-1", url: "https://ufs.sh/f/permit-1", name: "permit.pdf" }],
   rooms: "4",
   baths: "5",
   area: "380",
@@ -85,6 +94,22 @@ it("saves uploaded images as media and publishes when status is active", async (
   const result = await props.onSave(formInput);
 
   expect(result).toEqual({ redirectTo: "/ws/projects/property-new" });
-  expect(createProperty).toHaveBeenCalledWith(expect.objectContaining({ media: [uploadedImage] }));
+  expect(createProperty).toHaveBeenCalledWith(
+    expect.objectContaining({
+      media: [uploadedImage],
+      body: {
+        presentation: expect.objectContaining({
+          descriptionShort: "نبذة قصيرة",
+          amenities: ["مسبح", "نادي"],
+          parkingSpaces: 2,
+          hasParking: true,
+          coverImageKey: "file-1",
+          galleryDisplayMode: "fit",
+          galleryAspectRatio: "square",
+          privatePermitSummary: "تصريح للطرف المستلم فقط",
+        }),
+      },
+    }),
+  );
   expect(publishProperty).toHaveBeenCalledWith({ id: "property-new" });
 });

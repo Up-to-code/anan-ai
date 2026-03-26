@@ -79,7 +79,7 @@ function ProjectFormLayout(args: {
   onDeleteConfirm: () => void;
 }) {
   return (
-    <div className="flex min-h-full flex-col p-6 lg:p-12">
+    <div className="min-h-full bg-[#f6f3ee] px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8 lg:py-8">
       <AgPropertyForm
         propertyId={args.projectId}
         initialData={args.initialData}

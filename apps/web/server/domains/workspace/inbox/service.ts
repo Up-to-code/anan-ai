@@ -4,11 +4,14 @@ import type {
   BootstrapOfferConversationInput,
   CreatePrivateOfferInConversationInput,
   MarkConversationReadInput,
+  PublishConversationOfferInput,
   ResolveDirectConversationInput,
+  RespondToConversationOfferInput,
   SendConversationMessageInput,
   ShareDealInConversationInput,
   ShareFileInConversationInput,
   ShareProjectInConversationInput,
+  UpdatePrivateOfferDraftInConversationInput,
 } from "@/server/contracts/inbox";
 import {
   convexInboxRepository,
@@ -248,8 +251,8 @@ export async function shareInboxDealInConversation(
 
 /**
  * WHY:   Targeted private offers should be creatable from the active conversation so users do not have to restart the flow elsewhere.
- * WHAT:  Creates and publishes a private offer addressed to the specific thread participant.
- * HOW:   Validates collaboration access, resolves the recipient auth user and org ids from the conversation, then delegates to the workspace offers zone.
+ * WHAT:  Creates a private offer draft addressed to the specific thread participant.
+ * HOW:   Validates collaboration access, resolves the recipient auth user and org ids from the conversation, then delegates to the workspace offers zone draft flow.
  */
 export async function createInboxPrivateOfferInConversation(
   input: CreatePrivateOfferInConversationInput,
@@ -268,18 +271,73 @@ export async function createInboxPrivateOfferInConversation(
     });
   }
 
-  const created = await offersZone.createOffer({
+  return offersZone.createOfferDraft({
     propertyId: input.propertyId,
     price: input.price,
     message: input.message,
     description: input.description,
     visibility: "private",
     attachments: input.attachments,
+    sourceConversationId: conversation.id,
     recipientAuthUserId: conversation.otherUser.id,
     toBrokerId: recipientBrokerId,
     toREDId: recipientREDId,
   });
+}
 
-  await offersZone.publishOffer({ id: created.offerId });
-  return created;
+/**
+ * WHY:   Draft-first inbox offers need a focused update path that keeps the recipient locked to the active conversation.
+ * WHAT:  Updates one private offer draft linked to the current conversation.
+ * HOW:   Verifies collaboration access, then delegates the draft patch to the workspace offers zone with the conversation guard.
+ */
+export async function updateInboxPrivateOfferDraft(
+  input: UpdatePrivateOfferDraftInConversationInput,
+  dependencies: InboxServiceDependencies = defaultDependencies,
+) {
+  const { workspace } = await requireCollaborationContext(input.conversationId, dependencies);
+  const offersZone = getWorkspaceOffersZone(workspace.audience, workspace.ownerContext);
+  return offersZone.updateOfferDraft({
+    id: input.offerId,
+    conversationId: input.conversationId,
+    propertyId: input.propertyId,
+    price: input.price,
+    message: input.message,
+    description: input.description,
+    attachments: input.attachments,
+  });
+}
+
+/**
+ * WHY:   Draft activation should happen from the inbox thread where the private offer was prepared.
+ * WHAT:  Publishes one conversation-linked private offer and delivers it to the recipient.
+ * HOW:   Verifies collaboration access, then delegates publish + side effects to the workspace offers zone.
+ */
+export async function publishInboxConversationOffer(
+  input: PublishConversationOfferInput,
+  dependencies: InboxServiceDependencies = defaultDependencies,
+) {
+  const { workspace } = await requireCollaborationContext(input.conversationId, dependencies);
+  const offersZone = getWorkspaceOffersZone(workspace.audience, workspace.ownerContext);
+  return offersZone.publishConversationOffer({
+    id: input.offerId,
+    conversationId: input.conversationId,
+  });
+}
+
+/**
+ * WHY:   Recipients should be able to accept or reject private offers without leaving the inbox flow.
+ * WHAT:  Responds to one inbox-linked offer for the current recipient.
+ * HOW:   Verifies collaboration access and delegates the response mutation to the workspace offers zone.
+ */
+export async function respondToInboxConversationOffer(
+  input: RespondToConversationOfferInput,
+  dependencies: InboxServiceDependencies = defaultDependencies,
+) {
+  const { workspace } = await requireCollaborationContext(input.conversationId, dependencies);
+  const offersZone = getWorkspaceOffersZone(workspace.audience, workspace.ownerContext);
+  await offersZone.respondToOffer({
+    id: input.offerId,
+    status: input.status,
+  });
+  return { ok: true } as const;
 }

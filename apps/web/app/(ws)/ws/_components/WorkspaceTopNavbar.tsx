@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useWorkspaceSignalCounts } from "../(zones)/inbox/InboxPage/useRealtimeInbox";
 import type { SidebarUser } from "./Sidebar/types";
 import type { WorkspaceShellVariant } from "./WorkspaceShell";
+import ThemeToggle from "@/app/_components/ThemeToggle";
 
 /**
  * WHY:   Workspace screens need one shared top navbar for identity, organization context, and incoming signals.
@@ -59,10 +60,10 @@ function WorkspaceTopNavbarInner({
       data-slot="workspace-top-navbar"
       data-variant={variant}
       className={cn(
-        "flex shrink-0 items-center justify-between border-b bg-white",
+        "flex shrink-0 items-center justify-between border-b transition-colors",
         isAssistantVariant
-          ? "h-14 border-slate-200/80 px-4 sm:px-5 lg:px-6"
-          : "h-16 border-slate-200 px-6",
+          ? "h-14 border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-4 sm:px-5 lg:px-6"
+          : "h-16 border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-6",
       )}
     >
       {/* Start side (right in RTL): Mobile nav + page context */}
@@ -70,7 +71,7 @@ function WorkspaceTopNavbarInner({
         {mobileNavigation ? <div className="lg:hidden">{mobileNavigation}</div> : null}
         <h1
           className={cn(
-            isAssistantVariant ? "text-base font-semibold text-slate-900" : "text-lg font-black text-slate-800",
+            isAssistantVariant ? "text-base font-semibold text-foreground" : "text-lg font-black text-foreground",
           )}
         >
           {resolvedTitle}
@@ -79,8 +80,9 @@ function WorkspaceTopNavbarInner({
 
       {/* End side (left in RTL): Signal buttons + unified account */}
       <div className={cn("flex items-center", isAssistantVariant ? "gap-3" : "gap-4")}>
+        <ThemeToggle className="h-9 w-9 rounded-[8px]" />
         {/* Action Group */}
-        <div className={cn("flex items-center gap-1 border-s border-slate-200", isAssistantVariant ? "ps-3" : "ps-4")}>
+        <div className={cn("flex items-center gap-1 border-s border-[color:var(--workspace-border)]", isAssistantVariant ? "ps-3" : "ps-4")}>
           <SignalButton
             label="الإشعارات"
             count={signalCounts.notificationCount}
@@ -99,34 +101,24 @@ function WorkspaceTopNavbarInner({
             />
           ) : null}
         </div>
-
-        {/* Unified Account / Org Button */}
         <Link
           href="/ws/me"
           className={cn(
-            "group flex items-center text-right transition hover:bg-slate-50",
-            isAssistantVariant ? "gap-2 rounded-[8px] px-2 py-1.5" : "gap-3 rounded-[8px] p-1 pe-3",
+            "flex items-center gap-3 rounded-[10px] border px-3 py-2 text-right transition",
+            "border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] hover:bg-[var(--workspace-accent-soft)]",
+            isAssistantVariant ? "min-w-[180px]" : "min-w-[220px]",
           )}
         >
-          <div
-            className={cn(
-              "flex items-center justify-center text-sm font-bold text-white transition",
-              isAssistantVariant
-                ? "h-8 w-8 rounded-[8px] bg-slate-900"
-                : "h-9 w-9 rounded-[8px] bg-blue-600 shadow-sm ring-2 ring-transparent group-hover:ring-blue-100",
-            )}
-          >
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-xs font-black text-foreground">{organization.name}</div>
+            <div className="truncate text-[11px] text-muted-foreground">
+              {user.name || user.email}
+            </div>
+          </div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:color-mix(in_srgb,var(--workspace-highlight)_16%,transparent)] text-sm font-black text-[var(--workspace-highlight)]">
             {accountInitial}
           </div>
-          <div className="hidden sm:block">
-            <p className="text-[13px] font-black leading-none text-slate-700">
-              {user.name || "مستخدم عنان"}
-            </p>
-            <p className="mt-1 text-[11px] font-bold leading-none text-slate-500">
-              {organization.name}
-            </p>
-          </div>
-          <ChevronDown className="hidden h-4 w-4 text-slate-400 transition group-hover:text-slate-600 sm:block" />
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
         </Link>
       </div>
     </header>
@@ -158,15 +150,15 @@ function SignalButton({
         "rounded-[8px]",
         isActive
           ? isAssistantVariant
-            ? "bg-slate-100 text-slate-900"
-            : "bg-blue-50 text-blue-600"
-          : "text-slate-400 hover:bg-slate-100 hover:text-slate-600",
+            ? "bg-muted text-foreground"
+            : "bg-[color:color-mix(in_srgb,var(--workspace-highlight)_14%,transparent)] text-[var(--workspace-highlight)]"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
       aria-label={`${label}: ${count}`}
     >
       {icon}
       {count > 0 ? (
-        <span className="absolute end-1 top-1 flex h-2 w-2 items-center justify-center rounded-full bg-red-500 ring-2 ring-white" />
+        <span className="absolute end-1 top-1 flex h-2 w-2 items-center justify-center rounded-full bg-red-500 ring-2 ring-background" />
       ) : null}
     </Link>
   );

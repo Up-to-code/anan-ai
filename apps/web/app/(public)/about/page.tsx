@@ -35,11 +35,11 @@ const itemVariants = {
 export default function AboutPage() {
     return (
         <main className="overflow-x-hidden">
-            <Section bg="none" className="pt-48 pb-32 relative overflow-hidden bg-white">
+            <Section bg="none" className="relative overflow-hidden bg-white pt-48 pb-32 dark:bg-slate-950">
                 {/* Dynamic Background Patterns */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    <div className="absolute -top-[10%] -left-[10%] h-[50%] w-[50%] bg-blue-50/50 blur-[120px]" />
-                    <div className="absolute -bottom-[10%] -right-[10%] h-[50%] w-[50%] bg-blue-50/50 blur-[120px]" />
+                    <div className="absolute -top-[10%] -left-[10%] h-[50%] w-[50%] bg-blue-50/50 blur-[120px] dark:bg-blue-500/10" />
+                    <div className="absolute -bottom-[10%] -right-[10%] h-[50%] w-[50%] bg-blue-50/50 blur-[120px] dark:bg-blue-500/10" />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src="/vectors/landing/ecosystem_hub.svg"
@@ -56,14 +56,14 @@ export default function AboutPage() {
                         className="space-y-12 text-center"
                     >
                         <motion.div variants={itemVariants} className="flex justify-center">
-                            <span className="px-4 py-1.5 border border-blue-100 bg-blue-50 text-blue-600 text-sm font-black tracking-widest uppercase">
+                            <span className="px-4 py-1.5 border border-blue-100 bg-blue-50 text-blue-600 text-sm font-black tracking-widest uppercase dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
                                 من نحن
                             </span>
                         </motion.div>
 
                         <motion.h1
                             variants={itemVariants}
-                            className="text-6xl md:text-8xl font-black text-slate-900 tracking-tight"
+                            className="text-6xl md:text-8xl font-black tracking-tight text-slate-900 dark:text-slate-100"
                         >
                             عن عنان <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400">
@@ -73,7 +73,7 @@ export default function AboutPage() {
 
                         <motion.div
                             variants={itemVariants}
-                            className="space-y-8 text-xl md:text-2xl text-slate-500 font-bold leading-relaxed max-w-3xl mx-auto"
+                            className="max-w-3xl mx-auto space-y-8 text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300 md:text-2xl"
                         >
                             <p>
                                 نحن نبني البنية التحتية الرقمية لمستقبل العقار في المملكة العربية السعودية، متمشين مع رؤية ٢٠٣٠ لتحويل القطاع إلى منظومة ذكية وشفافة.
@@ -122,8 +122,8 @@ export default function AboutPage() {
                 </motion.div>
             </Section>
 
-            <Section className="py-32 bg-white relative">
-                <div className="absolute top-0 right-0 w-32 h-full bg-slate-50/50 -skew-x-12 translate-x-16" />
+            <Section className="relative bg-white py-32 dark:bg-slate-950">
+                <div className="absolute top-0 right-0 h-full w-32 -skew-x-12 translate-x-16 bg-slate-50/50 dark:bg-slate-900/70" />
 
                 <motion.div
                     initial={{ opacity: 0, x: 50 }}
@@ -133,13 +133,13 @@ export default function AboutPage() {
                     className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center relative z-10"
                 >
                     <div className="space-y-8">
-                        <h2 className="text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                        <h2 className="text-5xl font-black leading-tight tracking-tight text-slate-900 dark:text-slate-100">
                             رؤية عام <br />
                             <span className="text-blue-600">٢٠٣٠</span>
                         </h2>
                         <div className="w-20 h-2 bg-blue-600" />
                     </div>
-                    <div className="space-y-8 text-slate-500 font-bold leading-relaxed text-xl">
+                    <div className="space-y-8 text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300">
                         <p>
                             تساهم عنان في تسريع التحول الرقمي للقطاع العقاري السعودي من خلال أتمتة عمليات البحث والتمويل والتعاقد. نحن لا نوفر مجرد تطبيق، بل نبني بروتوكولاً للتعاملات الكبرى.
                         </p>
@@ -150,7 +150,7 @@ export default function AboutPage() {
                 </motion.div>
             </Section>
 
-            <Section bg="slate" className="py-32 border-y border-slate-100">
+            <Section bg="slate" className="border-y border-slate-100 py-32 dark:border-slate-800">
                 <motion.div
                     initial="hidden"
                     whileInView="visible"

@@ -1,263 +1,266 @@
-import type { AgUiConversationTurn } from "./agUi/types";
+import type { WorkspaceActionState, WorkspaceUploadedFileReference } from "./assistantService/types";
+import type { AgUiCardDefinition, AgUiConversationTurn } from "./agUi/types";
 
-const PROJECT_CREATE_ACTION: AgUiConversationTurn["action"] = {
+type WorkspaceAgUiOptions = {
+  assistantText: string;
+  ownerType: "broker" | "RED" | "user";
+  actionState: WorkspaceActionState | null;
+  attachments?: WorkspaceUploadedFileReference[];
+};
+
+const WORKSPACE_ZONE_ACCESS: Record<WorkspaceAgUiOptions["ownerType"], readonly string[]> = {
+  broker: ["projects", "offers", "crm", "market"],
+  RED: ["projects", "offers", "market"],
+  user: ["market"],
+};
+
+const CREATE_PROJECT_ACTION: AgUiConversationTurn["action"] = {
   id: "create_project",
   title: "إنشاء مشروع",
   zone: "projects",
-  fields: ["name", "city", "district", "price", "brokerFee", "rooms", "bathrooms"],
+  fields: ["name", "city", "district", "price", "rooms", "bathrooms", "description"],
 };
 
-const PROJECT_CREATE_READY_CARD = {
-  id: "project-draft",
-  componentId: "project_create_draft",
-  props: {
-    name: "مشروع مساكن الربوة",
-    city: "الرياض",
-    district: "الربوة",
-    price: "1,850,000 ر.س",
-    brokerFee: "2.5%",
-    rooms: "4",
-    bathrooms: "4",
-    summary: "مشروع سكني متوسط الارتفاع مع وحدات ثلاث وأربع غرف في نطاق مرتفع الطلب.",
-  },
-} as const;
-
-const PROJECT_CREATE_CONSTRAINTS_CARD = {
-  id: "constraints",
-  componentId: "constraint_summary",
-  props: { constraints: ["سكني", "4 غرف", "الرياض", "عمولة 2.5%"] },
-} as const;
-
-const PROJECT_CREATE_MISSING_FIELDS_CARD = {
-  id: "missing",
-  componentId: "field_request_list",
-  props: { fields: ["السعر المستهدف", "عدد الحمامات", "وصف مختصر للبيع"] },
-} as const;
-
-const PROJECT_CREATE_FOLLOWUP_CARD = {
-  id: "followup",
-  componentId: "missing_data_prompt",
-  props: { prompt: "اذكر السعر والحمامات والوصف، وسأكمل المسودة فوراً." },
-} as const;
-
-function buildProjectCreateDraft(hasPrice: boolean) {
-  return {
-    actionId: "create_project",
-    title: "مشروع مساكن الربوة",
-    description: "مشروع سكني متوسط الارتفاع مع وحدات ثلاث وأربع غرف في نطاق مرتفع الطلب.",
-    fields: {
-      name: "مشروع مساكن الربوة",
-      city: "الرياض",
-      district: "الربوة",
-      price: hasPrice ? "1,850,000 ر.س" : "",
-      brokerFee: "2.5%",
-      rooms: "4",
-      bathrooms: "4",
-    },
-    missingFields: hasPrice ? [] : ["price", "bathrooms", "description"],
-    zone: "projects",
-    state: hasPrice ? "ready" : "collecting",
-  } as const;
+function hasProjectWriteAccess(ownerType: WorkspaceAgUiOptions["ownerType"]) {
+  return WORKSPACE_ZONE_ACCESS[ownerType].includes("projects");
 }
 
-function projectCreateTurn(input: string, assistantText: string): AgUiConversationTurn {
-  const hasPrice = /\d/.test(input);
+function toText(value: string | number | undefined, fallback = "غير محدد") {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return new Intl.NumberFormat("ar-SA").format(value);
+  }
+  if (typeof value === "string" && value.trim().length > 0) {
+    return value.trim();
+  }
+  return fallback;
+}
+
+function buildAttachmentReceiptCard(
+  attachments: WorkspaceUploadedFileReference[] | undefined,
+): AgUiCardDefinition[] {
+  if (!attachments || attachments.length === 0) {
+    return [];
+  }
+
+  const imageCount = attachments.filter((file) => file.mime?.startsWith("image/")).length;
+  const label =
+    imageCount > 0
+      ? `تم استلام ${imageCount} صورة و${attachments.length - imageCount} ملف إضافي.`
+      : `تم استلام ${attachments.length} ملف مرفق.`;
+
+  return [
+    {
+      id: "workspace-attachments-received",
+      componentId: "execution_result",
+      props: {
+        title: "تم استلام المرفقات",
+        description: `${label} ${attachments.map((file) => file.name).join("، ")}`,
+        status: "running",
+      },
+    },
+  ];
+}
+
+function buildProjectDraftCard(actionState: Extract<WorkspaceActionState, { type: "create_project" }>): AgUiCardDefinition {
   return {
-    objective: "create_project",
-    targetZone: "projects",
-    action: PROJECT_CREATE_ACTION,
-    draft: buildProjectCreateDraft(hasPrice),
-    executionState: hasPrice ? "ready" : "collecting",
-    assistantText,
-    followupQuestion: hasPrice ? undefined : "ما السعر المستهدف لهذا المشروع؟",
-    cards: hasPrice
-      ? [PROJECT_CREATE_READY_CARD, PROJECT_CREATE_CONSTRAINTS_CARD]
-      : [PROJECT_CREATE_MISSING_FIELDS_CARD, PROJECT_CREATE_FOLLOWUP_CARD],
+    id: "workspace-project-draft",
+    componentId: "project_create_draft",
+    props: {
+      name: toText(actionState.fields.name, "مسودة مشروع جديدة"),
+      city: toText(actionState.fields.city),
+      district: toText(actionState.fields.district),
+      price: actionState.fields.price ? `${toText(actionState.fields.price)} ر.س` : "غير محدد",
+      brokerFee: "يحدد لاحقاً",
+      rooms: toText(actionState.fields.rooms),
+      bathrooms: toText(actionState.fields.bathrooms),
+      summary: toText(actionState.fields.description, "بانتظار وصف مختصر للمشروع قبل الحفظ النهائي."),
+    },
   };
 }
 
-function publishOfferTurn(assistantText: string): AgUiConversationTurn {
+function buildCollectingCards(
+  actionState: Extract<WorkspaceActionState, { type: "create_project" }>,
+): AgUiCardDefinition[] {
+  return [
+    {
+      id: "workspace-project-missing-fields",
+      componentId: "field_request_list",
+      props: {
+        title: "المساعد يحتاج هذه البيانات قبل إنشاء المشروع",
+        fields: actionState.missingFields,
+      },
+    },
+    {
+      id: "workspace-project-followup",
+      componentId: "missing_data_prompt",
+      props: {
+        prompt:
+          actionState.missingFields.length > 0
+            ? `أرسل ${actionState.missingFields[0]} أولاً، ويمكنك أيضاً إرفاق صور أو ملفات تدعم المسودة.`
+            : "أرسل أي تفاصيل إضافية تريد إضافتها إلى المشروع.",
+      },
+    },
+  ];
+}
+
+function buildCompletedCard(
+  actionState: Extract<WorkspaceActionState, { type: "create_project" }>,
+): AgUiCardDefinition {
   return {
-    objective: "publish_offer",
-    targetZone: "offers",
-    action: { id: "publish_offer", title: "نشر عرض", zone: "offers", fields: ["project", "unit", "audience", "price", "notes"] },
+    id: "workspace-project-completed",
+    componentId: "execution_result",
+    props: {
+      title: "تم إنشاء المشروع",
+      description: actionState.projectId
+        ? `تم إنشاء المشروع كمسودة فعلية داخل مساحة العمل. رقم المشروع: ${actionState.projectId}.`
+        : "تم إنشاء المشروع كمسودة فعلية داخل مساحة العمل.",
+      status: "done",
+    },
+  };
+}
+
+function buildFailedCard(
+  actionState: Extract<WorkspaceActionState, { type: "create_project" }>,
+): AgUiCardDefinition {
+  return {
+    id: "workspace-project-failed",
+    componentId: "execution_result",
+    props: {
+      title: "تعذر إنشاء المشروع",
+      description:
+        actionState.error ?? "لم يتمكن المساعد من حفظ المشروع حالياً. راجع البيانات ثم أرسل التحديث المطلوب.",
+      status: "blocked",
+    },
+  };
+}
+
+function buildNoAccessTurn(options: WorkspaceAgUiOptions): AgUiConversationTurn {
+  return {
+    objective: "workspace_capability_check",
+    targetZone: "projects",
+    action: CREATE_PROJECT_ACTION,
+    executionState: "failed",
+    assistantText: options.assistantText,
+    cards: [
+      ...buildAttachmentReceiptCard(options.attachments),
+      {
+        id: "workspace-no-project-access",
+        componentId: "execution_result",
+        props: {
+          title: "الصلاحية غير متاحة",
+          description: "هذا الحساب لا يملك صلاحية إنشاء أو تعديل المشاريع داخل مساحة العمل الحالية.",
+          status: "blocked",
+        },
+      },
+    ],
+  };
+}
+
+function buildAttachmentOnlyTurn(options: WorkspaceAgUiOptions): AgUiConversationTurn {
+  return {
+    objective: "workspace_attachment_review",
+    targetZone: "projects",
+    action: CREATE_PROJECT_ACTION,
+    executionState: "collecting",
+    assistantText: options.assistantText,
+    cards: [
+      ...buildAttachmentReceiptCard(options.attachments),
+      {
+        id: "workspace-attachment-followup",
+        componentId: "missing_data_prompt",
+        props: {
+          prompt: "تم حفظ المرفقات في المحادثة. أرسل اسم المشروع والمدينة والحي والسعر المطلوب لأحوّلها إلى مسودة فعلية.",
+        },
+      },
+    ],
+  };
+}
+
+function dedupeCards(cards: AgUiCardDefinition[]) {
+  const seen = new Set<string>();
+  return cards.filter((card) => {
+    if (seen.has(card.id)) {
+      return false;
+    }
+    seen.add(card.id);
+    return true;
+  });
+}
+
+/**
+ * WHY:   Workspace AG UI should only render cards backed by real workspace state, not demo heuristics.
+ * WHAT:  Builds a conversation turn from current action state, attachments, and role capabilities.
+ * HOW:   Emits only honest draft, missing-data, execution-result, and attachment receipt cards.
+ */
+export function resolveWorkspaceAgUiTurn(options: WorkspaceAgUiOptions): AgUiConversationTurn | null {
+  if (!options.actionState) {
+    return options.attachments?.length ? buildAttachmentOnlyTurn(options) : null;
+  }
+
+  if (options.actionState.type === "create_project" && !hasProjectWriteAccess(options.ownerType)) {
+    return buildNoAccessTurn(options);
+  }
+
+  if (options.actionState.type !== "create_project") {
+    return options.attachments?.length ? buildAttachmentOnlyTurn(options) : null;
+  }
+
+  const cards: AgUiCardDefinition[] = [
+    ...buildAttachmentReceiptCard(options.attachments),
+    buildProjectDraftCard(options.actionState),
+  ];
+
+  if (options.actionState.state === "collecting") {
+    cards.push(...buildCollectingCards(options.actionState));
+  }
+
+  if (options.actionState.state === "completed") {
+    cards.push(buildCompletedCard(options.actionState));
+  }
+
+  if (options.actionState.state === "failed") {
+    cards.push(buildFailedCard(options.actionState));
+  }
+
+  if (options.actionState.state === "ready") {
+    cards.push({
+      id: "workspace-project-ready",
+      componentId: "execution_result",
+      props: {
+        title: "المسودة جاهزة للتنفيذ",
+        description: "تم جمع البيانات الأساسية، ويجري الآن تنفيذ الإنشاء الفعلي داخل مساحة العمل.",
+        status: "running",
+      },
+    });
+  }
+
+  return {
+    objective: options.actionState.type,
+    targetZone: "projects",
+    action: CREATE_PROJECT_ACTION,
     draft: {
-      actionId: "publish_offer",
-      title: "عرض إطلاق وحدات الربوة",
-      description: "مسودة نشر عرض قبل إرساله إلى السوق أو الوسطاء.",
+      actionId: "create_project",
+      title: toText(options.actionState.fields.name, "مسودة مشروع جديدة"),
+      description: toText(options.actionState.fields.description, "مسودة مشروع مشتقة من المحادثة الحالية."),
       fields: {
-        project: "مساكن الربوة",
-        unit: "A-12",
-        audience: "وسطاء البيع السكني",
-        price: "1,920,000 ر.س",
+        name: toText(options.actionState.fields.name, ""),
+        city: toText(options.actionState.fields.city, ""),
+        district: toText(options.actionState.fields.district, ""),
+        price: options.actionState.fields.price ? `${toText(options.actionState.fields.price)}` : "",
+        rooms: toText(options.actionState.fields.rooms, ""),
+        bathrooms: toText(options.actionState.fields.bathrooms, ""),
+        description: toText(options.actionState.fields.description, ""),
       },
-      missingFields: [],
-      zone: "offers",
-      state: "ready",
+      missingFields: [...options.actionState.missingFields],
+      zone: "projects",
+      state: options.actionState.state,
     },
-    executionState: "ready",
-    assistantText,
-    cards: [
-      {
-        id: "offer-publish",
-        componentId: "offer_publish_draft",
-        props: {
-          title: "عرض إطلاق وحدات الربوة",
-          project: "مساكن الربوة",
-          unit: "A-12",
-          audience: "وسطاء البيع السكني",
-          price: "1,920,000 ر.س",
-          notes: "دفعة أولى 10% مع مرونة جدولة الحجز خلال أول أسبوعين.",
-        },
-      },
-    ],
+    executionState: options.actionState.state,
+    assistantText: options.assistantText,
+    followupQuestion:
+      options.actionState.state === "collecting" && options.actionState.missingFields[0]
+        ? `أرسل ${options.actionState.missingFields[0]} لإكمال المسودة.`
+        : undefined,
+    cards: dedupeCards(cards),
   };
-}
-
-const SEND_OFFER_FIELDS = {
-  recipient: "شركة مسار الأولى",
-  project: "مساكن الربوة",
-  unit: "A-12",
-};
-
-const SEND_OFFER_CARD_PROPS = {
-  recipient: "شركة مسار الأولى",
-  project: "مساكن الربوة",
-  unit: "A-12",
-  message: "أرسل لك وحدة جاهزة للحجز الفوري ضمن إطلاق الربوة مع عمولة مرنة.",
-  action: "انتظار موافقة الاستلام أو اقتراح موعد معاينة",
-};
-
-const SEND_OFFER_THREAD_PROPS = {
-  subject: "خيط إرسال العرض التجريبي",
-  sender: "فريق التطوير",
-  recipient: "شركة مسار الأولى",
-  project: "مساكن الربوة",
-  unit: "A-12",
-  status: "ينتظر الإرسال",
-  update: "سيتم فتح الخيط بعد الموافقة",
-};
-
-function sendOfferTurn(assistantText: string): AgUiConversationTurn {
-  return {
-    objective: "send_offer",
-    targetZone: "offers",
-    action: { id: "send_offer", title: "إرسال عرض", zone: "offers", fields: ["recipient", "project", "unit", "message", "action"] },
-    draft: {
-      actionId: "send_offer",
-      title: "إرسال عرض لوحدة A-12",
-      description: "إرسال عرض مخصص إلى وسيط أو جهة تطوير.",
-      fields: SEND_OFFER_FIELDS,
-      missingFields: [],
-      zone: "offers",
-      state: "ready",
-    },
-    executionState: "ready",
-    assistantText,
-    cards: [
-      {
-        id: "offer-send",
-        componentId: "offer_send_draft",
-        props: SEND_OFFER_CARD_PROPS,
-      },
-      {
-        id: "thread-update",
-        componentId: "thread_update",
-        props: SEND_OFFER_THREAD_PROPS,
-      },
-    ],
-  };
-}
-
-function latestUpdateTurn(assistantText: string): AgUiConversationTurn {
-  return {
-    objective: "latest_update",
-    targetZone: "projects",
-    action: { id: "latest_update", title: "آخر تحديث", zone: "projects", fields: ["entity"] },
-    executionState: "completed",
-    assistantText,
-    cards: [
-      {
-        id: "latest",
-        componentId: "latest_update",
-        props: {
-          entity: "مشروع واجهة الياسمين",
-          headline: "ارتفع الاهتمام على وحدات الثلاث غرف بنسبة 18% هذا الأسبوع.",
-          details: [
-            "وسيطا بيع دخلا مرحلة المتابعة النهائية",
-            "آخر حجز مرتبط بالوحدة B-14",
-            "تم تحديث سعر الإطلاق للدفعة الثانية",
-          ],
-        },
-      },
-      {
-        id: "person",
-        componentId: "person_relation",
-        props: {
-          name: "سارة العتيبي",
-          role: "وسيط مشروع",
-          summary: "تقود المتابعة على وحدات العائلات الصغيرة وتغلق أسرع من المتوسط.",
-          relation: "وسيط مرتبط بالمشروع على مستوى الوحدة",
-          project: "واجهة الياسمين",
-          unit: "B-14",
-          badges: ["verified", "vip"],
-        },
-      },
-    ],
-  };
-}
-
-function marketTurn(assistantText: string): AgUiConversationTurn {
-  return {
-    objective: "search_market",
-    targetZone: "market",
-    action: { id: "search_market", title: "تحليل السوق", zone: "market", fields: ["city", "area", "budget"] },
-    executionState: "completed",
-    assistantText,
-    cards: [
-      {
-        id: "market-insight",
-        componentId: "market_insight",
-        props: {
-          title: "أفضل منتج مقترح في شمال الرياض",
-          body: "الوحدات ذات 3 غرف و3 حمامات تحقق طلباً أسرع من الفلل الكبيرة ضمن شريحة 1.7 - 2.2 مليون.",
-          metrics: [
-            { label: "متوسط سرعة البيع", value: "42 يوم" },
-            { label: "نطاق السعر", value: "1.7M - 2.2M" },
-            { label: "أفضل مساحة", value: "185 - 225م²" },
-            { label: "عمق الطلب", value: "مرتفع" },
-          ],
-        },
-      },
-      {
-        id: "area-heat",
-        componentId: "area_heat",
-        props: {
-          city: "الرياض",
-          area: "الملقا",
-          heat: "hot",
-          summary: "الطلب يرتفع على الشقق العائلية المتوسطة مع تسعير حازم وطرح سريع.",
-        },
-      },
-    ],
-  };
-}
-
-export function resolveWorkspaceAgUiTurn(input: string, assistantText: string): AgUiConversationTurn | null {
-  if (input.includes("إنشاء") && input.includes("مشروع")) {
-    return projectCreateTurn(input, assistantText);
-  }
-  if (input.includes("نشر") && input.includes("عرض")) {
-    return publishOfferTurn(assistantText);
-  }
-  if ((input.includes("إرسال") || input.includes("ارسل")) && input.includes("عرض")) {
-    return sendOfferTurn(assistantText);
-  }
-  if (input.includes("آخر") || input.includes("تحديث")) {
-    return latestUpdateTurn(assistantText);
-  }
-  if (input.includes("السوق") || input.includes("تحليل") || input.includes("ابحث")) {
-    return marketTurn(assistantText);
-  }
-  return null;
 }

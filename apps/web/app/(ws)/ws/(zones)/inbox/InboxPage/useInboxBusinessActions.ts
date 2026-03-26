@@ -25,12 +25,12 @@ export function useInboxBusinessActions() {
     setBusinessActionError(null);
   };
 
-  const runBusinessAction = async (action: () => Promise<void>) => {
+  const runBusinessAction = async <TResult>(action: () => Promise<TResult>) => {
     setBusinessActionError(null);
     setIsBusinessActionPending(true);
 
     try {
-      await action();
+      return await action();
     } catch (error) {
       setBusinessActionError(error instanceof Error ? error.message : "تعذر تنفيذ هذا الإجراء الآن.");
       throw error;

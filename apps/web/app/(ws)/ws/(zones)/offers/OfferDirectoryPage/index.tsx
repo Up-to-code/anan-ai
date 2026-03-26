@@ -42,36 +42,36 @@ function DirectoryPersonCardView({ person }: { person: DirectoryPersonCard }) {
       <div className="flex items-start gap-3">
         {person.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={person.avatarUrl} alt={person.displayName} className="h-12 w-12 rounded-full border border-slate-200 object-cover" />
+          <img src={person.avatarUrl} alt={person.displayName} className="h-12 w-12 rounded-full border border-slate-200 object-cover dark:border-slate-700" />
         ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-sm font-bold text-slate-700">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-sm font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
             {person.avatarLabel}
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-base font-semibold text-slate-900">{person.displayName}</h2>
-          <p className="mt-1 truncate text-sm text-slate-600">{person.organizationName}</p>
+          <h2 className="truncate text-base font-semibold text-slate-900 dark:text-slate-100">{person.displayName}</h2>
+          <p className="mt-1 truncate text-sm text-slate-600 dark:text-slate-300">{person.organizationName}</p>
         </div>
       </div>
-      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
           <UserRound className="h-3.5 w-3.5" />
           {person.role === "broker" ? "وسيط" : "مطور"}
         </div>
-        <span className="text-xs font-medium text-slate-700">{person.href?.includes("/ws/inbox/") ? "محادثة" : "الملف"}</span>
+        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">{person.href?.includes("/ws/inbox/") ? "محادثة" : "الملف"}</span>
       </div>
     </>
   );
 
   if (person.href) {
     return (
-      <Link href={person.href} className="rounded-lg border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300 hover:bg-slate-50">
+      <Link href={person.href} className="rounded-lg border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700 dark:hover:bg-slate-900">
         {content}
       </Link>
     );
   }
 
-  return <article className="rounded-lg border border-slate-200 bg-white p-4">{content}</article>;
+  return <article className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">{content}</article>;
 }
 
 function DirectoryOrganizationCardView({
@@ -82,27 +82,27 @@ function DirectoryOrganizationCardView({
   type: "broker" | "developer";
 }) {
   return (
-    <Link href={organization.href} className="rounded-lg border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300 hover:bg-slate-50">
+    <Link href={organization.href} className="rounded-lg border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700 dark:hover:bg-slate-900">
       <div className="flex items-start gap-3">
         {organization.logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={organization.logoUrl} alt={organization.displayName} className="h-12 w-12 rounded-md border border-slate-200 object-cover p-1" />
+          <img src={organization.logoUrl} alt={organization.displayName} className="h-12 w-12 rounded-md border border-slate-200 object-cover p-1 dark:border-slate-700" />
         ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-md border border-slate-200 bg-slate-100 text-sm font-bold text-slate-700">
+          <div className="flex h-12 w-12 items-center justify-center rounded-md border border-slate-200 bg-slate-100 text-sm font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
             {organization.avatarLabel}
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-base font-semibold text-slate-900">{organization.displayName}</h2>
-          <p className="mt-1 text-sm text-slate-600">{type === "broker" ? "شركة وساطة" : "شركة تطوير"}</p>
+          <h2 className="truncate text-base font-semibold text-slate-900 dark:text-slate-100">{organization.displayName}</h2>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{type === "broker" ? "شركة وساطة" : "شركة تطوير"}</p>
         </div>
       </div>
-      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
           <Building2 className="h-3.5 w-3.5" />
           جهة عمل
         </div>
-        <div className="inline-flex items-center gap-1 text-xs font-medium text-slate-700">
+        <div className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 dark:text-slate-200">
           <Briefcase className="h-3.5 w-3.5" />
           {organization.offerCount} عروض
         </div>
@@ -184,8 +184,8 @@ export default function OfferDirectoryPage({
     <div className="flex min-h-full flex-col pb-24">
       <div className="flex flex-col gap-6 px-6 py-8 lg:px-10 lg:py-10">
         <div className="space-y-2">
-          <h1 className="text-2xl font-black tracking-tight text-slate-950">{title}</h1>
-          <p className="max-w-3xl text-sm leading-relaxed text-slate-600">
+          <h1 className="text-2xl font-black tracking-tight text-slate-950 dark:text-slate-100">{title}</h1>
+          <p className="max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-slate-300">
             {description}
           </p>
         </div>
@@ -197,8 +197,8 @@ export default function OfferDirectoryPage({
             className={cn(
               "rounded-md border px-3 py-2 text-sm font-semibold transition-colors",
               activeFilter === "businessPersons"
-                ? "border-slate-900 bg-slate-900 text-white"
-                : "border-slate-300 bg-white text-slate-700 hover:border-slate-400",
+                ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-950"
+                : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-slate-600",
             )}
           >
             Business persons
@@ -209,15 +209,15 @@ export default function OfferDirectoryPage({
             className={cn(
               "rounded-md border px-3 py-2 text-sm font-semibold transition-colors",
               activeFilter === "organizationPeople"
-                ? "border-slate-900 bg-slate-900 text-white"
-                : "border-slate-300 bg-white text-slate-700 hover:border-slate-400",
+                ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-950"
+                : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-slate-600",
             )}
           >
             People in companies or organizations
           </button>
         </div>
 
-        <div className="text-xs font-semibold text-slate-500">
+        <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
           {pagination.totalItems} نتائج
         </div>
 
@@ -232,7 +232,7 @@ export default function OfferDirectoryPage({
         </div>
 
         {cards.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-16 text-center text-sm font-semibold text-slate-600">
+          <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-16 text-center text-sm font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
             {activeFilter === "businessPersons"
               ? "لا توجد ملفات أشخاص متاحة ضمن هذا التصنيف."
               : "لا توجد جهات متاحة ضمن هذا التصنيف."}

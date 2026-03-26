@@ -1,28 +1,28 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileUp, Building2, Handshake, Tag } from "lucide-react";
 import type { UploadedFileReference } from "@/server/contracts/files";
 import type { ConversationDetail } from "@/server/contracts/inbox";
-import ChatActionBar from "../../../_components/Chat/ChatActionBar";
+import type { OfferActionResult } from "@/server/contracts/offers";
 import InboxComposer from "./components/InboxComposer";
+import type { ComposerProjectOption, InboxShareAction } from "./components/InboxComposerActions";
 import InboxMessageList from "./components/InboxMessageList";
 import InboxThreadHeader from "./components/InboxThreadHeader";
 
 /**
- * WHY:   The inbox needs a small thread orchestrator that keeps reading, identity, and reply actions in one place.
- * WHAT:  Composes the active thread header, message list, icon+label action bar, and composer for a selected conversation.
- * HOW:   Owns only the scroll-to-bottom behavior while delegating rendering details to focused subcomponents.
+ * WHY:   The inbox needs one thread orchestrator that keeps identity, reading, and reply actions in sync.
+ * WHAT:  Composes the active thread header, message list, and simplified composer for one selected conversation.
+ * HOW:   Owns scroll-to-bottom and the shared action state so header actions and the composer stay aligned.
  */
 export default function InboxThreadView({
   canUseBusinessActions = false,
   conversation,
   currentUserId,
-  dealOptions,
   isSending,
-  onCreatePrivateOffer,
+  onCreatePrivateOfferDraft,
   onBack,
-  onShareDeal,
+  onPublishConversationOffer,
+  onRespondToConversationOffer,
   onShareFile,
   onShareProject,
   onSend,
@@ -33,38 +33,29 @@ export default function InboxThreadView({
   canUseBusinessActions?: boolean;
   conversation: ConversationDetail;
   currentUserId: string;
-  dealOptions: Array<{
-    id: string;
-    title: string;
-    stage: "new" | "contacted" | "negotiation" | "won" | "lost";
-    value?: number;
-    contactName?: string | null;
-  }>;
   isSending?: boolean;
-  onCreatePrivateOffer: (input: {
+  onCreatePrivateOfferDraft: (input: {
     propertyId: string;
     price: number;
     message?: string;
     description?: string;
     attachments?: UploadedFileReference[];
-  }) => Promise<void | null>;
+  }) => Promise<OfferActionResult | void | null>;
   onBack?: () => void;
-  onShareDeal: (dealId: string, note?: string) => Promise<void>;
+  onPublishConversationOffer: (offerId: string) => Promise<OfferActionResult | void | null>;
+  onRespondToConversationOffer: (input: {
+    offerId: string;
+    status: "accepted" | "rejected";
+  }) => Promise<{ ok: true } | void | null>;
   onShareFile: (file: UploadedFileReference, note?: string) => Promise<void>;
   onShareProject: (propertyId: string, note?: string) => Promise<void>;
   onSend: (message: string) => Promise<void>;
-  projectOptions: Array<{
-    id: string;
-    title: string;
-    location: string;
-    imageUrl?: string | null;
-    price?: number;
-  }>;
+  projectOptions: ComposerProjectOption[];
   sendError?: string | null;
   showBackButton?: boolean;
 }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [, setActiveAction] = useState<string | null>(null);
+  const [activeShareAction, setActiveShareAction] = useState<InboxShareAction | null>(null);
 
   useEffect(() => {
     const timerId = setTimeout(() => {
@@ -74,56 +65,36 @@ export default function InboxThreadView({
     return () => clearTimeout(timerId);
   }, [conversation.messages.length]);
 
-  const businessActions = canUseBusinessActions
-    ? [
-      {
-        key: "file",
-        icon: FileUp,
-        label: "ملف",
-        onClick: () => setActiveAction((prev) => (prev === "file" ? null : "file")),
-      },
-      {
-        key: "project",
-        icon: Building2,
-        label: "مشروع",
-        disabled: projectOptions.length === 0,
-        onClick: () => setActiveAction((prev) => (prev === "project" ? null : "project")),
-      },
-      {
-        key: "deal",
-        icon: Handshake,
-        label: "صفقة",
-        disabled: dealOptions.length === 0,
-        onClick: () => setActiveAction((prev) => (prev === "deal" ? null : "deal")),
-      },
-      {
-        key: "offer",
-        icon: Tag,
-        label: "عرض خاص",
-        disabled: projectOptions.length === 0,
-        onClick: () => setActiveAction((prev) => (prev === "offer" ? null : "offer")),
-      },
-    ]
-    : [];
+  useEffect(() => {
+    setActiveShareAction(null);
+  }, [conversation.id]);
 
   return (
-    <div className="flex h-full flex-col bg-white">
+    <div className="flex h-full flex-col bg-[var(--workspace-canvas)] text-foreground">
       <InboxThreadHeader
+        canCreateOffer={canUseBusinessActions && projectOptions.length > 0}
+        canShareProjects={projectOptions.length > 0}
+        canUseBusinessActions={canUseBusinessActions}
         conversation={conversation}
         onBack={onBack}
+        onOpenShareAction={setActiveShareAction}
         showBackButton={showBackButton}
       />
-      <InboxMessageList conversation={conversation} currentUserId={currentUserId} endRef={messagesEndRef} />
-      {businessActions.length > 0 ? (
-        <ChatActionBar actions={businessActions} />
-      ) : null}
+      <InboxMessageList
+        conversation={conversation}
+        currentUserId={currentUserId}
+        endRef={messagesEndRef}
+        onRespondToConversationOffer={onRespondToConversationOffer}
+      />
       <InboxComposer
+        activeShareAction={activeShareAction}
         canUseBusinessActions={canUseBusinessActions}
-        dealOptions={dealOptions}
+        conversation={conversation}
         isSending={isSending}
-        onCreatePrivateOffer={onCreatePrivateOffer}
+        onCreatePrivateOfferDraft={onCreatePrivateOfferDraft}
+        onPublishConversationOffer={onPublishConversationOffer}
         onSend={onSend}
-        onShareDeal={onShareDeal}
+        onShareActionChange={setActiveShareAction}
         onShareFile={onShareFile}
         onShareProject={onShareProject}
         projectOptions={projectOptions}

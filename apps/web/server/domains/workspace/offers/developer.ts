@@ -4,13 +4,18 @@ import {
   applyToOfferInputSchema,
   createOfferInputSchema,
   type OfferActionResult,
+  type OfferLiveState,
+  publishConversationOfferInputSchema,
   publishOfferInputSchema,
   respondToOfferInputSchema,
   type ApplyToOfferInput,
   type CreateOfferInput,
   type OffersSnapshot,
+  type PublishConversationOfferInput,
   type PublishOfferInput,
   type RespondToOfferInput,
+  type UpdateOfferDraftInput,
+  updateOfferDraftInputSchema,
 } from "@/server/contracts/offers";
 import { DomainError } from "@/server/contracts/errors";
 import { convexOffersRepository, type OffersRepository } from "@/server/infrastructure/convex/offersRepository";
@@ -33,12 +38,12 @@ const defaultDependencies: RedOffersDependencies = {
 export async function getRedOffersSnapshot(
   dependencies: RedOffersDependencies = defaultDependencies,
 ): Promise<OffersSnapshot> {
-  await dependencies.requireDeveloper();
+  const session = await dependencies.requireDeveloper();
 
   const [sent, received, marketplace] = await Promise.all([
-    dependencies.repository.listSent(),
-    dependencies.repository.listReceived(),
-    dependencies.repository.listMarketplace(),
+    dependencies.repository.listSent(session.token),
+    dependencies.repository.listReceived(session.token),
+    dependencies.repository.listMarketplace(session.token),
   ]);
 
   return { sent, received, marketplace };
@@ -60,30 +65,62 @@ export async function createRedOffer(
   input: CreateOfferInput,
   dependencies: RedOffersDependencies = defaultDependencies,
 ): Promise<OfferActionResult> {
-  await dependencies.requireDeveloper();
-  return dependencies.repository.create(parseOrThrow(createOfferInputSchema.safeParse(input)));
+  const session = await dependencies.requireDeveloper();
+  return dependencies.repository.create(parseOrThrow(createOfferInputSchema.safeParse(input)), session.token);
 }
 
 export async function publishRedOffer(
   input: PublishOfferInput,
   dependencies: RedOffersDependencies = defaultDependencies,
 ): Promise<{ ok: true }> {
-  await dependencies.requireDeveloper();
-  return dependencies.repository.publish(parseOrThrow(publishOfferInputSchema.safeParse(input)));
+  const session = await dependencies.requireDeveloper();
+  return dependencies.repository.publish(parseOrThrow(publishOfferInputSchema.safeParse(input)), session.token);
+}
+
+export async function publishRedConversationOffer(
+  input: PublishConversationOfferInput,
+  dependencies: RedOffersDependencies = defaultDependencies,
+): Promise<OfferActionResult> {
+  const session = await dependencies.requireDeveloper();
+  return dependencies.repository.publishConversation(parseOrThrow(publishConversationOfferInputSchema.safeParse(input)), session.token);
+}
+
+export async function createRedOfferDraft(
+  input: CreateOfferInput,
+  dependencies: RedOffersDependencies = defaultDependencies,
+): Promise<OfferActionResult> {
+  const session = await dependencies.requireDeveloper();
+  return dependencies.repository.createDraft(parseOrThrow(createOfferInputSchema.safeParse(input)), session.token);
+}
+
+export async function updateRedOfferDraft(
+  input: UpdateOfferDraftInput,
+  dependencies: RedOffersDependencies = defaultDependencies,
+): Promise<{ ok: true }> {
+  const session = await dependencies.requireDeveloper();
+  return dependencies.repository.updateDraft(parseOrThrow(updateOfferDraftInputSchema.safeParse(input)), session.token);
+}
+
+export async function getRedOfferLiveState(
+  offerId: string,
+  dependencies: RedOffersDependencies = defaultDependencies,
+): Promise<OfferLiveState | null> {
+  const session = await dependencies.requireDeveloper();
+  return dependencies.repository.getOfferLiveState({ offerId }, session.token);
 }
 
 export async function respondToRedOffer(
   input: RespondToOfferInput,
   dependencies: RedOffersDependencies = defaultDependencies,
 ): Promise<void> {
-  await dependencies.requireDeveloper();
-  await dependencies.repository.respond(parseOrThrow(respondToOfferInputSchema.safeParse(input)));
+  const session = await dependencies.requireDeveloper();
+  await dependencies.repository.respond(parseOrThrow(respondToOfferInputSchema.safeParse(input)), session.token);
 }
 
 export async function applyToRedOffer(
   input: ApplyToOfferInput,
   dependencies: RedOffersDependencies = defaultDependencies,
 ): Promise<OfferActionResult> {
-  await dependencies.requireDeveloper();
-  return dependencies.repository.apply(parseOrThrow(applyToOfferInputSchema.safeParse(input)));
+  const session = await dependencies.requireDeveloper();
+  return dependencies.repository.apply(parseOrThrow(applyToOfferInputSchema.safeParse(input)), session.token);
 }

@@ -20,6 +20,24 @@ export const propertyListFiltersSchema = z.object({
   status: propertyStatusSchema.optional(),
 });
 
+export const propertyPresentationSchema = z.object({
+  descriptionShort: z.string().trim().min(1).max(280).optional(),
+  amenities: z.array(z.string().trim().min(1)).optional(),
+  parkingSpaces: z.number().int().nonnegative().optional(),
+  hasParking: z.boolean().optional(),
+  slides: z.array(uploadedFileReferenceSchema).optional(),
+  coverImageKey: z.string().trim().min(1).optional(),
+  galleryDisplayMode: z.enum(["cover", "fit"]).optional(),
+  galleryAspectRatio: z.enum(["auto", "landscape", "square", "portrait"]).optional(),
+  privatePermitSummary: z.string().trim().min(1).optional(),
+  privatePermitFiles: z.array(uploadedFileReferenceSchema).optional(),
+  privatePermitVisibility: z.literal("conversation_only").optional(),
+});
+
+export const propertyBodySchema = z.object({
+  presentation: propertyPresentationSchema.optional(),
+});
+
 /**
  * WHY:   Property writes from server functions need one shared input contract across Broker and RED zones.
  * WHAT:  Validates the create payload for properties managed by role-zoned server functions.
@@ -38,6 +56,7 @@ export const createPropertyInputSchema = z.object({
   status: propertyStatusSchema.optional(),
   bankId: z.string().optional(),
   media: z.array(uploadedFileReferenceSchema).optional(),
+  body: propertyBodySchema.optional(),
   adLicenseNumber: z.string().trim().optional(),
 });
 
@@ -51,6 +70,8 @@ export const updatePropertyInputSchema = createPropertyInputSchema.partial();
 export type PropertyListFilters = z.infer<typeof propertyListFiltersSchema>;
 export type CreatePropertyInput = z.infer<typeof createPropertyInputSchema>;
 export type UpdatePropertyInput = z.infer<typeof updatePropertyInputSchema>;
+export type PropertyPresentation = z.infer<typeof propertyPresentationSchema>;
+export type PropertyBody = z.infer<typeof propertyBodySchema>;
 
 export type PropertyDetail = {
   _id: string;
@@ -72,7 +93,7 @@ export type PropertyDetail = {
   bankId?: string;
   heroImage?: import("@/server/contracts/files").UploadedFileReference | null;
   media?: import("@/server/contracts/files").UploadedFileReference[];
-  body?: unknown;
+  body?: PropertyBody;
   adLicenseNumber?: string;
   adLicenseStatus?: "pending" | "approved" | "rejected";
   adLicenseVerificationRequestId?: string;
@@ -83,3 +104,8 @@ export type PaginatedPropertiesResult = PaginationResult<PropertyListItem>;
 export type PublishPropertyResult = { ok: true };
 export type BrokerOverviewSummary = { properties: number };
 export type DeveloperOverviewSummary = { properties: number };
+
+export function parsePropertyBody(body: unknown): PropertyBody | null {
+  const parsed = propertyBodySchema.safeParse(body);
+  return parsed.success ? parsed.data : null;
+}

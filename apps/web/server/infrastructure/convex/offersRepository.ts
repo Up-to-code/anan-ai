@@ -4,9 +4,12 @@ import type {
   ApplyToOfferInput,
   CreateOfferInput,
   OfferActionResult,
+  OfferLiveState,
   OfferSummary,
+  PublishConversationOfferInput,
   PublishOfferInput,
   RespondToOfferInput,
+  UpdateOfferDraftInput,
 } from "@/server/contracts/offers";
 
 type OffersApiRefs = {
@@ -14,7 +17,11 @@ type OffersApiRefs = {
   listReceivedOffers: unknown;
   listPublicOffers: unknown;
   createOffer: unknown;
+  createOfferDraft: unknown;
   publishOffer: unknown;
+  publishConversationOffer: unknown;
+  updateOfferDraft: unknown;
+  getOfferLiveState: unknown;
   updateOfferStatus: unknown;
   applyToOffer: unknown;
 };
@@ -27,6 +34,7 @@ type RawOfferSummary = {
   publicationState?: OfferSummary["publicationState"];
   visibility?: OfferSummary["visibility"];
   recipientAuthUserId?: string;
+  sourceConversationId?: string;
   message?: string;
   description?: string;
   senderName?: string;
@@ -66,6 +74,7 @@ function mapOffer(offer: RawOfferSummary): OfferSummary {
     publicationState: offer.publicationState,
     visibility: offer.visibility,
     recipientAuthUserId: offer.recipientAuthUserId,
+    sourceConversationId: offer.sourceConversationId,
     message: offer.message,
     description: offer.description,
     senderName: offer.senderName,
@@ -87,13 +96,17 @@ function mapOfferActionResult(result: RawOfferActionResult): OfferActionResult {
 }
 
 export type OffersRepository = {
-  listSent(): Promise<OfferSummary[]>;
-  listReceived(): Promise<OfferSummary[]>;
-  listMarketplace(): Promise<OfferSummary[]>;
-  create(input: CreateOfferInput): Promise<OfferActionResult>;
-  publish(input: PublishOfferInput): Promise<{ ok: true }>;
-  respond(input: RespondToOfferInput): Promise<void>;
-  apply(input: ApplyToOfferInput): Promise<OfferActionResult>;
+  listSent(token?: string): Promise<OfferSummary[]>;
+  listReceived(token?: string): Promise<OfferSummary[]>;
+  listMarketplace(token?: string): Promise<OfferSummary[]>;
+  create(input: CreateOfferInput, token?: string): Promise<OfferActionResult>;
+  createDraft(input: CreateOfferInput, token?: string): Promise<OfferActionResult>;
+  publish(input: PublishOfferInput, token?: string): Promise<{ ok: true }>;
+  publishConversation(input: PublishConversationOfferInput, token?: string): Promise<OfferActionResult>;
+  updateDraft(input: UpdateOfferDraftInput, token?: string): Promise<{ ok: true }>;
+  getOfferLiveState(input: { offerId: string }, token?: string): Promise<OfferLiveState | null>;
+  respond(input: RespondToOfferInput, token?: string): Promise<void>;
+  apply(input: ApplyToOfferInput, token?: string): Promise<OfferActionResult>;
 };
 
 /**
@@ -102,38 +115,58 @@ export type OffersRepository = {
  * HOW:   Calls the auth-scoped Convex queries and normalizes embedded property projections for the UI.
  */
 export const convexOffersRepository: OffersRepository = {
-  async listSent() {
-    const offers = (await fetchQuery(offersApi.listSentOffers as never, {} as never)) as RawOfferSummary[];
+  async listSent(token) {
+    const offers = (await fetchQuery(offersApi.listSentOffers as never, {} as never, token ? { token } : undefined)) as RawOfferSummary[];
     return offers.map(mapOffer);
   },
 
-  async listReceived() {
-    const offers = (await fetchQuery(offersApi.listReceivedOffers as never, {} as never)) as RawOfferSummary[];
+  async listReceived(token) {
+    const offers = (await fetchQuery(offersApi.listReceivedOffers as never, {} as never, token ? { token } : undefined)) as RawOfferSummary[];
     return offers.map(mapOffer);
   },
 
-  async listMarketplace() {
-    const offers = (await fetchQuery(offersApi.listPublicOffers as never, {} as never)) as RawOfferSummary[];
+  async listMarketplace(token) {
+    const offers = (await fetchQuery(offersApi.listPublicOffers as never, {} as never, token ? { token } : undefined)) as RawOfferSummary[];
     return offers.map(mapOffer);
   },
 
-  async create(input) {
+  async create(input, token) {
     return mapOfferActionResult(
-      await (fetchMutation(offersApi.createOffer as never, input as never) as Promise<RawOfferActionResult>),
+      await (fetchMutation(offersApi.createOffer as never, input as never, token ? { token } : undefined) as Promise<RawOfferActionResult>),
     );
   },
 
-  async publish(input) {
-    return fetchMutation(offersApi.publishOffer as never, input as never) as Promise<{ ok: true }>;
-  },
-
-  async respond(input) {
-    await fetchMutation(offersApi.updateOfferStatus as never, input as never);
-  },
-
-  async apply(input) {
+  async createDraft(input, token) {
     return mapOfferActionResult(
-      await (fetchMutation(offersApi.applyToOffer as never, input as never) as Promise<RawOfferActionResult>),
+      await (fetchMutation(offersApi.createOfferDraft as never, input as never, token ? { token } : undefined) as Promise<RawOfferActionResult>),
+    );
+  },
+
+  async publish(input, token) {
+    return fetchMutation(offersApi.publishOffer as never, input as never, token ? { token } : undefined) as Promise<{ ok: true }>;
+  },
+
+  async publishConversation(input, token) {
+    return mapOfferActionResult(
+      await (fetchMutation(offersApi.publishConversationOffer as never, input as never, token ? { token } : undefined) as Promise<RawOfferActionResult>),
+    );
+  },
+
+  async updateDraft(input, token) {
+    return fetchMutation(offersApi.updateOfferDraft as never, input as never, token ? { token } : undefined) as Promise<{ ok: true }>;
+  },
+
+  async getOfferLiveState(input, token) {
+    return fetchQuery(offersApi.getOfferLiveState as never, input as never, token ? { token } : undefined) as Promise<OfferLiveState | null>;
+  },
+
+  async respond(input, token) {
+    await fetchMutation(offersApi.updateOfferStatus as never, input as never, token ? { token } : undefined);
+  },
+
+  async apply(input, token) {
+    return mapOfferActionResult(
+      await (fetchMutation(offersApi.applyToOffer as never, input as never, token ? { token } : undefined) as Promise<RawOfferActionResult>),
     );
   },
 };

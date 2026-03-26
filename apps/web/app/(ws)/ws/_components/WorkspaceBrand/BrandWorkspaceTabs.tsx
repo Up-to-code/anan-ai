@@ -20,7 +20,7 @@ export default function BrandWorkspaceTabs({
   const pathname = usePathname();
 
   return (
-    <div className={cn("border-b border-slate-200 bg-white px-6 lg:px-8", className)}>
+    <div className={cn("border-b border-slate-200 bg-white px-6 lg:px-8 dark:border-slate-800 dark:bg-slate-950", className)}>
       <div className="flex flex-wrap gap-6 py-3">
         {tabs.map((tab) => {
           const isActive = tab.exact
@@ -34,8 +34,8 @@ export default function BrandWorkspaceTabs({
               className={cn(
                 "border-b-2 border-transparent pb-3 text-sm font-medium transition-colors",
                 isActive
-                  ? "border-slate-950 text-slate-950"
-                  : "text-slate-500 hover:border-slate-300 hover:text-slate-900",
+                  ? "border-slate-950 text-slate-950 dark:border-slate-100 dark:text-slate-100"
+                  : "text-slate-500 hover:border-slate-300 hover:text-slate-900 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-100",
               )}
             >
               {tab.label}

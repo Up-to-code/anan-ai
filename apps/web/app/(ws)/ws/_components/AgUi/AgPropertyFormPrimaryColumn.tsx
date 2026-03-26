@@ -1,4 +1,4 @@
-import { Building2, ChevronRight, MapPin, Search, UserPlus, X } from "lucide-react";
+import { Building2, MapPin, Search, UserPlus, X } from "lucide-react";
 import AgRichTextEditor from "./AgRichTextEditor";
 import type { AgPropertyFormState } from "./AgPropertyForm.shared";
 import type { BrokerPresence } from "../Visuals/BrokerPresenceChip";
@@ -15,94 +15,216 @@ type AgPropertyFormPrimaryColumnProps = {
   setSelectedBrokerId: React.Dispatch<React.SetStateAction<string | null>>;
 };
 
-function BrokerAvatar({ avatarImage, avatarLabel, sizeClassName }: { avatarImage?: string | null; avatarLabel: string; sizeClassName: string }) {
+function FormSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className={`${sizeClassName} overflow-hidden border border-slate-100 bg-white`}>
+    <section className="rounded-[28px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-6 shadow-[0_12px_40px_rgba(0,0,0,0.2)] sm:p-7">
+      <div className="mb-6 border-b border-[color:var(--workspace-border)] pb-4">
+        <h3 className="text-xl font-black text-[var(--workspace-bubble-other-foreground)]">{title}</h3>
+        {description ? <p className="mt-2 text-sm leading-6 text-[var(--workspace-muted)]">{description}</p> : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function FormLabel({ children }: { children: React.ReactNode }) {
+  return <label className="text-sm font-bold text-[var(--workspace-bubble-other-foreground)]">{children}</label>;
+}
+
+function TextInput({
+  value,
+  onChange,
+  placeholder,
+  icon,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div className="relative">
+      <input
+        type="text"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="min-h-[52px] w-full rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-3 text-base font-semibold text-[var(--workspace-bubble-other-foreground)] outline-none transition placeholder:text-[var(--workspace-muted)] focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_36%,transparent)] focus:bg-[var(--workspace-panel)]"
+      />
+      {icon ? <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--workspace-muted)]">{icon}</div> : null}
+    </div>
+  );
+}
+
+function TextArea({
+  value,
+  onChange,
+  placeholder,
+  rows = 4,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  rows?: number;
+}) {
+  return (
+    <textarea
+      rows={rows}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder={placeholder}
+      className="w-full resize-none rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-3 text-base font-semibold text-[var(--workspace-bubble-other-foreground)] outline-none transition placeholder:text-[var(--workspace-muted)] focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_36%,transparent)] focus:bg-[var(--workspace-panel)]"
+    />
+  );
+}
+
+function BrokerAvatar({
+  avatarImage,
+  avatarLabel,
+}: {
+  avatarImage?: string | null;
+  avatarLabel: string;
+}) {
+  return (
+    <div className="h-11 w-11 overflow-hidden rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)]">
       {avatarImage ? (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img src={avatarImage} alt="" className="h-full w-full object-cover" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center font-black text-slate-400">{avatarLabel}</div>
+        <div className="flex h-full w-full items-center justify-center text-sm font-black text-[var(--workspace-muted)]">
+          {avatarLabel}
+        </div>
       )}
     </div>
   );
 }
 
-function BasicDataSection({ formState, setFormState }: Pick<AgPropertyFormPrimaryColumnProps, "formState" | "setFormState">) {
+function BasicDataSection({
+  formState,
+  setFormState,
+}: Pick<AgPropertyFormPrimaryColumnProps, "formState" | "setFormState">) {
   return (
-    <div className="border border-slate-200 bg-white p-8">
-      <h3 className="mb-8 border-b border-slate-100 pb-4 text-lg font-black text-slate-950">البيانات الأساسية</h3>
-      <div className="grid gap-8">
-        <div className="grid gap-3 text-right">
-          <label className="text-[11px] font-black text-slate-400">اسم المشروع أو العقار</label>
-          <div className="group relative">
-            <input type="text" value={formState.name} onChange={(e) => setFormState((prev) => ({ ...prev, name: e.target.value }))} placeholder="أدخل اسماً يميز المشروع..." className="w-full border-b-2 border-slate-100 bg-transparent py-4 pr-2 text-right text-3xl font-black text-slate-950 outline-none transition-all placeholder:text-slate-300 focus:border-blue-600" />
-            <Building2 className="absolute left-0 top-1/2 h-6 w-6 -translate-y-1/2 text-slate-200 transition duration-500 group-focus-within:text-blue-600" />
-          </div>
+    <FormSection title="البيانات الأساسية" description="املأ أهم معلومات المشروع التي تظهر أولاً في الصفحات والمشاركات.">
+      <div className="grid gap-5">
+        <div className="grid gap-2">
+          <FormLabel>اسم المشروع</FormLabel>
+          <TextInput
+            value={formState.name}
+            onChange={(value) => setFormState((prev) => ({ ...prev, name: value }))}
+            placeholder="مثال: أبراج الياسمين"
+            icon={<Building2 className="h-4 w-4" />}
+          />
         </div>
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-          <div className="grid gap-3 text-right">
-            <label className="text-[11px] font-black text-slate-400">النطاق السعري التقديري</label>
-            <input type="text" value={formState.price} onChange={(e) => setFormState((prev) => ({ ...prev, price: e.target.value }))} placeholder="مثال: 2.1 مليون ر.س" className="w-full border-b-2 border-slate-100 bg-transparent py-3 pr-2 text-right text-xl font-black text-slate-900 outline-none transition-all placeholder:text-slate-300 focus:border-blue-600" />
+
+        <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid gap-2">
+            <FormLabel>السعر</FormLabel>
+            <TextInput
+              value={formState.price}
+              onChange={(value) => setFormState((prev) => ({ ...prev, price: value }))}
+              placeholder="مثال: 2,500,000 ر.س"
+            />
           </div>
-          <div className="grid gap-3 text-right">
-            <label className="text-[11px] font-black text-slate-400">الموقع (الحي، المدينة)</label>
-            <div className="group relative">
-              <input type="text" value={formState.location} onChange={(e) => setFormState((prev) => ({ ...prev, location: e.target.value }))} placeholder="الرياض، حطين" className="w-full border-b-2 border-slate-100 bg-transparent py-3 pr-2 text-right text-xl font-black text-slate-900 outline-none transition-all placeholder:text-slate-300 focus:border-blue-600" />
-              <MapPin className="absolute left-0 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-200 transition duration-500 group-focus-within:text-blue-600" />
-            </div>
+          <div className="grid gap-2">
+            <FormLabel>الموقع</FormLabel>
+            <TextInput
+              value={formState.location}
+              onChange={(value) => setFormState((prev) => ({ ...prev, location: value }))}
+              placeholder="مثال: جدة، أبحر الشمالية"
+              icon={<MapPin className="h-4 w-4" />}
+            />
           </div>
         </div>
       </div>
-    </div>
+    </FormSection>
   );
 }
 
-function MarketingSection({ formState, setFormState }: Pick<AgPropertyFormPrimaryColumnProps, "formState" | "setFormState">) {
+function MarketingSection({
+  formState,
+  setFormState,
+}: Pick<AgPropertyFormPrimaryColumnProps, "formState" | "setFormState">) {
   return (
-    <div className="border border-slate-200 bg-white p-8">
-      <h3 className="mb-8 border-b border-slate-100 pb-4 text-lg font-black text-slate-950">التفاصيل والتسويق</h3>
-      <div className="grid gap-4 text-right">
-        <AgRichTextEditor value={formState.description} onChange={(val) => setFormState((prev) => ({ ...prev, description: val }))} placeholder="اكتب تفاصيل المشروع، المميزات الاستثنائية للوحدات والخدمات..." className="text-right" />
-      </div>
-    </div>
+    <FormSection title="وصف المشروع" description="اكتب الوصف الكامل الذي يشرح الفكرة، الموقع، وطبيعة المشروع بشكل واضح.">
+      <AgRichTextEditor
+        value={formState.description}
+        onChange={(value) => setFormState((prev) => ({ ...prev, description: value }))}
+        placeholder="صف المشروع بشكل واضح ومباشر. ما الذي يميزه؟ ما نوع الوحدات؟ وما أهم عناصر الجذب؟"
+        className="text-right"
+      />
+    </FormSection>
   );
 }
 
-function SelectedBrokerCard({ selectedBroker, setSelectedBrokerId }: Pick<AgPropertyFormPrimaryColumnProps, "selectedBroker" | "setSelectedBrokerId">) {
-  if (!selectedBroker) return null;
+function PresentationSection({
+  formState,
+  setFormState,
+}: Pick<AgPropertyFormPrimaryColumnProps, "formState" | "setFormState">) {
   return (
-    <div className="flex flex-row-reverse items-center justify-between border-2 border-blue-600 bg-blue-50/20 p-5">
-      <div className="flex flex-row-reverse items-center gap-4">
-        <BrokerAvatar avatarImage={selectedBroker.avatarImage} avatarLabel={selectedBroker.avatarLabel} sizeClassName="h-12 w-12" />
-        <div className="grid gap-1 text-right">
-          <div className="text-base font-black uppercase leading-none text-slate-950">{selectedBroker.name}</div>
-          <div className="mt-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">{selectedBroker.title}</div>
+    <FormSection title="محتوى صفحة العرض" description="هذه المعلومات تظهر بجوار المعرض وفي بطاقة المشروع عند مشاركته.">
+      <div className="grid gap-5">
+        <div className="grid gap-2">
+          <FormLabel>وصف قصير</FormLabel>
+          <TextArea
+            rows={3}
+            value={formState.shortDescription}
+            onChange={(value) => setFormState((prev) => ({ ...prev, shortDescription: value }))}
+            placeholder="ملخص قصير وسريع يشرح المشروع في سطرين أو ثلاثة."
+          />
+        </div>
+
+        <div className="grid gap-2">
+          <FormLabel>المزايا والخدمات</FormLabel>
+          <TextArea
+            rows={4}
+            value={formState.amenitiesText}
+            onChange={(value) => setFormState((prev) => ({ ...prev, amenitiesText: value }))}
+            placeholder="مثال: مواقف خاصة، نادي، حراسة، مصاعد، منطقة أطفال"
+          />
+          <p className="text-sm text-[var(--workspace-muted)]">افصل بين كل ميزة بفاصلة أو سطر جديد.</p>
         </div>
       </div>
-      <button onClick={() => setSelectedBrokerId(null)} className="flex h-8 w-8 items-center justify-center border border-slate-200 bg-white text-slate-400 transition-colors hover:border-red-600 hover:text-red-600" title="إلغاء التكليف">
+    </FormSection>
+  );
+}
+
+function SelectedBrokerCard({
+  selectedBroker,
+  setSelectedBrokerId,
+}: Pick<AgPropertyFormPrimaryColumnProps, "selectedBroker" | "setSelectedBrokerId">) {
+  if (!selectedBroker) {
+    return null;
+  }
+
+  return (
+    <div className="flex items-center justify-between rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-4">
+      <button
+        type="button"
+        onClick={() => setSelectedBrokerId(null)}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-[var(--workspace-muted)] transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] hover:text-[var(--workspace-bubble-other-foreground)]"
+        title="إلغاء التكليف"
+      >
         <X className="h-4 w-4" />
       </button>
-    </div>
-  );
-}
-
-function BrokerOption({
-  broker,
-  onSelect,
-}: {
-  broker: BrokerPresence;
-  onSelect: (brokerId: string) => void;
-}) {
-  return (
-    <button onClick={() => onSelect(broker.id)} className="group flex flex-row-reverse items-center gap-4 p-4 text-right transition hover:bg-slate-50">
-      <BrokerAvatar avatarImage={broker.avatarImage} avatarLabel={broker.avatarLabel} sizeClassName="h-10 w-10" />
-      <div className="flex-1 overflow-hidden">
-        <div className="text-sm font-black uppercase leading-none text-slate-950 transition-colors group-hover:text-blue-600">{broker.name}</div>
-        <div className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">{broker.title}</div>
+      <div className="flex items-center gap-3">
+        <div className="text-right">
+          <div className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{selectedBroker.name}</div>
+          <div className="mt-1 text-xs font-semibold text-[var(--workspace-muted)]">{selectedBroker.title}</div>
+        </div>
+        <BrokerAvatar
+          avatarImage={selectedBroker.avatarImage}
+          avatarLabel={selectedBroker.avatarLabel}
+        />
       </div>
-      <ChevronRight className="h-4 w-4 translate-x-0 text-slate-200 opacity-0 transition-all group-hover:translate-x-1 group-hover:opacity-100" />
-    </button>
+    </div>
   );
 }
 
@@ -111,39 +233,86 @@ function BrokerDropdown({
   setBrokerSearch,
   setIsBrokerDropdownOpen,
   setSelectedBrokerId,
-}: Pick<AgPropertyFormPrimaryColumnProps, "filteredBrokers" | "setBrokerSearch" | "setIsBrokerDropdownOpen" | "setSelectedBrokerId">) {
-  const handleSelect = (brokerId: string) => {
-    setSelectedBrokerId(brokerId);
-    setIsBrokerDropdownOpen(false);
-    setBrokerSearch("");
-  };
+}: Pick<
+  AgPropertyFormPrimaryColumnProps,
+  "filteredBrokers" | "setBrokerSearch" | "setIsBrokerDropdownOpen" | "setSelectedBrokerId"
+>) {
   if (filteredBrokers.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 p-8 text-center">
-        <UserPlus className="h-8 w-8 text-slate-200" />
-        <div className="text-xs font-black text-slate-400">لا يوجد بيانات مطابقة</div>
+      <div className="flex flex-col items-center justify-center gap-2 p-6 text-center text-sm text-[var(--workspace-muted)]">
+        <UserPlus className="h-5 w-5 text-[var(--workspace-muted)]" />
+        لا توجد نتائج مطابقة
       </div>
     );
   }
+
   return (
-    <div className="grid divide-y divide-slate-100">
+    <div className="grid divide-y divide-[color:var(--workspace-border)]">
       {filteredBrokers.map((broker) => (
-        <BrokerOption key={broker.id} broker={broker} onSelect={handleSelect} />
+        <button
+          key={broker.id}
+          type="button"
+          onClick={() => {
+            setSelectedBrokerId(broker.id);
+            setIsBrokerDropdownOpen(false);
+            setBrokerSearch("");
+          }}
+          className="flex items-center justify-between gap-4 px-4 py-3 text-right transition hover:bg-[var(--workspace-accent-soft)]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <div className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{broker.name}</div>
+              <div className="mt-1 text-xs font-semibold text-[var(--workspace-muted)]">{broker.title}</div>
+            </div>
+            <BrokerAvatar avatarImage={broker.avatarImage} avatarLabel={broker.avatarLabel} />
+          </div>
+        </button>
       ))}
     </div>
   );
 }
 
-function BrokerPicker(props: Pick<AgPropertyFormPrimaryColumnProps, "brokerSearch" | "filteredBrokers" | "isBrokerDropdownOpen" | "setBrokerSearch" | "setIsBrokerDropdownOpen" | "setSelectedBrokerId">) {
+function BrokerPicker(
+  props: Pick<
+    AgPropertyFormPrimaryColumnProps,
+    | "brokerSearch"
+    | "filteredBrokers"
+    | "isBrokerDropdownOpen"
+    | "setBrokerSearch"
+    | "setIsBrokerDropdownOpen"
+    | "setSelectedBrokerId"
+  >,
+) {
   return (
-    <div className="group relative">
-      <input type="text" value={props.brokerSearch} onChange={(e) => { props.setBrokerSearch(e.target.value); props.setIsBrokerDropdownOpen(true); }} onFocus={() => props.setIsBrokerDropdownOpen(true)} placeholder="ابحث بالاسم لتكليف وسيط للمشروع..." className="w-full border-2 border-slate-100 bg-slate-50 p-5 pr-12 text-right text-base font-bold text-slate-950 outline-none transition-all placeholder:text-slate-300 focus:border-blue-600 focus:bg-white" />
-      <Search className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-300 transition group-focus-within:text-blue-600" />
+    <div className="relative">
+      <div className="relative">
+        <input
+          type="text"
+          value={props.brokerSearch}
+          onChange={(event) => {
+            props.setBrokerSearch(event.target.value);
+            props.setIsBrokerDropdownOpen(true);
+          }}
+          onFocus={() => props.setIsBrokerDropdownOpen(true)}
+          placeholder="ابحث باسم الوسيط ثم اختره"
+          className="min-h-[52px] w-full rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-3 pr-11 text-base font-semibold text-[var(--workspace-bubble-other-foreground)] outline-none transition placeholder:text-[var(--workspace-muted)] focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_36%,transparent)] focus:bg-[var(--workspace-panel)]"
+        />
+        <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--workspace-muted)]" />
+      </div>
+
       {props.isBrokerDropdownOpen ? (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => props.setIsBrokerDropdownOpen(false)} />
-          <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-[300px] animate-in overflow-auto border-2 border-slate-950 bg-white shadow-none slide-in-from-top-2 duration-200">
-            <BrokerDropdown filteredBrokers={props.filteredBrokers} setBrokerSearch={props.setBrokerSearch} setIsBrokerDropdownOpen={props.setIsBrokerDropdownOpen} setSelectedBrokerId={props.setSelectedBrokerId} />
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => props.setIsBrokerDropdownOpen(false)}
+          />
+          <div className="absolute inset-x-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] shadow-[0_16px_40px_rgba(0,0,0,0.28)]">
+            <BrokerDropdown
+              filteredBrokers={props.filteredBrokers}
+              setBrokerSearch={props.setBrokerSearch}
+              setIsBrokerDropdownOpen={props.setIsBrokerDropdownOpen}
+              setSelectedBrokerId={props.setSelectedBrokerId}
+            />
           </div>
         </>
       ) : null}
@@ -151,26 +320,38 @@ function BrokerPicker(props: Pick<AgPropertyFormPrimaryColumnProps, "brokerSearc
   );
 }
 
-function BrokerAssignmentSection(props: Pick<AgPropertyFormPrimaryColumnProps, "brokerSearch" | "filteredBrokers" | "isBrokerDropdownOpen" | "selectedBroker" | "setBrokerSearch" | "setIsBrokerDropdownOpen" | "setSelectedBrokerId">) {
+function BrokerAssignmentSection(
+  props: Pick<
+    AgPropertyFormPrimaryColumnProps,
+    | "brokerSearch"
+    | "filteredBrokers"
+    | "isBrokerDropdownOpen"
+    | "selectedBroker"
+    | "setBrokerSearch"
+    | "setIsBrokerDropdownOpen"
+    | "setSelectedBrokerId"
+  >,
+) {
   return (
-    <div className="border border-slate-200 bg-white p-8">
-      <h3 className="mb-8 border-b border-slate-100 pb-4 text-lg font-black text-slate-950">تكليف وسيط</h3>
-      <div className="relative">
-        {props.selectedBroker ? (
-          <SelectedBrokerCard selectedBroker={props.selectedBroker} setSelectedBrokerId={props.setSelectedBrokerId} />
-        ) : (
-          <BrokerPicker {...props} />
-        )}
-      </div>
-    </div>
+    <FormSection title="تكليف وسيط" description="اختياري. اربط المشروع بوسيط محدد إذا كنت تريد إدارته مباشرة من هذه الصفحة.">
+      {props.selectedBroker ? (
+        <SelectedBrokerCard
+          selectedBroker={props.selectedBroker}
+          setSelectedBrokerId={props.setSelectedBrokerId}
+        />
+      ) : (
+        <BrokerPicker {...props} />
+      )}
+    </FormSection>
   );
 }
 
 export function AgPropertyFormPrimaryColumn(props: AgPropertyFormPrimaryColumnProps) {
   return (
-    <div className="flex flex-col gap-8">
+    <div className="min-w-0 space-y-6">
       <BasicDataSection formState={props.formState} setFormState={props.setFormState} />
       <MarketingSection formState={props.formState} setFormState={props.setFormState} />
+      <PresentationSection formState={props.formState} setFormState={props.setFormState} />
       <BrokerAssignmentSection
         brokerSearch={props.brokerSearch}
         filteredBrokers={props.filteredBrokers}

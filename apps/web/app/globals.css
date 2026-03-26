@@ -54,8 +54,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #2563EB;
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -65,7 +65,7 @@
   --destructive: oklch(0.58 0.22 27);
   --border: #F1F5F9;
   --input: #F1F5F9;
-  --ring: #2563EB;
+  --ring: #2563eb;
   --chart-1: oklch(0.809 0.105 251.813);
   --chart-2: oklch(0.623 0.214 259.815);
   --chart-3: oklch(0.546 0.245 262.881);
@@ -80,40 +80,72 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --workspace-shell: #f5f5f5;
+  --workspace-canvas: #fafafa;
+  --workspace-panel: #ffffff;
+  --workspace-elevated: #f4f4f5;
+  --workspace-sidebar: #fafafa;
+  --workspace-sidebar-strong: #f0f0f1;
+  --workspace-border: rgba(39, 39, 42, 0.08);
+  --workspace-muted: #71717a;
+  --workspace-bubble-self: #2563eb;
+  --workspace-bubble-self-foreground: #eff6ff;
+  --workspace-bubble-self-muted: #bfdbfe;
+  --workspace-bubble-other: #f4f4f5;
+  --workspace-bubble-other-foreground: #152236;
+  --workspace-bubble-other-muted: #71717a;
+  --workspace-accent-soft: #f0f0f1;
+  --workspace-highlight: #2563eb;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.87 0.00 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.371 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: #09090b;
+  --foreground: #f4f4f5;
+  --card: #111114;
+  --card-foreground: #f4f4f5;
+  --popover: #101013;
+  --popover-foreground: #f4f4f5;
+  --primary: #60a5fa;
+  --primary-foreground: #ffffff;
+  --secondary: #18181b;
+  --secondary-foreground: #f4f4f5;
+  --muted: #18181b;
+  --muted-foreground: #a1a1aa;
+  --accent: #15161a;
+  --accent-foreground: #f4f4f5;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --border: rgba(244, 244, 245, 0.08);
+  --input: #17181b;
+  --ring: #60a5fa;
   --chart-1: oklch(0.809 0.105 251.813);
   --chart-2: oklch(0.623 0.214 259.815);
   --chart-3: oklch(0.546 0.245 262.881);
   --chart-4: oklch(0.488 0.243 264.376);
   --chart-5: oklch(0.424 0.199 265.638);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: #0c0c0f;
+  --sidebar-foreground: #f4f4f5;
+  --sidebar-primary: #60a5fa;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #141519;
+  --sidebar-accent-foreground: #f4f4f5;
+  --sidebar-border: rgba(244, 244, 245, 0.07);
+  --sidebar-ring: #60a5fa;
+  --workspace-shell: #09090b;
+  --workspace-canvas: #0d0d10;
+  --workspace-panel: #111114;
+  --workspace-elevated: #18181b;
+  --workspace-sidebar: #0c0c0f;
+  --workspace-sidebar-strong: #070709;
+  --workspace-border: rgba(244, 244, 245, 0.08);
+  --workspace-muted: #a1a1aa;
+  --workspace-bubble-self: #1e40af;
+  --workspace-bubble-self-foreground: #eff6ff;
+  --workspace-bubble-self-muted: #bfdbfe;
+  --workspace-bubble-other: #18181b;
+  --workspace-bubble-other-foreground: #f4f4f5;
+  --workspace-bubble-other-muted: #a1a1aa;
+  --workspace-accent-soft: #141519;
+  --workspace-highlight: #60a5fa;
 }
 
 @layer base {
@@ -128,6 +160,14 @@
   html {
     @apply font-sans;
   }
+
+  html:not(.dark) {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
 }
 
 /* --- Anan Scrollbar (Chrome/Safari/Edge) --- */
@@ -138,7 +178,83 @@
 }
 
 .dark {
-  --sb-thumb: #f8fafc;
+  --sb-thumb: #52525b;
+  --sb-thumb-hover: #60a5fa;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--workspace-highlight) 28%, transparent);
+  color: var(--foreground);
+}
+
+.dark ::selection {
+  background: color-mix(in srgb, var(--workspace-highlight) 38%, transparent);
+  color: var(--workspace-bubble-other-foreground);
+}
+
+.dark [class~="bg-slate-950"],
+.dark [class*="bg-slate-950/"],
+.dark [class*="dark:bg-slate-950"] {
+  background-color: var(--workspace-sidebar-strong) !important;
+}
+
+.dark [class~="bg-slate-900"],
+.dark [class*="bg-slate-900/"],
+.dark [class*="dark:bg-slate-900"] {
+  background-color: var(--workspace-panel) !important;
+}
+
+.dark [class*="text-blue-"],
+.dark [class*="dark:text-blue-"] {
+  color: var(--workspace-highlight) !important;
+}
+
+.dark [class*="border-blue-"],
+.dark [class*="dark:border-blue-"] {
+  border-color: color-mix(in srgb, var(--workspace-highlight) 34%, transparent) !important;
+}
+
+.dark [class*="bg-blue-50"],
+.dark [class*="bg-blue-100"],
+.dark [class*="bg-blue-500/10"],
+.dark [class*="bg-blue-500/15"],
+.dark [class*="bg-blue-50/"],
+.dark [class*="dark:bg-blue-500/10"] {
+  background-color: color-mix(in srgb, var(--workspace-highlight) 11%, var(--workspace-panel)) !important;
+}
+
+.dark [class~="bg-blue-600"],
+.dark [class~="bg-blue-700"],
+.dark [class*="dark:bg-blue-500"],
+.dark [class*="dark:bg-blue-600"],
+.dark [class*="dark:bg-blue-700"] {
+  background-color: var(--workspace-highlight) !important;
+  color: var(--primary-foreground) !important;
+}
+
+.dark [class*="hover:bg-blue-"]:hover,
+.dark [class*="dark:hover:bg-blue-"]:hover {
+  background-color: color-mix(in srgb, var(--workspace-highlight) 88%, black) !important;
+  color: var(--primary-foreground) !important;
+}
+
+.dark [class*="hover:border-blue-"]:hover,
+.dark [class*="dark:hover:border-blue-"]:hover,
+.dark [class*="focus:border-blue-"]:focus,
+.dark [class*="focus-visible:border-blue-"]:focus-visible {
+  border-color: color-mix(in srgb, var(--workspace-highlight) 42%, transparent) !important;
+}
+
+.dark [class*="hover:text-blue-"]:hover,
+.dark [class*="dark:hover:text-blue-"]:hover {
+  color: var(--workspace-highlight) !important;
+}
+
+.dark [class*="ring-blue-"],
+.dark [class*="focus:ring-blue-"],
+.dark [class*="focus-visible:ring-blue-"],
+.dark [class*="dark:focus-visible:ring-blue-"] {
+  --tw-ring-color: color-mix(in srgb, var(--workspace-highlight) 28%, transparent) !important;
 }
 
 * {

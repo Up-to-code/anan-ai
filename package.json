@@ -45,9 +45,11 @@
     "@mzedstudio/llm-cache": "^0.1.0",
     "@mzedstudio/uploadthingtrack": "^0.4.1",
     "@openrouter/ai-sdk-provider": "^1.5.4",
+    "@tabler/icons-react": "",
     "@toon-format/toon": "^2.1.0",
     "@types/web-push": "^3.6.4",
     "ai": "^5.0.82",
+    "apps/web": "apps/web",
     "convex": "^1.31.6",
     "convex-audit-log": "^0.2.0",
     "convex-batch-processor": "^1.0.9",
@@ -60,5 +62,9 @@
     "convex-test": "^0.0.41",
     "typescript": "^5.2.2",
     "vitest": "^2.0.0"
-  }
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }

@@ -29,7 +29,9 @@ export default function PersonCard({
   compact?: boolean;
 }) {
   return (
-    <article className={`rounded-lg border border-slate-200 bg-white ${compact ? "w-full max-w-[320px]" : "w-full max-w-[360px]"}`}>
+    <article
+      className={`rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 ${compact ? "w-full max-w-[320px]" : "w-full max-w-[360px]"}`}
+    >
       <div className="space-y-4 p-4">
         <div className="flex items-start gap-3">
           <div className="relative shrink-0">
@@ -37,48 +39,48 @@ export default function PersonCard({
               /* eslint-disable-next-line @next/next/no-img-element */
               <img src={person.avatarImage} alt={person.name} className="h-14 w-14 rounded-lg object-cover" />
             ) : (
-              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-slate-100 text-lg font-black text-slate-500">
+              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-slate-100 text-lg font-black text-slate-500 dark:bg-slate-800 dark:text-slate-200">
                 {person.avatarLabel}
               </div>
             )}
             {person.badges?.includes("verified") ? (
-              <div className="absolute -bottom-1 -left-1 rounded-lg border border-blue-200 bg-blue-50 p-1 text-blue-700">
+              <div className="absolute -bottom-1 -left-1 rounded-lg border border-blue-200 bg-blue-50 p-1 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
                 <ShieldCheck className="h-3 w-3" />
               </div>
             ) : null}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="truncate text-base font-semibold text-slate-950">{person.name}</h3>
+              <h3 className="truncate text-base font-semibold text-slate-950 dark:text-slate-100">{person.name}</h3>
               {person.badges?.includes("vip") ? (
-                <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
                   VIP
                 </span>
               ) : null}
             </div>
-            <div className="mt-1 text-sm text-slate-500">
+            <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {person.title ?? (person.type === "broker" ? "وسيط معتمد" : "عميل نشط")}
             </div>
-            {person.location ? <div className="mt-1 text-sm text-slate-600">{person.location}</div> : null}
+            {person.location ? <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">{person.location}</div> : null}
           </div>
         </div>
 
-        <p className="text-sm leading-6 text-slate-600">{person.summary}</p>
+        <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">{person.summary}</p>
 
-        <div className="space-y-3 border-t border-slate-100 pt-3">
+        <div className="space-y-3 border-t border-slate-100 pt-3 dark:border-slate-800">
           <div>
-            <div className="text-[11px] text-slate-500">الارتباط</div>
-            <div className="mt-1 text-sm font-medium text-slate-900">
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">الارتباط</div>
+            <div className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">
               {person.relation?.project?.title ?? "بدون مشروع"}
             </div>
-            <div className="mt-1 text-sm text-slate-500">{person.relation?.unit?.label ?? "على مستوى المشروع"}</div>
+            <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">{person.relation?.unit?.label ?? "على مستوى المشروع"}</div>
           </div>
           <div className="flex items-center justify-between gap-3 text-sm">
             <div>
-              <div className="text-[11px] text-slate-500">الحالة</div>
-              <div className="mt-1 font-medium text-slate-900">{person.stageLabel ?? "قيد المتابعة"}</div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">الحالة</div>
+              <div className="mt-1 font-medium text-slate-900 dark:text-slate-100">{person.stageLabel ?? "قيد المتابعة"}</div>
             </div>
-            <div className="flex items-center gap-1 text-slate-500">
+            <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
               <CheckCircle2 className="h-4 w-4" />
               <span>{person.type === "broker" ? "وسيط" : "عميل"}</span>
             </div>

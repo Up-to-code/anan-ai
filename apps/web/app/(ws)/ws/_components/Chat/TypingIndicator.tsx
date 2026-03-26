@@ -17,26 +17,26 @@ export default function TypingIndicator({
 }) {
   return (
     <div
-      className="flex min-w-0 shrink-0 items-start gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-5 py-3.5"
+      className="flex min-w-0 shrink-0 items-start gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-5 py-3.5 dark:border-slate-700 dark:bg-slate-900"
       dir="rtl"
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white shadow-sm">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-950 dark:shadow-none">
         <AIMotionLogo state={state} size="compact" />
       </div>
       <div className="flex min-w-0 flex-col gap-1.5 pt-0.5 text-right">
-        <div className="text-[11px] font-medium text-slate-500">Anan AI</div>
+        <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Anan AI</div>
         <div className="flex items-center gap-1.5">
           {[0, 1, 2].map((i) => (
             <motion.span
               key={i}
-              className="h-2 w-2 rounded-full bg-slate-300"
+              className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-500"
               animate={{ y: [0, -5, 0], opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.18, ease: "easeInOut" }}
             />
           ))}
         </div>
         {text ? (
-          <span className="text-[11px] text-slate-500" style={{ unicodeBidi: "plaintext" }}>{text}</span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400" style={{ unicodeBidi: "plaintext" }}>{text}</span>
         ) : null}
       </div>
     </div>

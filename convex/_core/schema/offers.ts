@@ -28,6 +28,7 @@ const offersTables = {
         visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
         recipientEmail: v.optional(v.string()),
         recipientPhone: v.optional(v.string()),
+        sourceConversationId: v.optional(v.id("inboxConversations")),
         description: v.optional(v.string()),
         documentIds: v.optional(v.array(v.id("_storage"))),
         attachments: v.optional(uploadedFileReferenceListValidator),
@@ -39,7 +40,8 @@ const offersTables = {
         .index("toREDId", ["toREDId"])
         .index("recipientAuthUserId", ["recipientAuthUserId"])
         .index("visibility", ["visibility"])
-        .index("publicationState", ["publicationState"]),
+        .index("publicationState", ["publicationState"])
+        .index("sourceConversationId", ["sourceConversationId"]),
 };
 
 export default offersTables;

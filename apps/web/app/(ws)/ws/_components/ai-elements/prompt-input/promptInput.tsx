@@ -221,7 +221,7 @@ export const PromptInput = ({
         const convertedFiles = await convertFilesForSubmit(files);
         const ok = await runSubmit({
           event,
-          message: { files: convertedFiles, text },
+          message: { files: convertedFiles, localFiles: files, text },
           onSubmit,
         });
         if (!ok) {
@@ -264,4 +264,3 @@ export const PromptInput = ({
     </LocalAttachmentsContext.Provider>
   );
 };
-

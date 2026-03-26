@@ -17,7 +17,7 @@ export default async function InboxZoneLayout({
   const primaryOrganization = chrome.organizations?.[0];
 
   if (!primaryOrganization) {
-    return <div className="min-h-svh bg-white">{children}</div>;
+    return <div className="min-h-svh bg-background text-foreground">{children}</div>;
   }
 
   const complianceBanner = buildComplianceBanner(primaryOrganization, complianceRuleset);

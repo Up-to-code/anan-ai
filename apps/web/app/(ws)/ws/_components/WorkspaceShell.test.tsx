@@ -16,6 +16,10 @@ vi.mock("convex/react", () => ({
   useQuery,
 }));
 
+vi.mock("next-themes", () => ({
+  useTheme: () => ({ resolvedTheme: "light", setTheme: vi.fn() }),
+}));
+
 vi.mock("next/link", () => ({
   default: ({
     href,
@@ -70,6 +74,7 @@ describe("WorkspaceShell", () => {
     expect(markup).toContain("data-slot=\"workspace-sidebar-desktop\"");
     expect(markup).toContain("data-slot=\"workspace-sidebar-trigger\"");
     expect(markup).toContain("data-slot=\"workspace-top-navbar\"");
+    expect(markup).toContain("data-slot=\"theme-toggle\"");
     expect(markup).toContain("Body");
     expect(markup).toContain("Alpha");
     expect(markup).toContain("/ws/notifications");
@@ -96,5 +101,6 @@ describe("WorkspaceShell", () => {
     expect(markup).toContain("Assistant Body");
     expect(markup).toContain("data-slot=\"workspace-sidebar-desktop\"");
     expect(markup).toContain("data-slot=\"workspace-sidebar-trigger\"");
+    expect(markup).toContain("data-slot=\"theme-toggle\"");
   });
 });

@@ -37,21 +37,21 @@ type BlogPostSummary = (typeof BLOG_POSTS)[number];
 function BlogPostCard({ post }: { post: BlogPostSummary }) {
   return (
     <Link href={`/blog/${post.slug}`} className="group block focus:outline-none focus-visible:ring-4 ring-blue-600 ring-offset-4">
-      <article className="border-2 border-slate-100 bg-white p-10 h-full flex flex-col space-y-8 transition-colors group-hover:border-blue-600">
+      <article className="flex h-full flex-col space-y-8 border-2 border-slate-100 bg-white p-10 transition-colors group-hover:border-blue-600 dark:border-slate-800 dark:bg-slate-950">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 bg-blue-50 px-3 py-1">
+          <span className="bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
             {post.category}
           </span>
-          <BookOpen className="h-5 w-5 text-slate-300 group-hover:text-blue-600 transition-colors" />
+          <BookOpen className="h-5 w-5 text-slate-300 transition-colors group-hover:text-blue-600 dark:text-slate-600 dark:group-hover:text-blue-300" />
         </div>
         <div className="flex-1 space-y-4">
-          <h2 className="text-2xl font-black text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-3 leading-snug">
+          <h2 className="line-clamp-3 text-2xl font-black leading-snug text-slate-900 transition-colors group-hover:text-blue-600 dark:text-slate-100 dark:group-hover:text-blue-300">
             {post.title}
           </h2>
-          <p className="text-slate-500 font-bold leading-relaxed line-clamp-3">{post.excerpt}</p>
+          <p className="line-clamp-3 font-bold leading-relaxed text-slate-500 dark:text-slate-300">{post.excerpt}</p>
         </div>
-        <div className="pt-6 border-t border-slate-100 flex items-center justify-between mt-auto">
-          <span className="text-xs font-black uppercase text-slate-400">{post.date}</span>
+        <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-6 dark:border-slate-800">
+          <span className="text-xs font-black uppercase text-slate-400 dark:text-slate-500">{post.date}</span>
           <span className="text-xs font-black uppercase text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
             اقرأ المزيد
           </span>
@@ -76,9 +76,9 @@ export default function BlogIndexPage() {
             </SectionLabel>
           }
           title={<>مدونة <br /><span className="text-blue-600 text-3xl">عنان للأخبار والمقالات</span></>}
-          titleClassName="text-6xl font-black text-slate-900 uppercase leading-tight"
+          titleClassName="text-6xl font-black uppercase leading-tight text-slate-900 dark:text-slate-100"
           description={
-            <p className="max-w-2xl text-xl font-bold leading-relaxed text-slate-500">
+            <p className="max-w-2xl text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300">
               تابع أحدث تحليلات السوق السعودي والتقنيات العقارية المؤسسية من خبراء عنان.
             </p>
           }

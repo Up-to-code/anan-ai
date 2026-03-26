@@ -18,5 +18,6 @@ export type CreateOfferArgs = {
   recipientAuthUserId?: string;
   recipientEmail?: string;
   recipientPhone?: string;
+  sourceConversationId?: Id<"inboxConversations">;
   attachments?: Infer<typeof uploadedFileReferenceValidator>[];
 };

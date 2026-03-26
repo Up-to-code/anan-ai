@@ -12,8 +12,8 @@ export default function SettingsHeader({
 }) {
   return (
     <header className="space-y-1">
-      <h1 className="text-xl font-semibold text-slate-950">{title}</h1>
-      <p className="max-w-2xl text-sm text-slate-500">{description}</p>
+      <h1 className="text-xl font-semibold text-slate-950 dark:text-slate-100">{title}</h1>
+      <p className="max-w-2xl text-sm text-slate-500 dark:text-slate-400">{description}</p>
     </header>
   );
 }

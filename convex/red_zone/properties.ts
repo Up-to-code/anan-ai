@@ -63,6 +63,7 @@ export const create = mutation({
     status: v.optional(statusValidator),
     bankId: v.optional(v.id("banks")),
     media: v.optional(uploadedFileReferenceListValidator),
+    body: v.optional(v.any()),
     adLicenseNumber: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -90,6 +91,7 @@ export const update = mutation({
     status: v.optional(statusValidator),
     bankId: v.optional(v.id("banks")),
     media: v.optional(uploadedFileReferenceListValidator),
+    body: v.optional(v.any()),
     adLicenseNumber: v.optional(v.string()),
   },
   handler: async (ctx, args) => {

@@ -53,7 +53,10 @@ export function buildBarsFromFrequencyData(dataArray: Uint8Array, bars = METER_B
   });
 }
 
-export async function uploadAudioBlob(uploadUrl: string, blob: Blob) {
+export async function uploadBlobToStorage(uploadUrl: string, blob: Blob, errorMessages?: {
+  uploadFailed?: string;
+  missingStorageId?: string;
+}) {
   const response = await fetch(uploadUrl, {
     method: "POST",
     headers: {
@@ -63,14 +66,21 @@ export async function uploadAudioBlob(uploadUrl: string, blob: Blob) {
   });
 
   if (!response.ok) {
-    throw new Error("تعذر رفع التسجيل الصوتي.");
+    throw new Error(errorMessages?.uploadFailed ?? "تعذر رفع الملف.");
   }
 
   const payload = (await response.json().catch(() => null)) as { storageId?: string } | null;
   const storageId = payload?.storageId?.trim();
   if (!storageId) {
-    throw new Error("تعذر تجهيز الملف الصوتي للتفريغ.");
+    throw new Error(errorMessages?.missingStorageId ?? "تعذر تجهيز الملف المرفوع.");
   }
 
   return storageId;
+}
+
+export async function uploadAudioBlob(uploadUrl: string, blob: Blob) {
+  return uploadBlobToStorage(uploadUrl, blob, {
+    uploadFailed: "تعذر رفع التسجيل الصوتي.",
+    missingStorageId: "تعذر تجهيز الملف الصوتي للتفريغ.",
+  });
 }

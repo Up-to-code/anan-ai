@@ -49,9 +49,13 @@ function MembersTabSection(args: {
       <div className="text-sm text-slate-500">
         {args.members.length} أعضاء، {args.invites.length} دعوات، وصلاحيتك الحالية: {args.roleLabel}
       </div>
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
-        <MembersWorkspace initialMembers={args.members} invites={args.invites} canManage={args.canManage} />
-        <InviteMemberForm canManage={args.canManage} hasOrganization={args.hasOrganization} />
+      <div>
+        <MembersWorkspace
+          initialMembers={args.members}
+          invites={args.invites}
+          canManage={args.canManage}
+          hasOrganization={args.hasOrganization}
+        />
       </div>
     </div>
   );

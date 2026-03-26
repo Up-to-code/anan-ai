@@ -13,23 +13,23 @@ type SigninPageViewProps = {
 
 export default function SigninPageView({ redirectTo }: SigninPageViewProps) {
   return (
-    <main className="flex min-h-screen flex-col bg-white pt-20 font-sans text-slate-900 selection:bg-blue-600 selection:text-white" dir="rtl">
+    <main className="flex min-h-screen flex-col bg-background pt-20 font-sans text-foreground selection:bg-blue-600 selection:text-white transition-colors" dir="rtl">
       <Section className="flex flex-1 items-center justify-center pb-24">
         <div className="w-full max-w-md">
           <PageHero
             contentClassName="space-y-12 text-center"
             badge={(
               <div className="space-y-6">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center bg-blue-600">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-[0_12px_40px_rgba(37,99,235,0.25)]">
                   <LogIn className="h-8 w-8 text-white" />
                 </div>
               </div>
             )}
             title="دخول النظام المؤسسي"
             titleTag="h1"
-            titleClassName="text-4xl font-black uppercase tracking-tight text-slate-900"
+            titleClassName="text-4xl font-black uppercase tracking-tight text-slate-900 dark:text-slate-100"
             description={(
-              <p className="font-bold text-slate-500">
+              <p className="font-bold text-slate-500 dark:text-slate-300">
                 وصول آمن للمطورين والوسطاء المعتمدين في المملكة العربية السعودية.
               </p>
             )}
@@ -50,11 +50,11 @@ export default function SigninPageView({ redirectTo }: SigninPageViewProps) {
                     {" "}السعودية.
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-8 border-t border-slate-100 pt-12">
+                <div className="grid grid-cols-2 gap-8 border-t border-slate-100 pt-12 dark:border-slate-800">
                   {TRUST_SIGNALS.map(({ icon: Icon, label }) => (
                     <div key={label} className="flex flex-col items-center gap-3">
-                      <Icon className="h-5 w-5 text-slate-300" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</span>
+                      <Icon className="h-5 w-5 text-slate-300 dark:text-slate-500" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{label}</span>
                     </div>
                   ))}
                 </div>

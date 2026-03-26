@@ -38,24 +38,24 @@ export default function LandingPage() {
             badge={
               <div className="flex items-center justify-center gap-4">
                 <Minus className="h-6 w-6 text-blue-600" />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 dark:text-slate-500">
                   البنية التحتية العقارية في المملكة
                 </span>
                 <Minus className="h-6 w-6 text-blue-600" />
               </div>
             }
             title={<>عنان: مستقبل <br /><span className="text-blue-600">العقار في السعودية</span></>}
-            titleClassName="text-[clamp(2.5rem,8vw,6.5rem)] font-black leading-[1.1] tracking-tighter text-slate-900 uppercase"
+            titleClassName="text-[clamp(2.5rem,8vw,6.5rem)] font-black uppercase leading-[1.1] tracking-tighter text-slate-900 dark:text-slate-100"
             description={
               <p>
                 استبدل التعقيد في السوق السعودي بدردشة ذكية موحدة. ابحث عن الفرص، موّل مشاريعك، وأغلق صفقاتك في الرياض وجدة وكافة مدن المملكة فوراً.
               </p>
             }
-            descriptionClassName="mx-auto max-w-2xl border-r-4 border-blue-600 pr-6 text-right text-xl font-bold leading-relaxed text-slate-600 md:text-2xl"
+            descriptionClassName="mx-auto max-w-2xl border-r-4 border-blue-600 pr-6 text-right text-xl font-bold leading-relaxed text-slate-600 dark:text-slate-300 md:text-2xl"
             actions={
               <ActionRow className="flex flex-col items-center justify-center gap-8 pt-6 sm:flex-row">
                 <ButtonLink href="/signin" variant="primary" className="px-12 py-5">ابدأ الوصول المجاني</ButtonLink>
-                <ButtonLink href="/developer" variant="outline" className="border-slate-200 px-12 py-5">استكشف النظام</ButtonLink>
+                <ButtonLink href="/developer" variant="outline" className="border-slate-200 px-12 py-5 dark:border-slate-700">استكشف النظام</ButtonLink>
               </ActionRow>
             }
             visual={<HeroBrandNetworkVisual />}
@@ -70,12 +70,12 @@ export default function LandingPage() {
               icon={MessageCircle}
               className="inline-flex items-center gap-3 border-r-4 border-blue-600 bg-blue-50 px-4 py-2"
               iconClassName="h-5 w-5 text-blue-600"
-              textClassName="text-xs font-black uppercase tracking-widest text-blue-900"
+              textClassName="text-xs font-black uppercase tracking-widest text-blue-900 dark:text-blue-200"
             >
               للمستثمرين في المملكة
             </SectionLabel>
-            <h2 className="text-5xl font-black leading-[1.2] text-slate-900">دردشة واحدة.. <br /><span className="text-blue-600">لإغلاق صفقة استثمارية</span></h2>
-            <p className="text-xl font-bold leading-relaxed text-slate-500">
+            <h2 className="text-5xl font-black leading-[1.2] text-slate-900 dark:text-slate-100">دردشة واحدة.. <br /><span className="text-blue-600">لإغلاق صفقة استثمارية</span></h2>
+            <p className="text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300">
               سواء كنت تبحث في شمال الرياض أو مشاريع الواجهة البحرية في جدة، وكيلنا الذكي يحلل آلاف الوحدات والتمويلات البنكية المحلية ليعطيك القرار الأفضل.
             </p>
             <FeatureCardGrid
@@ -133,12 +133,12 @@ export default function LandingPage() {
               icon={Users2}
               className="inline-flex items-center gap-3 border-r-4 border-slate-900 bg-slate-100 px-4 py-2"
               iconClassName="h-5 w-5 text-slate-900"
-              textClassName="text-xs font-black uppercase tracking-widest text-slate-900"
+              textClassName="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-slate-100"
             >
               للوسطاء الموثقين
             </SectionLabel>
-            <h2 className="text-5xl font-black leading-[1.2] text-slate-900">شبكة الربط <br /><span className="text-blue-600">بين وسطاء المملكة</span></h2>
-            <p className="text-xl font-bold leading-relaxed text-slate-500">
+            <h2 className="text-5xl font-black leading-[1.2] text-slate-900 dark:text-slate-100">شبكة الربط <br /><span className="text-blue-600">بين وسطاء المملكة</span></h2>
+            <p className="text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300">
               منصة الربط الموحدة للوسطاء العقاريين المسجلين في الهيئة العامة للعقار. شارك العروض والطلبات وأغلق صفقاتك بضمان وحماية حقوقك.
             </p>
             <FeatureCardGrid
@@ -163,12 +163,12 @@ export default function LandingPage() {
               icon={Target}
               className="mx-auto inline-flex items-center gap-3 border-r-4 border-blue-600 bg-slate-900 px-4 py-2"
               iconClassName="h-5 w-5 text-blue-500"
-              textClassName="text-xs font-black uppercase tracking-widest text-white"
+              textClassName="text-xs font-black uppercase tracking-widest text-white dark:text-slate-100"
             >
               نقطة التقاء السوق السعودي
             </SectionLabel>
-            <h2 className="text-6xl font-black uppercase leading-tight text-slate-900">فكرة واحدة.. <br /><span className="text-blue-600">تربط الجميع</span></h2>
-            <p className="mx-auto max-w-2xl text-xl font-bold leading-relaxed text-slate-500">
+            <h2 className="text-6xl font-black uppercase leading-tight text-slate-900 dark:text-slate-100">فكرة واحدة.. <br /><span className="text-blue-600">تربط الجميع</span></h2>
+            <p className="mx-auto max-w-2xl text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300">
               عنان هي المحور الذي يلتقي فيه المطور، الوسيط، والمستثمر. كل نقاط السوق السعودي تتصل هنا لتشكل حجر الزاوية في مستقبلك العقاري.
             </p>
           </div>
@@ -184,20 +184,20 @@ export default function LandingPage() {
               { label: "المستثمرون", desc: "فرص عادلة وحية" },
               { label: "البنوك", desc: "تمويل سيادي فوري" },
             ].map((item, i) => (
-              <div key={i} className="group space-y-4 border-2 border-slate-100 p-8 transition-colors hover:border-blue-600">
-                <span className="block text-xl font-black text-slate-900 group-hover:text-blue-600">{item.label}</span>
-                <span className="block text-xs font-bold uppercase tracking-widest text-slate-400">{item.desc}</span>
+              <div key={i} className="group space-y-4 border-2 border-slate-100 p-8 transition-colors hover:border-blue-600 dark:border-slate-800">
+                <span className="block text-xl font-black text-slate-900 group-hover:text-blue-600 dark:text-slate-100 dark:group-hover:text-blue-300">{item.label}</span>
+                <span className="block text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">{item.desc}</span>
               </div>
             ))}
           </div>
         </div>
       </Section>
 
-      <Section bg="slate" className="border-t-2 border-slate-100 py-32">
+      <Section bg="slate" className="border-t-2 border-slate-100 py-32 dark:border-slate-800">
         <div className="mx-auto max-w-[1400px] space-y-24 text-center">
           <div className="space-y-6">
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">بوابة الربط المعتمدة</span>
-            <h2 className="text-4xl font-black uppercase text-slate-900">شركاء البنية التحتية</h2>
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 dark:text-slate-500">بوابة الربط المعتمدة</span>
+            <h2 className="text-4xl font-black uppercase text-slate-900 dark:text-slate-100">شركاء البنية التحتية</h2>
           </div>
           <div className="grid grid-cols-2 items-center gap-12 opacity-40 grayscale transition-all hover:grayscale-0 md:grid-cols-4">
             <div className="flex h-12 items-center justify-center font-black tracking-tighter md:text-xl">SAMA_COMPLIANT</div>
@@ -216,12 +216,12 @@ export default function LandingPage() {
               icon={Sparkles}
               className="inline-flex items-center gap-3 border-r-4 border-blue-600 bg-blue-50 px-4 py-2"
               iconClassName="h-5 w-5 text-blue-600"
-              textClassName="text-xs font-black uppercase tracking-widest text-blue-900"
+              textClassName="text-xs font-black uppercase tracking-widest text-blue-900 dark:text-blue-200"
             >
               ذكاء عنان الخارق
             </SectionLabel>
-            <h2 className="text-5xl font-black leading-[1.2] text-slate-900">ذكاء اصطناعي <br /><span className="text-blue-600">يفهم لغة العقار</span></h2>
-            <p className="text-xl font-bold leading-relaxed text-slate-500">
+            <h2 className="text-5xl font-black leading-[1.2] text-slate-900 dark:text-slate-100">ذكاء اصطناعي <br /><span className="text-blue-600">يفهم لغة العقار</span></h2>
+            <p className="text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300">
               نظامنا يعالج ملايين البيانات العقارية في المملكة لحظياً ليقدم لك أصدق التوقعات وأدق التحليلات لصفقاتك.
             </p>
             <ButtonLink href="/signin" variant="dark">
@@ -238,12 +238,12 @@ export default function LandingPage() {
               icon={Users2}
               className="inline-flex items-center gap-3 border-r-4 border-slate-950 bg-slate-200 px-4 py-2"
               iconClassName="h-5 w-5 text-slate-950"
-              textClassName="text-xs font-black uppercase tracking-widest text-slate-950"
+              textClassName="text-xs font-black uppercase tracking-widest text-slate-950 dark:text-slate-100"
             >
               شبكة الربط المؤسسي
             </SectionLabel>
-            <h2 className="text-5xl font-black leading-[1.2] text-slate-900">منصة الربط <br /><span className="text-blue-600">الأقوى في المملكة</span></h2>
-            <p className="text-xl font-bold leading-relaxed text-slate-500">
+            <h2 className="text-5xl font-black leading-[1.2] text-slate-900 dark:text-slate-100">منصة الربط <br /><span className="text-blue-600">الأقوى في المملكة</span></h2>
+            <p className="text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300">
               نربط المطورين بالوسطاء والممولين في بيئة تقنية مؤسسية تضمن الشفافية والسرعة في التنفيذ.
             </p>
             <ButtonLink href="/signin" variant="dark">
@@ -267,7 +267,7 @@ export default function LandingPage() {
           <ActionRow className="flex flex-col justify-center gap-8 pt-8 sm:flex-row">
             <a
               href="/signin"
-              className="inline-flex min-w-[180px] items-center justify-center border border-white bg-white px-10 py-5 text-base font-black tracking-wide text-blue-700 shadow-none transition-colors hover:bg-slate-50"
+              className="inline-flex min-w-[180px] items-center justify-center border border-white bg-white px-10 py-5 text-base font-black tracking-wide text-blue-700 shadow-none transition-colors hover:bg-slate-50 dark:border-slate-100 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white"
             >
               ابدأ الآن مجاناً
             </a>

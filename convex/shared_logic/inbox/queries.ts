@@ -55,6 +55,11 @@ export const getConversation = query({
       ctx,
       membership as Doc<"inboxConversationParticipants">
     );
+    const otherParticipantMembership = await getConversationParticipant(
+      ctx,
+      conversationId,
+      membership.otherUserId,
+    );
     const messages = await ctx.db
       .query("inboxMessages")
       .withIndex("conversationId", (q) => q.eq("conversationId", conversationId))
@@ -62,6 +67,7 @@ export const getConversation = query({
 
     return {
       ...summary,
+      otherParticipantLastReadAt: otherParticipantMembership?.lastReadAt ?? null,
       messages: messages.map(mapConversationMessage),
     };
   },
@@ -79,6 +85,41 @@ export const getInboxUnreadSummary = query({
     return {
       unreadCount: memberships.reduce((sum, item) => sum + item.unreadCount, 0),
     };
+  },
+});
+
+export const hasProjectShareAccess = query({
+  args: {
+    propertyId: v.id("properties"),
+  },
+  handler: async (ctx, { propertyId }) => {
+    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    const memberships = await ctx.db
+      .query("inboxConversationParticipants")
+      .withIndex("userId", (q) => q.eq("userId", access.authUserId))
+      .collect();
+
+    for (const membership of memberships) {
+      const messages = await ctx.db
+        .query("inboxMessages")
+        .withIndex("conversationId", (q) => q.eq("conversationId", membership.conversationId))
+        .collect();
+
+      const hasMatchingShare = messages.some((message) => {
+        if (message.type !== "project_share") {
+          return false;
+        }
+
+        const metadata = message.metadata as { propertyId?: string } | null | undefined;
+        return metadata?.propertyId === propertyId;
+      });
+
+      if (hasMatchingShare) {
+        return true;
+      }
+    }
+
+    return false;
   },
 });
 

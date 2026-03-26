@@ -68,15 +68,15 @@ export default function CreateOfferForm({ properties, onSubmit }: CreateOfferFor
   return (
     <div className="flex min-h-full flex-col pb-24">
       <div className="mx-auto grid w-full max-w-4xl gap-8 px-6 py-6 lg:px-8 lg:py-8">
-        <div className="flex items-center justify-between border border-slate-200 bg-white p-4">
+        <div className="flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-sm">
           <div>
-            <h1 className="text-xl font-black text-slate-950">إنشاء عرض جديد</h1>
-            <p className="mt-1 text-xs font-bold text-slate-500">اختر عقاراً من محفظتك ثم ارفع المرفقات عبر UploadThing.</p>
+            <h1 className="text-xl font-bold text-foreground">إنشاء عرض جديد</h1>
+            <p className="mt-1 text-[13px] font-medium text-muted-foreground">اختر عقاراً من محفظتك ثم ارفع المرفقات عبر UploadThing.</p>
           </div>
           <button
             type="button"
             onClick={() => router.push("/ws/offers")}
-            className="flex items-center gap-2 border border-slate-200 px-4 py-3 text-xs font-black text-slate-700 transition hover:border-slate-950"
+            className="flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-[13px] font-bold text-muted-foreground shadow-sm transition hover:bg-muted hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             العودة
@@ -105,8 +105,8 @@ export default function CreateOfferForm({ properties, onSubmit }: CreateOfferFor
         >
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="grid gap-6">
-              <section className="border border-slate-200 bg-white p-6">
-                <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">العقار المرتبط</label>
+              <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-muted-foreground">العقار المرتبط</label>
                 <select
                   value={form.propertyId}
                   onChange={(event) => {
@@ -117,7 +117,7 @@ export default function CreateOfferForm({ properties, onSubmit }: CreateOfferFor
                       price: property?.expectedPrice ?? current.price,
                     }));
                   }}
-                  className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-[13px] font-bold text-foreground outline-none transition focus:border-ring focus:ring-1 focus:ring-ring"
                 >
                   {properties.map((property) => (
                     <option key={property.id} value={property.id}>
@@ -127,62 +127,62 @@ export default function CreateOfferForm({ properties, onSubmit }: CreateOfferFor
                 </select>
               </section>
 
-              <section className="border border-slate-200 bg-white p-6">
-                <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">عنوان العرض</label>
+              <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-muted-foreground">عنوان العرض</label>
                 <input
                   type="text"
                   value={form.title}
                   onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-                  className="w-full border-b-2 border-slate-200 bg-transparent py-3 text-lg font-black text-slate-950 outline-none"
+                  className="w-full border-b-2 border-border bg-transparent py-3 text-lg font-black text-foreground outline-none transition focus:border-ring focus:ring-1 focus:ring-ring"
                 />
-                <label className="mb-2 mt-6 block text-[10px] font-black uppercase tracking-widest text-slate-400">الوصف</label>
+                <label className="mb-2 mt-6 block text-[11px] font-bold uppercase tracking-widest text-muted-foreground">الوصف</label>
                 <textarea
                   rows={5}
                   value={form.description}
                   onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-                  className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-[13px] font-medium text-foreground outline-none transition focus:border-ring focus:ring-1 focus:ring-ring"
                 />
               </section>
             </div>
 
             <div className="grid gap-6">
               {selectedProperty ? (
-                <section className="overflow-hidden border border-slate-200 bg-white">
-                  <div className="h-44 bg-cover bg-center" style={{ backgroundImage: `url(${selectedProperty.image})` }} />
-                  <div className="p-5">
-                    <div className="text-lg font-black text-slate-950">{selectedProperty.title}</div>
-                    <div className="mt-1 text-xs font-bold text-slate-500">{selectedProperty.location}</div>
+                <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                  <div className="h-44 bg-cover bg-center transition-transform duration-500 hover:scale-105" style={{ backgroundImage: `url(${selectedProperty.image})` }} />
+                  <div className="relative bg-card p-5">
+                    <div className="text-[14px] font-bold text-foreground">{selectedProperty.title}</div>
+                    <div className="mt-1 text-[12px] font-bold text-muted-foreground">{selectedProperty.location}</div>
                   </div>
                 </section>
               ) : null}
 
-              <section className="border border-slate-200 bg-white p-6">
-                <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">السعر</label>
+              <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-muted-foreground">السعر</label>
                 <input
                   type="text"
                   value={form.price}
                   onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
-                  className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-[13px] font-bold text-foreground outline-none transition focus:border-ring focus:ring-1 focus:ring-ring"
                 />
-                <label className="mb-2 mt-6 block text-[10px] font-black uppercase tracking-widest text-slate-400">الظهور</label>
+                <label className="mb-2 mt-6 block text-[11px] font-bold uppercase tracking-widest text-muted-foreground">الظهور</label>
                 <select
                   value={form.visibility}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, visibility: event.target.value as "public" | "private" }))
                   }
-                  className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-[13px] font-bold text-foreground outline-none transition focus:border-ring focus:ring-1 focus:ring-ring"
                 >
                   <option value="public">عام</option>
                   <option value="private">خاص</option>
                 </select>
               </section>
 
-              <section className="border border-slate-200 bg-white p-6">
+              <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                 <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFiles} />
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex w-full items-center justify-center gap-2 border-2 border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-sm font-black text-slate-900"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border/80 bg-muted/20 px-4 py-8 text-[13px] font-bold text-muted-foreground transition hover:border-border hover:bg-muted/40 hover:text-foreground"
                 >
                   <Upload className="h-5 w-5" />
                   {isUploading ? "جارٍ رفع الملفات..." : "إرفاق ملفات عبر UploadThing"}
@@ -194,7 +194,7 @@ export default function CreateOfferForm({ properties, onSubmit }: CreateOfferFor
                       href={attachment.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700"
+                      className="rounded-xl border border-border bg-background px-3 py-2 text-[12px] font-bold text-muted-foreground transition hover:bg-muted hover:text-foreground shadow-sm"
                     >
                       {attachment.name}
                     </a>
@@ -204,12 +204,12 @@ export default function CreateOfferForm({ properties, onSubmit }: CreateOfferFor
             </div>
           </div>
 
-          {error ? <div className="border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</div> : null}
+          {error ? <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-[13px] font-bold text-destructive">{error}</div> : null}
 
           <button
             type="submit"
             disabled={pending}
-            className="bg-blue-600 px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-white transition hover:bg-slate-950"
+            className="rounded-xl bg-foreground px-6 py-4 text-[13px] font-black uppercase tracking-[0.2em] text-background shadow-sm transition hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {pending ? "جارٍ الحفظ..." : "حفظ العرض"}
           </button>

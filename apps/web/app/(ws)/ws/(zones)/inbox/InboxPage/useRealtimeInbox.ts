@@ -16,6 +16,24 @@ export { useWorkspaceSignalCounts } from "./useWorkspaceSignalCounts";
 const inboxApi = api.shared_logic.inbox;
 
 /**
+ * WHY:   The inbox should only auto-open the first conversation when the user has not already chosen one.
+ * WHAT:  Returns the first conversation id eligible for automatic selection.
+ * HOW:   Skips auto-selection when the route is already pinned to a conversation or when local state already has an active id.
+ */
+export function getInboxAutoSelectedConversationId(args: {
+  activeConversationId: string | null;
+  conversations: Array<{ id: string }>;
+  hasInitializedAutoSelection?: boolean;
+  hasConversationRoute: boolean;
+}) {
+  if (args.hasInitializedAutoSelection || args.hasConversationRoute || args.activeConversationId) {
+    return null;
+  }
+
+  return args.conversations[0]?.id ?? null;
+}
+
+/**
  * WHY:   The inbox workspace needs one live coordinator for subscriptions, route sync, read state, and optimistic sends.
  * WHAT:  Exposes a realtime inbox model for the page orchestrator and keeps view components mostly presentational.
  * HOW:   Subscribes to Convex queries, mirrors route selection into local state, marks reads on visible active threads, and applies optimistic send updates.
@@ -34,6 +52,7 @@ export function useRealtimeInbox({
   const [sendError, setSendError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const deferredSearch = useDeferredValue(search.trim());
+  const hasInitializedAutoSelectionRef = useRef(false);
   // Track the last conversation ID for which we successfully received live data
   // to avoid showing the loading spinner on every conversation switch.
   const lastResolvedLiveIdRef = useRef<string | null>(null);
@@ -73,6 +92,7 @@ export function useRealtimeInbox({
 
   useEffect(() => {
     if (initialSelectedConversationId) {
+      hasInitializedAutoSelectionRef.current = true;
       setActiveConversationId(initialSelectedConversationId);
     }
   }, [initialSelectedConversationId]);
@@ -94,18 +114,26 @@ export function useRealtimeInbox({
   };
 
   useEffect(() => {
-    if (hasConversationRoute || conversations.length === 0) {
-      return;
-    }
+    const nextConversationId = getInboxAutoSelectedConversationId({
+      activeConversationId,
+      conversations,
+      hasInitializedAutoSelection: hasInitializedAutoSelectionRef.current,
+      hasConversationRoute,
+    });
 
-    const nextConversationId = conversations[0]?.id ?? null;
     if (!nextConversationId) {
+      if (
+        !hasInitializedAutoSelectionRef.current &&
+        (activeConversationId !== null || hasConversationRoute || conversations.length > 0)
+      ) {
+        hasInitializedAutoSelectionRef.current = true;
+      }
       return;
     }
 
-    if (activeConversationId !== nextConversationId) {
-      setActiveConversationId(nextConversationId);
-    }
+    hasInitializedAutoSelectionRef.current = true;
+    setActiveConversationId(nextConversationId);
+    syncConversationUrl(nextConversationId, "replace");
   }, [activeConversationId, conversations, hasConversationRoute]);
 
   useEffect(() => {
@@ -187,6 +215,7 @@ export function useRealtimeInbox({
   );
 
   const handleSelectConversation = (conversationId: string) => {
+    hasInitializedAutoSelectionRef.current = true;
     setActiveConversationId(conversationId);
     syncConversationUrl(conversationId);
   };
@@ -195,6 +224,7 @@ export function useRealtimeInbox({
     setSendError(null);
     const conversationId = await resolveConversation({ targetUserId });
     setSearch("");
+    hasInitializedAutoSelectionRef.current = true;
     setActiveConversationId(conversationId);
     syncConversationUrl(conversationId);
   };

@@ -8,6 +8,8 @@ import type { SidebarProps } from "./types";
  * HOW:   Delegates the actual navigation markup to `SidebarContent` and only varies the outer container per mode.
  */
 export default function Sidebar({
+  user,
+  organization,
   visibleZoneKeys,
   recentAssistantThreads,
   allAssistantThreads,
@@ -25,6 +27,8 @@ export default function Sidebar({
       className={cn("flex min-h-0 flex-col", mode === "desktop" ? "h-full" : "h-full w-full", className)}
     >
       <SidebarContent
+        user={user}
+        organization={organization}
         visibleZoneKeys={visibleZoneKeys}
         recentAssistantThreads={recentAssistantThreads}
         allAssistantThreads={allAssistantThreads}

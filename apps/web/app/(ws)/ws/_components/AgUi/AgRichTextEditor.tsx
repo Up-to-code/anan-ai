@@ -32,13 +32,13 @@ function EditorToolbar({
   execAction: (command: string, value?: string) => void;
 }) {
   return (
-    <div className={cn("flex items-center gap-1 border border-slate-200 bg-white p-1 transition-all duration-300", isFocused ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none")}>
+    <div className={cn("flex items-center gap-1 rounded-xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-1 transition-all duration-300", isFocused ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0")}>
       <ToolbarButton icon={Heading1} onClick={() => execAction("formatBlock", "h1")} title="عنوان رئيسي" />
       <ToolbarButton icon={Heading2} onClick={() => execAction("formatBlock", "h2")} title="عنوان فرعي" />
-      <div className="mx-1 h-4 w-px bg-slate-200" />
+      <div className="mx-1 h-4 w-px bg-[color:var(--workspace-border)]" />
       <ToolbarButton icon={Bold} onClick={() => execAction("bold")} title="عريض" />
       <ToolbarButton icon={Italic} onClick={() => execAction("italic")} title="مائل" />
-      <div className="mx-1 h-4 w-px bg-slate-200" />
+      <div className="mx-1 h-4 w-px bg-[color:var(--workspace-border)]" />
       <ToolbarButton icon={List} onClick={() => execAction("insertUnorderedList")} title="قائمة" />
       <ToolbarButton icon={ListOrdered} onClick={() => execAction("insertOrderedList")} title="قائمة مرقمة" />
     </div>
@@ -68,10 +68,10 @@ function EditorSurface({
         onInput={handleInput}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className={cn("min-h-[200px] w-full border border-slate-200 bg-white p-6 text-lg font-medium leading-relaxed text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-50/50", !value && "before:pointer-events-none before:absolute before:text-slate-400 before:content-[attr(data-placeholder)]")}
+        className={cn("min-h-[200px] w-full rounded-[24px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-6 text-lg font-medium leading-relaxed text-[var(--workspace-bubble-other-foreground)] outline-none transition-all focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_36%,transparent)] focus:ring-4 focus:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_12%,transparent)]", !value && "before:pointer-events-none before:absolute before:text-[var(--workspace-muted)] before:content-[attr(data-placeholder)]")}
         data-placeholder={placeholder}
       />
-      {!isFocused && !value ? <Type className="absolute left-6 top-6 h-6 w-6 text-slate-100 pointer-events-none" /> : null}
+      {!isFocused && !value ? <Type className="pointer-events-none absolute left-6 top-6 h-6 w-6 text-[color:color-mix(in_srgb,var(--workspace-muted)_35%,transparent)]" /> : null}
     </div>
   );
 }
@@ -127,7 +127,7 @@ function ToolbarButton({
         e.preventDefault();
         onClick();
       }}
-      className="flex h-8 w-8 items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-blue-600 transition"
+      className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--workspace-muted)] transition hover:bg-[var(--workspace-accent-soft)] hover:text-[var(--workspace-highlight)]"
       title={title}
     >
       <Icon className="h-4 w-4" />

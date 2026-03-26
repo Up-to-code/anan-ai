@@ -21,24 +21,24 @@ export default function MarketResultsSummary({ model }: { model: WorkspaceMarket
       description={`يعرض هذا الملخص ما برز في ${model.dateRange.label} داخل نطاق ${model.scopeLabel}.`}
     >
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-md border border-slate-200 p-4 text-right">
-          <div className="text-xs text-slate-500">المدينة الأوضح</div>
-          <div className="mt-1 text-base font-medium text-slate-950">{leadingCity}</div>
+        <div className="rounded-md border border-slate-200 p-4 text-right dark:border-slate-800">
+          <div className="text-xs text-slate-500 dark:text-slate-400">المدينة الأوضح</div>
+          <div className="mt-1 text-base font-medium text-slate-950 dark:text-slate-100">{leadingCity}</div>
         </div>
-        <div className="rounded-md border border-slate-200 p-4 text-right">
-          <div className="text-xs text-slate-500">المنطقة الأوضح</div>
-          <div className="mt-1 text-base font-medium text-slate-950">{leadingArea}</div>
+        <div className="rounded-md border border-slate-200 p-4 text-right dark:border-slate-800">
+          <div className="text-xs text-slate-500 dark:text-slate-400">المنطقة الأوضح</div>
+          <div className="mt-1 text-base font-medium text-slate-950 dark:text-slate-100">{leadingArea}</div>
         </div>
-        <div className="rounded-md border border-slate-200 p-4 text-right">
-          <div className="text-xs text-slate-500">أكثر عبارة بحثاً</div>
-          <div className="mt-1 text-base font-medium text-slate-950">{model.keywordInsights.mostResearchedLabel ?? "لا توجد عبارة واضحة"}</div>
+        <div className="rounded-md border border-slate-200 p-4 text-right dark:border-slate-800">
+          <div className="text-xs text-slate-500 dark:text-slate-400">أكثر عبارة بحثاً</div>
+          <div className="mt-1 text-base font-medium text-slate-950 dark:text-slate-100">{model.keywordInsights.mostResearchedLabel ?? "لا توجد عبارة واضحة"}</div>
         </div>
-        <div className="rounded-md border border-slate-200 p-4 text-right">
-          <div className="text-xs text-slate-500">أقرب فرصة حالية</div>
-          <div className="mt-1 text-base font-medium text-slate-950">{leadingOpportunity}</div>
+        <div className="rounded-md border border-slate-200 p-4 text-right dark:border-slate-800">
+          <div className="text-xs text-slate-500 dark:text-slate-400">أقرب فرصة حالية</div>
+          <div className="mt-1 text-base font-medium text-slate-950 dark:text-slate-100">{leadingOpportunity}</div>
         </div>
       </div>
-      <div className="mt-4 border-t border-slate-100 pt-4 text-sm leading-6 text-slate-600">
+      <div className="mt-4 border-t border-slate-100 pt-4 text-sm leading-6 text-slate-600 dark:border-slate-800 dark:text-slate-300">
         المخزون الحالي يبقى معبراً عن العرض النشط اليوم، بينما إشارات الطلب والأبحاث في هذه الصفحة تتبع الفترة المحددة فقط.
       </div>
     </MarketPanel>

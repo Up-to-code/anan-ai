@@ -8,6 +8,7 @@ import type {
   TranscribeVoiceFromStorageInput,
   TranscribeVoiceFromStorageResult,
 } from "@/server/contracts/ananPro";
+import type { UploadedFileReference } from "@/server/contracts/files";
 
 type AnanProApiRefs = {
   getThreadSafe: unknown;
@@ -19,6 +20,7 @@ type AnanProApiRefs = {
   sendMessage: unknown;
   generateVoiceUploadUrl: unknown;
   transcribeVoiceFromStorage: unknown;
+  finalizeUploadedFiles: unknown;
 };
 
 const ananProApi = apiUnsafe["ai_zone/assistantWorkspace"] as AnanProApiRefs;
@@ -36,7 +38,8 @@ type RawAssistantMessage = {
   metadata?: {
     uiTurn?: unknown;
     meta?: unknown;
-    inputMode?: "text" | "voice";
+    inputMode?: "text" | "voice" | "attachment";
+    attachments?: UploadedFileReference[];
   };
   createdAt: number;
 };
@@ -49,6 +52,7 @@ function mapThreadMessages(messages: RawAssistantMessage[]) {
     uiTurn: message.metadata?.uiTurn,
     meta: message.metadata?.meta,
     inputMode: message.metadata?.inputMode,
+    attachments: message.metadata?.attachments,
     createdAt: message.createdAt,
   }));
 }
@@ -83,6 +87,17 @@ export type AnanProRepository = {
     token: string,
     input: TranscribeVoiceFromStorageInput,
   ): Promise<TranscribeVoiceFromStorageResult>;
+  finalizeUploadedFiles(
+    token: string,
+    input: {
+      files: Array<{
+        storageId: string;
+        name: string;
+        size?: number;
+        mime?: string;
+      }>;
+    },
+  ): Promise<UploadedFileReference[]>;
 };
 
 export const convexAnanProRepository: AnanProRepository = {
@@ -174,5 +189,11 @@ export const convexAnanProRepository: AnanProRepository = {
     return fetchAction(ananProApi.transcribeVoiceFromStorage as never, input as never, {
       token,
     }) as Promise<TranscribeVoiceFromStorageResult>;
+  },
+
+  async finalizeUploadedFiles(token, input) {
+    return fetchMutation(ananProApi.finalizeUploadedFiles as never, input as never, {
+      token,
+    }) as Promise<UploadedFileReference[]>;
   },
 };

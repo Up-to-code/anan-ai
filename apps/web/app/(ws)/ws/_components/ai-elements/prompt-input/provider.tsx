@@ -18,8 +18,10 @@ export type PromptInputProviderProps = PropsWithChildren<{
 function toPromptInputFile(file: File): PromptInputFile {
   return {
     filename: file.name,
+    file,
     id: nanoid(),
     mediaType: file.type,
+    size: file.size,
     type: "file" as const,
     url: URL.createObjectURL(file),
   };

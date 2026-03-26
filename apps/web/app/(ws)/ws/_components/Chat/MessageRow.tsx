@@ -29,54 +29,28 @@ export default function MessageRow({
       className={cn("flex min-w-0 shrink-0 gap-3", isUser ? "flex-row-reverse" : "flex-row")}
       dir="rtl"
     >
-      <div
-        data-slot={isUser ? "user-avatar" : "ai-avatar"}
-        className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm",
-          isUser ? "border-slate-900 bg-slate-900" : "",
-        )}
-      >
-        {isUser ? (
-          user?.image ? (
-            <Image
-              src={user.image}
-              alt={user.name ?? "User"}
-              width={40}
-              height={40}
-              unoptimized
-              loader={({ src }) => src}
-              className="h-full w-full rounded-[inherit] object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center rounded-[inherit] bg-blue-600 text-xs font-bold text-white">
-              {user?.name?.charAt(0)?.toUpperCase() || <User className="h-5 w-5 text-white" />}
-            </div>
-          )
-        ) : (
-          <AIMotionLogo state={avatarState} size="compact" />
-        )}
-      </div>
-      <div className={cn("flex min-w-0 flex-1 flex-col gap-1.5", isUser ? "items-end" : "items-start")}>
+      {!isUser && (
         <div
-          className={cn(
-            "px-1 text-[11px] font-medium text-slate-400",
-            "text-right",
-          )}
+          data-slot="ai-avatar"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] dark:shadow-none"
         >
-          {isUser ? user?.name || "أنت" : "Anan AI"}
+          <AIMotionLogo state={avatarState} size="compact" />
         </div>
+      )}
+      <div className={cn("flex min-w-0 flex-1 flex-col gap-1.5", isUser ? "items-end" : "items-start")}>
+
         {content ? (
           <div
             className={cn("max-w-[92%] sm:max-w-[82%]", isStreaming && "transition-all duration-150")}
           >
             <div
               className={cn(
-                "w-fit min-w-0 max-w-full whitespace-pre-wrap break-words rounded-2xl border px-5 py-3.5 text-[15px] leading-7 text-right",
+                "w-fit min-w-0 max-w-full whitespace-pre-wrap break-words text-[15px] leading-relaxed text-right transition-all duration-300",
                 isUser
-                  ? "border-slate-900 bg-slate-900 text-white"
-                  : "border-slate-100 bg-white text-slate-900 shadow-sm",
-                !isUser && isInfo && "bg-slate-50 text-slate-600 shadow-none",
-                isStreaming && !isUser && "border-stone-200 bg-stone-50",
+                  ? "rounded-[1.5rem] bg-[var(--workspace-bubble-self)] px-5 py-3.5 text-[var(--workspace-bubble-self-foreground)]"
+                  : "bg-transparent px-0 py-2 text-[var(--workspace-bubble-other-foreground)]",
+                !isUser && isInfo && "text-[var(--workspace-muted)]",
+                isStreaming && !isUser && "text-[var(--workspace-bubble-other-foreground)]",
               )}
               dir="rtl"
               style={{ unicodeBidi: "plaintext" }}

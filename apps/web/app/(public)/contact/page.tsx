@@ -37,9 +37,9 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
             </SectionLabel>
           }
           title={<>تواصل مع <br /><span className="text-blue-600 text-3xl">فريق عنان</span></>}
-          titleClassName="text-6xl font-black text-slate-900 uppercase leading-tight"
+          titleClassName="text-6xl font-black uppercase leading-tight text-slate-900 dark:text-slate-100"
           description={
-            <p className="text-xl font-bold leading-relaxed text-slate-500">
+            <p className="text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300">
               نحن هنا لدعم شركائنا من المطورين والوسطاء لتسريع وتيرة التحول الرقمي العقاري في المملكة العربية السعودية.
             </p>
           }
@@ -49,27 +49,27 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
       <Section className="py-24">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-24">
           <div className="space-y-12">
-            <h2 className="text-3xl font-black text-slate-900 uppercase border-r-8 border-blue-600 pr-6">
+            <h2 className="border-r-8 border-blue-600 pr-6 text-3xl font-black uppercase text-slate-900 dark:text-slate-100">
               معلومات الاتصال
             </h2>
-            <div className="space-y-8 text-slate-700 font-bold">
-              <div className="flex items-start gap-6 border-b border-slate-100 pb-8">
+            <div className="space-y-8 font-bold text-slate-700 dark:text-slate-200">
+              <div className="flex items-start gap-6 border-b border-slate-100 pb-8 dark:border-slate-800">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-50">
                   <MapPin className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-slate-900 uppercase">المركز الرئيسي</h3>
-                  <p className="mt-2 text-slate-500">طريق الملك فهد، حي الملقا،<br />الرياض، المملكة العربية السعودية</p>
+                  <h3 className="text-xl font-black uppercase text-slate-900 dark:text-slate-100">المركز الرئيسي</h3>
+                  <p className="mt-2 text-slate-500 dark:text-slate-300">طريق الملك فهد، حي الملقا،<br />الرياض، المملكة العربية السعودية</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-6 border-b border-slate-100 pb-8">
+              <div className="flex items-start gap-6 border-b border-slate-100 pb-8 dark:border-slate-800">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-50">
                   <Mail className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-slate-900 uppercase">البريد الإلكتروني</h3>
-                  <p className="mt-2 text-slate-500">للاستفسارات العامة والمؤسسية</p>
+                  <h3 className="text-xl font-black uppercase text-slate-900 dark:text-slate-100">البريد الإلكتروني</h3>
+                  <p className="mt-2 text-slate-500 dark:text-slate-300">للاستفسارات العامة والمؤسسية</p>
                   <a href="mailto:info@anan.sa" className="mt-1 block text-blue-600 hover:underline">info@anan.sa</a>
                 </div>
               </div>
@@ -79,53 +79,53 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
                   <Phone className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-slate-900 uppercase">الهاتف الموحد</h3>
-                  <p className="mt-2 text-slate-500">من الأحد للخميس (٨ ص - ٥ م)</p>
+                  <h3 className="text-xl font-black uppercase text-slate-900 dark:text-slate-100">الهاتف الموحد</h3>
+                  <p className="mt-2 text-slate-500 dark:text-slate-300">من الأحد للخميس (٨ ص - ٥ م)</p>
                   <a href="tel:920000000" className="mt-1 block text-blue-600 hover:underline" dir="ltr text-right">9200 00000</a>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="rounded-lg border-2 border-slate-100 bg-slate-50 p-12">
-            <h2 className="text-2xl font-black text-slate-900 uppercase mb-8">أرسل استفسارك</h2>
+          <div className="rounded-lg border-2 border-slate-100 bg-slate-50 p-12 dark:border-slate-800 dark:bg-slate-950">
+            <h2 className="mb-8 text-2xl font-black uppercase text-slate-900 dark:text-slate-100">أرسل استفسارك</h2>
             {submitted === "1" ? (
-              <div className="mb-6 border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+              <div className="mb-6 border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200">
                 تم استلام طلبك بنجاح. سيتواصل الفريق معك قريباً.
               </div>
             ) : null}
             {error === "1" ? (
-              <div className="mb-6 border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+              <div className="mb-6 border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200">
                 تعذر إرسال الطلب الآن. تحقق من البيانات وحاول مرة أخرى.
               </div>
             ) : null}
 
             <form className="space-y-6" action={submitContactInquiry}>
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase text-slate-500">الاسم والجهة المؤسسية</label>
+                <label className="text-xs font-black uppercase text-slate-500 dark:text-slate-400">الاسم والجهة المؤسسية</label>
                 <input
                   type="text"
                   name="name"
-                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-4 py-3 font-bold text-slate-900 transition-colors focus:border-blue-600 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-4 py-3 font-bold text-slate-900 transition-colors focus:border-blue-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-400"
                   placeholder="شركة التطوير العقاري المحدودة"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase text-slate-500">البريد الإلكتروني</label>
+                <label className="text-xs font-black uppercase text-slate-500 dark:text-slate-400">البريد الإلكتروني</label>
                 <input
                   type="email"
                   name="email"
-                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-4 py-3 font-bold text-slate-900 transition-colors focus:border-blue-600 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-4 py-3 font-bold text-slate-900 transition-colors focus:border-blue-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-400"
                   placeholder="name@company.sa"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase text-slate-500">الرسالة</label>
+                <label className="text-xs font-black uppercase text-slate-500 dark:text-slate-400">الرسالة</label>
                 <textarea
                   name="message"
-                  className="min-h-[160px] w-full resize-none rounded-lg border-2 border-slate-200 bg-white px-4 py-3 font-bold text-slate-900 transition-colors focus:border-blue-600 focus:outline-none"
+                  className="min-h-[160px] w-full resize-none rounded-lg border-2 border-slate-200 bg-white px-4 py-3 font-bold text-slate-900 transition-colors focus:border-blue-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-400"
                   placeholder="تفاصيل الشراكة أو الاستفسار..."
                   required
                 />

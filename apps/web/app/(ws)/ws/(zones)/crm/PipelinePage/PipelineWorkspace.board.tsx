@@ -84,16 +84,16 @@ function PipelineStageColumn({
 
 function getStageColumnClassName(isActive: boolean) {
   if (isActive) {
-    return "space-y-3 border border-blue-400 bg-blue-50/50 p-4 outline-dashed outline-2 outline-offset-[-2px] outline-blue-300 transition duration-200";
+    return "space-y-3 border border-blue-400 bg-blue-50/50 p-4 outline-dashed outline-2 outline-offset-[-2px] outline-blue-300 transition duration-200 dark:border-blue-500 dark:bg-blue-500/10 dark:outline-blue-500/60";
   }
-  return "space-y-3 border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 transition duration-200";
+  return "space-y-3 border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 transition duration-200 dark:border-slate-800 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.92)_0%,rgba(2,6,23,0.98)_100%)]";
 }
 
 function StageColumnHeader({ stage, count }: { stage: PipelineStage; count: number }) {
   return (
     <div className="flex items-center justify-between">
-      <h2 className="text-sm font-black text-slate-950">{STAGE_LABELS[stage]}</h2>
-      <span className="text-xs font-black text-slate-400">{count}</span>
+      <h2 className="text-sm font-black text-slate-950 dark:text-slate-100">{STAGE_LABELS[stage]}</h2>
+      <span className="text-xs font-black text-slate-400 dark:text-slate-500">{count}</span>
     </div>
   );
 }

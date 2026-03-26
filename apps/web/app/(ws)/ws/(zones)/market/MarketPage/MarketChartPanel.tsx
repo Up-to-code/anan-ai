@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -12,6 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useTheme } from "next-themes";
 import MarketPanel from "./MarketPanel";
 
 type ChartSeries = {
@@ -47,10 +49,29 @@ export default function MarketChartPanel({
   if (data.length === 0) {
     return (
       <MarketPanel title={title} description={description}>
-        <div className="py-12 text-center text-sm text-slate-500">لا توجد بيانات كافية لرسم هذا المخطط.</div>
+        <div className="py-12 text-center text-sm text-slate-500 dark:text-slate-300">لا توجد بيانات كافية لرسم هذا المخطط.</div>
       </MarketPanel>
     );
   }
+
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDark = mounted && resolvedTheme === "dark";
+  const gridStroke = isDark ? "#334155" : "#e2e8f0";
+  const axisStroke = isDark ? "#475569" : "#cbd5e1";
+  const tickFill = isDark ? "#94a3b8" : "#64748b";
+  const tooltipStyle = {
+    borderRadius: 10,
+    border: `1px solid ${isDark ? "#334155" : "#cbd5e1"}`,
+    boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
+    backgroundColor: isDark ? "#020617" : "#ffffff",
+    color: isDark ? "#f8fafc" : "#0f172a",
+  };
 
   const ChartComponent = kind === "bar" ? BarChart : LineChart;
 
@@ -59,25 +80,19 @@ export default function MarketChartPanel({
       <div className="h-[280px] min-w-0 w-full md:h-[320px]" style={{ height }}>
         <ResponsiveContainer width="100%" height="100%" minWidth={240} minHeight={220}>
           <ChartComponent data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-            <CartesianGrid stroke="#e2e8f0" vertical={false} />
+            <CartesianGrid stroke={gridStroke} vertical={false} />
             <XAxis
               dataKey={xKey}
-              tick={{ fill: "#64748b", fontSize: 12 }}
-              axisLine={{ stroke: "#cbd5e1" }}
+              tick={{ fill: tickFill, fontSize: 12 }}
+              axisLine={{ stroke: axisStroke }}
               tickLine={false}
             />
             <YAxis
-              tick={{ fill: "#64748b", fontSize: 12 }}
+              tick={{ fill: tickFill, fontSize: 12 }}
               axisLine={false}
               tickLine={false}
             />
-            <Tooltip
-              contentStyle={{
-                borderRadius: 10,
-                border: "1px solid #cbd5e1",
-                boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
-              }}
-            />
+            <Tooltip contentStyle={tooltipStyle} />
             <Legend wrapperStyle={{ paddingTop: 18, fontSize: "12px" }} />
             {series.map((item) =>
               kind === "bar" ? (

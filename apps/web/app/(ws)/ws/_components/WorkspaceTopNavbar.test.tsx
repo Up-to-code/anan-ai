@@ -14,6 +14,10 @@ vi.mock("../(zones)/inbox/InboxPage/useRealtimeInbox", () => ({
   useWorkspaceSignalCounts,
 }));
 
+vi.mock("next-themes", () => ({
+  useTheme: () => ({ resolvedTheme: "dark", setTheme: vi.fn() }),
+}));
+
 vi.mock("@/app/ConvexClientProvider", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -40,5 +44,6 @@ describe("WorkspaceTopNavbar", () => {
     expect(html).toContain("href=\"/ws/me\"");
     expect(html).toContain("href=\"/ws/notifications\"");
     expect(html).toContain("href=\"/ws/inbox\"");
+    expect(html).toContain("data-slot=\"theme-toggle\"");
   });
 });

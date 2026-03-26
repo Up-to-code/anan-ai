@@ -42,15 +42,15 @@ export default function FAQPage() {
               icon={HelpCircle}
               className="inline-flex items-center gap-3 bg-blue-600/10 px-4 py-2 border-r-4 border-blue-600 mx-auto"
               iconClassName="h-5 w-5 text-blue-600"
-              textClassName="text-xs font-black uppercase tracking-widest text-blue-900"
+              textClassName="text-xs font-black uppercase tracking-widest text-blue-900 dark:text-blue-200"
             >
               دليل المعرفة المنظم
             </SectionLabel>
           }
           title={<>الأسئلة <br /><span className="text-blue-600 text-3xl">الـشائعة والمتكررة</span></>}
-          titleClassName="text-6xl font-black text-slate-900 uppercase leading-tight"
+          titleClassName="text-6xl font-black uppercase leading-tight text-slate-900 dark:text-slate-100"
           description={
-            <p className="max-w-2xl mx-auto text-xl font-bold leading-relaxed text-slate-500">
+            <p className="mx-auto max-w-2xl text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300">
               دليلك الشامل لآليات عمل منظومة عنان. تصفح الأقسام حسب فئة المستخدم.
             </p>
           }
@@ -61,14 +61,14 @@ export default function FAQPage() {
         <div className="max-w-4xl mx-auto space-y-24">
           {faqs.map((group, i) => (
             <div key={i} className="space-y-12">
-              <h2 className="text-3xl font-black text-slate-900 uppercase border-r-8 border-slate-200 pr-6">
+              <h2 className="border-r-8 border-slate-200 pr-6 text-3xl font-black uppercase text-slate-900 dark:border-slate-700 dark:text-slate-100">
                 {group.category}
               </h2>
               <div className="space-y-8">
                 {group.items.map((item, j) => (
-                  <div key={j} className="bg-slate-50 p-8 border-2 border-slate-100 hover:border-blue-600 transition-colors">
-                    <h3 className="text-xl font-black text-slate-900 mb-4">{item.q}</h3>
-                    <p className="text-slate-600 font-bold leading-relaxed">{item.a}</p>
+                  <div key={j} className="border-2 border-slate-100 bg-slate-50 p-8 transition-colors hover:border-blue-600 dark:border-slate-800 dark:bg-slate-900/70">
+                    <h3 className="mb-4 text-xl font-black text-slate-900 dark:text-slate-100">{item.q}</h3>
+                    <p className="font-bold leading-relaxed text-slate-600 dark:text-slate-300">{item.a}</p>
                   </div>
                 ))}
               </div>

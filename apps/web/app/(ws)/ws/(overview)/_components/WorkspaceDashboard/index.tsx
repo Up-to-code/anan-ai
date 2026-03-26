@@ -8,10 +8,12 @@ import {
 } from "./useWorkspaceAssistant";
 
 import type { SessionUser } from "@/server/contracts/session";
+import type { WorkspaceAudience } from "@/server/contracts/workspace";
 
 type WorkspaceDashboardProps = {
   initialThread: AnanProThread | null;
   initialRouteState?: AssistantInitialRouteState;
+  audience: WorkspaceAudience;
   user: SessionUser;
 };
 
@@ -21,6 +23,7 @@ export default function WorkspaceDashboard({
     requestedThreadId: null,
     unavailableThreadId: null,
   },
+  audience,
   user,
 }: WorkspaceDashboardProps) {
   const assistant = useWorkspaceAssistant({
@@ -29,9 +32,10 @@ export default function WorkspaceDashboard({
   });
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-white">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
       <div className="flex min-h-0 flex-1 flex-col">
         <WorkspaceAssistantCanvas
+          audience={audience}
           user={user}
           thread={assistant.thread}
           value={assistant.value}

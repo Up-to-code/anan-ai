@@ -18,7 +18,7 @@ export default async function MarketZoneLayout({
   const primaryOrganization = chrome.organizations?.[0];
 
   if (!primaryOrganization) {
-    return <div className="min-h-svh bg-white">{children}</div>;
+    return <div className="min-h-svh bg-background text-foreground">{children}</div>;
   }
 
   const complianceBanner = buildComplianceBanner(primaryOrganization, complianceRuleset);
@@ -38,7 +38,7 @@ export default async function MarketZoneLayout({
         zoneLabel: "ذكاء السوق",
       })}
     >
-      <div data-slot="market-shell" className="flex min-h-full flex-col">
+      <div data-slot="market-shell" className="flex min-h-full flex-col bg-background text-foreground">
         <MarketRouteTabs />
         <div className="flex-1">{children}</div>
       </div>

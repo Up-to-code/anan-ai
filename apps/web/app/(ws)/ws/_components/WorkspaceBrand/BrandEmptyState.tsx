@@ -11,10 +11,10 @@ export default function BrandEmptyState({
   description?: string;
 }) {
   return (
-    <section className="border border-dashed border-slate-300 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-5 py-8 text-center">
-      <div className="text-[11px] font-black uppercase tracking-[0.26em] text-blue-700">Anan</div>
-      <div className="mt-3 text-sm font-black text-slate-950">{title}</div>
-      {description ? <p className="mt-2 text-sm font-medium leading-6 text-slate-500">{description}</p> : null}
+    <section className="border border-dashed border-slate-300 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-5 py-8 text-center dark:border-slate-700 dark:bg-[linear-gradient(180deg,#0f172a_0%,#020617_100%)]">
+      <div className="text-[11px] font-black uppercase tracking-[0.26em] text-blue-700 dark:text-blue-300">Anan</div>
+      <div className="mt-3 text-sm font-black text-slate-950 dark:text-slate-100">{title}</div>
+      {description ? <p className="mt-2 text-sm font-medium leading-6 text-slate-500 dark:text-slate-300">{description}</p> : null}
     </section>
   );
 }

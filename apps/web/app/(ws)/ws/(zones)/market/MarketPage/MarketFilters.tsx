@@ -14,22 +14,22 @@ export default function MarketFilters({
   actionPath: string;
 }) {
   return (
-    <form action={actionPath} method="GET" className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <form action={actionPath} method="GET" className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <div className="mb-4 flex flex-col gap-1 text-right md:flex-row md:items-end md:justify-between">
         <div>
-          <div className="text-sm font-semibold text-slate-950">Market Explorer</div>
-          <div className="text-sm text-slate-500">فلترة السوق حسب المدينة، المنطقة، الكلمات، والفترة الزمنية.</div>
+          <div className="text-[14px] font-bold text-foreground">Market Explorer</div>
+          <div className="text-[13px] font-medium text-muted-foreground">فلترة السوق حسب المدينة، المنطقة، الكلمات، والفترة الزمنية.</div>
         </div>
-        <div className="text-sm text-slate-500">{model.dateRange.label}</div>
+        <div className="text-[12px] font-bold text-muted-foreground">{model.dateRange.label}</div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.1fr_1.1fr_1.2fr_0.9fr_0.9fr_auto] lg:items-end">
         <label className="grid gap-2 text-right">
-          <span className="text-sm font-medium text-slate-700">المدينة</span>
+          <span className="text-[12px] font-bold text-foreground">المدينة</span>
           <select
             name="city"
             defaultValue={model.filters.city}
-            className="h-11 rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm text-slate-950 outline-none transition focus:border-slate-500 focus:bg-white"
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-[13px] font-medium text-foreground outline-none transition focus:border-ring focus:ring-1 focus:ring-ring"
           >
             <option value="">كل مدن السعودية</option>
             {model.availableCities.map((city) => (
@@ -41,13 +41,13 @@ export default function MarketFilters({
         </label>
 
         <label className="grid gap-2 text-right">
-          <span className="text-sm font-medium text-slate-700">المنطقة أو الحي</span>
+          <span className="text-[12px] font-bold text-foreground">المنطقة أو الحي</span>
           <input
             name="area"
             list="market-areas"
             defaultValue={model.filters.area}
             placeholder={model.filters.city ? "مثال: الملقا" : "اختر مدينة أو اتركه فارغاً"}
-            className="h-11 rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-slate-500 focus:bg-white"
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-[13px] font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
           />
           <datalist id="market-areas">
             {model.availableAreas.map((area) => (
@@ -57,45 +57,45 @@ export default function MarketFilters({
         </label>
 
         <label className="grid gap-2 text-right">
-          <span className="text-sm font-medium text-slate-700">بحث إضافي</span>
+          <span className="text-[12px] font-bold text-foreground">بحث إضافي</span>
           <input
             name="query"
             defaultValue={model.filters.query}
             placeholder="كلمة مفتاحية أو نطاق فرعي"
-            className="h-11 rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-slate-500 focus:bg-white"
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-[13px] font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
           />
         </label>
 
         <label className="grid gap-2 text-right">
-          <span className="text-sm font-medium text-slate-700">من</span>
+          <span className="text-[12px] font-bold text-foreground">من</span>
           <input
             type="date"
             name="dateFrom"
             defaultValue={model.dateRange.from}
-            className="h-11 rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm text-slate-950 outline-none transition focus:border-slate-500 focus:bg-white"
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-[13px] font-medium text-foreground outline-none transition focus:border-ring focus:ring-1 focus:ring-ring"
           />
         </label>
 
         <label className="grid gap-2 text-right">
-          <span className="text-sm font-medium text-slate-700">إلى</span>
+          <span className="text-[12px] font-bold text-foreground">إلى</span>
           <input
             type="date"
             name="dateTo"
             defaultValue={model.dateRange.to}
-            className="h-11 rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm text-slate-950 outline-none transition focus:border-slate-500 focus:bg-white"
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-[13px] font-medium text-foreground outline-none transition focus:border-ring focus:ring-1 focus:ring-ring"
           />
         </label>
 
         <div className="flex gap-2 lg:justify-end">
           <button
             type="submit"
-            className="h-11 rounded-lg bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800"
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-foreground px-5 text-[13px] font-bold text-background transition hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             تحديث
           </button>
           <Link
             href={actionPath}
-            className="inline-flex h-11 items-center rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:text-slate-950"
+            className="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-background px-4 text-[13px] font-bold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             إعادة ضبط
           </Link>

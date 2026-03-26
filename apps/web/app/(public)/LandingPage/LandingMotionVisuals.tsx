@@ -72,7 +72,7 @@ function MotionVector({
 
   return (
     <motion.div
-      className={`relative mx-4 overflow-hidden rounded-lg border p-6 md:mx-8 md:p-8 ${dark ? "border-slate-800 bg-slate-950/70" : "border-slate-200 bg-white"} ${className ?? ""}`}
+      className={`relative mx-4 overflow-hidden rounded-lg border p-6 md:mx-8 md:p-8 ${dark ? "border-slate-800 bg-slate-950/70" : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950"} ${className ?? ""}`}
       initial={{ opacity: 0.96 }}
       animate={reduceMotion ? undefined : { y: [0, -3, 0], opacity: [0.98, 1, 0.98] }}
       transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut" }}
@@ -125,7 +125,7 @@ export function HeroBrandNetworkVisual() {
         reduceMotion={reduceMotion}
         size={104}
         wrapperClassName="absolute inset-0 flex items-center justify-center"
-        borderClassName="rounded-lg border border-slate-200 bg-white/96 p-4"
+        borderClassName="rounded-lg border border-slate-200 bg-white/96 p-4 dark:border-slate-700 dark:bg-slate-950/90"
       />
     </div>
   );

@@ -69,8 +69,40 @@ function buildCreateOfferPayload(args: {
     visibility: args.visibility,
     recipientEmail: request.recipientEmail,
     recipientPhone: request.recipientPhone,
+    sourceConversationId: request.sourceConversationId,
     attachments: request.attachments,
     status: "pending" as const,
+  };
+}
+
+async function insertOfferRecord(
+  ctx: MutationCtx,
+  args: {
+    access: Awaited<ReturnType<typeof requireSender>>;
+    toBrokerId?: Id<"brokers">;
+    toREDId?: Id<"RED">;
+    visibility: "public" | "private";
+    request: CreateOfferArgs;
+  },
+) {
+  return ctx.db.insert(
+    "offers",
+    buildCreateOfferPayload({
+      access: args.access,
+      toBrokerId: args.toBrokerId,
+      toREDId: args.toREDId,
+      visibility: args.visibility,
+      request: args.request,
+    }),
+  );
+}
+
+function buildDraftCreateResult(offerId: Id<"offers">) {
+  return {
+    offerId,
+    conversationId: null,
+    starterMessageCreated: false,
+    notification: null,
   };
 }
 
@@ -81,16 +113,13 @@ function buildCreateOfferPayload(args: {
  */
 export async function createOfferService(ctx: MutationCtx, args: CreateOfferArgs) {
   const context = await loadCreateOfferContext(ctx, args);
-  const offerId = await ctx.db.insert(
-    "offers",
-    buildCreateOfferPayload({
-      access: context.access,
-      toBrokerId: context.toBrokerId,
-      toREDId: context.toREDId,
-      visibility: context.visibility,
-      request: args,
-    }),
-  );
+  const offerId = await insertOfferRecord(ctx, {
+    access: context.access,
+    toBrokerId: context.toBrokerId,
+    toREDId: context.toREDId,
+    visibility: context.visibility,
+    request: args,
+  });
   const delivery: OfferDeliveryResult = await notifyOfferRecipient(ctx, {
     senderUserId: context.access.authUserId,
     offerId,
@@ -107,4 +136,21 @@ export async function createOfferService(ctx: MutationCtx, args: CreateOfferArgs
     offerId,
     ...delivery,
   };
+}
+
+/**
+ * WHY:   Inbox-originated private offers need a true draft mode that does not notify the recipient before activation.
+ * WHAT:  Creates a private draft offer owned by the current broker or RED and linked to an inbox conversation when provided.
+ * HOW:   Reuses the standard sender/recipient validation flow, inserts the offer, and skips all recipient side effects.
+ */
+export async function createOfferDraftService(ctx: MutationCtx, args: CreateOfferArgs) {
+  const context = await loadCreateOfferContext(ctx, args);
+  const offerId = await insertOfferRecord(ctx, {
+    access: context.access,
+    toBrokerId: context.toBrokerId,
+    toREDId: context.toREDId,
+    visibility: context.visibility,
+    request: args,
+  });
+  return buildDraftCreateResult(offerId);
 }

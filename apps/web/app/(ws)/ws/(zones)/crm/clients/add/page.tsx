@@ -47,34 +47,34 @@ export default async function AddClientPage() {
       <ZonePageIntro eyebrow="إدارة العملاء" title="إضافة عميل جديد" description="أنشئ صفقة CRM جديدة مرتبطة بعميل وعقار اختياري." />
 
       <div className="max-w-2xl px-6 py-6 lg:px-8 lg:py-8">
-        <form action={createClient} className="grid gap-6 border border-slate-200 bg-white p-8">
+        <form action={createClient} className="grid gap-6 border border-slate-200 bg-white p-8 dark:border-slate-800 dark:bg-slate-950">
           <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">اسم العميل</label>
-            <input name="name" required className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900" />
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">اسم العميل</label>
+            <input name="name" required className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
           </div>
           <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">رقم الهاتف</label>
-            <input name="phone" className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900" />
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">رقم الهاتف</label>
+            <input name="phone" className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
           </div>
           <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">الميزانية</label>
-            <input name="budget" className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900" />
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">الميزانية</label>
+            <input name="budget" className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
           </div>
           <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">الوصف / الاهتمام</label>
-            <textarea name="preference" rows={4} className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700" />
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">الوصف / الاهتمام</label>
+            <textarea name="preference" rows={4} className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" />
           </div>
           <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">موعد المتابعة</label>
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">موعد المتابعة</label>
             <input
               type="datetime-local"
               name="nextFollowUpAt"
-              className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900"
+              className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             />
           </div>
           <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">العقار المرتبط</label>
-            <select name="propertyId" className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900">
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">العقار المرتبط</label>
+            <select name="propertyId" className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
               <option value="">بدون عقار</option>
               {properties.page.map((property) => (
                 <option key={property._id} value={property._id}>
@@ -84,10 +84,10 @@ export default async function AddClientPage() {
             </select>
           </div>
           <div className="flex gap-3">
-            <button type="submit" className="flex-1 bg-slate-950 px-5 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-white">
+            <button type="submit" className="flex-1 bg-slate-950 px-5 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-white dark:bg-slate-100 dark:text-slate-950">
               حفظ العميل
             </button>
-            <Link href="/ws/crm" className="flex-1 border border-slate-200 px-5 py-4 text-center text-[10px] font-black uppercase tracking-[0.3em] text-slate-700">
+            <Link href="/ws/crm" className="flex-1 border border-slate-200 px-5 py-4 text-center text-[10px] font-black uppercase tracking-[0.3em] text-slate-700 dark:border-slate-700 dark:text-slate-200">
               إلغاء
             </Link>
           </div>

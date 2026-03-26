@@ -1,9 +1,11 @@
 import type { FileUIPart } from "ai";
 import type { FormEvent, HTMLAttributes } from "react";
+import type { PromptInputFile } from "./types";
 
 export interface PromptInputMessage {
   text: string;
   files: FileUIPart[];
+  localFiles: PromptInputFile[];
 }
 
 export type PromptInputProps = Omit<
@@ -25,4 +27,3 @@ export type PromptInputProps = Omit<
     event: FormEvent<HTMLFormElement>
   ) => void | Promise<void>;
 };
-

@@ -16,11 +16,27 @@ export const createOfferInputSchema = z.object({
   recipientAuthUserId: z.string().min(1).optional(),
   recipientEmail: z.string().email().optional(),
   recipientPhone: z.string().trim().min(1).optional(),
+  sourceConversationId: z.string().min(1).optional(),
   attachments: z.array(uploadedFileReferenceSchema).optional(),
 });
 
 export const publishOfferInputSchema = z.object({
   id: z.string().min(1),
+});
+
+export const publishConversationOfferInputSchema = z.object({
+  id: z.string().min(1),
+  conversationId: z.string().min(1),
+});
+
+export const updateOfferDraftInputSchema = z.object({
+  id: z.string().min(1),
+  conversationId: z.string().min(1).optional(),
+  propertyId: z.string().min(1),
+  price: z.number().finite(),
+  message: z.string().trim().min(1).optional(),
+  description: z.string().trim().min(1).optional(),
+  attachments: z.array(uploadedFileReferenceSchema).optional(),
 });
 
 export const respondToOfferInputSchema = z.object({
@@ -51,11 +67,24 @@ export type OfferSummary = {
   publicationState?: z.infer<typeof offerPublicationStateSchema>;
   visibility?: z.infer<typeof offerVisibilitySchema>;
   recipientAuthUserId?: string;
+  sourceConversationId?: string;
   message?: string;
   description?: string;
   senderName?: string;
   attachments?: UploadedFileReference[];
   property?: OfferPropertySummary | null;
+};
+
+export type OfferLiveState = OfferSummary & {
+  href: string;
+  propertyTitle: string;
+  propertyAddress: string;
+  propertyImageUrl?: string | null;
+  isOwner: boolean;
+  isRecipient: boolean;
+  canEditDraft: boolean;
+  canPublish: boolean;
+  canRespond: boolean;
 };
 
 export type OfferNotificationDelivery = {
@@ -82,5 +111,7 @@ export type OffersSnapshot = {
 
 export type CreateOfferInput = z.infer<typeof createOfferInputSchema>;
 export type PublishOfferInput = z.infer<typeof publishOfferInputSchema>;
+export type PublishConversationOfferInput = z.infer<typeof publishConversationOfferInputSchema>;
+export type UpdateOfferDraftInput = z.infer<typeof updateOfferDraftInputSchema>;
 export type RespondToOfferInput = z.infer<typeof respondToOfferInputSchema>;
 export type ApplyToOfferInput = z.infer<typeof applyToOfferInputSchema>;

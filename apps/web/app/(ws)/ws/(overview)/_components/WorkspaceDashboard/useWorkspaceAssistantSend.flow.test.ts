@@ -108,3 +108,43 @@ it("keeps the newly created thread active for the next send", async () => {
   expect(secondBody.startNewThread).toBeUndefined();
   expect(thread.current?.messages.at(-1)?.content).toBe("Second answer");
 });
+
+it("sends attachment payloads and keeps them in the optimistic user message", async () => {
+  const fetchMock = vi.fn().mockResolvedValue(
+    new Response(
+      [
+        'event: done\ndata: {"thread":{"id":"thread-B","title":"Files","messages":[{"id":"user-1","role":"user","content":"","attachments":[{"key":"storage-1","url":"https://example.com/a.png","name":"a.png","mime":"image/png","size":512}],"createdAt":1},{"id":"assistant-1","role":"assistant","content":"تم الاستلام","createdAt":2}]}}\n\n',
+      ].join(""),
+      { status: 200 },
+    ),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+
+  const { params, thread } = createSendFlowParams();
+  await runSendFlow({
+    params,
+    previousThread: null,
+    nextMessage: "",
+    inputMode: "attachment",
+    attachments: [
+      {
+        key: "storage-1",
+        url: "https://example.com/a.png",
+        name: "a.png",
+        mime: "image/png",
+        size: 512,
+      },
+    ],
+    streamSessionId: "session-files",
+    assistantMessageId: "assistant-files",
+  });
+
+  const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body ?? "{}")) as {
+    attachments?: Array<{ key: string }>;
+    inputMode?: string;
+  };
+
+  expect(body.inputMode).toBe("attachment");
+  expect(body.attachments?.[0]?.key).toBe("storage-1");
+  expect(thread.current?.messages[0]?.attachments?.[0]?.name).toBe("a.png");
+});

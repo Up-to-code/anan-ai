@@ -3,6 +3,7 @@ import { requireWorkspaceData } from "../../../../_lib/workspaceData";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapPropertyToWorkspaceProject } from "../../projectViewModel";
 import type { ProjectFormData } from "@/app/(ws)/ws/public";
+import { parsePropertyBody } from "@/server/contracts/properties";
 
 type WorkspacePropertyZone = ReturnType<typeof getWorkspacePropertyZone>;
 type WorkspaceProperty = Awaited<ReturnType<WorkspacePropertyZone["getProperty"]>>;
@@ -15,11 +16,21 @@ function toProjectFormStatus(publicationState: WorkspaceProject["publicationStat
 }
 
 function buildInitialProjectFormData(project: WorkspaceProject, property: WorkspaceProperty | null): Partial<ProjectFormData> {
+  const presentation = parsePropertyBody(property?.body)?.presentation;
   return {
     name: project.title,
     price: project.priceLabel,
     location: project.location,
     description: project.summary,
+    shortDescription: presentation?.descriptionShort ?? "",
+    amenitiesText: (presentation?.amenities ?? []).join("، "),
+    hasParking: presentation?.hasParking ?? project.parking.hasParking,
+    parkingSpaces: presentation?.parkingSpaces ? String(presentation.parkingSpaces) : "",
+    coverImageKey: presentation?.coverImageKey ?? property?.media?.[0]?.key ?? null,
+    galleryDisplayMode: presentation?.galleryDisplayMode ?? "cover",
+    galleryAspectRatio: presentation?.galleryAspectRatio ?? "landscape",
+    privatePermitSummary: presentation?.privatePermitSummary ?? "",
+    privatePermitFiles: presentation?.privatePermitFiles ?? [],
     rooms: project.specs.rooms.replace(/[^\d]/g, ""),
     baths: project.specs.baths.replace(/[^\d]/g, ""),
     area: project.specs.area.replace(/[^\d]/g, ""),

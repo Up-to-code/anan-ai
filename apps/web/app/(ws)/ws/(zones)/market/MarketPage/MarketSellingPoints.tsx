@@ -27,7 +27,7 @@ export default function MarketSellingPoints({
   if (items.length === 0) {
     return (
       <MarketPanel title={title} description={description}>
-        <div className="py-10 text-center text-sm text-slate-500">لا توجد إشارات متكررة كافية لاستخلاص نقاط بيع مؤكدة.</div>
+        <div className="py-10 text-center text-sm text-slate-500 dark:text-slate-300">لا توجد إشارات متكررة كافية لاستخلاص نقاط بيع مؤكدة.</div>
       </MarketPanel>
     );
   }
@@ -36,12 +36,12 @@ export default function MarketSellingPoints({
     <MarketPanel title={title} description={description}>
       <ol className="grid gap-3">
         {items.map((item) => (
-          <li key={`${item.source}-${item.label}`} className="flex items-start justify-between gap-4 rounded-md border border-slate-200 px-4 py-3">
+          <li key={`${item.source}-${item.label}`} className="flex items-start justify-between gap-4 rounded-md border border-slate-200 px-4 py-3 dark:border-slate-800">
             <div className="min-w-0 text-right">
-              <div className="text-sm font-medium text-slate-950">{item.label}</div>
-              <div className="mt-1 text-xs text-slate-500">{getSourceLabel(item.source)}</div>
+              <div className="text-sm font-medium text-slate-950 dark:text-slate-100">{item.label}</div>
+              <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{getSourceLabel(item.source)}</div>
             </div>
-            <div className="shrink-0 text-sm font-medium text-slate-950">{item.count.toLocaleString("en-US")}</div>
+            <div className="shrink-0 text-sm font-medium text-slate-950 dark:text-slate-100">{item.count.toLocaleString("en-US")}</div>
           </li>
         ))}
       </ol>

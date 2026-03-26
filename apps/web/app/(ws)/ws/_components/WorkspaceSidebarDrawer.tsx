@@ -40,7 +40,7 @@ export default function WorkspaceSidebarDrawer({
         aria-expanded={open}
         aria-controls={drawerId}
         data-slot="workspace-sidebar-trigger"
-        className="inline-flex h-10 w-10 items-center justify-center rounded-[8px] border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:text-slate-900 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 active:scale-95"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-[8px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-[var(--workspace-muted)] shadow-sm transition-all hover:bg-[var(--workspace-accent-soft)] hover:text-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] active:scale-95"
         onClick={() => setOpen(true)}
       >
         <Menu className="h-5 w-5" />
@@ -64,7 +64,7 @@ export default function WorkspaceSidebarDrawer({
               القائمة الرئيسية الخاصة بمنطقة العمل الحالية.
             </Dialog.Description>
 
-            <div className="relative flex h-full w-full shadow-2xl shadow-slate-950/40">
+            <div className="relative flex h-full w-full shadow-2xl shadow-black/45">
               <Sidebar
                 user={user}
                 organization={organization}
@@ -79,7 +79,7 @@ export default function WorkspaceSidebarDrawer({
 
               <Dialog.Close
                 aria-label="إغلاق القائمة"
-                className="absolute left-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-[8px] bg-white/10 text-white/80 backdrop-blur-sm transition-all hover:bg-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 active:scale-95"
+                className="absolute left-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-[8px] border border-white/10 bg-black/20 text-white/75 backdrop-blur-sm transition-all hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_30%,transparent)] hover:bg-black/35 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] active:scale-95"
               >
                 <X className="h-4 w-4" />
               </Dialog.Close>
@@ -90,4 +90,3 @@ export default function WorkspaceSidebarDrawer({
     </>
   );
 }
-

@@ -14,7 +14,8 @@ import { maybeAutoCreateDraftAndAnnotate, resolveWorkspaceProjectActionState } f
 import { appendQuestionsToAssistantText, enrichUiTurnWithWorkspaceState } from "./workspaceUi";
 import { createWorkspaceStreamControls } from "./workspaceStream";
 import { syncWorkspaceAssistantStream } from "./streamSync";
-import { buildBasePrompt, buildKnowledgeContext, buildWorkspaceContextBlock, selectRegenerateSource } from "./promptComposer";
+import { buildAttachmentContext, buildBasePrompt, buildKnowledgeContext, buildWorkspaceContextBlock, selectRegenerateSource } from "./promptComposer";
+import type { WorkspaceUploadedFileReference } from "./types";
 
 /**
  * Core orchestration logic: resolves context, gathers knowledge,
@@ -26,7 +27,8 @@ export async function handleAssistantMessage(
     message: string;
     threadId?: Id<"assistantThreads">;
     startNewThread?: boolean;
-    inputMode?: "text" | "voice";
+    inputMode?: "text" | "voice" | "attachment";
+    attachments?: WorkspaceUploadedFileReference[];
     regenerate?: boolean;
     regenerateMessageId?: string;
     assistantKind?: AssistantKind;
@@ -101,7 +103,7 @@ export async function handleAssistantMessage(
 
   if (isWorkspaceAssistant && !activeThreadId) {
     const created = await ctx.runMutation(api.ai_zone.assistantWorkspace.createThread, {
-      title: args.message.slice(0, 80),
+      title: args.message.trim().slice(0, 80) || (args.attachments?.length ? "محادثة مرفقات جديدة" : "محادثة جديدة"),
     });
     activeThreadId = created.threadId as Id<"assistantThreads">;
   }
@@ -141,6 +143,7 @@ export async function handleAssistantMessage(
     isWorkspaceAssistant,
     previousActionState,
   });
+  const attachmentContext = buildAttachmentContext(args.attachments);
 
   // 4. Build the prompt based on mode
   const basePrompt = buildBasePrompt({
@@ -149,6 +152,7 @@ export async function handleAssistantMessage(
     mode,
     promptPrefix: args.promptPrefix,
     workspaceContextBlock,
+    attachmentContext,
   });
 
   // 5. Map ownerType to orchestrator role
@@ -242,7 +246,12 @@ export async function handleAssistantMessage(
   });
 
   let assistantUiTurn = isWorkspaceAssistant
-    ? resolveWorkspaceAgUiTurn(effectiveUserMessage, assistantText)
+    ? resolveWorkspaceAgUiTurn({
+        assistantText,
+        ownerType: owner.ownerType,
+        actionState: workspaceActionState,
+        attachments: args.attachments,
+      })
     : null;
 
   if (isWorkspaceAssistant) {
@@ -262,7 +271,7 @@ export async function handleAssistantMessage(
     const actionCandidate = workspaceActionState ?? structuredOutput.actionCandidate;
     return {
       uiTurn: assistantUiTurn,
-      meta: { questions, actionCandidate, workspaceActionState },
+      meta: { questions, actionCandidate, workspaceActionState, attachments: args.attachments },
       workspaceActionState,
     };
   })();
@@ -291,7 +300,13 @@ export async function handleAssistantMessage(
     ownerBrokerId: owner.ownerBrokerId,
     ownerREDId: owner.ownerREDId,
     userMessage: effectiveUserMessage,
-    userMessageMetadata: args.inputMode ? { inputMode: args.inputMode } : undefined,
+    userMessageMetadata:
+      args.inputMode || (args.attachments?.length ?? 0) > 0
+        ? {
+            inputMode: args.inputMode,
+            attachments: args.attachments,
+          }
+        : undefined,
     persistUserMessage: !(args.regenerate && regenerateSource),
     assistantMessage: assistantText,
     assistantMetadata,

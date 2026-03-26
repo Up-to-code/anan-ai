@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { Dialog } from "@base-ui/react/dialog";
+import { Plus, X } from "lucide-react";
+import InviteMemberForm from "./InviteMemberForm";
 import type { OrganizationInviteDisplay, OrganizationMemberDisplay } from "../../../_lib/entities";
 
 const roleLabels: Record<OrganizationMemberDisplay["role"], string> = {
@@ -19,7 +22,7 @@ function queueStatusClear(setStatus: (value: string | null) => void) {
 function StatusNotice({ status }: { status: string | null }) {
   if (!status) return null;
   return (
-    <div className="rounded-lg border border-blue-100 bg-blue-50/50 px-4 py-3 text-xs font-bold text-blue-700">
+    <div className="rounded-xl border border-border bg-muted/50 px-4 py-3 text-[13px] font-bold text-foreground">
       {status}
     </div>
   );
@@ -30,7 +33,9 @@ function MemberStatusPill({ label }: { label: string }) {
     <span
       className={cn(
         "rounded-full border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest",
-        label === "نشط" ? "border-green-100 bg-green-50 text-green-700" : "border-slate-200 bg-slate-50 text-slate-500",
+        label === "نشط"
+          ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400"
+          : "border-border bg-muted text-muted-foreground",
       )}
     >
       {label}
@@ -52,10 +57,10 @@ function MemberRoleButtons(args: {
           disabled={!args.canManage}
           onClick={() => args.onRoleChange(args.member, role)}
           className={cn(
-            "rounded-lg border px-3 py-1.5 text-xs font-black tracking-widest uppercase transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
+            "rounded-xl border px-3 py-1.5 text-[11px] font-black tracking-widest uppercase transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             args.member.role === role
-              ? "border-blue-600 bg-blue-600 text-white shadow-sm"
-              : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50",
+              ? "border-foreground bg-foreground text-background shadow-sm"
+              : "border-border bg-background text-muted-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50",
           )}
         >
           {roleLabels[role]}
@@ -71,10 +76,10 @@ function MemberRow(args: {
   onRoleChange: (member: OrganizationMemberDisplay, role: OrganizationMemberDisplay["role"]) => Promise<void>;
 }) {
   return (
-    <article className="flex flex-col gap-4 p-6 transition hover:bg-slate-50/30 md:flex-row md:items-center md:justify-between">
+    <article className="flex flex-col gap-4 border-b border-border py-4 transition-colors last:border-0 hover:bg-muted/30 md:flex-row md:items-center md:justify-between px-4">
       <div className="min-w-0">
-        <div className="truncate text-base font-black text-slate-950">{args.member.name}</div>
-        <div className="mt-1 truncate text-xs font-medium text-slate-500" dir="ltr">{args.member.email}</div>
+        <div className="truncate text-[14px] font-bold text-foreground">{args.member.name}</div>
+        <div className="mt-1 truncate text-[12px] font-medium text-muted-foreground" dir="ltr">{args.member.email}</div>
       </div>
       <div className="flex flex-wrap items-center gap-4">
         <MemberStatusPill label={args.member.statusLabel} />
@@ -90,20 +95,20 @@ function InviteRow(args: {
   onCancelInvite: (invite: OrganizationInviteDisplay) => Promise<void>;
 }) {
   return (
-    <article className="flex flex-col gap-4 p-6 transition hover:bg-slate-50/30 md:flex-row md:items-center md:justify-between">
+    <article className="flex flex-col gap-4 border-b border-border py-4 transition-colors last:border-0 hover:bg-muted/30 md:flex-row md:items-center md:justify-between px-4">
       <div className="min-w-0">
-        <div className="truncate text-sm font-black text-slate-950" dir="ltr">{args.invite.email}</div>
-        <div className="mt-1 text-xs font-medium text-slate-400">تنتهي {args.invite.expiresLabel}</div>
+        <div className="truncate text-[14px] font-bold text-foreground" dir="ltr">{args.invite.email}</div>
+        <div className="mt-1 text-[12px] font-medium text-muted-foreground">تنتهي {args.invite.expiresLabel}</div>
       </div>
       <div className="flex flex-wrap items-center gap-4">
-        <span className="rounded-full border border-amber-100 bg-amber-50 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-amber-700">
+        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400">
           {roleLabels[args.invite.role]}
         </span>
         {args.canManage ? (
           <button
             type="button"
             onClick={() => args.onCancelInvite(args.invite)}
-            className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-black tracking-widest uppercase text-red-600 shadow-sm transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+            className="rounded-xl border border-red-500/30 bg-background px-3 py-1.5 text-[11px] font-black tracking-widest uppercase text-red-600 shadow-sm transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 dark:hover:bg-red-500/10"
           >
             إلغاء الدعوة
           </button>
@@ -122,14 +127,17 @@ export default function MembersWorkspace({
   initialMembers,
   invites,
   canManage,
+  hasOrganization,
 }: {
   initialMembers: OrganizationMemberDisplay[];
   invites: OrganizationInviteDisplay[];
   canManage: boolean;
+  hasOrganization: boolean;
 }) {
   const [members, setMembers] = useState(initialMembers);
   const [pendingInvites, setPendingInvites] = useState(invites);
   const [status, setStatus] = useState<string | null>(null);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
 
   const handleRoleChange = async (member: OrganizationMemberDisplay, role: OrganizationMemberDisplay["role"]) => {
     if (!canManage || member.role === role) return;
@@ -163,33 +171,64 @@ export default function MembersWorkspace({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 pb-12">
       <StatusNotice status={status} />
 
-      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-100 p-6">
-          <h2 className="text-xl font-black tracking-tight text-slate-950">أعضاء المنظمة ({members.length})</h2>
-          <p className="mt-1 text-sm font-medium text-slate-500">إدارة الأدوار والصلاحيات للأعضاء الحاليين.</p>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-lg font-bold text-foreground">أعضاء المنظمة ({members.length})</h2>
+          <p className="text-[13px] font-medium text-muted-foreground">
+            إدارة الأدوار والصلاحيات للأعضاء الحاليين.
+          </p>
         </div>
-        <div className="divide-y divide-slate-100">
+        {canManage && (
+          <Dialog.Root open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+            <Dialog.Trigger className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-foreground px-4 text-[13px] font-bold text-background transition-colors hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              <Plus className="h-4 w-4" />
+              دعوة عضو
+            </Dialog.Trigger>
+            <Dialog.Portal>
+              <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-all duration-300 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
+              <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[24px] bg-background shadow-xl transition-all duration-300 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between border-b border-border p-5">
+                    <Dialog.Title className="text-lg font-bold text-foreground">دعوة عضو جديد</Dialog.Title>
+                    <Dialog.Close className="flex rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      <X className="h-4 w-4" />
+                    </Dialog.Close>
+                  </div>
+                  <div className="bg-muted/10 p-1">
+                    <InviteMemberForm canManage={canManage} hasOrganization={hasOrganization} showHeader={false} />
+                  </div>
+                </div>
+              </Dialog.Popup>
+            </Dialog.Portal>
+          </Dialog.Root>
+        )}
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <div className="flex flex-col">
           {members.map((member) => (
             <MemberRow key={member.id} member={member} canManage={canManage} onRoleChange={handleRoleChange} />
           ))}
         </div>
-      </section>
+      </div>
 
       {pendingInvites.length > 0 ? (
-        <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-100 p-6">
-            <h2 className="text-xl font-black tracking-tight text-slate-950">الدعوات المعلقة ({pendingInvites.length})</h2>
-            <p className="mt-1 text-sm font-medium text-slate-500">راجع الدعوات المرسلة وألغِ غير المطلوبة.</p>
+        <>
+          <div className="flex flex-col gap-1 pt-4">
+            <h2 className="text-lg font-bold text-foreground">الدعوات المعلقة ({pendingInvites.length})</h2>
+            <p className="text-[13px] font-medium text-muted-foreground">راجع الدعوات المرسلة وألغِ غير المطلوبة.</p>
           </div>
-          <div className="divide-y divide-slate-100">
-            {pendingInvites.map((invite) => (
-              <InviteRow key={invite.id} invite={invite} canManage={canManage} onCancelInvite={handleCancelInvite} />
-            ))}
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+            <div className="flex flex-col">
+              {pendingInvites.map((invite) => (
+                <InviteRow key={invite.id} invite={invite} canManage={canManage} onCancelInvite={handleCancelInvite} />
+              ))}
+            </div>
           </div>
-        </section>
+        </>
       ) : null}
     </div>
   );

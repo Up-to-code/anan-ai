@@ -72,10 +72,10 @@ export default function Footer() {
 
                 {/* Bottom Section: Tagline (Left) | Copyright (Right) */}
                 <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
                         الدقة هي ثمن الريادة في السوق العقاري السعودي.
                     </p>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest transition-opacity hover:opacity-100 opacity-60">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 opacity-60 transition-opacity hover:opacity-100 dark:text-slate-400">
                         © ٢٠٢٥ شركة عنان للحلول الرقمية. جميع الحقوق محفوظة.
                     </p>
                 </div>

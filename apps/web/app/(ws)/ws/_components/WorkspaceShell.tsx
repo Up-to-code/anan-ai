@@ -8,6 +8,7 @@ import type { WorkspaceOrganizationDisplay } from "../_lib/organizationDisplay";
 import { WORKSPACE_SIDEBAR_WIDTH_CLASS } from "../_lib/shell";
 import WorkspaceSidebarDrawer from "./WorkspaceSidebarDrawer";
 import WorkspaceTopNavbar from "./WorkspaceTopNavbar";
+import WorkspaceMessageToasts from "./WorkspaceMessageToasts";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
 import type { AnanProThreadSummary } from "@/server/contracts/ananPro";
 import { cn } from "@/lib/utils";
@@ -56,23 +57,23 @@ export default function WorkspaceShell({
       data-variant={variant}
       className={cn(
         "min-h-svh lg:flex lg:h-svh lg:overflow-hidden",
-        isAssistantVariant ? "bg-white" : "bg-slate-50",
+        "bg-[var(--workspace-shell)]",
       )}
     >
       {!sidebarCollapsed ? (
-        <div className={`relative hidden shrink-0 lg:flex lg:h-svh ${WORKSPACE_SIDEBAR_WIDTH_CLASS}`}>
+        <div className={`relative hidden shrink-0 lg:flex lg:h-svh p-3 ${WORKSPACE_SIDEBAR_WIDTH_CLASS}`}>
           <Sidebar
             user={user}
             organization={organization}
             visibleZoneKeys={visibleZoneKeys}
             recentAssistantThreads={recentAssistantThreads}
             allAssistantThreads={allAssistantThreads}
-            className="w-full"
+            className="h-full w-full overflow-hidden rounded-xl border border-[color:var(--workspace-border)] shadow-sm"
           />
           <button
             type="button"
             onClick={() => setSidebarCollapsed(true)}
-            className="absolute left-4 top-4 z-10 inline-flex h-9 min-w-9 items-center justify-center rounded-[8px] border border-white/10 bg-white/5 px-2 text-slate-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            className="absolute left-6 top-6 z-10 inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-2 text-[var(--workspace-muted)] transition hover:bg-[var(--workspace-elevated)] hover:text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_30%,transparent)]"
             aria-label="إخفاء القائمة"
             title="إخفاء القائمة"
           >
@@ -81,17 +82,17 @@ export default function WorkspaceShell({
         </div>
       ) : null}
       {sidebarCollapsed ? (
-        <div className="hidden shrink-0 border-e border-white/5 bg-slate-950 py-4 lg:flex lg:h-svh lg:w-[72px] lg:flex-col lg:items-center">
+        <div className="hidden shrink-0 border-e border-[color:var(--workspace-border)] bg-[var(--workspace-sidebar-strong)] py-4 lg:flex lg:h-svh lg:w-[72px] lg:flex-col lg:items-center">
           <button
             type="button"
             onClick={() => setSidebarCollapsed(false)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-[8px] border border-white/10 bg-white/5 text-slate-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-[var(--workspace-muted)] transition hover:bg-[var(--workspace-elevated)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_30%,transparent)]"
             aria-label="إظهار القائمة"
             title="إظهار القائمة"
           >
             <PanelLeft className="h-5 w-5" />
           </button>
-          <span className="mt-3 text-[10px] font-black tracking-[0.18em] text-slate-500">
+          <span className="mt-3 text-[10px] font-black tracking-[0.18em] text-[var(--workspace-muted)]">
             القائمة
           </span>
         </div>
@@ -117,14 +118,14 @@ export default function WorkspaceShell({
         />
 
         {complianceBanner ? (
-          <div className="border-b border-amber-200 bg-amber-50 px-6 py-4 text-right">
+          <div className="border-b border-amber-200 bg-amber-50 px-6 py-4 text-right dark:border-amber-500/30 dark:bg-amber-500/10">
             <div className="text-sm font-black text-amber-900">{complianceBanner.title}</div>
-            <div className="mt-1 text-xs font-semibold text-amber-800">{complianceBanner.body}</div>
+            <div className="mt-1 text-xs font-semibold text-amber-800 dark:text-amber-200">{complianceBanner.body}</div>
             {complianceBanner.ctaLabel ? (
               <div className="mt-3">
                 <a
                   href={complianceBanner.ctaHref ?? "/ws?onboarding=verification"}
-                  className="inline-flex items-center rounded-[8px] border border-amber-300 bg-white px-3 py-1.5 text-[10px] font-black tracking-[0.18em] text-amber-900"
+                  className="inline-flex items-center rounded-[8px] border border-amber-300 bg-white px-3 py-1.5 text-[10px] font-black tracking-[0.18em] text-amber-900 dark:border-amber-400/40 dark:bg-slate-950 dark:text-amber-200"
                 >
                   {complianceBanner.ctaLabel}
                 </a>
@@ -141,6 +142,8 @@ export default function WorkspaceShell({
         >
           {children}
         </main>
+
+        <WorkspaceMessageToasts />
       </div>
     </div>
   );

@@ -63,8 +63,8 @@ function PipelineClientFooter({
   onSaveFollowUp,
 }: PipelineClientFooterProps) {
   return (
-    <div className="space-y-3 border-t border-slate-200 pt-3">
-      <div className="text-xs font-medium text-slate-500">{client.budgetLabel}</div>
+    <div className="space-y-3 border-t border-slate-200 pt-3 dark:border-slate-800">
+      <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{client.budgetLabel}</div>
       <div className={`inline-flex border px-2 py-1 text-[10px] font-black tracking-[0.14em] ${followUpTone}`}>
         متابعة: {followUpLabel}
       </div>
@@ -95,20 +95,20 @@ function FollowUpEditor({
 }) {
   return (
     <div className="space-y-2">
-      <label className="block text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">المتابعة القادمة</label>
+      <label className="block text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">المتابعة القادمة</label>
       <input
         type="datetime-local"
         value={draft}
         onChange={(event) => onFollowUpDraftChange(client.id, event.currentTarget.value)}
-        className="w-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
+        className="w-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
       />
       <div className="flex items-center justify-between gap-2">
-        <div className="text-[11px] font-medium text-slate-500">{formatFollowUpLabel(client.nextFollowUpAt)}</div>
+        <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{formatFollowUpLabel(client.nextFollowUpAt)}</div>
         <button
           type="button"
           disabled={isPending || !draft}
           onClick={() => onSaveFollowUp(client.id)}
-          className="border border-slate-300 bg-white px-3 py-2 text-[10px] font-black tracking-[0.16em] text-slate-700 transition hover:border-blue-600 hover:text-blue-700 disabled:opacity-50"
+          className="border border-slate-300 bg-white px-3 py-2 text-[10px] font-black tracking-[0.16em] text-slate-700 transition hover:border-blue-600 hover:text-blue-700 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-blue-500 dark:hover:text-blue-300"
         >
           حفظ المتابعة
         </button>
@@ -122,11 +122,11 @@ function ClientCardActions({ clientId }: { clientId: string }) {
     <>
       <Link
         href={`/ws/crm/clients/${clientId}`}
-        className="inline-flex border border-blue-500 bg-blue-500 px-3 py-2 text-[10px] font-black tracking-[0.18em] text-white"
+        className="inline-flex border border-blue-500 bg-blue-500 px-3 py-2 text-[10px] font-black tracking-[0.18em] text-white dark:border-blue-500 dark:bg-blue-500 dark:text-white"
       >
         فتح
       </Link>
-      <div className="text-[11px] font-medium text-slate-500">
+      <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
         تعديل العلاقات والمستندات يتم من سجل الصفقة الفعلي وليس من محاكاة محلية.
       </div>
     </>

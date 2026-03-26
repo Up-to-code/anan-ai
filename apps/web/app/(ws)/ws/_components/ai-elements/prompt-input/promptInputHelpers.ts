@@ -9,8 +9,10 @@ export type PromptInputLocalFile = FileUIPart & { id: string };
 export function makeLocalFile(file: File): PromptInputLocalFile {
   return {
     filename: file.name,
+    file,
     id: nanoid(),
     mediaType: file.type,
+    size: file.size,
     type: "file",
     url: URL.createObjectURL(file),
   };
@@ -105,8 +107,10 @@ export async function convertFilesForSubmit(
 ): Promise<FileUIPart[]> {
   return await Promise.all(
     files.map(async (file) => {
-      const { id, ...item } = file;
+      const { id, file: originalFile, size, ...item } = file;
       void id;
+      void originalFile;
+      void size;
       if (item.url?.startsWith("blob:")) {
         const dataUrl = await convertBlobUrlToDataUrl(item.url);
         return { ...item, url: dataUrl ?? item.url };

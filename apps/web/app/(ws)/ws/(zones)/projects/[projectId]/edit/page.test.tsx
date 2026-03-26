@@ -19,6 +19,22 @@ const {
       address: "الرياض",
       location: "الرياض",
       description: "وصف",
+      body: {
+        presentation: {
+          descriptionShort: "وصف مختصر",
+          amenities: ["مسبح", "حراسة"],
+          parkingSpaces: 3,
+          hasParking: true,
+          coverImageKey: "file-existing",
+          galleryDisplayMode: "fit",
+          galleryAspectRatio: "portrait",
+          privatePermitSummary: "ملف خاص بالمحادثة",
+          privatePermitFiles: [
+            { key: "permit-existing", url: "https://ufs.sh/f/permit-existing", name: "permit.pdf" },
+          ],
+          privatePermitVisibility: "conversation_only",
+        },
+      },
       price: 2200000,
       beds: 4,
       baths: 4,
@@ -81,6 +97,15 @@ const saveFormInput: ProjectFormData = {
   price: "2,300,000 ر.س",
   location: "الرياض",
   description: "وصف محدث",
+  shortDescription: "وصف مختصر محدث",
+  amenitiesText: "مسبح، حراسة، نادي",
+  hasParking: true,
+  parkingSpaces: "4",
+  coverImageKey: "file-new",
+  galleryDisplayMode: "cover",
+  galleryAspectRatio: "landscape",
+  privatePermitSummary: "نسخة خاصة لهذه المحادثة",
+  privatePermitFiles: [{ key: "permit-new", url: "https://ufs.sh/f/permit-new", name: "permit-new.pdf" }],
   rooms: "4",
   baths: "4",
   area: "400",
@@ -118,12 +143,33 @@ it("updates project media through the mapped patch and publish action", async ()
 
   expect(markup).toContain("ProjectFormScreenMock");
   expect(props.initialData.images).toEqual([{ key: "file-existing", url: "https://ufs.sh/f/existing", name: "existing.jpg" }]);
+  expect(props.initialData.shortDescription).toBe("وصف مختصر");
+  expect(props.initialData.amenitiesText).toBe("مسبح، حراسة");
+  expect(props.initialData.hasParking).toBe(true);
+  expect(props.initialData.coverImageKey).toBe("file-existing");
+  expect(props.initialData.galleryDisplayMode).toBe("fit");
+  expect(props.initialData.galleryAspectRatio).toBe("portrait");
+  expect(props.initialData.privatePermitSummary).toBe("ملف خاص بالمحادثة");
 
   const saveResult = await props.onSave(saveFormInput);
   expect(saveResult).toEqual({ redirectTo: "/ws/projects/property-1" });
   expect(updateProperty).toHaveBeenCalledWith({
     id: "property-1",
-    patch: expect.objectContaining({ media: [uploadedImage] }),
+    patch: expect.objectContaining({
+      media: [uploadedImage],
+      body: {
+        presentation: expect.objectContaining({
+          descriptionShort: "وصف مختصر محدث",
+          amenities: ["مسبح", "حراسة", "نادي"],
+          parkingSpaces: 4,
+          hasParking: true,
+          coverImageKey: "file-new",
+          galleryDisplayMode: "cover",
+          galleryAspectRatio: "landscape",
+          privatePermitSummary: "نسخة خاصة لهذه المحادثة",
+        }),
+      },
+    }),
   });
   expect(publishProperty).toHaveBeenCalledWith({ id: "property-1" });
 });

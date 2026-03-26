@@ -5,6 +5,15 @@ export type AgPropertyFormState = {
   price: string;
   location: string;
   description: string;
+  shortDescription: string;
+  amenitiesText: string;
+  hasParking: boolean;
+  parkingSpaces: string;
+  coverImageKey: string | null;
+  galleryDisplayMode: "cover" | "fit";
+  galleryAspectRatio: "auto" | "landscape" | "square" | "portrait";
+  privatePermitSummary: string;
+  privatePermitFiles: UploadedFileReference[];
   rooms: string;
   baths: string;
   area: string;

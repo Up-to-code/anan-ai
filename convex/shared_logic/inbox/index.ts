@@ -18,6 +18,7 @@ export {
   buildDirectConversationKey,
   getConversation,
   getInboxUnreadSummary,
+  hasProjectShareAccess,
   listConversations,
   searchConversationTargets,
 } from "./queries";
@@ -28,4 +29,3 @@ export {
   resolveDirectConversation,
   sendConversationMessage,
 } from "./mutations";
-

@@ -31,23 +31,23 @@ export default function DeveloperPage() {
                             icon={ShieldCheck}
                             className="inline-flex items-center gap-3 bg-blue-600/10 px-4 py-2 border-r-4 border-blue-600"
                             iconClassName="h-5 w-5 text-blue-600"
-                            textClassName="text-xs font-black uppercase tracking-widest text-blue-900"
+                            textClassName="text-xs font-black uppercase tracking-widest text-blue-900 dark:text-blue-200"
                         >
                             بوابة المطورين - المملكة العربية السعودية
                         </SectionLabel>
                     }
                     title={<>استخبارات <br /><span className="text-blue-600">السوق المؤسسي السعودي</span></>}
-                    titleClassName="text-6xl font-black text-slate-900 leading-tight"
+                    titleClassName="text-6xl font-black leading-tight text-slate-900 dark:text-slate-100"
                     description={
                         <p>
                             قم بتوزيع مشاريعك عبر البنية التحتية لعنان. احصل على بيانات حية، مؤشرات الطلب في الرياض وجدة، والتحليلات السلوكية للمشترين في الوقت الفعلي.
                         </p>
                     }
-                    descriptionClassName="text-xl text-slate-500 font-bold leading-relaxed max-w-xl"
+                    descriptionClassName="max-w-xl text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300"
                     actions={
                         <ActionRow className="flex flex-col sm:flex-row gap-8 pt-6">
                             <ButtonLink href="/signin" variant="primary" className="px-12 py-5">تسجيل مشروع جديد</ButtonLink>
-                            <ButtonLink href="/contact" variant="outline" className="px-12 py-5 border-slate-200">طلب البيانات التاريخية</ButtonLink>
+                            <ButtonLink href="/contact" variant="outline" className="border-slate-200 px-12 py-5 dark:border-slate-700">طلب البيانات التاريخية</ButtonLink>
                         </ActionRow>
                     }
                     visual={

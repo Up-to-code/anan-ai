@@ -42,10 +42,10 @@ export default function MarketMetricGrid({ model }: { model: WorkspaceMarketPage
   return (
     <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => (
-        <article key={card.label} className="rounded-lg border border-slate-200 bg-white p-4">
-          <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400">{card.label}</div>
-          <div className="mt-3 text-2xl font-semibold text-slate-950">{card.value}</div>
-          <div className="mt-2 text-sm text-slate-500">{card.note}</div>
+        <article key={card.label} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">{card.label}</div>
+          <div className="mt-3 text-2xl font-bold text-foreground">{card.value}</div>
+          <div className="mt-2 text-[12px] font-medium text-muted-foreground">{card.note}</div>
         </article>
       ))}
     </section>

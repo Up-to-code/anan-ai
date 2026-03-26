@@ -3,11 +3,16 @@ import { v } from "convex/values";
 import { uploadedFileReferenceListValidator } from "./files";
 import {
   applyToOfferService,
+  createOfferDraftService,
   createOfferService,
+  getOfferLiveStateService,
+  listConversationPrivateOfferDraftsService,
   listPublicOffersService,
   listReceivedOffersService,
   listSentOffersService,
+  publishConversationOfferService,
   publishOfferService,
+  updateOfferDraftService,
   updateOfferStatusService,
 } from "./offers/index";
 
@@ -25,6 +30,7 @@ export const createOffer = mutation({
     recipientAuthUserId: v.optional(v.string()),
     recipientEmail: v.optional(v.string()),
     recipientPhone: v.optional(v.string()),
+    sourceConversationId: v.optional(v.id("inboxConversations")),
     attachments: v.optional(uploadedFileReferenceListValidator),
   },
   handler: async (ctx, args) => {
@@ -44,10 +50,11 @@ export const createOfferDraft = mutation({
     recipientAuthUserId: v.optional(v.string()),
     recipientEmail: v.optional(v.string()),
     recipientPhone: v.optional(v.string()),
+    sourceConversationId: v.optional(v.id("inboxConversations")),
     attachments: v.optional(uploadedFileReferenceListValidator),
   },
   handler: async (ctx, args) => {
-    return await createOfferService(ctx, args);
+    return await createOfferDraftService(ctx, args);
   },
 });
 
@@ -57,6 +64,31 @@ export const publishOffer = mutation({
   },
   handler: async (ctx, args) => {
     return await publishOfferService(ctx, args);
+  },
+});
+
+export const updateOfferDraft = mutation({
+  args: {
+    id: v.id("offers"),
+    conversationId: v.optional(v.id("inboxConversations")),
+    propertyId: v.id("properties"),
+    price: v.number(),
+    message: v.optional(v.string()),
+    description: v.optional(v.string()),
+    attachments: v.optional(uploadedFileReferenceListValidator),
+  },
+  handler: async (ctx, args) => {
+    return await updateOfferDraftService(ctx, args);
+  },
+});
+
+export const publishConversationOffer = mutation({
+  args: {
+    id: v.id("offers"),
+    conversationId: v.id("inboxConversations"),
+  },
+  handler: async (ctx, args) => {
+    return await publishConversationOfferService(ctx, args);
   },
 });
 
@@ -107,5 +139,23 @@ export const listPublicOffers = query({
   args: {},
   handler: async (ctx) => {
     return await listPublicOffersService(ctx);
+  },
+});
+
+export const listConversationPrivateOfferDrafts = query({
+  args: {
+    conversationId: v.id("inboxConversations"),
+  },
+  handler: async (ctx, args) => {
+    return await listConversationPrivateOfferDraftsService(ctx, args);
+  },
+});
+
+export const getOfferLiveState = query({
+  args: {
+    offerId: v.id("offers"),
+  },
+  handler: async (ctx, args) => {
+    return await getOfferLiveStateService(ctx, args);
   },
 });

@@ -72,7 +72,14 @@ export const sendMessage = action({
     message: v.string(),
     threadId: v.optional(v.id("assistantThreads")),
     startNewThread: v.optional(v.boolean()),
-    inputMode: v.optional(v.union(v.literal("text"), v.literal("voice"))),
+    inputMode: v.optional(v.union(v.literal("text"), v.literal("voice"), v.literal("attachment"))),
+    attachments: v.optional(v.array(v.object({
+      key: v.string(),
+      url: v.string(),
+      name: v.string(),
+      size: v.optional(v.number()),
+      mime: v.optional(v.string()),
+    }))),
     streamSessionId: v.optional(v.string()),
     regenerate: v.optional(v.boolean()),
     regenerateMessageId: v.optional(v.string()),
@@ -107,6 +114,36 @@ export const generateVoiceUploadUrl = mutation({
   handler: async (ctx) => {
     await resolveAssistantOwner(ctx);
     return ctx.storage.generateUploadUrl();
+  },
+});
+
+export const finalizeUploadedFiles = mutation({
+  args: {
+    files: v.array(v.object({
+      storageId: v.id("_storage"),
+      name: v.string(),
+      size: v.optional(v.number()),
+      mime: v.optional(v.string()),
+    })),
+  },
+  handler: async (ctx, args) => {
+    await resolveAssistantOwner(ctx);
+    const uploaded = await Promise.all(
+      args.files.map(async (file) => {
+        const url = await ctx.storage.getUrl(file.storageId);
+        if (!url) {
+          throw new Error(`ASSISTANT_ATTACHMENT_URL_UNAVAILABLE:${String(file.storageId)}`);
+        }
+        return {
+          key: String(file.storageId),
+          url,
+          name: file.name,
+          size: file.size,
+          mime: file.mime,
+        };
+      }),
+    );
+    return uploaded;
   },
 });
 

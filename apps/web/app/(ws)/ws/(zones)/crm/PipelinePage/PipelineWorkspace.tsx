@@ -130,13 +130,13 @@ function PipelineCreateClientActions({
         value={draftName}
         onChange={(event) => onDraftNameChange(event.currentTarget.value)}
         placeholder="اسم صفقة أو عميل جديد"
-        className="w-64 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"
+        className="w-64 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-blue-500/20"
       />
       <button
         type="button"
         disabled={!canCreate || isPending}
         onClick={onCreateClick}
-        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-xs font-black tracking-[0.18em] text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 disabled:opacity-60"
+        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-xs font-black tracking-[0.18em] text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 disabled:opacity-60 dark:focus:ring-offset-slate-950"
       >
         <Plus className="h-4 w-4" />
         إضافة صفقة

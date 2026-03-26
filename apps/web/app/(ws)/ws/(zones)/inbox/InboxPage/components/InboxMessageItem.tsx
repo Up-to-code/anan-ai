@@ -20,10 +20,19 @@ import InboxOfferEventCard from "./InboxOfferEventCard";
  */
 export default function InboxMessageItem({
   currentUserId,
+  latestOutgoingMessageId,
   message,
+  otherParticipantLastReadAt,
+  onRespondToConversationOffer,
 }: {
   currentUserId: string;
+  latestOutgoingMessageId: string | null;
   message: ConversationMessage;
+  otherParticipantLastReadAt: number | null;
+  onRespondToConversationOffer: (input: {
+    offerId: string;
+    status: "accepted" | "rejected";
+  }) => Promise<{ ok: true } | void | null>;
 }) {
   const isMe = message.senderUserId === currentUserId;
   const isOptimistic = Boolean(
@@ -69,30 +78,58 @@ export default function InboxMessageItem({
     hour: "numeric",
     minute: "2-digit",
   });
+  const isLatestOutgoingMessage = isMe && latestOutgoingMessageId === message.id;
+  const isSeenByRecipient = Boolean(
+    isLatestOutgoingMessage &&
+      otherParticipantLastReadAt &&
+      otherParticipantLastReadAt >= message.createdAt,
+  );
+  const seenTimeLabel = isSeenByRecipient
+    ? new Date(otherParticipantLastReadAt as number).toLocaleTimeString("ar-SA", {
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : null;
+  const deliveryLabel = isOptimistic
+    ? "جاري الإرسال"
+    : isSeenByRecipient
+      ? `شوهد ${seenTimeLabel}`
+      : isLatestOutgoingMessage
+        ? "تم الإرسال"
+        : null;
 
   return (
     <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[88%] px-4 py-2.5 sm:max-w-[75%] ${isMe
-          ? "rounded-lg rounded-tl-sm bg-blue-600 text-white shadow-sm"
-          : "rounded-lg rounded-tr-sm bg-slate-100 text-slate-900"
-          } ${isOptimistic ? "opacity-80" : ""}`}
+        className={`max-w-[88%] sm:max-w-[75%] ${
+          offerCardMetadata || collaborationMetadata
+            ? ""
+            : `px-4 py-2.5 ${isMe
+              ? "rounded-[22px] rounded-tl-md bg-[var(--workspace-bubble-self)] text-[var(--workspace-bubble-self-foreground)] shadow-sm"
+              : "rounded-[22px] rounded-tr-md border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-panel)] text-[var(--workspace-bubble-other-foreground)] shadow-sm"
+            }`
+        } ${isOptimistic ? "opacity-80" : ""}`}
       >
         {offerCardMetadata ? (
-          <InboxOfferEventCard body={message.body} isMe={isMe} metadata={offerCardMetadata} />
+          <InboxOfferEventCard
+            body={message.body}
+            isMe={isMe}
+            metadata={offerCardMetadata}
+            onRespondToConversationOffer={onRespondToConversationOffer}
+          />
         ) : collaborationMetadata ? (
           <InboxCollaborationCard isMe={isMe} metadata={collaborationMetadata} />
         ) : (
-          <div className="text-sm font-medium leading-relaxed">{message.body}</div>
+          <div className="text-sm font-medium leading-7">{message.body}</div>
         )}
 
         <div
-          className={`mt-1.5 flex items-center gap-1.5 text-[10px] font-bold ${isMe ? "text-blue-200" : "text-slate-400"
+          className={`mt-1.5 flex items-center gap-1.5 text-[10px] font-bold ${isMe ? "text-[var(--workspace-bubble-self-muted)]" : "text-[var(--workspace-bubble-other-muted)]"
             }`}
         >
           <Clock3 className="h-2.5 w-2.5" />
           <span>{timeLabel}</span>
-          {isOptimistic ? <span>• جاري الإرسال</span> : null}
+          {deliveryLabel ? <span>• {deliveryLabel}</span> : null}
         </div>
       </div>
     </div>

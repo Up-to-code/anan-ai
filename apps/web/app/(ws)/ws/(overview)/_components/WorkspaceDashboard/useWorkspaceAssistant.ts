@@ -6,6 +6,7 @@ import { useQuery } from "convex/react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { api } from "@/lib/convexApi";
 import type { AnanProInputMode, AnanProStreamStageEvent, AnanProThread } from "@/server/contracts/ananPro";
+import type { UploadedFileReference } from "@/server/contracts/files";
 import {
   getVoiceUploadUrl,
   transcribeVoiceFromStorage,
@@ -44,6 +45,7 @@ type LiveAssistantMessage = {
     uiTurn?: unknown;
     meta?: unknown;
     inputMode?: AnanProInputMode;
+    attachments?: UploadedFileReference[];
   };
   createdAt: number;
 };
@@ -56,6 +58,7 @@ function mapLiveAssistantMessages(messages: LiveAssistantMessage[]) {
     uiTurn: message.metadata?.uiTurn,
     meta: message.metadata?.meta,
     inputMode: message.metadata?.inputMode,
+    attachments: message.metadata?.attachments,
     createdAt: message.createdAt,
   }));
 }
@@ -100,6 +103,10 @@ function isIncomingMessageWeaker(args: {
   }
 
   if (args.currentMessage.inputMode && !args.incomingMessage.inputMode) {
+    return true;
+  }
+
+  if ((args.currentMessage.attachments?.length ?? 0) > (args.incomingMessage.attachments?.length ?? 0)) {
     return true;
   }
 
@@ -478,7 +485,7 @@ export function useWorkspaceAssistant({
     onTranscriptReady: async (transcript) => {
       setSendError(null);
       setUnavailableThreadId(null);
-      sendWithOptimisticUpdate(transcript, "voice");
+    sendWithOptimisticUpdate(transcript, "voice");
     },
     onError: (message) => {
       setSendError(message);
@@ -520,24 +527,32 @@ export function useWorkspaceAssistant({
     const targetUserMessage = [...thread.messages].reverse().find((message) => message.role === "user");
     if (!targetUserMessage?.content?.trim()) return;
     setSendError(null);
-    sendWithOptimisticUpdate(targetUserMessage.content, targetUserMessage.inputMode, {
-      regenerate: true,
-      regenerateMessageId: targetUserMessage.id,
-    });
+    sendWithOptimisticUpdate(
+      targetUserMessage.content,
+      targetUserMessage.inputMode,
+      {
+        regenerate: true,
+        regenerateMessageId: targetUserMessage.id,
+      },
+      targetUserMessage.attachments,
+    );
   }, [isLoadingThread, isSending, sendWithOptimisticUpdate, thread]);
 
-  const handleSend = (message?: string, inputMode?: AnanProInputMode) => {
+  const handleSend = (
+    message?: string,
+    inputMode?: AnanProInputMode,
+    attachments?: UploadedFileReference[],
+  ) => {
     const nextMessage = (message ?? value).trim();
-    if (!nextMessage || isSending || isLoadingThread) {
+    const hasAttachments = (attachments?.length ?? 0) > 0;
+    if ((!nextMessage && !hasAttachments) || isSending || isLoadingThread) {
       return;
     }
 
-    if (typeof message !== "string") {
-      setValue("");
-    }
+    setValue("");
     setSendError(null);
     setUnavailableThreadId(null);
-    sendWithOptimisticUpdate(nextMessage, inputMode);
+    sendWithOptimisticUpdate(nextMessage, inputMode, undefined, attachments);
   };
 
   const assistantMotionState = getAssistantMotionState(isSending, streamStage);
