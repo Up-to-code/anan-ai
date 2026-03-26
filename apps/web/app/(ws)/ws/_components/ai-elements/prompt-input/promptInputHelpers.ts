@@ -2,9 +2,12 @@ import type { FileUIPart } from "ai";
 import { nanoid } from "nanoid";
 import type { FormEvent } from "react";
 import { convertBlobUrlToDataUrl } from "./blob";
-import type { PromptInputProps, PromptInputMessage } from "./promptInputTypes";
+import type { PromptInputProps, PromptInputMessage, PromptInputFile } from "./promptInputTypes";
 
-export type PromptInputLocalFile = FileUIPart & { id: string };
+export type PromptInputLocalFile = PromptInputFile & { 
+  filename: string;
+  mediaType: string;
+};
 
 export function makeLocalFile(file: File): PromptInputLocalFile {
   return {
@@ -103,7 +106,7 @@ export function clearAndRevoke(files: PromptInputLocalFile[]): PromptInputLocalF
 }
 
 export async function convertFilesForSubmit(
-  files: PromptInputLocalFile[]
+  files: PromptInputFile[]
 ): Promise<FileUIPart[]> {
   return await Promise.all(
     files.map(async (file) => {

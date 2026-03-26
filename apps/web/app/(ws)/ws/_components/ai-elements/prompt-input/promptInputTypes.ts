@@ -1,6 +1,7 @@
 import type { FileUIPart } from "ai";
 import type { FormEvent, HTMLAttributes } from "react";
 import type { PromptInputFile } from "./types";
+export type { PromptInputFile };
 
 export interface PromptInputMessage {
   text: string;

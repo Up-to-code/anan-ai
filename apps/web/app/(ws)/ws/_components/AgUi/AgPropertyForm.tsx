@@ -74,7 +74,7 @@ const LICENSE_STATUS_UI = {
   approved: { label: "معتمد", tone: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-500/10 dark:border-emerald-500/30" },
   rejected: { label: "مرفوض", tone: "text-rose-700 bg-rose-50 border-rose-200 dark:text-rose-300 dark:bg-rose-500/10 dark:border-rose-500/30" },
   pending: { label: "قيد المراجعة", tone: "text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-300 dark:bg-amber-500/10 dark:border-amber-500/30" },
-  default: { label: "غير مكتمل", tone: "text-[var(--workspace-muted)] bg-[var(--workspace-elevated)] border-[color:var(--workspace-border)]" },
+  default: { label: "غير مكتمل", tone: "text-muted-foreground bg-muted/20 border-border" },
 } as const;
 
 const STEP_DEFINITIONS: StepDefinition[] = [
@@ -138,10 +138,10 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-5 shadow-sm sm:p-6 transition-colors">
-      <div className="mb-5 border-b border-[color:var(--workspace-border)] pb-4 text-right">
-        <h3 className="text-lg font-black text-[var(--workspace-bubble-other-foreground)]">{title}</h3>
-        {description ? <p className="mt-1 text-[13px] leading-6 text-[var(--workspace-muted)]">{description}</p> : null}
+    <section className="rounded-3xl border border-border bg-card p-6 md:p-10 shadow-xl shadow-black/[0.02] transition-all">
+      <div className="mb-8 border-b border-border/40 pb-6 text-right">
+        <h3 className="text-xl font-black tracking-tight text-foreground">{title}</h3>
+        {description ? <p className="mt-2 text-[14px] font-medium leading-relaxed text-muted-foreground/70">{description}</p> : null}
       </div>
       {children}
     </section>
@@ -149,7 +149,7 @@ function SectionCard({
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <label className="text-sm font-bold text-[var(--workspace-bubble-other-foreground)]">{children}</label>;
+  return <label className="mb-2.5 block text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">{children}</label>;
 }
 
 function TextInput({
@@ -175,9 +175,9 @@ function TextInput({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="h-10 w-full rounded-md border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-3 py-2 text-sm font-semibold text-[var(--workspace-bubble-other-foreground)] outline-none transition placeholder:text-[var(--workspace-muted)] focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_50%,transparent)] focus:bg-[var(--workspace-panel)] focus:ring-1 focus:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_30%,transparent)] disabled:cursor-not-allowed disabled:bg-[var(--workspace-accent-soft)] disabled:text-[var(--workspace-muted)]"
+        className="h-14 w-full rounded-2xl border border-border/40 bg-muted/10 px-5 text-[15px] font-bold text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:border-foreground/20 focus:bg-muted/20 disabled:cursor-not-allowed disabled:opacity-50"
       />
-      {icon ? <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--workspace-muted)]">{icon}</div> : null}
+      {icon ? <div className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground/30">{icon}</div> : null}
     </div>
   );
 }
@@ -199,7 +199,7 @@ function TextArea({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
-      className="w-full resize-none rounded-md border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-3 py-2 text-sm font-semibold text-[var(--workspace-bubble-other-foreground)] outline-none transition placeholder:text-[var(--workspace-muted)] focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_50%,transparent)] focus:bg-[var(--workspace-panel)] focus:ring-1 focus:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_30%,transparent)]"
+      className="w-full resize-none rounded-2xl border border-border/40 bg-muted/10 px-5 py-4 text-[15px] font-medium leading-[1.6] text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:border-foreground/20 focus:bg-muted/20"
     />
   );
 }
@@ -222,22 +222,22 @@ function UploadTile({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="group flex w-full items-center justify-between gap-3 rounded-xl border border-dashed border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-4 text-right transition hover:border-[color:var(--workspace-highlight)] hover:bg-[color:color-mix(in_srgb,var(--workspace-highlight)_4%,transparent)] disabled:cursor-not-allowed disabled:opacity-60"
+      className="group flex w-full items-center justify-between gap-3 rounded-2xl border-2 border-dashed border-border/80 bg-muted/20 px-4 py-6 text-right transition hover:border-border hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-60"
     >
       <div className="text-right">
-        <div className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{title}</div>
-        {subtitle ? <div className="mt-1 text-xs font-semibold text-[var(--workspace-muted)]">{subtitle}</div> : null}
+        <div className="text-[13px] font-bold text-foreground">{title}</div>
+        {subtitle ? <div className="mt-1 text-[11px] font-bold text-muted-foreground">{subtitle}</div> : null}
       </div>
-      <div className="text-[var(--workspace-muted)] transition-colors group-hover:text-[var(--workspace-highlight)]">{icon}</div>
+      <div className="text-muted-foreground transition-colors group-hover:text-foreground">{icon}</div>
     </button>
   );
 }
 
 function ReviewRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-lg border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-3 transition-colors">
-      <div className="text-[13px] font-semibold text-[var(--workspace-bubble-other-foreground)]">{value}</div>
-      <div className="text-[13px] font-bold text-[var(--workspace-muted)]">{label}</div>
+    <div className="flex items-start justify-between gap-4 rounded-xl border border-border bg-background px-4 py-3 transition-colors shadow-sm">
+      <div className="text-[13px] font-bold text-foreground">{value}</div>
+      <div className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground">{label}</div>
     </div>
   );
 }
@@ -250,12 +250,12 @@ function BrokerAvatar({
   avatarLabel: string;
 }) {
   return (
-    <div className="h-10 w-10 overflow-hidden rounded-lg border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)]">
+    <div className="h-10 w-10 overflow-hidden rounded-full border border-border bg-card shadow-sm">
       {avatarImage ? (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img src={avatarImage} alt="" className="h-full w-full object-cover" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center text-sm font-black text-[var(--workspace-muted)]">
+        <div className="flex h-full w-full items-center justify-center text-[12px] font-bold text-muted-foreground bg-background">
           {avatarLabel}
         </div>
       )}
@@ -561,7 +561,7 @@ export default function AgPropertyForm({
               onChange={(value) => setFormState((prev) => ({ ...prev, amenitiesText: value }))}
               placeholder="مثال: مواقف خاصة، نادي، مصاعد، حراسة"
             />
-            <p className="text-sm text-[var(--workspace-muted)]">افصل بين كل ميزة بفاصلة أو سطر جديد.</p>
+            <p className="text-sm text-muted-foreground">افصل بين كل ميزة بفاصلة أو سطر جديد.</p>
           </div>
         </div>
       </SectionCard>
@@ -599,8 +599,8 @@ export default function AgPropertyForm({
               {formState.images.map((image, index) => {
                 const isCover = formState.coverImageKey === image.key;
                 return (
-                  <div key={`${image.key}-${index}`} className="rounded-xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-3">
-                    <div className={["overflow-hidden rounded-lg border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)]", previewAspectClass].join(" ")}>
+                  <div key={`${image.key}-${index}`} className="rounded-xl border border-border bg-card p-3">
+                    <div className={["overflow-hidden rounded-lg border border-border bg-muted/20", previewAspectClass].join(" ")}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={image.url}
@@ -610,8 +610,8 @@ export default function AgPropertyForm({
                     </div>
                     <div className="mt-3 flex items-center justify-between gap-3">
                       <div className="min-w-0 text-right">
-                        <div className="truncate text-[13px] font-black text-[var(--workspace-bubble-other-foreground)]">{image.name}</div>
-                        <div className="mt-1 text-xs font-semibold text-[var(--workspace-muted)]">
+                        <div className="truncate text-[13px] font-black text-foreground">{image.name}</div>
+                        <div className="mt-1 text-xs font-semibold text-muted-foreground">
                           {isCover ? "صورة الغلاف الحالية" : `الصورة رقم ${index + 1}`}
                         </div>
                       </div>
@@ -625,7 +625,7 @@ export default function AgPropertyForm({
                       <button
                         type="button"
                         onClick={() => setCoverImageKey(image.key)}
-                        className="rounded-md border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-3 py-2 text-xs font-bold text-[var(--workspace-bubble-other-foreground)] transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_32%,transparent)]"
+                        className="rounded-md border border-border bg-muted/20 px-3 py-2 text-xs font-bold text-foreground transition hover:border-foreground/30"
                       >
                         غلاف
                       </button>
@@ -633,7 +633,7 @@ export default function AgPropertyForm({
                         type="button"
                         onClick={() => moveImage(index, -1)}
                         disabled={index === 0}
-                        className="rounded-md border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-3 py-2 text-xs font-bold text-[var(--workspace-bubble-other-foreground)] transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_32%,transparent)] disabled:opacity-40"
+                        className="rounded-md border border-border bg-muted/20 px-3 py-2 text-xs font-bold text-foreground transition hover:border-foreground/30 disabled:opacity-40"
                       >
                         رفع
                       </button>
@@ -641,7 +641,7 @@ export default function AgPropertyForm({
                         type="button"
                         onClick={() => moveImage(index, 1)}
                         disabled={index === formState.images.length - 1}
-                        className="rounded-md border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-3 py-2 text-xs font-bold text-[var(--workspace-bubble-other-foreground)] transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_32%,transparent)] disabled:opacity-40"
+                        className="rounded-md border border-border bg-muted/20 px-3 py-2 text-xs font-bold text-foreground transition hover:border-foreground/30 disabled:opacity-40"
                       >
                         خفض
                       </button>
@@ -658,7 +658,7 @@ export default function AgPropertyForm({
               })}
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-8 text-center text-sm font-semibold text-[var(--workspace-muted)]">
+            <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center text-sm font-semibold text-muted-foreground">
               ارفع صور المشروع أولاً لتظهر أدوات الترتيب والغلاف.
             </div>
           )}
@@ -677,7 +677,7 @@ export default function AgPropertyForm({
                   galleryDisplayMode: event.target.value as GalleryDisplayMode,
                 }))
               }
-              className="min-h-[54px] w-full rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-3 text-base font-semibold text-[var(--workspace-bubble-other-foreground)] outline-none transition focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_36%,transparent)] focus:bg-[var(--workspace-panel)]"
+              className="min-h-[54px] w-full rounded-2xl border border-border bg-muted/20 px-4 py-3 text-base font-semibold text-foreground outline-none transition focus:border-ring focus:bg-card"
             >
               {GALLERY_DISPLAY_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -696,7 +696,7 @@ export default function AgPropertyForm({
                   galleryAspectRatio: event.target.value as GalleryAspectRatio,
                 }))
               }
-              className="min-h-[54px] w-full rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-3 text-base font-semibold text-[var(--workspace-bubble-other-foreground)] outline-none transition focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_36%,transparent)] focus:bg-[var(--workspace-panel)]"
+              className="min-h-[54px] w-full rounded-2xl border border-border bg-muted/20 px-4 py-3 text-base font-semibold text-foreground outline-none transition focus:border-ring focus:bg-card"
             >
               {GALLERY_ASPECT_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -713,14 +713,14 @@ export default function AgPropertyForm({
           className="mt-5 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-right transition hover:border-stone-400"
         >
           <div className="text-right">
-            <div className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">
+            <div className="text-sm font-black text-foreground">
               {formState.video ? "الفيديو مفعّل" : "تفعيل فيديو توضيحي"}
             </div>
-            <div className="mt-1 text-xs font-semibold text-[var(--workspace-muted)]">
+            <div className="mt-1 text-xs font-semibold text-muted-foreground">
               {formState.video ? "يمكنك إيقافه متى شئت." : "خيار اختياري لإرفاق فيديو قصير."}
             </div>
           </div>
-          <Video className={`h-5 w-5 ${formState.video ? "text-emerald-300" : "text-[var(--workspace-muted)]"}`} />
+          <Video className={`h-5 w-5 ${formState.video ? "text-emerald-300" : "text-muted-foreground"}`} />
         </button>
       </SectionCard>
     </div>
@@ -735,7 +735,7 @@ export default function AgPropertyForm({
             <select
               value={formState.status}
               onChange={(event) => setFormState((prev) => ({ ...prev, status: event.target.value }))}
-              className="min-h-[54px] w-full rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-3 text-base font-semibold text-[var(--workspace-bubble-other-foreground)] outline-none transition focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_36%,transparent)] focus:bg-[var(--workspace-panel)]"
+              className="min-h-[54px] w-full rounded-2xl border border-border bg-muted/20 px-4 py-3 text-base font-semibold text-foreground outline-none transition focus:border-ring focus:bg-card"
             >
               <option value="active">جاهز للنشر</option>
               <option value="pending">مسودة</option>
@@ -772,10 +772,10 @@ export default function AgPropertyForm({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-4">
+          <div className="rounded-2xl border border-border bg-muted/20 p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <span className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">المواقف</span>
-              <label className="flex items-center gap-2 text-sm font-semibold text-[var(--workspace-bubble-other-foreground)]">
+              <span className="text-sm font-black text-foreground">المواقف</span>
+              <label className="flex items-center gap-2 text-sm font-semibold text-foreground">
                 <span>متوفر</span>
                 <input
                   type="checkbox"
@@ -804,14 +804,14 @@ export default function AgPropertyForm({
 
       <SectionCard title="رخصة الإعلان" description="أدخل رقم الرخصة الآن، وارفع مستندات التوثيق عندما يكون المشروع محفوظاً.">
         <div className="space-y-4">
-          <div className="rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-4">
+          <div className="rounded-2xl border border-border bg-muted/20 p-4">
             <div className="mb-2 flex items-center justify-between gap-3">
-              <span className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">حالة التوثيق</span>
+              <span className="text-sm font-black text-foreground">حالة التوثيق</span>
               <span className={`rounded-full border px-3 py-1 text-xs font-bold ${adLicenseTone}`}>
                 {adLicenseLabel}
               </span>
             </div>
-            <p className="text-sm text-[var(--workspace-muted)]">ستبقى هذه الحالة محدثة عند إرسال أو مراجعة الطلب.</p>
+            <p className="text-sm text-muted-foreground">ستبقى هذه الحالة محدثة عند إرسال أو مراجعة الطلب.</p>
           </div>
 
           <div className="grid gap-2">
@@ -843,15 +843,15 @@ export default function AgPropertyForm({
               {licenseDocs.length > 0 ? (
                 <div className="space-y-2">
                   {licenseDocs.map((doc) => (
-                    <div key={doc.key} className="flex items-center justify-between gap-3 rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-3">
+                    <div key={doc.key} className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/20 px-4 py-3">
                       <button
                         type="button"
                         onClick={() => setLicenseDocs((current) => current.filter((item) => item.key !== doc.key))}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-[var(--workspace-muted)] transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] hover:text-[var(--workspace-bubble-other-foreground)]"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:border-foreground/30 hover:text-foreground"
                       >
                         <X className="h-4 w-4" />
                       </button>
-                      <div className="truncate text-sm font-bold text-[var(--workspace-bubble-other-foreground)]">{doc.name}</div>
+                      <div className="truncate text-sm font-bold text-foreground">{doc.name}</div>
                     </div>
                   ))}
                 </div>
@@ -872,7 +872,7 @@ export default function AgPropertyForm({
                 type="button"
                 onClick={() => void handleLicenseSubmit()}
                 disabled={licenseSubmitting}
-                className="w-full rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-highlight)_50%,transparent)] bg-[var(--workspace-highlight)] px-4 py-3 text-sm font-bold text-[var(--primary-foreground)] transition hover:brightness-110 disabled:opacity-60"
+                className="w-full rounded-2xl border border-foreground/50 bg-foreground px-4 py-3 text-sm font-bold text-background transition hover:brightness-110 disabled:opacity-60"
               >
                 {licenseSubmitting ? "جارٍ الإرسال..." : "إرسال طلب التوثيق"}
               </button>
@@ -919,7 +919,7 @@ export default function AgPropertyForm({
           {formState.privatePermitFiles.length > 0 ? (
             <div className="space-y-2">
               {formState.privatePermitFiles.map((doc) => (
-                <div key={doc.key} className="flex items-center justify-between gap-3 rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-3">
+                <div key={doc.key} className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/20 px-4 py-3">
                   <button
                     type="button"
                     onClick={() =>
@@ -928,11 +928,11 @@ export default function AgPropertyForm({
                         privatePermitFiles: prev.privatePermitFiles.filter((item) => item.key !== doc.key),
                       }))
                     }
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-[var(--workspace-muted)] transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] hover:text-[var(--workspace-bubble-other-foreground)]"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:border-foreground/30 hover:text-foreground"
                   >
                     <X className="h-4 w-4" />
                   </button>
-                  <div className="truncate text-sm font-bold text-[var(--workspace-bubble-other-foreground)]">{doc.name}</div>
+                  <div className="truncate text-sm font-bold text-foreground">{doc.name}</div>
                 </div>
               ))}
             </div>
@@ -942,20 +942,20 @@ export default function AgPropertyForm({
 
       <SectionCard title="تكليف وسيط" description="اختياري. يمكنك اختيار وسيط واحد لربط المشروع به من هذه الصفحة.">
         {selectedBroker ? (
-          <div className="rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-4">
+          <div className="rounded-2xl border border-border bg-muted/20 p-4">
             <div className="flex items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={() => setSelectedBrokerId(null)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-[var(--workspace-muted)] transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] hover:text-[var(--workspace-bubble-other-foreground)]"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:border-foreground/30 hover:text-foreground"
                 title="إلغاء التكليف"
               >
                 <X className="h-4 w-4" />
               </button>
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <div className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{selectedBroker.name}</div>
-                  <div className="mt-1 text-xs font-semibold text-[var(--workspace-muted)]">{selectedBroker.title}</div>
+                  <div className="text-sm font-black text-foreground">{selectedBroker.name}</div>
+                  <div className="mt-1 text-xs font-semibold text-muted-foreground">{selectedBroker.title}</div>
                 </div>
                 <BrokerAvatar
                   avatarImage={selectedBroker.avatarImage}
@@ -972,7 +972,7 @@ export default function AgPropertyForm({
                 value={brokerSearch}
                 onChange={(event) => setBrokerSearch(event.target.value)}
                 placeholder="ابحث باسم الوسيط"
-                className="min-h-[54px] w-full rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-3 pr-11 text-base font-semibold text-[var(--workspace-bubble-other-foreground)] outline-none transition placeholder:text-[var(--workspace-muted)] focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_36%,transparent)] focus:bg-[var(--workspace-panel)]"
+                className="min-h-[54px] w-full rounded-2xl border border-border bg-muted/20 px-4 py-3 pr-11 text-base font-semibold text-foreground outline-none transition placeholder:text-muted-foreground focus:border-ring focus:bg-card"
               />
               <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
             </div>
@@ -986,12 +986,12 @@ export default function AgPropertyForm({
                       setSelectedBrokerId(broker.id);
                       setBrokerSearch("");
                     }}
-                    className="flex items-center justify-between gap-3 rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-3 text-right transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_32%,transparent)] hover:bg-[var(--workspace-panel)]"
+                    className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/20 px-4 py-3 text-right transition hover:border-foreground/30 hover:bg-card"
                   >
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <div className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{broker.name}</div>
-                        <div className="mt-1 text-xs font-semibold text-[var(--workspace-muted)]">{broker.title}</div>
+                        <div className="text-sm font-black text-foreground">{broker.name}</div>
+                        <div className="mt-1 text-xs font-semibold text-muted-foreground">{broker.title}</div>
                       </div>
                       <BrokerAvatar avatarImage={broker.avatarImage} avatarLabel={broker.avatarLabel} />
                     </div>
@@ -1000,7 +1000,7 @@ export default function AgPropertyForm({
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-6 text-center text-sm font-semibold text-[var(--workspace-muted)]">
+              <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-6 text-center text-sm font-semibold text-muted-foreground">
                 لا توجد نتائج مطابقة حالياً.
               </div>
             )}
@@ -1054,10 +1054,10 @@ export default function AgPropertyForm({
         </div>
       </SectionCard>
 
-      <section className="rounded-[28px] border border-[color:var(--workspace-border)] bg-[var(--workspace-sidebar-strong)] p-6 text-[var(--workspace-bubble-other-foreground)] shadow-[0_16px_44px_rgba(0,0,0,0.28)]">
-        <div className="flex items-start gap-3 rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)]/40 p-4 text-right">
+      <section className="rounded-[28px] border border-border bg-card p-6 text-foreground shadow-[0_16px_44px_rgba(0,0,0,0.28)]">
+        <div className="flex items-start gap-3 rounded-2xl border border-border bg-card/40 p-4 text-right">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
-          <p className="text-sm leading-6 text-[var(--workspace-muted)]">
+          <p className="text-sm leading-6 text-muted-foreground">
             تم تبسيط هذا النموذج ليتصرف بشكل أنظف في Safari أيضاً: عمود واحد، أزرار واضحة، وصور داخل أطر ثابتة.
           </p>
         </div>
@@ -1066,12 +1066,12 @@ export default function AgPropertyForm({
           type="button"
           onClick={() => setShowSafetyConfirm(true)}
           disabled={savePending}
-          className="mt-5 w-full rounded-2xl bg-[var(--workspace-highlight)] px-4 py-4 text-base font-black text-[var(--primary-foreground)] transition hover:brightness-110 disabled:opacity-60"
+          className="mt-5 w-full rounded-2xl bg-foreground px-4 py-4 text-base font-black text-background transition hover:brightness-110 disabled:opacity-60"
         >
           {savePending ? "جارٍ الحفظ..." : submitLabel}
         </button>
 
-        <div className="mt-4 flex items-center gap-2 text-sm text-[var(--workspace-muted)]">
+        <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
           <Check className="h-4 w-4" />
           سيتم حفظ المشروع وفق الحالة المختارة والبيانات الظاهرة أعلاه.
         </div>
@@ -1106,15 +1106,15 @@ export default function AgPropertyForm({
       />
 
       <div className="space-y-6 px-1 py-4 lg:py-6">
-        <section className="rounded-[28px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-5 shadow-[0_12px_40px_rgba(0,0,0,0.2)] sm:p-6">
+        <section className="rounded-[28px] border border-border bg-card p-5 shadow-[0_12px_40px_rgba(0,0,0,0.2)] sm:p-6">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div className="text-right">
-              <div className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">
+              <div className="text-sm font-black text-foreground">
                 الخطوة {currentStepIndex + 1} من {STEP_DEFINITIONS.length}
               </div>
-              <div className="mt-1 text-sm text-[var(--workspace-muted)]">{activeStep.summary}</div>
+              <div className="mt-1 text-sm text-muted-foreground">{activeStep.summary}</div>
             </div>
-            <div className="inline-flex h-12 min-w-12 items-center justify-center rounded-full bg-[var(--workspace-highlight)] px-3 text-sm font-black text-[var(--primary-foreground)]">
+            <div className="inline-flex h-12 min-w-12 items-center justify-center rounded-full bg-foreground px-3 text-sm font-black text-background">
               {currentStepIndex + 1}
             </div>
           </div>
@@ -1130,14 +1130,14 @@ export default function AgPropertyForm({
                   onClick={() => setCurrentStepIndex(index)}
                   className={`rounded-xl border px-3 py-3 text-right transition ${
                     isActive
-                      ? "border-[color:color-mix(in_srgb,var(--workspace-highlight)_45%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_14%,transparent)] text-[var(--workspace-highlight)]"
+                      ? "border-border-foreground/45 bg-foreground/10 text-foreground"
                       : isCompleted
                         ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
-                        : "border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] text-[var(--workspace-bubble-other-foreground)] hover:border-[color:var(--workspace-border)] hover:bg-[color:color-mix(in_srgb,var(--workspace-highlight)_4%,transparent)]"
+                        : "border-border bg-muted/20 text-foreground hover:border-border hover:bg-muted/40"
                   }`}
                 >
                   <div className="text-xs font-black">{step.title}</div>
-                  <div className={`mt-1 text-[11px] ${isActive ? "text-[color:color-mix(in_srgb,var(--workspace-highlight)_78%,white)]" : "text-[var(--workspace-muted)]"}`}>
+                  <div className={`mt-1 text-[11px] ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
                     {step.summary}
                   </div>
                 </button>
@@ -1148,30 +1148,30 @@ export default function AgPropertyForm({
 
         {renderCurrentStep()}
 
-        <section className="rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-3 shadow-none">
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <section className="rounded-3xl border border-border bg-card p-4 md:p-6 shadow-xl shadow-black/[0.02]">
+          <div className="flex items-center justify-between gap-6">
             <button
               type="button"
               onClick={() => setCurrentStepIndex((current) => Math.max(0, current - 1))}
               disabled={currentStepIndex === 0}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-2 text-[13px] font-bold text-[var(--workspace-bubble-other-foreground)] transition hover:bg-[color:color-mix(in_srgb,var(--workspace-highlight)_4%,transparent)] disabled:opacity-40"
+              className="group inline-flex items-center justify-center gap-2 rounded-2xl border border-border bg-muted/10 px-8 py-4 text-[13px] font-black uppercase tracking-[0.2em] text-foreground transition-all hover:bg-muted active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
             >
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               السابق
             </button>
 
-            <div className="text-center text-sm text-[var(--workspace-muted)]">
-              {isLastStep ? "راجع البيانات ثم احفظ المشروع." : `التالي: ${STEP_DEFINITIONS[currentStepIndex + 1]?.title ?? ""}`}
+            <div className="hidden text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 lg:block">
+              {isLastStep ? "المراجعة النهائية" : `التالي: ${STEP_DEFINITIONS[currentStepIndex + 1]?.title ?? ""}`}
             </div>
 
             <button
               type="button"
               onClick={() => setCurrentStepIndex((current) => Math.min(STEP_DEFINITIONS.length - 1, current + 1))}
               disabled={isLastStep}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-[color:color-mix(in_srgb,var(--workspace-highlight)_50%,transparent)] bg-[var(--workspace-highlight)] px-4 py-2 text-[13px] font-bold text-[var(--primary-foreground)] transition hover:brightness-110 disabled:opacity-40"
+              className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-foreground px-10 py-4 text-[13px] font-black uppercase tracking-[0.2em] text-background transition-all hover:opacity-90 active:scale-95 disabled:opacity-30 disabled:pointer-events-none shadow-lg shadow-black/10"
             >
               التالي
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
             </button>
           </div>
         </section>

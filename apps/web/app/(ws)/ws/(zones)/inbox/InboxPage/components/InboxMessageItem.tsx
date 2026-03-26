@@ -1,6 +1,7 @@
 "use client";
 
 import { Clock3 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   dealShareMetadataSchema,
   fileShareMetadataSchema,
@@ -101,14 +102,18 @@ export default function InboxMessageItem({
   return (
     <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[88%] sm:max-w-[75%] ${
+        className={cn(
+          "max-w-[88%] sm:max-w-[75%] transition-all",
           offerCardMetadata || collaborationMetadata
             ? ""
-            : `px-4 py-2.5 ${isMe
-              ? "rounded-[22px] rounded-tl-md bg-[var(--workspace-bubble-self)] text-[var(--workspace-bubble-self-foreground)] shadow-sm"
-              : "rounded-[22px] rounded-tr-md border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-panel)] text-[var(--workspace-bubble-other-foreground)] shadow-sm"
-            }`
-        } ${isOptimistic ? "opacity-80" : ""}`}
+            : cn(
+                "px-5 py-3.5 shadow-sm",
+                isMe
+                  ? "rounded-3xl rounded-tr-sm bg-foreground text-background"
+                  : "rounded-3xl rounded-tl-sm border border-border bg-card text-foreground"
+              ),
+          isOptimistic && "opacity-60"
+        )}
       >
         {offerCardMetadata ? (
           <InboxOfferEventCard
@@ -124,12 +129,14 @@ export default function InboxMessageItem({
         )}
 
         <div
-          className={`mt-1.5 flex items-center gap-1.5 text-[10px] font-bold ${isMe ? "text-[var(--workspace-bubble-self-muted)]" : "text-[var(--workspace-bubble-other-muted)]"
-            }`}
+          className={cn(
+            "mt-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider",
+            isMe ? "text-background/60" : "text-muted-foreground/60"
+          )}
         >
-          <Clock3 className="h-2.5 w-2.5" />
+          <Clock3 className="h-3 w-3" />
           <span>{timeLabel}</span>
-          {deliveryLabel ? <span>• {deliveryLabel}</span> : null}
+          {deliveryLabel ? <span className="opacity-80">• {deliveryLabel}</span> : null}
         </div>
       </div>
     </div>

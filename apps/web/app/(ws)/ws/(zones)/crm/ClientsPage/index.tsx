@@ -44,15 +44,15 @@ function ClientCard({ client }: { client: CrmClientRecord }) {
         },
       }}
       footer={(
-        <div className="space-y-3 border-t border-slate-200 pt-3 dark:border-slate-800">
-          <div className="text-sm text-slate-600 dark:text-slate-300">الميزانية: {client.budgetLabel}</div>
+        <div className="space-y-4 border-t border-border/60 pt-4 mt-1">
+          <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">الميزانية: {client.budgetLabel}</div>
           <div className="flex items-center justify-between gap-3">
-            <div className="text-sm text-slate-500 dark:text-slate-400">
+            <div className="text-[13px] font-medium text-foreground/70">
               {client.broker ? `مع ${client.broker.name}` : "بدون وسيط"}
             </div>
             <Link
               href={`/ws/crm/clients/${client.id}`}
-              className="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-900"
+              className="rounded-xl border border-border bg-card px-4 py-2 text-[13px] font-bold text-foreground transition hover:border-foreground/30 hover:bg-muted/10"
             >
               فتح
             </Link>
@@ -74,26 +74,38 @@ export default function ClientsPage({ clients }: { clients: CrmClientRecord[] })
   const [filterKey, setFilterKey] = useState("all");
   const visibleClients = clients.filter((client) => matchesClientFilter(client, filterKey));
   return (
-    <div className="flex min-h-full flex-col">
-      <ZonePageIntro
-        eyebrow="إدارة الصفقات"
-        title="العملاء"
-        description=""
-        actions={
+    <div className="flex min-h-full flex-col pb-24">
+      <div className="flex flex-col gap-6 px-6 py-8 lg:px-10 lg:py-10">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-black tracking-tight text-foreground">العملاء</h1>
+            <p className="text-[13px] font-medium text-muted-foreground uppercase tracking-[0.05em]">إدارة الصفقات والارتباطات</p>
+          </div>
           <Link
             href="/ws/crm/clients/add"
-            className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white"
+            className="inline-flex h-11 items-center gap-2 rounded-xl bg-foreground px-5 text-[13px] font-bold text-background transition hover:bg-foreground/90 disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
             إضافة صفقة
           </Link>
-        }
-      />
+        </div>
 
-      <div className="space-y-6 px-6 py-6 lg:px-8 lg:py-8">
-        <FilterChipBar chips={[...FILTER_CHIPS]} activeKey={filterKey} onChange={setFilterKey} />
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {visibleClients.map((client) => <ClientCard key={client.id} client={client} />)}
+        <div className="mt-4 flex flex-col gap-6">
+          <FilterChipBar chips={[...FILTER_CHIPS]} activeKey={filterKey} onChange={setFilterKey} />
+          
+          <div className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest">
+            {visibleClients.length} نتائج
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {visibleClients.map((client) => <ClientCard key={client.id} client={client} />)}
+          </div>
+
+          {visibleClients.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-border bg-muted/10 p-20 text-center">
+              <p className="text-sm font-bold text-muted-foreground">لا توجد صفقات مطابقة للتصفية الحالية.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

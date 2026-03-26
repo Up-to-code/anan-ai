@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "convex/react";
 import { ArrowUpLeft, Check, Clock3, FileText, MapPin, Shield, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Id } from "@convex/dataModel";
 import { api } from "@/lib/convexApi";
 import type { OfferEventMetadata } from "@/server/contracts/inbox";
@@ -19,9 +20,9 @@ function statusLabel(status: OfferLiveState["status"]) {
 }
 
 function statusClassName(status: OfferLiveState["status"]) {
-  if (status === "accepted") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-200";
-  if (status === "rejected") return "border-rose-500/30 bg-rose-500/10 text-rose-200";
-  return "border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_12%,transparent)] text-[var(--workspace-highlight)]";
+  if (status === "accepted") return "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+  if (status === "rejected") return "border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400";
+  return "border-foreground/10 bg-foreground/5 text-foreground";
 }
 
 function buildFallbackState(metadata: OfferEventMetadata): OfferLiveState {
@@ -86,90 +87,102 @@ export default function InboxOfferEventCard({
 
   return (
     <div
-      className={`space-y-4 rounded-[24px] border p-4 shadow-sm ${
+      className={cn(
+        "space-y-6 rounded-3xl border p-6 shadow-sm transition-all",
         isMe
-          ? "border-[color:color-mix(in_srgb,var(--workspace-border)_56%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-bubble-self)_84%,var(--workspace-panel))] text-[var(--workspace-bubble-self-foreground)]"
-          : "border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-panel)] text-[var(--workspace-bubble-other-foreground)]"
-      }`}
+          ? "border-foreground/10 bg-foreground/5 text-foreground"
+          : "border-border bg-card text-foreground"
+      )}
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1 space-y-2">
-          <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
-            <span className={isMe ? "text-[var(--workspace-bubble-self-muted)]" : "text-[var(--workspace-highlight)]"}>عرض خاص</span>
-            <span className={`inline-flex items-center gap-1 border px-2 py-1 ${statusClassName(state.status)}`}>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-widest">
+            <span className={isMe ? "text-foreground/60" : "text-muted-foreground"}>عرض استثنائي</span>
+            <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 tracking-normal", statusClassName(state.status))}>
               <Clock3 className="h-3 w-3" />
               {statusLabel(state.status)}
             </span>
           </div>
-          <div className="text-base font-black leading-6">{state.propertyTitle}</div>
-          <div className={`flex flex-wrap items-center gap-3 text-xs font-medium ${isMe ? "text-[var(--workspace-bubble-self-muted)]" : "text-[var(--workspace-bubble-other-muted)]"}`}>
+          <div className="text-lg font-black tracking-tight leading-tight">{state.propertyTitle}</div>
+          <div className={cn("flex flex-wrap items-center gap-3 text-[13px] font-medium", isMe ? "text-foreground/60" : "text-muted-foreground")}>
             <span>{metadata.authorName}</span>
+            {metadata.organizationName ? <span className="opacity-40">/</span> : null}
             <span>{metadata.organizationName}</span>
           </div>
         </div>
-        <div className={`rounded-2xl border px-3 py-2 text-right ${isMe ? "border-[color:color-mix(in_srgb,var(--workspace-border)_52%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-bubble-self)_74%,var(--workspace-panel))]" : "border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)]"}`}>
-          <div className={`text-[11px] font-bold ${isMe ? "text-[var(--workspace-bubble-self-muted)]" : "text-[var(--workspace-bubble-other-muted)]"}`}>القيمة المقترحة</div>
-          <div className="mt-1 text-base font-black">{formatOfferPrice(state.price)}</div>
+        <div className={cn(
+          "rounded-2xl border px-5 py-3 text-right shadow-sm",
+          isMe ? "border-foreground/20 bg-foreground/10" : "border-border bg-muted/30"
+        )}>
+          <div className={cn("text-[11px] font-bold uppercase tracking-wider", isMe ? "text-foreground/60" : "text-muted-foreground")}>القيمة المقترحة</div>
+          <div className="mt-1 text-xl font-black tabular-nums">{formatOfferPrice(state.price)}</div>
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-        <div className={`space-y-3 rounded-2xl border p-3 ${isMe ? "border-[color:color-mix(in_srgb,var(--workspace-border)_52%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-bubble-self)_74%,var(--workspace-panel))]" : "border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)]"}`}>
-          <div className={`flex flex-wrap items-center gap-3 text-xs font-medium ${isMe ? "text-[var(--workspace-bubble-self-muted)]" : "text-[var(--workspace-bubble-other-muted)]"}`}>
-            <span className="inline-flex items-center gap-1">
+      <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+        <div className={cn(
+          "space-y-4 rounded-2xl border p-5 shadow-inner-sm",
+          isMe ? "border-foreground/10 bg-foreground/5" : "border-border bg-muted/20"
+        )}>
+          <div className={cn("flex flex-wrap items-center gap-4 text-[11px] font-bold uppercase tracking-wide", isMe ? "text-foreground/50" : "text-muted-foreground/60")}>
+            <span className="inline-flex items-center gap-1.5">
               <Shield className="h-3.5 w-3.5" />
-              خاص للطرف المحدد
+              عرض حصري
             </span>
-            <span className="inline-flex items-center gap-1">
+            <span className="inline-flex items-center gap-1.5">
               <MapPin className="h-3.5 w-3.5" />
               {state.propertyAddress}
             </span>
           </div>
-          <div className={`text-sm leading-6 ${isMe ? "text-[var(--workspace-bubble-self-foreground)]" : "text-[var(--workspace-bubble-other-foreground)]"}`}>
+          <div className={cn("text-[13px] font-medium leading-relaxed", isMe ? "text-foreground/90" : "text-foreground")}>
             {messageSummary || "لا يوجد وصف إضافي لهذا العرض."}
           </div>
         </div>
-        <div className={`min-w-[132px] rounded-2xl border p-3 text-xs font-medium ${isMe ? "border-[color:color-mix(in_srgb,var(--workspace-border)_52%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-bubble-self)_74%,var(--workspace-panel))] text-[var(--workspace-bubble-self-muted)]" : "border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)] text-[var(--workspace-bubble-other-muted)]"}`}>
-          <div className="flex items-center gap-1.5">
+        <div className={cn(
+          "flex flex-col justify-center min-w-[140px] rounded-2xl border p-5 text-center shadow-inner-sm",
+          isMe ? "border-foreground/10 bg-foreground/5 text-foreground/50" : "border-border bg-muted/20 text-muted-foreground"
+        )}>
+          <div className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider">
             <FileText className="h-3.5 w-3.5" />
             المرفقات
           </div>
-          <div className="mt-2 text-sm font-black text-inherit">{state.attachments?.length ?? 0}</div>
+          <div className="mt-2 text-2xl font-black text-foreground">{state.attachments?.length ?? 0}</div>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-3">
         {state.canRespond ? (
           <>
             <button
               type="button"
               onClick={() => void handleRespond("accepted")}
               disabled={pendingAction !== null}
-              className="inline-flex items-center gap-2 rounded-xl border border-emerald-700 bg-emerald-700 px-3 py-2 text-xs font-bold text-[var(--primary-foreground)] transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-foreground px-5 text-[13px] font-bold text-background transition-all hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Check className="h-3.5 w-3.5" />
+              <Check className="h-4 w-4" />
               {pendingAction === "accepted" ? "جاري التنفيذ" : "قبول"}
             </button>
             <button
               type="button"
               onClick={() => void handleRespond("rejected")}
               disabled={pendingAction !== null}
-              className="inline-flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-bold text-rose-200 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-5 text-[13px] font-bold text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
               {pendingAction === "rejected" ? "جاري التنفيذ" : "رفض"}
             </button>
           </>
         ) : null}
         <a
           href={state.href}
-          className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition ${
+          className={cn(
+            "inline-flex h-11 items-center gap-2 rounded-xl border px-5 text-[13px] font-bold transition-all",
             isMe
-              ? "border-[color:color-mix(in_srgb,var(--workspace-border)_52%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-bubble-self)_74%,var(--workspace-panel))] text-[var(--workspace-bubble-self-foreground)] hover:brightness-110"
-              : "border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)] text-[var(--workspace-bubble-other-foreground)] hover:bg-[var(--workspace-accent-soft)]"
-          }`}
+              ? "border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20"
+              : "border-border bg-card text-foreground hover:bg-muted"
+          )}
         >
-          <ArrowUpLeft className="h-3.5 w-3.5" />
+          <ArrowUpLeft className="h-4 w-4" />
           افتح العرض
         </a>
       </div>

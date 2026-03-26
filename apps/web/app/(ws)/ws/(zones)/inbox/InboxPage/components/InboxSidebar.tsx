@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Briefcase, Building2, Search, ShieldCheck, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { IncomingOrganizationInvite } from "@/server/contracts/organizations";
@@ -58,7 +58,7 @@ function UserAvatar({
   size?: "sm" | "md";
 }) {
   const initials = name.slice(0, 1) || "؟";
-  const sizeClass = size === "sm" ? "h-8 w-8 text-xs" : "h-10 w-10 text-sm";
+  const sizeClass = size === "sm" ? "h-8 w-8 text-xs" : "h-11 w-11 text-sm";
 
   if (image) {
     return (
@@ -67,11 +67,11 @@ function UserAvatar({
         src={image}
         alt={name}
         className={cn(
-          "shrink-0 rounded-full object-cover ring-2",
+          "shrink-0 rounded-full object-cover ring-2 transition-all",
           sizeClass,
           active
-            ? "ring-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,transparent)]"
-            : "ring-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)]",
+            ? "ring-foreground/20"
+            : "ring-border/40",
         )}
       />
     );
@@ -80,11 +80,11 @@ function UserAvatar({
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-full font-black",
+        "flex shrink-0 items-center justify-center rounded-full font-black transition-all",
         sizeClass,
         active
-          ? "bg-[var(--workspace-highlight)] text-[var(--primary-foreground)]"
-          : "bg-[var(--workspace-elevated)] text-[var(--workspace-muted)]",
+          ? "bg-foreground text-background shadow-md shadow-foreground/10"
+          : "bg-muted text-muted-foreground",
       )}
     >
       {initials}
@@ -92,66 +92,9 @@ function UserAvatar({
   );
 }
 
-type InboxCategory = "all" | "unread" | "brokers" | "developers";
+// Category logic removed for simplification as requested.
 
-function resolveConversationCategory(conversation: ConversationSummary): Exclude<InboxCategory, "all" | "unread"> | null {
-  const role = conversation.otherUser.role.toLowerCase();
-  if (role.includes("broker") || role.includes("وسيط")) return "brokers";
-  if (role.includes("developer") || role.includes("مطور")) return "developers";
-  return null;
-}
-
-function categoryLabel(category: InboxCategory) {
-  if (category === "all") return "الكل";
-  if (category === "unread") return "غير المقروءة";
-  if (category === "brokers") return "وسطاء";
-  return "مطورون";
-}
-
-function CategoryBar({
-  activeCategory,
-  counts,
-  onChange,
-}: {
-  activeCategory: InboxCategory;
-  counts: Record<InboxCategory, number>;
-  onChange: (category: InboxCategory) => void;
-}) {
-  const categories: InboxCategory[] = ["all", "unread", "brokers", "developers"];
-
-  return (
-    <div className="mt-4 flex flex-wrap gap-2">
-      {categories.map((category) => {
-        const isActive = activeCategory === category;
-        return (
-          <button
-            key={category}
-            type="button"
-            onClick={() => onChange(category)}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold transition",
-              isActive
-                ? "border-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,transparent)] text-[var(--workspace-highlight)]"
-                : "border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)] text-[var(--workspace-muted)] hover:bg-[var(--workspace-panel)] hover:text-[var(--workspace-bubble-other-foreground)]",
-            )}
-          >
-            <span>{categoryLabel(category)}</span>
-            <span
-              className={cn(
-                "inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-black",
-                isActive
-                  ? "bg-[var(--workspace-highlight)] text-[var(--primary-foreground)]"
-                  : "bg-[var(--workspace-panel)] text-[var(--workspace-muted)]",
-              )}
-            >
-              {counts[category]}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+// CategoryBar is removed for simplification as requested.
 
 function SearchResultsList({
   onStartConversation,
@@ -167,26 +110,26 @@ function SearchResultsList({
           key={result.id}
           type="button"
           onClick={() => onStartConversation(result.id)}
-          className="flex w-full items-center gap-3 rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-panel)] px-4 py-3 text-right transition hover:bg-[var(--workspace-elevated)]"
+          className="flex w-full items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4 text-right transition-all hover:border-foreground/20 hover:bg-muted/10"
         >
           <UserAvatar image={result.image} name={result.name} size="sm" />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-black text-[var(--workspace-bubble-other-foreground)]">
+            <div className="truncate text-[13px] font-bold text-foreground">
               {result.name}
             </div>
-            <div className="mt-1 flex items-center gap-1.5 text-xs font-medium text-[var(--workspace-muted)]">
+            <div className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
               <RoleIcon role={result.role} />
               <span className="truncate">
                 {result.organizationName ? `${getParticipantTypeLabel(result.role)} · ${result.organizationName}` : result.role}
               </span>
             </div>
             {formatMembershipState(result.membershipState) ? (
-              <div className="mt-1 text-[10px] font-medium text-[var(--workspace-highlight)]">
+              <div className="mt-1 text-[10px] font-bold text-foreground/60 uppercase tracking-wider">
                 {formatMembershipState(result.membershipState)}
               </div>
             ) : null}
           </div>
-          <span className="rounded-full border border-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,transparent)] px-2 py-1 text-[10px] font-black text-[var(--workspace-highlight)]">
+          <span className="rounded-full border border-border bg-muted/20 px-3 py-1 text-[11px] font-bold text-foreground">
             بدء
           </span>
         </button>
@@ -211,13 +154,13 @@ function SearchResultsState({
   }
 
   if (isSearching) {
-    return <div className="mt-3 text-xs font-medium text-[var(--workspace-muted)]">جاري البحث...</div>;
+    return <div className="mt-4 text-[11px] font-bold text-muted-foreground/60">جاري البحث...</div>;
   }
 
   if (hasSearch) {
     return (
-      <div className="mt-4 rounded-2xl border border-dashed border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)] bg-[var(--workspace-panel)] px-4 py-4 text-xs font-medium text-[var(--workspace-muted)]">
-        لا توجد نتائج مطابقة.
+      <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/5 px-4 py-6 text-center text-[12px] font-bold text-muted-foreground">
+        لا توجد نتائج مطابقة لبحثك.
       </div>
     );
   }
@@ -239,35 +182,40 @@ function ConversationRow({
       type="button"
       onClick={() => onSelect(conversation.id)}
       className={cn(
-        "flex w-full items-start gap-3 rounded-[24px] border px-4 py-3 text-right transition-all duration-150",
+        "group flex w-full items-start gap-4 rounded-2xl px-4 py-3.5 text-right transition-all duration-200",
         isActive
-          ? "border-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,transparent)]"
-          : "border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-panel)] hover:bg-[var(--workspace-elevated)]",
+          ? "bg-muted shadow-sm"
+          : "bg-transparent hover:bg-muted/50",
       )}
     >
       <UserAvatar active={isActive} image={conversation.otherUser.image} name={conversation.otherUser.name} />
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="truncate text-sm font-black text-[var(--workspace-bubble-other-foreground)]">
+            <div className={cn(
+              "truncate text-[14px] font-bold tracking-tight",
+              isActive ? "text-foreground" : "text-foreground/90"
+            )}>
               {conversation.otherUser.name}
             </div>
-            <div className="mt-1 flex items-center gap-1 text-[11px] font-medium text-[var(--workspace-muted)]">
-              <RoleIcon role={conversation.otherUser.role} />
+            <div className="mt-0.5 flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/60">
               <span className="truncate">{roleOrganizationLabel(conversation)}</span>
             </div>
           </div>
-          <div className="shrink-0 text-[10px] font-medium text-[color:color-mix(in_srgb,var(--workspace-muted)_86%,transparent)]">
+          <div className="shrink-0 pt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/40">
             {formatConversationTime(conversation.updatedAt)}
           </div>
         </div>
 
-        <div className="mt-3 flex items-center gap-2">
-          <p className="min-w-0 flex-1 truncate text-xs font-medium text-[var(--workspace-muted)]">
+        <div className="mt-2.5 flex items-center gap-3">
+          <p className={cn(
+            "min-w-0 flex-1 truncate text-[13px] font-medium leading-relaxed",
+            conversation.unreadCount > 0 ? "font-bold text-foreground" : "text-muted-foreground/60"
+          )}>
             {conversation.lastMessagePreview || "ابدأ المحادثة"}
           </p>
           {conversation.unreadCount > 0 ? (
-            <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--workspace-highlight)] px-1.5 text-[10px] font-black text-[var(--primary-foreground)]">
+            <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-foreground px-1 text-[9px] font-black text-background">
               {conversation.unreadCount}
             </span>
           ) : null}
@@ -277,42 +225,23 @@ function ConversationRow({
   );
 }
 
-type InboxSidebarProps = {
-  conversations: ConversationSummary[];
-  activeId?: string | null;
-  invites: IncomingOrganizationInvite[];
-  isSearching?: boolean;
-  onAcceptInvite: (invite: IncomingOrganizationInvite) => void;
-  onCancelInvite: (inviteId: string) => void;
-  onInviteMessage: (invite: IncomingOrganizationInvite) => void;
-  onSearchChange: (value: string) => void;
-  onSelect: (conversationId: string) => void;
-  onStartConversation: (targetUserId: string) => void;
-  search: string;
-  searchResults: UserConversationTarget[];
-};
-
 function ConversationsPane({
-  activeCategory,
   activeId,
   conversations,
   onSelect,
 }: {
-  activeCategory: InboxCategory;
   activeId?: string | null;
   conversations: ConversationSummary[];
   onSelect: (conversationId: string) => void;
 }) {
-  const filteredConversations = useMemo(() => {
-    if (activeCategory === "all") return conversations;
-    if (activeCategory === "unread") return conversations.filter((conversation) => conversation.unreadCount > 0);
-    return conversations.filter((conversation) => resolveConversationCategory(conversation) === activeCategory);
-  }, [activeCategory, conversations]);
+  const filteredConversations = conversations;
 
   if (filteredConversations.length === 0) {
     return (
-      <div className="rounded-[24px] border border-dashed border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)] bg-[var(--workspace-panel)] px-4 py-5 text-sm font-medium text-[var(--workspace-muted)]">
-        لا توجد محادثات في هذا القسم حاليًا.
+      <div className="rounded-3xl border border-dashed border-border bg-muted/10 px-6 py-8 text-center">
+        <p className="text-[13px] font-bold text-muted-foreground leading-relaxed">
+          لا توجد محادثات في هذا القسم حاليًا.
+        </p>
       </div>
     );
   }
@@ -331,6 +260,21 @@ function ConversationsPane({
   );
 }
 
+type InboxSidebarProps = {
+  conversations: ConversationSummary[];
+  activeId?: string | null;
+  invites: IncomingOrganizationInvite[];
+  isSearching?: boolean;
+  onAcceptInvite: (invite: IncomingOrganizationInvite) => void;
+  onCancelInvite: (inviteId: string) => void;
+  onInviteMessage: (invite: IncomingOrganizationInvite) => void;
+  onSearchChange: (value: string) => void;
+  onSelect: (conversationId: string) => void;
+  onStartConversation: (targetUserId: string) => void;
+  search: string;
+  searchResults: UserConversationTarget[];
+};
+
 export default function InboxSidebar({
   activeId = null,
   conversations,
@@ -345,44 +289,33 @@ export default function InboxSidebar({
   search,
   searchResults,
 }: InboxSidebarProps) {
-  const [activeCategory, setActiveCategory] = useState<InboxCategory>("all");
   const hasSearch = search.trim().length > 0;
-  const counts = useMemo<Record<InboxCategory, number>>(
-    () => ({
-      all: conversations.length,
-      unread: conversations.filter((conversation) => conversation.unreadCount > 0).length,
-      brokers: conversations.filter((conversation) => resolveConversationCategory(conversation) === "brokers").length,
-      developers: conversations.filter((conversation) => resolveConversationCategory(conversation) === "developers").length,
-    }),
-    [conversations],
-  );
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col bg-[var(--workspace-sidebar)] text-foreground">
-      <div className="border-b border-[color:color-mix(in_srgb,var(--workspace-border)_78%,transparent)] px-5 py-5">
+    <aside className="flex h-full min-h-0 w-full flex-col bg-background text-foreground border-l border-border/40">
+      <div className="px-6 py-8">
         <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-base font-black text-[var(--workspace-bubble-other-foreground)]">البريد الوارد</h1>
-            <p className="mt-1 text-xs font-medium text-[var(--workspace-muted)]">
-              {conversations.length > 0 ? `${conversations.length} محادثة نشطة` : "ابدأ محادثة جديدة"}
-            </p>
+          <h1 className="text-xl font-black tracking-tight text-foreground">البريد الوارد</h1>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-muted/20 px-3 py-1 text-[11px] font-bold text-muted-foreground">
+              {conversations.length}
+            </span>
           </div>
         </div>
 
-        <label className="mt-4 block" htmlFor="workspace-inbox-search">
-          <div className="relative">
-            <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--workspace-muted)]" />
+        <div className="mt-6 flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
             <input
               id="workspace-inbox-search"
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="ابحث عن شخص أو جهة..."
-              className="w-full rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_74%,transparent)] bg-[var(--workspace-elevated)] py-2.5 pl-4 pr-10 text-sm font-bold text-[var(--workspace-bubble-other-foreground)] outline-none transition focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,transparent)] focus:bg-[var(--workspace-panel)]"
+              placeholder="ابحث عن محادثة..."
+              className="w-full rounded-2xl border border-border bg-muted/10 py-3 pl-5 pr-11 text-[13px] font-bold text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:border-foreground/20 focus:bg-background"
             />
           </div>
-        </label>
+        </div>
 
-        <CategoryBar activeCategory={activeCategory} counts={counts} onChange={setActiveCategory} />
         <SearchResultsState
           hasSearch={hasSearch}
           isSearching={isSearching}
@@ -405,7 +338,6 @@ export default function InboxSidebar({
 
         {!hasSearch ? (
           <ConversationsPane
-            activeCategory={activeCategory}
             activeId={activeId}
             conversations={conversations}
             onSelect={onSelect}

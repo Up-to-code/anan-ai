@@ -57,10 +57,11 @@ const FOLLOW_UP_STATUS_UI: Record<
   ReturnType<typeof getFollowUpStatus>,
   { label: string; toneClassName: string }
 > = {
-  overdue: { label: "متابعة متأخرة", toneClassName: "border-rose-200 bg-rose-50 text-rose-700" },
-  scheduled: { label: "موعد مجدول", toneClassName: "border-emerald-200 bg-emerald-50 text-emerald-700" },
-  none: { label: "بدون متابعة", toneClassName: "border-slate-200 bg-slate-50 text-slate-500" },
+  overdue: { label: "متابعة متأخرة", toneClassName: "border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400" },
+  scheduled: { label: "موعد مجدول", toneClassName: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+  none: { label: "بدون متابعة", toneClassName: "border-border bg-muted/20 text-muted-foreground" },
 };
+
 
 /**
  * WHY:   CRM client detail should make the relationship picture immediately visible.
@@ -80,21 +81,21 @@ export default function ClientDetailPage({
   const followUpStatus = getFollowUpStatus(client.nextFollowUpAt, nowTimestamp);
 
   return (
-    <div className="flex min-h-full flex-col">
-      <ZonePageIntro
-        eyebrow="إدارة الصفقات"
-        title={client.name}
-        description={client.notes}
-        actions={
-          <Link
-            href="/ws/crm"
-            className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-          >
-            <ArrowRight className="h-3.5 w-3.5" />
-            العودة للصفقات
-          </Link>
-        }
-      />
+    <div className="flex min-h-full flex-col pb-24">
+      <div className="flex items-center justify-between border-b border-border/60 px-6 py-10 lg:px-10">
+        <div className="space-y-1">
+          <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">إدارة الصفقات</div>
+          <h1 className="text-2xl font-black tracking-tight text-foreground">{client.name}</h1>
+          <p className="max-w-xl text-[13px] font-medium text-muted-foreground leading-relaxed">{client.notes}</p>
+        </div>
+        <Link
+          href="/ws/crm"
+          className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-5 text-[13px] font-bold text-foreground transition hover:border-foreground/30 hover:bg-muted/10"
+        >
+          <ArrowRight className="h-4 w-4" />
+          العودة للصفقات
+        </Link>
+      </div>
 
       <div className="grid gap-6 px-6 py-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8 lg:py-8">
         <div className="space-y-6">
@@ -141,16 +142,16 @@ export default function ClientDetailPage({
           )}
         </div>
 
-        <aside className="space-y-4">
+        <aside className="space-y-6">
           {/* Stage panel */}
-          <section className="border-2 border-slate-100 bg-white p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-700">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
               المرحلة الحالية
             </div>
-            <div className="mt-3 text-2xl font-black text-slate-950">{stageLabel}</div>
-            <div className="mt-2 h-1.5 w-full bg-slate-100">
+            <div className="mt-3 text-2xl font-black text-foreground">{stageLabel}</div>
+            <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className="h-1.5 bg-blue-600 transition-all"
+                className="h-full bg-foreground transition-all duration-500"
                 style={{
                   width: STAGE_PROGRESS_WIDTH[client.stage] ?? "5%",
                 }}
@@ -160,37 +161,37 @@ export default function ClientDetailPage({
 
           {/* Budget panel */}
           {client.budgetLabel ? (
-            <section className="border-2 border-slate-100 bg-white p-5">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-700">
+            <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
                 الميزانية
               </div>
-              <div className="mt-3 text-xl font-black text-slate-950">{client.budgetLabel}</div>
+              <div className="mt-3 text-xl font-bold text-foreground">{client.budgetLabel}</div>
             </section>
           ) : null}
 
           {/* Follow-up panel */}
-          <section className="border-2 border-slate-100 bg-white p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-700">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
               المتابعة القادمة
             </div>
-            <div className="mt-3 text-sm font-black text-slate-900">{formatFollowUpLabel(client.nextFollowUpAt)}</div>
+            <div className="mt-3 text-sm font-bold text-foreground">{formatFollowUpLabel(client.nextFollowUpAt)}</div>
             <div
-              className={`mt-2 inline-flex border px-2 py-1 text-[10px] font-black tracking-[0.18em] ${FOLLOW_UP_STATUS_UI[followUpStatus].toneClassName}`}
+              className={`mt-3 inline-flex rounded-xl border px-3 py-1.5 text-[11px] font-bold tracking-wide ${FOLLOW_UP_STATUS_UI[followUpStatus].toneClassName}`}
             >
               {FOLLOW_UP_STATUS_UI[followUpStatus].label}
             </div>
-            <form action={onFollowUpSubmit} className="mt-4 space-y-3">
+            <form action={onFollowUpSubmit} className="mt-6 space-y-3">
               <input
                 type="datetime-local"
                 name="nextFollowUpAt"
                 required
                 defaultValue={toDateTimeLocalValue(client.nextFollowUpAt)}
-                className="w-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
+                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-[13px] font-bold text-foreground outline-none focus:ring-1 focus:ring-ring"
               />
               <button
                 type="submit"
                 disabled={!onFollowUpSubmit}
-                className="w-full border border-slate-300 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-700 transition hover:border-blue-600 hover:text-blue-700 disabled:opacity-60"
+                className="w-full rounded-xl bg-foreground py-3 text-[13px] font-bold text-background transition hover:bg-foreground/90 disabled:opacity-50"
               >
                 حفظ المتابعة
               </button>
@@ -198,18 +199,19 @@ export default function ClientDetailPage({
           </section>
 
           {/* Broker panel */}
-          <section className="border-2 border-slate-100 bg-white p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-700">
-              الوسيط
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              الوسيط المرتبط
             </div>
             <div className="mt-4">
               {client.broker ? (
-                <PersonCard person={brokerPresenceToPersonCard(client.broker)} compact />
+                <div className="flex items-center gap-3">
+                  <PersonCard person={brokerPresenceToPersonCard(client.broker)} compact />
+                </div>
               ) : (
-                <BrandEmptyState
-                  title="بدون وسيط"
-                  description="لم يتم تعيين وسيط لهذا العميل بعد."
-                />
+                <div className="rounded-xl border border-dashed border-border bg-muted/10 p-8 text-center">
+                  <p className="text-sm font-bold text-muted-foreground">لم يتم تعيين وسيط لهذا العميل بعد.</p>
+                </div>
               )}
             </div>
           </section>

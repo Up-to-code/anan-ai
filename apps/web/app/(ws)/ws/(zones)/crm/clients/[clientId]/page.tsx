@@ -28,7 +28,7 @@ export default async function WorkspaceCrmClientDetailRoute({
   const propertyZone = getWorkspacePropertyZone(audience, ownerContext);
   const deals = await crmZone.listDeals();
   const deal = deals.find((entry) => entry.id === clientId) ?? null;
-  const property = deal?.propertyId ? await propertyZone.getProperty(deal.propertyId) : null;
+  const property = deal?.propertyId ? await propertyZone.getProperty({ id: deal.propertyId }) : null;
   const client = deal ? mapDealToCrmClientRecord(deal, property) : null;
 
   if (!client) {

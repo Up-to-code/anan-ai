@@ -114,27 +114,27 @@ export function buildMockMarketSnapshot(filters: MarketSnapshot["filters"]): Mar
     topCities: cities.length > 0 ? cities : CITY_BASE.slice(0, 4),
     topAreas: areaRows.length > 0 ? areaRows : [],
     sellingPoints: [
-      { label: "قرب الخدمات", count: 88, source: "features" },
-      { label: "جاهزية السكن", count: 71, source: "features" },
-      { label: "عوائد استثمارية", count: 64, source: "derived_configuration" },
-      { label: "3 غرف / 2 حمامات", count: 59, source: "derived_configuration" },
+      { label: "قرب الخدمات", count: 88, source: "features" as const },
+      { label: "جاهزية السكن", count: 71, source: "features" as const },
+      { label: "عوائد استثمارية", count: 64, source: "derived_configuration" as const },
+      { label: "3 غرف / 2 حمامات", count: 59, source: "derived_configuration" as const },
     ],
     keywordInsights: {
       relatedSearches: relatedSearchSeed.map((label, index) => ({
         label,
         count: 42 - index * 6,
-        source: index < 2 ? "research_query" : "search_log",
+        source: (index < 2 ? "research_query" : "search_log") as "research_query" | "research_term" | "search_log",
       })),
-      topKeywords: [
+      topKeywords: ([
         { label: "استثمار", count: 34, source: "query" },
         { label: "جاهز", count: 27, source: "query" },
         { label: "تشطيب", count: 22, source: "feature" },
-      ].filter((row) => matchesQuery(query, row.label)),
-      topTopics: [
+      ] as const).map(item => ({ ...item })).filter((row) => matchesQuery(query, row.label)),
+      topTopics: ([
         { label: "شقق", count: 41, source: "derived_topic" },
         { label: "فلل", count: 25, source: "derived_topic" },
         { label: "أراض", count: 16, source: "derived_topic" },
-      ].filter((row) => matchesQuery(query, row.label)),
+      ] as const).map(item => ({ ...item })).filter((row) => matchesQuery(query, row.label)),
       mostResearchedLabel: relatedSearchSeed[0] ?? `أفضل عقار في ${visibleCity}`,
     },
     opportunities: areaRows.slice(0, 4).map((row, index) => ({

@@ -6,7 +6,7 @@ import SearchOffersClient from "./SearchOffersClient";
 export default async function SearchOffersPage() {
   const workspace = await requireWorkspaceData("/ws/offers/search");
   const snapshot = await getWorkspaceOffersZone(workspace.audience, workspace.ownerContext).getSnapshot();
-  const items = [...snapshot.marketplace, ...snapshot.received, ...snapshot.sent].map(mapOfferToMarketplaceItem);
+  const items = [...snapshot.marketplace, ...snapshot.received, ...snapshot.sent].map((item) => mapOfferToMarketplaceItem(item));
 
   return <SearchOffersClient items={items} />;
 }

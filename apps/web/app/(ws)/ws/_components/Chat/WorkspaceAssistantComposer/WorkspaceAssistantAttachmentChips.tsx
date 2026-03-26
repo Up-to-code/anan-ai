@@ -46,7 +46,7 @@ export default function WorkspaceAssistantAttachmentChips() {
               {isImage ? (
                 <Image
                   src={file.url}
-                  alt={file.filename}
+                  alt={file.filename ?? "مرفق"}
                   width={48}
                   height={48}
                   unoptimized

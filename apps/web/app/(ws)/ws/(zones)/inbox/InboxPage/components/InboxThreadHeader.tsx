@@ -42,13 +42,13 @@ function ThreadAvatar({ image, name }: { image?: string | null; name: string }) 
       <img
         src={image}
         alt={name}
-        className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)]"
+        className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-border/40"
       />
     );
   }
 
   return (
-    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--workspace-elevated)] text-sm font-black text-[var(--workspace-muted)]">
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted text-[13px] font-black text-muted-foreground">
       {name.slice(0, 1) || "؟"}
     </div>
   );
@@ -59,23 +59,22 @@ function HeaderIdentity({
 }: {
   conversation: ConversationDetail;
 }) {
-  const organizationLabel = conversation.otherUser.organizationName ?? "بدون جهة مرتبطة";
+  const organizationLabel = conversation.otherUser.organizationName;
   const participantType = getParticipantTypeLabel(conversation);
 
   return (
     <div className="min-w-0 flex-1">
-      <div className="truncate text-base font-black text-[var(--workspace-bubble-other-foreground)]">
+      <div className="truncate text-[15px] font-black tracking-tight text-foreground">
         {conversation.otherUser.name}
       </div>
-      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--workspace-muted)]">
-        <span className="inline-flex items-center gap-1 rounded-full border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)] px-2.5 py-1">
-          <Building2 className="h-3.5 w-3.5" />
-          {organizationLabel}
-        </span>
-        <span className="inline-flex items-center gap-1 rounded-full border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)] px-2.5 py-1">
-          <UserRound className="h-3.5 w-3.5" />
-          {participantType}
-        </span>
+      <div className="mt-0.5 flex items-center gap-2 text-[11px] font-bold text-muted-foreground">
+        <span>{participantType}</span>
+        {organizationLabel ? (
+          <>
+            <span className="opacity-30">•</span>
+            <span className="truncate">{organizationLabel}</span>
+          </>
+        ) : null}
       </div>
     </div>
   );
@@ -164,20 +163,20 @@ export default function InboxThreadHeader({
   };
 
   return (
-    <header className="sticky top-0 z-10 border-b border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_94%,transparent)] px-4 py-4 backdrop-blur-xl sm:px-6">
-      <div className="flex items-start gap-3">
+    <header className="sticky top-0 z-10 border-b border-border/40 bg-background/80 px-6 py-4 backdrop-blur-xl">
+      <div className="flex items-center gap-4">
         {showBackButton ? (
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)] text-[var(--workspace-muted)] transition hover:bg-[var(--workspace-panel)] md:hidden"
-            aria-label="العودة إلى قائمة المحادثات"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition hover:bg-muted md:hidden"
+            aria-label="العودة"
           >
             <ArrowRight className="h-4 w-4" />
           </button>
         ) : null}
 
-        <div className="flex min-w-0 flex-1 items-start gap-3 rounded-[26px] border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_86%,transparent)] px-4 py-3">
+        <div className="flex min-w-0 flex-1 items-center gap-4">
           <ThreadAvatar image={conversation.otherUser.image} name={conversation.otherUser.name} />
           <HeaderIdentity conversation={conversation} />
 
@@ -186,54 +185,51 @@ export default function InboxThreadHeader({
               type="button"
               onClick={() => setIsMenuOpen((current) => !current)}
               className={cn(
-                "inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-bold transition",
+                "inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-[13px] font-bold transition-all",
                 isMenuOpen
-                  ? "border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,transparent)] text-[var(--workspace-highlight)]"
-                  : "border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)] text-[var(--workspace-bubble-other-foreground)] hover:bg-[var(--workspace-panel)]",
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border bg-card text-foreground hover:bg-muted"
               )}
               aria-expanded={isMenuOpen}
               aria-haspopup="menu"
-              aria-label="فتح إجراءات المحادثة"
             >
               إجراءات
-              <ChevronDown className="h-3.5 w-3.5" />
+              <ChevronDown className={cn("h-4 w-4 transition-transform", isMenuOpen && "rotate-180")} />
             </button>
 
             {isMenuOpen ? (
-              <div className="absolute left-0 top-[calc(100%+10px)] z-20 w-[300px] rounded-[26px] border border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)] bg-[var(--workspace-panel)] p-3 shadow-[0_24px_64px_rgba(0,0,0,0.28)]">
-                <div className="rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)] px-3 py-3">
-                  <div className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">
-                    {conversation.otherUser.name}
-                  </div>
-                  <div className="mt-1 text-xs font-medium text-[var(--workspace-muted)]">
-                    {conversation.otherUser.organizationName ?? "بدون جهة مرتبطة"}
-                  </div>
-                  <div className="mt-2 text-[11px] font-bold text-[var(--workspace-highlight)]">
-                    النوع: {getParticipantTypeLabel(conversation)}
-                  </div>
-                </div>
-
+              <div className="absolute left-0 top-[calc(100%+12px)] z-20 w-[240px] rounded-2xl border border-border bg-card p-2 shadow-xl shadow-black/10">
                 {canUseBusinessActions ? (
-                  <div className="mt-3 space-y-2" role="menu">
-                    <HeaderActionButton
-                      action="offer"
+                  <div className="space-y-1" role="menu">
+                    <button
+                      onClick={() => handleAction("offer")}
                       disabled={!canCreateOffer}
-                      label="إنشاء عرض خاص"
-                      onClick={handleAction}
-                    />
-                    <HeaderActionButton
-                      action="project"
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-right text-[13px] font-bold text-foreground transition hover:bg-muted disabled:opacity-40"
+                    >
+                      <Tag className="h-4 w-4" />
+                      إنشاء عرض خاص
+                    </button>
+                    <button
+                      onClick={() => handleAction("project")}
                       disabled={!canShareProjects}
-                      label="إرسال عقار أو شقة"
-                      onClick={handleAction}
-                    />
-                    <HeaderActionButton
-                      action="file"
-                      label="إرفاق ملف"
-                      onClick={handleAction}
-                    />
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-right text-[13px] font-bold text-foreground transition hover:bg-muted disabled:opacity-40"
+                    >
+                      <Building2 className="h-4 w-4" />
+                      إرسال مشروع
+                    </button>
+                    <button
+                      onClick={() => handleAction("file")}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-right text-[13px] font-bold text-foreground transition hover:bg-muted"
+                    >
+                      <FileUp className="h-4 w-4" />
+                      إرفاق ملف
+                    </button>
                   </div>
-                ) : null}
+                ) : (
+                  <div className="p-3 text-center text-[12px] font-medium text-muted-foreground">
+                    لا توجد إجراءات متاحة
+                  </div>
+                )}
               </div>
             ) : null}
           </div>

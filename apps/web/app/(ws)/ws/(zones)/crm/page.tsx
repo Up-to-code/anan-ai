@@ -10,7 +10,7 @@ export default async function WorkspaceCrmRoute() {
   const crmZone = getWorkspaceCrmZone(audience, ownerContext);
   const propertyZone = getWorkspacePropertyZone(audience, ownerContext);
   const deals = await crmZone.listDeals();
-  const propertyMap = await loadCrmPropertyMap(deals, propertyZone.getProperty);
+  const propertyMap = await loadCrmPropertyMap(deals, (input) => propertyZone.getProperty(input));
 
   async function updateStage(input: { dealId: string; stage: "new" | "contacted" | "negotiation" | "won" | "lost" }) {
     "use server";

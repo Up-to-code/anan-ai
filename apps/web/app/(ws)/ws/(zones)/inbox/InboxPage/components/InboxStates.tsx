@@ -9,12 +9,12 @@ import { MessageCircleMore } from "lucide-react";
  */
 export function InboxThreadEmptyState() {
   return (
-    <div className="flex h-full items-center justify-center bg-[color:color-mix(in_srgb,var(--workspace-canvas)_86%,transparent)] px-6">
-      <div className="flex max-w-md flex-col items-center gap-4 rounded-[28px] border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-panel)] px-8 py-10 text-center shadow-[0_20px_50px_rgba(0,0,0,0.12)]">
-        <MessageCircleMore className="h-10 w-10 text-[var(--workspace-highlight)]" />
-        <h2 className="text-lg font-black text-[var(--workspace-bubble-other-foreground)]">اختر محادثة من القائمة</h2>
-        <p className="max-w-sm text-sm font-medium leading-6 text-[var(--workspace-muted)]">
-          افتح محادثة حالية أو ابحث عن مستخدم جديد لبدء نقاش مباشر من مساحة العمل.
+    <div className="flex h-full items-center justify-center bg-background/50 px-6">
+      <div className="flex max-w-md flex-col items-center gap-4 rounded-3xl border border-border bg-card px-8 py-12 text-center shadow-sm">
+        <MessageCircleMore className="h-10 w-10 text-muted-foreground/40" />
+        <h2 className="text-xl font-black tracking-tight text-foreground">البريد الوارد</h2>
+        <p className="max-w-xs text-[13px] font-medium leading-relaxed text-muted-foreground/80">
+          اختر محادثة من القائمة الجانبية أو ابحث عن مستخدم جديد لبدء نقاش مباشر.
         </p>
       </div>
     </div>
@@ -28,8 +28,8 @@ export function InboxThreadEmptyState() {
  */
 export function InboxThreadLoadingState() {
   return (
-    <div className="flex h-full items-center justify-center bg-[color:color-mix(in_srgb,var(--workspace-canvas)_86%,transparent)] px-6">
-      <div className="rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-panel)] px-5 py-4 text-sm font-medium text-[var(--workspace-muted)]">
+    <div className="flex h-full items-center justify-center bg-background/50 px-6">
+      <div className="rounded-2xl border border-border bg-card px-6 py-4 text-[13px] font-bold text-muted-foreground shadow-sm animate-pulse">
         جاري تحميل المحادثة...
       </div>
     </div>

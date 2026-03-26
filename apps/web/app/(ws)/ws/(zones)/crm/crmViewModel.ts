@@ -68,10 +68,12 @@ export function mapDealToCrmClientRecord(
  */
 export async function loadCrmPropertyMap(
   deals: DealSummary[],
-  getProperty: (propertyId: string) => Promise<PropertyDetail | null>,
+  getProperty: (input: { id: string }) => Promise<PropertyDetail | null>,
 ) {
   const propertyIds = [...new Set(deals.flatMap((deal) => (deal.propertyId ? [deal.propertyId] : [])))];
-  const entries = await Promise.all(propertyIds.map(async (propertyId) => [propertyId, await getProperty(propertyId)] as const));
+  const entries = await Promise.all(
+    propertyIds.map(async (propertyId) => [propertyId, await getProperty({ id: propertyId })] as const),
+  );
   return new Map(entries);
 }
 

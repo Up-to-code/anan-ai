@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowUpLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type {
   DealShareMetadata,
   FileShareMetadata,
@@ -61,33 +62,47 @@ export default function InboxCollaborationCard({
 }) {
   return (
     <div
-      className={`space-y-4 rounded-[24px] border px-4 py-4 shadow-sm ${
+      className={cn(
+        "space-y-5 rounded-3xl border p-5 shadow-sm transition-all",
         isMe
-          ? "border-[color:color-mix(in_srgb,var(--workspace-border)_60%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-bubble-self)_84%,var(--workspace-panel))] text-[var(--workspace-bubble-self-foreground)]"
-          : "border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-panel)] text-[var(--workspace-bubble-other-foreground)]"
-      }`}
+          ? "border-foreground/10 bg-foreground/5 text-foreground"
+          : "border-border bg-card text-foreground"
+      )}
     >
-      <div className="space-y-1">
-        <div className={`text-[11px] font-black tracking-[0.18em] ${isMe ? "text-[var(--workspace-bubble-self-muted)]" : "text-[var(--workspace-highlight)]"}`}>{getCardLabel(metadata)}</div>
+      <div className="space-y-1.5">
+        <div className={cn(
+          "text-[11px] font-black uppercase tracking-widest",
+          isMe ? "text-foreground/60" : "text-foreground/70"
+        )}>
+          {getCardLabel(metadata)}
+        </div>
         <div className="text-sm font-black leading-6">{metadata.title}</div>
       </div>
-      <div className={`text-xs font-medium ${isMe ? "text-[var(--workspace-bubble-self-muted)]" : "text-[var(--workspace-bubble-other-muted)]"}`}>
+      <div className={cn("text-[12px] font-bold", isMe ? "text-foreground/70" : "text-muted-foreground")}>
         {metadata.actor.name}
         {metadata.actor.organizationName ? ` · ${metadata.actor.organizationName}` : ""}
       </div>
-      <div className={`rounded-2xl border px-3 py-3 text-sm font-medium leading-6 ${isMe ? "border-[color:color-mix(in_srgb,var(--workspace-border)_52%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-bubble-self)_74%,var(--workspace-panel))] text-[var(--workspace-bubble-self-foreground)]" : "border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)] text-[var(--workspace-bubble-other-foreground)]"}`}>{metadata.summary}</div>
-      <div className={`text-xs font-bold ${isMe ? "text-[var(--workspace-bubble-self-foreground)]" : "text-[var(--workspace-bubble-other-foreground)]"}`}>
+      <div className={cn(
+        "rounded-2xl border px-4 py-3.5 text-[13px] font-medium leading-relaxed",
+        isMe 
+          ? "border-foreground/20 bg-foreground/10 text-foreground" 
+          : "border-border bg-muted/30 text-foreground"
+      )}>
+        {metadata.summary}
+      </div>
+      <div className={cn("text-[13px] font-black", isMe ? "text-foreground" : "text-foreground")}>
         {getMetaDetails(metadata)}
       </div>
       <a
         href={metadata.action.href}
-        className={`inline-flex items-center gap-2 border px-3 py-2 text-xs font-bold transition ${
+        className={cn(
+          "inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-[13px] font-bold transition-all",
           isMe
-            ? "rounded-xl border-[color:color-mix(in_srgb,var(--workspace-border)_52%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-bubble-self)_74%,var(--workspace-panel))] text-[var(--workspace-bubble-self-foreground)] hover:brightness-110"
-            : "rounded-xl border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)] text-[var(--workspace-bubble-other-foreground)] hover:bg-[var(--workspace-accent-soft)] hover:text-[var(--workspace-highlight)]"
-        }`}
+            ? "border-foreground/20 bg-foreground text-background hover:bg-foreground/90"
+            : "border-border bg-card text-foreground hover:bg-muted"
+        )}
       >
-        <ArrowUpLeft className="h-3.5 w-3.5" />
+        <ArrowUpLeft className="h-4 w-4" />
         {metadata.action.label}
       </a>
     </div>

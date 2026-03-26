@@ -46,48 +46,53 @@ export default async function AddClientPage() {
     <div className="flex min-h-full flex-col">
       <ZonePageIntro eyebrow="إدارة العملاء" title="إضافة عميل جديد" description="أنشئ صفقة CRM جديدة مرتبطة بعميل وعقار اختياري." />
 
-      <div className="max-w-2xl px-6 py-6 lg:px-8 lg:py-8">
-        <form action={createClient} className="grid gap-6 border border-slate-200 bg-white p-8 dark:border-slate-800 dark:bg-slate-950">
-          <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">اسم العميل</label>
-            <input name="name" required className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+      <div className="mx-auto w-full max-w-2xl px-6 py-12 lg:px-10 lg:py-16">
+        <form action={createClient} className="grid gap-8 rounded-3xl border border-border bg-card p-8 md:p-12 shadow-xl shadow-black/[0.02]">
+          <div className="space-y-6">
+            <div>
+              <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">اسم العميل</label>
+              <input name="name" required className="w-full rounded-xl border border-border/40 bg-muted/10 px-4 py-3.5 text-[15px] font-bold text-foreground outline-none transition-all focus:border-foreground/20 focus:bg-muted/20" />
+            </div>
+            <div className="grid gap-6 sm:grid-cols-2">
+              <div>
+                <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">رقم الهاتف</label>
+                <input name="phone" className="w-full rounded-xl border border-border/40 bg-muted/10 px-4 py-3.5 text-[15px] font-bold text-foreground outline-none transition-all focus:border-foreground/20 focus:bg-muted/20" />
+              </div>
+              <div>
+                <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">الميزانية</label>
+                <input name="budget" className="w-full rounded-xl border border-border/40 bg-muted/10 px-4 py-3.5 text-[15px] font-bold text-foreground outline-none transition-all focus:border-foreground/20 focus:bg-muted/20" />
+              </div>
+            </div>
+            <div>
+              <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">موعد المتابعة</label>
+              <input
+                type="datetime-local"
+                name="nextFollowUpAt"
+                className="w-full rounded-xl border border-border/40 bg-muted/10 px-4 py-3.5 text-[15px] font-bold text-foreground outline-none transition-all focus:border-foreground/20 focus:bg-muted/20"
+              />
+            </div>
+            <div>
+              <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">العقار المرتبط</label>
+              <select name="propertyId" className="w-full rounded-xl border border-border/40 bg-muted/10 px-4 py-3.5 text-[15px] font-bold text-foreground outline-none transition-all focus:border-foreground/20 focus:bg-muted/20">
+                <option value="">بدون عقار</option>
+                {properties.page.map((property) => (
+                  <option key={property._id} value={property._id}>
+                    {property.title} - {property.location ?? property.address}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">الوصف / الاهتمام</label>
+              <textarea name="preference" rows={4} className="w-full rounded-xl border border-border/40 bg-muted/10 px-4 py-3.5 text-[15px] font-medium leading-[1.6] text-foreground outline-none transition-all focus:border-foreground/20 focus:bg-muted/20" />
+            </div>
           </div>
-          <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">رقم الهاتف</label>
-            <input name="phone" className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-          </div>
-          <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">الميزانية</label>
-            <input name="budget" className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-          </div>
-          <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">الوصف / الاهتمام</label>
-            <textarea name="preference" rows={4} className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" />
-          </div>
-          <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">موعد المتابعة</label>
-            <input
-              type="datetime-local"
-              name="nextFollowUpAt"
-              className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-            />
-          </div>
-          <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">العقار المرتبط</label>
-            <select name="propertyId" className="w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-              <option value="">بدون عقار</option>
-              {properties.page.map((property) => (
-                <option key={property._id} value={property._id}>
-                  {property.title} - {property.location ?? property.address}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex gap-3">
-            <button type="submit" className="flex-1 bg-slate-950 px-5 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-white dark:bg-slate-100 dark:text-slate-950">
+
+          <div className="flex flex-col gap-3 pt-4 sm:flex-row-reverse">
+            <button type="submit" className="flex-1 rounded-2xl bg-foreground px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-background transition-all hover:opacity-90 active:scale-[0.98] shadow-md">
               حفظ العميل
             </button>
-            <Link href="/ws/crm" className="flex-1 border border-slate-200 px-5 py-4 text-center text-[10px] font-black uppercase tracking-[0.3em] text-slate-700 dark:border-slate-700 dark:text-slate-200">
+            <Link href="/ws/crm" className="flex-1 rounded-2xl border border-border px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-[0.98]">
               إلغاء
             </Link>
           </div>

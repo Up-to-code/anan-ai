@@ -63,10 +63,12 @@ function PipelineClientFooter({
   onSaveFollowUp,
 }: PipelineClientFooterProps) {
   return (
-    <div className="space-y-3 border-t border-slate-200 pt-3 dark:border-slate-800">
-      <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{client.budgetLabel}</div>
-      <div className={`inline-flex border px-2 py-1 text-[10px] font-black tracking-[0.14em] ${followUpTone}`}>
-        متابعة: {followUpLabel}
+    <div className="space-y-3 border-t border-border/60 pt-3">
+      <div className="flex items-center justify-between">
+        <div className="text-xs font-medium text-muted-foreground">{client.budgetLabel}</div>
+        <div className={`inline-flex rounded-md border px-2 py-1 text-[10px] font-bold tracking-wide ${followUpTone}`}>
+          متابعة: {followUpLabel}
+        </div>
       </div>
       <FollowUpEditor
         client={client}
@@ -94,21 +96,21 @@ function FollowUpEditor({
   onSaveFollowUp: (clientId: string) => void;
 }) {
   return (
-    <div className="space-y-2">
-      <label className="block text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">المتابعة القادمة</label>
+    <div className="space-y-2 mt-2">
+      <label className="block text-[11px] font-bold text-muted-foreground">المتابعة القادمة</label>
       <input
         type="datetime-local"
         value={draft}
         onChange={(event) => onFollowUpDraftChange(client.id, event.currentTarget.value)}
-        className="w-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+        className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
       />
-      <div className="flex items-center justify-between gap-2">
-        <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{formatFollowUpLabel(client.nextFollowUpAt)}</div>
+      <div className="flex items-center justify-between gap-2 mt-2">
+        <div className="text-[11px] font-medium text-muted-foreground">{formatFollowUpLabel(client.nextFollowUpAt)}</div>
         <button
           type="button"
           disabled={isPending || !draft}
           onClick={() => onSaveFollowUp(client.id)}
-          className="border border-slate-300 bg-white px-3 py-2 text-[10px] font-black tracking-[0.16em] text-slate-700 transition hover:border-blue-600 hover:text-blue-700 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-blue-500 dark:hover:text-blue-300"
+          className="rounded-lg border border-border bg-card px-3 py-2 text-[11px] font-bold text-foreground transition hover:border-foreground/30 hover:bg-muted/50 disabled:opacity-50"
         >
           حفظ المتابعة
         </button>
@@ -119,17 +121,17 @@ function FollowUpEditor({
 
 function ClientCardActions({ clientId }: { clientId: string }) {
   return (
-    <>
+    <div className="pt-1">
       <Link
         href={`/ws/crm/clients/${clientId}`}
-        className="inline-flex border border-blue-500 bg-blue-500 px-3 py-2 text-[10px] font-black tracking-[0.18em] text-white dark:border-blue-500 dark:bg-blue-500 dark:text-white"
+        className="inline-flex rounded-lg border border-border bg-foreground px-4 py-2 text-[11px] font-bold tracking-wide text-background transition hover:bg-foreground/90 hover:opacity-90"
       >
-        فتح
+        فتح السجل
       </Link>
-      <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+      <div className="mt-2 text-[11px] leading-relaxed font-medium text-muted-foreground">
         تعديل العلاقات والمستندات يتم من سجل الصفقة الفعلي وليس من محاكاة محلية.
       </div>
-    </>
+    </div>
   );
 }
 

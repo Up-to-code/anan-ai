@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { SendHorizontal, Sparkles } from "lucide-react";
+import {
+  Calendar,
+  FileText,
+  Paperclip,
+  SendHorizontal,
+  ShieldCheck,
+  Smile,
+  Sparkles,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useUploadThing } from "@/lib/uploadthing";
 import type { UploadedFileReference } from "@/server/contracts/files";
 import type { ConversationDetail } from "@/server/contracts/inbox";
@@ -71,6 +80,27 @@ export function getInboxComposerKeyAction(key: string, shiftKey: boolean) {
  */
 export function isInboxComposerSendDisabled(draft: string, isSending = false) {
   return isSending || draft.trim().length === 0;
+}
+
+function ShareButton({
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  icon: React.ElementType;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-[13px] font-bold text-foreground transition-all hover:border-foreground/30 hover:bg-muted/30"
+    >
+      <Icon className="h-4 w-4 text-muted-foreground" />
+      <span>{label}</span>
+    </button>
+  );
 }
 
 /**
@@ -267,43 +297,43 @@ export default function InboxComposer({
     }
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (getInboxComposerKeyAction(event.key, event.shiftKey) === "send") {
+      event.preventDefault();
+      void handleSubmit();
+    }
+  };
+
   const inlineShareAction =
     activeShareAction === "file" || activeShareAction === "project" ? activeShareAction : null;
 
   return (
     <>
-      <div className="border-t border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] px-4 py-4 backdrop-blur sm:px-6">
+      <div className="border-t border-border/40 bg-background px-4 py-6 transition-all sm:px-6">
         <div className="mx-auto max-w-4xl">
           {sendError || localError ? (
-            <div className="mb-3 rounded-2xl border border-rose-500/22 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-200">
+            <div className="mb-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-600 dark:text-rose-400">
               {sendError || localError}
             </div>
           ) : null}
 
           {canUseBusinessActions ? (
-            <div className="mb-3">
-              <button
-                type="button"
-                onClick={() => setIsShareMenuOpen((current) => !current)}
-                className="inline-flex items-center gap-2 rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-panel)] px-3 py-2 text-xs font-bold text-[var(--workspace-bubble-other-foreground)] transition hover:bg-[var(--workspace-elevated)]"
-              >
-                <Sparkles className="h-3.5 w-3.5 text-[var(--workspace-highlight)]" />
-                مشاركة سريعة
-              </button>
-
-              {isShareMenuOpen || activeShareAction ? (
-                <div className="mt-3">
-                  <InboxQuickShareMenu
-                    activeAction={activeShareAction}
-                    canCreateOffer={projectOptions.length > 0}
-                    canShareProjects={projectOptions.length > 0}
-                    onSelectAction={(action) => {
-                      onShareActionChange(action);
-                      setIsShareMenuOpen(false);
-                    }}
-                  />
-                </div>
-              ) : null}
+            <div className="mb-4 flex flex-wrap gap-2">
+              <ShareButton
+                icon={FileText}
+                label="مشاركة ملف"
+                onClick={() => onShareActionChange("file")}
+              />
+              <ShareButton
+                icon={ShieldCheck}
+                label="إرسال عرض"
+                onClick={() => onShareActionChange("offer")}
+              />
+              <ShareButton
+                icon={Calendar}
+                label="تحديد موعد"
+                onClick={() => onShareActionChange("project")}
+              />
             </div>
           ) : null}
 
@@ -328,45 +358,42 @@ export default function InboxComposer({
             </div>
           ) : null}
 
-          <div className="rounded-[28px] border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-panel)] p-3 shadow-[0_18px_46px_rgba(0,0,0,0.12)]">
-            <div className="mb-3 flex items-center justify-between gap-3 border-b border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] px-2 pb-3">
-              <div className="text-right">
-                <div className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">
-                  اكتب رسالتك
-                </div>
-                <div className="mt-1 text-xs font-medium text-[var(--workspace-muted)]">
-                  رسالة واحدة واضحة، ثم استخدم المشاركة السريعة عند الحاجة.
-                </div>
-              </div>
-              <div className="rounded-full bg-[var(--workspace-elevated)] px-3 py-1 text-[11px] font-bold text-[var(--workspace-muted)]">
-                إلى {conversation.otherUser.name}
-              </div>
-            </div>
-
+          <div
+            className={cn(
+              "relative rounded-3xl border border-border bg-muted/10 p-2 shadow-sm transition-all focus-within:border-foreground/30 focus-within:bg-background shadow-black/5",
+              isSending && "opacity-50 grayscale cursor-not-allowed",
+            )}
+          >
             <textarea
               ref={textareaRef}
               rows={1}
-              placeholder="اكتب رسالة واضحة ومباشرة..."
               value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              onKeyDown={(event) => {
-                if (getInboxComposerKeyAction(event.key, event.shiftKey) === "send") {
-                  event.preventDefault();
-                  void handleSubmit();
-                }
-              }}
-              className="max-h-[220px] min-h-[74px] w-full resize-none bg-transparent px-2 py-2 text-sm font-medium leading-7 text-[var(--workspace-bubble-other-foreground)] outline-none placeholder:text-[var(--workspace-muted)]"
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="اكتب رسالتك لوسيط العقارات..."
+              disabled={isSending}
+              className="w-full resize-none bg-transparent px-4 py-3.5 text-[15px] font-medium leading-relaxed text-foreground placeholder-muted-foreground/50 outline-none"
             />
-
-            <div className="mt-3 flex items-center justify-between gap-3 border-t border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] pt-3">
-              <div className="text-xs font-medium text-[var(--workspace-muted)]">
-                Enter للإرسال، و Shift + Enter لسطر جديد.
+            <div className="flex items-center justify-between px-2 pb-1 pt-1">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-muted/30 hover:text-foreground"
+                >
+                  <Smile className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-muted/30 hover:text-foreground"
+                >
+                  <Paperclip className="h-5 w-5" />
+                </button>
               </div>
               <button
                 type="button"
                 onClick={() => void handleSubmit()}
-                disabled={isInboxComposerSendDisabled(draft, isSending)}
-                className="inline-flex items-center gap-2 rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-highlight)_34%,transparent)] bg-[var(--workspace-highlight)] px-4 py-2.5 text-sm font-bold text-[var(--primary-foreground)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] disabled:bg-[var(--workspace-elevated)] disabled:text-[var(--workspace-muted)]"
+                disabled={isSending || !draft.trim()}
+                className="flex items-center gap-2 rounded-2xl bg-foreground px-5 py-2.5 text-[13px] font-bold text-background transition-all hover:brightness-90 active:scale-95 disabled:scale-100 disabled:bg-muted disabled:text-muted-foreground"
               >
                 <SendHorizontal className="h-4 w-4" />
                 {isSending ? "جاري الإرسال" : "إرسال"}

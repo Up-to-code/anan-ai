@@ -13,7 +13,7 @@ export default async function WorkspaceCrmClientsRoute() {
   const deals = await getWorkspaceCrmZone(workspace.audience, workspace.ownerContext).listDeals();
   const propertyMap = await loadCrmPropertyMap(
     deals,
-    getWorkspacePropertyZone(workspace.audience, workspace.ownerContext).getProperty,
+    (input) => getWorkspacePropertyZone(workspace.audience, workspace.ownerContext).getProperty(input),
   );
   return <ClientsPage clients={deals.map((deal) => mapDealToCrmClientRecord(deal, propertyMap.get(deal.propertyId ?? "") ?? null))} />;
 }

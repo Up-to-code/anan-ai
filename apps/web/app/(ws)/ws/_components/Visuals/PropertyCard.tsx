@@ -37,11 +37,11 @@ export default function PropertyCard({
   const content = (
     <article
       className={cn(
-        "overflow-hidden rounded-lg border border-slate-200 bg-white transition-colors hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700",
+        "overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-colors hover:border-foreground/20",
         density === "flexible" ? "w-full" : density === "detail" ? "w-full max-w-sm" : "w-full max-w-xs",
       )}
     >
-      <div className="h-44 overflow-hidden bg-slate-100 dark:bg-slate-900">
+      <div className="h-44 overflow-hidden bg-muted/20">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={image} alt={title} className="h-full w-full object-cover" />
       </div>
@@ -49,28 +49,28 @@ export default function PropertyCard({
       <div className="space-y-4 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 text-right">
-            <h2 className="truncate text-base font-semibold leading-tight text-slate-900 dark:text-slate-100">{title}</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{location}</p>
+            <h2 className="truncate text-base font-semibold leading-tight text-foreground">{title}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{location}</p>
           </div>
-          <div className="shrink-0 text-sm font-semibold text-slate-900 dark:text-slate-100">{priceLabel}</div>
+          <div className="shrink-0 text-sm font-semibold text-foreground">{priceLabel}</div>
         </div>
 
-        {summary ? <p className="line-clamp-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{summary}</p> : null}
+        {summary ? <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">{summary}</p> : null}
 
         {specs.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 text-right sm:grid-cols-4">
             {specs.slice(0, 4).map((spec) => (
               <div key={spec.label}>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">{spec.label}</div>
-                <div className="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">{spec.value}</div>
+                <div className="text-[11px] text-muted-foreground">{spec.label}</div>
+                <div className="mt-1 text-sm font-medium text-foreground">{spec.value}</div>
               </div>
             ))}
           </div>
         ) : null}
 
-        {publicationBadge ? <div className="text-xs text-slate-500 dark:text-slate-400">{publicationBadge}</div> : null}
+        {publicationBadge ? <div className="text-xs text-muted-foreground">{publicationBadge}</div> : null}
 
-        {footer ? <div className="border-t border-slate-100 pt-3 dark:border-slate-800">{footer}</div> : null}
+        {footer ? <div className="border-t border-border/60 pt-3">{footer}</div> : null}
       </div>
     </article>
   );

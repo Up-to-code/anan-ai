@@ -67,7 +67,6 @@ export default function InstitutionalChatInput({
   const sendDisabled = !value.trim() || isSending || isMicProcessing;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isExpanded = value.length > 100 || value.includes("\n");
-  const [menuOpen, setMenuOpen] = React.useState(false);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -95,21 +94,12 @@ export default function InstitutionalChatInput({
       >
         <div
           className={cn(
-            "w-full mx-auto cursor-text overflow-clip bg-clip-padding p-2.5 shadow-lg border border-slate-200 transition-[border-radius] duration-200 ease-out",
-            isLanding ? "bg-white dark:bg-slate-900/50" : "bg-white dark:bg-slate-900/50",
-            isExpanded
-              ? "rounded-3xl grid [grid-template-columns:1fr] [grid-template-rows:auto_1fr_auto] [grid-template-areas:'header'_'primary'_'footer']"
-              : "rounded-3xl grid [grid-template-columns:auto_1fr_auto] [grid-template-rows:auto_1fr_auto] [grid-template-areas:'header_header_header'_'leading_primary_trailing'_'._footer_.']",
+            "mx-auto flex w-full flex-col overflow-hidden bg-background shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-border/80 transition-all duration-300 ease-out dark:shadow-none",
+            isExpanded ? "rounded-3xl p-3" : "rounded-[32px] p-2 hover:border-border"
           )}
         >
-          {/* ── Primary: Textarea ─────────────────────────────── */}
-          <div
-            className={cn(
-              "flex min-h-14 items-center overflow-x-hidden px-1.5",
-              isExpanded ? "px-2 py-1 mb-0" : "-my-2.5",
-            )}
-            style={{ gridArea: "primary" }}
-          >
+          {/* Text Area */}
+          <div className={cn("flex w-full", isExpanded ? "min-h-[120px] px-3 pt-3" : "min-h-[44px] px-4 py-2.5")}>
             <div className="flex-1 overflow-auto max-h-52">
               <textarea
                 ref={textareaRef}
@@ -119,68 +109,47 @@ export default function InstitutionalChatInput({
                 disabled={Boolean(isMicProcessing)}
                 placeholder={placeholder}
                 dir="rtl"
-                className="min-h-0 w-full resize-none rounded-none border-0 bg-transparent p-0 text-[15px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-0 scrollbar-thin leading-relaxed"
+                className="min-h-0 w-full resize-none border-0 bg-transparent p-0 text-[15px] font-medium leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0 scrollbar-thin"
                 rows={1}
               />
             </div>
           </div>
 
-          {/* ── Leading: Plus / Menu Button ────────────────────── */}
-          <div
-            className={cn("flex", { hidden: isExpanded })}
-            style={{ gridArea: "leading" }}
-          >
-            <div className="relative">
+          {/* Action Ribbon */}
+          <div className={cn("flex items-center justify-between", isExpanded ? "mt-4" : "")}>
+            <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                title="إرفاق ملفات"
               >
                 <Plus className="h-5 w-5" />
               </button>
-
-              {menuOpen && (
-                <div className="absolute bottom-full left-0 mb-2 z-50 min-w-[200px] rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl" dir="rtl">
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <Paperclip className="h-4 w-4 opacity-60" />
-                    إرفاق ملفات وصور
-                  </button>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <Sparkles className="h-4 w-4 opacity-60" />
-                    وضع المساعد الذكي
-                  </button>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <Search className="h-4 w-4 opacity-60" />
-                    بحث عميق
-                  </button>
-                </div>
-              )}
+              
+              <div className="hidden sm:flex items-center gap-1 border-r border-border/60 pr-1 mr-1">
+                <button
+                  type="button"
+                  className="flex h-9 items-center gap-2 rounded-full px-3 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground font-bold text-[13px]"
+                >
+                  <Search className="h-4 w-4" />
+                  بحث
+                </button>
+                <button
+                  type="button"
+                  className="flex h-9 items-center gap-2 rounded-full px-3 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground font-bold text-[13px]"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  بحث عميق
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* ── Trailing: Action Buttons ───────────────────────── */}
-          <div
-            className="flex items-center gap-1.5"
-            style={{ gridArea: isExpanded ? "footer" : "trailing" }}
-          >
-            <div className="ms-auto flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {canRegenerate && !isSending ? (
                 <button
                   type="button"
                   onClick={onRegenerate}
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                  className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <RotateCcw className="h-4 w-4" />
                 </button>
@@ -193,41 +162,34 @@ export default function InstitutionalChatInput({
                   onClick={onMicToggle}
                   disabled={!onMicToggle || (isMicProcessing && !isMicRecording)}
                   className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600",
-                    isMicRecording && "text-red-600 bg-red-50 hover:bg-red-100",
+                    "flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                    isMicRecording && "text-destructive bg-destructive/10 hover:bg-destructive/20",
                   )}
                 >
-                  {isMicRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  {isMicRecording ? <Square className="h-4 w-4" /> : <Mic className="h-5 w-5" />}
                 </button>
               </div>
-
-              <button
-                type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-              >
-                <AudioLines className="h-4 w-4" />
-              </button>
 
               {isSending ? (
                 <button
                   type="button"
                   onClick={onStopGenerating}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-white shadow-sm transition-transform hover:scale-105"
+                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-foreground text-background shadow-sm transition-transform hover:scale-105"
                 >
-                  <Square className="h-3.5 w-3.5 fill-current" />
+                  <Square className="h-4 w-4 fill-current" />
                 </button>
               ) : value.trim() ? (
                 <button
                   type="submit"
                   disabled={sendDisabled}
                   className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-full transition-all",
+                    "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-all",
                     sendDisabled
-                      ? "cursor-not-allowed bg-slate-100 text-slate-300"
-                      : "bg-slate-900 text-white shadow-sm hover:scale-105 active:scale-95",
+                      ? "bg-muted text-muted-foreground"
+                      : "bg-foreground text-background shadow-sm hover:scale-105 active:scale-95",
                   )}
                 >
-                  <ArrowUp className="h-4 w-4" />
+                  <ArrowUp className="h-5 w-5" />
                 </button>
               ) : null}
             </div>
