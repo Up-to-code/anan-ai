@@ -1,7 +1,7 @@
 import { ConvexError } from "convex/values";
 import type { Id } from "../../_generated/dataModel";
 import type { ActionCtx } from "../../_generated/server";
-import { api } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 
 const ASSEMBLYAI_BASE_URL = "https://api.assemblyai.com";
 const POLL_INTERVAL_MS = 1_500;
@@ -35,7 +35,7 @@ async function sleep(ms: number) {
 }
 
 async function resolveVoiceStorageUrl(ctx: ActionCtx, storageId: Id<"_storage">) {
-  const storageUrl = await ctx.runQuery(api.shared_logic.lib.storage.getUrl, { storageId });
+  const storageUrl = await ctx.runQuery(internal.shared_logic.lib.storage.getUrl, { storageId });
   if (!storageUrl) {
     throw new ConvexError({
       code: "NOT_FOUND",

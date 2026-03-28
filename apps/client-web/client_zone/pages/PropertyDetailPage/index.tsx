@@ -11,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/cli
 import { Button } from "@/client_zone/components/ui/button";
 import { Badge } from "@/client_zone/components/ui/badge";
 import { formatCurrency } from "@/client_zone/lib/formatters";
-import { MOCK_PROPERTIES } from "@/client_zone/lib/mockAssistant/mockCatalog";
 
 /**
  * WHY:   Buyers need a focused property detail view that connects directly back into the assistant flow.
@@ -21,15 +20,11 @@ import { MOCK_PROPERTIES } from "@/client_zone/lib/mockAssistant/mockCatalog";
 export function PropertyDetailPage({ propertyId }: { propertyId: string }) {
   const { isAuthenticated } = useConvexAuth();
   const { dictionary, locale } = useLocaleDictionary();
-  const isMockPropertyId = propertyId.startsWith("demo-");
-  const mockProperty = isMockPropertyId
-    ? (MOCK_PROPERTIES.find((property) => property.id === propertyId) ?? null)
-    : null;
   const liveProperty = useQuery(
     api.user_zone.web.properties.getPropertyDetail,
-    isMockPropertyId ? "skip" : { propertyId: propertyId as never },
+    { propertyId: propertyId as never },
   );
-  const property = mockProperty ?? liveProperty;
+  const property = liveProperty;
 
   useEffect(() => {
     if (!property) return;

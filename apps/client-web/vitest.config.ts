@@ -11,15 +11,10 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["apps/client-web/client_zone/components/chat/**/*.test.{ts,tsx}"],
+    include: ["client_zone/**/*.test.{ts,tsx}"],
     environment: "node",
     globals: false,
     testTimeout: 30_000,
     hookTimeout: 10_000,
-  },
-  server: {
-    deps: {
-      inline: ["@convex-dev/auth"],
-    },
   },
 });

@@ -5,7 +5,7 @@ import { useAction, useMutation, useQuery, useConvexAuth } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/convexApi";
 import { capturePostHogEvent } from "@/lib/posthog";
-import { buildClientUiTurn } from "@/client_zone/lib/mockAssistant/adapters";
+import { buildClientUiTurn } from "@/client_zone/lib/clientAgUi";
 import type {
   AssistantMessage,
   ClientOrderDetail,
@@ -253,9 +253,7 @@ export function useClientAssistant({
 
     try {
       const selectedPropertyId =
-        activeProperty && !String(activeProperty.id).startsWith("demo-")
-          ? (activeProperty.id as never)
-          : undefined;
+        activeProperty ? (activeProperty.id as never) : undefined;
       const response = await askClientAssistant({
         message: trimmed,
         threadId: isAuthenticated && activeThreadId ? (activeThreadId as never) : undefined,

@@ -48,6 +48,7 @@ export function capturePostHogEvent(
   event: string,
   properties: Record<string, AnalyticsPrimitive | string[]> = {},
 ) {
+  if (!isInitialized) return;
   const payload = Object.fromEntries(
     Object.entries(properties).filter(([, value]) => value !== undefined),
   );
@@ -60,6 +61,7 @@ export function capturePostHogEvent(
  * HOW:   Calls `identify` when a non-empty id is available.
  */
 export function identifyPostHogUser(userId?: string | null) {
+  if (!isInitialized) return;
   if (!userId?.trim()) return;
   posthog.identify(userId.trim());
 }
@@ -70,6 +72,7 @@ export function identifyPostHogUser(userId?: string | null) {
  * HOW:   Delegates to the shared SDK instance.
  */
 export function resetPostHogUser() {
+  if (!isInitialized) return;
   posthog.reset();
 }
 

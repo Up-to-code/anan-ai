@@ -1,4 +1,4 @@
-import { buildClientUiTurn } from "./mockAssistant/adapters";
+import { buildClientUiTurn } from "./clientAgUi";
 import type {
   AssistantMessage,
   ClientProperty,
