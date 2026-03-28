@@ -60,5 +60,9 @@
     "convex-test": "^0.0.41",
     "typescript": "^5.2.2",
     "vitest": "^2.0.0"
-  }
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }
