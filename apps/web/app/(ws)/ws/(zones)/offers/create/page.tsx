@@ -5,31 +5,43 @@ import { mapPropertyToOfferOption } from "../offerViewModel";
 import type { UploadedFileReference } from "@/server/contracts/files";
 import type { OfferActionResult } from "@/server/contracts/offers";
 
-function buildOfferRedirectQuery(result: OfferActionResult) {
-  const params = new URLSearchParams();
-  if (result.notification) {
-    params.set("deliveryTarget", result.notification.targetName);
-    params.set("deliveryOrganization", result.notification.organizationName);
-    params.set("deliveryPushStatus", result.notification.pushStatus);
-    params.set("deliveryConversationId", result.conversationId ?? "");
-  }
-  return params.toString();
-}
-
-export default async function CreateOfferPage() {
+export default async function CreateOfferPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const workspace = await requireWorkspaceData("/ws/offers/create");
   const audience = workspace.audience;
   const ownerContext = workspace.ownerContext ?? null;
   const properties = await getWorkspacePropertyZone(audience, ownerContext).listProperties({
     paginationOpts: { cursor: null, numItems: 100 },
   });
+  const params = await searchParams;
+  const propertyId = Array.isArray(params.propertyId) ? params.propertyId[0] : params.propertyId;
+  const mode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
+  const clientName = Array.isArray(params.clientName) ? params.clientName[0] : params.clientName;
+  const clientPhone = Array.isArray(params.clientPhone) ? params.clientPhone[0] : params.clientPhone;
+  const clientBudget = Array.isArray(params.clientBudget) ? params.clientBudget[0] : params.clientBudget;
+  const clientNeed = Array.isArray(params.clientNeed) ? params.clientNeed[0] : params.clientNeed;
 
   async function createOffer(data: {
     propertyId: string;
+    mode: "open_offer" | "private_offer" | "collaboration_case";
     title: string;
     description: string;
     price: string;
-    visibility: "public" | "private";
+    allowedAudience: "brokers" | "developers" | "both";
+    commissionText?: string;
+    permitStatus?: string;
+    productStatus?: string;
+    recipientEmail?: string;
+    recipientPhone?: string;
+    clientContext?: {
+      clientName: string;
+      clientPhone?: string;
+      clientBudget?: string;
+      clientNeed: string;
+    };
     attachments: UploadedFileReference[];
   }) {
     "use server";
@@ -39,16 +51,32 @@ export default async function CreateOfferPage() {
       price: Number(data.price.replace(/[^\d.]/g, "")) || 0,
       message: data.title,
       description: data.description,
-      visibility: data.visibility,
+      visibility: data.mode === "open_offer" ? "public" : "private",
+      caseType: data.mode,
+      allowedAudience: data.allowedAudience,
+      commissionText: data.commissionText,
+      permitStatus: data.permitStatus,
+      productStatus: data.productStatus,
+      recipientEmail: data.recipientEmail,
+      recipientPhone: data.recipientPhone,
+      clientContext: data.clientContext,
       attachments: data.attachments,
     });
     await actionZone.publishOffer({ id: result.offerId });
-    const query = buildOfferRedirectQuery(result);
-    return { redirectTo: `/ws/offers/${result.offerId}${query ? `?${query}` : ""}` };
+    return { redirectTo: `/ws/offers/${result.offerId}` };
   }
+
   return (
     <CreateOfferForm
       properties={properties.page.map(mapPropertyToOfferOption)}
+      initialData={{
+        propertyId,
+        mode: mode === "private_offer" || mode === "collaboration_case" ? mode : "open_offer",
+        clientName,
+        clientPhone,
+        clientBudget,
+        clientNeed,
+      }}
       onSubmit={createOffer}
     />
   );

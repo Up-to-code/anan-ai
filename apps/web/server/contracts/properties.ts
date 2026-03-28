@@ -4,6 +4,7 @@ import { uploadedFileReferenceSchema } from "@/server/contracts/files";
 
 export const propertyStatusSchema = z.enum(["available", "sold", "reserved"]);
 export const publicationStateSchema = z.enum(["draft", "published", "archived"]);
+export const buyerVisibilitySchema = z.enum(["private", "public"]);
 
 export const paginationOptionsSchema = z.object({
   cursor: z.string().nullable(),
@@ -32,6 +33,7 @@ export const propertyPresentationSchema = z.object({
   privatePermitSummary: z.string().trim().min(1).optional(),
   privatePermitFiles: z.array(uploadedFileReferenceSchema).optional(),
   privatePermitVisibility: z.literal("conversation_only").optional(),
+  privateViewerAuthUserIds: z.array(z.string().min(1)).optional(),
 });
 
 export const propertyBodySchema = z.object({
@@ -58,6 +60,7 @@ export const createPropertyInputSchema = z.object({
   media: z.array(uploadedFileReferenceSchema).optional(),
   body: propertyBodySchema.optional(),
   adLicenseNumber: z.string().trim().optional(),
+  publicationState: publicationStateSchema.optional(),
 });
 
 /**
@@ -72,6 +75,7 @@ export type CreatePropertyInput = z.infer<typeof createPropertyInputSchema>;
 export type UpdatePropertyInput = z.infer<typeof updatePropertyInputSchema>;
 export type PropertyPresentation = z.infer<typeof propertyPresentationSchema>;
 export type PropertyBody = z.infer<typeof propertyBodySchema>;
+export type BuyerVisibility = z.infer<typeof buyerVisibilitySchema>;
 
 export type PropertyDetail = {
   _id: string;
@@ -98,6 +102,45 @@ export type PropertyDetail = {
   adLicenseStatus?: "pending" | "approved" | "rejected";
   adLicenseVerificationRequestId?: string;
 };
+
+export const propertyViewerSummarySchema = z.object({
+  authUserId: z.string().min(1),
+  name: z.string().min(1),
+  email: z.string().email().nullable().optional(),
+  accessSource: z.enum(["manual", "chat_share"]),
+  createdAt: z.number().int().nonnegative(),
+  updatedAt: z.number().int().nonnegative(),
+});
+export type PropertyViewerSummary = z.infer<typeof propertyViewerSummarySchema>;
+
+export const organizationAssetSchema = z.object({
+  _id: z.string().min(1).optional(),
+  tenantOrgId: z.string().min(1),
+  uploaderAuthUserId: z.string().min(1),
+  category: z.enum([
+    "project_image",
+    "project_document",
+    "chat_attachment",
+    "offer_attachment",
+    "verification_document",
+  ]),
+  kind: z.enum(["image", "pdf"]),
+  key: z.string().min(1),
+  url: z.string().url(),
+  name: z.string().min(1),
+  size: z.number().int().nonnegative(),
+  mime: z.string().min(1),
+  lifecycleState: z.enum(["active", "archived", "pending_delete", "deleted"]),
+  attachedEntityType: z.enum(["project", "conversation", "offer"]).nullable().optional(),
+  attachedEntityId: z.string().nullable().optional(),
+  visibilityScope: z.enum(["organization", "project_private_share", "public_project"]),
+  createdAt: z.number().int().nonnegative(),
+  updatedAt: z.number().int().nonnegative(),
+  scheduledDeletionAt: z.number().int().nonnegative().optional(),
+  deletedAt: z.number().int().nonnegative().optional(),
+  deletionReason: z.string().min(1).optional(),
+});
+export type OrganizationAsset = z.infer<typeof organizationAssetSchema>;
 
 export type PropertyListItem = PropertyDetail;
 export type PaginatedPropertiesResult = PaginationResult<PropertyListItem>;

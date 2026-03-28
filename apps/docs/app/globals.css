@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -29,6 +31,23 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  --color-workspace-shell: var(--workspace-shell);
+  --color-workspace-canvas: var(--workspace-canvas);
+  --color-workspace-panel: var(--workspace-panel);
+  --color-workspace-elevated: var(--workspace-elevated);
+  --color-workspace-sidebar: var(--workspace-sidebar);
+  --color-workspace-sidebar-strong: var(--workspace-sidebar-strong);
+  --color-workspace-border: var(--workspace-border);
+  --color-workspace-muted: var(--workspace-muted);
+  --color-workspace-bubble-self: var(--workspace-bubble-self);
+  --color-workspace-bubble-self-foreground: var(--workspace-bubble-self-foreground);
+  --color-workspace-bubble-self-muted: var(--workspace-bubble-self-muted);
+  --color-workspace-bubble-other: var(--workspace-bubble-other);
+  --color-workspace-bubble-other-foreground: var(--workspace-bubble-other-foreground);
+  --color-workspace-bubble-other-muted: var(--workspace-bubble-other-muted);
+  --color-workspace-accent-soft: var(--workspace-accent-soft);
+  --color-workspace-highlight: var(--workspace-highlight);
 }
 
 :root {
@@ -57,6 +76,70 @@
   --sidebar-border: #dbe3ef;
   --sidebar-ring: #2563eb;
   --radius: 0.85rem;
+
+  --workspace-shell: #f5f5f5;
+  --workspace-canvas: #fafafa;
+  --workspace-panel: #ffffff;
+  --workspace-elevated: #f4f4f5;
+  --workspace-sidebar: #fafafa;
+  --workspace-sidebar-strong: #f0f0f1;
+  --workspace-border: rgba(39, 39, 42, 0.08);
+  --workspace-muted: #71717a;
+  --workspace-bubble-self: #2563eb;
+  --workspace-bubble-self-foreground: #eff6ff;
+  --workspace-bubble-self-muted: #bfdbfe;
+  --workspace-bubble-other: #f4f4f5;
+  --workspace-bubble-other-foreground: #152236;
+  --workspace-bubble-other-muted: #71717a;
+  --workspace-accent-soft: #f0f0f1;
+  --workspace-highlight: #2563eb;
+}
+
+.dark {
+  --background: #09090b;
+  --foreground: #f4f4f5;
+  --card: #111114;
+  --card-foreground: #f4f4f5;
+  --popover: #101013;
+  --popover-foreground: #f4f4f5;
+  --primary: #60a5fa;
+  --primary-foreground: #ffffff;
+  --secondary: #18181b;
+  --secondary-foreground: #f4f4f5;
+  --muted: #18181b;
+  --muted-foreground: #a1a1aa;
+  --accent: #15161a;
+  --accent-foreground: #f4f4f5;
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: rgba(244, 244, 245, 0.08);
+  --input: #17181b;
+  --ring: #60a5fa;
+
+  --sidebar: #0c0c0f;
+  --sidebar-foreground: #f4f4f5;
+  --sidebar-primary: #60a5fa;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #141519;
+  --sidebar-accent-foreground: #f4f4f5;
+  --sidebar-border: rgba(244, 244, 245, 0.07);
+  --sidebar-ring: #60a5fa;
+
+  --workspace-shell: #09090b;
+  --workspace-canvas: #0d0d10;
+  --workspace-panel: #111114;
+  --workspace-elevated: #18181b;
+  --workspace-sidebar: #0c0c0f;
+  --workspace-sidebar-strong: #070709;
+  --workspace-border: rgba(244, 244, 245, 0.08);
+  --workspace-muted: #a1a1aa;
+  --workspace-bubble-self: #1e40af;
+  --workspace-bubble-self-foreground: #eff6ff;
+  --workspace-bubble-self-muted: #bfdbfe;
+  --workspace-bubble-other: #18181b;
+  --workspace-bubble-other-foreground: #f4f4f5;
+  --workspace-bubble-other-muted: #a1a1aa;
+  --workspace-accent-soft: #141519;
+  --workspace-highlight: #60a5fa;
 }
 
 * {
@@ -84,4 +167,39 @@ a {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* --- Scrollbar --- */
+:root {
+  --sb-thumb: #0f172a;
+  --sb-thumb-hover: #2563eb;
+  --sb-track: transparent;
+}
+
+.dark {
+  --sb-thumb: #52525b;
+  --sb-thumb-hover: #60a5fa;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sb-thumb) var(--sb-track);
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: var(--sb-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--sb-thumb);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sb-thumb-hover);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
 }

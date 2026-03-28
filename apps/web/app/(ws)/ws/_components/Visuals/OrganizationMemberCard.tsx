@@ -1,4 +1,4 @@
-import { Building2, Mail, ShieldCheck, Users } from "lucide-react";
+import { Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { OrganizationSummary } from "@/server/contracts/organizations";
 import type { OrganizationMemberDisplay } from "../../_lib/entities";
@@ -9,9 +9,7 @@ import {
 } from "../../_lib/organizationMembers";
 
 /**
- * WHY:   Current-organization member screens need one reusable card instead of repeating bespoke team-member markup.
- * WHAT:  Renders a member-focused card with initials, email, role, status, organization accent, and optional actions.
- * HOW:   Uses the existing `OrganizationMemberDisplay` payload plus organization type to keep styling shared across settings and CRM.
+ * Simplified member card — clean row layout with avatar, name, email, role, and optional footer.
  */
 export default function OrganizationMemberCard({
   member,
@@ -31,85 +29,51 @@ export default function OrganizationMemberCard({
 
   return (
     <article
+      dir="rtl"
       className={cn(
-        "group overflow-hidden rounded-2xl border border-slate-200/60 border-l-[3px] bg-white shadow-sm transition-all duration-300 dark:border-slate-800 dark:bg-slate-950",
-        "hover:-translate-y-0.5 hover:shadow-lg",
-        theme.borderClassName,
+        "rounded-2xl border border-border bg-card p-4 transition-all hover:bg-muted/30",
         className,
       )}
     >
-      <div className="space-y-4 p-5">
-        <div className="flex items-start gap-4">
-          <div className="relative shrink-0">
-            <div
-              className={cn(
-                "flex h-14 w-14 items-center justify-center rounded-xl text-lg font-black ring-2 ring-slate-100 transition-shadow dark:ring-slate-800",
-                theme.avatarClassName,
-                theme.ringClassName,
-              )}
-            >
-              {avatarLabel}
-            </div>
+      <div className="flex items-center gap-3">
+        {/* Avatar */}
+        <div
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-black",
+            theme.avatarClassName,
+          )}
+        >
+          {avatarLabel}
+        </div>
+
+        {/* Info */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="truncate text-[14px] font-bold text-foreground">{member.name}</h3>
             <span
               className={cn(
-                "absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white text-white dark:border-slate-950",
-                theme.accentDotClassName,
+                "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold",
+                isActive
+                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                  : "bg-muted text-muted-foreground",
               )}
             >
-              {organizationType === "red" ? (
-                <Building2 className="h-2.5 w-2.5" />
-              ) : (
-                <Users className="h-2.5 w-2.5" />
-              )}
+              {member.statusLabel}
             </span>
           </div>
-
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{member.name}</h3>
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-bold",
-                  theme.roleClassName,
-                )}
-              >
-                {organizationType === "red" ? <Building2 className="h-3 w-3" /> : <Users className="h-3 w-3" />}
-                {roleLabel}
-              </span>
-            </div>
-
-            <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
-              {theme.accentLabel}
-            </p>
-
-            <p className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400" dir="ltr">
-              <Mail className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">{member.email}</span>
-            </p>
-          </div>
+          <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted-foreground" dir="ltr">
+            <Mail className="h-3 w-3 shrink-0" />
+            <span className="truncate">{member.email}</span>
+          </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest",
-              isActive
-                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                : "border-border bg-muted text-muted-foreground",
-            )}
-          >
-            {isActive ? <ShieldCheck className="h-3 w-3" /> : null}
-            {member.statusLabel}
-          </span>
-          {member.username ? (
-            <span className="rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:border-slate-700 dark:text-slate-400">
-              @{member.username}
-            </span>
-          ) : null}
-        </div>
-
-        {footer ? <div className="border-t border-slate-100 pt-4 dark:border-slate-800">{footer}</div> : null}
+        {/* Role */}
+        <span className="shrink-0 rounded-lg border border-border px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
+          {roleLabel}
+        </span>
       </div>
+
+      {footer ? <div className="mt-3 border-t border-border pt-3">{footer}</div> : null}
     </article>
   );
 }

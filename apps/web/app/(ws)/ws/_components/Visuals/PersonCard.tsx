@@ -78,6 +78,9 @@ export default function PersonCard({
               {person.relation?.project?.title ?? "بدون مشروع"}
             </div>
             <div className="mt-1 text-sm text-muted-foreground">{person.relation?.unit?.label ?? "على مستوى المشروع"}</div>
+            {person.relation?.stageLabel ? (
+              <div className="mt-1 text-[11px] font-bold text-blue-700">{person.relation.stageLabel}</div>
+            ) : null}
           </div>
           <div className="flex items-center justify-between gap-3 text-sm">
             <div>

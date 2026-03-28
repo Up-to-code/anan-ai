@@ -7,9 +7,10 @@ import { modules } from "../../../test.setup";
 async function seedBrokerKeyFixture(t: ReturnType<typeof convexTest>) {
   const now = Date.now();
   return t.run(async (ctx) => {
-    const [brokerOneId, brokerTwoId] = await Promise.all([
+    const [brokerOneId, brokerTwoId, relatedBrokerId] = await Promise.all([
       ctx.db.insert("brokers", { name: "Broker One", slug: "broker-one", status: "active" } as any),
       ctx.db.insert("brokers", { name: "Broker Two", slug: "broker-two", status: "active" } as any),
+      ctx.db.insert("brokers", { name: "Related Broker", slug: "related-broker", status: "active", phone: "+966500000001", isVerified: true } as any),
     ]);
 
     const [ownClientId, foreignClientId] = await Promise.all([
@@ -56,6 +57,28 @@ async function seedBrokerKeyFixture(t: ReturnType<typeof convexTest>) {
       } as any),
     ]);
 
+    const [ownDealId, foreignDealId] = await Promise.all([
+      ctx.db.insert("deals", {
+        title: "Deal One",
+        brokerId: brokerOneId,
+        crmClientId: ownClientId,
+        propertyId: ownPropertyId,
+        relatedBrokerId,
+        relationType: "broker_managed",
+        stage: "negotiation",
+        createdAt: now - 1000,
+      } as any),
+      ctx.db.insert("deals", {
+        title: "Deal Two",
+        brokerId: brokerTwoId,
+        crmClientId: foreignClientId,
+        propertyId: foreignPropertyId,
+        relationType: "internal_client",
+        stage: "new",
+        createdAt: now - 1000,
+      } as any),
+    ]);
+
     const activeKeyId = await ctx.db.insert("organizationApiKeys", {
       keyId: "oak_active",
       prefix: "anan_1234",
@@ -67,6 +90,11 @@ async function seedBrokerKeyFixture(t: ReturnType<typeof convexTest>) {
         { resource: "clients", action: "update" },
         { resource: "properties", action: "read" },
         { resource: "properties", action: "update" },
+        { resource: "deals", action: "read" },
+        { resource: "deals", action: "create" },
+        { resource: "deals", action: "update" },
+        { resource: "deals", action: "delete" },
+        { resource: "brokers", action: "read" },
       ],
       status: "active",
       ownerType: "broker",
@@ -96,6 +124,9 @@ async function seedBrokerKeyFixture(t: ReturnType<typeof convexTest>) {
       foreignClientId,
       ownPropertyId,
       foreignPropertyId,
+      ownDealId,
+      foreignDealId,
+      relatedBrokerId,
     };
   });
 }
@@ -155,5 +186,63 @@ describe("organization api key machine mutations", () => {
         title: "Foreign Update",
       } as never),
     ).rejects.toThrow("Property not found");
+  });
+
+  it("persists external references on client writes", async () => {
+    const t = convexTest(schema, modules);
+    const seeded = await seedBrokerKeyFixture(t);
+
+    const result = await t.mutation(api.shared_logic.agencies.repositories.apiKeys.createClientByApiKey as never, {
+      secretHash: "secret-hash-active",
+      now: seeded.now,
+      name: "Imported Client",
+      sourceSystem: "hubspot",
+      externalId: "ext-123",
+      businessId: "biz-456",
+    } as never);
+
+    expect((result as { client: { sourceSystem?: string; externalId?: string; businessId?: string } }).client).toEqual(
+      expect.objectContaining({
+        sourceSystem: "hubspot",
+        externalId: "ext-123",
+        businessId: "biz-456",
+      }),
+    );
+  });
+
+  it("returns relation-rich deals for the owning organization only", async () => {
+    const t = convexTest(schema, modules);
+    const seeded = await seedBrokerKeyFixture(t);
+
+    const result = await t.mutation(api.shared_logic.agencies.repositories.apiKeys.listDealsByApiKey as never, {
+      secretHash: "secret-hash-active",
+      now: seeded.now,
+    } as never);
+
+    expect((result as { deals: Array<{ id: string; stage: string; client: { id: string } | null; project: { id: string } | null; broker: { id: string } | null }> }).deals).toEqual([
+      expect.objectContaining({
+        id: String(seeded.ownDealId),
+        stage: "negotiation",
+        client: expect.objectContaining({ id: String(seeded.ownClientId) }),
+        project: expect.objectContaining({ id: String(seeded.ownPropertyId) }),
+        broker: expect.objectContaining({ id: String(seeded.relatedBrokerId) }),
+      }),
+    ]);
+  });
+
+  it("lists brokers when the key has broker read access", async () => {
+    const t = convexTest(schema, modules);
+    const seeded = await seedBrokerKeyFixture(t);
+
+    const result = await t.mutation(api.shared_logic.agencies.repositories.apiKeys.listBrokersByApiKey as never, {
+      secretHash: "secret-hash-active",
+      now: seeded.now,
+    } as never);
+
+    expect((result as { brokers: Array<{ id: string; name: string }> }).brokers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: String(seeded.relatedBrokerId), name: "Related Broker" }),
+      ]),
+    );
   });
 });

@@ -1,5 +1,10 @@
 import type { Id } from "../../../_generated/dataModel";
-import type { WorkspaceProjectFieldKey, WorkspaceProjectActionCandidate } from "../../agents/anan_workspace/types";
+import type {
+  WorkspaceDeleteProjectConfirmationState,
+  WorkspaceListActionState,
+  WorkspaceProjectActionCandidate,
+  WorkspaceProjectFieldKey,
+} from "../../agents/anan_workspace/types";
 
 export type AssistantOwner = {
   userId: string;
@@ -36,7 +41,10 @@ export type WorkspaceProjectActionState = WorkspaceProjectActionCandidate & {
   error?: string;
 };
 
-export type WorkspaceActionState = WorkspaceProjectActionState;
+export type WorkspaceActionState =
+  | WorkspaceProjectActionState
+  | WorkspaceListActionState
+  | WorkspaceDeleteProjectConfirmationState;
 
 export const WORKSPACE_KINDS: AssistantKind[] = ["anan_workspace", "anan_pro"];
 

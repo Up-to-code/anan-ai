@@ -2,6 +2,7 @@ import Link from "next/link";
 import { docsPages, getDocsPageSiblings, getDocsSectionId } from "@/lib/docs/registry";
 import type { DocsPageDefinition } from "@/lib/docs/types";
 import Callout from "./Callout";
+import CodeExampleGroup from "./CodeExampleGroup";
 import CodeSnippet from "./CodeSnippet";
 import EndpointCard from "./EndpointCard";
 import ScopeBadge from "./ScopeBadge";
@@ -82,6 +83,29 @@ export default function DocsArticle({ page }: { page: DocsPageDefinition }) {
               <div className="space-y-4 pt-2">
                 {section.callouts.map((callout) => (
                   <Callout key={`${callout.tone}-${callout.title}`} callout={callout} />
+                ))}
+              </div>
+            ) : null}
+
+            {section.relatedLinks && section.relatedLinks.length > 0 ? (
+              <div className="grid gap-4 pt-2 md:grid-cols-2">
+                {section.relatedLinks.map((link) => (
+                  <Link
+                    key={`${link.href}-${link.label}`}
+                    href={link.href}
+                    className="rounded-lg border-2 border-slate-200 bg-white p-4 transition-colors hover:border-blue-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-blue-500 dark:hover:bg-slate-900"
+                  >
+                    <div className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">{link.label}</div>
+                    {link.description ? <div className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{link.description}</div> : null}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+
+            {section.codeExampleGroups ? (
+              <div className="space-y-6 pt-2">
+                {section.codeExampleGroups.map((group) => (
+                  <CodeExampleGroup key={group.title} group={group} />
                 ))}
               </div>
             ) : null}

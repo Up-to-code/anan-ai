@@ -56,6 +56,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     label: "المنظمات",
     items: [
       { href: "/organizations", label: "كل المنظمات", icon: Building, sectionKey: "organizations" },
+      { href: "/verifications", label: "طلبات التوثيق", icon: Building2, sectionKey: "verifications" },
     ],
   },
   {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope, JetBrains_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -24,9 +25,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${manrope.variable} ${jetbrainsMono.variable} font-[var(--font-manrope)] antialiased`}>
-        <TooltipProvider>{children}</TooltipProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${manrope.variable} ${jetbrainsMono.variable} font-[var(--font-manrope)] antialiased bg-white dark:bg-[#09090b] dark:text-white`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <TooltipProvider>{children}</TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

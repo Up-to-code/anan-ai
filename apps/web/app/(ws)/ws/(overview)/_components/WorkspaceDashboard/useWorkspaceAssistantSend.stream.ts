@@ -13,6 +13,7 @@ export type StreamSetters = {
   setStageHistory: React.Dispatch<React.SetStateAction<AnanProStreamStageEvent[]>>;
   setStreamLifecycleStatus: React.Dispatch<React.SetStateAction<"running" | "completed" | "failed" | "cancelled" | null>>;
   setActiveTeamId: React.Dispatch<React.SetStateAction<string | null>>;
+  setActiveAgentName: React.Dispatch<React.SetStateAction<string | null>>;
   setCompletedTeamIds: React.Dispatch<React.SetStateAction<string[]>>;
   replaceThreadRoute: (threadId: string | null) => void;
 };
@@ -89,6 +90,9 @@ function updateStageMeta(
   if (stage.phase === "team_started" && stage.teamId) {
     setters.setActiveTeamId(stage.teamId);
   }
+  if (stage.phase === "team_started" && stage.agentName) {
+    setters.setActiveAgentName(stage.agentName);
+  }
   if (stage.phase !== "team_done" || !stage.teamId) {
     return;
   }
@@ -97,6 +101,9 @@ function updateStageMeta(
     current.includes(teamId) ? current : [...current, teamId],
   );
   setters.setActiveTeamId((current) => (current === teamId ? null : current));
+  if (stage.agentName) {
+    setters.setActiveAgentName((current) => (current === stage.agentName ? null : current));
+  }
 }
 
 function handleMetaEvent(
@@ -129,6 +136,7 @@ function handleDoneEvent(
   state.didFinish = true;
   setters.setStreamStage(null);
   setters.setActiveTeamId(null);
+  setters.setActiveAgentName(null);
   setters.setCompletedTeamIds([]);
   setters.setStreamLifecycleStatus("completed");
   setters.setThread(event.data.thread);

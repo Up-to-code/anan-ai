@@ -16,11 +16,13 @@ vi.mock("@base-ui/react/dialog", () => ({
 
 it("renders the centralized api key permission catalog in the picker", () => {
   const markup = renderToStaticMarkup(
-    <ApiKeysWorkspace initialKeys={[]} canManage hasOrganization />,
+    <ApiKeysWorkspace initialKeys={[]} canCreate canRevoke canView hasOrganization />,
   );
 
   expect(markup).toContain("العملاء");
   expect(markup).toContain("العقارات");
+  expect(markup).toContain("الصفقات");
+  expect(markup).toContain("الوسطاء");
   expect(markup).toContain("قراءة");
   expect(markup).toContain("إنشاء");
   expect(markup).toContain("تحديث");

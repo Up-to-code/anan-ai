@@ -10,11 +10,13 @@ import { cn } from "@/lib/utils";
 export function ThreadListItem({
   title,
   meta,
+  preview,
   active = false,
   onSelect,
 }: {
   title: string;
   meta?: string;
+  preview?: string;
   active?: boolean;
   onSelect: () => void;
 }) {
@@ -23,12 +25,23 @@ export function ThreadListItem({
       type="button"
       onClick={onSelect}
       className={cn(
-        "flex w-full flex-col items-start rounded-lg px-3 py-2 text-start transition-colors",
-        active ? "bg-slate-100 text-slate-950" : "text-slate-700 hover:bg-slate-50",
+        "flex w-full flex-col items-start rounded-[22px] border px-4 py-3 text-start transition-all",
+        active
+          ? "border-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,var(--workspace-panel))] text-[var(--workspace-bubble-other-foreground)] shadow-sm"
+          : "border-transparent text-[var(--workspace-bubble-other-foreground)] hover:border-[color:var(--workspace-border)] hover:bg-[var(--workspace-panel)]",
       )}
     >
-      <span className="line-clamp-1 text-sm font-medium">{title}</span>
-      {meta ? <span className="mt-1 text-xs text-slate-500">{meta}</span> : null}
+      <span className="line-clamp-1 text-sm font-black">{title}</span>
+      {preview ? (
+        <span className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--workspace-muted)]">
+          {preview}
+        </span>
+      ) : null}
+      {meta ? (
+        <span className="mt-2 text-[11px] font-black uppercase tracking-[0.16em] text-[var(--workspace-muted)]">
+          {meta}
+        </span>
+      ) : null}
     </button>
   );
 }

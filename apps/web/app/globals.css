@@ -54,7 +54,7 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #2563eb;
+  --primary: #2563EB;
   --primary-foreground: #ffffff;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -88,14 +88,16 @@
   --workspace-sidebar-strong: #f0f0f1;
   --workspace-border: rgba(39, 39, 42, 0.08);
   --workspace-muted: #71717a;
-  --workspace-bubble-self: #2563eb;
+  --workspace-bubble-self: #2563EB;
   --workspace-bubble-self-foreground: #eff6ff;
   --workspace-bubble-self-muted: #bfdbfe;
   --workspace-bubble-other: #f4f4f5;
   --workspace-bubble-other-foreground: #152236;
   --workspace-bubble-other-muted: #71717a;
   --workspace-accent-soft: #f0f0f1;
-  --workspace-highlight: #2563eb;
+  --workspace-highlight: #2563EB;
+  --workspace-highlight-soft: color-mix(in srgb, #2563EB 10%, white);
+  --workspace-highlight-strong: color-mix(in srgb, #2563EB 86%, black);
 }
 
 .dark {
@@ -105,18 +107,18 @@
   --card-foreground: #f4f4f5;
   --popover: #101013;
   --popover-foreground: #f4f4f5;
-  --primary: #60a5fa;
+  --primary: #2563EB;
   --primary-foreground: #ffffff;
   --secondary: #18181b;
   --secondary-foreground: #f4f4f5;
   --muted: #18181b;
   --muted-foreground: #a1a1aa;
-  --accent: #15161a;
+  --accent: #18181b;
   --accent-foreground: #f4f4f5;
   --destructive: oklch(0.704 0.191 22.216);
   --border: rgba(244, 244, 245, 0.08);
   --input: #17181b;
-  --ring: #60a5fa;
+  --ring: #2563EB;
   --chart-1: oklch(0.809 0.105 251.813);
   --chart-2: oklch(0.623 0.214 259.815);
   --chart-3: oklch(0.546 0.245 262.881);
@@ -124,7 +126,7 @@
   --chart-5: oklch(0.424 0.199 265.638);
   --sidebar: #0c0c0f;
   --sidebar-foreground: #f4f4f5;
-  --sidebar-primary: #60a5fa;
+  --sidebar-primary: #2563EB;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #141519;
   --sidebar-accent-foreground: #f4f4f5;
@@ -132,20 +134,22 @@
   --sidebar-ring: #60a5fa;
   --workspace-shell: #09090b;
   --workspace-canvas: #0d0d10;
-  --workspace-panel: #111114;
-  --workspace-elevated: #18181b;
-  --workspace-sidebar: #0c0c0f;
-  --workspace-sidebar-strong: #070709;
+  --workspace-panel: #111318;
+  --workspace-elevated: #181b21;
+  --workspace-sidebar: #0e1014;
+  --workspace-sidebar-strong: #090b0f;
   --workspace-border: rgba(244, 244, 245, 0.08);
   --workspace-muted: #a1a1aa;
-  --workspace-bubble-self: #1e40af;
+  --workspace-bubble-self: #2563EB;
   --workspace-bubble-self-foreground: #eff6ff;
   --workspace-bubble-self-muted: #bfdbfe;
-  --workspace-bubble-other: #18181b;
+  --workspace-bubble-other: #181b21;
   --workspace-bubble-other-foreground: #f4f4f5;
   --workspace-bubble-other-muted: #a1a1aa;
-  --workspace-accent-soft: #141519;
-  --workspace-highlight: #60a5fa;
+  --workspace-accent-soft: #141820;
+  --workspace-highlight: #2563EB;
+  --workspace-highlight-soft: color-mix(in srgb, #2563EB 14%, #111318);
+  --workspace-highlight-strong: color-mix(in srgb, #2563EB 82%, black);
 }
 
 @layer base {

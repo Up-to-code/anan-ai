@@ -17,6 +17,7 @@ function createSendFlowParams() {
   const stageHistory = { current: [] as unknown[] };
   const streamLifecycleStatus = { current: null as "running" | "completed" | "failed" | "cancelled" | null };
   const activeTeamId = { current: null as string | null };
+  const activeAgentName = { current: null as string | null };
   const completedTeamIds = { current: [] as string[] };
   const activeStreamSessionId = { current: null as string | null };
   const isStoppingStream = { current: false };
@@ -32,6 +33,7 @@ function createSendFlowParams() {
     setStageHistory: createSetter(stageHistory),
     setStreamLifecycleStatus: createSetter(streamLifecycleStatus),
     setActiveTeamId: createSetter(activeTeamId),
+    setActiveAgentName: createSetter(activeAgentName),
     setCompletedTeamIds: createSetter(completedTeamIds),
     setActiveStreamSessionId: createSetter(activeStreamSessionId),
     setIsStoppingStream: createSetter(isStoppingStream),

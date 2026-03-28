@@ -1,4 +1,5 @@
 import { CheckCircle2, Clock3, CircleAlert } from "lucide-react";
+import { AgCardShell } from "./AgCardShell";
 
 export default function AgExecutionResultCard({
   title,
@@ -18,7 +19,7 @@ export default function AgExecutionResultCard({
   const Icon = status === "done" ? CheckCircle2 : status === "running" ? Clock3 : CircleAlert;
 
   return (
-    <section className="w-full max-w-[340px] rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-5">
+    <AgCardShell className="max-w-[340px]">
       <div className="flex items-start gap-3">
         <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${tone}`}>
           <Icon className="h-4 w-4" />
@@ -28,6 +29,6 @@ export default function AgExecutionResultCard({
           <p className="mt-1 text-xs font-medium leading-6 text-[var(--workspace-muted)]">{description}</p>
         </div>
       </div>
-    </section>
+    </AgCardShell>
   );
 }

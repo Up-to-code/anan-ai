@@ -89,8 +89,17 @@ export default function ClientDetailPage({
           <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">إدارة الصفقات</div>
           <h1 className="text-2xl font-black tracking-tight text-foreground">{client.name}</h1>
           <p className="max-w-xl text-[13px] font-medium text-muted-foreground leading-relaxed">{client.notes}</p>
+          <div className="text-[12px] font-black text-blue-700">{client.relationLabel}</div>
         </div>
         <div className="flex items-center gap-3">
+          {client.project ? (
+            <Link
+              href={`/ws/offers/create?mode=collaboration_case&propertyId=${client.project.id}&clientName=${encodeURIComponent(client.name)}&clientPhone=${encodeURIComponent(client.linkedClient?.phone ?? "")}&clientBudget=${encodeURIComponent(client.budgetLabel)}&clientNeed=${encodeURIComponent(client.preference)}`}
+              className="inline-flex h-11 items-center rounded-xl border border-border bg-card px-5 text-[13px] font-bold text-foreground transition hover:border-foreground/30 hover:bg-muted/10"
+            >
+              إنشاء حالة تعاون
+            </Link>
+          ) : null}
           {editHref ? (
             <Link
               href={editHref}
@@ -140,6 +149,7 @@ export default function ClientDetailPage({
               priceLabel={client.project.priceLabel}
               summary={client.preference}
               specs={[
+                { label: "نوع الربط", value: client.relationLabel },
                 { label: "المرحلة", value: stageLabel },
                 { label: "الطلب", value: client.preference },
                 { label: "الميزانية", value: client.budgetLabel },

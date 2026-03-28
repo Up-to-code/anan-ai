@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useQuery } from "convex/react";
 import { ArrowUpLeft, Check, Clock3, FileText, MapPin, Shield, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Id } from "@convex/dataModel";
-import { api } from "@/lib/convexApi";
+import { apiUnsafe } from "@/lib/convexApi";
 import type { OfferEventMetadata } from "@/server/contracts/inbox";
 import type { OfferLiveState } from "@/server/contracts/offers";
 
@@ -28,19 +27,30 @@ function statusClassName(status: OfferLiveState["status"]) {
 function buildFallbackState(metadata: OfferEventMetadata): OfferLiveState {
   return {
     id: metadata.offerId,
+    packageId: metadata.offerId,
+    type: metadata.visibility === "public" ? "open_offer" : "private_offer",
+    stage: metadata.visibility === "public" ? "open" : "targeted",
     propertyId: metadata.propertyId,
     price: metadata.price,
     status: "pending",
     publicationState: "published",
     visibility: metadata.visibility,
-    recipientAuthUserId: metadata.recipientAuthUserId,
-    sourceConversationId: undefined,
+    recipientAuthUserId: metadata.recipientAuthUserId ?? null,
+    sourceConversationId: null,
     message: metadata.offerTitle,
-    description: undefined,
+    description: null,
     senderName: metadata.authorName,
+    commissionText: null,
+    permitStatus: null,
+    productStatus: null,
+    allowedAudience: "both",
     attachments: [],
+    clientContext: null,
+    participants: [],
     property: null,
     href: metadata.href,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
     propertyTitle: metadata.offerTitle,
     propertyAddress: "تفاصيل العقار داخل صفحة العرض",
     propertyImageUrl: null,
@@ -48,10 +58,30 @@ function buildFallbackState(metadata: OfferEventMetadata): OfferLiveState {
     isRecipient: false,
     canEditDraft: false,
     canPublish: false,
+    canArchive: false,
     canRespond: false,
+    allowedActions: {
+      isInventoryOwner: false,
+      isClientOwner: false,
+      isExecutionPartner: false,
+      canEditDraft: false,
+      canPublish: false,
+      canArchive: false,
+      canEngage: false,
+      canRespond: false,
+      canMarkAgreed: false,
+      canCloseWon: false,
+      canCloseLost: false,
+    },
+    activity: [],
   };
 }
 
+/**
+ * WHY:   Inbox offer cards should still render when the live offer query is loading or the case is no longer directly accessible.
+ * WHAT:  Shows the conversation-embedded offer snapshot and upgrades to live case state when available.
+ * HOW:   Falls back to message metadata, then reads the new offers 2.0 live state through the unsafe Convex API bridge.
+ */
 export default function InboxOfferEventCard({
   body,
   isMe,
@@ -67,9 +97,10 @@ export default function InboxOfferEventCard({
   }) => Promise<{ ok: true } | void | null>;
 }) {
   const [pendingAction, setPendingAction] = useState<"accepted" | "rejected" | null>(null);
-  const liveOffer = useQuery(api.shared_logic.offers.getOfferLiveState, {
-    offerId: metadata.offerId as Id<"offers">,
-  }) as OfferLiveState | null | undefined;
+  const liveOffer = useQuery(
+    (apiUnsafe["shared_logic/offers"] as { getOfferLiveState: unknown }).getOfferLiveState as never,
+    { offerId: metadata.offerId } as never,
+  ) as OfferLiveState | null | undefined;
   const state = liveOffer ?? buildFallbackState(metadata);
   const messageSummary = state.description ?? body;
 

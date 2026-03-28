@@ -63,7 +63,7 @@ it("shows the projects navigation entry for developer roles", () => {
   expect(markup.indexOf("/ws/crm")).toBeLessThan(markup.indexOf("/ws/projects"));
   expect(markup).toContain("data-slot=\"workspace-sidebar-desktop\"");
   expect(markup).not.toContain("Alpha Dev");
-  expect(markup).toContain("المحادثات");
+  expect(markup).not.toContain("أحدث المحادثات");
   expect(markup).not.toContain("ANAN");
   expect(markup).not.toContain("Institutional");
 });
@@ -132,7 +132,7 @@ it("keeps the new-thread entry as a bare /ws draft action", () => {
   expect(markup).toContain("h-4 w-4");
 });
 
-it("highlights an assistant thread only when the URL threadId is valid", () => {
+it("renders the last three threads in the sidebar rail when available", () => {
   usePathname.mockReturnValue("/ws");
   useSearchParams.mockReturnValue(new URLSearchParams("threadId=thread-2"));
 
@@ -153,24 +153,20 @@ it("highlights an assistant thread only when the URL threadId is valid", () => {
   );
 
   expect(markup).toContain("/ws?threadId=thread-2");
-  expect(markup).toContain("bg-white/[0.06]");
+  expect(markup).toContain("آخر 3 محادثات");
+  expect(markup).toContain(">2/2<");
+  expect(markup).toContain("bg-[var(--workspace-highlight-soft)]");
 });
 
-it("does not highlight any thread when threadId is missing or invalid", () => {
-  usePathname.mockReturnValue("/ws");
-  useSearchParams.mockReturnValue(new URLSearchParams("threadId=missing"));
-
+it("keeps the sidebar subtitle without leaking the organization name", () => {
   const markup = renderToStaticMarkup(
     <Sidebar
       user={{ name: "Ahmed", email: "ahmed@example.com" }}
       organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
       visibleZoneKeys={["overview", "settings"]}
-      allAssistantThreads={[
-        { id: "thread-1", title: "A", updatedAt: 11 },
-        { id: "thread-2", title: "B", updatedAt: 12 },
-      ]}
     />,
   );
 
-  expect(markup).not.toContain("border-white/10 bg-white/5");
+  expect(markup).toContain("لوحة العمل");
+  expect(markup).not.toContain("Alpha Dev");
 });

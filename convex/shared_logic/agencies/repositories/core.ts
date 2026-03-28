@@ -11,6 +11,7 @@ export type OrganizationMembershipRecord = {
   authUserId: string;
   profileId: string;
   role: "manager" | "member" | "viewer";
+  tenantRole?: string;
   status: "active" | "inactive";
   createdAt: number;
   updatedAt: number;

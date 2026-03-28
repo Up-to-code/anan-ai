@@ -9,7 +9,10 @@ import { CLIENT_AG_UI_REGISTRY } from "./registry";
  */
 export function AgUiTurnRenderer({ turn }: { turn: ClientAgUiTurn }) {
   return (
-    <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-4">
+    <div
+      className="ag-ui-thread flex w-full flex-col gap-4 [&_section]:max-w-full [&_section]:text-start"
+      dir="auto"
+    >
       {turn.cards.map((card) => {
         const Component = CLIENT_AG_UI_REGISTRY[card.componentId] as ComponentType<Record<string, unknown>> | undefined;
         if (!Component) {

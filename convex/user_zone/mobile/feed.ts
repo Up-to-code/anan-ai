@@ -20,6 +20,7 @@ type PropertyDoc = {
   brokerId?: any;
   heroImage?: { url: string };
   media?: Array<{ url: string }>;
+  bankId?: any;
 };
 
 type PropertyOwner = {
@@ -28,6 +29,10 @@ type PropertyOwner = {
   slug?: string;
   isVerified?: boolean;
   countryCode?: string;
+  description?: string;
+  phone?: string;
+  contactEmail?: string;
+  notes?: string;
 };
 
 const FALLBACK_FEED_IMAGE =
@@ -52,13 +57,59 @@ function resolveFeedMedia(property: PropertyDoc) {
   return media;
 }
 
+function parseOwnerNotesMetadata(notes?: string) {
+  if (!notes) return null;
+  try {
+    const parsed = JSON.parse(notes);
+    if (!parsed || typeof parsed !== "object") return null;
+    return parsed as {
+      agencyLabel?: string;
+      rating?: number;
+      establishedYear?: number;
+      completedProjects?: number;
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function countActiveListingsForOwner(ctx: any, property: PropertyDoc) {
+  if (property.brokerId) {
+    return (
+      await ctx.db
+        .query("properties")
+        .withIndex("brokerId", (q: any) => q.eq("brokerId", property.brokerId))
+        .collect()
+    ).filter((item: any) => item.publicationState === "published").length;
+  }
+
+  if (property.REDId) {
+    return (
+      await ctx.db
+        .query("properties")
+        .withIndex("REDId", (q: any) => q.eq("REDId", property.REDId))
+        .collect()
+    ).filter((item: any) => item.publicationState === "published").length;
+  }
+
+  return 0;
+}
+
 function toOwnerPreview(owner: PropertyOwner, ownerType: "broker" | "RED") {
+  const notesMetadata = parseOwnerNotesMetadata(owner.notes);
   return {
     id: String(owner._id ?? ""),
     type: ownerType,
     name: owner.name ?? "Anan Partner",
     slug: owner.slug ?? "anan-partner",
     isVerified: owner.isVerified === true,
+    description: owner.description,
+    phone: owner.phone,
+    contactEmail: owner.contactEmail,
+    agencyLabel: notesMetadata?.agencyLabel,
+    rating: notesMetadata?.rating,
+    establishedYear: notesMetadata?.establishedYear,
+    completedProjects: notesMetadata?.completedProjects,
   };
 }
 
@@ -131,11 +182,14 @@ export async function buildMobilePropertyFeedItem(
   }
 
   const media = resolveFeedMedia(property);
+  const activeListings = await countActiveListingsForOwner(ctx, property);
+  const ownerPreview = toOwnerPreview(owner, ownerType);
 
   return {
     id: property._id,
     title: property.title,
     address: property.address,
+    bankId: property.bankId,
     location: property.location,
     area: property.area,
     price: property.price,
@@ -144,7 +198,10 @@ export async function buildMobilePropertyFeedItem(
     sqft: property.sqft,
     status: property.status,
     media,
-    owner: toOwnerPreview(owner, ownerType),
+    owner: {
+      ...ownerPreview,
+      activeListings,
+    },
     aiSummary: buildAiSummary(property),
   };
 }

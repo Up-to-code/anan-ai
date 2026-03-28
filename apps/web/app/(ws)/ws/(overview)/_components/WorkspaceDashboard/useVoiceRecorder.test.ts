@@ -1,46 +1,73 @@
-import { describe, expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
+
 import {
-  buildBarsFromFrequencyData,
   resolveVoiceActivityPhase,
-  VOICE_SILENCE_AUTOSTOP_MS,
+  stopRecorderCapture,
 } from "./useVoiceRecorder";
 
-describe("buildBarsFromFrequencyData", () => {
-  it("returns zero bars when no frequency data exists", () => {
-    const bars = buildBarsFromFrequencyData(new Uint8Array([]), 4);
-    expect(bars).toEqual([0, 0, 0, 0]);
+function createRef<T>(value: T) {
+  return { current: value };
+}
+
+it("stops recorder capture immediately and only once", () => {
+  const stopTrack = vi.fn();
+  const recorderStop = vi.fn();
+  const closeAudioContext = vi.fn().mockResolvedValue(undefined);
+
+  const refs = {
+    streamRef: createRef({
+      getTracks: () => [{ stop: stopTrack }],
+    } as unknown as MediaStream),
+    mediaRecorderRef: createRef({
+      state: "recording",
+      stop: recorderStop,
+    } as unknown as MediaRecorder),
+    stopInFlightRef: createRef(false),
+    durationIntervalRef: createRef(10),
+    stopTimeoutRef: createRef(11),
+    animationFrameRef: createRef(12),
+    audioContextRef: createRef({
+      close: closeAudioContext,
+    } as unknown as AudioContext),
+    analyserRef: createRef({} as AnalyserNode),
+    analyserDataRef: createRef(new Uint8Array([1, 2, 3])),
+  };
+
+  vi.stubGlobal("window", {
+    clearInterval: vi.fn(),
+    clearTimeout: vi.fn(),
+    cancelAnimationFrame: vi.fn(),
+  } as unknown as Window & typeof globalThis);
+
+  expect(stopRecorderCapture(refs).didStop).toBe(true);
+  expect(stopRecorderCapture(refs).didStop).toBe(false);
+  expect(recorderStop).toHaveBeenCalledTimes(1);
+  expect(stopTrack).toHaveBeenCalledTimes(1);
+  expect(refs.streamRef.current).toBeNull();
+  expect(refs.stopInFlightRef.current).toBe(true);
+});
+
+it("keeps waiting when no speech has been detected yet", () => {
+  const result = resolveVoiceActivityPhase({
+    peakLevel: 0.01,
+    hasDetectedSpeech: false,
+    silenceStartedAt: null,
+    now: 1000,
   });
 
-  it("normalizes frequency buckets to the 0-1 range", () => {
-    const bars = buildBarsFromFrequencyData(new Uint8Array([0, 128, 255, 255]), 2);
-    expect(bars[0]).toBeGreaterThanOrEqual(0);
-    expect(bars[0]).toBeLessThanOrEqual(1);
-    expect(bars[1]).toBeGreaterThanOrEqual(0);
-    expect(bars[1]).toBeLessThanOrEqual(1);
-    expect(bars[1]).toBeGreaterThan(bars[0]);
+  expect(result.phase).toBe("waiting_for_speech");
+  expect(result.shouldAutoStop).toBe(false);
+});
+
+it("auto-stops after silence once speech was already detected", () => {
+  const result = resolveVoiceActivityPhase({
+    peakLevel: 0.01,
+    hasDetectedSpeech: true,
+    silenceStartedAt: 0,
+    now: 1_200,
+    silenceMs: 1_000,
   });
 
-  it("waits for actual speech before starting silence countdown", () => {
-    const phase = resolveVoiceActivityPhase({
-      peakLevel: 0.02,
-      hasDetectedSpeech: false,
-      silenceStartedAt: null,
-      now: 1_000,
-    });
-
-    expect(phase.phase).toBe("waiting_for_speech");
-    expect(phase.shouldAutoStop).toBe(false);
-  });
-
-  it("auto-stops only after speech is followed by long enough silence", () => {
-    const phase = resolveVoiceActivityPhase({
-      peakLevel: 0.01,
-      hasDetectedSpeech: true,
-      silenceStartedAt: 1_000,
-      now: 1_000 + VOICE_SILENCE_AUTOSTOP_MS + 10,
-    });
-
-    expect(phase.phase).toBe("silence_countdown");
-    expect(phase.shouldAutoStop).toBe(true);
-  });
+  expect(result.phase).toBe("silence_countdown");
+  expect(result.shouldAutoStop).toBe(true);
 });

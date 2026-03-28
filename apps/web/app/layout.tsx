@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { RootFontFaces, rootFontClassName } from "@/lib/rootFonts";
 import ThemeProvider from "./theme-provider";
+import PostHogProvider from "./PostHogProvider";
 
 export const metadata: Metadata = {
   title: "Anan - Coming Soon",
@@ -17,8 +18,10 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className={`${rootFontClassName} bg-background text-foreground antialiased`}>
         <ThemeProvider>
-          <RootFontFaces />
-          {children}
+          <PostHogProvider>
+            <RootFontFaces />
+            {children}
+          </PostHogProvider>
         </ThemeProvider>
       </body>
     </html>

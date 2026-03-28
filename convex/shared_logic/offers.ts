@@ -2,11 +2,13 @@ import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { uploadedFileReferenceListValidator } from "./files";
 import {
+  advanceOfferCaseStageService,
   archiveOfferService,
   applyToOfferService,
   createOfferDraftService,
   createOfferService,
   getOfferLiveStateService,
+  getWorkspaceOfferQueuesService,
   listConversationPrivateOfferDraftsService,
   listPublicOffersService,
   listReceivedOffersService,
@@ -26,6 +28,19 @@ export const createOffer = mutation({
     message: v.optional(v.string()),
     description: v.optional(v.string()),
     visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
+    caseType: v.optional(
+      v.union(
+        v.literal("open_offer"),
+        v.literal("private_offer"),
+        v.literal("collaboration_case"),
+      ),
+    ),
+    allowedAudience: v.optional(
+      v.union(v.literal("brokers"), v.literal("developers"), v.literal("both")),
+    ),
+    commissionText: v.optional(v.string()),
+    permitStatus: v.optional(v.string()),
+    productStatus: v.optional(v.string()),
     toBrokerId: v.optional(v.id("brokers")),
     toREDId: v.optional(v.id("RED")),
     recipientAuthUserId: v.optional(v.string()),
@@ -33,6 +48,15 @@ export const createOffer = mutation({
     recipientPhone: v.optional(v.string()),
     sourceConversationId: v.optional(v.id("inboxConversations")),
     attachments: v.optional(uploadedFileReferenceListValidator),
+    clientContext: v.optional(
+      v.object({
+        crmClientId: v.optional(v.id("crmClients")),
+        clientName: v.string(),
+        clientPhone: v.optional(v.string()),
+        clientBudget: v.optional(v.string()),
+        clientNeed: v.string(),
+      }),
+    ),
   },
   handler: async (ctx, args) => {
     return await createOfferService(ctx, args);
@@ -46,6 +70,19 @@ export const createOfferDraft = mutation({
     message: v.optional(v.string()),
     description: v.optional(v.string()),
     visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
+    caseType: v.optional(
+      v.union(
+        v.literal("open_offer"),
+        v.literal("private_offer"),
+        v.literal("collaboration_case"),
+      ),
+    ),
+    allowedAudience: v.optional(
+      v.union(v.literal("brokers"), v.literal("developers"), v.literal("both")),
+    ),
+    commissionText: v.optional(v.string()),
+    permitStatus: v.optional(v.string()),
+    productStatus: v.optional(v.string()),
     toBrokerId: v.optional(v.id("brokers")),
     toREDId: v.optional(v.id("RED")),
     recipientAuthUserId: v.optional(v.string()),
@@ -53,6 +90,15 @@ export const createOfferDraft = mutation({
     recipientPhone: v.optional(v.string()),
     sourceConversationId: v.optional(v.id("inboxConversations")),
     attachments: v.optional(uploadedFileReferenceListValidator),
+    clientContext: v.optional(
+      v.object({
+        crmClientId: v.optional(v.id("crmClients")),
+        clientName: v.string(),
+        clientPhone: v.optional(v.string()),
+        clientBudget: v.optional(v.string()),
+        clientNeed: v.string(),
+      }),
+    ),
   },
   handler: async (ctx, args) => {
     return await createOfferDraftService(ctx, args);
@@ -61,7 +107,7 @@ export const createOfferDraft = mutation({
 
 export const publishOffer = mutation({
   args: {
-    id: v.id("offers"),
+    id: v.id("offerCases"),
   },
   handler: async (ctx, args) => {
     return await publishOfferService(ctx, args);
@@ -70,13 +116,28 @@ export const publishOffer = mutation({
 
 export const updateOfferDraft = mutation({
   args: {
-    id: v.id("offers"),
+    id: v.id("offerCases"),
     conversationId: v.optional(v.id("inboxConversations")),
     propertyId: v.id("properties"),
     price: v.number(),
     message: v.optional(v.string()),
     description: v.optional(v.string()),
     attachments: v.optional(uploadedFileReferenceListValidator),
+    commissionText: v.optional(v.string()),
+    permitStatus: v.optional(v.string()),
+    productStatus: v.optional(v.string()),
+    allowedAudience: v.optional(
+      v.union(v.literal("brokers"), v.literal("developers"), v.literal("both")),
+    ),
+    clientContext: v.optional(
+      v.object({
+        crmClientId: v.optional(v.id("crmClients")),
+        clientName: v.string(),
+        clientPhone: v.optional(v.string()),
+        clientBudget: v.optional(v.string()),
+        clientNeed: v.string(),
+      }),
+    ),
   },
   handler: async (ctx, args) => {
     return await updateOfferDraftService(ctx, args);
@@ -85,7 +146,7 @@ export const updateOfferDraft = mutation({
 
 export const archiveOffer = mutation({
   args: {
-    id: v.id("offers"),
+    id: v.id("offerCases"),
   },
   handler: async (ctx, args) => {
     return await archiveOfferService(ctx, args);
@@ -94,7 +155,7 @@ export const archiveOffer = mutation({
 
 export const publishConversationOffer = mutation({
   args: {
-    id: v.id("offers"),
+    id: v.id("offerCases"),
     conversationId: v.id("inboxConversations"),
   },
   handler: async (ctx, args) => {
@@ -106,7 +167,7 @@ export const publishConversationOffer = mutation({
 
 export const updateOfferStatus = mutation({
   args: {
-    id: v.id("offers"),
+    id: v.id("offerCases"),
     status: v.union(v.literal("accepted"), v.literal("rejected")),
   },
   handler: async (ctx, args) => {
@@ -118,11 +179,25 @@ export const updateOfferStatus = mutation({
 
 export const applyToOffer = mutation({
   args: {
-    offerId: v.id("offers"),
+    offerId: v.id("offerCases"),
     message: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     return await applyToOfferService(ctx, args);
+  },
+});
+
+export const advanceOfferCaseStage = mutation({
+  args: {
+    id: v.id("offerCases"),
+    action: v.union(
+      v.literal("mark_agreed"),
+      v.literal("close_won"),
+      v.literal("close_lost"),
+    ),
+  },
+  handler: async (ctx, args) => {
+    return await advanceOfferCaseStageService(ctx, args);
   },
 });
 
@@ -163,9 +238,16 @@ export const listConversationPrivateOfferDrafts = query({
 
 export const getOfferLiveState = query({
   args: {
-    offerId: v.id("offers"),
+    offerId: v.union(v.id("offerCases"), v.string()),
   },
   handler: async (ctx, args) => {
     return await getOfferLiveStateService(ctx, args);
+  },
+});
+
+export const getWorkspaceOfferQueues = query({
+  args: {},
+  handler: async (ctx) => {
+    return await getWorkspaceOfferQueuesService(ctx);
   },
 });

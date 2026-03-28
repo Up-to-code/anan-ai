@@ -4,8 +4,12 @@ import type {
   AddDealDocumentInput,
   ArchiveDealInput,
   CreateDealInput,
+  DealClientPreview,
   DealDetail,
+  DealSelectorBroker,
+  DealSelectorClient,
   DealSummary,
+  PaginatedDealsResult,
   UpdateDealInput,
   UpdateDealFollowUpInput,
   UpdateDealNotesInput,
@@ -15,7 +19,13 @@ import type {
 type CrmApiRefs = {
   listDealsByBrokerId: unknown;
   listDealsByRedId: unknown;
+  listDealsPageByBrokerId: unknown;
+  listDealsPageByRedId: unknown;
   listDealsByPropertyId: unknown;
+  listClientsByBrokerId: unknown;
+  listClientsByRedId: unknown;
+  getClientById: unknown;
+  listBrokerSelectorOptions: unknown;
   getDealById: unknown;
   createDeal: unknown;
   updateDeal: unknown;
@@ -33,7 +43,13 @@ const crmApi = (apiUnsafe[
 export type CrmRepository = {
   listByBrokerId(brokerId: string): Promise<DealSummary[]>;
   listByRedId(redId: string): Promise<DealSummary[]>;
+  listPageByBrokerId(brokerId: string, paginationOpts: { cursor: string | null; numItems: number }): Promise<PaginatedDealsResult>;
+  listPageByRedId(redId: string, paginationOpts: { cursor: string | null; numItems: number }): Promise<PaginatedDealsResult>;
   listByPropertyId(propertyId: string): Promise<DealSummary[]>;
+  listClientsByBrokerId(brokerId: string): Promise<DealSelectorClient[]>;
+  listClientsByRedId(redId: string): Promise<DealSelectorClient[]>;
+  getClientById(clientId: string): Promise<DealClientPreview | null>;
+  listBrokerSelectorOptions(): Promise<DealSelectorBroker[]>;
   getById(dealId: string): Promise<DealDetail | null>;
   create(args: {
     brokerId?: string;
@@ -58,6 +74,13 @@ function mapDealIds<T extends { id?: string; REDId?: string; brokerId?: string; 
   };
 }
 
+function mapPaginatedDeals(result: PaginatedDealsResult): PaginatedDealsResult {
+  return {
+    ...result,
+    page: result.page.map(mapDealIds),
+  };
+}
+
 /**
  * WHY:   CRM server functions should not know about Convex transport or internal module paths.
  * WHAT:  Repository adapter for owner-scoped deal CRUD through internal Convex functions.
@@ -78,11 +101,49 @@ export const convexCrmRepository: CrmRepository = {
     return deals.map(mapDealIds);
   },
 
+  async listPageByBrokerId(brokerId, paginationOpts) {
+    const result = (await fetchQuery(crmApi.listDealsPageByBrokerId as never, {
+      brokerId: brokerId as never,
+      paginationOpts,
+    } as never)) as PaginatedDealsResult;
+    return mapPaginatedDeals(result);
+  },
+
+  async listPageByRedId(redId, paginationOpts) {
+    const result = (await fetchQuery(crmApi.listDealsPageByRedId as never, {
+      REDId: redId as never,
+      paginationOpts,
+    } as never)) as PaginatedDealsResult;
+    return mapPaginatedDeals(result);
+  },
+
   async listByPropertyId(propertyId) {
     const deals = (await fetchQuery(crmApi.listDealsByPropertyId as never, {
       propertyId: propertyId as never,
     })) as DealSummary[];
     return deals.map(mapDealIds);
+  },
+
+  async listClientsByBrokerId(brokerId) {
+    return (await fetchQuery(crmApi.listClientsByBrokerId as never, {
+      brokerId: brokerId as never,
+    } as never)) as DealSelectorClient[];
+  },
+
+  async listClientsByRedId(redId) {
+    return (await fetchQuery(crmApi.listClientsByRedId as never, {
+      REDId: redId as never,
+    } as never)) as DealSelectorClient[];
+  },
+
+  async getClientById(clientId) {
+    return (await fetchQuery(crmApi.getClientById as never, {
+      clientId: clientId as never,
+    } as never)) as DealClientPreview | null;
+  },
+
+  async listBrokerSelectorOptions() {
+    return (await fetchQuery(crmApi.listBrokerSelectorOptions as never, {} as never)) as DealSelectorBroker[];
   },
 
   async getById(dealId) {
@@ -96,13 +157,15 @@ export const convexCrmRepository: CrmRepository = {
     return fetchMutation(crmApi.createDeal as never, {
       ...input,
       propertyId: input.propertyId as never,
+      crmClientId: input.crmClientId as never,
+      relatedBrokerId: input.relatedBrokerId as never,
       brokerId: brokerId as never,
       REDId: redId as never,
       lastUpdatedBy,
     } as never) as Promise<string>;
   },
 
-  async update({ lastUpdatedBy, dealId, title, description, value, nextFollowUpAt, stage, contactName, contactPhone, propertyId, notes }) {
+  async update({ lastUpdatedBy, dealId, title, description, value, nextFollowUpAt, stage, contactName, contactPhone, propertyId, relationType, crmClientId, relatedBrokerId, notes }) {
     await fetchMutation(crmApi.updateDeal as never, {
       dealId: dealId as never,
       title,
@@ -110,6 +173,9 @@ export const convexCrmRepository: CrmRepository = {
       value,
       nextFollowUpAt,
       stage,
+      relationType,
+      crmClientId: crmClientId as never,
+      relatedBrokerId: relatedBrokerId as never,
       contactName,
       contactPhone,
       propertyId: propertyId as never,

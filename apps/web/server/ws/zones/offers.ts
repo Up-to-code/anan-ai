@@ -1,5 +1,6 @@
 import {
   applyToBrokerOffer,
+  advanceBrokerOfferCase,
   archiveBrokerOffer,
   createBrokerOfferDraft,
   createBrokerOffer,
@@ -14,6 +15,7 @@ import type { WorkspaceAudience, WorkspaceOwnerContext } from "@/server/contract
 import { convexOffersRepository } from "@/server/infrastructure/convex/offersRepository";
 import {
   applyToRedOffer,
+  advanceRedOfferCase,
   archiveRedOffer,
   createRedOfferDraft,
   createRedOffer,
@@ -53,6 +55,8 @@ export function getWorkspaceOffersZone(
         respondToBrokerOffer(input, { requireBroker: requireSession, repository: convexOffersRepository }),
       applyToOffer: (input: Parameters<typeof applyToBrokerOffer>[0]) =>
         applyToBrokerOffer(input, { requireBroker: requireSession, repository: convexOffersRepository }),
+      advanceCaseStage: (input: Parameters<typeof advanceBrokerOfferCase>[0]) =>
+        advanceBrokerOfferCase(input, { requireBroker: requireSession, repository: convexOffersRepository }),
     };
   }
 
@@ -77,6 +81,8 @@ export function getWorkspaceOffersZone(
         respondToRedOffer(input, { requireDeveloper: requireSession, repository: convexOffersRepository }),
       applyToOffer: (input: Parameters<typeof applyToRedOffer>[0]) =>
         applyToRedOffer(input, { requireDeveloper: requireSession, repository: convexOffersRepository }),
+      advanceCaseStage: (input: Parameters<typeof advanceRedOfferCase>[0]) =>
+        advanceRedOfferCase(input, { requireDeveloper: requireSession, repository: convexOffersRepository }),
     };
   }
 

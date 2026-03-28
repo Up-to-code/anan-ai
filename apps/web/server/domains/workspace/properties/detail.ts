@@ -3,6 +3,10 @@ import type { PropertyDetail } from "@/server/contracts/properties";
 import type { WorkspaceAudience, WorkspaceOwnerContext } from "@/server/contracts/workspace";
 import { convexBrokerZoneRepository } from "@/server/infrastructure/convex/brokerZoneRepository";
 import { convexInboxRepository, type InboxRepository } from "@/server/infrastructure/convex/inboxRepository";
+import {
+  convexProjectAccessRepository,
+  type ProjectAccessRepository,
+} from "@/server/infrastructure/convex/projectAccessRepository";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
 
 export type WorkspaceProjectDetailAccessMode = "owner" | "shared";
@@ -16,12 +20,17 @@ export type ResolvedWorkspaceProjectDetail = {
 type WorkspaceProjectDetailResolverDependencies = {
   requireSession: typeof requireSessionContext;
   inboxRepository: Pick<InboxRepository, "hasProjectShareAccess">;
+  projectAccessRepository: Pick<
+    ProjectAccessRepository,
+    "hasExplicitProjectViewerAccess" | "promoteCurrentUserToProjectViewer"
+  >;
   rawPropertyRepository: Pick<typeof convexBrokerZoneRepository, "getProperty">;
 };
 
 const defaultDependencies: WorkspaceProjectDetailResolverDependencies = {
   requireSession: requireSessionContext,
   inboxRepository: convexInboxRepository,
+  projectAccessRepository: convexProjectAccessRepository,
   rawPropertyRepository: convexBrokerZoneRepository,
 };
 
@@ -55,6 +64,23 @@ export async function resolveWorkspaceProjectDetail(
   }
 
   const session = await dependencies.requireSession();
+  const hasExplicitViewerAccess = await dependencies.projectAccessRepository.hasExplicitProjectViewerAccess(
+    session.token,
+    input.projectId,
+  );
+
+  if (hasExplicitViewerAccess) {
+    const sharedProperty = await dependencies.rawPropertyRepository.getProperty(input.projectId);
+    if (!sharedProperty) {
+      return null;
+    }
+    return {
+      property: sharedProperty,
+      accessMode: "shared",
+      canEdit: false,
+    };
+  }
+
   const hasSharedAccess = await dependencies.inboxRepository.hasProjectShareAccess(
     session.token,
     input.projectId,
@@ -68,6 +94,10 @@ export async function resolveWorkspaceProjectDetail(
   if (!sharedProperty) {
     return null;
   }
+
+  await dependencies.projectAccessRepository.promoteCurrentUserToProjectViewer(session.token, {
+    propertyId: input.projectId,
+  });
 
   return {
     property: sharedProperty,

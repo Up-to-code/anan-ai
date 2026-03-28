@@ -15,6 +15,7 @@ type UseWorkspaceAssistantSendParams = {
   setStageHistory: React.Dispatch<React.SetStateAction<AnanProStreamStageEvent[]>>;
   setStreamLifecycleStatus: React.Dispatch<React.SetStateAction<"running" | "completed" | "failed" | "cancelled" | null>>;
   setActiveTeamId: React.Dispatch<React.SetStateAction<string | null>>;
+  setActiveAgentName: React.Dispatch<React.SetStateAction<string | null>>;
   setCompletedTeamIds: React.Dispatch<React.SetStateAction<string[]>>;
   setActiveStreamSessionId: React.Dispatch<React.SetStateAction<string | null>>;
   setIsStoppingStream: React.Dispatch<React.SetStateAction<boolean>>;
@@ -37,6 +38,7 @@ function toSendFlowParams(params: UseWorkspaceAssistantSendParams) {
     setStageHistory: params.setStageHistory,
     setStreamLifecycleStatus: params.setStreamLifecycleStatus,
     setActiveTeamId: params.setActiveTeamId,
+    setActiveAgentName: params.setActiveAgentName,
     setCompletedTeamIds: params.setCompletedTeamIds,
     setActiveStreamSessionId: params.setActiveStreamSessionId,
     setIsStoppingStream: params.setIsStoppingStream,

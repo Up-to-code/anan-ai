@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocaleDictionary } from "@/client_zone/components/LocaleProvider";
+import { Badge } from "@/client_zone/components/ui/badge";
 import type { AssistantMessage } from "@/client_zone/lib/types";
 import { AnanBrandMark } from "./AnanBrandMark";
 import { AssistantArticle } from "./AssistantArticle";
@@ -15,18 +16,22 @@ export function AssistantTurn({ message }: { message: AssistantMessage }) {
   const { dictionary } = useLocaleDictionary();
 
   return (
-    <section className="space-y-4">
-      <div className="mx-auto flex w-full max-w-[820px] items-center gap-3">
-        <AnanBrandMark className="h-10 w-10" />
-        <div className="min-w-0">
-          <div className="text-sm font-semibold text-slate-900">{dictionary.app.assistantName}</div>
-          <div className="text-xs text-slate-500">{dictionary.app.liveNow}</div>
+    <section className="w-full">
+      <div className="flex min-w-0 items-start gap-4 sm:gap-5">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[22px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] shadow-sm sm:h-12 sm:w-12">
+          <AnanBrandMark className="h-10 w-10" />
+        </div>
+        <div className="min-w-0 flex-1 space-y-4 sm:space-y-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">
+              {dictionary.app.assistantName}
+            </div>
+            <Badge>{dictionary.app.liveNow}</Badge>
+          </div>
+          <AssistantArticle content={message.text} />
+          {message.uiTurn ? <AgUiTurnRenderer turn={message.uiTurn} /> : null}
         </div>
       </div>
-      <div className="mx-auto w-full max-w-[820px]">
-        <AssistantArticle content={message.text} />
-      </div>
-      {message.uiTurn ? <AgUiTurnRenderer turn={message.uiTurn} /> : null}
     </section>
   );
 }

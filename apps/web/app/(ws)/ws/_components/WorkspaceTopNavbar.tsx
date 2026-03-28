@@ -31,7 +31,6 @@ export default function WorkspaceTopNavbar({
 }
 
 function WorkspaceTopNavbarInner({
-  user,
   organization,
   visibleZoneKeys,
   initialSignalCounts = { notificationCount: 0, inboxCount: 0 },
@@ -51,9 +50,9 @@ function WorkspaceTopNavbarInner({
   const signalCounts = useWorkspaceSignalCounts(initialSignalCounts);
   const isInboxActive = pathname.startsWith("/ws/inbox");
   const canUseInbox = (visibleZoneKeys ?? []).includes("inbox");
-  const accountInitial = (user.name || user.email || "A").trim().slice(0, 1).toUpperCase();
   const isAssistantVariant = variant === "assistant";
   const resolvedTitle = title ?? (isAssistantVariant ? "مساعد عنان" : "نظرة عامة");
+  const orgSubtitle = organization.navbarSubtitle?.trim() || organization.sidebarSubtitle?.trim() || "مساحة العمل";
 
   return (
     <header
@@ -102,21 +101,16 @@ function WorkspaceTopNavbarInner({
           ) : null}
         </div>
         <Link
-          href="/ws/me"
+          href="/ws/settings"
           className={cn(
             "flex items-center gap-3 rounded-[10px] border px-3 py-2 text-right transition",
             "border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] hover:bg-[var(--workspace-accent-soft)]",
-            isAssistantVariant ? "min-w-[180px]" : "min-w-[220px]",
+            isAssistantVariant ? "min-w-[160px]" : "min-w-[210px]",
           )}
         >
           <div className="min-w-0 flex-1">
             <div className="truncate text-xs font-black text-foreground">{organization.name}</div>
-            <div className="truncate text-[11px] text-muted-foreground">
-              {user.name || user.email}
-            </div>
-          </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:color-mix(in_srgb,var(--workspace-highlight)_16%,transparent)] text-sm font-black text-[var(--workspace-highlight)]">
-            {accountInitial}
+            <div className="truncate text-[11px] text-muted-foreground">{orgSubtitle}</div>
           </div>
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
         </Link>

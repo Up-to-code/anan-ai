@@ -40,12 +40,16 @@ export function buildWorkspaceContextBlock(options: {
 
   const recentContext = buildRecentThreadContext(options.existingMessages);
   const actionContext = options.previousActionState
-    ? `[Open Action]\n${JSON.stringify({
-        type: options.previousActionState.type,
-        fields: options.previousActionState.fields,
-        missingFields: options.previousActionState.missingFields,
-        state: options.previousActionState.state,
-      })}`
+    ? `[Open Action]\n${JSON.stringify(
+        options.previousActionState.type === "create_project"
+          ? {
+              type: options.previousActionState.type,
+              fields: options.previousActionState.fields,
+              missingFields: options.previousActionState.missingFields,
+              state: options.previousActionState.state,
+            }
+          : options.previousActionState,
+      )}`
     : "";
 
   return [recentContext, actionContext]

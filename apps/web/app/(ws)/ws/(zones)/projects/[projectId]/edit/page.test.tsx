@@ -5,8 +5,10 @@ import type { ProjectFormData } from "@/app/(ws)/ws/public";
 const {
   getProperty,
   updateProperty,
-  publishProperty,
   deleteProperty,
+  attachOrganizationAssets,
+  markEntityAssetsPendingDelete,
+  listPropertyViewers,
   getCapturedProps,
   setCapturedProps,
 } = vi.hoisted(() => {
@@ -44,8 +46,19 @@ const {
       adLicenseStatus: "pending",
     })),
     updateProperty: vi.fn(async () => undefined),
-    publishProperty: vi.fn(async () => ({ ok: true })),
     deleteProperty: vi.fn(async () => undefined),
+    attachOrganizationAssets: vi.fn(async () => undefined),
+    markEntityAssetsPendingDelete: vi.fn(async () => undefined),
+    listPropertyViewers: vi.fn(async () => [
+      {
+        authUserId: "viewer-1",
+        name: "Shared Viewer",
+        email: "viewer@example.com",
+        accessSource: "chat_share",
+        createdAt: 1,
+        updatedAt: 2,
+      },
+    ]),
     getCapturedProps: () => capturedProps,
     setCapturedProps: (props: unknown) => {
       capturedProps = props;
@@ -70,9 +83,30 @@ vi.mock("@/server/ws/zones", () => ({
   getWorkspacePropertyZone: vi.fn(() => ({
     getProperty,
     updateProperty,
-    publishProperty,
     deleteProperty,
   })),
+}));
+
+vi.mock("@/server/auth/session", () => ({
+  requireSessionContext: vi.fn(async () => ({
+    token: "token",
+    context: { userId: "user-1", role: "developer", isActive: true, redId: "red-1" },
+    profile: null,
+  })),
+}));
+
+vi.mock("@/server/infrastructure/convex/organizationAssetsRepository", () => ({
+  convexOrganizationAssetsRepository: {
+    attachOrganizationAssets,
+    markEntityAssetsPendingDelete,
+  },
+}));
+
+vi.mock("@/server/infrastructure/convex/projectAccessRepository", () => ({
+  convexProjectAccessRepository: {
+    listPropertyViewers,
+    revokePropertyViewer: vi.fn(async () => ({ ok: true })),
+  },
 }));
 
 vi.mock("../../ProjectFormScreen", () => ({
@@ -110,6 +144,7 @@ const saveFormInput: ProjectFormData = {
   baths: "4",
   area: "400",
   status: "active",
+  clientVisibility: "public",
   images: [uploadedImage],
   video: null,
   brokerId: null,
@@ -133,12 +168,11 @@ async function renderEditProject() {
 beforeEach(() => {
   getProperty.mockClear();
   updateProperty.mockClear();
-  publishProperty.mockClear();
   deleteProperty.mockClear();
   setCapturedProps(null);
 });
 
-it("updates project media through the mapped patch and publish action", async () => {
+it("updates project media through the mapped patch without implicit publish side effects", async () => {
   const { markup, props } = await renderEditProject();
 
   expect(markup).toContain("ProjectFormScreenMock");
@@ -150,6 +184,13 @@ it("updates project media through the mapped patch and publish action", async ()
   expect(props.initialData.galleryDisplayMode).toBe("fit");
   expect(props.initialData.galleryAspectRatio).toBe("portrait");
   expect(props.initialData.privatePermitSummary).toBe("ملف خاص بالمحادثة");
+  expect(props.initialData.clientVisibility).toBe("private");
+  expect(props.initialData.visibilityMembers).toEqual([
+    expect.objectContaining({
+      authUserId: "viewer-1",
+      name: "Shared Viewer",
+    }),
+  ]);
 
   const saveResult = await props.onSave(saveFormInput);
   expect(saveResult).toEqual({ redirectTo: "/ws/projects/property-1" });
@@ -157,6 +198,8 @@ it("updates project media through the mapped patch and publish action", async ()
     id: "property-1",
     patch: expect.objectContaining({
       media: [uploadedImage],
+      publicationState: "published",
+      status: "available",
       body: {
         presentation: expect.objectContaining({
           descriptionShort: "وصف مختصر محدث",
@@ -171,7 +214,7 @@ it("updates project media through the mapped patch and publish action", async ()
       },
     }),
   });
-  expect(publishProperty).toHaveBeenCalledWith({ id: "property-1" });
+  expect(attachOrganizationAssets).toHaveBeenCalledTimes(2);
 });
 
 it("supports deleting the project", async () => {
@@ -179,5 +222,12 @@ it("supports deleting the project", async () => {
   const deleteResult = await props.onDelete();
 
   expect(deleteResult).toEqual({ redirectTo: "/ws/projects" });
+  expect(markEntityAssetsPendingDelete).toHaveBeenCalledWith(
+    "token",
+    expect.objectContaining({
+      attachedEntityType: "project",
+      attachedEntityId: "property-1",
+    }),
+  );
   expect(deleteProperty).toHaveBeenCalledWith({ id: "property-1" });
 });

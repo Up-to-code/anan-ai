@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useConvexAuth } from "convex/react";
 import { ChatHeader } from "./ChatHeader";
 import { ChatConversation } from "./ChatConversation";
@@ -14,9 +14,10 @@ import { ChatAurora } from "./ChatAurora";
 import { ChatHistorySidebar } from "./ChatHistorySidebar";
 import { AssistantTurn } from "./AssistantTurn";
 import { ThreadWelcome } from "./ThreadWelcome";
+import { ClientAssistantColumn } from "./chatLayout";
 import { useLocaleDictionary } from "@/client_zone/components/LocaleProvider";
 import { useClientAssistant } from "@/client_zone/hooks/useClientAssistant";
-import type { ChatSuggestion } from "@/client_zone/lib/types";
+import { buildChatSuggestions } from "@/client_zone/lib/chatSuggestions";
 
 function useComposerDockHeight() {
   const dockRef = useRef<HTMLDivElement | null>(null);
@@ -44,50 +45,6 @@ function useComposerDockHeight() {
   return { dockRef, dockHeight };
 }
 
-function buildSuggestions(locale: "ar" | "en", mode: "default" | "search" | "loans"): ChatSuggestion[] {
-  if (mode === "search") {
-    return locale === "ar"
-      ? [
-          { id: "s1", label: "شقة في الرياض", prompt: "أبحث عن شقة في الرياض" },
-          { id: "s2", label: "قارن الخيارات", prompt: "قارن أفضل الخيارات" },
-          { id: "s3", label: "استثمار", prompt: "أريد خيارات مناسبة للاستثمار" },
-        ]
-      : [
-          { id: "s1", label: "Riyadh apartment", prompt: "Find an apartment in Riyadh" },
-          { id: "s2", label: "Compare options", prompt: "Compare the best options" },
-          { id: "s3", label: "Investment", prompt: "Show investment-friendly options" },
-        ];
-  }
-
-  if (mode === "loans") {
-    return locale === "ar"
-      ? [
-          { id: "l1", label: "فحص الأهلية", prompt: "هل راتبي 15000 مناسب للتمويل؟" },
-          { id: "l2", label: "خطة سداد", prompt: "اعرض خطة سداد مبدئية" },
-          { id: "l3", label: "قرض لشقة", prompt: "أريد تمويل لشقة في الرياض" },
-        ]
-      : [
-          { id: "l1", label: "Check eligibility", prompt: "Does a SAR 15,000 salary qualify me?" },
-          { id: "l2", label: "Payment plan", prompt: "Show me a starter payment plan" },
-          { id: "l3", label: "Loan for apartment", prompt: "I need financing for an apartment in Riyadh" },
-        ];
-  }
-
-  return locale === "ar"
-    ? [
-        { id: "d1", label: "أبحث عن شقة", prompt: "أبحث عن شقة في الرياض" },
-        { id: "d2", label: "فحص التمويل", prompt: "هل راتبي 15000 مناسب للتمويل؟" },
-        { id: "d3", label: "قارن الخيارات", prompt: "قارن أفضل الخيارات" },
-        { id: "d4", label: "محادثة تجريبية", prompt: "__open_demo__:demo-apartment-search" },
-      ]
-    : [
-        { id: "d1", label: "Find apartment", prompt: "Find an apartment in Riyadh" },
-        { id: "d2", label: "Check financing", prompt: "Does a SAR 15,000 salary qualify me?" },
-        { id: "d3", label: "Compare options", prompt: "Compare the best options" },
-        { id: "d4", label: "Open demo conversation", prompt: "__open_demo__:demo-apartment-search" },
-      ];
-}
-
 /**
  * WHY:   The simplified client app needs one primary ChatGPT-style shell shared by `/`, `/app`, `/search`, and `/loans`.
  * WHAT:  Renders the centered chat experience, including header, thread, suggestions, and sticky prompt input.
@@ -96,10 +53,13 @@ function buildSuggestions(locale: "ar" | "en", mode: "default" | "search" | "loa
 export function ChatShell({
   mode = "default",
   initialPrompt,
+  initialThreadId,
 }: {
   mode?: "default" | "search" | "loans";
   initialPrompt?: string | null;
+  initialThreadId?: string | null;
 }) {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { isAuthenticated } = useConvexAuth();
   const { locale } = useLocaleDictionary();
@@ -108,19 +68,13 @@ export function ChatShell({
   const assistant = useClientAssistant({
     locale,
     initialPrompt: initialPrompt ?? searchParams.get("prompt"),
+    initialThreadId: initialThreadId ?? searchParams.get("threadId"),
   });
-  const suggestions = useMemo(() => buildSuggestions(locale, mode), [locale, mode]);
-
-  function handleSuggestion(prompt: string) {
-    if (prompt.startsWith("__open_demo__:")) {
-      assistant.openDemoThread(prompt.replace("__open_demo__:", ""));
-      return;
-    }
-    void assistant.submit(prompt);
-  }
+  const suggestions = useMemo(() => buildChatSuggestions(locale, mode), [locale, mode]);
+  const returnTo = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
 
   return (
-    <div className="relative flex min-h-dvh flex-col bg-slate-50">
+    <div className="relative flex min-h-dvh flex-col bg-[var(--workspace-shell)] text-[var(--workspace-bubble-other-foreground)]">
       <ChatAurora />
       <ChatHeader
         isAuthenticated={isAuthenticated}
@@ -129,41 +83,42 @@ export function ChatShell({
       <ChatHistorySidebar
         open={isHistoryOpen}
         isAuthenticated={isAuthenticated}
-        demoThreads={assistant.demoThreads}
         recentThreads={assistant.recentThreads}
         activeThreadId={assistant.activeThreadId}
-        onSelectDemoThread={assistant.openDemoThread}
         onSelectHistoryThread={assistant.openHistoryThread}
         onClose={() => setIsHistoryOpen(false)}
       />
       <ChatConversation
         className="relative z-10"
         contentStyle={{
-          paddingBottom: `calc(${dockHeight}px + max(1.5rem, env(safe-area-inset-bottom)))`,
+          paddingBottom: `calc(${dockHeight}px + 4rem + env(safe-area-inset-bottom))`,
         }}
       >
         {assistant.activeThreadKind === "welcome" ? (
-          <ThreadWelcome suggestions={suggestions} onSelect={handleSuggestion} />
+          <ThreadWelcome suggestions={suggestions} onSelect={(prompt) => void assistant.submit(prompt)} />
         ) : null}
 
         {assistant.messages.map((message) => (
-          <div key={message.id} className="space-y-3">
+          <div key={message.id} className="w-full">
             {message.role === "assistant" ? (
               <AssistantTurn message={message} />
             ) : (
               <ChatMessage role={message.role}>
-              <p>{message.text}</p>
+                <p>{message.text}</p>
               </ChatMessage>
             )}
           </div>
         ))}
 
-        {assistant.showAuthCallout ? <ChatAuthGateNotice returnTo="/" /> : null}
+        {assistant.showAuthCallout ? <ChatAuthGateNotice returnTo={returnTo} /> : null}
         {assistant.isSubmitting ? <ChatLoader /> : null}
         {assistant.messages.length > 0 ? (
-          <div className="mx-auto w-full max-w-[1080px] pt-2">
-            <ChatSuggestions suggestions={suggestions} onSelect={handleSuggestion} />
-          </div>
+          <ClientAssistantColumn className="pt-2">
+            <ChatSuggestions
+              suggestions={suggestions}
+              onSelect={(prompt) => void assistant.submit(prompt)}
+            />
+          </ClientAssistantColumn>
         ) : null}
       </ChatConversation>
       <ChatPromptInput

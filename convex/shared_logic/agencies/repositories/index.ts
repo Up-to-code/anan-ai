@@ -43,4 +43,10 @@ export {
   createPropertyByApiKey,
   updatePropertyByApiKey,
   deletePropertyByApiKey,
+  listDealsByApiKey,
+  createDealByApiKey,
+  updateDealByApiKey,
+  deleteDealByApiKey,
+  listBrokersByApiKey,
+  getBrokerByApiKey,
 } from "./apiKeys";

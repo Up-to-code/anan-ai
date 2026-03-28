@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useUploadThing } from "@/lib/uploadthing";
 import type { UploadedFileReference } from "@/server/contracts/files";
+import type { PropertyViewerSummary } from "@/server/contracts/properties";
 import type { AgPropertyFormState } from "./AgPropertyForm.shared";
 import { AgPropertyFormHeaderActions } from "./AgPropertyFormHeaderActions";
 import { AgPropertyFormSafetyOverlay } from "./AgPropertyFormSafetyOverlay";
@@ -45,11 +46,13 @@ export type ProjectFormData = {
   baths: string;
   area: string;
   status: string;
+  clientVisibility: "private" | "public";
   images: UploadedFileReference[];
   video: string | null;
   brokerId: string | null;
   adLicenseNumber?: string;
   adLicenseStatus?: "pending" | "approved" | "rejected" | null;
+  visibilityMembers?: PropertyViewerSummary[];
 };
 
 type AgPropertyFormProps = {
@@ -62,6 +65,7 @@ type AgPropertyFormProps = {
   onSave?: (data: ProjectFormData) => Promise<void> | void;
   onCancel?: () => void;
   onDelete?: () => void;
+  onRevokeViewer?: (viewerAuthUserId: string) => Promise<void> | void;
 };
 
 type StepDefinition = {
@@ -97,6 +101,36 @@ const GALLERY_ASPECT_OPTIONS: Array<{ value: GalleryAspectRatio; label: string }
   { value: "square", label: "مربع" },
   { value: "portrait", label: "عمودي" },
 ];
+
+const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const PDF_MIME_TYPE = "application/pdf";
+const MAX_IMAGE_SIZE_BYTES = 8 * 1024 * 1024;
+const MAX_PDF_SIZE_BYTES = 20 * 1024 * 1024;
+
+function validateUploadSelection(files: File[], mode: "image-only" | "image-or-pdf") {
+  for (const file of files) {
+    const isImage = ALLOWED_IMAGE_MIME_TYPES.has(file.type);
+    const isPdf = file.type === PDF_MIME_TYPE;
+
+    if (mode === "image-only" && !isImage) {
+      return "يسمح فقط برفع صور JPG أو PNG أو WEBP.";
+    }
+
+    if (mode === "image-or-pdf" && !isImage && !isPdf) {
+      return "يسمح فقط برفع صور JPG أو PNG أو WEBP أو ملفات PDF.";
+    }
+
+    if (isImage && file.size > MAX_IMAGE_SIZE_BYTES) {
+      return "الحد الأقصى لحجم الصورة هو 8MB.";
+    }
+
+    if (isPdf && file.size > MAX_PDF_SIZE_BYTES) {
+      return "الحد الأقصى لحجم ملف PDF هو 20MB.";
+    }
+  }
+
+  return null;
+}
 
 function resolveLicenseStatusUi(status: "pending" | "approved" | "rejected" | null) {
   if (!status) return LICENSE_STATUS_UI.default;
@@ -278,6 +312,7 @@ export default function AgPropertyForm({
   onSave,
   onCancel,
   onDelete,
+  onRevokeViewer,
 }: AgPropertyFormProps) {
   const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(initialData?.brokerId ?? null);
   const [brokerSearch, setBrokerSearch] = useState("");
@@ -310,9 +345,11 @@ export default function AgPropertyForm({
     baths: initialData?.baths ?? "",
     area: initialData?.area ?? "",
     status: initialData?.status ?? "active",
+    clientVisibility: initialData?.clientVisibility ?? "private",
     images: initialData?.images ?? [],
     video: initialData?.video ?? null,
     adLicenseNumber: initialData?.adLicenseNumber ?? "",
+    visibilityMembers: initialData?.visibilityMembers ?? [],
   });
   const adLicenseStatus = initialData?.adLicenseStatus ?? null;
   const [licenseDocs, setLicenseDocs] = useState<UploadedFileReference[]>([]);
@@ -382,6 +419,12 @@ export default function AgPropertyForm({
     }
 
     setUploadError(null);
+    const validationError = validateUploadSelection(files, "image-only");
+    if (validationError) {
+      setUploadError(validationError);
+      event.target.value = "";
+      return;
+    }
 
     try {
       const uploaded = await startUpload(files);
@@ -408,6 +451,12 @@ export default function AgPropertyForm({
     }
     setLicenseError(null);
     setLicenseSubmitted(false);
+    const validationError = validateUploadSelection(files, "image-or-pdf");
+    if (validationError) {
+      setLicenseError(validationError);
+      event.target.value = "";
+      return;
+    }
 
     try {
       const uploaded = await startLicenseUpload(files);
@@ -425,6 +474,12 @@ export default function AgPropertyForm({
     if (files.length === 0) {
       return;
     }
+    const validationError = validateUploadSelection(files, "image-or-pdf");
+    if (validationError) {
+      setUploadError(validationError);
+      event.target.value = "";
+      return;
+    }
 
     try {
       const uploaded = await startLicenseUpload(files);
@@ -433,6 +488,9 @@ export default function AgPropertyForm({
         ...prev,
         privatePermitFiles: [...prev.privatePermitFiles, ...nextDocs],
       }));
+      setUploadError(null);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "تعذر رفع ملفات التصريح الخاص.");
     } finally {
       event.target.value = "";
     }
@@ -483,6 +541,7 @@ export default function AgPropertyForm({
       ...formState,
       brokerId: selectedBrokerId,
       adLicenseStatus,
+      visibilityMembers: formState.visibilityMembers,
     };
     setSavePending(true);
     try {
@@ -525,6 +584,36 @@ export default function AgPropertyForm({
               placeholder="مثال: جدة، أبحر الشمالية"
               icon={<MapPin className="h-4 w-4" />}
             />
+          </div>
+        </div>
+
+        <div className="grid gap-2">
+          <FieldLabel>ظهور العقار في AI والعميل</FieldLabel>
+          <div className="grid gap-3 md:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setFormState((prev) => ({ ...prev, clientVisibility: "public" }))}
+              className={`rounded-2xl border px-5 py-4 text-right transition ${
+                formState.clientVisibility === "public"
+                  ? "border-emerald-500 bg-emerald-500/10 text-foreground"
+                  : "border-border bg-muted/10 text-muted-foreground"
+              }`}
+            >
+              <div className="text-sm font-black">عام للعميل وAI</div>
+              <div className="mt-1 text-xs font-semibold">يظهر في client-web والمساعد الرئيسي عند النشر.</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormState((prev) => ({ ...prev, clientVisibility: "private" }))}
+              className={`rounded-2xl border px-5 py-4 text-right transition ${
+                formState.clientVisibility === "private"
+                  ? "border-amber-500 bg-amber-500/10 text-foreground"
+                  : "border-border bg-muted/10 text-muted-foreground"
+              }`}
+            >
+              <div className="text-sm font-black">خاص داخل مساحة العمل</div>
+              <div className="mt-1 text-xs font-semibold">يبقى داخلياً للمطور أو الوسيط ولا يظهر للعميل.</div>
+            </button>
           </div>
         </div>
       </div>
@@ -889,6 +978,82 @@ export default function AgPropertyForm({
 
   const renderSharingStep = () => (
     <div className="space-y-6">
+      <SectionCard
+        title="رؤية المشروع"
+        description="حدد إذا كان المشروع عاماً أو خاصاً، وراجع من يملك حق المشاهدة عندما يكون خاصاً."
+      >
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setFormState((prev) => ({ ...prev, clientVisibility: "private" }))}
+              className={`rounded-2xl border px-4 py-4 text-right transition ${
+                formState.clientVisibility === "private"
+                  ? "border-foreground/20 bg-foreground text-background"
+                  : "border-border bg-background text-foreground hover:bg-muted"
+              }`}
+            >
+              <div className="text-sm font-black">خاص</div>
+              <div className="mt-1 text-xs opacity-80">لا يظهر إلا للجهات التي يتم السماح لها بالمشاهدة.</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormState((prev) => ({ ...prev, clientVisibility: "public" }))}
+              className={`rounded-2xl border px-4 py-4 text-right transition ${
+                formState.clientVisibility === "public"
+                  ? "border-foreground/20 bg-foreground text-background"
+                  : "border-border bg-background text-foreground hover:bg-muted"
+              }`}
+            >
+              <div className="text-sm font-black">عام</div>
+              <div className="mt-1 text-xs opacity-80">يظهر في قنوات العميل والـ AI حسب حالة النشر.</div>
+            </button>
+          </div>
+
+          {formState.clientVisibility === "private" ? (
+            <div className="space-y-3">
+              {formState.visibilityMembers.length > 0 ? (
+                formState.visibilityMembers.map((viewer) => (
+                  <div
+                    key={viewer.authUserId}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background px-4 py-3"
+                  >
+                    <button
+                      type="button"
+                      disabled={!onRevokeViewer}
+                      onClick={() => {
+                        if (!onRevokeViewer) return;
+                        void Promise.resolve(onRevokeViewer(viewer.authUserId)).then(() => {
+                          setFormState((prev) => ({
+                            ...prev,
+                            visibilityMembers: prev.visibilityMembers.filter(
+                              (entry) => entry.authUserId !== viewer.authUserId,
+                            ),
+                          }));
+                        });
+                      }}
+                      className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      إلغاء الوصول
+                    </button>
+                    <div className="text-right">
+                      <div className="text-sm font-bold text-foreground">{viewer.name}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {viewer.email ?? "بدون بريد ظاهر"} · {viewer.accessSource === "chat_share" ? "من المحادثة" : "يدوي"}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-6 text-center text-sm font-medium text-muted-foreground">
+                  لا يوجد مشاهدون مضافون بعد. ستظهر هنا الجهات التي تفتح المشروع من مشاركة خاصة في المحادثات.
+                </div>
+              )}
+            </div>
+          ) : null}
+        </div>
+      </SectionCard>
+
       <SectionCard title="تصريح خاص للمحادثة" description="سيظهر فقط للشخص الذي فُتح له المشروع عبر مشاركة خاصة في المحادثات.">
         <div className="space-y-4">
           <TextArea
@@ -1039,6 +1204,14 @@ export default function AgPropertyForm({
             value={formState.hasParking ? `${formState.parkingSpaces || "غير محدد"} موقف` : "غير متوفر"}
           />
           <ReviewRow label="حالة المشروع" value={formState.status} />
+          <ReviewRow
+            label="ظهور العميل"
+            value={formState.clientVisibility === "public" ? "ظاهر في AI والعميل" : "خاص داخل مساحة العمل"}
+          />
+          <ReviewRow
+            label="المشاهدون المصرح لهم"
+            value={formState.visibilityMembers.length > 0 ? `${formState.visibilityMembers.length} مستخدم` : "لا يوجد"}
+          />
           <ReviewRow
             label="الوسيط"
             value={selectedBroker ? selectedBroker.name : "بدون وسيط محدد"}

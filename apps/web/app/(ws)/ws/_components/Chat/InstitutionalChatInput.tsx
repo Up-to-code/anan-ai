@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
-import { motion } from "framer-motion";
-import { ArrowUp, Mic, RotateCcw, Square, Plus, Paperclip, Sparkles, Search, AudioLines } from "lucide-react";
+import React, { useCallback, useEffect, useRef } from "react";
+import { ArrowUp, Mic, Search, Sparkles, Loader2, Paperclip } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface InstitutionalChatInputProps {
   value: string;
@@ -11,207 +11,192 @@ interface InstitutionalChatInputProps {
   onSend: () => void;
   isSending?: boolean;
   placeholder?: string;
-  layout?: "landing" | "thread";
   onMicToggle?: () => void;
   isMicRecording?: boolean;
   isMicProcessing?: boolean;
   micLevels?: number[];
-  onStopGenerating?: () => void;
-  onRegenerate?: () => void;
-  canRegenerate?: boolean;
 }
 
-function MicPulseRings({ active }: { active: boolean }) {
-  if (!active) return null;
+function MicMeter({ levels }: { levels: number[] }) {
+  if (levels.length === 0) return null;
   return (
-    <>
-      {[0, 1, 2].map((index) => (
+    <div className="flex items-center gap-[2px] h-4">
+      {levels.slice(-10).map((level, index) => (
         <motion.span
           key={index}
-          className="pointer-events-none absolute inset-0 rounded-full border border-red-300"
-          initial={{ opacity: 0.65, scale: 0.7 }}
-          animate={{ opacity: 0, scale: 1.45 }}
-          transition={{
-            duration: 1.2,
-            ease: "easeOut",
-            repeat: Infinity,
-            delay: index * 0.25,
-          }}
+          initial={{ height: 2 }}
+          animate={{ height: Math.max(2, Math.round(level * 14)) }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          className="w-[2px] rounded-full bg-red-500"
         />
       ))}
-    </>
+    </div>
   );
 }
 
-/**
- * WHY:  The workspace assistant needs one composer built on the blocks.so ai-01 design pattern.
- * WHAT: Renders a ChatGPT-style composer with adaptive grid layout, microphone action, and send action.
- * HOW:  Uses CSS grid for adaptive layout, delegates submit/mic actions to parent handlers.
- */
 export default function InstitutionalChatInput({
   value,
   onChange,
   onSend,
-  isSending,
+  isSending = false,
   placeholder = "اسأل عنان عن السوق العقاري، أنشئ عرض سعر، أو تابع أداء فريقك...",
-  layout = "thread",
   onMicToggle,
   isMicRecording = false,
   isMicProcessing = false,
   micLevels = [],
-  onStopGenerating,
-  onRegenerate,
-  canRegenerate = false,
 }: InstitutionalChatInputProps) {
-  const isLanding = layout === "landing";
-  const sendDisabled = !value.trim() || isSending || isMicProcessing;
+  const isBusy = isSending || isMicProcessing;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const isExpanded = value.length > 100 || value.includes("\n");
 
-  // Auto-resize textarea
   useEffect(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    ta.style.height = "auto";
-    ta.style.height = `${ta.scrollHeight}px`;
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+      if (textarea.scrollHeight > 200) {
+        textarea.style.overflowY = "auto";
+      } else {
+        textarea.style.overflowY = "hidden";
+      }
+    }
   }, [value]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      if (!sendDisabled) onSend();
+  const handleSubmit = useCallback(() => {
+    const trimmedText = value.trim();
+    if (!trimmedText || isBusy) return;
+    try {
+      onSend();
+      onChange("");
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+      }
+    } catch (error) {
+      // Intentionally empty, handled by parent
     }
-  };
+  }, [value, isBusy, onSend, onChange]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSubmit();
+      }
+    },
+    [handleSubmit]
+  );
+
+  const isTyping = value.trim().length > 0;
 
   return (
-    <div className="w-full" data-slot={`chat-input-shell-${layout}`}>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!sendDisabled) onSend();
-        }}
-        className="group/composer w-full"
+    <div className="w-full" data-slot="institutional-chat-input-nexus">
+      <div
+        className={cn(
+          "mx-auto flex w-full flex-col overflow-hidden rounded-[32px] transition-all duration-500",
+          "bg-white/40 backdrop-blur-3xl border border-white/40 shadow-[0_4px_20px_rgba(0,0,0,0.03)]",
+          "dark:bg-white/[0.03] dark:border-white/[0.08] dark:shadow-none",
+          "focus-within:bg-white/60 dark:focus-within:bg-white/[0.06] focus-within:border-white/60 dark:focus-within:border-white/20 focus-within:shadow-2xl focus-within:shadow-black/[0.02]"
+        )}
       >
-        <div
-          className={cn(
-            "mx-auto flex w-full flex-col overflow-hidden bg-background shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-border/80 transition-all duration-300 ease-out dark:shadow-none",
-            isExpanded ? "rounded-3xl p-3" : "rounded-[32px] p-2 hover:border-border"
-          )}
-        >
-          {/* Text Area */}
-          <div className={cn("flex w-full", isExpanded ? "min-h-[120px] px-3 pt-3" : "min-h-[44px] px-4 py-2.5")}>
-            <div className="flex-1 overflow-auto max-h-52">
-              <textarea
-                ref={textareaRef}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={Boolean(isMicProcessing)}
-                placeholder={placeholder}
-                dir="rtl"
-                className="min-h-0 w-full resize-none border-0 bg-transparent p-0 text-[15px] font-medium leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0 scrollbar-thin"
-                rows={1}
-              />
-            </div>
+        <div className="flex w-full flex-col items-start px-6 pt-4">
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isBusy}
+            placeholder={placeholder}
+            className={cn(
+              "w-full resize-none border-0 bg-transparent p-0 py-2 pt-3 text-[15px] font-semibold leading-relaxed outline-none ring-0 appearance-none transition-colors",
+              "text-slate-900 placeholder:text-slate-400/50",
+              "dark:text-white dark:placeholder:text-white/20"
+            )}
+            style={{ minHeight: "48px", maxHeight: "200px" }}
+            dir="rtl"
+            rows={1}
+          />
+        </div>
+
+        <div className="flex items-center justify-between px-4 pb-4 pt-1" dir="rtl">
+          <div className="flex items-center gap-1.5 pl-1">
+            <button
+              type="button"
+              className="flex h-10 items-center gap-2 rounded-full px-4 text-slate-500 transition-all hover:bg-slate-100/50 hover:text-slate-900 dark:text-white/40 dark:hover:bg-white/5 dark:hover:text-white font-bold text-[12px] uppercase tracking-wider"
+            >
+              <Paperclip className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">إرفاق</span>
+            </button>
+            <div className="h-4 w-[1px] bg-slate-200 dark:bg-white/10 mx-1 hidden sm:block" />
+            <button
+              type="button"
+              className="hidden sm:flex h-9 items-center gap-2 rounded-full px-3 text-slate-500 transition-colors hover:bg-slate-100/50 hover:text-slate-900 dark:text-white/40 dark:hover:bg-white/5 dark:hover:text-white font-black text-[10px] uppercase tracking-[0.15em]"
+            >
+              <Search className="h-3 w-3" />
+              بحث
+            </button>
+            <button
+              type="button"
+              className="hidden sm:flex h-9 items-center gap-2 rounded-full px-3 text-slate-500 transition-colors hover:bg-slate-100/50 hover:text-slate-900 dark:text-white/40 dark:hover:bg-white/5 dark:hover:text-white font-black text-[10px] uppercase tracking-[0.15em]"
+            >
+              <Sparkles className="h-3 w-3" />
+              بحث عميق
+            </button>
           </div>
 
-          {/* Action Ribbon */}
-          <div className={cn("flex items-center justify-between", isExpanded ? "mt-4" : "")}>
-            <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2.5" dir="ltr">
+            <AnimatePresence>
+              {isMicRecording && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="flex items-center gap-3.5 px-4 py-1.5 rounded-full bg-red-50/50 dark:bg-red-500/10 border border-red-100/50 dark:border-red-500/10 mr-2"
+                >
+                  <button
+                    type="button"
+                    onClick={onMicToggle}
+                    className="text-[10px] font-black uppercase tracking-[0.15em] text-red-600 dark:text-red-400"
+                  >
+                    إيقاف
+                  </button>
+                  <MicMeter levels={micLevels} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {!isMicRecording && (
               <button
                 type="button"
-                className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                title="إرفاق ملفات"
+                onClick={onMicToggle}
+                disabled={!onMicToggle || (isMicProcessing && !isMicRecording)}
+                className="flex h-11 w-11 items-center justify-center rounded-full text-slate-400 transition-all duration-500 hover:bg-slate-100/50 hover:text-slate-900 dark:text-white/30 dark:hover:bg-white/5 dark:hover:text-white"
               >
-                <Plus className="h-5 w-5" />
+                {isMicProcessing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Mic className="h-5 w-5" />
+                )}
               </button>
-              
-              <div className="hidden sm:flex items-center gap-1 border-r border-border/60 pr-1 mr-1">
-                <button
-                  type="button"
-                  className="flex h-9 items-center gap-2 rounded-full px-3 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground font-bold text-[13px]"
-                >
-                  <Search className="h-4 w-4" />
-                  بحث
-                </button>
-                <button
-                  type="button"
-                  className="flex h-9 items-center gap-2 rounded-full px-3 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground font-bold text-[13px]"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  بحث عميق
-                </button>
-              </div>
-            </div>
+            )}
 
-            <div className="flex items-center gap-1.5">
-              {canRegenerate && !isSending ? (
-                <button
-                  type="button"
-                  onClick={onRegenerate}
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </button>
-              ) : null}
-
-              <div className="relative">
-                <MicPulseRings active={isMicRecording} />
-                <button
-                  type="button"
-                  onClick={onMicToggle}
-                  disabled={!onMicToggle || (isMicProcessing && !isMicRecording)}
-                  className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                    isMicRecording && "text-destructive bg-destructive/10 hover:bg-destructive/20",
-                  )}
-                >
-                  {isMicRecording ? <Square className="h-4 w-4" /> : <Mic className="h-5 w-5" />}
-                </button>
-              </div>
-
+            <button
+              onClick={handleSubmit}
+              disabled={isBusy || !isTyping}
+              className={cn(
+                "flex h-11 w-11 items-center justify-center rounded-full transition-all duration-500 shadow-md",
+                isTyping
+                  ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 scale-100 hover:scale-105 hover:shadow-xl"
+                  : "bg-slate-200 text-slate-400 scale-95 opacity-50 dark:bg-white/5 dark:text-white/10"
+              )}
+            >
               {isSending ? (
-                <button
-                  type="button"
-                  onClick={onStopGenerating}
-                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-foreground text-background shadow-sm transition-transform hover:scale-105"
-                >
-                  <Square className="h-4 w-4 fill-current" />
-                </button>
-              ) : value.trim() ? (
-                <button
-                  type="submit"
-                  disabled={sendDisabled}
-                  className={cn(
-                    "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-all",
-                    sendDisabled
-                      ? "bg-muted text-muted-foreground"
-                      : "bg-foreground text-background shadow-sm hover:scale-105 active:scale-95",
-                  )}
-                >
-                  <ArrowUp className="h-5 w-5" />
-                </button>
-              ) : null}
-            </div>
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowUp className="h-5 w-5 stroke-[2.5px]" />
+              )}
+            </button>
           </div>
         </div>
-      </form>
-
-      {isMicRecording && micLevels.length > 0 ? (
-        <div className="mt-3 flex items-center justify-end">
-          <div className="pointer-events-none flex items-end gap-0.5 rounded-xl border border-red-200 bg-white px-3 py-1.5 shadow-sm">
-            {micLevels.map((level, index) => (
-              <motion.span
-                key={index}
-                className="w-0.5 rounded-full bg-red-500"
-                animate={{ height: Math.max(2, Math.round(level * 18)) }}
-                transition={{ duration: 0.12, ease: "easeOut" }}
-                style={{ height: "2px" }}
-              />
-            ))}
-          </div>
-        </div>
-      ) : null}
+      </div>
     </div>
   );
 }

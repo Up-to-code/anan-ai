@@ -16,15 +16,22 @@ type WorkspaceAssistantCanvasProps = {
   sendError: string | null;
   isLoadingThread: boolean;
   isSending: boolean;
+  isVoicePanelOpen: boolean;
   isVoiceRecording: boolean;
   isVoiceTranscribing: boolean;
-  voiceProcessingPhase: "idle" | "waiting_for_speech" | "recording" | "silence_countdown" | "uploading" | "transcribing" | "sending" | "error";
+  voicePermissionState: "unknown" | "unsupported" | "prompt" | "granted" | "denied";
+  voiceProcessingPhase: "idle" | "waiting_for_permission" | "waiting_for_speech" | "recording" | "silence_countdown" | "uploading" | "transcribing" | "sending" | "error";
   canRegenerate: boolean;
+  activeTeamId: string | null;
+  activeAgentName: string | null;
   liveAssistantMotionState: AIMotionState;
   liveStageLabel: string;
   voiceElapsedMs: number;
   voiceLevels: number[];
   onToggleVoiceRecording: () => void;
+  onStopVoiceRecording: () => void | Promise<void>;
+  onCancelVoiceRecording: () => void;
+  onRequestVoicePermission: () => void | Promise<void>;
   onStopStreaming: () => void;
   onRegenerate: () => void;
   onResetUnavailableThread: () => void;
@@ -69,13 +76,20 @@ function toComposerProps(props: WorkspaceAssistantCanvasProps): AssistantCompose
     value: props.value,
     sendError: props.sendError,
     isSending: props.isSending,
+    isVoicePanelOpen: props.isVoicePanelOpen,
     isVoiceRecording: props.isVoiceRecording,
     isVoiceTranscribing: props.isVoiceTranscribing,
+    voicePermissionState: props.voicePermissionState,
     voiceProcessingPhase: props.voiceProcessingPhase,
     canRegenerate: props.canRegenerate,
+    activeTeamId: props.activeTeamId,
+    activeAgentName: props.activeAgentName,
     voiceElapsedMs: props.voiceElapsedMs,
     voiceLevels: props.voiceLevels,
     onToggleVoiceRecording: props.onToggleVoiceRecording,
+    onStopVoiceRecording: props.onStopVoiceRecording,
+    onCancelVoiceRecording: props.onCancelVoiceRecording,
+    onRequestVoicePermission: props.onRequestVoicePermission,
     onStopStreaming: props.onStopStreaming,
     onRegenerate: props.onRegenerate,
     onChange: props.onChange,

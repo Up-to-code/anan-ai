@@ -1,4 +1,5 @@
 import type { UploadedFileReference } from "@/server/contracts/files";
+import type { PropertyViewerSummary } from "@/server/contracts/properties";
 
 export type AgPropertyFormState = {
   name: string;
@@ -18,7 +19,9 @@ export type AgPropertyFormState = {
   baths: string;
   area: string;
   status: string;
+  clientVisibility: "private" | "public";
   images: UploadedFileReference[];
   video: string | null;
   adLicenseNumber: string;
+  visibilityMembers: PropertyViewerSummary[];
 };

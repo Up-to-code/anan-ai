@@ -14,7 +14,10 @@ export type AgUiComponentId =
   | "market_insight"
   | "area_heat"
   | "constraint_summary"
-  | "missing_data_prompt";
+  | "missing_data_prompt"
+  | "data_list"
+  | "filter_summary"
+  | "target_summary";
 
 export type AgUiCardDefinition = {
   id: string;

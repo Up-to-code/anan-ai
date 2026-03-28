@@ -4,12 +4,12 @@ import schema from "../schema";
 import { api } from "../_generated/api";
 import { modules } from "../test.setup";
 
-async function insertComplianceRuleset(ctx: any) {
+async function insertComplianceRuleset(ctx: any, orgType: "broker" | "red" = "broker") {
   const now = Date.now();
   await ctx.db.insert("complianceRulesets", {
     countryCode: "SA",
     countryLabel: "المملكة العربية السعودية",
-    orgType: "broker",
+    orgType,
     status: "active",
     requirements: [],
     sources: [],
@@ -28,18 +28,36 @@ async function insertComplianceRuleset(ctx: any) {
 
 async function seedWebFixtures(t: ReturnType<typeof convexTest>) {
   await t.run(async (ctx) => {
-    await insertComplianceRuleset(ctx);
+    await insertComplianceRuleset(ctx, "broker");
+    await insertComplianceRuleset(ctx, "red");
     const brokerId = await ctx.db.insert("brokers", {
       name: "Web Broker",
       slug: "web-broker",
       isVerified: true,
       countryCode: "SA",
+      description: "وسيط جاهز للمتابعة مع العميل حتى الزيارة والتمويل.",
+      notes: JSON.stringify({ agencyLabel: "شركة وسيط الويب", rating: 4.9 }),
+    });
+    const bankId = await ctx.db.insert("banks", {
+      name: "Bank Web",
+      slug: "bank-web",
+      contactEmail: "bank@example.com",
+      status: "active",
+      products: [
+        {
+          name: "تمويل الشقق",
+          type: "mortgage",
+          description: "منتج تمويلي اختباري",
+          rules: { interestRate: 4.2, minDownPaymentPercent: 10 },
+        },
+      ],
     });
 
     await ctx.db.insert("properties", {
       title: "Riyadh Garden Apartment",
       address: "Al Yasmin",
       brokerId,
+      bankId,
       price: 1250000,
       beds: 3,
       baths: 3,
@@ -87,7 +105,7 @@ describe("user_zone web", () => {
     expect(property).not.toBeNull();
 
     const result = await (t as any).action((api as any)["user_zone/web/assistant"].askClientAssistant, {
-      message: "أحتاج تمويل لهذا العقار",
+      message: "أحتاج تمويل لهذا العقار وأريد الوسيط وأفضل بنك",
       locale: "ar",
       selectedPropertyId: property!._id,
       qualification: { monthlySalary: 15000, downPayment: 150000 },
@@ -96,5 +114,26 @@ describe("user_zone web", () => {
     expect(result.properties.length).toBeGreaterThan(0);
     expect(result.suggestedPrompts.length).toBeGreaterThan(0);
     expect(typeof result.message).toBe("string");
+    expect(result.cards.some((card: any) => card.type === "loan_calculator")).toBe(true);
+    expect(result.cards.some((card: any) => card.type === "bank_offer")).toBe(true);
+    expect(result.cards.some((card: any) => card.type === "broker_profile")).toBe(true);
+  });
+
+  it("seeds the Arabic development ecosystem idempotently", async () => {
+    const t = convexTest(schema, modules);
+
+    const firstRun = await (t as any).mutation((api as any).seed.seedArabicDevelopmentEcosystem, {});
+    const secondRun = await (t as any).mutation((api as any).seed.seedArabicDevelopmentEcosystem, {});
+
+    expect(firstRun.ok).toBe(true);
+    expect(secondRun.ok).toBe(true);
+
+    const publishedProperties = await t.run(async (ctx) =>
+      ctx.db.query("properties").withIndex("publicationState", (q) => q.eq("publicationState", "published")).collect(),
+    );
+    const banks = await t.run(async (ctx) => ctx.db.query("banks").collect());
+
+    expect(publishedProperties.length).toBeGreaterThan(0);
+    expect(banks.length).toBeGreaterThan(0);
   });
 });

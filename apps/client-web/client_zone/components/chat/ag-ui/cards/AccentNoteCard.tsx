@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2, Info } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/client_zone/components/ui/card";
+import { AgUiCardHeading, AgUiCardShell } from "../AgUiCardPrimitives";
 import type { AccentNoteCardProps } from "../types";
 
 /**
@@ -19,20 +19,22 @@ export function AccentNoteCard(props: AccentNoteCardProps) {
 
   const toneClass =
     props.tone === "success"
-      ? "border-emerald-200 bg-emerald-50"
+      ? "border-emerald-200/60 bg-[color:color-mix(in_srgb,#10b981_8%,var(--workspace-panel))]"
       : props.tone === "warning"
-        ? "border-amber-200 bg-amber-50"
-        : "border-blue-200 bg-blue-50";
+        ? "border-amber-200/60 bg-[color:color-mix(in_srgb,#f59e0b_8%,var(--workspace-panel))]"
+        : "border-blue-200/60 bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,var(--workspace-panel))]";
 
   return (
-    <Card className={toneClass}>
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          {icon}
-          <CardTitle className="text-sm">{props.title}</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent className="text-sm leading-6 text-slate-700">{props.summary}</CardContent>
-    </Card>
+    <AgUiCardShell className={toneClass}>
+      <AgUiCardHeading
+        title={props.title}
+        summary={props.summary}
+        aside={
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/60 bg-white/75">
+            {icon}
+          </div>
+        }
+      />
+    </AgUiCardShell>
   );
 }

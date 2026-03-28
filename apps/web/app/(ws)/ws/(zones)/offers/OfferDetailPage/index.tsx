@@ -1,330 +1,313 @@
 "use client";
 
 import { useState } from "react";
-import type { OfferMarketplaceItem } from "../offerTypes";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle, Send, MapPin, Home, Bed, Bath, Ruler, DollarSign, User, Tag, MessageCircle, Building2, Paperclip, PencilLine, Archive } from "lucide-react";
+import { ArrowLeft, Archive, CheckCircle2, Handshake, Mail, ShieldCheck, Target, Trophy, XCircle } from "lucide-react";
+import { formatOfferPrice, formatOfferStageLabel, formatOfferTypeLabel } from "../offerViewModel";
+import type { WorkspaceOfferDetail } from "../offerTypes";
 import type { OfferActionResult } from "@/server/contracts/offers";
-import {
-  getLinkedProject,
-  getPushStatusLabel,
-  KIND_LABELS,
-  mapDeliveryFeedback,
-  type DeliveryFeedback,
-} from "./viewModel";
 
+type DetailActionResult = { redirectTo?: string } | { ok: true } | OfferActionResult | void;
+
+/**
+ * WHY:   Each offer case needs one action-oriented workspace page where brokers and developers can move collaboration forward.
+ * WHAT:  Renders the case detail, participants, package data, activity, and role-based case actions.
+ * HOW:   Treats server actions as async callbacks, handling redirect-capable and refresh-only responses in one place.
+ */
 export default function OfferDetailPage({
   offer,
-  onApply,
   onMessage,
   onArchive,
-  canApply,
-  canEdit,
-  canArchive,
+  onPublish,
+  onEngage,
+  onRespond,
+  onAdvanceStage,
   editHref,
-  initialDeliveryFeedback = null,
 }: {
-  offer: OfferMarketplaceItem;
-  onApply: () => Promise<OfferActionResult>;
+  offer: WorkspaceOfferDetail;
   onMessage: () => Promise<{ conversationId: string }>;
   onArchive?: () => Promise<{ redirectTo: string }>;
-  canApply: boolean;
-  canEdit?: boolean;
-  canArchive?: boolean;
+  onPublish?: () => Promise<DetailActionResult>;
+  onEngage?: () => Promise<DetailActionResult>;
+  onRespond?: (status: "accepted" | "rejected") => Promise<DetailActionResult>;
+  onAdvanceStage?: (action: "mark_agreed" | "close_won" | "close_lost") => Promise<DetailActionResult>;
   editHref?: string | null;
-  initialDeliveryFeedback?: DeliveryFeedback | null;
 }) {
   const router = useRouter();
-  const [showApplyConfirm, setShowApplyConfirm] = useState(false);
-  const [applied, setApplied] = useState(false);
-  const [deliveryFeedback, setDeliveryFeedback] = useState<DeliveryFeedback | null>(initialDeliveryFeedback);
-  const [isMessaging, setIsMessaging] = useState(false);
-  const [isArchiving, setIsArchiving] = useState(false);
-  const [messageError, setMessageError] = useState<string | null>(null);
-  const [archiveError, setArchiveError] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const linkedProject = getLinkedProject(offer);
-
-  const handleApply = async () => {
-    const result = await onApply();
-    setApplied(true);
-    setDeliveryFeedback(mapDeliveryFeedback(result));
-    setShowApplyConfirm(false);
-  };
-
-  const handleMessage = async () => {
-    setMessageError(null);
+  async function runAction(actionKey: string, callback: () => Promise<DetailActionResult>) {
+    setError(null);
     try {
-      setIsMessaging(true);
-      const result = await onMessage();
-      router.push(`/ws/inbox/${result.conversationId}`);
-    } catch {
-      setMessageError("تعذر فتح محادثة العرض الآن. حاول مرة أخرى.");
+      setPendingAction(actionKey);
+      const result = await callback();
+      if (result && typeof result === "object" && "redirectTo" in result && result.redirectTo) {
+        router.push(result.redirectTo);
+        return;
+      }
+      router.refresh();
+    } catch (actionError) {
+      setError(actionError instanceof Error ? actionError.message : "تعذر تنفيذ الإجراء.");
     } finally {
-      setIsMessaging(false);
+      setPendingAction(null);
     }
-  };
-
-  const handleArchive = async () => {
-    if (!onArchive) return;
-    setArchiveError(null);
-    try {
-      setIsArchiving(true);
-      const result = await onArchive();
-      router.push(result.redirectTo);
-    } catch {
-      setArchiveError("تعذر أرشفة العرض الآن. حاول مرة أخرى.");
-    } finally {
-      setIsArchiving(false);
-    }
-  };
+  }
 
   return (
     <div className="flex min-h-full flex-col pb-32">
-      <div className="px-6 py-6 lg:px-8 lg:py-8 grid gap-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-6 lg:px-8 lg:py-8">
+        <header className="grid gap-4 rounded-3xl border border-border bg-card p-6 shadow-sm lg:grid-cols-[1fr_auto] lg:items-start">
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => router.push("/ws/offers")}
+              className="inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.2em] text-muted-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              العودة للعروض
+            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-border bg-muted/30 px-3 py-1 text-[11px] font-bold text-muted-foreground">
+                {formatOfferTypeLabel(offer.type)}
+              </span>
+              <span className="rounded-full border border-border bg-background px-3 py-1 text-[11px] font-bold text-foreground">
+                {formatOfferStageLabel(offer.stage)}
+              </span>
+            </div>
+            <h1 className="text-3xl font-black text-foreground">{offer.message}</h1>
+            <p className="max-w-3xl text-[15px] leading-8 text-muted-foreground">
+              {offer.description ?? offer.property?.address ?? "بدون وصف إضافي."}
+            </p>
+          </div>
 
-        {/* Action Bar */}
-        <div className="flex flex-col sm:flex-row gap-3 border border-slate-200 bg-white p-4 items-center justify-between">
-          <button
-            onClick={() => router.push("/ws/offers")}
-            className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-950 transition"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            العودة للسوق
-          </button>
-          <div className="flex gap-2 flex-wrap">
-            {canEdit && editHref ? (
+          <div className="flex flex-wrap justify-end gap-3">
+            {offer.canPublish && onPublish ? (
               <button
-                onClick={() => router.push(editHref)}
-                className="flex items-center gap-2 border border-slate-200 bg-white px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:border-blue-600 hover:text-blue-600 transition"
+                type="button"
+                onClick={() => void runAction("publish", onPublish)}
+                className="rounded-2xl bg-foreground px-4 py-3 text-[13px] font-bold text-background"
               >
-                <PencilLine className="h-3.5 w-3.5" />
+                {pendingAction === "publish" ? "جارٍ النشر" : "نشر الحالة"}
+              </button>
+            ) : null}
+            {editHref ? (
+              <button
+                type="button"
+                onClick={() => router.push(editHref)}
+                className="rounded-2xl border border-border bg-background px-4 py-3 text-[13px] font-bold text-foreground"
+              >
                 تعديل المسودة
               </button>
             ) : null}
-            {canArchive ? (
-              <button
-                onClick={() => void handleArchive()}
-                disabled={isArchiving}
-                className="flex items-center gap-2 border border-rose-200 bg-rose-50 px-5 py-3 text-xs font-black uppercase tracking-widest text-rose-700 hover:bg-rose-100 transition disabled:opacity-50"
-              >
-                <Archive className="h-3.5 w-3.5" />
-                {isArchiving ? "جارٍ الأرشفة" : "أرشفة العرض"}
-              </button>
-            ) : null}
-            {canApply && !applied ? (
-              <button
-                onClick={() => setShowApplyConfirm(true)}
-                className="flex items-center gap-2 bg-blue-600 px-6 py-3 text-xs font-black uppercase tracking-[0.2em] text-white hover:bg-slate-950 transition"
-              >
-                <Send className="h-3.5 w-3.5" />
-                أريد التقديم على هذا العرض
-              </button>
-            ) : canApply ? (
-              <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-6 py-3 text-xs font-black uppercase tracking-widest text-emerald-700">
-                <CheckCircle className="h-3.5 w-3.5" />
-                تم إرسال طلبك بنجاح
-              </div>
-            ) : null}
             <button
-              onClick={() => void handleMessage()}
-              disabled={isMessaging}
-              className="flex items-center gap-2 border border-slate-200 bg-white px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:border-blue-600 hover:text-blue-600 transition"
+              type="button"
+              onClick={() =>
+                void runAction("message", async () => {
+                  const result = await onMessage();
+                  router.push(`/ws/inbox/${result.conversationId}`);
+                })
+              }
+              className="rounded-2xl border border-border bg-background px-4 py-3 text-[13px] font-bold text-foreground"
             >
-              <MessageCircle className="h-3.5 w-3.5" />
-              {isMessaging ? "جاري فتح المحادثة" : "مراسلة"}
+              <span className="inline-flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                فتح المحادثة
+              </span>
             </button>
-          </div>
-        </div>
-
-        {deliveryFeedback ? (
-          <div className="border border-emerald-200 bg-emerald-50 px-5 py-4 text-right">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">تم الربط بنجاح</div>
-            <div className="mt-2 text-sm font-bold text-emerald-900">
-              تم إنشاء بطاقة العرض وإشعار الحساب {deliveryFeedback.targetName} داخل {deliveryFeedback.organizationName}.
-            </div>
-            <div className="mt-2 text-xs font-bold text-emerald-700">{getPushStatusLabel(deliveryFeedback.pushStatus)}</div>
-          </div>
-        ) : null}
-
-        {messageError ? (
-          <div className="border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-bold text-rose-700">
-            {messageError}
-          </div>
-        ) : null}
-
-        {archiveError ? (
-          <div className="border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-bold text-rose-700">
-            {archiveError}
-          </div>
-        ) : null}
-
-        {/* Main Content Grid */}
-        <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
-
-          {/* Property Details */}
-          <div className="grid gap-6">
-            {/* Hero Image */}
-            <div className="border border-slate-200 overflow-hidden">
-              <div className="h-72 lg:h-96 bg-cover bg-center" style={{ backgroundImage: `url(${offer.image})` }} />
-            </div>
-
-            {/* Property Specs Grid */}
-            <div className="border border-slate-200 bg-white p-6">
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
-                <Home className="h-3.5 w-3.5" /> مواصفات الأصل العقاري
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-                <div className="flex flex-col items-center text-center border border-slate-100 bg-slate-50 p-4">
-                  <Home className="h-5 w-5 text-slate-400 mb-2" />
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">النوع</div>
-                  <div className="text-sm font-black text-slate-950 mt-1">{offer.propertyType}</div>
-                </div>
-                <div className="flex flex-col items-center text-center border border-slate-100 bg-slate-50 p-4">
-                  <Bed className="h-5 w-5 text-slate-400 mb-2" />
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">الغرف</div>
-                  <div className="text-sm font-black text-slate-950 mt-1">{offer.project.rooms}</div>
-                </div>
-                <div className="flex flex-col items-center text-center border border-slate-100 bg-slate-50 p-4">
-                  <Bath className="h-5 w-5 text-slate-400 mb-2" />
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">الحمامات</div>
-                  <div className="text-sm font-black text-slate-950 mt-1">{offer.project.baths}</div>
-                </div>
-                <div className="flex flex-col items-center text-center border border-slate-100 bg-slate-50 p-4">
-                  <Ruler className="h-5 w-5 text-slate-400 mb-2" />
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">المساحة</div>
-                  <div className="text-sm font-black text-slate-950 mt-1">{offer.project.area}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="border border-slate-200 bg-white p-6">
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">وصف العرض</div>
-              <p className="text-sm font-medium leading-relaxed text-slate-700">{offer.summary}</p>
-            </div>
-
-            {/* Linked Project Card */}
-            {linkedProject && (
-              <div className="border border-blue-200 bg-blue-50/30 p-6">
-                <div className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-4 flex items-center gap-2">
-                  <Building2 className="h-3.5 w-3.5" /> المشروع المرتبط بالعرض
-                </div>
-                <div className="flex flex-col sm:flex-row bg-white border border-slate-200">
-                  <div className="sm:w-48 h-48 sm:h-auto bg-cover bg-center shrink-0 border-b sm:border-b-0 sm:border-l border-slate-100" style={{ backgroundImage: `url(${linkedProject.image})` }} />
-                  <div className="p-5 flex-1 flex flex-col justify-center">
-                    <div className="text-lg font-black text-slate-950 mb-1">{linkedProject.name}</div>
-                    <div className="text-xs font-bold text-slate-500 mb-3">{linkedProject.location} • {linkedProject.type}</div>
-                    <p className="text-xs font-medium text-slate-600 leading-relaxed">{linkedProject.description}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="border border-slate-200 bg-white p-6">
-              <div className="mb-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                <Paperclip className="h-3.5 w-3.5" />
-                ملفات العرض
-              </div>
-              <p className="text-sm font-medium text-slate-500">المرفقات إن وجدت تُدار الآن عبر UploadThing وتظهر في سجل العرض الحقيقي.</p>
-            </div>
-            
-            {/* Unit Details */}
-            {offer.unit && (
-              <div className="border border-slate-200 bg-white p-6">
-                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">تفاصيل الوحدة المحددة</div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div><span className="text-[10px] font-black text-slate-400 uppercase block">الرمز</span><span className="text-sm font-black text-slate-950">{offer.unit.label}</span></div>
-                  <div><span className="text-[10px] font-black text-slate-400 uppercase block">الغرف</span><span className="text-sm font-black text-slate-950">{offer.unit.bedrooms}</span></div>
-                  <div><span className="text-[10px] font-black text-slate-400 uppercase block">الحمامات</span><span className="text-sm font-black text-slate-950">{offer.unit.bathrooms}</span></div>
-                  <div><span className="text-[10px] font-black text-slate-400 uppercase block">السعر</span><span className="text-sm font-black text-blue-600">{offer.unit.priceLabel}</span></div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar Info Panels */}
-          <aside className="space-y-4">
-            {/* Price */}
-            <section className="border border-slate-200 bg-white p-6 border-r-4 border-r-blue-600">
-              <div className="text-[10px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-1"><DollarSign className="h-3 w-3" /> السعر المطروح</div>
-              <div className="mt-2 text-2xl font-black text-slate-950">{offer.priceLabel}</div>
-            </section>
-
-            {/* Location */}
-            <section className="border border-slate-200 bg-white p-6">
-              <div className="text-[10px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-1"><MapPin className="h-3 w-3" /> الموقع</div>
-              <div className="mt-2 text-base font-black text-slate-950">{offer.location}</div>
-            </section>
-
-            {/* Owner */}
-            <section className="border border-slate-200 bg-white p-6">
-              <div className="text-[10px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-1"><User className="h-3 w-3" /> صاحب العرض</div>
-              <div className="mt-2 text-base font-black text-slate-950">{offer.ownerLabel}</div>
-            </section>
-
-            {/* Kind */}
-            <section className="border border-slate-200 bg-white p-6">
-              <div className="text-[10px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-1"><Tag className="h-3 w-3" /> تصنيف العرض</div>
-              <div className="mt-2 text-sm font-black text-slate-900">{KIND_LABELS[offer.kind]}</div>
-            </section>
-
-            {/* Demand */}
-            {offer.demandLabel && (
-              <section className="border border-blue-200 bg-blue-50 p-6">
-                <div className="text-[10px] font-black tracking-widest text-blue-600 uppercase">حالة الطلب</div>
-                <div className="mt-2 text-sm font-black text-blue-800">{offer.demandLabel}</div>
-              </section>
-            )}
-
-            {/* Broker */}
-            {offer.broker && (
-              <section className="border border-slate-200 bg-white p-6">
-                <div className="text-[10px] font-black tracking-widest text-slate-400 uppercase">الوسيط المرتبط</div>
-                <div className="mt-3 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-950 text-white flex items-center justify-center text-sm font-black shrink-0">
-                    {offer.broker.avatarLabel}
-                  </div>
-                  <div>
-                    <div className="text-sm font-black text-slate-950">{offer.broker.name}</div>
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{offer.broker.title}</div>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* CTA */}
-            {canApply && !applied && (
+            {offer.canArchive && onArchive ? (
               <button
-                onClick={() => setShowApplyConfirm(true)}
-                className="w-full bg-blue-600 px-6 py-5 text-xs font-black uppercase tracking-[0.2em] text-white hover:bg-slate-950 transition flex items-center justify-center gap-2"
+                type="button"
+                onClick={() => void runAction("archive", onArchive)}
+                className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] font-bold text-rose-700"
               >
-                <Send className="h-4 w-4" />
-                تقديم طلب مشاركة
+                <span className="inline-flex items-center gap-2">
+                  <Archive className="h-4 w-4" />
+                  {pendingAction === "archive" ? "جارٍ الأرشفة" : "أرشفة"}
+                </span>
               </button>
-            )}
+            ) : null}
+          </div>
+        </header>
+
+        {error ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] font-bold text-rose-700">
+            {error}
+          </div>
+        ) : null}
+
+        <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+          <section className="grid gap-6">
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={offer.propertyImageUrl ?? offer.property?.imageUrl ?? "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1200&q=80"}
+                alt={offer.propertyTitle}
+                className="h-72 w-full object-cover"
+              />
+              <div className="grid gap-4 p-6">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="rounded-2xl border border-border bg-background p-4">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">الأصل</div>
+                    <div className="mt-2 text-[16px] font-black text-foreground">{offer.propertyTitle}</div>
+                    <div className="mt-1 text-[13px] text-muted-foreground">{offer.propertyAddress}</div>
+                  </div>
+                  <div className="rounded-2xl border border-border bg-background p-4">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">السعر</div>
+                    <div className="mt-2 text-[16px] font-black text-foreground">{formatOfferPrice(offer.price)}</div>
+                    <div className="mt-1 text-[13px] text-muted-foreground">{offer.commissionText ?? "بدون عمولة محددة"}</div>
+                  </div>
+                  <div className="rounded-2xl border border-border bg-background p-4">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">الحزمة</div>
+                    <div className="mt-2 text-[16px] font-black text-foreground">{offer.permitStatus ?? "بدون تصريح"}</div>
+                    <div className="mt-1 text-[13px] text-muted-foreground">{offer.productStatus ?? "بدون حالة منتج"}</div>
+                  </div>
+                </div>
+
+                {offer.clientContext ? (
+                  <div className="rounded-3xl border border-sky-200 bg-sky-50/70 p-5">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-700">ملف العميل</div>
+                    <div className="mt-3 text-xl font-black text-sky-950">{offer.clientContext.clientName}</div>
+                    <div className="mt-2 text-[14px] leading-7 text-sky-900/80">{offer.clientContext.clientNeed}</div>
+                    <div className="mt-3 flex flex-wrap gap-3 text-[13px] font-bold text-sky-900/80">
+                      {offer.clientContext.clientPhone ? <span>{offer.clientContext.clientPhone}</span> : null}
+                      {offer.clientContext.clientBudget ? <span>{offer.clientContext.clientBudget}</span> : null}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="rounded-3xl border border-border bg-background p-5">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">التسلسل</div>
+                  <div className="mt-4 grid gap-4">
+                    {offer.activity.length > 0 ? (
+                      offer.activity.map((activity) => (
+                        <div key={activity.id} className="rounded-2xl border border-border bg-card p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="text-[14px] font-black text-foreground">{activity.message ?? activity.kind}</div>
+                            <div className="text-[12px] font-medium text-muted-foreground">
+                              {new Intl.DateTimeFormat("ar-SA", {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              }).format(new Date(activity.createdAt))}
+                            </div>
+                          </div>
+                          {activity.actorName ? (
+                            <div className="mt-2 text-[13px] text-muted-foreground">{activity.actorName}</div>
+                          ) : null}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-[13px] text-muted-foreground">
+                        لا توجد أحداث مسجلة بعد.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <aside className="grid gap-6">
+            <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">الأطراف</div>
+              <div className="mt-4 grid gap-3">
+                {offer.participants.map((participant) => (
+                  <div key={participant.id} className="rounded-2xl border border-border bg-background p-4">
+                    <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                      <ShieldCheck className="h-4 w-4" />
+                      {participant.role}
+                    </div>
+                    <div className="mt-2 text-[16px] font-black text-foreground">{participant.organizationName}</div>
+                    <div className="mt-1 text-[13px] text-muted-foreground">{participant.name}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">الإجراءات التالية</div>
+              <div className="mt-4 grid gap-3">
+                {offer.allowedActions.canEngage && onEngage ? (
+                  <button
+                    type="button"
+                    onClick={() => void runAction("engage", onEngage)}
+                    className="rounded-2xl bg-foreground px-4 py-3 text-[13px] font-bold text-background"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <Handshake className="h-4 w-4" />
+                      {pendingAction === "engage" ? "جارٍ فتح التعاون" : "ابدأ التعاون"}
+                    </span>
+                  </button>
+                ) : null}
+
+                {offer.allowedActions.canRespond && onRespond ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => void runAction("accept", () => onRespond("accepted"))}
+                      className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] font-bold text-emerald-700"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4" />
+                        {pendingAction === "accept" ? "جارٍ القبول" : "قبول الحالة"}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void runAction("reject", () => onRespond("rejected"))}
+                      className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] font-bold text-rose-700"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <XCircle className="h-4 w-4" />
+                        {pendingAction === "reject" ? "جارٍ الرفض" : "رفض الحالة"}
+                      </span>
+                    </button>
+                  </>
+                ) : null}
+
+                {offer.allowedActions.canMarkAgreed && onAdvanceStage ? (
+                  <button
+                    type="button"
+                    onClick={() => void runAction("mark_agreed", () => onAdvanceStage("mark_agreed"))}
+                    className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-[13px] font-bold text-sky-700"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <Target className="h-4 w-4" />
+                      {pendingAction === "mark_agreed" ? "جارٍ اعتماد الاتفاق" : "تحويل إلى تم الاتفاق"}
+                    </span>
+                  </button>
+                ) : null}
+
+                {offer.allowedActions.canCloseWon && onAdvanceStage ? (
+                  <button
+                    type="button"
+                    onClick={() => void runAction("close_won", () => onAdvanceStage("close_won"))}
+                    className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] font-bold text-emerald-700"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <Trophy className="h-4 w-4" />
+                      {pendingAction === "close_won" ? "جارٍ الإغلاق" : "إغلاق ناجح"}
+                    </span>
+                  </button>
+                ) : null}
+
+                {offer.allowedActions.canCloseLost && onAdvanceStage ? (
+                  <button
+                    type="button"
+                    onClick={() => void runAction("close_lost", () => onAdvanceStage("close_lost"))}
+                    className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] font-bold text-rose-700"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <XCircle className="h-4 w-4" />
+                      {pendingAction === "close_lost" ? "جارٍ الإغلاق" : "إغلاق غير مكتمل"}
+                    </span>
+                  </button>
+                ) : null}
+              </div>
+            </div>
           </aside>
         </div>
       </div>
-
-      {/* Apply Modal */}
-      {canApply && showApplyConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowApplyConfirm(false)}>
-          <div className="bg-white border border-slate-200 p-8 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-black text-slate-950 mb-2">تأكيد التقديم على العرض</h3>
-            <p className="text-sm font-medium text-slate-500 mb-2">ستقوم بإرسال طلب مشاركة في هذا العرض:</p>
-            <div className="border border-slate-100 bg-slate-50 p-4 my-4">
-              <div className="text-base font-black text-slate-950">{offer.title}</div>
-              <div className="text-xs font-bold text-slate-500 mt-1">{offer.location} • {offer.priceLabel}</div>
-            </div>
-            <p className="text-xs font-bold text-slate-400 mb-6">سيتم إرسال الطلب إلى صاحب العرض ({offer.ownerLabel}) للمراجعة والرد.</p>
-            <div className="flex gap-3">
-              <button onClick={handleApply} className="flex-1 bg-blue-600 px-5 py-4 text-xs font-black uppercase tracking-widest text-white hover:bg-slate-950 transition">نعم، إرسال الطلب</button>
-              <button onClick={() => setShowApplyConfirm(false)} className="flex-1 border border-slate-200 px-5 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 transition">إلغاء</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

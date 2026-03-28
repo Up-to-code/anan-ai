@@ -1,16 +1,19 @@
 import { getWorkspaceOrganizationTeam } from "../../_lib/organizationTeam";
 import { listCurrentOrganizationApiKeysForCurrentUser } from "@/server/domains/auth/organizationApiKeys/service";
+import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
 import type { OrganizationApiKeySummary } from "@/server/contracts/organizationApiKeys";
 import SettingsHeader from "./_components/SettingsHeader";
 import ApiKeysWorkspace from "./_components/ApiKeysWorkspace";
 import OrganizationSettingsWorkspace from "./_components/OrganizationSettingsWorkspace";
 import SettingsTabs from "./_components/SettingsTabs";
 import MembersWorkspace from "./_components/MembersWorkspace";
+import OrganizationVerificationWorkspace from "./_components/OrganizationVerificationWorkspace";
 
-type SettingsTabKey = "org" | "members" | "api-keys";
+type SettingsTabKey = "org" | "verification" | "members" | "api-keys";
 
 const settingsTabs = [
   { key: "org", label: "المنظمة" },
+  { key: "verification", label: "التوثيق" },
   { key: "members", label: "الأعضاء والدعوات" },
   { key: "api-keys", label: "مفاتيح API" },
 ] as const;
@@ -64,18 +67,45 @@ function MembersTabSection(args: {
 
 function ApiKeysTabSection(args: {
   initialKeys: OrganizationApiKeySummary[];
-  canManage: boolean;
+  canCreate: boolean;
+  canRevoke: boolean;
+  canView: boolean;
   hasOrganization: boolean;
 }) {
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-300">
       <div className="text-sm text-slate-500">
-        {args.initialKeys.length} مفاتيح محفوظة. {args.canManage ? "يمكنك إدارة المفاتيح من هنا." : "تحتاج صلاحية إدارة للوصول الكامل."}
+        {args.initialKeys.length} مفاتيح محفوظة. {args.canCreate ? "يمكنك إنشاء وإلغاء المفاتيح من هنا." : args.canRevoke ? "يمكنك مراجعة المفاتيح وإلغاؤها من هنا." : "لا تملك صلاحية إدارة هذا القسم."}
       </div>
       <ApiKeysWorkspace
         initialKeys={args.initialKeys}
-        canManage={args.canManage}
+        canCreate={args.canCreate}
+        canRevoke={args.canRevoke}
+        canView={args.canView}
         hasOrganization={args.hasOrganization}
+      />
+    </div>
+  );
+}
+
+function VerificationTabSection(args: {
+  organization: Awaited<ReturnType<typeof getWorkspaceOrganizationTeam>>["organization"];
+  membersCount: number;
+  invitesCount: number;
+  canManage: boolean;
+  roleLabel: string;
+  ruleset: Awaited<ReturnType<typeof getComplianceRulesetForCurrentOrg>>;
+}) {
+  return (
+    <div className="space-y-6 animate-in fade-in-50 duration-300">
+      <OrganizationVerificationWorkspace
+        organization={args.organization}
+        verificationSummary={args.organization?.verificationSummary}
+        ruleset={args.ruleset}
+        canManage={args.canManage}
+        membersCount={args.membersCount}
+        invitesCount={args.invitesCount}
+        roleLabel={args.roleLabel}
       />
     </div>
   );
@@ -91,21 +121,25 @@ export default async function WorkspaceSettingsPage(props: {
 }) {
   const searchParams = await props.searchParams;
   const currentTab: SettingsTabKey =
-    searchParams.tab === "members" || searchParams.tab === "api-keys"
+    searchParams.tab === "members" || searchParams.tab === "api-keys" || searchParams.tab === "verification"
       ? searchParams.tab
       : "org";
 
-  const { organization, members, invites, currentMembershipRole } = await getWorkspaceOrganizationTeam();
+  const { organization, members, invites, currentMembershipRole, currentTenantRole } = await getWorkspaceOrganizationTeam();
   const canManage = currentMembershipRole === "manager";
+  const canViewApiKeys = currentMembershipRole === "manager";
+  const canCreateApiKeys = currentTenantRole === "owner";
+  const canRevokeApiKeys = currentMembershipRole === "manager";
   const roleLabel = roleLabelForMembership(currentMembershipRole);
   const hasOrganization = Boolean(organization && currentMembershipRole);
+  const complianceRuleset = hasOrganization ? await getComplianceRulesetForCurrentOrg() : null;
   const initialApiKeys =
-    canManage && hasOrganization
+    canViewApiKeys && hasOrganization
       ? await listCurrentOrganizationApiKeysForCurrentUser()
       : [];
 
   return (
-    <div className="space-y-8 p-6 lg:p-10">
+    <div className="space-y-8 p-6 lg:p-10" dir="rtl">
       <SettingsHeader
         title="الإعدادات"
         description="بيانات المنظمة والأعضاء ومفاتيح الربط."
@@ -115,10 +149,21 @@ export default async function WorkspaceSettingsPage(props: {
 
       {currentTab === "org" ? (
         <OrganizationTabSection organization={organization} canManage={canManage} />
+      ) : currentTab === "verification" ? (
+        <VerificationTabSection
+          organization={organization}
+          membersCount={members.length}
+          invitesCount={invites.length}
+          canManage={canManage}
+          roleLabel={roleLabel}
+          ruleset={complianceRuleset}
+        />
       ) : currentTab === "api-keys" ? (
         <ApiKeysTabSection
           initialKeys={initialApiKeys}
-          canManage={canManage}
+          canCreate={canCreateApiKeys}
+          canRevoke={canRevokeApiKeys}
+          canView={canViewApiKeys}
           hasOrganization={hasOrganization}
         />
       ) : (

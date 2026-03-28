@@ -69,5 +69,3 @@ function CustomLatestUpdateCard(props: Record<string, unknown>) {
 - `docs/architecture.md`
 - `docs/integration.md`
 - `docs/api.md`
-- `examples/next-host.tsx`
-- `examples/agent-turns.ts`

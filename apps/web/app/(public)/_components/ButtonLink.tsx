@@ -31,6 +31,10 @@ export default function ButtonLink({
       href={href}
       prefetch={prefetch}
       className={`${baseStyles} ${variants[variant]} ${className}`}
+      data-analytics-event="web_cta_clicked"
+      data-analytics-location="public_button_link"
+      data-analytics-href={href}
+      data-analytics-variant={variant}
     >
       <span className="flex items-center gap-3">{children}</span>
     </Link>

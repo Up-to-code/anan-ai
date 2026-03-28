@@ -2,7 +2,10 @@ import {
   addBrokerDealDocument,
   archiveBrokerDeal,
   createBrokerDeal,
+  listBrokerCrmBrokers,
+  listBrokerCrmClients,
   listBrokerDeals,
+  listBrokerDealsPage,
   updateBrokerDeal,
   updateBrokerDealFollowUp,
   updateBrokerDealNotes,
@@ -16,7 +19,10 @@ import {
   addRedDealDocument,
   archiveRedDeal,
   createRedDeal,
+  listRedCrmBrokers,
+  listRedCrmClients,
   listRedDeals,
+  listRedDealsPage,
   updateRedDeal,
   updateRedDealFollowUp,
   updateRedDealNotes,
@@ -40,6 +46,24 @@ export function getWorkspaceCrmZone(
     return {
       listDeals: () =>
         listBrokerDeals({
+          requireBroker: requireSession,
+          crmRepository: convexCrmRepository,
+          propertiesRepository: convexBrokerZoneRepository,
+        }),
+      listDealsPage: (input: Parameters<typeof listBrokerDealsPage>[0]) =>
+        listBrokerDealsPage(input, {
+          requireBroker: requireSession,
+          crmRepository: convexCrmRepository,
+          propertiesRepository: convexBrokerZoneRepository,
+        }),
+      listClients: () =>
+        listBrokerCrmClients({
+          requireBroker: requireSession,
+          crmRepository: convexCrmRepository,
+          propertiesRepository: convexBrokerZoneRepository,
+        }),
+      listBrokers: () =>
+        listBrokerCrmBrokers({
           requireBroker: requireSession,
           crmRepository: convexCrmRepository,
           propertiesRepository: convexBrokerZoneRepository,
@@ -93,6 +117,24 @@ export function getWorkspaceCrmZone(
     return {
       listDeals: () =>
         listRedDeals({
+          requireDeveloper: requireSession,
+          crmRepository: convexCrmRepository,
+          propertiesRepository: convexRedZoneRepository,
+        }),
+      listDealsPage: (input: Parameters<typeof listRedDealsPage>[0]) =>
+        listRedDealsPage(input, {
+          requireDeveloper: requireSession,
+          crmRepository: convexCrmRepository,
+          propertiesRepository: convexRedZoneRepository,
+        }),
+      listClients: () =>
+        listRedCrmClients({
+          requireDeveloper: requireSession,
+          crmRepository: convexCrmRepository,
+          propertiesRepository: convexRedZoneRepository,
+        }),
+      listBrokers: () =>
+        listRedCrmBrokers({
           requireDeveloper: requireSession,
           crmRepository: convexCrmRepository,
           propertiesRepository: convexRedZoneRepository,

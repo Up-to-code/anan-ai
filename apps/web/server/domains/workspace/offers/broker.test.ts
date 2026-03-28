@@ -10,9 +10,20 @@ import { archiveBrokerOffer, getBrokerOffersSnapshot, updateBrokerOfferDraft } f
 describe("broker offers server functions", () => {
   it("loads the broker offers snapshot after session validation", async () => {
     const repository = {
-      listSent: vi.fn(async () => []),
-      listReceived: vi.fn(async () => [{ id: "offer-2", propertyId: "property-1", price: 1, status: "pending" as const }]),
-      listMarketplace: vi.fn(async () => []),
+      getQueues: vi.fn(async () => ({
+        audience: "broker" as const,
+        queues: [
+          {
+            key: "incoming_opportunities" as const,
+            label: "Incoming Opportunities",
+            description: "Open opportunities and targeted requests visible to you.",
+            items: [{ id: "offer-2", propertyId: "property-1", price: 1, status: "pending" as const }],
+          },
+        ],
+        sent: [],
+        received: [{ id: "offer-2", propertyId: "property-1", price: 1, status: "pending" as const }],
+        marketplace: [],
+      })),
       create: vi.fn(async () => ({ offerId: "offer-1", conversationId: null, starterMessageCreated: false, notification: null })),
       publish: vi.fn(async () => ({ ok: true as const })),
       respond: vi.fn(async () => undefined),
@@ -29,9 +40,7 @@ describe("broker offers server functions", () => {
     });
 
     expect(snapshot.received).toHaveLength(1);
-    expect(repository.listSent).toHaveBeenCalled();
-    expect(repository.listReceived).toHaveBeenCalled();
-    expect(repository.listMarketplace).toHaveBeenCalled();
+    expect(repository.getQueues).toHaveBeenCalledWith("token");
   });
 
   it("updates only owner-editable drafts", async () => {

@@ -10,9 +10,9 @@ type WorkspaceOfferEditRouteProps = {
 };
 
 /**
- * WHY:   Draft offer owners need a dedicated workspace route to revise offer details before publishing or archiving.
- * WHAT:  Loads one owner-editable draft offer and reuses the workspace offer form with save + archive server actions.
- * HOW:   Requires a visible live state, enforces `canEditDraft`, and routes all mutations through the workspace offers zone for the active audience.
+ * WHY:   Draft case owners need one focused route to revise package and collaboration details before publish.
+ * WHAT:  Loads one editable draft case and reuses the offers 2.0 form with save + archive actions.
+ * HOW:   Requires `canEditDraft` from the case detail payload, then delegates all writes back through the offers zone.
  */
 export default async function WorkspaceOfferEditRoute({
   params,
@@ -28,27 +28,46 @@ export default async function WorkspaceOfferEditRoute({
     propertyZone.listProperties({ paginationOpts: { cursor: null, numItems: 100 } }),
   ]);
 
-  if (!offer || !offer.isOwner || !offer.canEditDraft) {
+  if (!offer || !offer.canEditDraft) {
     notFound();
   }
 
+  const resolvedOffer = offer;
+
   async function updateOffer(data: {
     propertyId: string;
+    mode: "open_offer" | "private_offer" | "collaboration_case";
     title: string;
     description: string;
     price: string;
-    visibility: "public" | "private";
+    allowedAudience: "brokers" | "developers" | "both";
+    commissionText?: string;
+    permitStatus?: string;
+    productStatus?: string;
+    recipientEmail?: string;
+    recipientPhone?: string;
+    clientContext?: {
+      clientName: string;
+      clientPhone?: string;
+      clientBudget?: string;
+      clientNeed: string;
+    };
     attachments: UploadedFileReference[];
   }) {
     "use server";
     await getWorkspaceOffersZone(audience, ownerContext).updateOfferDraft({
       id: offerId,
-      conversationId: offer.sourceConversationId ?? undefined,
+      conversationId: resolvedOffer.sourceConversationId ?? undefined,
       propertyId: data.propertyId,
       price: Number(data.price.replace(/[^\d.]/g, "")) || 0,
       message: data.title.trim() || undefined,
       description: data.description.trim() || undefined,
       attachments: data.attachments,
+      commissionText: data.commissionText,
+      permitStatus: data.permitStatus,
+      productStatus: data.productStatus,
+      allowedAudience: data.allowedAudience,
+      clientContext: data.clientContext,
     });
     return { redirectTo: `/ws/offers/${offerId}` };
   }
@@ -56,24 +75,31 @@ export default async function WorkspaceOfferEditRoute({
   async function archiveOffer() {
     "use server";
     await getWorkspaceOffersZone(audience, ownerContext).archiveOffer({ id: offerId });
-    return { redirectTo: "/ws/offers?tab=sent" };
+    return { redirectTo: "/ws/offers" };
   }
 
   return (
     <CreateOfferForm
       properties={properties.page.map(mapPropertyToOfferOption)}
       pageTitle="تعديل مسودة العرض"
-      pageDescription="حدّث تفاصيل المسودة قبل النشر أو قم بأرشفتها لإخفائها من القوائم النشطة."
+      pageDescription="حدّث تفاصيل الحزمة، العلاقة، وملف العميل قبل نشر الحالة."
       submitLabel="حفظ المسودة"
-      allowVisibilityChange={false}
       backHref={`/ws/offers/${offerId}`}
       initialData={{
-        propertyId: offer.property?.id ?? offer.propertyId,
-        title: offer.message ?? "",
-        description: offer.description ?? "",
-        price: String(offer.price),
-        visibility: offer.visibility ?? "private",
-        attachments: offer.attachments ?? [],
+        propertyId: resolvedOffer.propertyId,
+        mode: resolvedOffer.type,
+        title: resolvedOffer.message ?? "",
+        description: resolvedOffer.description ?? undefined,
+        price: String(resolvedOffer.price),
+        allowedAudience: resolvedOffer.allowedAudience,
+        commissionText: resolvedOffer.commissionText ?? undefined,
+        permitStatus: resolvedOffer.permitStatus ?? undefined,
+        productStatus: resolvedOffer.productStatus ?? undefined,
+        clientName: resolvedOffer.clientContext?.clientName ?? undefined,
+        clientPhone: resolvedOffer.clientContext?.clientPhone ?? undefined,
+        clientBudget: resolvedOffer.clientContext?.clientBudget ?? undefined,
+        clientNeed: resolvedOffer.clientContext?.clientNeed ?? undefined,
+        attachments: resolvedOffer.attachments ?? [],
       }}
       onSubmit={updateOffer}
       onArchive={archiveOffer}

@@ -42,6 +42,7 @@ async function mapMembershipRecord(
     authUserId: member.userId,
     profileId: profile._id,
     role: normalizeTenantRole(member.role),
+    tenantRole: member.role,
     status: (member.status ?? "active") === "active" ? "active" : "inactive",
     createdAt: member.joinedAt ?? member._creationTime ?? Date.now(),
     updatedAt: member.joinedAt ?? member._creationTime ?? Date.now(),
@@ -69,6 +70,40 @@ export async function requireOrganizationMembership(
   }
 
   return { profile: persistedProfile, owner, membership };
+}
+
+/**
+ * WHY:   API key governance differentiates tenant owners from managers and cannot rely on normalized roles alone.
+ * WHAT:  Resolves current organization access with the raw tenant membership role preserved.
+ * HOW:   Reuses current membership resolution, then loads the tenant member directly for owner-sensitive decisions.
+ */
+export async function requireApiKeyAccess(
+  ctx: AgenciesRepositoryCtx,
+): Promise<{
+  profile: UserProfileRecord;
+  owner: OwnerContext;
+  membership: OrganizationMembershipRecord;
+  tenantRole: string;
+}> {
+  const current = await requireOrganizationMembership(ctx);
+  if (!current.owner.tenantOrgId) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Tenant organization required" });
+  }
+
+  const tenantMember = await tenants.getMember(ctx as never, current.owner.tenantOrgId, current.profile.authUserId);
+  if (!tenantMember) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Organization membership required" });
+  }
+
+  const tenantRole = tenantMember.role ?? "";
+  if (!tenantRole || !["owner", "admin", "manager"].includes(tenantRole)) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Manager role required" });
+  }
+
+  return {
+    ...current,
+    tenantRole,
+  };
 }
 
 /**

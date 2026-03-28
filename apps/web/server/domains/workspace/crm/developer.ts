@@ -4,7 +4,10 @@ import {
   addDealDocumentInputSchema,
   archiveDealInputSchema,
   createDealInputSchema,
+  type DealSelectorBroker,
+  type DealSelectorClient,
   type DealSummary,
+  type PaginatedDealsResult,
   propertyDealsInputSchema,
   updateDealInputSchema,
   updateDealFollowUpInputSchema,
@@ -67,6 +70,28 @@ export async function listRedDeals(
   return dependencies.crmRepository.listByRedId(redId);
 }
 
+export async function listRedDealsPage(
+  input: { paginationOpts: { cursor: string | null; numItems: number } },
+  dependencies: RedCrmDependencies = defaultDependencies,
+): Promise<PaginatedDealsResult> {
+  const { redId } = await requireRedOwner(dependencies);
+  return dependencies.crmRepository.listPageByRedId(redId, input.paginationOpts);
+}
+
+export async function listRedCrmClients(
+  dependencies: RedCrmDependencies = defaultDependencies,
+): Promise<DealSelectorClient[]> {
+  const { redId } = await requireRedOwner(dependencies);
+  return dependencies.crmRepository.listClientsByRedId(redId);
+}
+
+export async function listRedCrmBrokers(
+  dependencies: RedCrmDependencies = defaultDependencies,
+): Promise<DealSelectorBroker[]> {
+  await requireRedOwner(dependencies);
+  return dependencies.crmRepository.listBrokerSelectorOptions();
+}
+
 export async function listRedDealsByProperty(
   input: unknown,
   dependencies: RedCrmDependencies = defaultDependencies,
@@ -89,6 +114,17 @@ export async function createRedDeal(
   }
   if (parsed.data.propertyId) {
     await requireOwnedProperty(parsed.data.propertyId, dependencies);
+  }
+  if (parsed.data.crmClientId) {
+    const client = await dependencies.crmRepository.getClientById(parsed.data.crmClientId);
+    const { redId } = await requireRedOwner(dependencies);
+    if (!client) {
+      throw new DomainError({ code: "NOT_FOUND", message: "Client not found", status: 404 });
+    }
+    const ownedClient = await dependencies.crmRepository.listClientsByRedId(redId);
+    if (!ownedClient.some((entry) => entry.id === parsed.data.crmClientId)) {
+      throw new DomainError({ code: "FORBIDDEN", message: "Cannot access this client", status: 403 });
+    }
   }
   const { redId, authUserId } = await requireRedOwner(dependencies);
   return dependencies.crmRepository.create({
@@ -127,6 +163,13 @@ export async function updateRedDeal(
   await requireOwnedDeal(parsed.data.dealId, dependencies);
   if (parsed.data.propertyId) {
     await requireOwnedProperty(parsed.data.propertyId, dependencies);
+  }
+  if (parsed.data.crmClientId) {
+    const { redId } = await requireRedOwner(dependencies);
+    const ownedClient = await dependencies.crmRepository.listClientsByRedId(redId);
+    if (!ownedClient.some((entry) => entry.id === parsed.data.crmClientId)) {
+      throw new DomainError({ code: "FORBIDDEN", message: "Cannot access this client", status: 403 });
+    }
   }
   const { authUserId } = await requireRedOwner(dependencies);
   await dependencies.crmRepository.update({ ...parsed.data, lastUpdatedBy: authUserId });

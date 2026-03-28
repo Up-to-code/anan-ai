@@ -1,8 +1,8 @@
 import type { AssistantCard } from "@/client_zone/lib/types";
 import { formatCurrency } from "@/client_zone/lib/formatters";
 import { useLocaleDictionary } from "@/client_zone/components/LocaleProvider";
-import { Card, CardContent } from "@/client_zone/components/ui/card";
 import { Badge } from "@/client_zone/components/ui/badge";
+import { AgUiCardHeading, AgUiCardShell, CardContent } from "./ag-ui/AgUiCardPrimitives";
 
 function renderFinanceMeta(card: AssistantCard, locale: "ar" | "en") {
   if (card.type === "payment_plan") {
@@ -44,12 +44,9 @@ export function ChatFinanceCard({ card }: { card: AssistantCard }) {
   const meta = renderFinanceMeta(card, locale);
 
   return (
-    <Card className="max-w-[85%]">
-      <CardContent className="space-y-3 p-4">
-        <div className="space-y-1">
-          <h4 className="text-sm font-semibold text-slate-900">{card.title}</h4>
-          <p className="text-xs leading-6 text-slate-500">{card.summary}</p>
-        </div>
+    <AgUiCardShell>
+      <AgUiCardHeading title={card.title} summary={card.summary} />
+      <CardContent className="pt-0">
         {meta.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {meta.map((item) => (
@@ -58,6 +55,6 @@ export function ChatFinanceCard({ card }: { card: AssistantCard }) {
           </div>
         ) : null}
       </CardContent>
-    </Card>
+    </AgUiCardShell>
   );
 }

@@ -5,9 +5,13 @@ import type {
   OrganizationApiKeySummary,
 } from "@/server/contracts/organizationApiKeys";
 import type {
+  OrgApiBrokerRecord,
   OrgApiClientInput,
   OrgApiClientRecord,
   OrgApiClientUpdateInput,
+  OrgApiDealInput,
+  OrgApiDealRecord,
+  OrgApiDealUpdateInput,
   OrgApiPropertyInput,
   OrgApiPropertyRecord,
   OrgApiPropertyUpdateInput,
@@ -25,6 +29,12 @@ type AgenciesApiRefs = {
   createPropertyByApiKey: unknown;
   updatePropertyByApiKey: unknown;
   deletePropertyByApiKey: unknown;
+  listDealsByApiKey: unknown;
+  createDealByApiKey: unknown;
+  updateDealByApiKey: unknown;
+  deleteDealByApiKey: unknown;
+  listBrokersByApiKey: unknown;
+  getBrokerByApiKey: unknown;
 };
 
 const agenciesApi = apiUnsafe["shared_logic/agencies/repositories/apiKeys"] as AgenciesApiRefs;
@@ -44,6 +54,12 @@ export type OrganizationApiKeysRepository = {
   createPropertyByApiKey(secretHash: string, input: OrgApiPropertyInput, now: number): Promise<OrgApiPropertyRecord>;
   updatePropertyByApiKey(secretHash: string, propertyId: string, input: OrgApiPropertyUpdateInput, now: number): Promise<OrgApiPropertyRecord>;
   deletePropertyByApiKey(secretHash: string, propertyId: string, now: number): Promise<void>;
+  listDealsByApiKey(secretHash: string, now: number): Promise<OrgApiDealRecord[]>;
+  createDealByApiKey(secretHash: string, input: OrgApiDealInput, now: number): Promise<OrgApiDealRecord>;
+  updateDealByApiKey(secretHash: string, dealId: string, input: OrgApiDealUpdateInput, now: number): Promise<OrgApiDealRecord>;
+  deleteDealByApiKey(secretHash: string, dealId: string, now: number): Promise<void>;
+  listBrokersByApiKey(secretHash: string, now: number): Promise<OrgApiBrokerRecord[]>;
+  getBrokerByApiKey(secretHash: string, brokerId: string, now: number): Promise<OrgApiBrokerRecord>;
 };
 
 /**
@@ -110,5 +126,39 @@ export const convexOrganizationApiKeysRepository: OrganizationApiKeysRepository 
 
   async deletePropertyByApiKey(secretHash, propertyId, now) {
     await fetchMutation(agenciesApi.deletePropertyByApiKey as never, { secretHash, now, propertyId } as never);
+  },
+
+  async listDealsByApiKey(secretHash, now) {
+    const response = await fetchMutation(agenciesApi.listDealsByApiKey as never, { secretHash, now } as never);
+    return (response as { deals: OrgApiDealRecord[] }).deals;
+  },
+
+  async createDealByApiKey(secretHash, input, now) {
+    const response = await fetchMutation(agenciesApi.createDealByApiKey as never, { secretHash, now, ...input } as never);
+    return (response as { deal: OrgApiDealRecord }).deal;
+  },
+
+  async updateDealByApiKey(secretHash, dealId, input, now) {
+    const response = await fetchMutation(agenciesApi.updateDealByApiKey as never, {
+      secretHash,
+      now,
+      dealId,
+      ...input,
+    } as never);
+    return (response as { deal: OrgApiDealRecord }).deal;
+  },
+
+  async deleteDealByApiKey(secretHash, dealId, now) {
+    await fetchMutation(agenciesApi.deleteDealByApiKey as never, { secretHash, now, dealId } as never);
+  },
+
+  async listBrokersByApiKey(secretHash, now) {
+    const response = await fetchMutation(agenciesApi.listBrokersByApiKey as never, { secretHash, now } as never);
+    return (response as { brokers: OrgApiBrokerRecord[] }).brokers;
+  },
+
+  async getBrokerByApiKey(secretHash, brokerId, now) {
+    const response = await fetchMutation(agenciesApi.getBrokerByApiKey as never, { secretHash, now, brokerId } as never);
+    return (response as { broker: OrgApiBrokerRecord }).broker;
   },
 };

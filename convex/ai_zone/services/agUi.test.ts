@@ -63,4 +63,55 @@ describe("resolveWorkspaceAgUiTurn", () => {
 
     expect(turn?.cards.map((card) => card.id)).toContain("workspace-no-project-access");
   });
+
+  it("renders data-first list cards for operator list states", () => {
+    const turn = resolveWorkspaceAgUiTurn({
+      assistantText: "هذه قائمة العملاء الحالية.",
+      ownerType: "broker",
+      actionState: {
+        type: "list_clients",
+        zone: "crm",
+        state: "completed",
+        title: "قائمة العملاء",
+        description: "تم تجهيز سجل عميل واحد.",
+        totalCount: 1,
+        filters: [{ label: "الوقت", value: "اليوم" }],
+        items: [
+          {
+            id: "client_1",
+            title: "أحمد علي",
+            subtitle: "01000000000",
+            meta: "المرحلة: contacted",
+          },
+        ],
+      },
+    });
+
+    expect(turn?.targetZone).toBe("crm");
+    expect(turn?.cards.map((card) => card.componentId)).toEqual(
+      expect.arrayContaining(["filter_summary", "data_list", "execution_result"]),
+    );
+  });
+
+  it("renders explicit target-summary cards for delete confirmation flows", () => {
+    const turn = resolveWorkspaceAgUiTurn({
+      assistantText: "حددت المشروع المطلوب للحذف.",
+      ownerType: "broker",
+      actionState: {
+        type: "delete_project_confirmation",
+        zone: "projects",
+        state: "collecting",
+        projectId: "project_1",
+        projectTitle: "مشروع النرجس",
+        description: "الرياض - النرجس · 3,000,000 ر.س",
+        filters: [{ label: "المعرف", value: "project_1" }],
+        requiresConfirmation: true,
+      },
+    });
+
+    expect(turn?.cards.map((card) => card.componentId)).toEqual(
+      expect.arrayContaining(["filter_summary", "target_summary", "execution_result"]),
+    );
+    expect(turn?.followupQuestion).toContain("أكد الحذف");
+  });
 });

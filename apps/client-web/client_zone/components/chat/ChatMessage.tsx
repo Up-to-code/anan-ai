@@ -16,10 +16,10 @@ export function ChatMessage({
     <div className={cn("flex w-full", role === "user" ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "max-w-[min(85%,720px)] rounded-2xl px-4 py-3 text-sm leading-7",
+          "max-w-[min(100%,42rem)] px-5 py-4 text-[15px] leading-7 shadow-sm",
           role === "user"
-            ? "bg-slate-900 text-white"
-            : "bg-transparent text-slate-800",
+            ? "rounded-t-[30px] rounded-bl-[14px] rounded-br-[30px] bg-[var(--workspace-bubble-self)] text-[var(--workspace-bubble-self-foreground)]"
+            : "rounded-[28px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-[var(--workspace-bubble-other-foreground)]",
         )}
       >
         {children}

@@ -273,7 +273,7 @@ export async function mapConversationSummary(
 export async function findExistingOfferStarterMessage(
   ctx: MutationCtx,
   conversationId: Id<"inboxConversations">,
-  offerId: Id<"offers">
+  offerId: string
 ) {
   const messages = await ctx.db
     .query("inboxMessages")

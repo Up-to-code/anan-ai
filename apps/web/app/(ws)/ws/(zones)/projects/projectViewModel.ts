@@ -106,6 +106,11 @@ export function mapPropertyToWorkspaceProject(property: PropertyDetail): Workspa
     publicationState: formatPublicationState(property.publicationState),
     accessMode: "owner",
     canEdit: true,
+    visibility: {
+      clientVisibility: property.publicationState === "published" ? "public" : "private",
+      viewers: [],
+    },
+    assets: [],
     units: [],
     brokers: [],
   };
@@ -119,12 +124,21 @@ export function mapPropertyToWorkspaceProject(property: PropertyDetail): Workspa
 export function mapPropertyToWorkspaceProjectDetail(
   property: PropertyDetail,
   accessMode: WorkspaceProjectDetailAccessMode,
+  options?: {
+    viewers?: WorkspaceProject["visibility"]["viewers"];
+    assets?: WorkspaceProject["assets"];
+  },
 ): WorkspaceProject {
   const project = mapPropertyToWorkspaceProject(property);
   return {
     ...project,
     accessMode,
     canEdit: accessMode === "owner",
+    visibility: {
+      ...project.visibility,
+      viewers: options?.viewers ?? [],
+    },
+    assets: options?.assets ?? [],
     permit: {
       ...project.permit,
       canShowPrivatePanel:
@@ -157,6 +171,8 @@ export function mapWorkspaceProjectToPropertyInput(project: {
   rooms: string;
   baths: string;
   area: string;
+  status: string;
+  clientVisibility: "private" | "public";
   images: PropertyDetail["media"];
   adLicenseNumber?: string;
 }) {
@@ -179,6 +195,13 @@ export function mapWorkspaceProjectToPropertyInput(project: {
     beds: Number(project.rooms) || 0,
     baths: Number(project.baths) || 0,
     sqft: numericArea,
+    status:
+      project.status === "maintenance"
+        ? ("reserved" as const)
+        : project.status === "pending"
+          ? ("reserved" as const)
+          : ("available" as const),
+    publicationState: project.clientVisibility === "public" ? ("published" as const) : ("draft" as const),
     media: orderedImages,
     body: {
       presentation: {

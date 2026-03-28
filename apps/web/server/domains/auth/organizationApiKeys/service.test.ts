@@ -18,6 +18,12 @@ const repository = {
   createPropertyByApiKey: vi.fn(),
   updatePropertyByApiKey: vi.fn(),
   deletePropertyByApiKey: vi.fn(),
+  listDealsByApiKey: vi.fn(),
+  createDealByApiKey: vi.fn(),
+  updateDealByApiKey: vi.fn(),
+  deleteDealByApiKey: vi.fn(),
+  listBrokersByApiKey: vi.fn(),
+  getBrokerByApiKey: vi.fn(),
 };
 
 beforeEach(() => {

@@ -21,10 +21,20 @@ export function buildComplianceBanner(
   if (!ruleset.enforcement.showBanner || !ruleset.enforcement.requireOrgVerification) return null;
   if (primaryOrganization.isVerified) return null;
 
+  const verificationSummary = primaryOrganization.verificationSummary;
+  const statusBody =
+    verificationSummary?.currentRequestStatus === "in_review"
+      ? "تم إرسال مستندات المنظمة وهي الآن قيد مراجعة الأدمن. سيبقى النشر محدوداً حتى الاعتماد."
+      : verificationSummary?.currentRequestStatus === "rejected"
+        ? verificationSummary.reviewerNotes ?? "تم رفض آخر طلب توثيق. راجع الملاحظات وأعد إرسال المستندات المطلوبة."
+        : verificationSummary?.currentRequestStatus === "closed"
+          ? "تم إغلاق توثيق المنظمة من لوحة الأدمن. أعد إرسال المستندات إذا كنت تريد إعادة التفعيل."
+          : ruleset.enforcement.bannerBody ?? "يرجى إكمال مستندات التحقق لإظهار العقارات ونشرها.";
+
   return {
     title: ruleset.enforcement.bannerTitle ?? "التوثيق مطلوب قبل النشر",
-    body: ruleset.enforcement.bannerBody ?? "يرجى إكمال مستندات التحقق لإظهار العقارات ونشرها.",
+    body: statusBody,
     ctaLabel: ruleset.enforcement.bannerCtaLabel ?? "إكمال التوثيق",
-    ctaHref: ruleset.enforcement.bannerCtaHref ?? "/ws?onboarding=verification",
+    ctaHref: ruleset.enforcement.bannerCtaHref ?? "/ws/settings?tab=verification",
   };
 }

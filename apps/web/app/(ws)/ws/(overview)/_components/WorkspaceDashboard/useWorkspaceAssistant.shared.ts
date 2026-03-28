@@ -138,7 +138,7 @@ export function getAssistantStageLabel(
   if (streamLifecycleStatus === "cancelled") {
     return "تم إيقاف التوليد.";
   }
-  if (!isStreaming || !streamStage) return "anan workspace يجهز الخطوة التالية...";
+  if (!isStreaming || !streamStage) return "مساعد مساحة العمل يجهز الخطوة التالية...";
   const team = streamStage.teamId?.replace("team_workspace_", "");
   switch (streamStage.phase) {
     case "intent_started":
@@ -164,7 +164,7 @@ export function getAssistantStageLabel(
     case "persist_done":
       return "اكتمل حفظ المحادثة.";
     default:
-      return "anan workspace يجهز الخطوة التالية...";
+      return "مساعد مساحة العمل يجهز الخطوة التالية...";
   }
 }
 

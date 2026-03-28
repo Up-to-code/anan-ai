@@ -14,6 +14,9 @@ import {
 const statusValidator = v.optional(
   v.union(v.literal("available"), v.literal("sold"), v.literal("reserved")),
 );
+const publicationStateValidator = v.optional(
+  v.union(v.literal("draft"), v.literal("published"), v.literal("archived")),
+);
 
 /**
  * WHY:   Developer server functions need a private Convex query for RED-owned property pagination.
@@ -65,6 +68,7 @@ export const create = mutation({
     media: v.optional(uploadedFileReferenceListValidator),
     body: v.optional(v.any()),
     adLicenseNumber: v.optional(v.string()),
+    publicationState: publicationStateValidator,
   },
   handler: async (ctx, args) => {
     return await createRedProperty(ctx, args);
@@ -93,6 +97,7 @@ export const update = mutation({
     media: v.optional(uploadedFileReferenceListValidator),
     body: v.optional(v.any()),
     adLicenseNumber: v.optional(v.string()),
+    publicationState: publicationStateValidator,
   },
   handler: async (ctx, args) => {
     return await updateRedProperty(ctx, args);

@@ -6,7 +6,7 @@ export default function DocsShell({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <DocsSidebar />
-      <SidebarInset className="min-h-svh bg-white">
+      <SidebarInset className="min-h-svh bg-white dark:bg-[#09090b]">
         <DocsTopNav />
         <div className="mx-auto w-full max-w-5xl px-4 py-8 lg:px-6 lg:py-12">
           <main>{children}</main>

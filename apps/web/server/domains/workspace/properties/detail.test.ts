@@ -50,6 +50,10 @@ it("returns owner access when the workspace zone can load the property", async (
       inboxRepository: {
         hasProjectShareAccess: vi.fn(async () => false),
       },
+      projectAccessRepository: {
+        hasExplicitProjectViewerAccess: vi.fn(async () => false),
+        promoteCurrentUserToProjectViewer: vi.fn(async () => ({ alreadyOwner: false, promoted: false })),
+      },
       rawPropertyRepository: {
         getProperty: vi.fn(async () => property),
       },
@@ -67,6 +71,7 @@ it("returns shared read-only access when inbox project sharing grants access", a
   const property = makeProperty();
   getProperty.mockResolvedValue(null);
   const hasProjectShareAccess = vi.fn(async () => true);
+  const promoteCurrentUserToProjectViewer = vi.fn(async () => ({ alreadyOwner: false, promoted: true }));
   const rawGetProperty = vi.fn(async () => property);
 
   const result = await resolveWorkspaceProjectDetail(
@@ -82,11 +87,16 @@ it("returns shared read-only access when inbox project sharing grants access", a
         profile: null,
       })),
       inboxRepository: { hasProjectShareAccess },
+      projectAccessRepository: {
+        hasExplicitProjectViewerAccess: vi.fn(async () => false),
+        promoteCurrentUserToProjectViewer,
+      },
       rawPropertyRepository: { getProperty: rawGetProperty },
     },
   );
 
   expect(hasProjectShareAccess).toHaveBeenCalledWith("token", "property-1");
+  expect(promoteCurrentUserToProjectViewer).toHaveBeenCalledWith("token", { propertyId: "property-1" });
   expect(rawGetProperty).toHaveBeenCalledWith("property-1");
   expect(result).toEqual({
     property,
@@ -112,6 +122,10 @@ it("returns null when the project is neither owned nor explicitly shared", async
       })),
       inboxRepository: {
         hasProjectShareAccess: vi.fn(async () => false),
+      },
+      projectAccessRepository: {
+        hasExplicitProjectViewerAccess: vi.fn(async () => false),
+        promoteCurrentUserToProjectViewer: vi.fn(async () => ({ alreadyOwner: false, promoted: false })),
       },
       rawPropertyRepository: {
         getProperty: vi.fn(async () => null),

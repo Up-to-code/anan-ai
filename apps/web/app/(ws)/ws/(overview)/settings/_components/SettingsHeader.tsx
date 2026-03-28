@@ -1,7 +1,5 @@
 /**
- * WHY:   Settings pages need a clean, consistent header aligned with the account center style.
- * WHAT:  Renders a simple title + description block for settings screens.
- * HOW:   Uses the same typography and spacing as `/ws/me` while avoiding branded intro chrome.
+ * Clean, RTL-friendly settings header.
  */
 export default function SettingsHeader({
   title,
@@ -11,9 +9,9 @@ export default function SettingsHeader({
   description: string;
 }) {
   return (
-    <header className="space-y-1">
-      <h1 className="text-xl font-semibold text-slate-950 dark:text-slate-100">{title}</h1>
-      <p className="max-w-2xl text-sm text-slate-500 dark:text-slate-400">{description}</p>
+    <header className="space-y-1" dir="rtl">
+      <h1 className="text-xl font-bold text-foreground">{title}</h1>
+      <p className="text-sm text-muted-foreground">{description}</p>
     </header>
   );
 }

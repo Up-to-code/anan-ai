@@ -14,7 +14,10 @@ export type AgUiCardDefinition = {
     | "market_insight"
     | "area_heat"
     | "constraint_summary"
-    | "missing_data_prompt";
+    | "missing_data_prompt"
+    | "data_list"
+    | "filter_summary"
+    | "target_summary";
   props: Record<string, unknown>;
 };
 
@@ -41,4 +44,3 @@ export type AgUiConversationTurn = {
   assistantText: string;
   followupQuestion?: string;
 };
-

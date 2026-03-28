@@ -100,8 +100,8 @@ function VerificationDocsView(model: VerificationDocsModel) {
   return (
     <div className="space-y-10">
       <div className="space-y-2 text-right">
-        <div className="text-xl font-black tracking-tight text-slate-900">التوثيق والمستندات</div>
-        <p className="text-sm font-medium text-slate-500">ارفع مستنداتك لإثبات الهوية والنشاط. القائمة أدناه مرجع إرشادي ويمكن تحديثها لاحقاً.</p>
+        <div className="text-xl font-black tracking-tight text-foreground">التوثيق والمستندات</div>
+        <p className="text-sm font-medium text-muted-foreground">ارفع مستنداتك لإثبات الهوية والنشاط. القائمة أدناه مرجع إرشادي ويمكن تحديثها لاحقاً.</p>
       </div>
       
       <RequirementsChecklist 
@@ -121,7 +121,7 @@ function VerificationDocsView(model: VerificationDocsModel) {
       </div>
 
       {model.error ? (
-        <div className="rounded-2xl bg-red-50 p-4 text-[13px] font-bold text-red-700">
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-[13px] font-bold text-red-700 dark:text-red-300">
           {model.error}
         </div>
       ) : null}

@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
 import { useLocaleDictionary } from "@/client_zone/components/LocaleProvider";
 import Link from "next/link";
 import { ChatHeader } from "@/client_zone/components/chat/ChatHeader";
 import { api } from "@/lib/convexApi";
+import { capturePostHogEvent } from "@/lib/posthog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/client_zone/components/ui/card";
 import { Button } from "@/client_zone/components/ui/button";
 import { Badge } from "@/client_zone/components/ui/badge";
@@ -29,6 +31,14 @@ export function PropertyDetailPage({ propertyId }: { propertyId: string }) {
   );
   const property = mockProperty ?? liveProperty;
 
+  useEffect(() => {
+    if (!property) return;
+    capturePostHogEvent("client_property_detail_viewed", {
+      ownerType: property.owner.type,
+      propertyId: String(property.id),
+    });
+  }, [property]);
+
   return (
     <div className="min-h-screen bg-slate-50">
       <ChatHeader isAuthenticated={isAuthenticated} />
@@ -51,12 +61,28 @@ export function PropertyDetailPage({ propertyId }: { propertyId: string }) {
                 <Badge>{property.area ?? property.location ?? property.address}</Badge>
                 <Badge>{property.beds}</Badge>
                 <Badge>{property.baths}</Badge>
+                <Badge>{property.owner.type === "RED" ? "مطور" : "وسيط"}</Badge>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs text-slate-500">{property.owner.type === "RED" ? "Developer" : "Broker"}</div>
+                <div className="mt-1 text-sm font-semibold text-slate-900">{property.owner.name}</div>
+                {property.owner.description ? (
+                  <p className="mt-2 text-sm text-slate-600">{property.owner.description}</p>
+                ) : null}
               </div>
               <div className="flex flex-wrap gap-3">
-                <Link href={`/?prompt=${encodeURIComponent(locale === "ar" ? `أريد تفاصيل أكثر عن ${property.title}` : `Tell me more about ${property.title}`)}`}>
+                <Link
+                  href={`/?prompt=${encodeURIComponent(locale === "ar" ? `أريد تفاصيل أكثر عن ${property.title}` : `Tell me more about ${property.title}`)}`}
+                  data-analytics-event="client_property_continue_in_chat_clicked"
+                  data-analytics-property-id={String(property.id)}
+                >
                   <Button>{dictionary.app.continueInChat}</Button>
                 </Link>
-                <Link href={`/?prompt=${encodeURIComponent(locale === "ar" ? `أريد خطة تمويل لعقار ${property.title}` : `Show financing options for ${property.title}`)}`}>
+                <Link
+                  href={`/?prompt=${encodeURIComponent(locale === "ar" ? `أريد خطة تمويل لعقار ${property.title}` : `Show financing options for ${property.title}`)}`}
+                  data-analytics-event="client_property_finance_cta_clicked"
+                  data-analytics-property-id={String(property.id)}
+                >
                   <Button variant="outline">{dictionary.app.financeCta}</Button>
                 </Link>
               </div>

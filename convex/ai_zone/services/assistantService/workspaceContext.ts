@@ -13,7 +13,7 @@ export function getLatestWorkspaceActionState(
       meta?: { workspaceActionState?: WorkspaceActionState };
     };
     const state = metadata.workspaceActionState ?? metadata.meta?.workspaceActionState;
-    if (state?.type === "create_project") {
+    if (state?.type) {
       return state;
     }
   }

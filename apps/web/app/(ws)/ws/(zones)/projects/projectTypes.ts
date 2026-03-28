@@ -1,6 +1,7 @@
 import type { BrokerPresence } from "../../_components/Visuals/BrokerPresenceChip";
 import type { UnitReference } from "../../_lib/entities";
 import type { UploadedFileReference } from "@/server/contracts/files";
+import type { OrganizationAsset, PropertyViewerSummary } from "@/server/contracts/properties";
 
 export type WorkspaceProject = {
   id: string;
@@ -38,6 +39,11 @@ export type WorkspaceProject = {
   publicationState: "published" | "draft" | "archived";
   accessMode: "owner" | "shared";
   canEdit: boolean;
+  visibility: {
+    clientVisibility: "private" | "public";
+    viewers: PropertyViewerSummary[];
+  };
+  assets: OrganizationAsset[];
   units: UnitReference[];
   brokers: BrokerPresence[];
 };

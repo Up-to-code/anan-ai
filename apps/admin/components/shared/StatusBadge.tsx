@@ -24,6 +24,7 @@ const toneByValue: Record<string, string> = {
   approved: "bg-emerald-100/50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-500/10",
   accepted: "bg-emerald-100/50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-500/10",
   rejected: "bg-rose-100/50 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400 border-rose-500/10",
+  closed: "bg-slate-100/50 text-slate-500 border-slate-200/50 dark:bg-slate-800/60 dark:text-slate-300 dark:border-slate-700",
   pending: "bg-slate-100/50 text-slate-500 border-slate-200/50",
   draft: "bg-slate-100/50 text-slate-500 border-slate-200/50",
   published: "bg-blue-100/50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-500/10",

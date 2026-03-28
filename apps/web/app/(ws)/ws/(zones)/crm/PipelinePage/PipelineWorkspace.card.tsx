@@ -140,7 +140,7 @@ function buildCardPerson(client: CrmClientRecord) {
     id: client.id,
     type: client.personType,
     name: client.name,
-    title: client.personType === "broker" ? "وسيط" : "عميل",
+    title: client.relationLabel,
     avatarImage: client.avatarImage,
     avatarLabel: client.avatarLabel,
     location: client.project?.location,
@@ -156,6 +156,7 @@ function buildCardPerson(client: CrmClientRecord) {
           }
         : null,
       unit: client.unit,
+      stageLabel: client.broker?.state === "client-linked" ? "متابعة وسيط" : undefined,
       summary: client.notes,
     },
   };

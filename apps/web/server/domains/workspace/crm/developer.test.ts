@@ -39,7 +39,7 @@ it("creates a developer deal after property ownership validation", async () => {
 
   await expect(
     createRedDeal(
-      { title: "Deal", stage: "new", propertyId: "property-1" },
+      { title: "Deal", stage: "new", propertyId: "property-1", relationType: "internal_client" },
       { requireDeveloper: requireDeveloper(), crmRepository: crmRepository as never, propertiesRepository },
     ),
   ).resolves.toBe("deal-1");

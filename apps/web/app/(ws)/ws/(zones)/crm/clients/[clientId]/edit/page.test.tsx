@@ -3,6 +3,8 @@ import { beforeEach, expect, it, vi } from "vitest";
 
 const {
   listDeals,
+  listClients,
+  listBrokers,
   updateDeal,
   archiveDeal,
   listProperties,
@@ -14,20 +16,34 @@ const {
   return {
     listDeals: vi.fn(async () => [{
       id: "deal-1",
+      createdAt: 1_700_000_000_000,
       title: "منى الغامدي",
       contactName: "منى الغامدي",
       contactPhone: "+966500000000",
       description: "عميل مهتم",
       stage: "contacted" as const,
+      relationType: "internal_client" as const,
+      crmClientId: "client-1",
       value: 1800000,
       propertyId: "property-1",
       nextFollowUpAt: 1_700_000_000_000,
       notes: "متابعة مهمة",
+      client: { id: "client-1", name: "منى الغامدي", phone: "+966500000000" },
+      project: {
+        id: "property-1",
+        title: "مالقا ريزيدنس",
+        image: "https://example.com/project.jpg",
+        location: "الرياض",
+        priceLabel: "1800000 ر.س",
+        summary: "نبذة مختصرة",
+      },
     }]),
+    listClients: vi.fn(async () => [{ id: "client-1", name: "منى الغامدي", phone: "+966500000000" }]),
+    listBrokers: vi.fn(async () => [{ id: "broker-1", name: "وسيط الرياض", avatarLabel: "و" }]),
     updateDeal: vi.fn(async () => undefined),
     archiveDeal: vi.fn(async () => undefined),
     listProperties: vi.fn(async () => ({
-      page: [{ _id: "property-1", title: "مالقا ريزيدنس", location: "الرياض", address: "الرياض" }],
+      page: [{ _id: "property-1", title: "مالقا ريزيدنس", location: "الرياض", address: "الرياض", price: 1800000, description: "وصف", media: [] }],
       isDone: true,
       continueCursor: "",
       pageStatus: "Done",
@@ -55,6 +71,8 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/server/ws/zones", () => ({
   getWorkspaceCrmZone: vi.fn(() => ({
     listDeals,
+    listClients,
+    listBrokers,
     updateDeal,
     archiveDeal,
   })),
@@ -79,6 +97,9 @@ type CapturedDealFormProps = {
     budget: string;
     preference: string;
     propertyId: string;
+    relationType: "internal_client" | "broker_managed";
+    crmClientId: string;
+    relatedBrokerId: string;
     stage: "new" | "contacted" | "negotiation" | "won" | "lost";
     notes: string;
   };
@@ -88,6 +109,9 @@ type CapturedDealFormProps = {
     budget: string;
     preference: string;
     propertyId: string;
+    relationType: "internal_client" | "broker_managed";
+    crmClientId: string;
+    relatedBrokerId: string;
     nextFollowUpAt: string;
     stage: "new" | "contacted" | "negotiation" | "won" | "lost";
     notes: string;
@@ -100,6 +124,8 @@ beforeEach(() => {
   updateDeal.mockClear();
   archiveDeal.mockClear();
   listProperties.mockClear();
+  listClients.mockClear();
+  listBrokers.mockClear();
   setCapturedProps(null);
 });
 
@@ -112,6 +138,7 @@ it("loads the edit deal form and wires save + archive actions", async () => {
   expect(props.initialData.name).toBe("منى الغامدي");
   expect(props.initialData.stage).toBe("contacted");
   expect(props.initialData.notes).toBe("متابعة مهمة");
+  expect(props.initialData.crmClientId).toBe("client-1");
 
   await expect(props.onSubmit({
     name: "منى الجديدة",
@@ -119,6 +146,9 @@ it("loads the edit deal form and wires save + archive actions", async () => {
     budget: "2000000",
     preference: "مهتمة بمشروع جديد",
     propertyId: "property-1",
+    relationType: "internal_client",
+    crmClientId: "client-1",
+    relatedBrokerId: "",
     nextFollowUpAt: "2026-03-30T10:30",
     stage: "negotiation",
     notes: "تم تحديث الملاحظات",

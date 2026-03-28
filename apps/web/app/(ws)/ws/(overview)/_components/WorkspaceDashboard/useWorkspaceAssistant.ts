@@ -237,6 +237,7 @@ export function useWorkspaceAssistant({
   const [stageHistory, setStageHistory] = useState<AnanProStreamStageEvent[]>([]);
   const [streamLifecycleStatus, setStreamLifecycleStatus] = useState<"running" | "completed" | "failed" | "cancelled" | null>(null);
   const [activeTeamId, setActiveTeamId] = useState<string | null>(null);
+  const [activeAgentName, setActiveAgentName] = useState<string | null>(null);
   const [completedTeamIds, setCompletedTeamIds] = useState<string[]>([]);
   const [activeStreamSessionId, setActiveStreamSessionId] = useState<string | null>(null);
   const [isStoppingStream, setIsStoppingStream] = useState(false);
@@ -270,6 +271,7 @@ export function useWorkspaceAssistant({
     setStageHistory([]);
     setStreamLifecycleStatus(null);
     setActiveTeamId(null);
+    setActiveAgentName(null);
     setCompletedTeamIds([]);
     setActiveStreamSessionId(null);
     setIsStoppingStream(false);
@@ -470,6 +472,7 @@ export function useWorkspaceAssistant({
     setStageHistory,
     setStreamLifecycleStatus,
     setActiveTeamId,
+    setActiveAgentName,
     setCompletedTeamIds,
     setActiveStreamSessionId,
     setIsStoppingStream,
@@ -557,8 +560,19 @@ export function useWorkspaceAssistant({
 
   const assistantMotionState = getAssistantMotionState(isSending, streamStage);
   const stageLabel = getAssistantStageLabel(isSending, streamStage, streamLifecycleStatus);
+  const handleToggleVoiceRecording = useCallback(() => {
+    setSendError(null);
+    void voiceRecorder.toggleRecording();
+  }, [voiceRecorder, setSendError]);
+  const handleStopVoiceRecording = useCallback(() => {
+    setSendError(null);
+    return voiceRecorder.stopRecording();
+  }, [voiceRecorder, setSendError]);
+  const handleCancelVoiceRecording = useCallback(() => {
+    setSendError(null);
+    voiceRecorder.cancelRecording();
+  }, [voiceRecorder, setSendError]);
 
-  const activeTeamLabel = activeTeamId ? normalizeAssistantTeamLabel(activeTeamId) : null;
   const completedTeamLabels = completedTeamIds.map(normalizeAssistantTeamLabel);
   const canRegenerate = Boolean(thread?.messages.some((message) => message.role === "user")) && !isSending && !isLoadingThread;
 
@@ -570,11 +584,14 @@ export function useWorkspaceAssistant({
     isLoadingThread,
     isStoppingStream,
     isSending,
+    isVoicePanelOpen: voiceRecorder.isPanelOpen,
     isVoiceRecording: voiceRecorder.isRecording,
     isVoiceTranscribing: voiceRecorder.isTranscribing,
+    voicePermissionState: voiceRecorder.permissionState,
     voiceProcessingPhase: voiceRecorder.processingPhase,
     canRegenerate,
-    activeTeamLabel,
+    activeAgentName,
+    activeTeamId,
     completedTeamLabels,
     stageHistory,
     streamLifecycleStatus,
@@ -582,7 +599,10 @@ export function useWorkspaceAssistant({
     liveStageLabel: stageLabel,
     voiceElapsedMs: voiceRecorder.elapsedMs,
     voiceLevels: voiceRecorder.levels,
-    toggleVoiceRecording: voiceRecorder.toggleRecording,
+    toggleVoiceRecording: handleToggleVoiceRecording,
+    stopVoiceRecording: handleStopVoiceRecording,
+    cancelVoiceRecording: handleCancelVoiceRecording,
+    requestVoicePermission: voiceRecorder.requestMicrophonePermission,
     sendError,
     setValue,
     thread,

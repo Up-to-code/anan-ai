@@ -42,7 +42,7 @@ it("creates a broker deal after property ownership validation", async () => {
 
   await expect(
     createBrokerDeal(
-      { title: "Deal", stage: "new", propertyId: "property-1" },
+      { title: "Deal", stage: "new", propertyId: "property-1", relationType: "internal_client" },
       { requireBroker: requireBroker(), crmRepository: crmRepository as never, propertiesRepository },
     ),
   ).resolves.toBe("deal-1");
@@ -126,6 +126,7 @@ it("updates full deal fields and archives only owned broker deals", async () => 
       value: 2500000,
       nextFollowUpAt: 1_700_000_000_000,
       stage: "negotiation",
+      relationType: "internal_client",
       contactName: "Client Updated",
       contactPhone: "+966500000000",
       propertyId: "property-2",

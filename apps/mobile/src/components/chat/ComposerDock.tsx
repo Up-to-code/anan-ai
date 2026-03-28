@@ -9,6 +9,7 @@ type ComposerDockProps = {
 
 export function ComposerDock({ value, onChange, onSend }: ComposerDockProps) {
   const isTyping = value.trim().length > 0;
+  const canSend = isTyping;
 
   return (
     <View className="bg-transparent py-4 w-full">
@@ -25,6 +26,12 @@ export function ComposerDock({ value, onChange, onSend }: ComposerDockProps) {
           value={value}
           onChangeText={onChange}
           multiline={false}
+          returnKeyType="send"
+          blurOnSubmit
+          onSubmitEditing={() => {
+            if (!canSend) return;
+            onSend();
+          }}
           placeholder="كيف أقدر أساعدك اليوم؟"
           placeholderTextColor="#94A3B8"
           cursorColor="#2563EB"
@@ -34,7 +41,10 @@ export function ComposerDock({ value, onChange, onSend }: ComposerDockProps) {
 
         {/* Left Icon (Send Button) */}
         <Pressable
-          onPress={isTyping ? onSend : undefined}
+          onPress={canSend ? onSend : undefined}
+          accessibilityRole="button"
+          accessibilityLabel="إرسال"
+          accessibilityState={{ disabled: !canSend }}
           className={`h-12 w-12 items-center justify-center rounded-full transition-all ${
             isTyping ? "bg-primary active:scale-95" : "bg-slate-100 dark:bg-slate-800"
           }`}

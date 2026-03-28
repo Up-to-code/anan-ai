@@ -182,6 +182,7 @@ import type * as ai_zone_services_assistantService_streamSync from "../ai_zone/s
 import type * as ai_zone_services_assistantService_threads from "../ai_zone/services/assistantService/threads.js";
 import type * as ai_zone_services_assistantService_types from "../ai_zone/services/assistantService/types.js";
 import type * as ai_zone_services_assistantService_utils from "../ai_zone/services/assistantService/utils.js";
+import type * as ai_zone_services_assistantService_workspaceCommandRouter from "../ai_zone/services/assistantService/workspaceCommandRouter.js";
 import type * as ai_zone_services_assistantService_workspaceContext from "../ai_zone/services/assistantService/workspaceContext.js";
 import type * as ai_zone_services_assistantService_workspaceParsing from "../ai_zone/services/assistantService/workspaceParsing.js";
 import type * as ai_zone_services_assistantService_workspaceProjectAction from "../ai_zone/services/assistantService/workspaceProjectAction.js";
@@ -216,6 +217,7 @@ import type * as shared_logic_agencies_repositories_invites from "../shared_logi
 import type * as shared_logic_agencies_repositories_membership from "../shared_logic/agencies/repositories/membership.js";
 import type * as shared_logic_agencies_repositories_membershipRoleEvents from "../shared_logic/agencies/repositories/membershipRoleEvents.js";
 import type * as shared_logic_agencies_repositories_organization from "../shared_logic/agencies/repositories/organization.js";
+import type * as shared_logic_analytics_posthog from "../shared_logic/analytics/posthog.js";
 import type * as shared_logic_banks_queries from "../shared_logic/banks/queries.js";
 import type * as shared_logic_batch_index from "../shared_logic/batch/index.js";
 import type * as shared_logic_compliance_index from "../shared_logic/compliance/index.js";
@@ -286,6 +288,7 @@ import type * as shared_logic_oauth_internal_tokens_accessLifecycle from "../sha
 import type * as shared_logic_oauth_internal_tokens_common from "../shared_logic/oauth/internal/tokens/common.js";
 import type * as shared_logic_offers from "../shared_logic/offers.js";
 import type * as shared_logic_offers_access from "../shared_logic/offers/access.js";
+import type * as shared_logic_offers_cases from "../shared_logic/offers/cases.js";
 import type * as shared_logic_offers_index from "../shared_logic/offers/index.js";
 import type * as shared_logic_offers_mutations from "../shared_logic/offers/mutations.js";
 import type * as shared_logic_offers_mutations_apply from "../shared_logic/offers/mutations/apply.js";
@@ -299,6 +302,8 @@ import type * as shared_logic_offers_mutations_sideEffects from "../shared_logic
 import type * as shared_logic_offers_mutations_types from "../shared_logic/offers/mutations/types.js";
 import type * as shared_logic_offers_queries from "../shared_logic/offers/queries.js";
 import type * as shared_logic_offers_recipients from "../shared_logic/offers/recipients.js";
+import type * as shared_logic_organizationAssets from "../shared_logic/organizationAssets.js";
+import type * as shared_logic_projectAccess from "../shared_logic/projectAccess.js";
 import type * as shared_logic_properties_cache from "../shared_logic/properties/cache.js";
 import type * as shared_logic_properties_history from "../shared_logic/properties/history.js";
 import type * as shared_logic_properties_search from "../shared_logic/properties/search.js";
@@ -317,7 +322,9 @@ import type * as user_zone_mobile_contracts from "../user_zone/mobile/contracts.
 import type * as user_zone_mobile_feed from "../user_zone/mobile/feed.js";
 import type * as user_zone_web_assistant from "../user_zone/web/assistant.js";
 import type * as user_zone_web_contracts from "../user_zone/web/contracts.js";
+import type * as user_zone_web_orders from "../user_zone/web/orders.js";
 import type * as user_zone_web_properties from "../user_zone/web/properties.js";
+import type * as user_zone_web_threads from "../user_zone/web/threads.js";
 import type * as user_zone_whatsapp_contracts from "../user_zone/whatsapp/contracts.js";
 import type * as user_zone_whatsapp_formatters from "../user_zone/whatsapp/formatters.js";
 import type * as user_zone_whatsapp_handoff from "../user_zone/whatsapp/handoff.js";
@@ -507,6 +514,7 @@ declare const fullApi: ApiFromModules<{
   "ai_zone/services/assistantService/threads": typeof ai_zone_services_assistantService_threads;
   "ai_zone/services/assistantService/types": typeof ai_zone_services_assistantService_types;
   "ai_zone/services/assistantService/utils": typeof ai_zone_services_assistantService_utils;
+  "ai_zone/services/assistantService/workspaceCommandRouter": typeof ai_zone_services_assistantService_workspaceCommandRouter;
   "ai_zone/services/assistantService/workspaceContext": typeof ai_zone_services_assistantService_workspaceContext;
   "ai_zone/services/assistantService/workspaceParsing": typeof ai_zone_services_assistantService_workspaceParsing;
   "ai_zone/services/assistantService/workspaceProjectAction": typeof ai_zone_services_assistantService_workspaceProjectAction;
@@ -541,6 +549,7 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/agencies/repositories/membership": typeof shared_logic_agencies_repositories_membership;
   "shared_logic/agencies/repositories/membershipRoleEvents": typeof shared_logic_agencies_repositories_membershipRoleEvents;
   "shared_logic/agencies/repositories/organization": typeof shared_logic_agencies_repositories_organization;
+  "shared_logic/analytics/posthog": typeof shared_logic_analytics_posthog;
   "shared_logic/banks/queries": typeof shared_logic_banks_queries;
   "shared_logic/batch/index": typeof shared_logic_batch_index;
   "shared_logic/compliance/index": typeof shared_logic_compliance_index;
@@ -611,6 +620,7 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/oauth/internal/tokens/common": typeof shared_logic_oauth_internal_tokens_common;
   "shared_logic/offers": typeof shared_logic_offers;
   "shared_logic/offers/access": typeof shared_logic_offers_access;
+  "shared_logic/offers/cases": typeof shared_logic_offers_cases;
   "shared_logic/offers/index": typeof shared_logic_offers_index;
   "shared_logic/offers/mutations": typeof shared_logic_offers_mutations;
   "shared_logic/offers/mutations/apply": typeof shared_logic_offers_mutations_apply;
@@ -624,6 +634,8 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/offers/mutations/types": typeof shared_logic_offers_mutations_types;
   "shared_logic/offers/queries": typeof shared_logic_offers_queries;
   "shared_logic/offers/recipients": typeof shared_logic_offers_recipients;
+  "shared_logic/organizationAssets": typeof shared_logic_organizationAssets;
+  "shared_logic/projectAccess": typeof shared_logic_projectAccess;
   "shared_logic/properties/cache": typeof shared_logic_properties_cache;
   "shared_logic/properties/history": typeof shared_logic_properties_history;
   "shared_logic/properties/search": typeof shared_logic_properties_search;
@@ -642,7 +654,9 @@ declare const fullApi: ApiFromModules<{
   "user_zone/mobile/feed": typeof user_zone_mobile_feed;
   "user_zone/web/assistant": typeof user_zone_web_assistant;
   "user_zone/web/contracts": typeof user_zone_web_contracts;
+  "user_zone/web/orders": typeof user_zone_web_orders;
   "user_zone/web/properties": typeof user_zone_web_properties;
+  "user_zone/web/threads": typeof user_zone_web_threads;
   "user_zone/whatsapp/contracts": typeof user_zone_whatsapp_contracts;
   "user_zone/whatsapp/formatters": typeof user_zone_whatsapp_formatters;
   "user_zone/whatsapp/handoff": typeof user_zone_whatsapp_handoff;

@@ -34,7 +34,7 @@ async function getOrganizationNameByParty(ctx: MutationCtx, args: OfferPartyArgs
 }
 
 export type OfferDeliveryResult = {
-  conversationId: Id<"inboxConversations"> | null;
+  conversationId: string | null;
   starterMessageCreated: boolean;
   notification: null | {
     notificationId: Id<"workspaceNotifications">;

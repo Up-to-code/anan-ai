@@ -15,6 +15,7 @@ import {
   listOrganizationsForProfile,
   updateOrganizationForOwner,
 } from "./organizationProfile.helpers";
+import { resolveComplianceRulesetForOwner } from "../../compliance/utils";
 
 const ORGANIZATION_ACCESS_ERROR_MESSAGES = [
   "Organization owner profile required",
@@ -93,6 +94,87 @@ function mapOrganizationSummary(owner: any, organization: any) {
   } as const;
 }
 
+function buildOrganizationVerificationSummary(args: {
+  organization: any;
+  latestRequest: any | null;
+  ruleset: any | null;
+}) {
+  const submittedData =
+    args.latestRequest && typeof args.latestRequest.submittedData === "object" && args.latestRequest.submittedData
+      ? args.latestRequest.submittedData
+      : null;
+  const requirements = Array.isArray(submittedData?.requirements)
+    ? submittedData.requirements.filter((entry: unknown): entry is string => typeof entry === "string")
+    : [];
+  const sourceUrls = Array.isArray(submittedData?.sourceUrls)
+    ? submittedData.sourceUrls.filter((entry: unknown): entry is string => typeof entry === "string")
+    : [];
+  const requiresOrgVerification = args.ruleset?.enforcement?.requireOrgVerification === true;
+  const publishingBlocked =
+    requiresOrgVerification &&
+    args.ruleset?.enforcement?.blockPublish === true &&
+    args.organization.isVerified !== true;
+
+  return {
+    isVerified: args.organization.isVerified === true,
+    currentRequestId: args.latestRequest ? String(args.latestRequest._id) : null,
+    currentRequestStatus: args.latestRequest?.currentStatus ?? "not_submitted",
+    lastSubmittedAt: args.latestRequest?.submittedAt ?? null,
+    lastReviewedAt: args.latestRequest?.reviewedAt ?? null,
+    reviewerNotes: args.latestRequest?.reviewerNotes ?? null,
+    documentsCount: Array.isArray(args.latestRequest?.attachedDocuments)
+      ? args.latestRequest.attachedDocuments.length
+      : 0,
+    publishingBlocked,
+    attachedDocuments: Array.isArray(args.latestRequest?.attachedDocuments)
+      ? args.latestRequest.attachedDocuments
+      : [],
+    requirements,
+    sourceUrls,
+  } as const;
+}
+
+async function getLatestOrganizationVerificationRequest(ctx: any, owner: any) {
+  const indexName = owner.ownerType === "broker" ? "subjectBrokerId" : "subjectREDId";
+  const indexValue = owner.ownerType === "broker" ? owner.ownerBrokerId : owner.ownerREDId;
+  const requestType = owner.ownerType === "broker" ? "broker" : "RED";
+
+  const requests = await ctx.db
+    .query("verificationRequests")
+    .withIndex(indexName, (q: any) => q.eq(indexName, indexValue))
+    .collect();
+
+  return (
+    requests
+      .filter((request: any) => request.requestType === requestType)
+      .sort((left: any, right: any) => (right.submittedAt ?? 0) - (left.submittedAt ?? 0))[0] ?? null
+  );
+}
+
+async function buildCurrentOrganizationResponse(ctx: any, owner: any, membership: any) {
+  const [organization, { ruleset }, latestVerificationRequest] = await Promise.all([
+    getOrganizationRecord(ctx, owner),
+    resolveComplianceRulesetForOwner(ctx, owner),
+    getLatestOrganizationVerificationRequest(ctx, owner),
+  ]);
+
+  if (!organization) {
+    throw new ConvexError({ code: "NOT_FOUND", message: "Organization not found" });
+  }
+
+  return {
+    organization: {
+      ...mapOrganizationSummary(owner, organization),
+      verificationSummary: buildOrganizationVerificationSummary({
+        organization,
+        latestRequest: latestVerificationRequest,
+        ruleset,
+      }),
+    },
+    membership,
+  };
+}
+
 /**
  * WHY:   Backend gateways sometimes need to resolve organizations for another auth user directly.
  * WHAT:  Lists organizations linked to the provided auth user id.
@@ -134,25 +216,7 @@ export const getCurrentOrganization = query({
   handler: async (ctx) => {
     try {
       const { owner, membership } = await requireOrganizationMembership(ctx);
-      const organization = await getOrganizationRecord(ctx, owner);
-      if (!organization) {
-        throw new ConvexError({ code: "NOT_FOUND", message: "Organization not found" });
-      }
-
-      return {
-        organization: {
-          id: String(getOwnerId(owner)),
-          type: owner.ownerType === "broker" ? "broker" : "red",
-          name: organization.name,
-          slug: organization.slug,
-          status: organization.status ?? null,
-          isVerified: organization.isVerified === true,
-          description: organization.description,
-          website: organization.website,
-          contactEmail: organization.contactEmail,
-        },
-        membership,
-      };
+      return buildCurrentOrganizationResponse(ctx, owner, membership);
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       if (hasOrganizationAccessError(message)) {

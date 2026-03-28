@@ -63,7 +63,7 @@ export default function InboxCollaborationCard({
   return (
     <div
       className={cn(
-        "space-y-5 rounded-3xl border p-5 shadow-sm transition-all",
+        "min-w-0 space-y-5 rounded-2xl border p-5 shadow-sm transition-all",
         isMe
           ? "border-foreground/10 bg-foreground/5 text-foreground"
           : "border-border bg-card text-foreground"
@@ -76,34 +76,34 @@ export default function InboxCollaborationCard({
         )}>
           {getCardLabel(metadata)}
         </div>
-        <div className="text-sm font-black leading-6">{metadata.title}</div>
+        <div className="break-words text-sm font-black leading-6 [overflow-wrap:anywhere]">{metadata.title}</div>
       </div>
-      <div className={cn("text-[12px] font-bold", isMe ? "text-foreground/70" : "text-muted-foreground")}>
+      <div className={cn("break-words text-[12px] font-bold [overflow-wrap:anywhere]", isMe ? "text-foreground/70" : "text-muted-foreground")}>
         {metadata.actor.name}
         {metadata.actor.organizationName ? ` · ${metadata.actor.organizationName}` : ""}
       </div>
       <div className={cn(
-        "rounded-2xl border px-4 py-3.5 text-[13px] font-medium leading-relaxed",
+        "rounded-xl border px-4 py-3.5 text-[13px] font-medium leading-relaxed break-words [overflow-wrap:anywhere]",
         isMe 
           ? "border-foreground/20 bg-foreground/10 text-foreground" 
           : "border-border bg-muted/30 text-foreground"
       )}>
         {metadata.summary}
       </div>
-      <div className={cn("text-[13px] font-black", isMe ? "text-foreground" : "text-foreground")}>
+      <div className={cn("break-words text-[13px] font-black [overflow-wrap:anywhere]", isMe ? "text-foreground" : "text-foreground")}>
         {getMetaDetails(metadata)}
       </div>
       <a
         href={metadata.action.href}
         className={cn(
-          "inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-[13px] font-bold transition-all",
+          "inline-flex max-w-full items-center gap-2 rounded-xl border px-4 py-2.5 text-[13px] font-bold transition-all",
           isMe
             ? "border-foreground/20 bg-foreground text-background hover:bg-foreground/90"
             : "border-border bg-card text-foreground hover:bg-muted"
         )}
       >
         <ArrowUpLeft className="h-4 w-4" />
-        {metadata.action.label}
+        <span className="truncate">{metadata.action.label}</span>
       </a>
     </div>
   );

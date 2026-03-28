@@ -2,6 +2,7 @@
 
 import type { ChatSuggestion } from "@/client_zone/lib/types";
 import { Button } from "@/client_zone/components/ui/button";
+import { cn } from "@/lib/utils";
 
 /**
  * WHY:   A chat-first empty state still needs a fast way to start common buyer journeys.
@@ -11,19 +12,21 @@ import { Button } from "@/client_zone/components/ui/button";
 export function ChatSuggestions({
   suggestions,
   onSelect,
+  className,
 }: {
   suggestions: ChatSuggestion[];
   onSelect: (prompt: string) => void;
+  className?: string;
 }) {
   return (
-    <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
+    <div className={cn("flex flex-wrap gap-3", className)}>
       {suggestions.map((suggestion) => (
         <Button
           key={suggestion.id}
           variant="outline"
           size="sm"
           onClick={() => onSelect(suggestion.prompt)}
-          className="h-auto rounded-lg px-3 py-2 text-start text-xs sm:text-sm"
+          className="h-auto min-h-11 max-w-full justify-start rounded-full px-4 py-2 text-start text-xs normal-case sm:text-sm"
         >
           {suggestion.label}
         </Button>

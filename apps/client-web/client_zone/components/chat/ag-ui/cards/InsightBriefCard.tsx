@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/client_zone/components/ui/card";
+import { AgUiCardHeading, AgUiCardShell, CardContent } from "../AgUiCardPrimitives";
 import type { InsightBriefCardProps } from "../types";
 
 /**
@@ -8,16 +8,13 @@ import type { InsightBriefCardProps } from "../types";
  */
 export function InsightBriefCard(props: InsightBriefCardProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm">{props.title}</CardTitle>
-        <CardDescription>{props.summary}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="max-w-[820px] text-[15px] leading-8 text-slate-700 sm:text-base">
+    <AgUiCardShell>
+      <AgUiCardHeading title={props.title} summary={props.summary} />
+      <CardContent className="pt-0">
+        <div className="text-[15px] leading-8 text-[var(--workspace-bubble-other-foreground)]/88 sm:text-base">
           {props.body}
         </div>
       </CardContent>
-    </Card>
+    </AgUiCardShell>
   );
 }

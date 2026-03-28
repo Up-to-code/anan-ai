@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import DealFormScreen from "../../../DealFormScreen";
 import { requireWorkspaceData } from "../../../../../_lib/workspaceData";
 import { getWorkspaceCrmZone, getWorkspacePropertyZone } from "@/server/ws/zones";
+import { parsePropertyBody } from "@/server/contracts/properties";
 
 type WorkspaceCrmClientEditRouteProps = {
   params: Promise<{ clientId: string }>;
@@ -28,9 +29,11 @@ export default async function WorkspaceCrmClientEditRoute({
   const ownerContext = workspace.ownerContext ?? null;
   const crmZone = getWorkspaceCrmZone(audience, ownerContext);
   const propertyZone = getWorkspacePropertyZone(audience, ownerContext);
-  const [deals, properties] = await Promise.all([
+  const [deals, properties, clients, brokers] = await Promise.all([
     crmZone.listDeals(),
     propertyZone.listProperties({ paginationOpts: { cursor: null, numItems: 100 } }),
+    crmZone.listClients(),
+    crmZone.listBrokers(),
   ]);
   const deal = deals.find((entry) => entry.id === clientId) ?? null;
 
@@ -44,6 +47,9 @@ export default async function WorkspaceCrmClientEditRoute({
     budget: string;
     preference: string;
     propertyId: string;
+    relationType: "internal_client" | "broker_managed";
+    crmClientId: string;
+    relatedBrokerId: string;
     nextFollowUpAt: string;
     stage: "new" | "contacted" | "negotiation" | "won" | "lost";
     notes: string;
@@ -58,6 +64,9 @@ export default async function WorkspaceCrmClientEditRoute({
       value: Number(data.budget.replace(/[^\d.]/g, "")) || undefined,
       description: data.preference.trim() || undefined,
       propertyId: data.propertyId.trim() || undefined,
+      relationType: data.relationType,
+      crmClientId: data.crmClientId.trim() || undefined,
+      relatedBrokerId: data.relatedBrokerId.trim() || undefined,
       nextFollowUpAt: data.nextFollowUpAt ? Date.parse(data.nextFollowUpAt) : undefined,
       stage: data.stage,
       notes: data.notes.trim() || undefined,
@@ -78,17 +87,31 @@ export default async function WorkspaceCrmClientEditRoute({
       pageDescription="حدّث بيانات العميل والصفقة أو قم بأرشفتها دون حذف السجل نهائياً."
       submitLabel="حفظ التعديلات"
       cancelHref={`/ws/crm/clients/${clientId}`}
-      properties={properties.page.map((property) => ({
+      projects={properties.page.map((property) => ({
         id: property._id,
         title: property.title,
+        image:
+          property.heroImage?.url ??
+          property.media?.[0]?.url ??
+          "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1200&q=80",
         location: property.location ?? property.address ?? "غير محدد",
+        priceLabel: `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(property.price)} ر.س`,
+        summary:
+          parsePropertyBody(property.body)?.presentation?.descriptionShort ??
+          property.description ??
+          "نبذة المشروع غير متاحة بعد.",
       }))}
+      clients={clients}
+      brokers={brokers}
       initialData={{
-        name: deal.contactName ?? deal.title,
+        name: deal.client?.name ?? deal.contactName ?? deal.title,
         phone: deal.contactPhone ?? "",
         budget: deal.value ? String(deal.value) : "",
         preference: deal.description ?? "",
         propertyId: deal.propertyId ?? "",
+        relationType: deal.relationType ?? "internal_client",
+        crmClientId: deal.crmClientId ?? "",
+        relatedBrokerId: deal.relatedBrokerId ?? "",
         nextFollowUpAt: toDateTimeLocalValue(deal.nextFollowUpAt),
         stage: deal.stage,
         notes: deal.notes ?? "",

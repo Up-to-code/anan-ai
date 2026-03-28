@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { ClientAssistantColumn } from "./chatLayout";
 
 /**
  * WHY:   The redesign needs one dedicated scrollable thread container with chat-friendly width and spacing.
@@ -17,13 +18,21 @@ export function ChatConversation({
   contentStyle?: React.CSSProperties;
 }) {
   return (
-    <section className={cn("flex-1 overflow-y-auto", className)}>
-      <div
-        className={cn("mx-auto flex w-full max-w-[1120px] flex-col gap-8 px-3 py-6 sm:px-4 sm:py-8", contentClassName)}
+    <section
+      className={cn(
+        "min-h-0 flex-1 overflow-y-auto bg-[var(--workspace-canvas)] px-4 sm:px-6 lg:px-8",
+        className,
+      )}
+    >
+      <ClientAssistantColumn
+        className={cn(
+          "flex w-full flex-col gap-10 pt-8 pb-6 sm:gap-12 sm:pt-10",
+          contentClassName,
+        )}
         style={contentStyle}
       >
         {children}
-      </div>
+      </ClientAssistantColumn>
     </section>
   );
 }

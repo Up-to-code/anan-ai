@@ -103,7 +103,7 @@ export default function InboxMessageItem({
     <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
       <div
         className={cn(
-          "max-w-[88%] sm:max-w-[75%] transition-all",
+          "min-w-0 max-w-[92%] sm:max-w-[75%] transition-all",
           offerCardMetadata || collaborationMetadata
             ? ""
             : cn(
@@ -125,12 +125,14 @@ export default function InboxMessageItem({
         ) : collaborationMetadata ? (
           <InboxCollaborationCard isMe={isMe} metadata={collaborationMetadata} />
         ) : (
-          <div className="text-sm font-medium leading-7">{message.body}</div>
+          <div className="whitespace-pre-wrap break-words text-sm font-medium leading-7 [overflow-wrap:anywhere]">
+            {message.body}
+          </div>
         )}
 
         <div
           className={cn(
-            "mt-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider",
+            "mt-2 flex flex-wrap items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider",
             isMe ? "text-background/60" : "text-muted-foreground/60"
           )}
         >

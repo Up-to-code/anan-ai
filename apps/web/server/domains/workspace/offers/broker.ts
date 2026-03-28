@@ -5,6 +5,7 @@ import {
   archiveOfferInputSchema,
   createOfferInputSchema,
   type OfferActionResult,
+  type AdvanceOfferCaseStageInput,
   type OfferLiveState,
   publishConversationOfferInputSchema,
   publishOfferInputSchema,
@@ -41,14 +42,7 @@ export async function getBrokerOffersSnapshot(
   dependencies: BrokerOffersDependencies = defaultDependencies,
 ): Promise<OffersSnapshot> {
   const session = await dependencies.requireBroker();
-
-  const [sent, received, marketplace] = await Promise.all([
-    dependencies.repository.listSent(session.token),
-    dependencies.repository.listReceived(session.token),
-    dependencies.repository.listMarketplace(session.token),
-  ]);
-
-  return { sent, received, marketplace };
+  return dependencies.repository.getQueues(session.token);
 }
 
 function parseOrThrow<T>(result: { success: true; data: T } | { success: false; error: { issues?: { message?: string }[] } }) {
@@ -132,6 +126,14 @@ export async function applyToBrokerOffer(
 ): Promise<OfferActionResult> {
   const session = await dependencies.requireBroker();
   return dependencies.repository.apply(parseOrThrow(applyToOfferInputSchema.safeParse(input)), session.token);
+}
+
+export async function advanceBrokerOfferCase(
+  input: AdvanceOfferCaseStageInput,
+  dependencies: BrokerOffersDependencies = defaultDependencies,
+): Promise<{ ok: true }> {
+  const session = await dependencies.requireBroker();
+  return dependencies.repository.advanceStage(input, session.token);
 }
 
 /**

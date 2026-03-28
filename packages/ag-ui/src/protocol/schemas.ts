@@ -15,11 +15,20 @@ export const agUiComponentIdSchema = z.enum([
   "area_heat",
   "constraint_summary",
   "missing_data_prompt",
+  "data_list",
+  "filter_summary",
+  "target_summary",
 ]);
 
 export const agUiActionDefinitionSchema = z.object({
   id: z.enum([
     "create_project",
+    "list_clients",
+    "list_projects",
+    "search_projects",
+    "list_offers",
+    "search_offers",
+    "delete_project_confirmation",
     "publish_offer",
     "send_offer",
     "latest_update",

@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import {
-  Calendar,
+  Building2,
   FileText,
+  Loader2,
   Paperclip,
   SendHorizontal,
   ShieldCheck,
   Smile,
-  Sparkles,
 } from "lucide-react";
+import {
+  COMPOSER_ATTACHMENT_ACCEPT,
+  validateSupportedAttachmentFiles,
+} from "@/app/(ws)/ws/_components/attachments/attachmentPresentation";
 import { cn } from "@/lib/utils";
 import { useUploadThing } from "@/lib/uploadthing";
 import type { UploadedFileReference } from "@/server/contracts/files";
@@ -19,6 +23,7 @@ import {
   buildDefaultOfferForm,
   InboxInlineSharePanel,
   InboxOfferModal,
+  InboxProjectPickerModal,
   InboxQuickShareMenu,
   type ComposerOfferFormState,
   type ComposerProjectOption,
@@ -95,17 +100,21 @@ function ShareButton({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-[13px] font-bold text-foreground transition-all hover:border-foreground/30 hover:bg-muted/30"
+      className={cn(
+        "inline-flex min-w-0 items-center gap-2 rounded-xl border px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] transition-all duration-300 active:scale-95 shadow-sm",
+        "bg-white border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-slate-50",
+        "dark:bg-white/[0.03] dark:border-white/[0.08] dark:text-white dark:hover:border-white/[0.2] dark:hover:bg-white/[0.06]"
+      )}
     >
-      <Icon className="h-4 w-4 text-muted-foreground" />
-      <span>{label}</span>
+      <Icon className="h-3.5 w-3.5 shrink-0 opacity-60" />
+      <span className="truncate">{label}</span>
     </button>
   );
 }
 
 /**
  * WHY:   Broker↔developer inbox threads need one practical composer that keeps messaging and sharing lightweight.
- * WHAT:  Renders the simplified textarea, compact share menu, and quick offer modal for a selected conversation.
+ * WHAT:  Renders the simplified textarea, compact share menu, and quick offer modal for a selected conversation. (Refined: Modern & Clean).
  * HOW:   Keeps text replies primary, opens one share flow at a time, and routes all business actions through focused callbacks.
  */
 export default function InboxComposer({
@@ -148,9 +157,11 @@ export default function InboxComposer({
   const [localError, setLocalError] = useState<string | null>(null);
   const [offerForm, setOfferForm] = useState<ComposerOfferFormState>(() => buildDefaultOfferForm(projectOptions));
   const [projectNote, setProjectNote] = useState("");
+  const [isProjectPickerOpen, setIsProjectPickerOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<UploadedFileReference | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState(projectOptions[0]?.id ?? "");
   const [shareFileNote, setShareFileNote] = useState("");
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const offerFileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -171,6 +182,7 @@ export default function InboxComposer({
     setSelectedFile(null);
     setShareFileNote("");
     setProjectNote("");
+    setIsProjectPickerOpen(false);
     setSelectedProjectId(projectOptions[0]?.id ?? "");
     setOfferForm(buildDefaultOfferForm(projectOptions));
   }, [conversation.id, initialValue, projectOptions]);
@@ -209,6 +221,12 @@ export default function InboxComposer({
     }
 
     setLocalError(null);
+    const validationError = validateSupportedAttachmentFiles(files);
+    if (validationError) {
+      setLocalError(validationError);
+      event.target.value = "";
+      return;
+    }
     try {
       const uploaded = await startUpload([files[0]]);
       setSelectedFile((uploaded?.[0]?.serverData as UploadedFileReference | undefined) ?? null);
@@ -226,6 +244,12 @@ export default function InboxComposer({
     }
 
     setLocalError(null);
+    const validationError = validateSupportedAttachmentFiles(files);
+    if (validationError) {
+      setLocalError(validationError);
+      event.target.value = "";
+      return;
+    }
     try {
       const uploaded = await startUpload(files);
       const nextAttachments = uploaded?.map((file) => file.serverData as UploadedFileReference) ?? [];
@@ -246,6 +270,7 @@ export default function InboxComposer({
     setProjectNote("");
     onShareActionChange(null);
     setIsShareMenuOpen(false);
+    setIsProjectPickerOpen(false);
   };
 
   const handleShareAction = async () => {
@@ -297,6 +322,21 @@ export default function InboxComposer({
     }
   };
 
+  const handleSelectOfferProject = (projectId: string) => {
+    const project = projectOptions.find((entry) => entry.id === projectId) ?? null;
+    setOfferForm((current) => ({
+      ...current,
+      propertyId: projectId,
+      title:
+        current.title.trim().length === 0 || current.title.startsWith("عرض خاص على ")
+          ? project?.title
+            ? `عرض خاص على ${project.title}`
+            : current.title
+          : current.title,
+      price: project?.price ? String(project.price) : current.price,
+    }));
+  };
+
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (getInboxComposerKeyAction(event.key, event.shiftKey) === "send") {
       event.preventDefault();
@@ -307,18 +347,36 @@ export default function InboxComposer({
   const inlineShareAction =
     activeShareAction === "file" || activeShareAction === "project" ? activeShareAction : null;
 
+  const handleComposerDrop = async (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDraggingFiles(false);
+    const files = Array.from(event.dataTransfer.files ?? []);
+    if (files.length === 0) {
+      return;
+    }
+
+    const validationError = validateSupportedAttachmentFiles(files);
+    if (validationError) {
+      setLocalError(validationError);
+      return;
+    }
+
+    const target = { files: event.dataTransfer.files, value: "" } as EventTarget & HTMLInputElement;
+    await handleUploadFile({ target } as ChangeEvent<HTMLInputElement>);
+  };
+
   return (
     <>
-      <div className="border-t border-border/40 bg-background px-4 py-6 transition-all sm:px-6">
+      <div className="border-t border-border/40 bg-background px-4 py-8 transition-all sm:px-6">
         <div className="mx-auto max-w-4xl">
           {sendError || localError ? (
-            <div className="mb-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-600 dark:text-rose-400">
+            <div className="mb-4 rounded-3xl border border-red-500/10 bg-red-50/50 backdrop-blur-xl px-6 py-4 text-right text-[13px] font-bold text-red-600 dark:bg-red-500/10 dark:text-red-400 shadow-sm transition-all duration-500">
               {sendError || localError}
             </div>
           ) : null}
 
           {canUseBusinessActions ? (
-            <div className="mb-4 flex flex-wrap gap-2">
+            <div className="mb-6 flex flex-wrap flex-row-reverse gap-2">
               <ShareButton
                 icon={FileText}
                 label="مشاركة ملف"
@@ -326,19 +384,19 @@ export default function InboxComposer({
               />
               <ShareButton
                 icon={ShieldCheck}
-                label="إرسال عرض"
+                label="إرسال عرض خاص"
                 onClick={() => onShareActionChange("offer")}
               />
               <ShareButton
-                icon={Calendar}
-                label="تحديد موعد"
+                icon={Building2}
+                label="مشاركة مشروع"
                 onClick={() => onShareActionChange("project")}
               />
             </div>
           ) : null}
 
           {inlineShareAction ? (
-            <div className="mb-3">
+            <div className="mb-4">
               <InboxInlineSharePanel
                 activeAction={inlineShareAction}
                 fileInputRef={fileInputRef}
@@ -350,20 +408,49 @@ export default function InboxComposer({
                 projectOptions={projectOptions}
                 selectedFile={selectedFile}
                 selectedProjectId={selectedProjectId}
+                setSelectedFile={setSelectedFile}
                 setProjectNote={setProjectNote}
                 setSelectedProjectId={setSelectedProjectId}
                 setShareFileNote={setShareFileNote}
                 shareFileNote={shareFileNote}
+                onOpenProjectPicker={() => setIsProjectPickerOpen(true)}
               />
             </div>
           ) : null}
 
           <div
             className={cn(
-              "relative rounded-3xl border border-border bg-muted/10 p-2 shadow-sm transition-all focus-within:border-foreground/30 focus-within:bg-background shadow-black/5",
+              "relative rounded-2xl transition-all duration-500",
+              "bg-white/40 backdrop-blur-3xl border border-white/40 shadow-[0_4px_20px_rgba(0,0,0,0.03)]",
+              "dark:bg-white/[0.03] dark:border-white/[0.08] dark:shadow-none",
+              "focus-within:bg-white/60 dark:focus-within:bg-white/[0.06] focus-within:border-white/60 dark:focus-within:border-white/20 focus-within:shadow-2xl focus-within:shadow-black/[0.02]",
+              isDraggingFiles && "border-blue-400 bg-blue-50/70 dark:border-blue-400/50 dark:bg-blue-500/10",
               isSending && "opacity-50 grayscale cursor-not-allowed",
             )}
+            onDragEnter={(event) => {
+              event.preventDefault();
+              if (isSending) return;
+              setIsDraggingFiles(true);
+            }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              if (isSending) return;
+              event.dataTransfer.dropEffect = "copy";
+            }}
+            onDragLeave={(event) => {
+              event.preventDefault();
+              if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+              setIsDraggingFiles(false);
+            }}
+            onDrop={(event) => void handleComposerDrop(event)}
           >
+            {isDraggingFiles ? (
+              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-blue-500/8 backdrop-blur-[2px]">
+                <div className="rounded-full border border-blue-300 bg-white px-5 py-2 text-[12px] font-black text-blue-700 shadow-sm dark:border-blue-500/30 dark:bg-slate-950 dark:text-blue-200">
+                  أفلت صورة أو PDF هنا لإرفاقه بسرعة
+                </div>
+              </div>
+            ) : null}
             <textarea
               ref={textareaRef}
               rows={1}
@@ -372,32 +459,52 @@ export default function InboxComposer({
               onKeyDown={handleKeyDown}
               placeholder="اكتب رسالتك لوسيط العقارات..."
               disabled={isSending}
-              className="w-full resize-none bg-transparent px-4 py-3.5 text-[15px] font-medium leading-relaxed text-foreground placeholder-muted-foreground/50 outline-none"
+              dir="rtl"
+              className={cn(
+                "w-full resize-none bg-transparent px-8 py-6 text-[15px] font-semibold leading-relaxed outline-none ring-0 appearance-none transition-colors",
+                "text-slate-900 placeholder:text-slate-400/50",
+                "dark:text-white dark:[-webkit-text-fill-color:white] dark:placeholder:text-white/20 caret-current"
+              )}
             />
-            <div className="flex items-center justify-between px-2 pb-1 pt-1">
-              <div className="flex items-center gap-1">
+            <div className="flex flex-wrap flex-row-reverse items-center justify-between gap-3 px-4 pb-4 pt-1">
+              <button
+                type="button"
+                onClick={() => void handleSubmit()}
+                disabled={isSending || !draft.trim()}
+                className={cn(
+                  "flex h-11 shrink-0 items-center gap-2 rounded-xl px-5 text-[12px] font-black uppercase tracking-[0.15em] transition-all duration-500 active:scale-95 shadow-lg",
+                  draft.trim() 
+                    ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 hover:shadow-xl hover:-translate-y-0.5" 
+                    : "bg-slate-200 text-slate-400 opacity-50 grayscale dark:bg-white/5 dark:text-white/10"
+                )}
+              >
+                {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
+                <span>{isSending ? "جاري الإرسال" : "إرسال"}</span>
+              </button>
+
+              <div className="flex flex-row-reverse items-center gap-1.5 pr-1">
                 <button
                   type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-muted/30 hover:text-foreground"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition-all duration-500 hover:bg-slate-100/50 hover:text-slate-900 dark:text-white/30 dark:hover:bg-white/5 dark:hover:text-white"
                 >
                   <Smile className="h-5 w-5" />
                 </button>
                 <button
                   type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-muted/30 hover:text-foreground"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition-all duration-500 hover:bg-slate-100/50 hover:text-slate-900 dark:text-white/30 dark:hover:bg-white/5 dark:hover:text-white"
+                  aria-label="إرفاق ملف"
                 >
                   <Paperclip className="h-5 w-5" />
                 </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={COMPOSER_ATTACHMENT_ACCEPT}
+                  className="hidden"
+                  onChange={(event) => void handleUploadFile(event)}
+                />
               </div>
-              <button
-                type="button"
-                onClick={() => void handleSubmit()}
-                disabled={isSending || !draft.trim()}
-                className="flex items-center gap-2 rounded-2xl bg-foreground px-5 py-2.5 text-[13px] font-bold text-background transition-all hover:brightness-90 active:scale-95 disabled:scale-100 disabled:bg-muted disabled:text-muted-foreground"
-              >
-                <SendHorizontal className="h-4 w-4" />
-                {isSending ? "جاري الإرسال" : "إرسال"}
-              </button>
             </div>
           </div>
         </div>
@@ -407,6 +514,7 @@ export default function InboxComposer({
         conversationLabel={conversation.otherUser.name}
         fileInputRef={offerFileInputRef}
         handleUploadOfferAttachments={handleUploadOfferAttachments}
+        handleSelectOfferProject={handleSelectOfferProject}
         isOpen={activeShareAction === "offer"}
         isSending={isSending}
         isUploading={isUploading}
@@ -415,6 +523,14 @@ export default function InboxComposer({
         onSubmit={handleSubmitOffer}
         projectOptions={projectOptions}
         setOfferForm={setOfferForm}
+      />
+
+      <InboxProjectPickerModal
+        isOpen={isProjectPickerOpen}
+        onClose={() => setIsProjectPickerOpen(false)}
+        onSelectProject={setSelectedProjectId}
+        projectOptions={projectOptions}
+        selectedProjectId={selectedProjectId}
       />
     </>
   );

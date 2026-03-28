@@ -20,8 +20,8 @@ function RequirementBadge({ required }: { required: boolean }) {
     <span
       className={`rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${
         required 
-          ? "bg-amber-100 text-amber-900 border border-amber-200/50" 
-          : "bg-slate-100 text-slate-500 border border-slate-200/50"
+          ? "border border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300" 
+          : "border border-border bg-muted text-muted-foreground"
       }`}
     >
       {required ? "أساسي" : "اختياري"}
@@ -36,7 +36,7 @@ function RequirementItemsList(args: {
 }) {
   if (args.filteredRequirements.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 text-sm font-medium text-slate-400 text-center">
+      <div className="rounded-2xl border border-border bg-muted/30 px-5 py-4 text-center text-sm font-medium text-muted-foreground">
         لا توجد نتائج مطابقة.
       </div>
     );
@@ -51,21 +51,21 @@ function RequirementItemsList(args: {
         onClick={() => args.onToggleRequirement(item.id)}
         className={`flex items-start gap-4 rounded-2xl border-2 p-4 text-right transition-all ${
           isChecked 
-            ? "border-slate-900 bg-white" 
-            : "border-slate-50 bg-slate-50/50 hover:bg-white"
+            ? "border-foreground bg-card shadow-sm" 
+            : "border-border bg-background hover:bg-muted/20"
         }`}
       >
         <div className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${
-          isChecked ? "border-slate-900 bg-slate-900" : "border-slate-200 bg-white"
+          isChecked ? "border-foreground bg-foreground" : "border-border bg-background"
         }`}>
           {isChecked && <Check size={12} color="white" strokeWidth={4} />}
         </div>
         <span className="space-y-1.5 flex-1">
-          <span className="flex flex-wrap items-center gap-3 text-[15px] font-black text-slate-900">
+          <span className="flex flex-wrap items-center gap-3 text-[15px] font-black text-foreground">
             {item.label}
             <RequirementBadge required={item.required} />
           </span>
-          {item.note ? <span className="block text-[13px] font-medium text-slate-500 leading-relaxed">{item.note}</span> : null}
+          {item.note ? <span className="block text-[13px] font-medium leading-relaxed text-muted-foreground">{item.note}</span> : null}
         </span>
       </button>
     );
@@ -74,7 +74,7 @@ function RequirementItemsList(args: {
 
 function RequirementSources({ sources }: Pick<RequirementsChecklistProps, "sources">) {
   return (
-    <div className="text-[13px] font-medium text-slate-400">
+    <div className="text-[13px] font-medium text-muted-foreground">
       المصادر الرسمية:
       <span className="mr-3 inline-flex flex-wrap gap-4">
         {sources.map((source) => (
@@ -83,7 +83,7 @@ function RequirementSources({ sources }: Pick<RequirementsChecklistProps, "sourc
             href={source.url} 
             target="_blank" 
             rel="noreferrer" 
-            className="text-slate-600 font-bold underline decoration-slate-200 underline-offset-4 hover:text-slate-900 hover:decoration-slate-400 transition"
+            className="font-bold text-foreground underline decoration-border underline-offset-4 transition hover:text-primary hover:decoration-primary/40"
           >
             {source.label}
           </a>
@@ -104,12 +104,12 @@ export function RequirementsChecklist({
   sources,
 }: RequirementsChecklistProps) {
   return (
-    <div className="space-y-6 rounded-[32px] border border-slate-100 bg-white p-8 shadow-sm">
+    <div className="space-y-6 rounded-[32px] border border-border bg-card p-8 shadow-sm">
       <div className="space-y-1.5 text-right">
-        <div className="text-sm font-black uppercase tracking-widest text-slate-900">
+        <div className="text-sm font-black uppercase tracking-widest text-foreground">
           مرجع المتطلبات {countryLabel ?? "للامتثال"}
         </div>
-        <div className="text-[13px] font-bold text-slate-400 uppercase">القائمة الحالية: {typeLabel}</div>
+        <div className="text-[13px] font-bold uppercase text-muted-foreground">القائمة الحالية: {typeLabel}</div>
       </div>
       
       <div className="relative">
@@ -118,9 +118,9 @@ export function RequirementsChecklist({
           placeholder="ابحث عن مستند أو متطلب..."
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          className="w-full rounded-full border border-slate-100 bg-slate-50 px-12 py-3.5 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-300 focus:border-slate-200 focus:bg-white"
+          className="w-full rounded-full border border-border bg-muted/30 px-12 py-3.5 text-sm font-medium text-foreground outline-none transition-all placeholder:text-muted-foreground/50 focus:border-ring focus:bg-background"
         />
-        <Search className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <Search className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       </div>
 
       <div className="grid gap-3">
@@ -162,10 +162,10 @@ export function DocumentsCard({
   onFilesChange,
 }: DocumentsCardProps) {
   return (
-    <div className="space-y-6 rounded-[32px] border border-slate-100 bg-white p-8 shadow-sm">
+    <div className="space-y-6 rounded-[32px] border border-border bg-card p-8 shadow-sm">
       <div className="space-y-1.5 text-right">
-        <div className="text-[15px] font-black tracking-tight text-slate-900">{title}</div>
-        <div className="text-[13px] font-medium text-slate-500">{subtitle}</div>
+        <div className="text-[15px] font-black tracking-tight text-foreground">{title}</div>
+        <div className="text-[13px] font-medium text-muted-foreground">{subtitle}</div>
       </div>
 
       <input ref={inputRef} type="file" multiple className="hidden" onChange={(event) => void onFilesChange(event)} />
@@ -173,9 +173,9 @@ export function DocumentsCard({
       <button 
         type="button" 
         onClick={() => inputRef.current?.click()} 
-        className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50/50 px-4 py-8 text-sm font-bold text-slate-600 transition hover:border-slate-200 hover:bg-slate-50"
+        className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border bg-muted/20 px-4 py-8 text-sm font-bold text-muted-foreground transition hover:border-ring/40 hover:bg-muted/30"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
            <Upload size={18} />
         </div>
         {isUploading ? uploadingLabel : idleLabel}
@@ -183,12 +183,12 @@ export function DocumentsCard({
 
       <div className="grid gap-2">
         {docs.map((doc) => (
-          <div key={doc.key} className="flex items-center justify-between rounded-xl border border-slate-100 bg-white pl-3 pr-4 py-2.5 text-[13px] font-medium text-slate-700 group hover:border-slate-200 transition">
+          <div key={doc.key} className="group flex items-center justify-between rounded-xl border border-border bg-background py-2.5 pl-3 pr-4 text-[13px] font-medium text-foreground transition hover:border-ring/40">
             <span className="truncate max-w-[200px]">{doc.name}</span>
             <button 
               type="button" 
               onClick={() => onRemoveDoc(doc.key)} 
-              className="rounded-lg px-2.5 py-1 text-[11px] font-black uppercase text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+              className="rounded-lg px-2.5 py-1 text-[11px] font-black uppercase text-muted-foreground transition hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400"
             >
               إزالة
             </button>
@@ -212,7 +212,7 @@ export function StepActions({ isSubmitting, onBack, onSkip, onSubmit }: StepActi
       <button 
         type="button" 
         onClick={onBack} 
-        className="rounded-full bg-slate-100 px-8 py-3.5 text-xs font-black uppercase tracking-widest text-slate-900 transition hover:bg-slate-200"
+        className="rounded-full bg-muted px-8 py-3.5 text-xs font-black uppercase tracking-widest text-foreground transition hover:bg-muted/80"
       >
         رجوع
       </button>
@@ -220,7 +220,7 @@ export function StepActions({ isSubmitting, onBack, onSkip, onSubmit }: StepActi
         <button 
           type="button" 
           onClick={onSkip} 
-          className="rounded-full border border-slate-200 bg-white px-8 py-3.5 text-xs font-black uppercase tracking-widest text-slate-500 transition hover:bg-slate-50"
+          className="rounded-full border border-border bg-background px-8 py-3.5 text-xs font-black uppercase tracking-widest text-muted-foreground transition hover:bg-muted/20"
         >
           تخطي الآن
         </button>
@@ -228,7 +228,7 @@ export function StepActions({ isSubmitting, onBack, onSkip, onSubmit }: StepActi
           type="button" 
           onClick={onSubmit} 
           disabled={isSubmitting} 
-          className="rounded-full bg-slate-900 px-10 py-3.5 text-xs font-black uppercase tracking-widest text-white transition hover:bg-slate-800 disabled:opacity-50 shadow-sm"
+          className="rounded-full bg-foreground px-10 py-3.5 text-xs font-black uppercase tracking-widest text-background shadow-sm transition hover:bg-foreground/90 disabled:opacity-50"
         >
           {isSubmitting ? "جارٍ الإرسال..." : "إرسال الطلب"}
         </button>

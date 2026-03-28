@@ -21,12 +21,65 @@ export type WorkspaceProjectFieldKey =
   | "bathrooms"
   | "description";
 
+export type WorkspaceOperatorFilter = {
+  label: string;
+  value: string;
+};
+
+export type WorkspaceOperatorListItem = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  meta?: string;
+};
+
+export type WorkspaceOperatorActionType =
+  | "create_project"
+  | "list_clients"
+  | "list_projects"
+  | "search_projects"
+  | "list_offers"
+  | "search_offers"
+  | "delete_project_confirmation";
+
 export type WorkspaceProjectActionCandidate = {
   type: "create_project";
   fields: Partial<Record<WorkspaceProjectFieldKey, string | number>>;
   missingFields: WorkspaceProjectFieldKey[];
   state: "collecting" | "ready" | "completed" | "failed";
 };
+
+export type WorkspaceListActionState = {
+  type:
+    | "list_clients"
+    | "list_projects"
+    | "search_projects"
+    | "list_offers"
+    | "search_offers";
+  zone: "crm" | "projects" | "offers";
+  state: "completed";
+  title: string;
+  description: string;
+  totalCount: number;
+  filters: WorkspaceOperatorFilter[];
+  items: WorkspaceOperatorListItem[];
+};
+
+export type WorkspaceDeleteProjectConfirmationState = {
+  type: "delete_project_confirmation";
+  zone: "projects";
+  state: "collecting" | "completed" | "failed";
+  projectId: string;
+  projectTitle: string;
+  description: string;
+  filters: WorkspaceOperatorFilter[];
+  requiresConfirmation: boolean;
+};
+
+export type WorkspaceActionCandidate =
+  | WorkspaceProjectActionCandidate
+  | WorkspaceListActionState
+  | WorkspaceDeleteProjectConfirmationState;
 
 export type WorkspaceStreamPhase =
   | "intent_started"
@@ -57,7 +110,7 @@ export interface WorkspaceStreamStageEvent {
 
 export interface WorkspaceStructuredOutput {
   questions: string[];
-  actionCandidate?: WorkspaceProjectActionCandidate;
+  actionCandidate?: WorkspaceActionCandidate;
 }
 
 export interface OrchestrateInput {

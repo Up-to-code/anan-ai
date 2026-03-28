@@ -1,6 +1,7 @@
 "use client";
 
 import { useConvexAuth } from "convex/react";
+import Link from "next/link";
 import { ChatHeader } from "@/client_zone/components/chat/ChatHeader";
 import { ChatAuthGateNotice } from "@/client_zone/components/chat/ChatAuthGateNotice";
 import { useClientHistory } from "@/client_zone/hooks/useClientAssistant";
@@ -39,15 +40,17 @@ export function ClientHistoryPage() {
                 <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-2">
                     <h2 className="text-sm font-semibold text-slate-900">{item.title}</h2>
-                    <p className="text-sm leading-6 text-slate-600">{item.summary}</p>
+                    <p className="text-sm leading-6 text-slate-600">{item.preview ?? dictionary.app.historyEmpty}</p>
                     <p className="text-xs text-slate-400">
                       {new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-US", {
                         dateStyle: "medium",
                         timeStyle: "short",
-                      }).format(item.createdAt)}
+                      }).format(item.updatedAt)}
                     </p>
                   </div>
-                  <Button variant="outline" onClick={() => window.location.assign("/")}>{dictionary.app.backToAssistant}</Button>
+                  <Link href={`/app?threadId=${encodeURIComponent(item.id)}`}>
+                    <Button variant="outline">{dictionary.app.backToAssistant}</Button>
+                  </Link>
                 </CardContent>
               </Card>
             ))}

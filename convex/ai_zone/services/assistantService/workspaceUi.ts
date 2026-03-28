@@ -13,13 +13,53 @@ function ensureUiTurn(turn: any, assistantText: string, actionState: WorkspaceAc
     return null;
   }
 
-  return {
-    objective: actionState.type,
-    targetZone: "projects",
-    action: {
+  const actionMap = {
+    create_project: {
       id: "create_project",
       title: "إنشاء مشروع",
       zone: "projects",
+    },
+    list_clients: {
+      id: "list_clients",
+      title: "قائمة العملاء",
+      zone: "crm",
+    },
+    list_projects: {
+      id: "list_projects",
+      title: "قائمة المشاريع",
+      zone: "projects",
+    },
+    search_projects: {
+      id: "search_projects",
+      title: "بحث المشاريع",
+      zone: "projects",
+    },
+    list_offers: {
+      id: "list_offers",
+      title: "قائمة العروض",
+      zone: "offers",
+    },
+    search_offers: {
+      id: "search_offers",
+      title: "بحث العروض",
+      zone: "offers",
+    },
+    delete_project_confirmation: {
+      id: "delete_project_confirmation",
+      title: "تأكيد حذف المشروع",
+      zone: "projects",
+    },
+  } as const;
+
+  const action = actionMap[actionState.type];
+
+  return {
+    objective: actionState.type,
+    targetZone: action.zone,
+    action: {
+      id: action.id,
+      title: action.title,
+      zone: action.zone,
       fields: [],
     },
     cards: [],

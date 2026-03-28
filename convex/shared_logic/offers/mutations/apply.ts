@@ -45,14 +45,19 @@ async function insertAppliedOfferDeal(ctx: MutationCtx, args: {
   access: Awaited<ReturnType<typeof requireVerifiedSender>>;
   propertyTitle?: string;
 }) {
+  const now = Date.now();
   await ctx.db.insert("deals", {
+    createdAt: now,
     title: `عرض عام مقبول — ${args.propertyTitle ?? "عقار"}`,
     value: args.offer.price,
     stage: "new",
+    relationType: "broker_managed",
     REDId: args.offer.fromREDId ?? args.access.REDId,
     brokerId: args.offer.fromBrokerId ?? args.access.brokerId,
+    relatedBrokerId: args.offer.fromBrokerId ?? args.access.brokerId,
     propertyId: args.offer.propertyId,
     offerId: args.offer._id,
+    lastUpdatedBy: args.access.authUserId,
   });
 }
 

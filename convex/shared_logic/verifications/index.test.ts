@@ -6,14 +6,17 @@ import { api } from "../../_generated/api";
 import { modules } from "../../test.setup";
 
 const mockRequireOrganizationMembership = vi.fn();
+const mockRequireManagerAccess = vi.fn();
 
 vi.mock("../agencies/repositories/membership", () => ({
   requireOrganizationMembership: mockRequireOrganizationMembership,
+  requireManagerAccess: mockRequireManagerAccess,
 }));
 
-function setBrokerMembership(profileId: unknown, brokerId: unknown) {
+function setBrokerMembership(profileId: unknown, brokerId: unknown, role: "manager" | "member" = "manager") {
   mockRequireOrganizationMembership.mockReset();
-  mockRequireOrganizationMembership.mockResolvedValue({
+  mockRequireManagerAccess.mockReset();
+  const membership = {
     owner: {
       ownerType: "broker",
       ownerBrokerId: brokerId,
@@ -24,10 +27,18 @@ function setBrokerMembership(profileId: unknown, brokerId: unknown) {
       authUserId: "auth-1",
     },
     membership: {
-      role: "manager",
+      role,
       status: "active",
     },
-  });
+  };
+  mockRequireOrganizationMembership.mockResolvedValue(membership);
+  if (role === "manager") {
+    mockRequireManagerAccess.mockResolvedValue(membership);
+    return;
+  }
+  mockRequireManagerAccess.mockRejectedValue(
+    new ConvexError({ code: "FORBIDDEN", message: "Manager role required" }),
+  );
 }
 
 function buildSampleVerificationPayload() {
@@ -72,8 +83,8 @@ it("rejects submissions without documents", async () => {
   const redId = await t.run((ctx) =>
     ctx.db.insert("RED", { name: "Developer One", slug: "developer-one" }),
   );
-  mockRequireOrganizationMembership.mockReset();
-  mockRequireOrganizationMembership.mockResolvedValue({
+  mockRequireManagerAccess.mockReset();
+  mockRequireManagerAccess.mockResolvedValue({
     owner: {
       ownerType: "RED",
       ownerREDId: redId,
@@ -95,6 +106,25 @@ it("rejects submissions without documents", async () => {
       {
         documents: [],
       } as never,
+    ),
+  ).rejects.toBeInstanceOf(ConvexError);
+});
+
+it("rejects organization verification submissions from non-managers", async () => {
+  const t = convexTest(schema, modules);
+  const brokerId = await t.run((ctx) =>
+    ctx.db.insert("brokers", { name: "Broker Two", slug: "broker-two" }),
+  );
+  const profileId = await t.run((ctx) =>
+    ctx.db.insert("userProfiles", { authUserId: "auth-2", brokerId }),
+  );
+
+  setBrokerMembership(profileId, brokerId, "member");
+
+  await expect(
+    t.mutation(
+      api.shared_logic.verifications.index.createVerificationRequestForCurrentOrg as never,
+      buildSampleVerificationPayload() as never,
     ),
   ).rejects.toBeInstanceOf(ConvexError);
 });

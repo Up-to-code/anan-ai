@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import "./globals.css";
 import ConvexClientProvider from "./ConvexClientProvider";
+import PostHogProvider from "./PostHogProvider";
 import { RootFontFaces, rootFontClassName } from "@/lib/rootFonts";
 import { LocaleProvider } from "@/client_zone/components/LocaleProvider";
 import { getDictionary } from "@/client_zone/i18n/dictionaries";
@@ -33,9 +34,11 @@ export default async function RootLayout({
         <RootFontFaces />
         <ConvexAuthNextjsServerProvider>
           <ConvexClientProvider>
-            <LocaleProvider locale={locale} dictionary={dictionary}>
-              {children}
-            </LocaleProvider>
+            <PostHogProvider>
+              <LocaleProvider locale={locale} dictionary={dictionary}>
+                {children}
+              </LocaleProvider>
+            </PostHogProvider>
           </ConvexClientProvider>
         </ConvexAuthNextjsServerProvider>
       </body>

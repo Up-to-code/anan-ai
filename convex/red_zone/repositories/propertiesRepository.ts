@@ -7,6 +7,7 @@ import type { Infer } from "convex/values";
 import { uploadedFileReferenceValidator } from "../../shared_logic/files";
 
 type PropertyStatus = "available" | "sold" | "reserved";
+type PropertyPublicationState = "draft" | "published" | "archived";
 
 type RedPropertyWriteFields = {
   title: string;
@@ -19,6 +20,7 @@ type RedPropertyWriteFields = {
   location?: string;
   area?: string;
   status?: PropertyStatus;
+  publicationState?: PropertyPublicationState;
   bankId?: Id<"banks">;
   media?: Infer<typeof uploadedFileReferenceValidator>[];
   body?: unknown;
@@ -83,7 +85,13 @@ export async function createRedProperty(ctx: MutationCtx, args: RedPropertyCreat
   const { REDId, ...rest } = args;
   const heroImage = rest.media?.[0];
   const searchText = buildPropertySearchText(rest);
-  return ctx.db.insert("properties", { ...rest, heroImage, searchText, REDId, publicationState: "draft" });
+  return ctx.db.insert("properties", {
+    ...rest,
+    heroImage,
+    searchText,
+    REDId,
+    publicationState: rest.publicationState ?? "draft",
+  });
 }
 
 /**

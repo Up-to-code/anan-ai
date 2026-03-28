@@ -16,7 +16,7 @@ const verificationsApi = apiUnsafe["admin_zone/verifications"] as VerificationsA
  * HOW:   Delegates to `convex/admin_zone/verifications` with the current admin token.
  */
 export const convexAdminVerificationsRepository = {
-  async list(token: string, status?: "new" | "in_review" | "approved" | "rejected") {
+  async list(token: string, status?: "new" | "in_review" | "approved" | "rejected" | "closed") {
     return fetchQuery(verificationsApi.listVerificationRequests as never, { status } as never, { token }) as Promise<Array<Record<string, unknown>>>;
   },
   async getSummary(token: string) {
@@ -25,12 +25,13 @@ export const convexAdminVerificationsRepository = {
       inReview: number;
       approved: number;
       rejected: number;
+      closed: number;
     }>;
   },
   async getDetail(token: string, id: string) {
     return fetchQuery(verificationsApi.getVerificationRequest as never, { id } as never, { token }) as Promise<Record<string, unknown> | null>;
   },
-  async review(token: string, input: { id: string; status: "in_review" | "approved" | "rejected"; reviewerId: string; reviewerNotes?: string }) {
+  async review(token: string, input: { id: string; status: "in_review" | "approved" | "rejected" | "closed"; reviewerId: string; reviewerNotes?: string }) {
     await fetchMutation(verificationsApi.reviewVerificationRequest as never, input as never, { token });
   },
 };

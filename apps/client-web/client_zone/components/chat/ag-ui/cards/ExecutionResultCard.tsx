@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/client_zone/components/ui/card";
 import { Badge } from "@/client_zone/components/ui/badge";
+import { AgUiCardHeading, AgUiCardShell } from "../AgUiCardPrimitives";
 import type { ExecutionResultCardProps } from "../types";
 
 /**
@@ -11,15 +11,12 @@ export function ExecutionResultCard(props: ExecutionResultCardProps) {
   const statusLabel = props.status === "done" ? "Ready" : props.status === "blocked" ? "Blocked" : "Info";
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle className="text-sm">{props.title}</CardTitle>
-          <Badge className="rounded-md bg-slate-100 text-slate-700">{statusLabel}</Badge>
-        </div>
-        <CardDescription>{props.description}</CardDescription>
-      </CardHeader>
-      <CardContent />
-    </Card>
+    <AgUiCardShell>
+      <AgUiCardHeading
+        title={props.title}
+        summary={props.description}
+        aside={<Badge>{statusLabel}</Badge>}
+      />
+    </AgUiCardShell>
   );
 }

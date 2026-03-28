@@ -2,6 +2,11 @@
 
 import { motion } from "framer-motion";
 import { AIMotionLogo, type AIMotionState } from "../AIMotion";
+import {
+  WorkspaceAssistantBadgeRow,
+  getWorkspaceAssistantBadges,
+  resolveAssistantDirection,
+} from "./WorkspaceAssistantBadges";
 
 /**
  * WHY:   Assistant typing needs a branded presence instead of generic dots or placeholder icons.
@@ -11,30 +16,43 @@ import { AIMotionLogo, type AIMotionState } from "../AIMotion";
 export default function TypingIndicator({
   state,
   text,
+  activeTeamId,
+  activeAgentName,
 }: {
   state: AIMotionState;
   text: string;
+  activeTeamId?: string | null;
+  activeAgentName?: string | null;
 }) {
+  const direction = resolveAssistantDirection(text);
+  const badges = getWorkspaceAssistantBadges({
+    content: text,
+    fallbackTeamId: activeTeamId,
+    fallbackAgentName: activeAgentName,
+  });
+
   return (
     <div
       className="flex min-w-0 shrink-0 items-start gap-4 bg-transparent px-0 py-2"
-      dir="rtl"
+      dir={direction}
     >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-border/40 bg-card shadow-sm dark:bg-slate-900">
         <AIMotionLogo state={state} size="compact" />
       </div>
       <div className="flex min-w-0 flex-col gap-2 pt-0.5 text-right">
-        <div className="flex items-center gap-2">
-          <div className="text-[12px] font-bold tracking-tight text-slate-900 dark:text-slate-100">Anan AI</div>
-          <div className="flex items-center gap-1.5 pt-0.5">
-            {[0, 1, 2].map((i) => (
-              <motion.span
-                key={i}
-                className="h-1.5 w-1.5 rounded-full bg-slate-400 dark:bg-slate-500"
-                animate={{ y: [0, -4, 0], opacity: [0.4, 1, 0.4] }}
-                transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15, ease: "easeInOut" }}
-              />
-            ))}
+        <div className="flex flex-col gap-2">
+          <WorkspaceAssistantBadgeRow badges={badges} dir={direction} />
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 pt-0.5">
+              {[0, 1, 2].map((i) => (
+                <motion.span
+                  key={i}
+                  className="h-1.5 w-1.5 rounded-full bg-[var(--workspace-highlight)]"
+                  animate={{ y: [0, -4, 0], opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15, ease: "easeInOut" }}
+                />
+              ))}
+            </div>
           </div>
         </div>
         {text ? (

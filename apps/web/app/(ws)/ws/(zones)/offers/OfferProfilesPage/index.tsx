@@ -1,4 +1,3 @@
-import type { OfferSenderProfile } from "../offersPageData";
 import OfferPaginationNav from "../OfferPaginationNav";
 
 export default function OfferProfilesPage({
@@ -14,7 +13,18 @@ export default function OfferProfilesPage({
 }: {
   title: string;
   description: string;
-  profiles: OfferSenderProfile[];
+  profiles: Array<{
+    id: string;
+    name: string;
+    kind: "developer" | "broker";
+    offerCount: number;
+    publicCount: number;
+    privateCount: number;
+    latestLocation: string;
+    averagePriceLabel: string;
+    topProjectTitle: string;
+    latestOfferTitle: string;
+  }>;
   totalItems: number;
   page: number;
   pageCount: number;

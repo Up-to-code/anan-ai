@@ -1,6 +1,7 @@
-import type { DealSummary } from "@/server/contracts/deals";
-import type { PropertyDetail } from "@/server/contracts/properties";
 import type { CrmClientRecord, CrmProjectReference, PipelineStage } from "./crmTypes";
+import type { BrokerPresence } from "../../_components/Visuals/BrokerPresenceChip";
+import type { PersonBadge } from "../../_lib/entities";
+import type { DealSummary } from "@/server/contracts/deals";
 
 function mapDealStage(stage: DealSummary["stage"]): PipelineStage {
   if (stage === "lost") return "lost";
@@ -16,21 +17,14 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
-/**
- * WHY:   CRM cards should reflect the real linked property when the deal already references one.
- * WHAT:  Converts a property DTO into the compact project reference used across the CRM UI.
- * HOW:   Pulls the best available image/location fields and formats the property price for direct display.
- */
-export function mapPropertyToCrmProjectReference(property: PropertyDetail): CrmProjectReference {
+export function mapProjectPreviewToCrmProjectReference(project: NonNullable<DealSummary["project"]>): CrmProjectReference {
   return {
-    id: property._id,
-    title: property.title,
-    image:
-      property.heroImage?.url ??
-      property.media?.[0]?.url ??
-      "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1200&q=80",
-    location: property.location ?? property.address,
-    priceLabel: `${formatCurrency(property.price)} ر.س`,
+    id: project.id,
+    title: project.title,
+    image: project.image,
+    location: project.location,
+    priceLabel: project.priceLabel,
+    summary: project.summary,
   };
 }
 
@@ -41,51 +35,68 @@ export function mapPropertyToCrmProjectReference(property: PropertyDetail): CrmP
  */
 export function mapDealToCrmClientRecord(
   deal: DealSummary,
-  property?: PropertyDetail | null,
 ): CrmClientRecord {
-  const project = property ? mapPropertyToCrmProjectReference(property) : null;
+  const project = deal.project ? mapProjectPreviewToCrmProjectReference(deal.project) : null;
+  const linkedBrokerBadges: PersonBadge[] | undefined = deal.linkedBroker?.isVerified ? ["verified"] : undefined;
+  const linkedBrokerState: BrokerPresence["state"] = deal.relationType === "broker_managed" ? "client-linked" : "idle";
+  const linkedBroker = deal.linkedBroker
+    ? {
+        id: deal.linkedBroker.id,
+        name: deal.linkedBroker.name,
+        avatarLabel: deal.linkedBroker.avatarLabel,
+        avatarImage: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=320&q=80",
+        state: linkedBrokerState,
+        title: "وسيط مرتبط",
+        city: project?.location,
+        projectTitle: project?.title ?? null,
+        clientName: deal.contactName ?? deal.client?.name ?? null,
+        summary: deal.linkedBroker.description ?? "يتابع هذا العميل ضمن شبكة الوسطاء.",
+        badges: linkedBrokerBadges,
+        relation: project
+          ? {
+              project: { id: project.id, title: project.title, location: project.location, image: project.image, summary: project.summary },
+              unit: null,
+              stageLabel: deal.linkedBroker.stateLabel,
+              summary: deal.notes ?? deal.description ?? undefined,
+            }
+          : null,
+      }
+    : null;
+
   return {
     id: deal.id,
     personType: "client",
+    relationType: deal.relationType ?? "internal_client",
     avatarImage: "https://images.unsplash.com/photo-1546961329-78bef0414d7c?auto=format&fit=crop&w=320&q=80",
-    avatarLabel: (deal.contactName ?? deal.title).slice(0, 1),
-    name: deal.contactName ?? deal.title,
+    avatarLabel: (deal.client?.name ?? deal.contactName ?? deal.title).slice(0, 1),
+    name: deal.client?.name ?? deal.contactName ?? deal.title,
     stage: mapDealStage(deal.stage),
     budgetLabel: deal.value ? `${formatCurrency(deal.value)} ر.س` : project?.priceLabel ?? "غير محدد",
-    preference: deal.description ?? "صفقة تحتاج متابعة",
+    preference: deal.description ?? project?.summary ?? "صفقة تحتاج متابعة",
     nextFollowUpAt: deal.nextFollowUpAt,
     project,
+    linkedClient: deal.client
+      ? {
+          id: deal.client.id,
+          name: deal.client.name,
+          phone: deal.client.phone,
+          notes: deal.client.notes,
+          sourceClientId: deal.client.sourceClientId,
+        }
+      : null,
     unit: null,
-    broker: null,
+    broker: linkedBroker,
+    relationLabel: deal.relationType === "broker_managed" ? "عميل عبر وسيط" : "عميل داخلي",
     notes: deal.notes ?? "لا توجد ملاحظات بعد.",
   };
 }
 
-/**
- * WHY:   CRM routes often need real property snapshots for several deal cards at once.
- * WHAT:  Loads a property map for every unique deal property id using the supplied resolver.
- * HOW:   De-duplicates ids first, then resolves them in parallel and returns a simple lookup map.
- */
-export async function loadCrmPropertyMap(
-  deals: DealSummary[],
-  getProperty: (input: { id: string }) => Promise<PropertyDetail | null>,
-) {
-  const propertyIds = [...new Set(deals.flatMap((deal) => (deal.propertyId ? [deal.propertyId] : [])))];
-  const entries = await Promise.all(
-    propertyIds.map(async (propertyId) => [propertyId, await getProperty({ id: propertyId })] as const),
-  );
-  return new Map(entries);
-}
-
-export function collectCrmProjects(deals: DealSummary[], propertyMap: Map<string, PropertyDetail | null>) {
+export function collectCrmProjects(deals: DealSummary[]) {
   const seen = new Map<string, CrmProjectReference>();
 
   deals.forEach((deal) => {
-    if (!deal.propertyId || seen.has(deal.propertyId)) return;
-    const property = propertyMap.get(deal.propertyId);
-    if (!property) return;
-
-    seen.set(deal.propertyId, mapPropertyToCrmProjectReference(property));
+    if (!deal.project || seen.has(deal.project.id)) return;
+    seen.set(deal.project.id, mapProjectPreviewToCrmProjectReference(deal.project));
   });
 
   return [...seen.values()];

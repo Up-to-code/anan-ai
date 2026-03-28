@@ -11,6 +11,11 @@ const { resolveWorkspaceProjectDetail } = vi.hoisted(() => ({
   resolveWorkspaceProjectDetail: vi.fn(),
 }));
 
+const { listProjectAssetsForViewer, listPropertyViewers } = vi.hoisted(() => ({
+  listProjectAssetsForViewer: vi.fn(async () => []),
+  listPropertyViewers: vi.fn(async () => []),
+}));
+
 vi.mock("next/navigation", () => ({
   notFound,
 }));
@@ -26,10 +31,32 @@ vi.mock("@/server/domains/workspace/properties/detail", () => ({
   resolveWorkspaceProjectDetail,
 }));
 
+vi.mock("@/server/auth/session", () => ({
+  requireSessionContext: vi.fn(async () => ({
+    token: "token",
+    context: { userId: "user-1", role: "broker", isActive: true, brokerId: "broker-1" },
+    profile: null,
+  })),
+}));
+
+vi.mock("@/server/infrastructure/convex/organizationAssetsRepository", () => ({
+  convexOrganizationAssetsRepository: {
+    listProjectAssetsForViewer,
+  },
+}));
+
+vi.mock("@/server/infrastructure/convex/projectAccessRepository", () => ({
+  convexProjectAccessRepository: {
+    listPropertyViewers,
+  },
+}));
+
 import WorkspaceProjectDetailRoute from "./page";
 
 beforeEach(() => {
   resolveWorkspaceProjectDetail.mockReset();
+  listProjectAssetsForViewer.mockClear();
+  listPropertyViewers.mockClear();
   notFound.mockClear();
 });
 
@@ -110,7 +137,7 @@ it("renders shared projects as read-only", async () => {
   });
   const markup = renderToStaticMarkup(element);
 
-  expect(markup).toContain("مشاهدة مشتركة");
+  expect(markup).toContain("مشاهدة فقط");
   expect(markup).not.toContain("تعديل المشروع");
   expect(markup).toContain("فتح المحادثات");
   expect(markup).toContain("تصريح خاص بهذه المحادثة");

@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/client_zone/components/ui/card";
+import { AgUiCardHeading, AgUiCardShell, CardContent, agUiInnerPanelClassName } from "../AgUiCardPrimitives";
 import type { FollowupPromptCardProps } from "../types";
 
 /**
@@ -9,17 +9,14 @@ import type { FollowupPromptCardProps } from "../types";
  */
 export function FollowupPromptCard(props: FollowupPromptCardProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm">{props.title}</CardTitle>
-        <CardDescription>{props.summary}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="inline-flex items-center gap-2 text-sm font-medium text-slate-900">
+    <AgUiCardShell>
+      <AgUiCardHeading title={props.title} summary={props.summary} />
+      <CardContent className="pt-0">
+        <div className={`inline-flex items-center gap-2 px-4 py-3 text-sm font-black text-[var(--workspace-bubble-other-foreground)] ${agUiInnerPanelClassName()}`}>
           <ArrowRight className="h-4 w-4" />
           {props.actionLabel}
         </div>
       </CardContent>
-    </Card>
+    </AgUiCardShell>
   );
 }

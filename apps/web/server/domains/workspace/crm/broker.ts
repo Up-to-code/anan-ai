@@ -4,7 +4,10 @@ import {
   addDealDocumentInputSchema,
   archiveDealInputSchema,
   createDealInputSchema,
+  type DealSelectorBroker,
+  type DealSelectorClient,
   type DealSummary,
+  type PaginatedDealsResult,
   propertyDealsInputSchema,
   updateDealInputSchema,
   updateDealFollowUpInputSchema,
@@ -73,6 +76,29 @@ export async function listBrokerDeals(
   return dependencies.crmRepository.listByBrokerId(brokerId);
 }
 
+export async function listBrokerDealsPage(
+  input: { paginationOpts: { cursor: string | null; numItems: number } },
+  dependencies: BrokerCrmDependencies = defaultDependencies,
+): Promise<PaginatedDealsResult> {
+  const { brokerId } = await requireBrokerOwner(dependencies);
+  return dependencies.crmRepository.listPageByBrokerId(brokerId, input.paginationOpts);
+}
+
+export async function listBrokerCrmClients(
+  dependencies: BrokerCrmDependencies = defaultDependencies,
+): Promise<DealSelectorClient[]> {
+  const { brokerId } = await requireBrokerOwner(dependencies);
+  return dependencies.crmRepository.listClientsByBrokerId(brokerId);
+}
+
+export async function listBrokerCrmBrokers(
+  dependencies: BrokerCrmDependencies = defaultDependencies,
+): Promise<DealSelectorBroker[]> {
+  const { brokerId } = await requireBrokerOwner(dependencies);
+  const brokers = await dependencies.crmRepository.listBrokerSelectorOptions();
+  return brokers.filter((broker) => broker.id === brokerId);
+}
+
 export async function listBrokerDealsByProperty(
   input: unknown,
   dependencies: BrokerCrmDependencies = defaultDependencies,
@@ -95,6 +121,13 @@ export async function createBrokerDeal(
   }
   if (parsed.data.propertyId) {
     await requireOwnedProperty(parsed.data.propertyId, dependencies);
+  }
+  if (parsed.data.crmClientId) {
+    const { brokerId } = await requireBrokerOwner(dependencies);
+    const ownedClient = await dependencies.crmRepository.listClientsByBrokerId(brokerId);
+    if (!ownedClient.some((entry) => entry.id === parsed.data.crmClientId)) {
+      throw new DomainError({ code: "FORBIDDEN", message: "Cannot access this client", status: 403 });
+    }
   }
   const { brokerId, authUserId } = await requireBrokerOwner(dependencies);
   return dependencies.crmRepository.create({
@@ -133,6 +166,13 @@ export async function updateBrokerDeal(
   await requireOwnedDeal(parsed.data.dealId, dependencies);
   if (parsed.data.propertyId) {
     await requireOwnedProperty(parsed.data.propertyId, dependencies);
+  }
+  if (parsed.data.crmClientId) {
+    const { brokerId } = await requireBrokerOwner(dependencies);
+    const ownedClient = await dependencies.crmRepository.listClientsByBrokerId(brokerId);
+    if (!ownedClient.some((entry) => entry.id === parsed.data.crmClientId)) {
+      throw new DomainError({ code: "FORBIDDEN", message: "Cannot access this client", status: 403 });
+    }
   }
   const { authUserId } = await requireBrokerOwner(dependencies);
   await dependencies.crmRepository.update({ ...parsed.data, lastUpdatedBy: authUserId });

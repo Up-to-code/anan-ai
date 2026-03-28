@@ -1,7 +1,5 @@
 import type { OfferActionResult } from "@/server/contracts/offers";
 
-import type { OfferMarketplaceItem } from "../offerTypes";
-
 export type DeliveryFeedback = {
   targetName: string;
   organizationName: string;
@@ -34,19 +32,4 @@ export function getPushStatusLabel(pushStatus: DeliveryFeedback["pushStatus"]) {
   if (pushStatus === "failed") return "تعذر إرسال الإشعار الفوري، لكن التنبيه سُجل داخل النظام.";
   if (pushStatus === "skipped") return "تم تسجيل التنبيه بدون Push على هذا الحساب.";
   return "الإشعار الفوري قيد المعالجة لهذا الحساب.";
-}
-
-export function getLinkedProject(offer: OfferMarketplaceItem) {
-  if (!offer.projectRefId) {
-    return null;
-  }
-
-  return {
-    id: offer.projectRefId,
-    name: offer.project.title,
-    image: offer.image,
-    location: offer.location,
-    type: offer.propertyType,
-    description: offer.summary,
-  };
 }

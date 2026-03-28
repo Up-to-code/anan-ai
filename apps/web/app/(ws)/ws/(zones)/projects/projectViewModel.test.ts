@@ -41,6 +41,8 @@ it("preserves uploaded images as media references", () => {
     rooms: "4",
     baths: "5",
     area: "420",
+    status: "active",
+    clientVisibility: "public",
     images,
     adLicenseNumber: "  AD-1234  ",
   });
@@ -51,6 +53,8 @@ it("preserves uploaded images as media references", () => {
   expect(mapped.price).toBe(2500000);
   expect(mapped.sqft).toBe(420);
   expect(mapped.adLicenseNumber).toBe("AD-1234");
+  expect(mapped.status).toBe("available");
+  expect(mapped.publicationState).toBe("published");
   expect(mapped.media?.[0]?.key).toBe("file-2");
   expect(mapped.body).toEqual({
     presentation: {
@@ -93,6 +97,8 @@ it("maps invalid numeric fields to safe defaults", () => {
     rooms: "",
     baths: "غير معروف",
     area: "n/a",
+    status: "pending",
+    clientVisibility: "private",
     images: [],
   });
 
@@ -100,6 +106,8 @@ it("maps invalid numeric fields to safe defaults", () => {
   expect(mapped.beds).toBe(0);
   expect(mapped.baths).toBe(0);
   expect(mapped.sqft).toBeUndefined();
+  expect(mapped.status).toBe("reserved");
+  expect(mapped.publicationState).toBe("draft");
   expect(mapped.media).toEqual([]);
   expect(mapped.body).toEqual({
     presentation: {

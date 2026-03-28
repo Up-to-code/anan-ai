@@ -17,6 +17,7 @@ export const VOICE_SILENCE_AUTOSTOP_MS = 1_000;
 
 type ProcessingPhase =
   | "idle"
+  | "waiting_for_permission"
   | "waiting_for_speech"
   | "recording"
   | "silence_countdown"
@@ -24,6 +25,8 @@ type ProcessingPhase =
   | "transcribing"
   | "sending"
   | "error";
+
+type MicrophonePermissionState = "unknown" | "unsupported" | "prompt" | "granted" | "denied";
 
 type RecorderRefs = {
   streamRef: React.MutableRefObject<MediaStream | null>;
@@ -40,6 +43,7 @@ type RecorderRefs = {
   hasDetectedSpeechRef: React.MutableRefObject<boolean>;
   silenceStartedAtRef: React.MutableRefObject<number | null>;
   autoStopRequestedRef: React.MutableRefObject<boolean>;
+  stopInFlightRef: React.MutableRefObject<boolean>;
 };
 
 export function resolveVoiceActivityPhase(args: {
@@ -100,6 +104,7 @@ function useRecorderRefs(): RecorderRefs {
     hasDetectedSpeechRef: useRef(false),
     silenceStartedAtRef: useRef<number | null>(null),
     autoStopRequestedRef: useRef(false),
+    stopInFlightRef: useRef(false),
   };
 }
 
@@ -152,7 +157,26 @@ function cleanupStream(refs: RecorderRefs) {
   refs.mediaRecorderRef.current = null;
   refs.recordedChunksRef.current = [];
   refs.stopPromiseRef.current = null;
+  refs.stopInFlightRef.current = false;
   resetVoiceDetection(refs);
+}
+
+function resetRecorderSession(args: {
+  refs: RecorderRefs;
+  resetLevels: () => void;
+  setElapsedMs: React.Dispatch<React.SetStateAction<number>>;
+  setIsRecording: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsTranscribing: React.Dispatch<React.SetStateAction<boolean>>;
+  setProcessingPhase: React.Dispatch<React.SetStateAction<ProcessingPhase>>;
+}) {
+  clearTimers(args.refs);
+  cleanupAudioGraph(args.refs);
+  cleanupStream(args.refs);
+  args.resetLevels();
+  args.setElapsedMs(0);
+  args.setIsRecording(false);
+  args.setIsTranscribing(false);
+  args.setProcessingPhase("idle");
 }
 
 function markError(
@@ -191,11 +215,56 @@ function initializeAudioGraph(refs: RecorderRefs, stream: MediaStream) {
   refs.analyserDataRef.current = new Uint8Array(analyser.frequencyBinCount);
 }
 
+/**
+ * WHY:   Manual stop should terminate browser microphone capture immediately instead of waiting for upload/transcription.
+ * WHAT:  Stops timers, level sampling, recorder capture, and media tracks exactly once for the active session.
+ * HOW:   Uses a ref-based in-flight guard so manual stop and silence auto-stop cannot double-stop the same recorder.
+ */
+export function stopRecorderCapture(refs: Pick<
+  RecorderRefs,
+  "streamRef" | "mediaRecorderRef" | "stopInFlightRef" | "durationIntervalRef" | "stopTimeoutRef" | "animationFrameRef" | "audioContextRef" | "analyserRef" | "analyserDataRef"
+>) {
+  const recorder = refs.mediaRecorderRef.current;
+  if (!recorder || refs.stopInFlightRef.current) {
+    return { didStop: false };
+  }
+
+  refs.stopInFlightRef.current = true;
+  clearTimers(refs as RecorderRefs);
+  cleanupAudioGraph(refs as RecorderRefs);
+
+  const stream = refs.streamRef.current;
+  refs.streamRef.current = null;
+  stopTracks(stream);
+
+  if (recorder.state !== "inactive") {
+    recorder.stop();
+  }
+
+  return { didStop: true };
+}
+
 async function getRecordingStream() {
   try {
     return await navigator.mediaDevices.getUserMedia(HIGH_QUALITY_AUDIO_CONSTRAINTS);
   } catch {
     return navigator.mediaDevices.getUserMedia({ audio: true });
+  }
+}
+
+async function getMicrophonePermissionState(): Promise<MicrophonePermissionState> {
+  if (typeof navigator === "undefined" || !("permissions" in navigator) || typeof navigator.permissions?.query !== "function") {
+    return "unsupported";
+  }
+
+  try {
+    const result = await navigator.permissions.query({ name: "microphone" as PermissionName });
+    if (result.state === "granted" || result.state === "prompt" || result.state === "denied") {
+      return result.state;
+    }
+    return "unknown";
+  } catch {
+    return "unsupported";
   }
 }
 
@@ -312,6 +381,7 @@ function useStopRecordingAction(args: {
   setIsTranscribing: React.Dispatch<React.SetStateAction<boolean>>;
   setProcessingPhase: React.Dispatch<React.SetStateAction<ProcessingPhase>>;
   setElapsedMs: React.Dispatch<React.SetStateAction<number>>;
+  setIsPanelOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const {
     refs,
@@ -324,20 +394,15 @@ function useStopRecordingAction(args: {
     setIsTranscribing,
     setProcessingPhase,
     setElapsedMs,
+    setIsPanelOpen,
   } = args;
 
   return useCallback(async () => {
-    const recorder = refs.mediaRecorderRef.current;
-    if (!recorder) return;
-
-    clearTimers(refs);
-    cleanupAudioGraph(refs);
-
-    if (recorder.state === "inactive") return;
+    const stopResult = stopRecorderCapture(refs);
+    if (!stopResult.didStop) return;
 
     setIsRecording(false);
     setProcessingPhase("uploading");
-    recorder.stop();
 
     const blob = await resolveRecordedBlob(refs, (message) => {
       cleanupStream(refs);
@@ -355,7 +420,9 @@ function useStopRecordingAction(args: {
       setElapsedMs(0);
       resetLevels();
       setProcessingPhase("idle");
+      setIsPanelOpen(false);
     } catch (error) {
+      setIsPanelOpen(true);
       markError(
         setProcessingPhase,
         emitError,
@@ -372,10 +439,52 @@ function useStopRecordingAction(args: {
     refs,
     resetLevels,
     setElapsedMs,
+    setIsPanelOpen,
     setIsRecording,
     setIsTranscribing,
     setProcessingPhase,
     transcribeFromStorage,
+  ]);
+}
+
+function useCancelRecordingAction(args: {
+  refs: RecorderRefs;
+  resetLevels: () => void;
+  setElapsedMs: React.Dispatch<React.SetStateAction<number>>;
+  setIsRecording: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsTranscribing: React.Dispatch<React.SetStateAction<boolean>>;
+  setProcessingPhase: React.Dispatch<React.SetStateAction<ProcessingPhase>>;
+  setIsPanelOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
+  const {
+    refs,
+    resetLevels,
+    setElapsedMs,
+    setIsRecording,
+    setIsTranscribing,
+    setProcessingPhase,
+    setIsPanelOpen,
+  } = args;
+
+  return useCallback(() => {
+    stopRecorderCapture(refs);
+    resetRecorderSession({
+      refs,
+      resetLevels,
+      setElapsedMs,
+      setIsRecording,
+      setIsTranscribing,
+      setProcessingPhase,
+    });
+    setIsPanelOpen(false);
+  }, [
+    refs,
+    resetLevels,
+    setElapsedMs,
+    setIsPanelOpen,
+    setIsRecording,
+    setIsTranscribing,
+    setProcessingPhase,
   ]);
 }
 
@@ -389,9 +498,12 @@ function useStartRecordingAction(args: {
   resetLevels: () => void;
   stopRecording: () => Promise<void>;
   setIsRecording: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsTranscribing: React.Dispatch<React.SetStateAction<boolean>>;
   setProcessingPhase: React.Dispatch<React.SetStateAction<ProcessingPhase>>;
   setElapsedMs: React.Dispatch<React.SetStateAction<number>>;
   setLevels: React.Dispatch<React.SetStateAction<number[]>>;
+  setIsPanelOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setPermissionState: React.Dispatch<React.SetStateAction<MicrophonePermissionState>>;
 }) {
   const {
     refs,
@@ -403,16 +515,22 @@ function useStartRecordingAction(args: {
     resetLevels,
     stopRecording,
     setIsRecording,
+    setIsTranscribing,
     setProcessingPhase,
     setElapsedMs,
     setLevels,
+    setIsPanelOpen,
+    setPermissionState,
   } = args;
 
   return useCallback(async () => {
     if (disabled || isRecording || isTranscribing) return;
 
     try {
+      setIsPanelOpen(true);
+      setProcessingPhase("waiting_for_permission");
       const stream = await getRecordingStream();
+      setPermissionState("granted");
       assignRecordingStream(refs, stream);
       resetVoiceDetection(refs);
 
@@ -422,16 +540,32 @@ function useStartRecordingAction(args: {
 
       setElapsedMs(0);
       setIsRecording(true);
+      refs.stopInFlightRef.current = false;
       setProcessingPhase("waiting_for_speech");
       sampleLevels({ refs, setLevels, setProcessingPhase, stopRecording });
       recorder.start(250);
       scheduleRecordingTimers(refs, maxDurationMs, setElapsedMs, stopRecording);
-    } catch {
-      cleanupStream(refs);
-      cleanupAudioGraph(refs);
-      clearTimers(refs);
-      resetLevels();
-      markError(setProcessingPhase, emitError, "فشل الوصول إلى الميكروفون. تأكد من منح الإذن للمتصفح.");
+    } catch (error) {
+      const nextPermissionState = await getMicrophonePermissionState();
+      setPermissionState(nextPermissionState);
+      resetRecorderSession({
+        refs,
+        resetLevels,
+        setElapsedMs,
+        setIsRecording,
+        setIsTranscribing,
+        setProcessingPhase,
+      });
+      setIsPanelOpen(true);
+      markError(
+        setProcessingPhase,
+        emitError,
+        nextPermissionState === "denied"
+          ? "تم رفض إذن الميكروفون. اسمح به من المتصفح ثم اضغط إعادة المحاولة."
+          : error instanceof DOMException && error.name === "NotFoundError"
+            ? "لا يوجد ميكروفون متاح على هذا الجهاز حالياً."
+            : "تعذر تشغيل الميكروفون حالياً. اضغط إعادة المحاولة لطلب الإذن مرة أخرى.",
+      );
     }
   }, [
     disabled,
@@ -442,7 +576,10 @@ function useStartRecordingAction(args: {
     refs,
     resetLevels,
     setElapsedMs,
+    setIsPanelOpen,
+    setPermissionState,
     setIsRecording,
+    setIsTranscribing,
     setLevels,
     setProcessingPhase,
     stopRecording,
@@ -464,6 +601,8 @@ export function useVoiceRecorder({
 }: UseVoiceRecorderParams) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [permissionState, setPermissionState] = useState<MicrophonePermissionState>("unknown");
   const [processingPhase, setProcessingPhase] = useState<ProcessingPhase>("idle");
   const [elapsedMs, setElapsedMs] = useState(0);
   const [levels, setLevels] = useState<number[]>(createEmptyLevels);
@@ -483,6 +622,17 @@ export function useVoiceRecorder({
     setIsTranscribing,
     setProcessingPhase,
     setElapsedMs,
+    setIsPanelOpen,
+  });
+
+  const cancelRecording = useCancelRecordingAction({
+    refs,
+    resetLevels,
+    setElapsedMs,
+    setIsRecording,
+    setIsTranscribing,
+    setProcessingPhase,
+    setIsPanelOpen,
   });
 
   const startRecording = useStartRecordingAction({
@@ -495,35 +645,75 @@ export function useVoiceRecorder({
     resetLevels,
     stopRecording,
     setIsRecording,
+    setIsTranscribing,
     setProcessingPhase,
     setElapsedMs,
     setLevels,
+    setIsPanelOpen,
+    setPermissionState,
   });
+
+  const requestMicrophonePermission = useCallback(async () => {
+    setIsPanelOpen(true);
+    setProcessingPhase("waiting_for_permission");
+    try {
+      const stream = await getRecordingStream();
+      setPermissionState("granted");
+      stopTracks(stream);
+      setProcessingPhase("idle");
+      await startRecording();
+    } catch (error) {
+      const nextPermissionState = await getMicrophonePermissionState();
+      setPermissionState(nextPermissionState);
+      setProcessingPhase("error");
+      emitError(
+        nextPermissionState === "denied"
+          ? "تم رفض إذن الميكروفون. اسمح به من المتصفح ثم اضغط إعادة المحاولة."
+          : "تعذر تشغيل الميكروفون حالياً. اضغط إعادة المحاولة لطلب الإذن مرة أخرى.",
+      );
+    }
+  }, [emitError, startRecording]);
 
   const toggleRecording = useCallback(async () => {
     if (isRecording) {
       await stopRecording();
       return;
     }
+    if (isTranscribing) {
+      return;
+    }
     await startRecording();
-  }, [isRecording, startRecording, stopRecording]);
+  }, [isRecording, isTranscribing, startRecording, stopRecording]);
+
+  useEffect(() => {
+    void getMicrophonePermissionState().then(setPermissionState);
+  }, []);
 
   useEffect(() => {
     return () => {
-      clearTimers(refs);
-      cleanupAudioGraph(refs);
-      cleanupStream(refs);
+      resetRecorderSession({
+        refs,
+        resetLevels,
+        setElapsedMs,
+        setIsRecording,
+        setIsTranscribing,
+        setProcessingPhase,
+      });
     };
-  }, [refs]);
+  }, [refs, resetLevels]);
 
   return {
     elapsedMs,
     isRecording,
+    isPanelOpen,
     isTranscribing,
+    permissionState,
     processingPhase,
     levels,
     startRecording,
     stopRecording,
+    cancelRecording,
+    requestMicrophonePermission,
     toggleRecording,
   };
 }

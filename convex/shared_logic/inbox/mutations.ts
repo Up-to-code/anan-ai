@@ -7,6 +7,7 @@ import { enforceHttpRateLimit } from "../lib/middleware/rateLimit";
 import { getConversationParticipant, resolveConversationInternal } from "./conversations";
 import { getProfileByAuthUserId } from "./profiles";
 import { appendInboxOfferEvent } from "./offerEvents";
+import { getOfferLiveStateService } from "../offers/index";
 import {
   assertNonEmptyMessage,
   assertMessageableOfferTarget,
@@ -242,23 +243,22 @@ export const sendConversationMessage = mutation({
 
 export const bootstrapOfferConversation = mutation({
   args: {
-    offerId: v.id("offers"),
+    offerId: v.string(),
   },
   handler: async (ctx, { offerId }) => {
     const access = await requireRole(ctx, ["broker", "RED"]);
-    const offer = await ctx.db.get(offerId);
+    const offer = await getOfferLiveStateService(ctx, { offerId });
     if (!offer) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Offer not found" });
     }
 
     const targets = resolveOfferConversationTargets(offer, access);
     assertMessageableOfferTarget(targets);
-    const property = await ctx.db.get(offer.propertyId);
     const starter = await appendInboxOfferEvent(
       ctx,
       buildOfferBootstrapEventPayload({
         offer,
-        propertyTitle: property?.title,
+        propertyTitle: offer.property?.title,
         senderUserId: access.authUserId,
         targets,
       }),

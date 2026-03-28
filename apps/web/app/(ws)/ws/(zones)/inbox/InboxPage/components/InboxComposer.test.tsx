@@ -86,12 +86,27 @@ it("renders the compact share menu options", () => {
   expect(html).toContain("إرفاق ملف");
 });
 
+it("renders explicit disabled guidance for unavailable quick actions", () => {
+  const html = renderToStaticMarkup(
+    <InboxQuickShareMenu
+      activeAction={null}
+      canCreateOffer={false}
+      canShareProjects={false}
+      onSelectAction={() => {}}
+    />,
+  );
+
+  expect(html).toContain("تحتاج إلى مشروع واحد على الأقل");
+  expect(html).toContain("أضف مشروعًا أولًا");
+});
+
 it("renders the offer modal with the simplified quick-send copy", () => {
   const html = renderToStaticMarkup(
     <InboxOfferModal
       conversationLabel="Broker B"
       fileInputRef={{ current: null }}
       handleUploadOfferAttachments={async () => {}}
+      handleSelectOfferProject={() => {}}
       isOpen
       isSending={false}
       isUploading={false}

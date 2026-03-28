@@ -7,6 +7,11 @@ import {
   mobileQualificationContextValidator,
 } from "./contracts";
 
+function describeFailure(error: unknown) {
+  if (error instanceof Error && error.message.trim()) return error.message;
+  return "unknown_failure";
+}
+
 /**
  * WHY:   The mobile feed needs a property-aware assistant that returns UI cards rather than plain chat prose.
  * WHAT:  Generates a typed assistant response for ROI, payment plans, mortgage checks, permits, or comparisons.
@@ -46,39 +51,84 @@ export const createQualifiedHandoff = mutation({
     message: v.string(),
     qualification: v.optional(mobileQualificationContextValidator),
     externalUserId: v.optional(v.string()),
+    threadId: v.optional(v.string()),
+    sourceChannel: v.optional(v.union(v.literal("app"), v.literal("web"))),
   },
   returns: v.object({
     orderId: v.id("orders"),
     status: v.literal("qualified"),
   }),
   handler: async (ctx, args) => {
-    const property = await ctx.db.get(args.propertyId);
-    if (!property) {
-      throw new ConvexError({ code: "NOT_FOUND", message: "Property not found for qualified handoff" });
+    const fallbackDistinctId = args.threadId?.trim()
+      ? `thread:${args.threadId.trim()}`
+      : `property:${String(args.propertyId)}`;
+
+    try {
+      const property = await ctx.db.get(args.propertyId);
+      if (!property) {
+        throw new ConvexError({ code: "NOT_FOUND", message: "Property not found for qualified handoff" });
+      }
+
+      const authUserId = await getAuthUserId(ctx);
+      const userId = authUserId ?? args.externalUserId;
+      if (!userId) {
+        throw new ConvexError({ code: "UNAUTHORIZED", message: "A user id is required for qualified handoff" });
+      }
+
+      const orderId = await ctx.db.insert("orders", {
+        userId,
+        type: "property",
+        status: "qualified",
+        propertyId: args.propertyId,
+        REDId: property.REDId,
+        intent: "mobile_ai_handoff",
+        notes: buildQualificationNotes(args.message, args.qualification, property.title),
+        assignedTo: property.brokerId ? `broker:${String(property.brokerId)}` : undefined,
+        threadId: args.threadId,
+        sourceChannel: args.sourceChannel ?? "app",
+      });
+
+      await ctx.scheduler.runAfter(
+        0,
+        (internal as any)["shared_logic/analytics/posthog"].captureEvent,
+        {
+          event: "qualified_order_created",
+          distinctId: userId ?? fallbackDistinctId,
+          properties: {
+            orderId: String(orderId),
+            propertyId: String(args.propertyId),
+            sourceChannel: args.sourceChannel ?? "app",
+            status: "qualified",
+            threadId: args.threadId,
+            userId,
+          },
+        },
+      );
+
+      return {
+        orderId,
+        status: "qualified" as const,
+      };
+    } catch (error) {
+      await ctx.scheduler.runAfter(
+        0,
+        (internal as any)["shared_logic/analytics/posthog"].captureEvent,
+        {
+          event: "qualified_handoff_failed",
+          distinctId: args.externalUserId?.trim() || fallbackDistinctId,
+          properties: {
+            propertyId: String(args.propertyId),
+            sourceChannel: args.sourceChannel ?? "app",
+            status: "failed",
+            threadId: args.threadId,
+            failureCode: describeFailure(error),
+            userId: args.externalUserId,
+          },
+        },
+      );
+
+      throw error;
     }
-
-    const authUserId = await getAuthUserId(ctx);
-    const userId = authUserId ?? args.externalUserId;
-    if (!userId) {
-      throw new ConvexError({ code: "UNAUTHORIZED", message: "A user id is required for qualified handoff" });
-    }
-
-    const orderId = await ctx.db.insert("orders", {
-      userId,
-      type: "property",
-      status: "qualified",
-      propertyId: args.propertyId,
-      REDId: property.REDId,
-      intent: "mobile_ai_handoff",
-      notes: buildQualificationNotes(args.message, args.qualification, property.title),
-      assignedTo: property.brokerId ? `broker:${String(property.brokerId)}` : undefined,
-      sourceChannel: "app",
-    });
-
-    return {
-      orderId,
-      status: "qualified" as const,
-    };
   },
 });
 

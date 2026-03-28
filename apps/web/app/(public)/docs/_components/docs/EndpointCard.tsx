@@ -8,7 +8,9 @@ function methodClassName(method: DocsEndpoint["method"]) {
     ? "bg-emerald-500 text-white"
     : method === "POST"
     ? "bg-indigo-600 text-white"
-    : "bg-amber-500 text-white";
+    : method === "PATCH"
+    ? "bg-amber-500 text-white"
+    : "bg-rose-600 text-white";
 }
 
 export default function EndpointCard({ endpoint }: { endpoint: DocsEndpoint }) {

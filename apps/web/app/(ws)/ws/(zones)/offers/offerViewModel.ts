@@ -1,65 +1,51 @@
-import type { OfferSummary } from "@/server/contracts/offers";
-import type { PropertyDetail } from "@/server/contracts/properties";
-import type { OfferMarketplaceItem } from "./offerTypes";
+import { parsePropertyBody, type PropertyDetail } from "@/server/contracts/properties";
+import type { OfferPropertyOption, WorkspaceOfferSummary } from "./offerTypes";
 
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", {
+export function formatOfferPrice(value: number) {
+  return `${new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(value)} ر.س`;
 }
 
-function formatPriceLabel(value?: number) {
-  if (!value || Number.isNaN(value)) return null;
-  return `${formatCurrency(value)} ر.س`;
+export function formatOfferStageLabel(stage: WorkspaceOfferSummary["stage"]) {
+  switch (stage) {
+    case "draft":
+      return "مسودة";
+    case "open":
+      return "مفتوح";
+    case "targeted":
+      return "موجّه";
+    case "engaged":
+      return "تعاون نشط";
+    case "agreed":
+      return "تم الاتفاق";
+    case "closed_won":
+      return "مغلقة - ناجحة";
+    case "closed_lost":
+      return "مغلقة - غير مكتملة";
+    case "archived":
+      return "مؤرشفة";
+    default:
+      return stage;
+  }
 }
 
-export function mapOfferToMarketplaceItem(
-  offer: OfferSummary,
-  source: OfferMarketplaceItem["source"] = "marketplace",
-): OfferMarketplaceItem {
-  const kind = offer.senderName?.includes("شركة") ? "developer" : "broker";
-  const linkedProperty = offer.property
-    ? {
-        id: offer.property.id,
-        title: offer.property.title,
-        image:
-          offer.property.imageUrl ??
-          "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1200&q=80",
-        location: offer.property.address ?? "غير محدد",
-        askingPriceLabel: formatPriceLabel(offer.property.price),
-      }
-    : null;
-
-  return {
-    id: offer.id,
-    title: offer.message ?? offer.description ?? offer.property?.title ?? "عرض جديد",
-    kind,
-    source,
-    image:
-      offer.property?.imageUrl ??
-      "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1200&q=80",
-    location: offer.property?.address ?? "غير محدد",
-    priceLabel: `${formatCurrency(offer.price)} ر.س`,
-    propertyType: offer.visibility === "public" ? "عرض عام" : "عرض خاص",
-    ownerLabel: offer.senderName ?? "صاحب العرض",
-    summary: offer.description ?? offer.message ?? "لا يوجد وصف إضافي.",
-    linkedProperty,
-    fallbackDetails: null,
-    project: {
-      id: offer.property?.id ?? offer.propertyId,
-      title: offer.property?.title ?? "عقار مرتبط",
-      rooms: "غير محدد",
-      baths: "غير محدد",
-      area: "غير محدد",
-    },
-    projectRefId: offer.property?.id ?? offer.propertyId,
-    unit: null,
-    broker: null,
-    demandLabel: offer.visibility === "public" ? "متاح في السوق" : null,
-  };
+export function formatOfferTypeLabel(type: WorkspaceOfferSummary["type"]) {
+  switch (type) {
+    case "open_offer":
+      return "عرض مفتوح";
+    case "private_offer":
+      return "مشاركة خاصة";
+    case "collaboration_case":
+      return "حالة تعاون";
+    default:
+      return type;
+  }
 }
 
-export function mapPropertyToOfferOption(property: PropertyDetail) {
+export function mapPropertyToOfferOption(property: PropertyDetail): OfferPropertyOption {
+  const presentation = parsePropertyBody(property.body)?.presentation;
+
   return {
     id: property._id,
     title: property.title,
@@ -69,5 +55,7 @@ export function mapPropertyToOfferOption(property: PropertyDetail) {
       property.media?.[0]?.url ??
       "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1200&q=80",
     expectedPrice: String(property.price),
+    shortDescription: presentation?.descriptionShort ?? property.description,
+    publicationState: property.publicationState,
   };
 }
