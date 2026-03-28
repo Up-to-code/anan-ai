@@ -83,6 +83,24 @@ In practice this means:
 - projections are designed intentionally for the consuming surface
 - new channels should reuse the same domain capabilities instead of forking logic
 
+### End-to-end request flow
+
+This is the default feature path when code is written correctly:
+
+```mermaid
+flowchart LR
+    A["User or operator action"] --> B["Surface\napps/web | apps/admin | apps/mobile | channel"]
+    B --> C["Owning layer\npage / route / adapter"]
+    C --> D["Convex entrypoint\nquery / mutation / action / httpAction"]
+    D --> E["Policy + identity\nconvex/_core"]
+    E --> F["Owning backend zone"]
+    F --> G["Shared capability\nconvex/shared_logic"]
+    G --> H["Projection / response"]
+    H --> I["UI or channel update"]
+```
+
+The important constraint is that the surface starts the flow, but the backend owns the rule.
+
 ## Why Convex Is the Center
 
 Convex is not just the database layer in this repo. It is the operational center of the platform.
@@ -188,6 +206,23 @@ Unauthenticated and public entry flows:
 
 This zone is for public access and entry, not for privileged business workflows.
 
+## Zone Ownership Map
+
+Use this as the fast answer to "who should do this work?" when you are writing code.
+
+| Need | Owning zone / layer | Why |
+| --- | --- | --- |
+| Schema, auth, identity normalization, access rules | `convex/_core` | These are platform invariants |
+| Shared business rules used by multiple audiences | `convex/shared_logic` | The capability should exist once |
+| AI orchestration, tool use, channel assistant behavior | `convex/ai_zone` | This is assistant execution logic |
+| Buyer/investor-specific product behavior | `convex/user_zone` | User flows have their own entrypoints and projections |
+| Broker-specific workflows or broker-facing projections | `convex/broker_zone` | Broker ownership belongs here |
+| Developer (RED)-specific workflows or projections | `convex/red_zone` | RED operations belong here |
+| Admin-only operations, moderation, internal tooling | `convex/admin_zone` | Platform operation stays isolated |
+| Public pages, public auth flows, unauthenticated entry | `convex/public_zone` | Public access has different constraints |
+| UI rendering, navigation, local interaction state | `apps/*` | Surfaces deliver the experience, not domain truth |
+| Stable reusable cross-surface system | `packages/*` | Only when the abstraction is durable |
+
 ## Repo Map
 
 A fast way to understand where work belongs:
@@ -211,6 +246,69 @@ Use `packages/*` only for stable shared systems. Large code does not automatical
 - Durable cross-surface system with stable public APIs: `packages/`
 
 If you are unsure, the safest question is not "where can I make this work?" but "who should own this behavior long-term?"
+
+## Who Should Do What When Writing Code
+
+When you start a feature, choose the owner before you write implementation code.
+
+### 1. Start with the audience
+
+- If the change is mainly for buyers or investors, start by checking `user_zone`
+- If it is mainly for brokers, start by checking `broker_zone`
+- If it is mainly for developers (RED), start by checking `red_zone`
+- If it is mainly for platform staff or internal operations, start by checking `admin_zone`
+- If it is public-facing or unauthenticated, start by checking `public_zone`
+- If it is assistant or channel execution, start by checking `ai_zone`
+
+### 2. Ask whether the rule is shared
+
+- If the rule will be reused by more than one audience, move the business logic into `convex/shared_logic`
+- If the rule defines security, schema, or identity, move it down into `convex/_core`
+- If the logic is only presentation or navigation, keep it in the surface app
+
+### 3. Keep each layer doing its job
+
+- `apps/*` should render screens, manage local interaction, and call backend entrypoints
+- role zones should expose audience-specific entrypoints and projections
+- `shared_logic` should contain reusable domain capabilities
+- `_core` should enforce foundational rules
+- `ai_zone` should orchestrate AI behavior by calling shared capabilities instead of reimplementing them
+
+### 4. Avoid these ownership mistakes
+
+- Do not put shared business rules directly in `apps/*`
+- Do not put broker-only or RED-only behavior straight into `shared_logic`
+- Do not put product-specific domain logic into `_core`
+- Do not let `ai_zone` become a second backend with copied business rules
+- Do not create a package just because a folder is getting large
+
+### Writing-code decision chart
+
+```mermaid
+flowchart TD
+    A["New feature or change"] --> B{"Is it only UI / navigation / local state?"}
+    B -- Yes --> C["Keep it in the owning app under apps/*"]
+    B -- No --> D{"Is it schema / auth / identity / policy?"}
+    D -- Yes --> E["Put it in convex/_core"]
+    D -- No --> F{"Is it AI orchestration or channel execution?"}
+    F -- Yes --> G["Put orchestration in convex/ai_zone"]
+    F -- No --> H{"Is it shared across multiple audiences?"}
+    H -- Yes --> I["Put capability in convex/shared_logic"]
+    H -- No --> J{"Who owns the workflow?"}
+    J --> K["buyer/investor -> convex/user_zone"]
+    J --> L["broker -> convex/broker_zone"]
+    J --> M["developer RED -> convex/red_zone"]
+    J --> N["admin/operator -> convex/admin_zone"]
+    J --> O["public entry -> convex/public_zone"]
+```
+
+### Real examples
+
+- Adding a broker-only dashboard projection: `convex/broker_zone`
+- Adding offer matching reused by broker, RED, and assistant flows: `convex/shared_logic`
+- Adding a WhatsApp-specific assistant action: `convex/ai_zone`
+- Adding a new auth redirect rule: `convex/_core`
+- Adding a mobile-only screen state improvement: `apps/mobile`
 
 ## How To Work In This Repo
 
