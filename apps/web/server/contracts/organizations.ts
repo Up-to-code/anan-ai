@@ -1,4 +1,32 @@
 import { z } from "zod";
+import type { UploadedFileReference } from "@/server/contracts/files";
+
+export type OrganizationVerificationRequestStatus =
+  | "not_submitted"
+  | "new"
+  | "in_review"
+  | "approved"
+  | "rejected"
+  | "closed";
+
+/**
+ * WHY:   Workspace settings need a stable organization-wide verification read model.
+ * WHAT:  Summarizes the latest organization verification request plus the derived publishing gate.
+ * HOW:   Mirrors the latest org-scoped verification request and augments it with computed blocking state.
+ */
+export type OrganizationVerificationSummary = {
+  isVerified: boolean;
+  currentRequestId: string | null;
+  currentRequestStatus: OrganizationVerificationRequestStatus;
+  lastSubmittedAt: number | null;
+  lastReviewedAt: number | null;
+  reviewerNotes: string | null;
+  documentsCount: number;
+  publishingBlocked: boolean;
+  attachedDocuments: UploadedFileReference[];
+  requirements: string[];
+  sourceUrls: string[];
+};
 
 /**
  * WHY:   Organization creation is the first migrated business mutation in the Next.js gateway.
@@ -15,6 +43,7 @@ export type OrganizationSummary = {
   description?: string;
   website?: string;
   contactEmail?: string;
+  verificationSummary?: OrganizationVerificationSummary;
 };
 
 /**
@@ -41,6 +70,7 @@ export type OrganizationMembershipSummary = {
   authUserId: string;
   profileId: string;
   role: "manager" | "member" | "viewer";
+  tenantRole?: string;
   status: "active" | "inactive";
   createdAt: number;
   updatedAt: number;

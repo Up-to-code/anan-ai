@@ -3,6 +3,7 @@ import { loadInboxWorkspaceClientProps } from "./InboxPage/loaders";
 
 type InboxIndexPageProps = {
   searchParams: Promise<{
+    conversationId?: string;
     startUserId?: string;
   }>;
 };

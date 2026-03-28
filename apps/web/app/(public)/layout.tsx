@@ -8,7 +8,10 @@ export default function PublicLayout({
 }) {
     return (
         <PublicConvexProvider>
-            <div className="min-h-screen selection:bg-blue-600 selection:text-white" dir="rtl">
+            <div
+                className="min-h-screen bg-background text-foreground selection:bg-blue-600 selection:text-white transition-colors"
+                dir="rtl"
+            >
                 <Navbar />
                 {children}
                 <Footer />

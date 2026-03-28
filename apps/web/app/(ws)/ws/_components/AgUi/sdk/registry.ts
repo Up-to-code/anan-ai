@@ -2,8 +2,10 @@ import type { ComponentType } from "react";
 import AgApprovalFooter from "../AgApprovalFooter";
 import AgAreaHeatCard from "../AgAreaHeatCard";
 import AgConstraintSummary from "../AgConstraintSummary";
+import AgDataList from "../AgDataList";
 import AgExecutionResultCard from "../AgExecutionResultCard";
 import AgFieldRequestList from "../AgFieldRequestList";
+import AgFilterSummary from "../AgFilterSummary";
 import AgLatestUpdateCard from "../AgLatestUpdateCard";
 import AgMarketInsightCard from "../AgMarketInsightCard";
 import AgMissingDataPrompt from "../AgMissingDataPrompt";
@@ -12,6 +14,7 @@ import AgOfferSendDraft from "../AgOfferSendDraft";
 import AgPersonRelationCard from "../AgPersonRelationCard";
 import AgProjectCreateDraft from "../AgProjectCreateDraft";
 import AgProjectUnitSelector from "../AgProjectUnitSelector";
+import AgTargetSummary from "../AgTargetSummary";
 import AgThreadUpdateCard from "../AgThreadUpdateCard";
 import type { AgUiComponentId } from "./types";
 
@@ -33,4 +36,7 @@ export const AG_UI_COMPONENT_REGISTRY: Record<
   area_heat: AgAreaHeatCard as ComponentType<Record<string, unknown>>,
   constraint_summary: AgConstraintSummary as ComponentType<Record<string, unknown>>,
   missing_data_prompt: AgMissingDataPrompt as ComponentType<Record<string, unknown>>,
+  data_list: AgDataList as ComponentType<Record<string, unknown>>,
+  filter_summary: AgFilterSummary as ComponentType<Record<string, unknown>>,
+  target_summary: AgTargetSummary as ComponentType<Record<string, unknown>>,
 };

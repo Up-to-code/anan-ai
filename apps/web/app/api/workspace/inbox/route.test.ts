@@ -7,21 +7,27 @@ const {
   createInboxPrivateOfferInConversation,
   getInboxConversation,
   listInboxConversations,
+  publishInboxConversationOffer,
   resolveInboxConversation,
+  respondToInboxConversationOffer,
   shareInboxDealInConversation,
   shareInboxFileInConversation,
   shareInboxProjectInConversation,
   sendInboxMessage,
+  updateInboxPrivateOfferDraft,
 } = vi.hoisted(() => ({
   bootstrapInboxOfferConversation: vi.fn(),
   createInboxPrivateOfferInConversation: vi.fn(),
   getInboxConversation: vi.fn(),
   listInboxConversations: vi.fn(),
+  publishInboxConversationOffer: vi.fn(),
   resolveInboxConversation: vi.fn(),
+  respondToInboxConversationOffer: vi.fn(),
   shareInboxDealInConversation: vi.fn(),
   shareInboxFileInConversation: vi.fn(),
   shareInboxProjectInConversation: vi.fn(),
   sendInboxMessage: vi.fn(),
+  updateInboxPrivateOfferDraft: vi.fn(),
 }));
 
 vi.mock("@/server/domains/workspace/inbox/service", () => ({
@@ -29,11 +35,14 @@ vi.mock("@/server/domains/workspace/inbox/service", () => ({
   createInboxPrivateOfferInConversation,
   getInboxConversation,
   listInboxConversations,
+  publishInboxConversationOffer,
   resolveInboxConversation,
+  respondToInboxConversationOffer,
   shareInboxDealInConversation,
   shareInboxFileInConversation,
   shareInboxProjectInConversation,
   sendInboxMessage,
+  updateInboxPrivateOfferDraft,
 }));
 
 import { GET, POST } from "./route";
@@ -43,11 +52,14 @@ beforeEach(() => {
   createInboxPrivateOfferInConversation.mockReset();
   getInboxConversation.mockReset();
   listInboxConversations.mockReset();
+  publishInboxConversationOffer.mockReset();
   resolveInboxConversation.mockReset();
+  respondToInboxConversationOffer.mockReset();
   shareInboxDealInConversation.mockReset();
   shareInboxFileInConversation.mockReset();
   shareInboxProjectInConversation.mockReset();
   sendInboxMessage.mockReset();
+  updateInboxPrivateOfferDraft.mockReset();
 });
 
 it("returns one conversation when conversationId is provided", async () => {
@@ -177,8 +189,8 @@ it("shares a file card when intent=shareFile", async () => {
 it("creates a private offer when intent=createPrivateOffer", async () => {
   createInboxPrivateOfferInConversation.mockResolvedValue({
     offerId: "offer-1",
-    conversationId: "conversation-2",
-    starterMessageCreated: true,
+    conversationId: null,
+    starterMessageCreated: false,
     notification: null,
   });
 
@@ -205,4 +217,81 @@ it("creates a private offer when intent=createPrivateOffer", async () => {
     description: "للشريك الحالي فقط",
   });
   expect(response.status).toBe(201);
+});
+
+it("updates a private offer draft when intent=updatePrivateOfferDraft", async () => {
+  updateInboxPrivateOfferDraft.mockResolvedValue({ ok: true });
+
+  const response = await POST(
+    new Request("http://localhost/api/workspace/inbox", {
+      method: "POST",
+      body: JSON.stringify({
+        intent: "updatePrivateOfferDraft",
+        conversationId: "conversation-2",
+        offerId: "offer-1",
+        propertyId: "property-1",
+        price: 1300000,
+      }),
+      headers: { "Content-Type": "application/json" },
+    }),
+  );
+
+  expect(updateInboxPrivateOfferDraft).toHaveBeenCalledWith({
+    conversationId: "conversation-2",
+    offerId: "offer-1",
+    propertyId: "property-1",
+    price: 1300000,
+  });
+  expect(response.status).toBe(200);
+});
+
+it("publishes a conversation offer when intent=publishConversationOffer", async () => {
+  publishInboxConversationOffer.mockResolvedValue({
+    offerId: "offer-1",
+    conversationId: "conversation-2",
+    starterMessageCreated: true,
+    notification: null,
+  });
+
+  const response = await POST(
+    new Request("http://localhost/api/workspace/inbox", {
+      method: "POST",
+      body: JSON.stringify({
+        intent: "publishConversationOffer",
+        conversationId: "conversation-2",
+        offerId: "offer-1",
+      }),
+      headers: { "Content-Type": "application/json" },
+    }),
+  );
+
+  expect(publishInboxConversationOffer).toHaveBeenCalledWith({
+    conversationId: "conversation-2",
+    offerId: "offer-1",
+  });
+  expect(response.status).toBe(201);
+});
+
+it("responds to a conversation offer when intent=respondToConversationOffer", async () => {
+  respondToInboxConversationOffer.mockResolvedValue({ ok: true });
+
+  const response = await POST(
+    new Request("http://localhost/api/workspace/inbox", {
+      method: "POST",
+      body: JSON.stringify({
+        intent: "respondToConversationOffer",
+        conversationId: "conversation-2",
+        offerId: "offer-1",
+        status: "accepted",
+      }),
+      headers: { "Content-Type": "application/json" },
+    }),
+  );
+
+  expect(respondToInboxConversationOffer).toHaveBeenCalledWith({
+    conversationId: "conversation-2",
+    offerId: "offer-1",
+    status: "accepted",
+  });
+  expect(response.status).toBe(200);
 });

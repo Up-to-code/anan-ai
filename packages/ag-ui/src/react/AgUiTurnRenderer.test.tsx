@@ -57,7 +57,7 @@ describe("AgUiTurnRenderer", () => {
 
     const markup = renderToStaticMarkup(<AgUiTurnRenderer turn={turn} />);
 
-    expect(markup).toBe("<div class=\"w-full space-y-4\"></div>");
+    expect(markup).toBe("<div class=\"mt-3 flex w-full max-w-[760px] flex-col gap-3\"></div>");
   });
 
   it("uses consumer overrides for specific card ids", () => {

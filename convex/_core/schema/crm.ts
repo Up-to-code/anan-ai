@@ -20,6 +20,9 @@ const crmTables = {
         email: v.optional(v.string()),
         notes: v.optional(v.string()),
         sourceClientId: v.optional(v.string()),
+        sourceSystem: v.optional(v.string()),
+        externalId: v.optional(v.string()),
+        businessId: v.optional(v.string()),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
@@ -31,6 +34,7 @@ const crmTables = {
         description: v.optional(v.string()),
         value: v.optional(v.number()),
         nextFollowUpAt: v.optional(v.number()),
+        createdAt: v.number(),
         stage: v.union(
             v.literal("new"),        // فرصة جديدة
             v.literal("contacted"),  // تواصل أولي
@@ -38,6 +42,11 @@ const crmTables = {
             v.literal("won"),        // منجزة
             v.literal("lost")
         ),
+        relationType: v.optional(
+            v.union(v.literal("internal_client"), v.literal("broker_managed"))
+        ),
+        crmClientId: v.optional(v.id("crmClients")),
+        relatedBrokerId: v.optional(v.id("brokers")),
         REDId: v.optional(v.id("RED")),
         brokerId: v.optional(v.id("brokers")),
         assignedTo: v.optional(v.id("userProfiles")),
@@ -46,17 +55,26 @@ const crmTables = {
         propertyId: v.optional(v.id("properties")),
         // Phase 1 additions
         offerId: v.optional(v.id("offers")),
+        offerCaseId: v.optional(v.id("offerCases")),
         notes: v.optional(v.string()),
+        sourceSystem: v.optional(v.string()),
+        externalId: v.optional(v.string()),
+        businessId: v.optional(v.string()),
         documentIds: v.optional(v.array(v.id("_storage"))),
         documents: v.optional(uploadedFileReferenceListValidator),
         lastUpdatedBy: v.optional(v.string()),
+        archivedAt: v.optional(v.number()),
+        archivedBy: v.optional(v.string()),
     })
         .index("REDId", ["REDId"])
         .index("brokerId", ["brokerId"])
         .index("assignedTo", ["assignedTo"])
         .index("stage", ["stage"])
         .index("propertyId", ["propertyId"])
-        .index("offerId", ["offerId"]),
+        .index("offerId", ["offerId"])
+        .index("offerCaseId", ["offerCaseId"])
+        .index("crmClientId", ["crmClientId"])
+        .index("relatedBrokerId", ["relatedBrokerId"]),
 };
 
 export default crmTables;

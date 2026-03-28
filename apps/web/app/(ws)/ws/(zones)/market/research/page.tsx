@@ -14,6 +14,8 @@ export default async function MarketResearchRoute({
     city?: string | string[];
     area?: string | string[];
     query?: string | string[];
+    dateFrom?: string | string[];
+    dateTo?: string | string[];
     windowDays?: string | string[];
   }>;
 }) {
@@ -24,9 +26,8 @@ export default async function MarketResearchRoute({
       model={model}
       actionPath="/ws/market/research"
       intro={{
-        eyebrow: "ذكاء السوق",
-        title: "البحث والكلمات",
-        description: "عرض مباشر للكلمات والموضوعات ونقاط البيع المتكررة داخل النطاق الحالي، مع آخر تحديث بحثي محفوظ.",
+        title: "مساعد الكلمات",
+        description: "كلمات وعبارات بحث محفوظة، موضوعات متكررة، ونقاط بيع تساعد على متابعة السوق داخل نفس النطاق.",
       }}
     >
       <ResearchKeywordsTab model={model} />

@@ -23,19 +23,19 @@ export default function Section({
     border = false
 }: SectionProps) {
     const backgrounds = {
-        white: "bg-white text-slate-900",
-        slate: "bg-[#F8FAFC] text-slate-900",
-        dark: "bg-[#0F172A] text-white",
+        white: "bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100",
+        slate: "bg-[#F8FAFC] text-slate-900 dark:bg-slate-900 dark:text-slate-100",
+        dark: "bg-[#0F172A] text-white dark:bg-slate-950 dark:text-slate-50",
         primary: "bg-[#2563EB] text-white",
-        glass: "bg-white/70 backdrop-blur-xl text-slate-900 border-y border-white/20",
-        gradient: "bg-gradient-to-b from-slate-50 to-white text-slate-900",
+        glass: "border-y border-white/20 bg-white/70 text-slate-900 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-100",
+        gradient: "bg-gradient-to-b from-slate-50 to-white text-slate-900 dark:from-slate-950 dark:to-slate-900 dark:text-slate-100",
         none: ""
     };
 
     return (
         <section
             id={id}
-            className={`py-24 md:py-32 px-6 ${backgrounds[bg]} ${border ? "border-b-2 border-slate-100" : ""} ${className}`}
+            className={`py-24 md:py-32 px-6 transition-colors ${backgrounds[bg]} ${border ? "border-b-2 border-slate-100 dark:border-slate-800" : ""} ${className}`}
         >
             <div className={`max-w-[1400px] mx-auto ${containerClassName}`}>
                 {children}

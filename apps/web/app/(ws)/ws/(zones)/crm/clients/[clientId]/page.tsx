@@ -48,5 +48,12 @@ export default async function WorkspaceCrmClientDetailRoute({
     redirect(`/ws/crm/clients/${clientId}`);
   }
 
-  return <ClientDetailPage client={client} nowTimestamp={getCurrentTimestamp()} onFollowUpSubmit={updateFollowUp} />;
+  return (
+    <ClientDetailPage
+      client={client}
+      nowTimestamp={getCurrentTimestamp()}
+      onFollowUpSubmit={updateFollowUp}
+      editHref={`/ws/crm/clients/${clientId}/edit`}
+    />
+  );
 }

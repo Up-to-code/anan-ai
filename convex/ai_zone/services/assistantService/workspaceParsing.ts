@@ -1,4 +1,7 @@
 import type {
+  WorkspaceActionCandidate,
+  WorkspaceDeleteProjectConfirmationState,
+  WorkspaceListActionState,
   WorkspaceProjectActionCandidate,
   WorkspaceProjectFieldKey,
   WorkspaceStructuredOutput,
@@ -149,6 +152,125 @@ function normalizeWorkspaceActionState(state: unknown) {
     : "collecting";
 }
 
+function normalizeWorkspaceOperatorFilters(filters: unknown) {
+  if (!Array.isArray(filters)) return [];
+  return filters
+    .map((filter) => {
+      if (!filter || typeof filter !== "object") return null;
+      const value = filter as { label?: unknown; value?: unknown };
+      if (typeof value.label !== "string" || typeof value.value !== "string") {
+        return null;
+      }
+      return { label: value.label, value: value.value };
+    })
+    .filter((filter): filter is NonNullable<typeof filter> => Boolean(filter))
+    .slice(0, 8);
+}
+
+function normalizeWorkspaceOperatorItems(items: unknown) {
+  if (!Array.isArray(items)) return [];
+  return items
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const value = item as {
+        id?: unknown;
+        title?: unknown;
+        subtitle?: unknown;
+        meta?: unknown;
+      };
+      if (typeof value.id !== "string" || typeof value.title !== "string") {
+        return null;
+      }
+      return {
+        id: value.id,
+        title: value.title,
+        subtitle: typeof value.subtitle === "string" ? value.subtitle : undefined,
+        meta: typeof value.meta === "string" ? value.meta : undefined,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item))
+    .slice(0, 50);
+}
+
+function normalizeWorkspaceListActionState(actionCandidate: unknown): WorkspaceListActionState | null {
+  if (!actionCandidate || typeof actionCandidate !== "object") {
+    return null;
+  }
+  const action = actionCandidate as {
+    type?: unknown;
+    zone?: unknown;
+    state?: unknown;
+    title?: unknown;
+    description?: unknown;
+    totalCount?: unknown;
+    filters?: unknown;
+    items?: unknown;
+  };
+
+  if (
+    action.type !== "list_clients" &&
+    action.type !== "list_projects" &&
+    action.type !== "search_projects" &&
+    action.type !== "list_offers" &&
+    action.type !== "search_offers"
+  ) {
+    return null;
+  }
+
+  if (action.zone !== "crm" && action.zone !== "projects" && action.zone !== "offers") {
+    return null;
+  }
+
+  return {
+    type: action.type,
+    zone: action.zone,
+    state: "completed",
+    title: typeof action.title === "string" ? action.title : "نتائج مساحة العمل",
+    description: typeof action.description === "string" ? action.description : "",
+    totalCount: typeof action.totalCount === "number" ? action.totalCount : 0,
+    filters: normalizeWorkspaceOperatorFilters(action.filters),
+    items: normalizeWorkspaceOperatorItems(action.items),
+  };
+}
+
+function normalizeWorkspaceDeleteProjectConfirmationState(
+  actionCandidate: unknown,
+): WorkspaceDeleteProjectConfirmationState | null {
+  if (!actionCandidate || typeof actionCandidate !== "object") {
+    return null;
+  }
+
+  const action = actionCandidate as {
+    type?: unknown;
+    zone?: unknown;
+    state?: unknown;
+    projectId?: unknown;
+    projectTitle?: unknown;
+    description?: unknown;
+    filters?: unknown;
+    requiresConfirmation?: unknown;
+  };
+
+  if (action.type !== "delete_project_confirmation" || action.zone !== "projects") {
+    return null;
+  }
+
+  if (typeof action.projectId !== "string" || typeof action.projectTitle !== "string") {
+    return null;
+  }
+
+  return {
+    type: "delete_project_confirmation",
+    zone: "projects",
+    state: action.state === "completed" || action.state === "failed" ? action.state : "collecting",
+    projectId: action.projectId,
+    projectTitle: action.projectTitle,
+    description: typeof action.description === "string" ? action.description : "",
+    filters: normalizeWorkspaceOperatorFilters(action.filters),
+    requiresConfirmation: action.requiresConfirmation !== false,
+  };
+}
+
 function normalizeWorkspaceActionCandidate(actionCandidate: unknown): WorkspaceProjectActionCandidate | null {
   if (!actionCandidate || typeof actionCandidate !== "object") {
     return null;
@@ -178,6 +300,14 @@ function normalizeWorkspaceActionCandidate(actionCandidate: unknown): WorkspaceP
   };
 }
 
+function normalizeWorkspaceActionCandidateUnion(actionCandidate: unknown): WorkspaceActionCandidate | null {
+  return (
+    normalizeWorkspaceActionCandidate(actionCandidate) ??
+    normalizeWorkspaceListActionState(actionCandidate) ??
+    normalizeWorkspaceDeleteProjectConfirmationState(actionCandidate)
+  );
+}
+
 export function normalizeWorkspaceStructuredOutput(
   value: unknown
 ): WorkspaceStructuredOutput {
@@ -187,7 +317,7 @@ export function normalizeWorkspaceStructuredOutput(
 
   const candidate = value as { questions?: unknown; actionCandidate?: unknown };
   const questions = normalizeStructuredQuestions(candidate);
-  const normalizedCandidate = normalizeWorkspaceActionCandidate(candidate.actionCandidate);
+  const normalizedCandidate = normalizeWorkspaceActionCandidateUnion(candidate.actionCandidate);
   if (!normalizedCandidate) {
     return { questions };
   }

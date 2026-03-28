@@ -23,6 +23,8 @@
   },
   "registries": {
     "@ai-elements": "https://ai-sdk.dev/elements/api/registry/{name}.json",
-    "@aceternity": "https://ui.aceternity.com/registry/{name}.json"
+    "@aceternity": "https://ui.aceternity.com/registry/{name}.json",
+    "@blocks-so": "https://blocks.so/r/{name}.json",
+    "@simple-ai": "https://www.simple-ai.dev/r/{name}.json"
   }
 }

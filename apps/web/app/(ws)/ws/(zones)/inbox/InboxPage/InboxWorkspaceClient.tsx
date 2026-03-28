@@ -21,7 +21,6 @@ import { useRealtimeInbox } from "./useRealtimeInbox";
 export default function InboxWorkspaceClient({
   canUseBusinessActions,
   currentUserId,
-  dealOptions,
   initialConversations,
   initialConversation,
   initialSelectedConversationId,
@@ -78,7 +77,6 @@ export default function InboxWorkspaceClient({
 
     startUserIdToResolveRef.current = null;
     startTransition(() => {
-      router.replace("/ws/inbox");
       void handleStartConversation(startUserIdToResolve).finally(() => {
         setIsResolvingStartConversation(false);
       });
@@ -170,22 +168,7 @@ export default function InboxWorkspaceClient({
     });
   };
 
-  const handleShareDeal = async (dealId: string, note?: string) => {
-    if (!conversation) {
-      return;
-    }
-
-    await runBusinessAction(async () => {
-      await postInboxIntent({
-        intent: "shareDeal",
-        conversationId: conversation.id,
-        dealId,
-        note,
-      });
-    });
-  };
-
-  const handleCreatePrivateOffer = async (input: {
+  const handleCreatePrivateOfferDraft = async (input: {
     propertyId: string;
     price: number;
     message?: string;
@@ -198,7 +181,7 @@ export default function InboxWorkspaceClient({
 
     return runBusinessAction(async () => {
       const result = await postInboxIntent<OfferActionResult>({
-        intent: "createPrivateOffer",
+        intent: "createPrivateOfferDraft",
         conversationId: conversation.id,
         propertyId: input.propertyId,
         price: input.price,
@@ -210,14 +193,54 @@ export default function InboxWorkspaceClient({
       if (result.conversationId && result.conversationId !== conversation.id) {
         handleShowConversation(result.conversationId);
       }
+
+      return result;
+    });
+  };
+
+  const handlePublishConversationOffer = async (offerId: string) => {
+    if (!conversation) {
+      return null;
+    }
+
+    return runBusinessAction(async () => {
+      const result = await postInboxIntent<OfferActionResult>({
+        intent: "publishConversationOffer",
+        conversationId: conversation.id,
+        offerId,
+      });
+
+      if (result.conversationId && result.conversationId !== conversation.id) {
+        handleShowConversation(result.conversationId);
+      }
+
+      return result;
+    });
+  };
+
+  const handleRespondToConversationOffer = async (input: {
+    offerId: string;
+    status: "accepted" | "rejected";
+  }) => {
+    if (!conversation) {
+      return null;
+    }
+
+    return runBusinessAction(async () => {
+      return postInboxIntent<{ ok: true }>({
+        intent: "respondToConversationOffer",
+        conversationId: conversation.id,
+        offerId: input.offerId,
+        status: input.status,
+      });
     });
   };
 
   return (
-    <div className="flex h-[calc(100svh-65px)] lg:h-[calc(100svh-73px)] w-full overflow-hidden bg-white">
+    <div className="flex h-[calc(100svh-65px)] w-full overflow-hidden bg-[var(--workspace-shell)] lg:h-[calc(100svh-73px)]">
       <div
         className={cn(
-          "min-w-0 border-l border-slate-200 bg-white md:flex md:w-[310px] md:shrink-0 lg:w-[340px]",
+          "min-w-0 border-l border-[color:var(--workspace-border)] bg-[var(--workspace-sidebar)] md:flex md:w-[340px] md:shrink-0 xl:w-[380px]",
           isThreadPaneVisible ? "hidden md:flex" : "flex w-full",
         )}
       >
@@ -239,21 +262,22 @@ export default function InboxWorkspaceClient({
 
       <div
         className={cn(
-          "min-w-0 flex-1 bg-white",
+          "min-w-0 flex-1 bg-[var(--workspace-canvas)]",
           isThreadPaneVisible ? "flex" : "hidden md:flex",
         )}
       >
         <div className="flex h-full w-full flex-col">
           {conversation ? (
             <InboxThreadView
+              key={conversation.id}
               canUseBusinessActions={canUseBusinessActions}
               conversation={conversation}
               currentUserId={currentUserId}
-              dealOptions={dealOptions}
               isSending={isSending || isPending || isBusinessActionPending}
-              onCreatePrivateOffer={handleCreatePrivateOffer}
+              onCreatePrivateOfferDraft={handleCreatePrivateOfferDraft}
               onBack={() => setIsMobileThreadVisible(false)}
-              onShareDeal={handleShareDeal}
+              onPublishConversationOffer={handlePublishConversationOffer}
+              onRespondToConversationOffer={handleRespondToConversationOffer}
               onShareFile={handleShareFile}
               onShareProject={handleShareProject}
               onSend={handleSendMessage}

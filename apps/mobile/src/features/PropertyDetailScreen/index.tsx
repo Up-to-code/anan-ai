@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
-import { Alert, ScrollView, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Alert, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Image } from "expo-image";
-import { ArrowLeft, BadgeCheck, Bath, BedDouble, Building2, MapPin, Ruler, ShieldCheck } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ArrowLeft, Bath, BedDouble, MapPin, Ruler } from "lucide-react-native";
 import { getPropertyById } from "@/lib/mvp/ananAssistant";
 import { formatCurrency } from "@/lib/mvp/formatters";
 import { AppText } from "@/components/ui/AppText";
@@ -11,116 +11,138 @@ import { IconButton } from "@/components/ui/IconButton";
 import { StickyJourneyBar } from "@/features/PropertyDetailScreen/StickyJourneyBar";
 
 /**
- * WHY:   Buyers need one lightweight detail screen before they commit to booking or advisor handoff.
- * WHAT:  Renders the selected property's imagery, facts, and journey context.
- * HOW:   Reads from the local MVP catalog and keeps the detail surface focused on trust and next steps.
+ * WHY:   The Nexus design requires a clean, breathable property overview.
+ * WHAT:  Modernizes the property detail with premium rounded-3xl cards and spaced-out layout.
+ * HOW:   Uses large Cairo-black typography and high-contrast styling for clear communication.
  */
 export default function PropertyDetailScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ id: string }>();
   const property = getPropertyById(params.id);
 
   if (!property) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-panel">
-        <View className="w-[320px] border border-line bg-white px-5 py-6">
-          <AppText tone="headline" className="text-lg">
-            الوحدة غير متاحة
-          </AppText>
-          <AppText className="mt-2 text-sm leading-6 text-muted">
-            عد إلى البحث أو المحادثة الرئيسية لاختيار وحدة أخرى من القائمة الحالية.
+      <View className="flex-1 items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <View className="w-[85%] rounded-[32px] border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-8 py-10 shadow-sm items-center gap-4">
+          <AppText className="text-2xl font-cairo-black text-slate-900 dark:text-slate-50 text-center">الوحدة غير متاحة</AppText>
+          <AppText className="text-[15px] leading-relaxed text-slate-500 font-medium text-center">
+            عد إلى البحث أو المحادثة الرئيسية لاختيار وحدة أخرى.
           </AppText>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-panel" edges={["top"]}>
+    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="bg-white">
+        {/* Full-bleed Hero Gallery */}
+        <View className="relative bg-slate-200 dark:bg-slate-800">
           <Image
             source={property.heroImage}
-            style={{ width: "100%", height: 280 }}
+            style={{ width: "100%", height: 360 }}
             contentFit="cover"
-            transition={120}
+            transition={200}
           />
-          <View className="absolute right-4 top-4">
-            <IconButton icon={ArrowLeft} onPress={() => router.back()} />
+          <View className="absolute right-6" style={{ top: insets.top + 16 }}>
+            <IconButton 
+              icon={ArrowLeft} 
+              onPress={() => router.back()} 
+              className="bg-white/95 dark:bg-slate-900/95 shadow-md border-0 w-12 h-12" 
+            />
           </View>
         </View>
 
-        <View className="gap-5 px-5 pb-28 pt-5">
-          <View className="border border-line bg-white px-4 py-4">
-            <View className="flex-row-reverse items-start justify-between gap-3">
+        <View className="gap-6 px-6 pb-40 pt-6">
+          {/* Main Title & Price Card */}
+          <View className="gap-2">
+            <View className="flex-row-reverse items-start justify-between gap-4">
               <View className="flex-1">
-                <AppText tone="headline" className="text-2xl leading-8">
+                <AppText className="text-[26px] font-cairo-black leading-tight text-slate-900 dark:text-slate-50 text-right">
                   {property.title}
                 </AppText>
-                <View className="mt-2 flex-row-reverse items-center gap-1">
+                <View className="mt-2 flex-row-reverse items-center gap-1.5">
                   <MapPin size={14} color="#64748B" />
-                  <AppText className="text-sm text-muted">{property.address}</AppText>
+                  <AppText className="text-[14px] text-slate-500 font-bold">{property.address}</AppText>
                 </View>
               </View>
-              <AppText tone="headline" className="text-lg text-brand">
+              <AppText className="text-2xl font-cairo-black text-primary">
                 {formatCurrency(property.price)}
               </AppText>
             </View>
 
-            <View className="mt-4 flex-row-reverse flex-wrap gap-3 border-t border-line pt-4">
-              <DetailFact icon={<BedDouble size={15} color="#64748B" />} label={`${property.beds} غرف`} />
-              <DetailFact icon={<Bath size={15} color="#64748B" />} label={`${property.baths} حمامات`} />
-              <DetailFact icon={<Ruler size={15} color="#64748B" />} label={`${property.sqft} قدم`} />
+            <View className="mt-6 flex-row-reverse flex-wrap gap-4 border-t border-slate-50 dark:border-slate-800 pt-6">
+              <DetailFact icon={<BedDouble size={18} color="#94A3B8" />} label={`${property.beds} غرف`} />
+              <DetailFact icon={<Bath size={18} color="#94A3B8" />} label={`${property.baths} حمامات`} />
+              <DetailFact icon={<Ruler size={18} color="#94A3B8" />} label={`${property.sqft} قدم`} />
+            </View>
+
+            <View className="mt-6">
+              <Pressable 
+                onPress={() => router.push("/finance")}
+                className="w-full h-14 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center flex-row-reverse gap-2 active:scale-[0.98] transition-transform"
+              >
+                <AppText className="text-[16px] font-cairo-black text-slate-900 dark:text-slate-50">حاسبة التمويل العقاري</AppText>
+              </Pressable>
             </View>
           </View>
 
-          <View className="border border-line bg-white px-4 py-4">
-            <AppText tone="headline" className="text-base">
+          {/* Quick Summary Card */}
+          <View className="py-2">
+            <AppText className="text-lg font-cairo-black text-slate-900 dark:text-slate-50 text-right mb-4">
               قراءة سريعة
             </AppText>
-            <AppText className="mt-3 text-sm leading-7 text-muted">{property.summary}</AppText>
-          </View>
-
-          <View className="border border-line bg-white px-4 py-4">
-            <AppText tone="headline" className="text-base">
-              نقاط تساعدك على القرار
+            <AppText className="text-[15px] leading-8 text-slate-500 dark:text-slate-400 font-medium text-right">
+              {property.summary}
             </AppText>
-            <View className="mt-3 gap-3">
-              <JourneyLine
-                icon={<BadgeCheck size={15} color="#2563EB" />}
-                title="القيمة الاستثمارية"
-                body={`الإيجار السنوي التقديري يقارب ${formatCurrency(property.annualRentEstimate)} لهذه الوحدة.`}
-              />
-              <JourneyLine
-                icon={<ShieldCheck size={15} color="#2563EB" />}
-                title="التحقق"
-                body={property.isVerified ? "الجهة المالكة موثقة داخل عنان." : "تحتاج مراجعة إضافية قبل الإغلاق النهائي."}
-              />
-              <JourneyLine
-                icon={property.ownerType === "RED" ? <Building2 size={15} color="#2563EB" /> : <BadgeCheck size={15} color="#2563EB" />}
-                title="المالك"
-                body={`${property.ownerName} · ${property.ownerType === "RED" ? "مطور" : "وسيط"}`}
-              />
-            </View>
           </View>
 
-          <View className="border border-line bg-white px-4 py-4">
-            <AppText tone="headline" className="text-base">
-              صور إضافية
+          {/* Broker Profile Card Link */}
+          <View className="py-2 gap-4">
+            <AppText className="text-lg font-cairo-black text-slate-900 dark:text-slate-50 text-right">
+              المسوق العقاري
+            </AppText>
+            <Pressable 
+              onPress={() => router.push({ pathname: "/broker/[id]", params: { id: "1" } })}
+              className="flex-row-reverse items-center gap-4 bg-slate-100 dark:bg-slate-900 rounded-[24px] p-4 active:scale-[0.98] transition-all"
+            >
+              <Image 
+                source="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=1000&auto=format&fit=crop" 
+                style={{ width: 60, height: 60, borderRadius: 30 }} 
+                contentFit="cover" 
+              />
+              <View className="flex-1">
+                <AppText className="text-[16px] font-cairo-black text-slate-900 dark:text-slate-50 text-right">خالد عبدالله</AppText>
+                <AppText className="text-[13px] font-medium text-slate-500 text-right">شركة مساكن العقارية</AppText>
+              </View>
+            </Pressable>
+          </View>
+
+          {/* Additional Gallery Section */}
+          <View className="py-2">
+            <AppText className="text-lg font-cairo-black text-slate-900 dark:text-slate-50 mb-6 text-right">
+              الصور الداخلية
             </AppText>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 10, paddingTop: 12 }}
+              className="flex-row-reverse"
+              contentContainerStyle={{ gap: 16 }}
             >
               {property.gallery.map((image) => (
-                <Image
-                  key={image}
-                  source={image}
-                  style={{ width: 176, height: 124, borderRadius: 2 }}
-                  contentFit="cover"
-                  transition={120}
-                />
+                <Pressable 
+                  key={image} 
+                  onPress={() => router.push({ pathname: "/gallery", params: { propertyId: property.id } })}
+                  className="active:opacity-80 transition-opacity"
+                >
+                  <Image
+                    source={image}
+                    style={{ width: 220, height: 160, borderRadius: 24 }}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                </Pressable>
               ))}
             </ScrollView>
           </View>
@@ -128,38 +150,19 @@ export default function PropertyDetailScreen() {
       </ScrollView>
 
       <StickyJourneyBar
-        onBookViewing={() => Alert.alert("حجز زيارة", "تم تجهيز طلب الزيارة في نسخة الـ MVP الحالية.")}
-        onTalkToAdvisor={() => Alert.alert("مستشار عنان", "تم تجهيز طلب تواصل مع مستشار عنان في نسخة الـ MVP الحالية.")}
+        onBookViewing={() => Alert.alert("حجز زيارة", "وظيفة الحجز غير متاحة بالنسخة الحالية.")}
+        onTalkToAdvisor={() => Alert.alert("مستشار عنان", "تم طلب التواصل مع المستشار.")}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 function DetailFact({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <View className="flex-row-reverse items-center gap-2 border border-line bg-panel px-3 py-2">
+    <View className="flex-row-reverse items-center gap-2.5 rounded-full border border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/50 px-5 py-3">
       {icon}
-      <AppText className="text-sm text-ink">{label}</AppText>
+      <AppText className="text-[14px] text-slate-600 dark:text-slate-300 font-cairo-black">{label}</AppText>
     </View>
   );
 }
 
-function JourneyLine({
-  icon,
-  title,
-  body,
-}: {
-  icon: ReactNode;
-  title: string;
-  body: string;
-}) {
-  return (
-    <View className="border border-line bg-panel px-3 py-3">
-      <View className="flex-row-reverse items-center gap-2">
-        {icon}
-        <AppText className="text-sm font-cairo-bold text-ink">{title}</AppText>
-      </View>
-      <AppText className="mt-2 text-sm leading-6 text-muted">{body}</AppText>
-    </View>
-  );
-}

@@ -15,6 +15,7 @@ const statusLabels: Record<string, string> = {
   in_review: "قيد المراجعة",
   approved: "معتمد",
   rejected: "مرفوض",
+  closed: "مغلق",
   pending: "معلق",
   active: "نشط",
   inactive: "غير نشط",

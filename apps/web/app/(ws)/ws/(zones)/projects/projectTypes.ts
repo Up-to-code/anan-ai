@@ -1,5 +1,7 @@
 import type { BrokerPresence } from "../../_components/Visuals/BrokerPresenceChip";
 import type { UnitReference } from "../../_lib/entities";
+import type { UploadedFileReference } from "@/server/contracts/files";
+import type { OrganizationAsset, PropertyViewerSummary } from "@/server/contracts/properties";
 
 export type WorkspaceProject = {
   id: string;
@@ -7,7 +9,27 @@ export type WorkspaceProject = {
   location: string;
   priceLabel: string;
   summary: string;
+  shortDescription: string;
   image: string;
+  galleryImages: UploadedFileReference[];
+  gallery: {
+    coverImageKey: string | null;
+    displayMode: "cover" | "fit";
+    aspectRatio: "auto" | "landscape" | "square" | "portrait";
+  };
+  amenities: string[];
+  parking: {
+    hasParking: boolean;
+    spaces: number | null;
+    label: string;
+  };
+  permit: {
+    statusLabel: string;
+    privateSummary: string | null;
+    privateFiles: UploadedFileReference[];
+    visibility: "conversation_only" | "hidden";
+    canShowPrivatePanel: boolean;
+  };
   specs: {
     rooms: string;
     baths: string;
@@ -15,6 +37,13 @@ export type WorkspaceProject = {
     status: string;
   };
   publicationState: "published" | "draft" | "archived";
+  accessMode: "owner" | "shared";
+  canEdit: boolean;
+  visibility: {
+    clientVisibility: "private" | "public";
+    viewers: PropertyViewerSummary[];
+  };
+  assets: OrganizationAsset[];
   units: UnitReference[];
   brokers: BrokerPresence[];
 };

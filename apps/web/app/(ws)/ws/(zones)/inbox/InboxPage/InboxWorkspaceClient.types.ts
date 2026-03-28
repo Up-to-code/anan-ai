@@ -7,6 +7,9 @@ export type InboxProjectOption = {
   location: string;
   imageUrl?: string | null;
   price?: number;
+  shortDescription?: string;
+  organizationName?: string | null;
+  publicationState?: "published" | "draft" | "archived";
 };
 
 export type InboxDealOption = {

@@ -26,7 +26,7 @@ export const apiPropertiesPage: DocsPageDefinition = {
               code: `{
   "properties": [
     {
-      "_id": "<property-id>",
+      "id": "<property-id>",
       "title": "Palm Residences Unit 301",
       "publicationState": "draft",
       "status": "available"
@@ -66,7 +66,7 @@ export const apiPropertiesPage: DocsPageDefinition = {
               language: "json",
               code: `{
   "property": {
-    "_id": "<property-id>",
+    "id": "<property-id>",
     "title": "Palm Residences Unit 301",
     "publicationState": "draft"
   }

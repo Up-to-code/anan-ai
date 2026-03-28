@@ -29,19 +29,13 @@ export default function FilterChipBar({
           type="button"
           onClick={() => onChange(chip.key)}
           className={cn(
-            "relative overflow-hidden border px-4 py-2.5 text-xs font-black tracking-[0.18em] transition",
+            "relative flex items-center justify-center rounded-xl border border-border bg-card px-5 py-2 text-[11px] font-bold tracking-wide transition-all",
             activeKey === chip.key
-              ? "border-blue-200 bg-blue-50 text-blue-700"
-              : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700",
+              ? "border-foreground bg-foreground text-background shadow-sm"
+              : "text-muted-foreground hover:border-foreground/30 hover:bg-muted/20 hover:text-foreground",
           )}
         >
           {chip.label}
-          <span
-            className={cn(
-              "absolute inset-x-3 bottom-0 h-0.5 transition-transform duration-200",
-              activeKey === chip.key ? "scale-x-100 bg-blue-600" : "scale-x-0 bg-blue-400",
-            )}
-          />
         </button>
       ))}
     </div>

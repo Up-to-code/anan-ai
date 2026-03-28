@@ -2,11 +2,11 @@ import type { DocsNavGroup, DocsPageKey } from "./types";
 
 export const docsPageOrder: DocsPageKey[] = [
   "getting-started",
-  "api-keys",
-  "oauth-overview",
   "oauth-get-credentials",
-  "oauth-authorization-code-pkce",
+  "api-keys",
   "scopes-and-org-permissions",
+  "oauth-overview",
+  "oauth-authorization-code-pkce",
   "api-clients",
   "api-properties",
   "errors-and-security",
@@ -16,17 +16,22 @@ export const docsNavGroups: DocsNavGroup[] = [
   {
     id: "start",
     title: "Start Here",
-    items: ["getting-started", "api-keys"],
+    items: ["getting-started", "oauth-get-credentials"],
   },
   {
-    id: "oauth",
-    title: "OAuth",
-    items: ["oauth-overview", "oauth-get-credentials", "oauth-authorization-code-pkce"],
+    id: "machine-api",
+    title: "Organization Machine API",
+    items: ["api-keys"],
   },
   {
     id: "access",
     title: "Permissions & Access",
     items: ["scopes-and-org-permissions"],
+  },
+  {
+    id: "oauth",
+    title: "OAuth",
+    items: ["oauth-overview", "oauth-authorization-code-pkce"],
   },
   {
     id: "api",

@@ -7,8 +7,10 @@ vi.mock("@/server/auth/session", () => ({
 
 import {
   addBrokerDealDocument,
+  archiveBrokerDeal,
   createBrokerDeal,
   listBrokerDealsByProperty,
+  updateBrokerDeal,
   updateBrokerDealFollowUp,
   updateBrokerDealStage,
 } from "./broker";
@@ -40,7 +42,7 @@ it("creates a broker deal after property ownership validation", async () => {
 
   await expect(
     createBrokerDeal(
-      { title: "Deal", stage: "new", propertyId: "property-1" },
+      { title: "Deal", stage: "new", propertyId: "property-1", relationType: "internal_client" },
       { requireBroker: requireBroker(), crmRepository: crmRepository as never, propertiesRepository },
     ),
   ).resolves.toBe("deal-1");
@@ -73,8 +75,10 @@ it("rejects property-scoped reads for non-owned properties", async () => {
 it("updates and appends documents only for owned deals", async () => {
   const crmRepository = {
     getById: vi.fn(async () => ({ id: "deal-1", brokerId: "broker-1", stage: "new", title: "Deal" })),
+    update: vi.fn(async () => undefined),
     updateStage: vi.fn(async () => undefined),
     updateFollowUp: vi.fn(async () => undefined),
+    archive: vi.fn(async () => undefined),
     addDocument: vi.fn(async () => undefined),
   };
 
@@ -93,4 +97,58 @@ it("updates and appends documents only for owned deals", async () => {
   expect(crmRepository.updateStage).toHaveBeenCalled();
   expect(crmRepository.updateFollowUp).toHaveBeenCalled();
   expect(crmRepository.addDocument).toHaveBeenCalled();
+});
+
+it("updates full deal fields and archives only owned broker deals", async () => {
+  const crmRepository = {
+    getById: vi.fn(async () => ({ id: "deal-1", brokerId: "broker-1", stage: "new", title: "Deal" })),
+    update: vi.fn(async () => undefined),
+    archive: vi.fn(async () => undefined),
+  };
+  const propertiesRepository = {
+    getProperty: vi.fn(async () => ({
+      _id: "property-2",
+      brokerId: "broker-1",
+      title: "Updated Villa",
+      address: "Riyadh",
+      description: "Desc",
+      price: 1,
+      beds: 1,
+      baths: 1,
+    })),
+  };
+
+  await updateBrokerDeal(
+    {
+      dealId: "deal-1",
+      title: "Updated Deal",
+      description: "Updated description",
+      value: 2500000,
+      nextFollowUpAt: 1_700_000_000_000,
+      stage: "negotiation",
+      relationType: "internal_client",
+      contactName: "Client Updated",
+      contactPhone: "+966500000000",
+      propertyId: "property-2",
+      notes: "Important note",
+    },
+    { requireBroker: requireBroker(), crmRepository: crmRepository as never, propertiesRepository },
+  );
+
+  await archiveBrokerDeal(
+    { dealId: "deal-1" },
+    { requireBroker: requireBroker(), crmRepository: crmRepository as never, propertiesRepository: {} as never },
+  );
+
+  expect(crmRepository.update).toHaveBeenCalledWith(expect.objectContaining({
+    dealId: "deal-1",
+    title: "Updated Deal",
+    notes: "Important note",
+    lastUpdatedBy: "user-1",
+  }));
+  expect(crmRepository.archive).toHaveBeenCalledWith(expect.objectContaining({
+    dealId: "deal-1",
+    lastUpdatedBy: "user-1",
+    archivedAt: expect.any(Number),
+  }));
 });

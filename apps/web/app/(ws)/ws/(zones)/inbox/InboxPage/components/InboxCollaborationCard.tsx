@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowUpLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type {
   DealShareMetadata,
   FileShareMetadata,
@@ -60,29 +61,49 @@ export default function InboxCollaborationCard({
   metadata: CollaborationMetadata;
 }) {
   return (
-    <div className={`space-y-3 border px-4 py-4 ${isMe ? "border-white/20 bg-white/10" : "border-slate-200 bg-white"}`}>
-      <div className="space-y-1">
-        <div className={`text-xs font-bold ${isMe ? "text-blue-100" : "text-blue-700"}`}>{getCardLabel(metadata)}</div>
-        <div className="text-sm font-black leading-6">{metadata.title}</div>
+    <div
+      className={cn(
+        "min-w-0 space-y-5 rounded-2xl border p-5 shadow-sm transition-all",
+        isMe
+          ? "border-foreground/10 bg-foreground/5 text-foreground"
+          : "border-border bg-card text-foreground"
+      )}
+    >
+      <div className="space-y-1.5">
+        <div className={cn(
+          "text-[11px] font-black uppercase tracking-widest",
+          isMe ? "text-foreground/60" : "text-foreground/70"
+        )}>
+          {getCardLabel(metadata)}
+        </div>
+        <div className="break-words text-sm font-black leading-6 [overflow-wrap:anywhere]">{metadata.title}</div>
       </div>
-      <div className={`text-xs font-medium ${isMe ? "text-blue-100" : "text-slate-600"}`}>
+      <div className={cn("break-words text-[12px] font-bold [overflow-wrap:anywhere]", isMe ? "text-foreground/70" : "text-muted-foreground")}>
         {metadata.actor.name}
         {metadata.actor.organizationName ? ` · ${metadata.actor.organizationName}` : ""}
       </div>
-      <div className={`text-sm font-medium leading-6 ${isMe ? "text-blue-50" : "text-slate-600"}`}>{metadata.summary}</div>
-      <div className={`text-xs font-bold ${isMe ? "text-white" : "text-slate-700"}`}>
+      <div className={cn(
+        "rounded-xl border px-4 py-3.5 text-[13px] font-medium leading-relaxed break-words [overflow-wrap:anywhere]",
+        isMe 
+          ? "border-foreground/20 bg-foreground/10 text-foreground" 
+          : "border-border bg-muted/30 text-foreground"
+      )}>
+        {metadata.summary}
+      </div>
+      <div className={cn("break-words text-[13px] font-black [overflow-wrap:anywhere]", isMe ? "text-foreground" : "text-foreground")}>
         {getMetaDetails(metadata)}
       </div>
       <a
         href={metadata.action.href}
-        className={`inline-flex items-center gap-2 border px-3 py-2 text-xs font-bold transition ${
+        className={cn(
+          "inline-flex max-w-full items-center gap-2 rounded-xl border px-4 py-2.5 text-[13px] font-bold transition-all",
           isMe
-            ? "border-white/25 text-white hover:bg-white/10"
-            : "border-slate-200 text-slate-800 hover:border-blue-200 hover:text-blue-700"
-        }`}
+            ? "border-foreground/20 bg-foreground text-background hover:bg-foreground/90"
+            : "border-border bg-card text-foreground hover:bg-muted"
+        )}
       >
-        <ArrowUpLeft className="h-3.5 w-3.5" />
-        {metadata.action.label}
+        <ArrowUpLeft className="h-4 w-4" />
+        <span className="truncate">{metadata.action.label}</span>
       </a>
     </div>
   );

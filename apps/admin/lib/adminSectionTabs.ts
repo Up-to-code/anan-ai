@@ -6,8 +6,12 @@ export const docsTabs: RouteTab[] = [];
 export const analyticsTabs: RouteTab[] = [];
 export const propertiesTabs: RouteTab[] = [];
 export const activityTabs: RouteTab[] = [];
-export const verificationTabs: RouteTab[] = [];
-export const verificationDetailTabs = (_requestId: string): RouteTab[] => [];
+export const verificationTabs: RouteTab[] = [
+  { href: "/verifications", label: "كل الطلبات", exact: true },
+];
+export const verificationDetailTabs = (requestId: string): RouteTab[] => [
+  { href: `/verifications/${requestId}`, label: "تفاصيل الطلب", exact: true },
+];
 
 export const salesTabs: RouteTab[] = [
   { href: "/sales/projects", label: "المشاريع", exact: false },

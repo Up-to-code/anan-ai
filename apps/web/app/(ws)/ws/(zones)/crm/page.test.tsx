@@ -12,13 +12,23 @@ vi.mock("../../_lib/workspaceData", () => ({
 const listDeals = vi.fn(async () => [
   {
     id: "deal-1",
+    createdAt: 1_700_000_000_000,
     title: "منى الغامدي",
     contactName: "منى الغامدي",
     description: "عميل مهتم",
     stage: "new" as const,
+    relationType: "internal_client" as const,
     value: 1800000,
     propertyId: "property-1",
     notes: "لا توجد ملاحظات بعد.",
+    project: {
+      id: "property-1",
+      title: "مالقا ريزيدنس",
+      image: "https://images.unsplash.com/photo-crm",
+      location: "الملقا، الرياض",
+      priceLabel: "1,950,000 ر.س",
+      summary: "مشروع جاهز",
+    },
   },
 ]);
 
@@ -37,8 +47,9 @@ describe("/ws/crm page", () => {
     const element = await WorkspaceCrmRoute();
     const markup = renderToStaticMarkup(element);
 
-    expect(markup).toContain("خط الأنابيب");
+    expect(markup).toContain("الصفقات");
     expect(markup).toContain("منى الغامدي");
+    expect(markup).toContain("مالقا ريزيدنس");
     expect(listDeals).toHaveBeenCalled();
     expect(markup).not.toContain("<select");
   });

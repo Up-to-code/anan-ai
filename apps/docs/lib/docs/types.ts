@@ -1,20 +1,29 @@
 export type DocsPageKey =
   | "getting-started"
   | "api-keys"
-  | "oauth-overview"
-  | "oauth-get-credentials"
-  | "oauth-authorization-code-pkce"
-  | "scopes-and-org-permissions"
-  | "api-clients"
-  | "api-properties"
+  | "org-clients"
+  | "org-properties"
   | "errors-and-security";
 
 export type DocsCalloutTone = "info" | "warning" | "success";
 
 export type DocsCodeExample = {
   title: string;
-  language: "bash" | "json" | "http" | "javascript" | "typescript" | "text";
+  language: "bash" | "json" | "http" | "javascript" | "typescript" | "csharp" | "text";
   code: string;
+};
+
+export type DocsCodeExampleGroup = {
+  title: string;
+  description?: string;
+  defaultLanguage?: DocsCodeExample["language"];
+  examples: DocsCodeExample[];
+};
+
+export type DocsRelatedLink = {
+  label: string;
+  href: string;
+  description?: string;
 };
 
 export type DocsScope = {
@@ -24,13 +33,26 @@ export type DocsScope = {
 
 export type DocsEndpoint = {
   title: string;
-  method: "GET" | "POST";
+  method: "GET" | "POST" | "PATCH" | "DELETE";
   path: string;
   description: string;
   requiredScopes?: string[];
   notes?: string[];
   requestExample?: DocsCodeExample;
   responseExample?: DocsCodeExample;
+};
+
+export type DocsImage = {
+  src: string;
+  alt: string;
+  caption?: string;
+  className?: string;
+};
+
+export type DocsVideo = {
+  src: string;
+  title?: string;
+  className?: string;
 };
 
 export type DocsCallout = {
@@ -45,14 +67,19 @@ export type DocsSection = {
   summary?: string;
   paragraphs?: string[];
   bullets?: string[];
+  images?: DocsImage[];
+  videos?: DocsVideo[];
   codeExamples?: DocsCodeExample[];
+  codeExampleGroups?: DocsCodeExampleGroup[];
   callouts?: DocsCallout[];
   scopes?: DocsScope[];
   endpoints?: DocsEndpoint[];
+  relatedLinks?: DocsRelatedLink[];
 };
 
 export type DocsPageDefinition = {
   key: DocsPageKey;
+  pageType: "guide" | "api" | "endpoint" | "concept";
   href: string;
   title: string;
   description: string;

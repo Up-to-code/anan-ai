@@ -14,7 +14,7 @@ export const metadata: Metadata = {
  */
 export default function DocsLayout({ children }: { children: ReactNode }) {
   return (
-    <section dir="ltr" className="min-h-screen bg-slate-50 text-slate-950">
+    <section dir="ltr" className="min-h-screen bg-background text-foreground transition-colors">
       <DocsShell>{children}</DocsShell>
     </section>
   );

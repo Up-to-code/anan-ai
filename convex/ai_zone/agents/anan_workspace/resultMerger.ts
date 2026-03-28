@@ -75,6 +75,9 @@ Agent outputs:
 ${successOutputs.join("\n\n---\n\n")}
 
 Merge these into a single, natural Arabic response. Do not mention the agents.
+Match the response length to the task: short for direct retrieval or simple operational asks, fuller only when the user asks for analysis.
+Prefer data-first Arabic output over decorative wording.
+If the task is operational, put the result first, then the next action only if needed.
 If the user is missing actionable information, ask concrete, short, non-redundant follow-up questions in Arabic.
 Do not ask for data already provided by the user in the current turn.
 ${hasFailures ? `Note: ${FALLBACK_MESSAGES.partialFailure}` : ""}`;

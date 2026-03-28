@@ -19,13 +19,17 @@ function assertOfferCanBeResponded(offer: any, access: any, authUserId: string) 
 
 async function createDealForAcceptedOffer(ctx: MutationCtx, offer: any, authUserId: string) {
   const property = (await ctx.db.get(offer.propertyId)) as any;
+  const now = Date.now();
   await ctx.db.insert("deals", {
+    createdAt: now,
     title: `عرض مقبول — ${property?.title ?? "عقار"}`,
     description: offer.description ?? offer.message ?? "",
     value: offer.price,
     stage: "new",
+    relationType: "broker_managed",
     REDId: offer.fromREDId ?? offer.toREDId,
     brokerId: offer.fromBrokerId ?? offer.toBrokerId,
+    relatedBrokerId: offer.fromBrokerId ?? offer.toBrokerId,
     propertyId: offer.propertyId,
     offerId: offer._id,
     lastUpdatedBy: authUserId,

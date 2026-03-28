@@ -23,12 +23,8 @@ function scopeLabel(scopeId: string) {
 export const docsPageOrder: DocsPageKey[] = [
   "getting-started",
   "api-keys",
-  "oauth-overview",
-  "oauth-get-credentials",
-  "oauth-authorization-code-pkce",
-  "scopes-and-org-permissions",
-  "api-clients",
-  "api-properties",
+  "org-clients",
+  "org-properties",
   "errors-and-security",
 ];
 
@@ -39,19 +35,9 @@ export const docsNavGroups: DocsNavGroup[] = [
     items: ["getting-started", "api-keys"],
   },
   {
-    id: "oauth",
-    title: "OAuth",
-    items: ["oauth-overview", "oauth-get-credentials", "oauth-authorization-code-pkce"],
-  },
-  {
-    id: "access",
-    title: "Permissions & Access",
-    items: ["scopes-and-org-permissions"],
-  },
-  {
     id: "api",
-    title: "Delegated APIs",
-    items: ["api-clients", "api-properties"],
+    title: "Organization APIs",
+    items: ["org-clients", "org-properties"],
   },
   {
     id: "ops",
@@ -63,36 +49,114 @@ export const docsNavGroups: DocsNavGroup[] = [
 export const docsPages: Record<DocsPageKey, DocsPageDefinition> = {
   "getting-started": {
     key: "getting-started",
+    pageType: "guide",
     href: "/docs/getting-started",
     title: "Getting Started",
     description: "Fast path from credentials to your first successful API call.",
     summary:
-      "Choose between self-service organization API keys for org-owned server integrations or OAuth for delegated user access.",
+      "Choose between manager-created organization API keys for broker or developer org data, or OAuth for delegated user access.",
     sections: [
       {
         id: "integration-checklist",
         title: "Integration Checklist",
+        summary: "Start by choosing the correct auth model, then wire your environment and first request with the smallest possible permission set.",
         bullets: [
-          "Choose your auth model first: organization API keys for backend-to-backend org access, or OAuth for delegated user access.",
-          "For organization API keys, create the key in Workspace Settings → API Keys and store it securely because the full secret is shown once.",
+          "Choose your auth model first: organization API keys for backend-to-backend access to the current broker or developer organization, or OAuth for delegated user access.",
+          "For organization API keys, create the key in Workspace Settings → API Keys as an organization manager and store it securely because the full secret is shown once.",
           "For OAuth, get your `client_id` and `client_secret` from Anan onboarding and register redirect URIs before launch.",
           "Store API keys, access tokens, and refresh tokens securely; rotate or revoke them if you suspect exposure.",
           "Use the minimum permission set required for each integration path.",
+        ],
+        callouts: [
+          {
+            title: "Recommended Starting Path",
+            body: "Use organization API keys first if you are building an internal backend integration for one broker or developer organization. Move to OAuth only when you need delegated user authorization.",
+            tone: "info",
+          },
+        ],
+        relatedLinks: [
+          {
+            label: "Organization API Keys",
+            href: "/docs/api-keys",
+            description: "How managers create keys, choose permissions, and revoke access.",
+          },
+          {
+            label: "Organization Clients API",
+            href: "/docs/org-clients",
+            description: "Machine API examples and endpoint references for client records.",
+          },
         ],
       },
       {
         id: "base-endpoints",
         title: "Base Endpoints",
+        summary: "The machine API and delegated OAuth API are separate on purpose. Choose one surface per request flow and keep that boundary clear in your integration.",
         paragraphs: [
           "Anan exposes two integration surfaces. Organization API keys call the workspace machine API under `/api/org/*`, while OAuth delegated integrations use `/authorize`, `/token`, and `/api/oauth/*`.",
-          "Prefer organization API keys for first-party internal tools that should only touch the current organization’s data.",
+          "Prefer organization API keys for first-party internal tools that should only touch the currently selected organization’s data. The key itself carries the organization binding, so requests never send broker, developer, or org ids for scoping.",
+        ],
+        codeExampleGroups: [
+          {
+            title: "List organization properties",
+            description: "TypeScript is the default example. Use the selector to switch to JavaScript, C#/.NET, or cURL.",
+            defaultLanguage: "typescript",
+            examples: [
+              {
+                title: "List organization properties",
+                language: "typescript",
+                code: `type ListPropertiesResponse = {
+  properties: Array<{
+    id: string;
+    title: string;
+    publicationState?: string;
+  }>;
+};
+
+const response = await fetch(\`\${process.env.ANAN_ISSUER}/api/org/properties\`, {
+  headers: {
+    "X-Anan-Api-Key": process.env.ANAN_ORG_API_KEY!,
+  },
+});
+
+const data = (await response.json()) as ListPropertiesResponse;
+console.log(data.properties);`,
+              },
+              {
+                title: "List organization properties",
+                language: "javascript",
+                code: `const response = await fetch(\`\${process.env.ANAN_ISSUER}/api/org/properties\`, {
+  headers: {
+    "X-Anan-Api-Key": process.env.ANAN_ORG_API_KEY,
+  },
+});
+
+const data = await response.json();
+console.log(data.properties);`,
+              },
+              {
+                title: "List organization properties",
+                language: "csharp",
+                code: `using System.Net.Http.Headers;
+
+using var http = new HttpClient();
+http.DefaultRequestHeaders.Add("X-Anan-Api-Key", Environment.GetEnvironmentVariable("ANAN_ORG_API_KEY"));
+
+var issuer = Environment.GetEnvironmentVariable("ANAN_ISSUER");
+var response = await http.GetAsync($"{issuer}/api/org/properties");
+response.EnsureSuccessStatusCode();
+
+var json = await response.Content.ReadAsStringAsync();
+Console.WriteLine(json);`,
+              },
+              {
+                title: "List organization properties",
+                language: "bash",
+                code: "curl -sS -H \"X-Anan-Api-Key: $ANAN_ORG_API_KEY\" \"$ANAN_ISSUER/api/org/properties\"",
+              },
+            ],
+          },
         ],
         codeExamples: [
-          {
-            title: "List properties with an organization API key",
-            language: "bash",
-            code: "curl -sS -H \"X-Anan-Api-Key: $ANAN_ORG_API_KEY\" \"$ANAN_ISSUER/api/org/properties\"",
-          },
           {
             title: "Fetch authorization-server metadata",
             language: "bash",
@@ -111,18 +175,106 @@ export const docsPages: Record<DocsPageKey, DocsPageDefinition> = {
 }`,
           },
         ],
+        relatedLinks: [
+          {
+            label: "Organization Properties API",
+            href: "/docs/org-properties",
+            description: "Full org-scoped property endpoint reference and payload examples.",
+          },
+          {
+            label: "Errors and Security",
+            href: "/docs/errors-and-security",
+            description: "Operational guardrails and credential handling guidance.",
+          },
+        ],
       },
       {
         id: "first-oauth-call",
         title: "First OAuth Delegated API Call",
+        summary: "Once token exchange succeeds, validate the whole OAuth path with one small read call before you build write flows.",
         paragraphs: [
           "After token exchange, start with a read operation. For example, list delegated clients with `clients:read` or `clients:read_own` scope.",
         ],
-        codeExamples: [
+        codeExampleGroups: [
           {
             title: "List delegated clients",
-            language: "bash",
-            code: "curl -sS -H \"Authorization: Bearer $ACCESS_TOKEN\" \"$ANAN_ISSUER/api/oauth/clients\"",
+            description: "Use the selector to switch between TypeScript, JavaScript, C#/.NET, and cURL.",
+            defaultLanguage: "typescript",
+            examples: [
+              {
+                title: "List delegated clients",
+                language: "typescript",
+                code: `type ListClientsResponse = {
+  clients: Array<{
+    id: string;
+    name: string;
+  }>;
+};
+
+const response = await fetch(\`\${process.env.ANAN_ISSUER}/api/oauth/clients\`, {
+  headers: {
+    Authorization: \`Bearer \${process.env.ACCESS_TOKEN!}\`,
+  },
+});
+
+const data = (await response.json()) as ListClientsResponse;
+console.log(data.clients);`,
+              },
+              {
+                title: "List delegated clients",
+                language: "javascript",
+                code: `const response = await fetch(\`\${process.env.ANAN_ISSUER}/api/oauth/clients\`, {
+  headers: {
+    Authorization: \`Bearer \${process.env.ACCESS_TOKEN}\`,
+  },
+});
+
+const data = await response.json();
+console.log(data.clients);`,
+              },
+              {
+                title: "List delegated clients",
+                language: "csharp",
+                code: `using System.Net.Http.Headers;
+
+using var http = new HttpClient();
+http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+    "Bearer",
+    Environment.GetEnvironmentVariable("ACCESS_TOKEN")
+);
+
+var issuer = Environment.GetEnvironmentVariable("ANAN_ISSUER");
+var response = await http.GetAsync($"{issuer}/api/oauth/clients");
+response.EnsureSuccessStatusCode();
+
+var json = await response.Content.ReadAsStringAsync();
+Console.WriteLine(json);`,
+              },
+              {
+                title: "List delegated clients",
+                language: "bash",
+                code: "curl -sS -H \"Authorization: Bearer $ACCESS_TOKEN\" \"$ANAN_ISSUER/api/oauth/clients\"",
+              },
+            ],
+          },
+        ],
+        callouts: [
+          {
+            title: "Scope Check",
+            body: "If this request fails with insufficient scope, inspect the granted scopes on your access token before debugging the endpoint itself.",
+            tone: "warning",
+          },
+        ],
+        relatedLinks: [
+          {
+            label: "Organization Clients API",
+            href: "/docs/org-clients",
+            description: "Compare delegated access with the machine API shape for clients.",
+          },
+          {
+            label: "Errors and Security",
+            href: "/docs/errors-and-security",
+            description: "Token revocation and OAuth operational guidance.",
           },
         ],
       },
@@ -130,38 +282,115 @@ export const docsPages: Record<DocsPageKey, DocsPageDefinition> = {
   },
   "api-keys": {
     key: "api-keys",
+    pageType: "guide",
     href: "/docs/api-keys",
     title: "Organization API Keys",
-    description: "Self-service org-scoped API keys for internal server integrations.",
+    description: "Manager-created org-scoped API keys for internal server integrations.",
     summary:
-      "Organization API keys are created from workspace settings, reveal their secret once, and can access only the owning organization’s clients and properties.",
+      "Organization API keys are created by organization managers in workspace settings, reveal their secret once, and can access only the owning broker or developer organization’s clients and properties.",
     sections: [
       {
         id: "create-key",
         title: "Create a Key",
+        summary: "API keys are created by workspace managers and are always bound to the current organization. They are intended for server-side integrations, not browser clients.",
         bullets: [
-          "Open Workspace Settings → API Keys as an organization manager.",
-          "Choose a name and resource-action permissions for `clients` and `properties`.",
+          "Open Workspace Settings → API Keys as a manager of the current broker or developer organization.",
+          "Choose a name and granular resource-action permissions for `clients` and `properties`.",
+          "Permissions are assigned per action: `read`, `create`, `update`, `delete`.",
           "Copy the secret immediately after creation; Anan stores only a hash and will not show the full value again.",
           "Revoke the key from the same settings tab if it is no longer needed.",
+        ],
+        callouts: [
+          {
+            title: "Server-Side Only",
+            body: "Treat organization API keys like production secrets. Keep them in backend environment variables or a secret manager and never expose them in frontend bundles.",
+            tone: "warning",
+          },
+        ],
+        relatedLinks: [
+          {
+            label: "Getting Started",
+            href: "/docs/getting-started",
+            description: "Start here if you still need to choose between org API keys and OAuth.",
+          },
+          {
+            label: "Errors and Security",
+            href: "/docs/errors-and-security",
+            description: "Credential hygiene, revocation, and operational recovery notes.",
+          },
         ],
       },
       {
         id: "authenticate",
         title: "Authenticate Requests",
+        summary: "TypeScript is the primary example. Use the selector to switch languages without leaving the same code block.",
         paragraphs: [
-          "Send the key in the `X-Anan-Api-Key` header. The key is always scoped to the organization that created it; callers never provide org ids in requests.",
+          "Send the key in the `X-Anan-Api-Key` header. The key is always scoped to the organization that created it, so callers never provide org ids, broker ids, or developer ids in requests.",
+        ],
+        codeExampleGroups: [
+          {
+            title: "Authenticate a request to the organization clients API",
+            description: "Use TypeScript by default, then switch to the language your team uses.",
+            defaultLanguage: "typescript",
+            examples: [
+              {
+                title: "Authenticate a request to the organization clients API",
+                language: "typescript",
+                code: `type ListClientsResponse = {
+  clients: Array<{
+    id: string;
+    name: string;
+    email?: string;
+  }>;
+};
+
+const response = await fetch(\`\${process.env.ANAN_ISSUER}/api/org/clients\`, {
+  headers: {
+    "X-Anan-Api-Key": process.env.ANAN_ORG_API_KEY!,
+  },
+});
+
+const data = (await response.json()) as ListClientsResponse;
+console.log(data.clients);`,
+              },
+              {
+                title: "Authenticate a request to the organization clients API",
+                language: "javascript",
+                code: `const response = await fetch(\`\${process.env.ANAN_ISSUER}/api/org/clients\`, {
+  headers: {
+    "X-Anan-Api-Key": process.env.ANAN_ORG_API_KEY,
+  },
+});
+
+const data = await response.json();
+console.log(data.clients);`,
+              },
+              {
+                title: "Authenticate a request to the organization clients API",
+                language: "csharp",
+                code: `using var http = new HttpClient();
+http.DefaultRequestHeaders.Add("X-Anan-Api-Key", Environment.GetEnvironmentVariable("ANAN_ORG_API_KEY"));
+
+var issuer = Environment.GetEnvironmentVariable("ANAN_ISSUER");
+var response = await http.GetAsync($"{issuer}/api/org/clients");
+response.EnsureSuccessStatusCode();
+
+var json = await response.Content.ReadAsStringAsync();
+Console.WriteLine(json);`,
+              },
+              {
+                title: "Authenticate a request to the organization clients API",
+                language: "bash",
+                code: "curl -sS -H \"X-Anan-Api-Key: $ANAN_ORG_API_KEY\" \"$ANAN_ISSUER/api/org/clients\"",
+              },
+            ],
+          },
         ],
         codeExamples: [
           {
             title: "Environment variable",
             language: "bash",
             code: "export ANAN_ORG_API_KEY=\"anan_abcd1234.<secret>\"",
-          },
-          {
-            title: "List org clients",
-            language: "bash",
-            code: "curl -sS -H \"X-Anan-Api-Key: $ANAN_ORG_API_KEY\" \"$ANAN_ISSUER/api/org/clients\"",
           },
         ],
       },
@@ -171,7 +400,7 @@ export const docsPages: Record<DocsPageKey, DocsPageDefinition> = {
         bullets: [
           "Permissions are granted per resource and action: `read`, `create`, `update`, `delete`.",
           "v1 resources are `clients` and `properties` only.",
-          "A key can never escape its owning organization even if a foreign resource id is supplied.",
+          "A key can never escape its owning broker or developer organization even if a foreign resource id is supplied.",
           "Revoked keys stop working immediately.",
         ],
       },
@@ -185,6 +414,22 @@ export const docsPages: Record<DocsPageKey, DocsPageDefinition> = {
             path: "/api/org/clients",
             description: "Lists CRM clients owned by the current organization.",
             notes: ["Requires `clients:read` permission."],
+            responseExample: {
+              title: "Example Response",
+              language: "json",
+              code: `{
+  "clients": [
+    {
+      "id": "c_123xyz",
+      "name": "Ahmed Mansour",
+      "email": "ahmed@example.com",
+      "phone": "+966555555555",
+      "createdAt": 1774346400000,
+      "updatedAt": 1774346400000
+    }
+  ]
+}`
+            }
           },
           {
             title: "Create client",
@@ -199,8 +444,22 @@ export const docsPages: Record<DocsPageKey, DocsPageDefinition> = {
   "name": "Al Noor Investments",
   "phone": "+966511111111",
   "email": "team@alnoor.example"
-}`,
+}`
             },
+            responseExample: {
+              title: "Created Response",
+              language: "json",
+              code: `{
+  "client": {
+    "id": "c_999abc",
+    "name": "Al Noor Investments",
+    "phone": "+966511111111",
+    "email": "team@alnoor.example",
+    "createdAt": 1774346400000,
+    "updatedAt": 1774346400000
+  }
+}`
+            }
           },
           {
             title: "Properties collection",
@@ -208,6 +467,24 @@ export const docsPages: Record<DocsPageKey, DocsPageDefinition> = {
             path: "/api/org/properties",
             description: "Lists properties owned by the current organization.",
             notes: ["Requires `properties:read` permission."],
+            responseExample: {
+              title: "Example Response",
+              language: "json",
+              code: `{
+  "properties": [
+    {
+      "id": "p_444def",
+      "title": "Palm Residences Unit 301",
+      "price": 1250000,
+      "beds": 3,
+      "baths": 3,
+      "address": "Al Olaya District, Riyadh",
+      "description": "High-floor unit with city view",
+      "publicationState": "draft"
+    }
+  ]
+}`
+            }
           },
           {
             title: "Create property",
@@ -225,510 +502,320 @@ export const docsPages: Record<DocsPageKey, DocsPageDefinition> = {
   "beds": 3,
   "baths": 3,
   "description": "High-floor unit with city view"
-}`,
+}`
             },
-          },
-        ],
-      },
-    ],
-  },
-  "oauth-overview": {
-    key: "oauth-overview",
-    href: "/docs/oauth/overview",
-    title: "OAuth Overview",
-    description: "How the Anan authorization server works end-to-end.",
-    summary:
-      "Anan supports OAuth 2.0 Authorization Code with PKCE, refresh tokens, OpenID user identity scopes, and delegated resource access with scoped permissions.",
-    sections: [
-      {
-        id: "supported-features",
-        title: "Supported Features",
-        bullets: [
-          "Authorization endpoint: `GET /authorize`",
-          "Token endpoint: `POST /token`",
-          "Userinfo endpoint: `GET|POST /userinfo`",
-          "Revocation endpoint: `POST /revoke`",
-          "Metadata endpoint: `GET /.well-known/oauth-authorization-server`",
-          "JWKS endpoint: `GET /jwks.json`",
-          "Grant types: `authorization_code`, `refresh_token`",
-          "Token auth methods: `none`, `client_secret_basic`",
-          "Code challenge method: `S256` (PKCE required for authorize flow)",
-        ],
-      },
-      {
-        id: "openid-and-api-scopes",
-        title: "OpenID + Delegated API Scopes",
-        summary:
-          "Scopes control both user identity claims (`openid`, `profile`, `email`) and delegated data permissions (`clients:*`, `properties:*`).",
-        scopes: OAUTH_SCOPES,
-      },
-      {
-        id: "high-level-sequence",
-        title: "High-Level Sequence",
-        bullets: [
-          "Redirect user to Anan `/authorize` with PKCE challenge and requested scopes.",
-          "User signs in (if needed) and approves requested scopes on Anan consent page.",
-          "Anan redirects back with authorization code and state.",
-          "Exchange code for access token (and optionally refresh token).",
-          "Call delegated APIs with bearer token and keep scopes minimal.",
-        ],
-      },
-    ],
-  },
-  "oauth-get-credentials": {
-    key: "oauth-get-credentials",
-    href: "/docs/oauth/get-credentials",
-    title: "Authentication & Credentials",
-    description: "How to obtain and configure your Anan API Keys and OAuth app credentials.",
-    summary:
-      "Organization API keys are self-service from workspace settings, while OAuth app credentials remain onboarding-managed for delegated user access.",
-    sections: [
-      {
-        id: "organization-api-keys",
-        title: "Organization API Keys",
-        paragraphs: [
-          "Use organization API keys for first-party server integrations that should read or write only the current organization’s clients and properties.",
-          "Managers can create these keys directly from Workspace Settings → API Keys. The secret is shown once and must be stored securely on your side.",
-        ],
-        codeExamples: [
-          {
-            title: "Using an organization API key",
-            language: "typescript",
-            code: `const response = await fetch(\`\${process.env.ANAN_ISSUER}/api/org/properties\`, {
-  headers: {
-    "X-Anan-Api-Key": process.env.ANAN_ORG_API_KEY!
+            responseExample: {
+              title: "Created Response",
+              language: "json",
+              code: `{
+  "property": {
+    "id": "p_555ghi",
+    "title": "Palm Residences Unit 301",
+    "address": "Al Olaya District, Riyadh",
+    "price": 1250000,
+    "beds": 3,
+    "baths": 3,
+    "publicationState": "draft"
   }
-});`
+}`
+            }
           },
         ],
       },
       {
-        id: "oauth-credentials",
-        title: "OAuth Credentials",
-        bullets: [
-          "`client_id` (always)",
-          "`client_secret` (confidential clients only)",
-          "approved redirect URI list",
-          "approved scope allowlist",
+        id: "api-key-usage-examples",
+        title: "Fetching & Modifying Data (Examples)",
+        paragraphs: [
+          "Use your organization API key to read and modify data inside the current organization boundary."
         ],
-      },
-      {
-        id: "provisioning-model",
-        title: "Provisioning Model",
-        callouts: [
-          {
-            title: "Self-Service Keys",
-            body: "Organization API keys are created directly by organization managers from workspace settings.",
-            tone: "info",
-          },
-          {
-            title: "OAuth Still Uses Onboarding",
-            body: "OAuth client credentials are still provisioned by Anan onboarding. There is no public self-service endpoint for creating external OAuth apps.",
-            tone: "warning",
-          },
-        ],
-      },
-      {
-        id: "environment-setup",
-        title: "Environment Setup",
         codeExamples: [
           {
-            title: "Suggested environment variables",
-            language: "bash",
-            code: `export ANAN_ISSUER="https://<your-anan-issuer>"
-export ANAN_ORG_API_KEY="<workspace-generated-api-key>"
-export ANAN_CLIENT_ID="<provided-client-id>"
-export ANAN_CLIENT_SECRET="<provided-client-secret-if-confidential>"
-export ANAN_REDIRECT_URI="https://your-app.example.com/oauth/callback"`,
+            title: "Fetch properties (GET)",
+            language: "javascript",
+            code: `const fetchProperties = async () => {
+  const res = await fetch("https://<anan-issuer>/api/org/properties", {
+    headers: { "X-Anan-Api-Key": process.env.ANAN_ORG_API_KEY }
+  });
+  const data = await res.json();
+  console.log(data.properties);
+};`
           },
-        ],
-      },
-    ],
+          {
+            title: "Add a new client (POST)",
+            language: "javascript",
+            code: `const addClient = async (clientData) => {
+  const res = await fetch("https://<anan-issuer>/api/org/clients", {
+    method: "POST",
+    headers: {
+      "X-Anan-Api-Key": process.env.ANAN_ORG_API_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(clientData)
+  });
+  const data = await res.json();
+  console.log("Created Client:", data.client);
+};
+
+// Usage
+addClient({ name: "Omar Real Estate", phone: "+966550000001" });`
+          }
+        ]
+      }
+    ]
   },
-  "oauth-authorization-code-pkce": {
-    key: "oauth-authorization-code-pkce",
-    href: "/docs/oauth/authorization-code-pkce",
-    title: "Authorization Code + PKCE",
-    description: "Complete browser authorization flow and token exchange examples.",
+  "org-clients": {
+    key: "org-clients",
+    pageType: "api",
+    href: "/docs/org-clients",
+    title: "Organization Clients API",
+    description: "Manage CRM clients exclusively using Organization API Keys.",
     summary:
-      "Use Authorization Code + PKCE for user-granted delegated access. Include `state`, enforce callback validation, and store refresh tokens securely.",
-    sections: [
-      {
-        id: "authorize-request",
-        title: "Step 1: Redirect to `/authorize`",
-        paragraphs: [
-          "Request authorization code with PKCE (`code_challenge_method=S256`). Include only the scopes your feature needs.",
-        ],
-        codeExamples: [
-          {
-            title: "Authorize URL example",
-            language: "text",
-            code: `$ANAN_ISSUER/authorize?response_type=code&client_id=$ANAN_CLIENT_ID&redirect_uri=$ANAN_REDIRECT_URI&scope=openid%20profile%20offline_access%20clients:read_own&state=<opaque-state>&code_challenge=<pkce-challenge>&code_challenge_method=S256`,
-          },
-        ],
-      },
-      {
-        id: "token-exchange",
-        title: "Step 2: Exchange code at `/token`",
-        paragraphs: [
-          "Exchange the returned authorization code for access token. Include `code_verifier` that matches your original PKCE challenge.",
-          "Confidential clients can authenticate with HTTP Basic (`client_id:client_secret`). Public clients can use `client_id` in form body without a secret.",
-        ],
-        codeExamples: [
-          {
-            title: "Authorization code grant",
-            language: "bash",
-            code: `curl -sS -X POST "$ANAN_ISSUER/token" \\
-  -H "Content-Type: application/x-www-form-urlencoded" \\
-  -u "$ANAN_CLIENT_ID:$ANAN_CLIENT_SECRET" \\
-  --data-urlencode "grant_type=authorization_code" \\
-  --data-urlencode "code=$AUTHORIZATION_CODE" \\
-  --data-urlencode "redirect_uri=$ANAN_REDIRECT_URI" \\
-  --data-urlencode "code_verifier=$PKCE_CODE_VERIFIER"`,
-          },
-          {
-            title: "Authorization code grant (public client)",
-            language: "bash",
-            code: `curl -sS -X POST "$ANAN_ISSUER/token" \\
-  -H "Content-Type: application/x-www-form-urlencoded" \\
-  --data-urlencode "grant_type=authorization_code" \\
-  --data-urlencode "client_id=$ANAN_CLIENT_ID" \\
-  --data-urlencode "code=$AUTHORIZATION_CODE" \\
-  --data-urlencode "redirect_uri=$ANAN_REDIRECT_URI" \\
-  --data-urlencode "code_verifier=$PKCE_CODE_VERIFIER"`,
-          },
-          {
-            title: "Token response shape",
-            language: "json",
-            code: `{
-  "access_token": "<jwt>",
-  "token_type": "Bearer",
-  "expires_in": 900,
-  "scope": "openid profile offline_access clients:read_own",
-  "refresh_token": "<refresh-token>"
-}`,
-          },
-        ],
-      },
-      {
-        id: "refresh-exchange",
-        title: "Step 3: Refresh token",
-        paragraphs: [
-          "Use refresh token grant when access token expires. Keep refresh token encrypted at rest and rotate according to your security policy.",
-        ],
-        codeExamples: [
-          {
-            title: "Refresh token grant",
-            language: "bash",
-            code: `curl -sS -X POST "$ANAN_ISSUER/token" \\
-  -H "Content-Type: application/x-www-form-urlencoded" \\
-  -u "$ANAN_CLIENT_ID:$ANAN_CLIENT_SECRET" \\
-  --data-urlencode "grant_type=refresh_token" \\
-  --data-urlencode "refresh_token=$REFRESH_TOKEN"`,
-          },
-        ],
-      },
-      {
-        id: "userinfo",
-        title: "Optional: Query `/userinfo`",
-        paragraphs: [
-          "Use `/userinfo` for identity claims that match granted scopes (`profile`, `email`).",
-        ],
-        codeExamples: [
-          {
-            title: "Userinfo request",
-            language: "bash",
-            code: "curl -sS -H \"Authorization: Bearer $ACCESS_TOKEN\" \"$ANAN_ISSUER/userinfo\"",
-          },
-        ],
-      },
-    ],
-  },
-  "scopes-and-org-permissions": {
-    key: "scopes-and-org-permissions",
-    href: "/docs/scopes-and-org-permissions",
-    title: "Scopes and Organization Permissions",
-    description: "How scopes and ownership context affect delegated API access.",
-    summary:
-      "Access decisions are scope-driven and ownership-aware. Delegated resource handlers resolve caller context from token and user profile, including broker/RED links for organization-scoped resources.",
-    sections: [
-      {
-        id: "scope-basics",
-        title: "Scope Basics",
-        paragraphs: [
-          "Request the minimum scope set for each feature. Some endpoints accept either broad read scopes or own-resource read scopes.",
-          "Examples: clients list accepts `clients:read_own` or `clients:read`; properties list accepts `properties:read_own` or `properties:read`.",
-        ],
-      },
-      {
-        id: "ownership-context",
-        title: "Organization Ownership Context",
-        bullets: [
-          "Delegated handlers resolve token context and user profile before resource access.",
-          "For property access, ownership links (`brokerId`, `REDId`) are used to scope delegated resources.",
-          "For client access, owner auth user id is used to list user-owned clients.",
-        ],
-      },
-      {
-        id: "recommended-scope-profiles",
-        title: "Recommended Scope Profiles",
-        bullets: [
-          "Read-only CRM sync: `openid profile clients:read_own properties:read_own`",
-          "Client creation workflow: `openid profile clients:read_own clients:create`",
-          "Property publishing assistant: `openid profile properties:read_own properties:create_own properties:update_own`",
-        ],
-      },
-      {
-        id: "scope-reference",
-        title: "Scope Reference",
-        scopes: OAUTH_SCOPES,
-      },
-    ],
-  },
-  "api-clients": {
-    key: "api-clients",
-    href: "/docs/api/clients",
-    title: "Delegated Clients API",
-    description: "Read and create CRM clients with delegated OAuth access.",
-    summary:
-      "Use `/api/oauth/clients` for delegated client operations. Scope requirements are enforced per method and caller identity.",
+      "Use `/api/org/clients` for first-party organization client operations. The `X-Anan-Api-Key` header binds every request to the current broker or developer organization.",
     sections: [
       {
         id: "clients-get",
-        title: "List Delegated Clients",
+        title: "List Clients",
         endpoints: [
           {
             title: "List clients",
             method: "GET",
-            path: "/api/oauth/clients",
-            description: "Returns CRM clients accessible to the delegated caller.",
-            requiredScopes: ["clients:read_own", "clients:read"],
-            notes: [
-              "Requires bearer token in Authorization header.",
-              "At least one of these scopes is required: `clients:read_own` or `clients:read`.",
-              "Caller identity comes from access token context.",
-            ],
+            path: "/api/org/clients",
+            description: "Returns CRM clients owned by the organization.",
+            notes: ["Requires the `X-Anan-Api-Key` HTTP header with `clients:read`."],
             responseExample: {
               title: "Example response",
               language: "json",
               code: `{
   "clients": [
     {
-      "_id": "<client-id>",
+      "id": "<client-id>",
       "name": "Alya Trading",
       "email": "ops@alya.example",
-      "phone": "+966500000000"
+      "phone": "+966500000000",
+      "createdAt": 1774346400000,
+      "updatedAt": 1774346400000
     }
   ]
-}`,
-            },
-          },
-        ],
+}`
+            }
+          }
+        ]
       },
       {
         id: "clients-post",
-        title: "Create Delegated Client",
+        title: "Create Client",
         endpoints: [
           {
             title: "Create client",
             method: "POST",
-            path: "/api/oauth/clients",
-            description: "Creates a CRM client on behalf of the delegated user.",
-            requiredScopes: ["clients:create"],
+            path: "/api/org/clients",
+            description: "Creates a CRM client under the current organization.",
+            notes: ["Requires the `X-Anan-Api-Key` HTTP header with `clients:create`."],
             requestExample: {
               title: "Request body",
               language: "json",
               code: `{
   "name": "Al Noor Investments",
   "phone": "+966511111111",
-  "email": "team@alnoor.example",
-  "notes": "Imported from partner portal"
-}`,
+  "email": "team@alnoor.example"
+}`
             },
             responseExample: {
               title: "Created response",
               language: "json",
               code: `{
   "client": {
-    "_id": "<client-id>",
+    "id": "<client-id>",
     "name": "Al Noor Investments"
   }
-}`,
-            },
-          },
-        ],
-      },
-      {
-        id: "clients-type-safety",
-        title: "Response Expectation & Type Safety",
-        paragraphs: [
-          "For seamless integration, use our provided TypeScript definitions to ensure type safety when handling responses and requests."
-        ],
-        codeExamples: [
-          {
-            title: "TypeScript Definitions",
-            language: "typescript",
-            code: `export interface Client {
-  _id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  notes?: string;
-}
-
-export interface ListClientsResponse {
-  clients: Client[];
-}
-
-export interface CreateClientRequest {
-  name: string;
-  email?: string;
-  phone?: string;
-  notes?: string;
 }`
+            }
           }
         ]
       },
       {
-        id: "clients-examples",
-        title: "Code Examples",
-        codeExamples: [
+        id: "clients-patch",
+        title: "Update Client",
+        endpoints: [
           {
-            title: "GET clients (TypeScript fetch)",
-            language: "typescript",
-            code: `async function getClients(): Promise<Client[]> {
-  const res = await fetch(\`\${process.env.ANAN_ISSUER}/api/oauth/clients\`, {
-    headers: { Authorization: \`Bearer \${process.env.ACCESS_TOKEN}\` }
-  });
-  
-  if (!res.ok) throw new Error("Failed to fetch clients");
-  
-  const data = await res.json() as ListClientsResponse;
-  return data.clients;
+            title: "Update client",
+            method: "PATCH",
+            path: "/api/org/clients/[clientId]",
+            description: "Updates a specific CRM client via its unique ID.",
+            notes: ["Requires the `X-Anan-Api-Key` HTTP header with `clients:update`."],
+            requestExample: {
+              title: "Request body",
+              language: "json",
+              code: `{
+  "name": "Al Noor Renewed"
 }`
-          },
-          {
-            title: "POST client (JavaScript fetch)",
-            language: "javascript",
-            code: `async function createClient(clientData) {
-  const res = await fetch(\`\${process.env.ANAN_ISSUER}/api/oauth/clients\`, {
-    method: "POST",
-    headers: {
-      "Authorization": \`Bearer \${process.env.ACCESS_TOKEN}\`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(clientData)
-  });
-  
-  return res.json();
-}
-
-// Usage
-createClient({ name: "Al Noor Investments", email: "team@alnoor.example" });`
-          },
-        ],
+            },
+            responseExample: {
+              title: "Updated response",
+              language: "json",
+              code: `{
+  "client": {
+    "id": "<client-id>",
+    "name": "Al Noor Renewed"
+  }
+}`
+            }
+          }
+        ]
       },
-    ],
+      {
+        id: "clients-delete",
+        title: "Delete Client",
+        endpoints: [
+          {
+            title: "Delete client",
+            method: "DELETE",
+            path: "/api/org/clients/[clientId]",
+            description: "Permanently deletes a CRM client via its unique ID.",
+            notes: ["Requires the `X-Anan-Api-Key` HTTP header with `clients:delete`."],
+            responseExample: {
+              title: "Deleted response",
+              language: "json",
+              code: `{
+  "deleted": true
+}`
+            }
+          }
+        ]
+      }
+    ]
   },
-  "api-properties": {
-    key: "api-properties",
-    href: "/docs/api/properties",
-    title: "Delegated Properties API",
-    description: "Read and create properties with delegated OAuth access.",
+  "org-properties": {
+    key: "org-properties",
+    pageType: "api",
+    href: "/docs/org-properties",
+    title: "Organization Properties API",
+    description: "Manage real estate properties exclusively using Organization API Keys.",
     summary:
-      "Use `/api/oauth/properties` for delegated property operations. Ownership is tied to caller profile context and scope permissions.",
+      "Use `/api/org/properties` for property operations within the current broker or developer organization. Supports full CRUD controls.",
     sections: [
       {
         id: "properties-get",
-        title: "List Delegated Properties",
+        title: "List Properties",
         endpoints: [
           {
             title: "List properties",
             method: "GET",
-            path: "/api/oauth/properties",
-            description: "Returns properties accessible through caller ownership links.",
-            requiredScopes: ["properties:read_own", "properties:read"],
-            notes: [
-              "At least one of these scopes is required: `properties:read_own` or `properties:read`.",
-            ],
+            path: "/api/org/properties",
+            description: "Returns properties owned by the organization.",
+            notes: ["Requires the `X-Anan-Api-Key` HTTP header with `properties:read`."],
             responseExample: {
               title: "Example response",
               language: "json",
               code: `{
   "properties": [
     {
-      "_id": "<property-id>",
-      "title": "Palm Residences Unit 301",
-      "publicationState": "draft",
-      "status": "available"
+      "id": "<property-id>",
+      "title": "Palm Residences",
+      "address": "Al Olaya District, Riyadh",
+      "price": 1250000,
+      "beds": 3,
+      "baths": 3,
+      "description": "High-floor unit",
+      "publicationState": "draft"
     }
   ]
-}`,
-            },
-          },
-        ],
+}`
+            }
+          }
+        ]
       },
       {
         id: "properties-post",
-        title: "Create Delegated Property",
+        title: "Create Property",
         endpoints: [
           {
             title: "Create property",
             method: "POST",
-            path: "/api/oauth/properties",
-            description: "Creates a draft property owned via caller broker/RED context.",
-            requiredScopes: ["properties:create_own"],
+            path: "/api/org/properties",
+            description: "Creates a draft property under the current organization.",
+            notes: ["Requires the `X-Anan-Api-Key` HTTP header with `properties:create`."],
             requestExample: {
               title: "Request body",
               language: "json",
               code: `{
-  "title": "Palm Residences Unit 301",
+  "title": "Palm Residences",
   "address": "Al Olaya District, Riyadh",
   "price": 1250000,
   "beds": 3,
   "baths": 3,
-  "description": "High-floor unit with city view",
-  "area": "160 sqm",
-  "location": "Riyadh"
-}`,
+  "description": "High-floor unit"
+}`
             },
             responseExample: {
               title: "Created response",
               language: "json",
               code: `{
   "property": {
-    "_id": "<property-id>",
-    "title": "Palm Residences Unit 301",
+    "id": "<property-id>",
+    "title": "Palm Residences",
     "publicationState": "draft"
   }
-}`,
-            },
-          },
-        ],
+}`
+            }
+          }
+        ]
       },
       {
-        id: "properties-curl",
-        title: "cURL Examples",
-        codeExamples: [
+        id: "properties-patch",
+        title: "Update Property",
+        endpoints: [
           {
-            title: "GET properties",
-            language: "bash",
-            code: "curl -sS -H \"Authorization: Bearer $ACCESS_TOKEN\" \"$ANAN_ISSUER/api/oauth/properties\"",
-          },
-          {
-            title: "POST property",
-            language: "bash",
-            code: `curl -sS -X POST "$ANAN_ISSUER/api/oauth/properties" \\
-  -H "Authorization: Bearer $ACCESS_TOKEN" \\
-  -H "Content-Type: application/json" \\
-  -d '{"title":"Palm Residences Unit 301","address":"Riyadh","price":1250000,"beds":3,"baths":3,"description":"High-floor unit"}'`,
-          },
-        ],
+            title: "Update property",
+            method: "PATCH",
+            path: "/api/org/properties/[propertyId]",
+            description: "Updates a specific property.",
+            notes: ["Requires the `X-Anan-Api-Key` HTTP header with `properties:update`."],
+            requestExample: {
+              title: "Request body",
+              language: "json",
+              code: `{
+  "price": 1300000
+}`
+            },
+            responseExample: {
+              title: "Updated response",
+              language: "json",
+              code: `{
+  "property": {
+    "id": "<property-id>",
+    "price": 1300000
+  }
+}`
+            }
+          }
+        ]
       },
-    ],
+      {
+        id: "properties-delete",
+        title: "Delete Property",
+        endpoints: [
+          {
+            title: "Delete property",
+            method: "DELETE",
+            path: "/api/org/properties/[propertyId]",
+            description: "Permanently deletes a property via its unique ID.",
+            notes: ["Requires the `X-Anan-Api-Key` HTTP header with `properties:delete`."],
+            responseExample: {
+              title: "Deleted response",
+              language: "json",
+              code: `{
+  "deleted": true
+}`
+            }
+          }
+        ]
+      }
+    ]
   },
   "errors-and-security": {
     key: "errors-and-security",
+    pageType: "concept",
     href: "/docs/errors-and-security",
     title: "Errors and Security",
     description: "Operational guardrails, revocation, and secure integration patterns.",

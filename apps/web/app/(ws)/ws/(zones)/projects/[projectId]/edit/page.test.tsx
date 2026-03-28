@@ -5,8 +5,10 @@ import type { ProjectFormData } from "@/app/(ws)/ws/public";
 const {
   getProperty,
   updateProperty,
-  publishProperty,
   deleteProperty,
+  attachOrganizationAssets,
+  markEntityAssetsPendingDelete,
+  listPropertyViewers,
   getCapturedProps,
   setCapturedProps,
 } = vi.hoisted(() => {
@@ -19,6 +21,22 @@ const {
       address: "الرياض",
       location: "الرياض",
       description: "وصف",
+      body: {
+        presentation: {
+          descriptionShort: "وصف مختصر",
+          amenities: ["مسبح", "حراسة"],
+          parkingSpaces: 3,
+          hasParking: true,
+          coverImageKey: "file-existing",
+          galleryDisplayMode: "fit",
+          galleryAspectRatio: "portrait",
+          privatePermitSummary: "ملف خاص بالمحادثة",
+          privatePermitFiles: [
+            { key: "permit-existing", url: "https://ufs.sh/f/permit-existing", name: "permit.pdf" },
+          ],
+          privatePermitVisibility: "conversation_only",
+        },
+      },
       price: 2200000,
       beds: 4,
       baths: 4,
@@ -28,8 +46,19 @@ const {
       adLicenseStatus: "pending",
     })),
     updateProperty: vi.fn(async () => undefined),
-    publishProperty: vi.fn(async () => ({ ok: true })),
     deleteProperty: vi.fn(async () => undefined),
+    attachOrganizationAssets: vi.fn(async () => undefined),
+    markEntityAssetsPendingDelete: vi.fn(async () => undefined),
+    listPropertyViewers: vi.fn(async () => [
+      {
+        authUserId: "viewer-1",
+        name: "Shared Viewer",
+        email: "viewer@example.com",
+        accessSource: "chat_share",
+        createdAt: 1,
+        updatedAt: 2,
+      },
+    ]),
     getCapturedProps: () => capturedProps,
     setCapturedProps: (props: unknown) => {
       capturedProps = props;
@@ -54,9 +83,30 @@ vi.mock("@/server/ws/zones", () => ({
   getWorkspacePropertyZone: vi.fn(() => ({
     getProperty,
     updateProperty,
-    publishProperty,
     deleteProperty,
   })),
+}));
+
+vi.mock("@/server/auth/session", () => ({
+  requireSessionContext: vi.fn(async () => ({
+    token: "token",
+    context: { userId: "user-1", role: "developer", isActive: true, redId: "red-1" },
+    profile: null,
+  })),
+}));
+
+vi.mock("@/server/infrastructure/convex/organizationAssetsRepository", () => ({
+  convexOrganizationAssetsRepository: {
+    attachOrganizationAssets,
+    markEntityAssetsPendingDelete,
+  },
+}));
+
+vi.mock("@/server/infrastructure/convex/projectAccessRepository", () => ({
+  convexProjectAccessRepository: {
+    listPropertyViewers,
+    revokePropertyViewer: vi.fn(async () => ({ ok: true })),
+  },
 }));
 
 vi.mock("../../ProjectFormScreen", () => ({
@@ -81,10 +131,20 @@ const saveFormInput: ProjectFormData = {
   price: "2,300,000 ر.س",
   location: "الرياض",
   description: "وصف محدث",
+  shortDescription: "وصف مختصر محدث",
+  amenitiesText: "مسبح، حراسة، نادي",
+  hasParking: true,
+  parkingSpaces: "4",
+  coverImageKey: "file-new",
+  galleryDisplayMode: "cover",
+  galleryAspectRatio: "landscape",
+  privatePermitSummary: "نسخة خاصة لهذه المحادثة",
+  privatePermitFiles: [{ key: "permit-new", url: "https://ufs.sh/f/permit-new", name: "permit-new.pdf" }],
   rooms: "4",
   baths: "4",
   area: "400",
   status: "active",
+  clientVisibility: "public",
   images: [uploadedImage],
   video: null,
   brokerId: null,
@@ -108,24 +168,53 @@ async function renderEditProject() {
 beforeEach(() => {
   getProperty.mockClear();
   updateProperty.mockClear();
-  publishProperty.mockClear();
   deleteProperty.mockClear();
   setCapturedProps(null);
 });
 
-it("updates project media through the mapped patch and publish action", async () => {
+it("updates project media through the mapped patch without implicit publish side effects", async () => {
   const { markup, props } = await renderEditProject();
 
   expect(markup).toContain("ProjectFormScreenMock");
   expect(props.initialData.images).toEqual([{ key: "file-existing", url: "https://ufs.sh/f/existing", name: "existing.jpg" }]);
+  expect(props.initialData.shortDescription).toBe("وصف مختصر");
+  expect(props.initialData.amenitiesText).toBe("مسبح، حراسة");
+  expect(props.initialData.hasParking).toBe(true);
+  expect(props.initialData.coverImageKey).toBe("file-existing");
+  expect(props.initialData.galleryDisplayMode).toBe("fit");
+  expect(props.initialData.galleryAspectRatio).toBe("portrait");
+  expect(props.initialData.privatePermitSummary).toBe("ملف خاص بالمحادثة");
+  expect(props.initialData.clientVisibility).toBe("private");
+  expect(props.initialData.visibilityMembers).toEqual([
+    expect.objectContaining({
+      authUserId: "viewer-1",
+      name: "Shared Viewer",
+    }),
+  ]);
 
   const saveResult = await props.onSave(saveFormInput);
   expect(saveResult).toEqual({ redirectTo: "/ws/projects/property-1" });
   expect(updateProperty).toHaveBeenCalledWith({
     id: "property-1",
-    patch: expect.objectContaining({ media: [uploadedImage] }),
+    patch: expect.objectContaining({
+      media: [uploadedImage],
+      publicationState: "published",
+      status: "available",
+      body: {
+        presentation: expect.objectContaining({
+          descriptionShort: "وصف مختصر محدث",
+          amenities: ["مسبح", "حراسة", "نادي"],
+          parkingSpaces: 4,
+          hasParking: true,
+          coverImageKey: "file-new",
+          galleryDisplayMode: "cover",
+          galleryAspectRatio: "landscape",
+          privatePermitSummary: "نسخة خاصة لهذه المحادثة",
+        }),
+      },
+    }),
   });
-  expect(publishProperty).toHaveBeenCalledWith({ id: "property-1" });
+  expect(attachOrganizationAssets).toHaveBeenCalledTimes(2);
 });
 
 it("supports deleting the project", async () => {
@@ -133,5 +222,12 @@ it("supports deleting the project", async () => {
   const deleteResult = await props.onDelete();
 
   expect(deleteResult).toEqual({ redirectTo: "/ws/projects" });
+  expect(markEntityAssetsPendingDelete).toHaveBeenCalledWith(
+    "token",
+    expect.objectContaining({
+      attachedEntityType: "project",
+      attachedEntityId: "property-1",
+    }),
+  );
   expect(deleteProperty).toHaveBeenCalledWith({ id: "property-1" });
 });

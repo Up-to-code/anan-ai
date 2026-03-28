@@ -3,14 +3,38 @@ import { cookies } from "next/headers";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import "./globals.css";
 import ConvexClientProvider from "./ConvexClientProvider";
+import PostHogProvider from "./PostHogProvider";
 import { RootFontFaces, rootFontClassName } from "@/lib/rootFonts";
+import { getClientWebBaseUrl } from "@/lib/site";
 import { LocaleProvider } from "@/client_zone/components/LocaleProvider";
 import { getDictionary } from "@/client_zone/i18n/dictionaries";
 import { isRtlLocale, resolveLocale } from "@/client_zone/i18n/locale";
 
+const metadataBase = getClientWebBaseUrl();
+
 export const metadata: Metadata = {
-  title: "Anan Clients",
-  description: "Buyer-focused web experience for property search, financing, and advisor handoff.",
+  metadataBase,
+  title: {
+    default: "Anan Client Assistant",
+    template: "%s | Anan Client Assistant",
+  },
+  description: "Search live properties, check financing, and request advisor follow-up from one buyer-friendly Anan experience.",
+  applicationName: "Anan Client Assistant",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: metadataBase,
+    siteName: "Anan Client Assistant",
+    title: "Anan Client Assistant",
+    description:
+      "Search live properties, check financing, and request advisor follow-up from one buyer-friendly Anan experience.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Anan Client Assistant",
+    description:
+      "Search live properties, check financing, and request advisor follow-up from one buyer-friendly Anan experience.",
+  },
 };
 
 /**
@@ -33,9 +57,11 @@ export default async function RootLayout({
         <RootFontFaces />
         <ConvexAuthNextjsServerProvider>
           <ConvexClientProvider>
-            <LocaleProvider locale={locale} dictionary={dictionary}>
-              {children}
-            </LocaleProvider>
+            <PostHogProvider>
+              <LocaleProvider locale={locale} dictionary={dictionary}>
+                {children}
+              </LocaleProvider>
+            </PostHogProvider>
           </ConvexClientProvider>
         </ConvexAuthNextjsServerProvider>
       </body>

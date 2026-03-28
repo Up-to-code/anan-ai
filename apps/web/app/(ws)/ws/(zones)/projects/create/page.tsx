@@ -2,6 +2,8 @@ import ProjectFormScreen from "../ProjectFormScreen";
 import { requireWorkspaceData } from "../../../_lib/workspaceData";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapWorkspaceProjectToPropertyInput } from "../projectViewModel";
+import { requireSessionContext } from "@/server/auth/session";
+import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizationAssetsRepository";
 
 /**
  * WHY:   Projects need a direct-mode creation route to complement AI-driven draft creation.
@@ -18,8 +20,26 @@ export default async function CreateProjectPage() {
 
     const propertiesZone = getWorkspacePropertyZone(audience, ownerContext);
     const id = await propertiesZone.createProperty(mapWorkspaceProjectToPropertyInput(data));
-    if (data.status === "active") {
-      await propertiesZone.publishProperty({ id });
+    const session = await requireSessionContext();
+    const imageKeys = data.images.map((image) => image.key);
+    const permitKeys = data.privatePermitFiles.map((file) => file.key);
+
+    if (imageKeys.length > 0) {
+      await convexOrganizationAssetsRepository.attachOrganizationAssets(session.token, {
+        keys: imageKeys,
+        attachedEntityType: "project",
+        attachedEntityId: id,
+        visibilityScope: data.clientVisibility === "public" ? "public_project" : "organization",
+      });
+    }
+
+    if (permitKeys.length > 0) {
+      await convexOrganizationAssetsRepository.attachOrganizationAssets(session.token, {
+        keys: permitKeys,
+        attachedEntityType: "project",
+        attachedEntityId: id,
+        visibilityScope: "project_private_share",
+      });
     }
 
     return { redirectTo: `/ws/projects/${id}` };

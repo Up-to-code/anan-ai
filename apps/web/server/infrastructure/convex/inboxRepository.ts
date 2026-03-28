@@ -15,6 +15,7 @@ type InboxApiRefs = {
   listConversations: unknown;
   getInboxUnreadSummary: unknown;
   getConversation: unknown;
+  hasProjectShareAccess: unknown;
   resolveDirectConversation: unknown;
   bootstrapOfferConversation: unknown;
   sendConversationMessage: unknown;
@@ -28,6 +29,7 @@ export type InboxRepository = {
   list(token: string): Promise<ConversationSummary[]>;
   getUnreadSummary(token: string): Promise<{ unreadCount: number }>;
   get(token: string, conversationId: string): Promise<ConversationDetail>;
+  hasProjectShareAccess(token: string, propertyId: string): Promise<boolean>;
   resolve(token: string, input: ResolveDirectConversationInput): Promise<string>;
   bootstrapOffer(token: string, input: BootstrapOfferConversationInput): Promise<BootstrapOfferConversationResult>;
   send(token: string, input: SendConversationMessageInput): Promise<{ conversationId: string; messageId: string }>;
@@ -44,6 +46,9 @@ export const convexInboxRepository: InboxRepository = {
   },
   async get(token, conversationId) {
     return fetchQuery(inboxApi.getConversation as never, { conversationId } as never, { token }) as Promise<ConversationDetail>;
+  },
+  async hasProjectShareAccess(token, propertyId) {
+    return fetchQuery(inboxApi.hasProjectShareAccess as never, { propertyId } as never, { token }) as Promise<boolean>;
   },
   async resolve(token, input) {
     return fetchMutation(inboxApi.resolveDirectConversation as never, input as never, { token }) as Promise<string>;

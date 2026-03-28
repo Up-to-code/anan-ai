@@ -1,167 +1,215 @@
-import type { OfferMarketplaceItem } from "../offerTypes";
 import Link from "next/link";
-import { Eye, MapPin, Plus } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, Building2, CircleDot, FolderArchive, Handshake, UserRoundSearch } from "lucide-react";
 import OfferPaginationNav from "../OfferPaginationNav";
+import { formatOfferPrice, formatOfferStageLabel, formatOfferTypeLabel } from "../offerViewModel";
+import type { WorkspaceOfferQueue, WorkspaceOfferQueueKey } from "../offerTypes";
 
-function kindLabel(kind: OfferMarketplaceItem["kind"]) {
-  if (kind === "developer") return "مطور";
-  if (kind === "broker") return "وسيط";
-  if (kind === "client") return "عميل";
-  return "ربط";
-}
+const queueIcons: Record<WorkspaceOfferQueueKey, typeof Handshake> = {
+  client_needs_match: UserRoundSearch,
+  inventory_i_can_share: Building2,
+  incoming_opportunities: CircleDot,
+  shared_by_me: BriefcaseBusiness,
+  active_collaborations: Handshake,
+  archived: FolderArchive,
+  open_inventory: Building2,
+  incoming_broker_requests: UserRoundSearch,
+  targeted_shares: BriefcaseBusiness,
+};
 
-function avatarLabel(name: string) {
-  const trimmed = name.trim();
-  if (!trimmed) return "؟";
-  return [...trimmed].slice(0, 1).join("").toUpperCase();
-}
+function OfferCaseCard({ item }: { item: WorkspaceOfferQueue["items"][number] }) {
+  const clientContext = item.clientContext;
+  const image = item.property?.imageUrl ?? "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1200&q=80";
+  const owner = item.participants.find((participant) => participant.role === "inventory_owner") ?? item.participants[0] ?? null;
+  const executionPartner = item.participants.find((participant) => participant.role === "execution_partner") ?? null;
 
-function OfferOwnerBlock({ item }: { item: OfferMarketplaceItem }) {
-  const ownerKindLabel = item.kind === "broker" ? "وسيط" : item.kind === "developer" ? "شركة تطوير" : "جهة العرض";
   return (
-    <div className="mt-3 flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2">
-      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-700">
-        {avatarLabel(item.ownerLabel)}
-      </div>
-      <div className="min-w-0">
-        <div className="truncate text-sm font-medium text-slate-800">{item.ownerLabel}</div>
-        <div className="text-xs text-slate-500">{ownerKindLabel}</div>
-      </div>
-    </div>
-  );
-}
-
-function OfferMetaGrid({ item }: { item: OfferMarketplaceItem }) {
-  return (
-    <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-      <div className="rounded-md border border-slate-200 bg-white p-2">
-        <div className="text-xs text-slate-500">السعر</div>
-        <div className="mt-1 font-semibold text-slate-900">{item.priceLabel}</div>
-      </div>
-      <div className="rounded-md border border-slate-200 bg-white p-2">
-        <div className="text-xs text-slate-500">نوع العرض</div>
-        <div className="mt-1 font-semibold text-slate-900">{item.propertyType}</div>
-      </div>
-    </div>
-  );
-}
-
-function OfferCardFooter({ item }: { item: OfferMarketplaceItem }) {
-  return (
-    <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-      <div className="inline-flex items-center gap-1">
-        <MapPin className="h-3.5 w-3.5" />
-        <span className="truncate">{item.location}</span>
-      </div>
-      <Link
-        href={`/ws/offers/${item.id}`}
-        className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
-      >
-        <Eye className="h-3.5 w-3.5" />
-        استعراض
-      </Link>
-    </div>
-  );
-}
-
-function OfferOverviewCard({ item }: { item: OfferMarketplaceItem }) {
-  return (
-    <article className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-      <Link href={`/ws/offers/${item.id}`} className="block">
+    <article className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+      <div className="grid gap-0 lg:grid-cols-[220px_1fr]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={item.image} alt={item.title} className="h-40 w-full object-cover" />
-      </Link>
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-2">
-          <Link href={`/ws/offers/${item.id}`} className="line-clamp-2 text-base font-semibold text-slate-900 hover:text-slate-700">
-            {item.title}
-          </Link>
-          <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600">
-            {kindLabel(item.kind)}
-          </span>
-        </div>
+        <img src={image} alt={item.property?.title ?? item.message} className="h-52 w-full object-cover lg:h-full" />
+        <div className="grid gap-5 p-5 lg:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-border bg-muted/30 px-3 py-1 text-[11px] font-bold text-muted-foreground">
+                  {formatOfferTypeLabel(item.type)}
+                </span>
+                <span className="rounded-full border border-border bg-background px-3 py-1 text-[11px] font-bold text-foreground">
+                  {formatOfferStageLabel(item.stage)}
+                </span>
+              </div>
+              <h2 className="text-xl font-black text-foreground">{item.message}</h2>
+              <p className="max-w-2xl text-[14px] leading-7 text-muted-foreground">
+                {item.description ?? item.property?.address ?? "بدون وصف إضافي."}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border bg-background px-4 py-3 text-right">
+              <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">القيمة</div>
+              <div className="mt-1 text-xl font-black text-foreground">{formatOfferPrice(item.price)}</div>
+            </div>
+          </div>
 
-        <p className="mt-2 line-clamp-2 text-sm text-slate-600">{item.summary}</p>
-        <p className="mt-1 truncate text-xs text-slate-500">المشروع: {item.project.title}</p>
-        <OfferOwnerBlock item={item} />
-        <OfferMetaGrid item={item} />
-        <OfferCardFooter item={item} />
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-border bg-muted/20 p-4">
+              <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">الأصل</div>
+              <div className="mt-2 text-[15px] font-black text-foreground">{item.property?.title ?? "بدون أصل واضح"}</div>
+              <div className="mt-1 text-[13px] text-muted-foreground">{item.property?.address ?? "غير محدد"}</div>
+            </div>
+            <div className="rounded-2xl border border-border bg-muted/20 p-4">
+              <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">صاحب المخزون</div>
+              <div className="mt-2 text-[15px] font-black text-foreground">{owner?.organizationName ?? "غير معروف"}</div>
+              <div className="mt-1 text-[13px] text-muted-foreground">{item.commissionText ?? "بدون تفاصيل عمولة"}</div>
+            </div>
+            <div className="rounded-2xl border border-border bg-muted/20 p-4">
+              <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">الطرف التنفيذي</div>
+              <div className="mt-2 text-[15px] font-black text-foreground">{executionPartner?.organizationName ?? "لم يتم التوجيه بعد"}</div>
+              <div className="mt-1 text-[13px] text-muted-foreground">{item.permitStatus ?? "بدون حالة تصريح"}</div>
+            </div>
+          </div>
+
+          {clientContext ? (
+            <div className="rounded-2xl border border-sky-200 bg-sky-50/80 p-4 text-right">
+              <div className="text-[11px] font-bold uppercase tracking-widest text-sky-700">ملخص العميل</div>
+              <div className="mt-2 text-[15px] font-black text-sky-950">{clientContext.clientName}</div>
+              <div className="mt-1 text-[13px] text-sky-900/80">{clientContext.clientNeed}</div>
+            </div>
+          ) : null}
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="text-[13px] font-medium text-muted-foreground">
+              {item.allowedAudience === "both"
+                ? "مفتوح للوسطاء والمطورين"
+                : item.allowedAudience === "brokers"
+                  ? "موجه للوسطاء"
+                  : "موجه للمطورين"}
+            </div>
+            <Link
+              href={item.href}
+              className="inline-flex items-center gap-2 rounded-2xl border border-border bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-muted"
+            >
+              افتح الحالة
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
       </div>
     </article>
   );
 }
 
-function OfferOverviewToolbar({ page, pageCount }: { page: number; pageCount: number }) {
-  return (
-    <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4">
-      <div className="flex items-center gap-2">
-        <Link
-          href="/ws/offers/create"
-          className="inline-flex items-center gap-2 rounded-md border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
-        >
-          <Plus className="h-4 w-4" />
-          طرح عرض جديد
-        </Link>
-      </div>
-      <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
-        صفحة {page} من {pageCount}
-      </div>
-    </div>
-  );
-}
-
-function OfferOverviewContent({ items }: { items: OfferMarketplaceItem[] }) {
-  if (items.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-16 text-center text-sm font-semibold text-slate-600">
-        لا توجد عروض متاحة في هذه الصفحة حالياً.
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-slot="offers-grid">
-      {items.map((item) => (
-        <OfferOverviewCard key={item.id} item={item} />
-      ))}
-    </div>
-  );
-}
-
 export default function OfferOverviewPage({
-  items,
-  totalItems,
-  page,
-  pageCount,
-  hasPreviousPage,
-  hasNextPage,
-  routeBase,
+  queues,
+  selectedQueue,
 }: {
-  items: OfferMarketplaceItem[];
-  totalItems: number;
-  page: number;
-  pageCount: number;
-  hasPreviousPage: boolean;
-  hasNextPage: boolean;
-  routeBase: string;
+  queues: Array<
+    WorkspaceOfferQueue & {
+      pagination: {
+        items: WorkspaceOfferQueue["items"];
+        page: number;
+        pageCount: number;
+        totalItems: number;
+        hasPreviousPage: boolean;
+        hasNextPage: boolean;
+      };
+    }
+  >;
+  selectedQueue: WorkspaceOfferQueueKey | "all";
 }) {
   return (
     <div className="flex min-h-full flex-col pb-32">
-      <div className="px-6 py-6 lg:px-8 lg:py-8 grid gap-6">
-        <OfferOverviewToolbar page={page} pageCount={pageCount} />
+      <div className="grid gap-8 px-6 py-6 lg:px-8 lg:py-8">
+        <header className="grid gap-4 rounded-3xl border border-border bg-card p-6 shadow-sm lg:grid-cols-[1fr_auto] lg:items-end">
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Offers 2.0</div>
+            <h1 className="mt-2 text-3xl font-black text-foreground">العروض كحالات تعاون</h1>
+            <p className="mt-3 max-w-3xl text-[14px] leading-7 text-muted-foreground">
+              تم تنظيم منطقة العروض الآن حول الحالات العملية بين صاحب المخزون، الوسيط صاحب العميل، والطرف التنفيذي.
+            </p>
+          </div>
+          <Link
+            href="/ws/offers/create"
+            className="inline-flex items-center justify-center rounded-2xl bg-foreground px-5 py-3 text-[13px] font-bold text-background transition hover:bg-foreground/90"
+          >
+            إنشاء حالة جديدة
+          </Link>
+        </header>
 
-        <div className="text-xs font-semibold text-slate-500">{totalItems} عروض</div>
-        <OfferOverviewContent items={items} />
+        <nav className="flex flex-wrap gap-2">
+          <Link
+            href="/ws/offers"
+            className={selectedQueue === "all"
+              ? "rounded-2xl bg-foreground px-4 py-2 text-[13px] font-bold text-background"
+              : "rounded-2xl border border-border bg-card px-4 py-2 text-[13px] font-bold text-foreground"}
+          >
+            كل الطوابير
+          </Link>
+          {queues.map((queue) => {
+            const Icon = queueIcons[queue.key];
+            return (
+              <Link
+                key={queue.key}
+                href={`/ws/offers?queue=${queue.key}`}
+                className={selectedQueue === queue.key
+                  ? "inline-flex items-center gap-2 rounded-2xl bg-foreground px-4 py-2 text-[13px] font-bold text-background"
+                  : "inline-flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-2 text-[13px] font-bold text-foreground"}
+              >
+                <Icon className="h-4 w-4" />
+                {queue.label}
+              </Link>
+            );
+          })}
+        </nav>
 
-        {items.length > 0 ? (
-          <OfferPaginationNav
-            page={page}
-            pageCount={pageCount}
-            hasPreviousPage={hasPreviousPage}
-            hasNextPage={hasNextPage}
-            routeBase={routeBase}
-          />
-        ) : null}
+        <div className="grid gap-6">
+          {queues.map((queue) => {
+            if (selectedQueue !== "all" && selectedQueue !== queue.key) {
+              return null;
+            }
+
+            const Icon = queueIcons[queue.key];
+
+            return (
+              <section key={queue.key} className="grid gap-4">
+                <div className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
+                  <div>
+                    <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                      <Icon className="h-4 w-4" />
+                      Queue
+                    </div>
+                    <h2 className="mt-2 text-2xl font-black text-foreground">{queue.label}</h2>
+                    <p className="mt-2 max-w-3xl text-[14px] leading-7 text-muted-foreground">{queue.description}</p>
+                  </div>
+                  <div className="rounded-2xl border border-border bg-background px-4 py-3 text-right">
+                    <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">عدد الحالات</div>
+                    <div className="mt-1 text-2xl font-black text-foreground">{queue.pagination.totalItems}</div>
+                  </div>
+                </div>
+
+                {queue.pagination.items.length > 0 ? (
+                  <div className="grid gap-4">
+                    {queue.pagination.items.map((item) => (
+                      <OfferCaseCard key={item.id} item={item} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-3xl border border-dashed border-border bg-card/60 p-10 text-center text-[14px] font-medium text-muted-foreground">
+                    لا توجد حالات في هذا الطابور الآن.
+                  </div>
+                )}
+
+                {queue.pagination.totalItems > 0 ? (
+                  <OfferPaginationNav
+                    page={queue.pagination.page}
+                    pageCount={queue.pagination.pageCount}
+                    hasPreviousPage={queue.pagination.hasPreviousPage}
+                    hasNextPage={queue.pagination.hasNextPage}
+                    routeBase={selectedQueue === "all" ? "/ws/offers" : `/ws/offers?queue=${queue.key}`}
+                  />
+                ) : null}
+              </section>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

@@ -65,16 +65,18 @@ export default function PropertiesPageClient({ properties }: PropertiesPageClien
 
       <DataTable headers={["العقار", "المشروع", "المنظمة", "النوع", "النشر", "الحالة", "السعر"]}>
         {filteredProperties.map((property) => (
-          <tr key={property.id} className="border-b border-border last:border-b-0">
-            <td className="px-4 py-3 font-medium text-slate-900">
-              <Link href={`/sales/properties/${property.id}`} className="hover:underline">{property.title}</Link>
+          <tr key={property.id} className="group transition-colors hover:bg-muted/5">
+            <td className="px-5 py-4">
+              <Link href={`/sales/properties/${property.id}`} className="block font-black tracking-tight text-foreground hover:text-primary transition-colors">
+                {property.title}
+              </Link>
             </td>
-            <td className="px-4 py-3 text-sm text-slate-600">{property.projectName}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{property.organizationName}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{property.type}</td>
-            <td className="px-4 py-3"><StatusBadge value={property.publicationStatus} /></td>
-            <td className="px-4 py-3"><StatusBadge value={property.inventoryStatus} /></td>
-            <td className="px-4 py-3 text-sm text-slate-600">{formatCurrency(property.price)}</td>
+            <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">{property.projectName}</td>
+            <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">{property.organizationName}</td>
+            <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">{property.type}</td>
+            <td className="px-5 py-4"><StatusBadge value={property.publicationStatus} /></td>
+            <td className="px-5 py-4"><StatusBadge value={property.inventoryStatus} /></td>
+            <td className="px-5 py-4 text-[13px] font-black tracking-tight text-foreground">{formatCurrency(property.price)}</td>
           </tr>
         ))}
       </DataTable>

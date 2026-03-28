@@ -1,11 +1,10 @@
 import Link from "next/link";
-import { Search, MapPin, Map, Calendar, RotateCcw } from "lucide-react";
 import type { WorkspaceMarketPageModel } from "../marketTypes";
 
 /**
- * WHY:   Users need a direct way to narrow the market snapshot by city, area, and lookback window using URL-backed filters.
- * WHAT:  Renders the GET filter form for the active market data route plus the reset action.
- * HOW:   Uses server-rendered controls so changing filters reloads the current market subpage without client-only state.
+ * WHY:   The rebuilt market page depends on exact dates and scope filters instead of the old preset-only bar.
+ * WHAT:  Renders a simple GET form for city, area, free-text search, and inclusive start/end dates.
+ * HOW:   Uses server-friendly native controls so every route can stay SSR and deep-linkable.
  */
 export default function MarketFilters({
   model,
@@ -15,95 +14,92 @@ export default function MarketFilters({
   actionPath: string;
 }) {
   return (
-    <form action={actionPath} method="GET" className="relative group">
-      <div className="relative flex flex-col gap-4 rounded-lg border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur-xl lg:flex-row lg:gap-0 lg:items-center">
-        
-        {/* City Filter */}
-        <div className="flex flex-[0.8] items-center rounded-lg px-4 py-2 transition-colors focus-within:bg-slate-50 lg:border-l lg:border-slate-200 group/input">
-          <Map className="w-4 h-4 text-slate-400 ml-3 shrink-0 group-focus-within/input:text-blue-500 transition-colors" />
-          <div className="flex-1 relative">
-            <span className="absolute -top-3 right-0 text-[9px] font-black text-slate-400">المدينة</span>
-            <select
-              name="city"
-              defaultValue={model.filters.city}
-              className="w-full bg-transparent text-sm font-bold text-slate-900 outline-none appearance-none cursor-pointer mt-1"
-            >
-              <option value="">كل المدن</option>
-              {model.availableCities.map((city) => (
-                <option key={city} value={city}>{city}</option>
-              ))}
-            </select>
-          </div>
+    <form action={actionPath} method="GET" className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="mb-4 flex flex-col gap-1 text-right md:flex-row md:items-end md:justify-between">
+        <div>
+          <div className="text-[14px] font-bold text-foreground">Market Explorer</div>
+          <div className="text-[13px] font-medium text-muted-foreground">فلترة السوق حسب المدينة، المنطقة، الكلمات، والفترة الزمنية.</div>
         </div>
+        <div className="text-[12px] font-bold text-muted-foreground">{model.dateRange.label}</div>
+      </div>
 
-        {/* Area Filter */}
-        <div className="flex flex-[0.8] items-center rounded-lg px-4 py-2 transition-colors focus-within:bg-slate-50 lg:border-l lg:border-slate-200 group/input">
-          <MapPin className="w-4 h-4 text-slate-400 ml-3 shrink-0 group-focus-within/input:text-blue-500 transition-colors" />
-          <div className="flex-1 text-right relative">
-            <span className="absolute -top-3 right-0 text-[9px] font-black text-slate-400">الحي</span>
-            <input
-              name="area"
-              list="market-areas"
-              defaultValue={model.filters.area}
-              placeholder={model.filters.city ? "ابحث داخل المدينة..." : "اختر مدينة أولاً"}
-              className="w-full bg-transparent text-sm font-bold text-slate-900 outline-none placeholder:font-medium placeholder:text-slate-400 mt-1"
-            />
-            <datalist id="market-areas">
-              {model.availableAreas.map((area) => (
-                <option key={area} value={area} />
-              ))}
-            </datalist>
-          </div>
-        </div>
-
-        {/* Window Days */}
-        <div className="flex flex-shrink-0 items-center rounded-lg px-4 py-2 transition-colors focus-within:bg-slate-50 lg:w-44 lg:border-l lg:border-slate-200 group/input">
-          <Calendar className="w-4 h-4 text-slate-400 ml-3 shrink-0 group-focus-within/input:text-blue-500 transition-colors" />
-          <div className="flex-1 relative">
-            <span className="absolute -top-3 right-0 text-[9px] font-black text-slate-400">الفترة</span>
-            <select
-              name="windowDays"
-              defaultValue={String(model.filters.windowDays)}
-              className="w-full bg-transparent text-sm font-bold text-slate-900 outline-none appearance-none cursor-pointer mt-1"
-            >
-              {model.windowOptions.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Query */}
-        <div className="flex flex-1 items-center rounded-lg px-4 py-2 transition-colors focus-within:bg-slate-50 group/input">
-          <Search className="w-4 h-4 text-slate-400 ml-3 shrink-0 group-focus-within/input:text-blue-500 transition-colors" />
-          <div className="flex-1 relative">
-            <span className="absolute -top-3 right-0 text-[9px] font-black text-slate-400">استعلام حر</span>
-            <input
-              name="query"
-              defaultValue={model.filters.query}
-              placeholder="مدينة، حي، كلمة بحثية..."
-              className="w-full bg-transparent text-sm font-bold text-slate-900 outline-none placeholder:font-medium placeholder:text-slate-400 mt-1"
-            />
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="mt-2 flex w-full shrink-0 items-center justify-end gap-2 px-2 lg:mt-0 lg:w-auto">
-          <Link
-            href={actionPath}
-            title="إعادة ضبط"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-900"
+      <div className="grid gap-4 lg:grid-cols-[1.1fr_1.1fr_1.2fr_0.9fr_0.9fr_auto] lg:items-end">
+        <label className="grid gap-2 text-right">
+          <span className="text-[12px] font-bold text-foreground">المدينة</span>
+          <select
+            name="city"
+            defaultValue={model.filters.city}
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-[13px] font-medium text-foreground outline-none transition focus:border-ring focus:ring-1 focus:ring-ring"
           >
-            <RotateCcw className="w-4 h-4" />
-          </Link>
+            <option value="">كل مدن السعودية</option>
+            {model.availableCities.map((city) => (
+              <option key={city} value={city}>
+                {city}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="grid gap-2 text-right">
+          <span className="text-[12px] font-bold text-foreground">المنطقة أو الحي</span>
+          <input
+            name="area"
+            list="market-areas"
+            defaultValue={model.filters.area}
+            placeholder={model.filters.city ? "مثال: الملقا" : "اختر مدينة أو اتركه فارغاً"}
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-[13px] font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
+          />
+          <datalist id="market-areas">
+            {model.availableAreas.map((area) => (
+              <option key={area} value={area} />
+            ))}
+          </datalist>
+        </label>
+
+        <label className="grid gap-2 text-right">
+          <span className="text-[12px] font-bold text-foreground">بحث إضافي</span>
+          <input
+            name="query"
+            defaultValue={model.filters.query}
+            placeholder="كلمة مفتاحية أو نطاق فرعي"
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-[13px] font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
+          />
+        </label>
+
+        <label className="grid gap-2 text-right">
+          <span className="text-[12px] font-bold text-foreground">من</span>
+          <input
+            type="date"
+            name="dateFrom"
+            defaultValue={model.dateRange.from}
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-[13px] font-medium text-foreground outline-none transition focus:border-ring focus:ring-1 focus:ring-ring"
+          />
+        </label>
+
+        <label className="grid gap-2 text-right">
+          <span className="text-[12px] font-bold text-foreground">إلى</span>
+          <input
+            type="date"
+            name="dateTo"
+            defaultValue={model.dateRange.to}
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-[13px] font-medium text-foreground outline-none transition focus:border-ring focus:ring-1 focus:ring-ring"
+          />
+        </label>
+
+        <div className="flex gap-2 lg:justify-end">
           <button
             type="submit"
-            className="flex h-10 items-center justify-center rounded-lg bg-slate-950 px-6 text-sm font-black text-white shadow-md transition-all hover:bg-slate-800 active:scale-95"
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-foreground px-5 text-[13px] font-bold text-background transition hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
-            بحث
+            تحديث
           </button>
+          <Link
+            href={actionPath}
+            className="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-background px-4 text-[13px] font-bold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            إعادة ضبط
+          </Link>
         </div>
-
       </div>
     </form>
   );

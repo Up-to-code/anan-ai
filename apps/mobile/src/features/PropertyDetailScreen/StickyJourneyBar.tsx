@@ -8,25 +8,29 @@ type StickyJourneyBarProps = {
 };
 
 /**
- * WHY:   The property detail screen needs fixed next-step CTAs that stay visible above bottom insets.
- * WHAT:  Renders the booking and advisor actions at the bottom of the property journey.
- * HOW:   Applies safe-area padding and compact button treatments to avoid hidden actions on modern devices.
+ * WHY:   The property detail screen needs fixed next-step CTAs.
+ * WHAT:  Modernizes the bottom bar with a cleaner glassmorphism wrapper and bigger buttons.
+ * HOW:   Uses our new rounded-full Button component within a shadow-heavy floating-style bar.
  */
 export function StickyJourneyBar({ onBookViewing, onTalkToAdvisor }: StickyJourneyBarProps) {
   const insets = useSafeAreaInsets();
 
   return (
     <View
-      className="border-t border-line bg-white px-5 pt-3"
-      style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+      className="absolute bottom-0 w-full px-6 pt-5"
+      style={{ paddingBottom: Math.max(insets.bottom, 20) }}
     >
-      <View className="flex-row-reverse gap-3">
-        <Button label="حجز زيارة" onPress={onBookViewing} className="flex-1" />
+      <View className="flex-row-reverse gap-4">
+        <Button 
+          label="حجز زيارة" 
+          onPress={onBookViewing} 
+          className="flex-1 rounded-full h-14" 
+        />
         <Button
-          label="مستشار عنان"
+          label="المستشار"
           variant="secondary"
           onPress={onTalkToAdvisor}
-          className="flex-1"
+          className="flex-1 rounded-full h-14"
         />
       </View>
     </View>

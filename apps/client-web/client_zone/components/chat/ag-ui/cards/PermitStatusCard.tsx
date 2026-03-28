@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/client_zone/components/ui/card";
 import { Badge } from "@/client_zone/components/ui/badge";
 import { useLocaleDictionary } from "@/client_zone/components/LocaleProvider";
+import { AgUiCardHeading, AgUiCardShell } from "../AgUiCardPrimitives";
 import type { PermitStatusCardProps } from "../types";
 
 /**
@@ -24,15 +24,8 @@ export function PermitStatusCard(props: PermitStatusCardProps) {
           : "Not available";
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle className="text-sm">{props.title}</CardTitle>
-          <Badge className="rounded-md bg-slate-100 text-slate-700">{label}</Badge>
-        </div>
-        <CardDescription>{props.summary}</CardDescription>
-      </CardHeader>
-      <CardContent />
-    </Card>
+    <AgUiCardShell>
+      <AgUiCardHeading title={props.title} summary={props.summary} aside={<Badge>{label}</Badge>} />
+    </AgUiCardShell>
   );
 }

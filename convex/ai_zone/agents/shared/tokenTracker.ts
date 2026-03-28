@@ -17,6 +17,7 @@
  * - To query token data: use the admin_zone queries
  */
 
+import { internal } from "../../../_generated/api";
 import type { MutationCtx } from "../../../_generated/server";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -101,6 +102,12 @@ export async function trackTokenUsage(
     params: TrackTokenParams,
 ): Promise<void> {
     try {
+        const estimatedCostUSD = estimateCostUSD(
+            params.modelName,
+            params.inputTokens,
+            params.outputTokens,
+        );
+
         await ctx.db.insert("aiTokenUsage", {
             agentName: params.agentName,
             teamName: params.teamName,
@@ -109,11 +116,7 @@ export async function trackTokenUsage(
             inputTokens: params.inputTokens,
             outputTokens: params.outputTokens,
             totalTokens: params.inputTokens + params.outputTokens,
-            estimatedCostUSD: estimateCostUSD(
-                params.modelName,
-                params.inputTokens,
-                params.outputTokens,
-            ),
+            estimatedCostUSD,
             userId: params.userId,
             threadId: params.threadId,
             channel: params.channel,
@@ -121,6 +124,31 @@ export async function trackTokenUsage(
             errorOccurred: params.errorOccurred ?? false,
             createdAt: Date.now(),
         });
+
+        await ctx.scheduler.runAfter(
+            0,
+            internal.shared_logic.analytics.posthog.captureEvent,
+            {
+                event: "ai_token_usage_recorded",
+                distinctId: params.userId?.trim() || (params.threadId?.trim() ? `thread:${params.threadId.trim()}` : undefined),
+                properties: {
+                    agentName: params.agentName,
+                    teamName: params.teamName,
+                    promptVersion: params.promptVersion,
+                    modelName: params.modelName,
+                    inputTokens: params.inputTokens,
+                    outputTokens: params.outputTokens,
+                    totalTokens: params.inputTokens + params.outputTokens,
+                    estimatedCostUSD,
+                    userId: params.userId,
+                    threadId: params.threadId,
+                    channel: params.channel,
+                    role: params.role,
+                    status: params.errorOccurred ? "failed" : "completed",
+                    errorFlag: params.errorOccurred ?? false,
+                },
+            },
+        );
     } catch (error) {
         // Token tracking is non-critical. Log but never throw.
         console.error(

@@ -14,6 +14,8 @@ export default async function MarketAreasRoute({
     city?: string | string[];
     area?: string | string[];
     query?: string | string[];
+    dateFrom?: string | string[];
+    dateTo?: string | string[];
     windowDays?: string | string[];
   }>;
 }) {
@@ -24,9 +26,8 @@ export default async function MarketAreasRoute({
       model={model}
       actionPath="/ws/market/areas"
       intro={{
-        eyebrow: "ذكاء السوق",
-        title: "جدول الأحياء",
-        description: "صفحة مركزة على الأحياء داخل النطاق المحدد، مع مقارنة مباشرة بين الطلب والمخزون والمنتج الغالب في كل حي.",
+        title: "المناطق الساخنة",
+        description: "تقرير يركز على المناطق الأعلى نشاطاً في السعودية أو داخل المدينة المحددة، مع المنتج الغالب والإشارة الأوضح.",
       }}
     >
       <AreasTab model={model} />

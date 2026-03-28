@@ -19,11 +19,11 @@ export default function ButtonLink({
   const variants = {
     primary: "bg-blue-600 text-white hover:bg-blue-700 px-8 py-2.5 text-xs font-black tracking-widest",
     outline:
-      "border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-12 py-5 text-sm font-black tracking-widest",
+      "border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-12 py-5 text-sm font-black tracking-widest dark:text-blue-300 dark:hover:bg-blue-500/10",
     ghost:
-      "text-slate-900 hover:bg-slate-50 px-6 py-3 text-xs border-b-2 border-transparent hover:border-blue-600",
-    dark: "bg-slate-900 text-white hover:bg-slate-800 px-12 py-5 text-sm font-black tracking-widest",
-    white: "bg-white text-blue-600 hover:bg-slate-50 px-12 py-5 text-sm font-black tracking-widest",
+      "border-b-2 border-transparent px-6 py-3 text-xs text-slate-900 hover:border-blue-600 hover:bg-slate-50 dark:text-slate-100 dark:hover:bg-slate-800",
+    dark: "bg-slate-900 text-white hover:bg-slate-800 px-12 py-5 text-sm font-black tracking-widest dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white",
+    white: "bg-white text-blue-600 hover:bg-slate-50 px-12 py-5 text-sm font-black tracking-widest dark:bg-slate-950 dark:text-blue-300 dark:hover:bg-slate-900",
   } as const;
 
   return (
@@ -31,6 +31,10 @@ export default function ButtonLink({
       href={href}
       prefetch={prefetch}
       className={`${baseStyles} ${variants[variant]} ${className}`}
+      data-analytics-event="web_cta_clicked"
+      data-analytics-location="public_button_link"
+      data-analytics-href={href}
+      data-analytics-variant={variant}
     >
       <span className="flex items-center gap-3">{children}</span>
     </Link>

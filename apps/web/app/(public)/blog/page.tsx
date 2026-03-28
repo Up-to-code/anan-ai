@@ -5,30 +5,30 @@ import { PageHero, Section, SectionLabel } from "@/app/(public)/public";
 
 export const metadata: Metadata = {
   title: "المدونة والتحديثات | عنان",
-  description: "مقالات، رؤى، وتحديثات حول السوق العقاري السعودي، تقنيات البروبتك، وأثر الذكاء الاصطناعي في الاستثمار.",
+  description: "مقالات وتحديثات حول بناء مساحة العمل في عنان، تجربة المطورين والوسطاء، وكيف نفكر في المنتج.",
 };
 
 const BLOG_POSTS = [
   {
-    slug: "saudi-real-estate-tech-2030",
-    title: "التقنية العقارية ورؤية ٢٠٣٠: كيف تعيد عنان تشكيل البنية التحتية",
-    excerpt: "نظرة متعمقة على دور البروبتك (PropTech) في تسريع وتيرة التحول الرقمي للقطاع العقاري في المملكة...",
+    slug: "workspace-entry-points",
+    title: "كيف صممنا الصفحة العامة لتكون مدخلاً واضحاً إلى مساحة العمل",
+    excerpt: "شرح لفكرة الفصل بين التعريف بالشركة في الصفحات العامة، والعمل الفعلي داخل المساحة المخصصة للمطورين والوسطاء...",
     date: "١٢ مارس ٢٠٢٥",
-    category: "رؤية واستراتيجية",
+    category: "المنتج",
   },
   {
-    slug: "ai-property-valuation",
-    title: "الأسعار العادلة: أثر الذكاء الاصطناعي على التقييم العقاري",
-    excerpt: "تعرف على آلية المطابقة السعرية في منصة عنان، وكيف تحمي الخوارزميات حقوق الأطراف عبر بيانات شفافة.",
+    slug: "developer-workspace-notes",
+    title: "ما الذي يحتاجه فريق التطوير فعلاً من مساحة العمل؟",
+    excerpt: "ملاحظاتنا حول كيف يجب أن تبدو واجهة المطورين عندما يكون الهدف هو الوضوح والمتابعة بدل الضجيج التسويقي.",
     date: "٥ مارس ٢٠٢٥",
-    category: "الذكاء الاصطناعي",
+    category: "مساحة المطورين",
   },
   {
-    slug: "brokers-network-future",
-    title: "مستقبل الوسطاء: لماذا تعتبر الشبكات المؤسسية هي الملاذ الآمن للعمولات؟",
-    excerpt: "تحليل لأهمية الارتباط بالمنصات المعتمدة من الهيئة العامة للعقار لضمان حقوق ومجهودات الوسيط.",
+    slug: "broker-workspace-rhythm",
+    title: "إيقاع العمل اليومي للوسيط داخل عنان",
+    excerpt: "كيف تساعد مساحة الوسطاء على ترتيب التفاصيل، متابعة الحالات، وتقديم سياق أوضح للتواصل مع المطورين.",
     date: "٢٠ فبراير ٢٠٢٥",
-    category: "دليل الوسطاء",
+    category: "مساحة الوسطاء",
   },
 ];
 
@@ -37,21 +37,21 @@ type BlogPostSummary = (typeof BLOG_POSTS)[number];
 function BlogPostCard({ post }: { post: BlogPostSummary }) {
   return (
     <Link href={`/blog/${post.slug}`} className="group block focus:outline-none focus-visible:ring-4 ring-blue-600 ring-offset-4">
-      <article className="border-2 border-slate-100 bg-white p-10 h-full flex flex-col space-y-8 transition-colors group-hover:border-blue-600">
+      <article className="flex h-full flex-col space-y-8 border-2 border-slate-100 bg-white p-10 transition-colors group-hover:border-blue-600 dark:border-slate-800 dark:bg-slate-950">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 bg-blue-50 px-3 py-1">
+          <span className="bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
             {post.category}
           </span>
-          <BookOpen className="h-5 w-5 text-slate-300 group-hover:text-blue-600 transition-colors" />
+          <BookOpen className="h-5 w-5 text-slate-300 transition-colors group-hover:text-blue-600 dark:text-slate-600 dark:group-hover:text-blue-300" />
         </div>
         <div className="flex-1 space-y-4">
-          <h2 className="text-2xl font-black text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-3 leading-snug">
+          <h2 className="line-clamp-3 text-2xl font-black leading-snug text-slate-900 transition-colors group-hover:text-blue-600 dark:text-slate-100 dark:group-hover:text-blue-300">
             {post.title}
           </h2>
-          <p className="text-slate-500 font-bold leading-relaxed line-clamp-3">{post.excerpt}</p>
+          <p className="line-clamp-3 font-bold leading-relaxed text-slate-500 dark:text-slate-300">{post.excerpt}</p>
         </div>
-        <div className="pt-6 border-t border-slate-100 flex items-center justify-between mt-auto">
-          <span className="text-xs font-black uppercase text-slate-400">{post.date}</span>
+        <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-6 dark:border-slate-800">
+          <span className="text-xs font-black uppercase text-slate-400 dark:text-slate-500">{post.date}</span>
           <span className="text-xs font-black uppercase text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
             اقرأ المزيد
           </span>
@@ -75,11 +75,11 @@ export default function BlogIndexPage() {
               الرؤى والبيانات النشرية
             </SectionLabel>
           }
-          title={<>مدونة <br /><span className="text-blue-600 text-3xl">عنان للأخبار والمقالات</span></>}
-          titleClassName="text-6xl font-black text-slate-900 uppercase leading-tight"
+          title={<>مدونة <br /><span className="text-blue-600 text-3xl">عنان للمقالات والتحديثات</span></>}
+          titleClassName="text-6xl font-black uppercase leading-tight text-slate-900 dark:text-slate-100"
           description={
-            <p className="max-w-2xl text-xl font-bold leading-relaxed text-slate-500">
-              تابع أحدث تحليلات السوق السعودي والتقنيات العقارية المؤسسية من خبراء عنان.
+            <p className="max-w-2xl text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300">
+              نكتب هنا عن المنتج، تجربة المساحة، وكيف نفكر في العمل اليومي للمطورين والوسطاء.
             </p>
           }
         />

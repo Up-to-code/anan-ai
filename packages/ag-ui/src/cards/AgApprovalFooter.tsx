@@ -27,7 +27,7 @@ export default function AgApprovalFooter({
       <button
         type="button"
         onClick={() => onApprove?.() ?? agUiContext?.dispatchAction("approve")}
-        className="flex flex-1 items-center justify-center gap-2 bg-slate-950 px-4 py-3 text-xs font-black tracking-[0.22em] text-white transition hover:bg-blue-700"
+        className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-highlight)_50%,transparent)] bg-[var(--workspace-highlight)] px-4 py-3 text-xs font-black tracking-[0.22em] text-[var(--primary-foreground)] transition hover:brightness-110"
       >
         <CheckCircle2 className="h-4 w-4" />
         {approveLabel}
@@ -35,7 +35,7 @@ export default function AgApprovalFooter({
       <button
         type="button"
         onClick={() => onEdit?.() ?? agUiContext?.dispatchAction("edit")}
-        className="flex flex-1 items-center justify-center gap-2 border border-slate-200 bg-white px-4 py-3 text-xs font-black tracking-[0.22em] text-slate-700 transition hover:border-blue-200 hover:text-blue-700"
+        className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-4 py-3 text-xs font-black tracking-[0.22em] text-[var(--workspace-bubble-other-foreground)] transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_32%,transparent)] hover:bg-[var(--workspace-accent-soft)] hover:text-[var(--workspace-highlight)]"
       >
         <RotateCcw className="h-4 w-4" />
         {editLabel}

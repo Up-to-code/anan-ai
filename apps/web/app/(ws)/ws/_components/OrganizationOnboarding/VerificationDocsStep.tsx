@@ -98,23 +98,43 @@ function useVerificationDocsModel(props: VerificationDocsStepProps): Verificatio
 
 function VerificationDocsView(model: VerificationDocsModel) {
   return (
-    <div className="space-y-6">
-      <div className="space-y-2"><div className="text-sm font-black text-slate-900">التوثيق والمستندات</div><p className="text-sm text-slate-500">ارفع مستنداتك لإثبات الهوية والنشاط. القائمة أدناه مرجع إرشادي ويمكن تحديثها لاحقاً.</p></div>
-      <RequirementsChecklist countryLabel={model.countryLabel} typeLabel={model.typeLabel} query={model.query} onQueryChange={model.setQuery} selected={model.selected} filteredRequirements={model.filteredRequirements} onToggleRequirement={(id) => model.setSelected((current) => ({ ...current, [id]: !current[id] }))} sources={model.sources} />
-      <div className="grid gap-6 md:grid-cols-2">
+    <div className="space-y-10">
+      <div className="space-y-2 text-right">
+        <div className="text-xl font-black tracking-tight text-foreground">التوثيق والمستندات</div>
+        <p className="text-sm font-medium text-muted-foreground">ارفع مستنداتك لإثبات الهوية والنشاط. القائمة أدناه مرجع إرشادي ويمكن تحديثها لاحقاً.</p>
+      </div>
+      
+      <RequirementsChecklist 
+        countryLabel={model.countryLabel} 
+        typeLabel={model.typeLabel} 
+        query={model.query} 
+        onQueryChange={model.setQuery} 
+        selected={model.selected} 
+        filteredRequirements={model.filteredRequirements} 
+        onToggleRequirement={(id) => model.setSelected((current) => ({ ...current, [id]: !current[id] }))} 
+        sources={model.sources} 
+      />
+
+      <div className="grid gap-8 md:grid-cols-2">
         <DocumentsCard title="المستندات الأساسية" subtitle="ملفات الهوية والسجلات النظامية الأساسية." uploadingLabel="جارٍ رفع الملفات..." idleLabel="رفع ملفات PDF أو صور" docs={model.requiredDocs} isUploading={model.isUploading} onRemoveDoc={(docKey) => model.setRequiredDocs((current) => current.filter((item) => item.key !== docKey))} inputRef={model.requiredInputRef} onFilesChange={model.handleRequiredFiles} />
         <DocumentsCard title="إثبات العمل (اختياري)" subtitle="نماذج أعمال أو مستندات داعمة لنشاطك." uploadingLabel="جارٍ رفع الملفات..." idleLabel="أضف نماذج أعمال أو موافقات مشاريع" docs={model.proofDocs} isUploading={model.isUploading} onRemoveDoc={(docKey) => model.setProofDocs((current) => current.filter((item) => item.key !== docKey))} inputRef={model.proofInputRef} onFilesChange={model.handleProofFiles} />
       </div>
-      {model.error ? <div className="border-2 border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{model.error}</div> : null}
+
+      {model.error ? (
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-[13px] font-bold text-red-700 dark:text-red-300">
+          {model.error}
+        </div>
+      ) : null}
+
       <StepActions isSubmitting={model.isSubmitting} onBack={model.onBack} onSkip={model.onSkip} onSubmit={() => void model.handleSubmit()} />
     </div>
   );
 }
 
 /**
- * WHY:   Verification needs a clear checklist and a real document upload flow.
- * WHAT:  Lets users search requirements, upload docs, and submit verification requests.
- * HOW:   Uses UploadThing for uploads and posts to the verification request API.
+ * WHY:   Verification needs a clean, guided flow with premium geometry.
+ * WHAT:  Modernizes the verification step with rounded-3xl cards and high-contrast actions.
+ * HOW:   Adopts rounded-3xl for cards and rounded-full for action buttons.
  */
 export default function VerificationDocsStep(props: VerificationDocsStepProps) {
   const model = useVerificationDocsModel(props);

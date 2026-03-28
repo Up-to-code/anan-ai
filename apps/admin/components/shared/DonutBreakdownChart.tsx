@@ -32,10 +32,10 @@ export default function DonutBreakdownChart({
             </Pie>
             <Tooltip
               contentStyle={{
-                borderRadius: 8,
-                border: "1px solid #c4c4c4",
-                backgroundColor: "#ffffff",
-                boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
+                borderRadius: 16,
+                border: "1px solid var(--border)",
+                backgroundColor: "var(--card)",
+                boxShadow: "0 10px 30px -10px rgba(0, 0, 0, 0.1)",
               }}
               formatter={(value, name) => [formatChartNumber(value as number | string), String(name ?? "")]}
             />
@@ -44,12 +44,12 @@ export default function DonutBreakdownChart({
       </div>
       <div className="space-y-3">
         {data.map((item) => (
-          <div key={item.label} className="flex items-center justify-between rounded-[8px] border border-border bg-slate-50 px-3 py-2.5">
-            <div className="flex items-center gap-2 text-sm text-slate-700">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+          <div key={item.label} className="flex items-center justify-between rounded-2xl border border-border/40 bg-muted/5 px-4 py-3 transition-colors hover:bg-muted/10">
+            <div className="flex items-center gap-3 text-[13px] font-bold text-foreground">
+              <span className="h-3 w-3 rounded-full shadow-sm" style={{ backgroundColor: item.color }} />
               <span>{item.label}</span>
             </div>
-            <span className="text-sm font-medium text-slate-900">{formatChartNumber(item.value)}</span>
+            <span className="text-sm font-black tabular-nums tracking-tight text-foreground">{formatChartNumber(item.value)}</span>
           </div>
         ))}
       </div>

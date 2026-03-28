@@ -4,6 +4,7 @@ import { useLocaleDictionary } from "@/client_zone/components/LocaleProvider";
 import type { ChatSuggestion } from "@/client_zone/lib/types";
 import { AnanBrandMark } from "./AnanBrandMark";
 import { ChatSuggestions } from "./ChatSuggestions";
+import { ClientAssistantColumn } from "./chatLayout";
 
 /**
  * WHY:   The default client route should feel intentional before any message is sent, not empty.
@@ -20,19 +21,25 @@ export function ThreadWelcome({
   const { dictionary } = useLocaleDictionary();
 
   return (
-    <div className="flex min-h-[58vh] flex-col items-center justify-center gap-6 px-2 text-center">
-      <AnanBrandMark className="h-14 w-14" />
-      <div className="max-w-2xl space-y-3">
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+    <ClientAssistantColumn className="flex min-h-[54vh] flex-col items-center justify-center gap-8 px-2 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-[28px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] shadow-sm">
+        <AnanBrandMark className="h-14 w-14" />
+      </div>
+      <div className="max-w-2xl space-y-4">
+        <h1 className="text-3xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)] sm:text-4xl">
           {dictionary.app.welcomeTitle}
         </h1>
-        <p className="text-sm leading-7 text-slate-600 sm:text-base">
+        <p className="text-sm leading-7 text-[var(--workspace-muted)] sm:text-base">
           {dictionary.app.welcomeDescription}
         </p>
       </div>
-      <div className="w-full max-w-2xl">
-        <ChatSuggestions suggestions={suggestions} onSelect={onSelect} />
+      <div className="w-full max-w-3xl">
+        <ChatSuggestions
+          suggestions={suggestions}
+          onSelect={onSelect}
+          className="justify-center"
+        />
       </div>
-    </div>
+    </ClientAssistantColumn>
   );
 }

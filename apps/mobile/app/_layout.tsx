@@ -2,15 +2,15 @@ import "react-native-gesture-handler";
 import "../global.css";
 
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import { Cairo_400Regular, Cairo_700Bold } from "@expo-google-fonts/cairo";
+import { Cairo_400Regular, Cairo_500Medium, Cairo_700Bold, Cairo_900Black } from "@expo-google-fonts/cairo";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { I18nManager } from "react-native";
+import { I18nManager, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { ConvexProvider } from "@/lib/convex";
 
 void SplashScreen.preventAutoHideAsync();
@@ -23,7 +23,9 @@ void SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [loaded] = useFonts({
     Cairo_400Regular,
+    Cairo_500Medium,
     Cairo_700Bold,
+    Cairo_900Black,
   });
 
   useEffect(() => {
@@ -45,8 +47,10 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ConvexProvider>
           <BottomSheetModalProvider>
-            <StatusBar style="dark" backgroundColor="#F8FAFC" />
-            <Stack screenOptions={{ headerShown: false }} />
+            <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+              <StatusBar style="dark" />
+              <Stack screenOptions={{ headerShown: false }} />
+            </View>
           </BottomSheetModalProvider>
         </ConvexProvider>
       </SafeAreaProvider>

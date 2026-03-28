@@ -6,7 +6,7 @@ import { orchestrate } from "../../agents/anan";
 import { orchestrate as orchestrateWorkspace } from "../../agents/anan_workspace";
 import type { WorkspaceStructuredOutput } from "../../agents/anan_workspace/types";
 import { resolveWorkspaceAgUiTurn } from "../agUi";
-import type { AssistantKind, AssistantOwner, WorkspaceProjectActionState } from "./types";
+import type { AssistantKind, AssistantOwner, WorkspaceActionState, WorkspaceProjectActionState } from "./types";
 import { isPublicAssistantKind, isWorkspaceKind } from "./utils";
 import { getLatestWorkspaceActionState } from "./workspaceContext";
 import { normalizeWorkspaceStructuredOutput, buildProjectQuestions } from "./workspaceParsing";
@@ -14,7 +14,9 @@ import { maybeAutoCreateDraftAndAnnotate, resolveWorkspaceProjectActionState } f
 import { appendQuestionsToAssistantText, enrichUiTurnWithWorkspaceState } from "./workspaceUi";
 import { createWorkspaceStreamControls } from "./workspaceStream";
 import { syncWorkspaceAssistantStream } from "./streamSync";
-import { buildBasePrompt, buildKnowledgeContext, buildWorkspaceContextBlock, selectRegenerateSource } from "./promptComposer";
+import { buildAttachmentContext, buildBasePrompt, buildKnowledgeContext, buildWorkspaceContextBlock, selectRegenerateSource } from "./promptComposer";
+import type { WorkspaceUploadedFileReference } from "./types";
+import { maybeHandleWorkspaceDirectCommand } from "./workspaceCommandRouter";
 
 /**
  * Core orchestration logic: resolves context, gathers knowledge,
@@ -26,7 +28,8 @@ export async function handleAssistantMessage(
     message: string;
     threadId?: Id<"assistantThreads">;
     startNewThread?: boolean;
-    inputMode?: "text" | "voice";
+    inputMode?: "text" | "voice" | "attachment";
+    attachments?: WorkspaceUploadedFileReference[];
     regenerate?: boolean;
     regenerateMessageId?: string;
     assistantKind?: AssistantKind;
@@ -75,6 +78,8 @@ export async function handleAssistantMessage(
     owner,
     streamSessionId: args.streamSessionId,
   });
+  const routedTeamIds: string[] = [];
+  const routedAgentNames: string[] = [];
 
   const shouldStartFreshWorkspaceThread = Boolean(
     isWorkspaceAssistant && args.startNewThread && !args.threadId,
@@ -101,7 +106,7 @@ export async function handleAssistantMessage(
 
   if (isWorkspaceAssistant && !activeThreadId) {
     const created = await ctx.runMutation(api.ai_zone.assistantWorkspace.createThread, {
-      title: args.message.slice(0, 80),
+      title: args.message.trim().slice(0, 80) || (args.attachments?.length ? "محادثة مرفقات جديدة" : "محادثة جديدة"),
     });
     activeThreadId = created.threadId as Id<"assistantThreads">;
   }
@@ -141,6 +146,7 @@ export async function handleAssistantMessage(
     isWorkspaceAssistant,
     previousActionState,
   });
+  const attachmentContext = buildAttachmentContext(args.attachments);
 
   // 4. Build the prompt based on mode
   const basePrompt = buildBasePrompt({
@@ -149,6 +155,7 @@ export async function handleAssistantMessage(
     mode,
     promptPrefix: args.promptPrefix,
     workspaceContextBlock,
+    attachmentContext,
   });
 
   // 5. Map ownerType to orchestrator role
@@ -159,35 +166,56 @@ export async function handleAssistantMessage(
   };
 
   // 6. Run the multi-agent orchestrator
-  const result = isWorkspaceAssistant
-    ? await orchestrateWorkspace({
+  const directWorkspaceCommand = isWorkspaceAssistant
+    ? await maybeHandleWorkspaceDirectCommand({
         ctx,
-        prompt: basePrompt,
-        role: roleMap[owner.ownerType] ?? "user",
-        userId: owner.userId,
-        threadId: activeThreadId,
-        ragContext: knowledgeContext || undefined,
-        channel: "app",
-        streamSessionId: args.streamSessionId,
-        onStageEvent: (event) =>
-          workspaceStream.emitStage(event.phase, {
-            status: event.status,
-            teamId: event.teamId,
-            agentName: event.agentName,
-            details: event.details,
-          }),
-        onTextDelta: workspaceStream.emitDelta,
-        onStreamCancelledCheck: workspaceStream.isCancelled,
+        message: effectiveUserMessage,
+        owner,
+        previousActionState,
       })
-    : await orchestrate({
-        ctx,
-        prompt: basePrompt,
-        role: roleMap[owner.ownerType] ?? "user",
-        userId: owner.userId,
-        threadId: activeThreadId,
-        ragContext: knowledgeContext || undefined,
-        channel: "app",
-      });
+    : null;
+
+  const result = directWorkspaceCommand
+    ? {
+        output: directWorkspaceCommand.assistantText,
+        structured: { questions: [] },
+      }
+    : isWorkspaceAssistant
+      ? await orchestrateWorkspace({
+          ctx,
+          prompt: basePrompt,
+          role: roleMap[owner.ownerType] ?? "user",
+          userId: owner.userId,
+          threadId: activeThreadId,
+          ragContext: knowledgeContext || undefined,
+          channel: "app",
+          streamSessionId: args.streamSessionId,
+          onStageEvent: (event) => {
+            if (event.teamId && !routedTeamIds.includes(event.teamId)) {
+              routedTeamIds.push(event.teamId);
+            }
+            if (event.agentName && !routedAgentNames.includes(event.agentName)) {
+              routedAgentNames.push(event.agentName);
+            }
+            return workspaceStream.emitStage(event.phase, {
+              status: event.status,
+              teamId: event.teamId,
+              agentName: event.agentName,
+              details: event.details,
+            });
+          },
+          onTextDelta: workspaceStream.emitDelta,
+          onStreamCancelledCheck: workspaceStream.isCancelled,
+        })
+      : await orchestrate({
+          ctx,
+          prompt: basePrompt,
+          role: roleMap[owner.ownerType] ?? "user",
+          userId: owner.userId,
+          threadId: activeThreadId,
+          ragContext: knowledgeContext || undefined,
+          channel: "app",
+        });
 
   let assistantText = result.output;
   const wasCancelled = Boolean((result as { cancelled?: boolean }).cancelled);
@@ -198,30 +226,35 @@ export async function handleAssistantMessage(
       )
     : { questions: [] };
 
-  let workspaceActionState: WorkspaceProjectActionState | null = isWorkspaceAssistant
-    ? resolveWorkspaceProjectActionState({
-        message: effectiveUserMessage,
-        previous: previousActionState,
-        structured: structuredOutput,
-      })
+  let workspaceActionState: WorkspaceActionState | null = isWorkspaceAssistant
+    ? directWorkspaceCommand
+      ? directWorkspaceCommand.actionState
+      : resolveWorkspaceProjectActionState({
+          message: effectiveUserMessage,
+          previous: previousActionState?.type === "create_project" ? previousActionState : null,
+          structured: structuredOutput,
+        })
     : null;
 
-  const createdResult = await maybeAutoCreateDraftAndAnnotate({
-    actionState: workspaceActionState,
-    assistantText,
-    ctx,
-    emitStage: (phase, payload) =>
-      workspaceStream.emitStage(phase, {
-        status: payload.status,
-        details: payload.details,
-      }),
-    owner,
-    wasCancelled,
-  });
+  const createdResult =
+    workspaceActionState?.type === "create_project"
+      ? await maybeAutoCreateDraftAndAnnotate({
+          actionState: workspaceActionState as WorkspaceProjectActionState | null,
+          assistantText,
+          ctx,
+          emitStage: (phase, payload) =>
+            workspaceStream.emitStage(phase, {
+              status: payload.status,
+              details: payload.details,
+            }),
+          owner,
+          wasCancelled,
+        })
+      : { actionState: workspaceActionState, assistantText };
   workspaceActionState = createdResult.actionState;
   assistantText = createdResult.assistantText;
 
-  if (workspaceActionState?.state === "collecting" && !wasCancelled) {
+  if (workspaceActionState?.type === "create_project" && workspaceActionState.state === "collecting" && !wasCancelled) {
     const actionQuestions = buildProjectQuestions(workspaceActionState.missingFields);
     assistantText = appendQuestionsToAssistantText(assistantText, actionQuestions);
     structuredOutput.questions = actionQuestions;
@@ -242,10 +275,24 @@ export async function handleAssistantMessage(
   });
 
   let assistantUiTurn = isWorkspaceAssistant
-    ? resolveWorkspaceAgUiTurn(effectiveUserMessage, assistantText)
+    ? directWorkspaceCommand?.uiTurn ?? resolveWorkspaceAgUiTurn({
+        assistantText,
+        ownerType: owner.ownerType,
+        actionState: workspaceActionState,
+        attachments: args.attachments,
+      })
     : null;
 
-  if (isWorkspaceAssistant) {
+  if (isWorkspaceAssistant && !directWorkspaceCommand) {
+    assistantUiTurn = resolveWorkspaceAgUiTurn({
+      assistantText,
+      ownerType: owner.ownerType,
+      actionState: workspaceActionState,
+      attachments: args.attachments,
+    });
+  }
+
+  if (isWorkspaceAssistant && !directWorkspaceCommand) {
     assistantUiTurn = enrichUiTurnWithWorkspaceState(
       assistantUiTurn,
       assistantText,
@@ -262,7 +309,19 @@ export async function handleAssistantMessage(
     const actionCandidate = workspaceActionState ?? structuredOutput.actionCandidate;
     return {
       uiTurn: assistantUiTurn,
-      meta: { questions, actionCandidate, workspaceActionState },
+      meta: {
+        questions,
+        actionCandidate,
+        workspaceActionState,
+        attachments: args.attachments,
+        directWorkspaceCommand: directWorkspaceCommand?.meta,
+        routing: {
+          assistantLabel: "وكيل عنان",
+          agentName: routedAgentNames[0],
+          primaryTeamId: routedTeamIds[0],
+          teamIds: routedTeamIds,
+        },
+      },
       workspaceActionState,
     };
   })();
@@ -291,7 +350,13 @@ export async function handleAssistantMessage(
     ownerBrokerId: owner.ownerBrokerId,
     ownerREDId: owner.ownerREDId,
     userMessage: effectiveUserMessage,
-    userMessageMetadata: args.inputMode ? { inputMode: args.inputMode } : undefined,
+    userMessageMetadata:
+      args.inputMode || (args.attachments?.length ?? 0) > 0
+        ? {
+            inputMode: args.inputMode,
+            attachments: args.attachments,
+          }
+        : undefined,
     persistUserMessage: !(args.regenerate && regenerateSource),
     assistantMessage: assistantText,
     assistantMetadata,

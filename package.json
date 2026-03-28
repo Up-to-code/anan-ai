@@ -45,6 +45,7 @@
     "@mzedstudio/llm-cache": "^0.1.0",
     "@mzedstudio/uploadthingtrack": "^0.4.1",
     "@openrouter/ai-sdk-provider": "^1.5.4",
+    "@tabler/icons-react": "",
     "@toon-format/toon": "^2.1.0",
     "@types/web-push": "^3.6.4",
     "ai": "^5.0.82",

@@ -44,7 +44,7 @@ function PushEnableActionButton({
       type="button"
       onClick={onEnable}
       disabled={status === "pending" || status === "enabled"}
-      className="inline-flex items-center border border-slate-200 bg-white px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-slate-700 transition hover:border-blue-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-70"
+      className="inline-flex items-center border border-slate-200 bg-white px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-slate-700 transition hover:border-blue-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-blue-500/40 dark:hover:text-blue-300"
     >
       {getStatusLabel(status)}
     </button>

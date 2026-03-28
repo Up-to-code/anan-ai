@@ -1,14 +1,12 @@
 import OfferOverviewPage from "./OfferOverviewPage";
 import { requireWorkspaceData } from "../../_lib/workspaceData";
 import { getWorkspaceOffersZone } from "@/server/ws/zones";
-import { mapOfferToMarketplaceItem } from "./offerViewModel";
-import { OFFERS_PAGE_SIZE, paginateItems, resolvePage, type OffersPageSearchParams } from "./offersPageData";
-
+import { OFFERS_PAGE_SIZE, paginateQueues, resolvePage, resolveQueue, type OffersPageSearchParams } from "./offersPageData";
 
 /**
- * WHY:   The offers root route should stay server-first while keeping role dispatch out of the UI.
- * WHAT:  Loads the real offer snapshot and renders the overview page.
- * HOW:   Resolves the workspace audience once and maps marketplace, received, and sent offers into one UI list.
+ * WHY:   The offers root route should now present role-based collaboration queues instead of the legacy marketplace buckets.
+ * WHAT:  Loads the offers 2.0 queue snapshot and renders queue sections for the active workspace audience.
+ * HOW:   Resolves the workspace once, reads the queue snapshot from the offers zone, and paginates each queue locally for the route.
  */
 export default async function WorkspaceOffersRoute({
   searchParams,
@@ -17,19 +15,13 @@ export default async function WorkspaceOffersRoute({
 }) {
   const workspace = await requireWorkspaceData("/ws/offers");
   const snapshot = await getWorkspaceOffersZone(workspace.audience, workspace.ownerContext).getSnapshot();
-  const items = [...snapshot.marketplace, ...snapshot.received, ...snapshot.sent].map(mapOfferToMarketplaceItem);
-  const page = resolvePage(await searchParams);
-  const paginatedItems = paginateItems(items, page, OFFERS_PAGE_SIZE);
-
-  return (
-    <OfferOverviewPage
-      items={paginatedItems.items}
-      totalItems={paginatedItems.totalItems}
-      page={paginatedItems.page}
-      pageCount={paginatedItems.pageCount}
-      hasPreviousPage={paginatedItems.hasPreviousPage}
-      hasNextPage={paginatedItems.hasNextPage}
-      routeBase="/ws/offers"
-    />
+  const resolvedSearchParams = await searchParams;
+  const page = resolvePage(resolvedSearchParams);
+  const selectedQueue = resolveQueue(
+    resolvedSearchParams,
+    snapshot.queues.map((queue) => queue.key),
   );
+  const queues = paginateQueues(snapshot.queues, page, OFFERS_PAGE_SIZE);
+
+  return <OfferOverviewPage queues={queues} selectedQueue={selectedQueue} />;
 }

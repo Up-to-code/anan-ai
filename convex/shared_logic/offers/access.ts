@@ -59,7 +59,7 @@ export async function requireVerifiedSender(ctx: MutationCtx) {
     }
   }
 
-  if (access.role === "RED") {
+  if (access.role === "developer") {
     const red = await ctx.db.get(access.REDId!);
     if (!red?.isVerified) {
       throw new ConvexError({

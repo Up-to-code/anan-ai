@@ -33,6 +33,10 @@ function toProjectOption(property: WorkspaceProperty): InboxProjectOption {
     location: property.location ?? property.address ?? "",
     imageUrl: property.heroImage?.url ?? property.media?.[0]?.url ?? null,
     price: property.price ?? undefined,
+    shortDescription:
+      (property.body as { presentation?: { descriptionShort?: string } } | undefined)?.presentation?.descriptionShort ??
+      property.description,
+    publicationState: property.publicationState ?? "draft",
   };
 }
 
@@ -53,7 +57,10 @@ async function loadCollaborationOptions(workspace: WorkspaceData) {
 
   return {
     dealOptions: deals.map(toDealOption),
-    projectOptions: properties.page.map(toProjectOption),
+    projectOptions: properties.page.map((property) => ({
+      ...toProjectOption(property),
+      organizationName: workspace.primaryOrganization?.name ?? null,
+    })),
   };
 }
 

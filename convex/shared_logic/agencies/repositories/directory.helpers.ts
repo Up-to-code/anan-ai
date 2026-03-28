@@ -54,11 +54,20 @@ export async function countPublicPublishedOffersForOrg(
   role: "broker" | "developer",
   organizationId: any,
 ) {
-  const offersQuery = role === "broker"
-    ? ctx.db.query("offers").withIndex("fromBrokerId", (q) => q.eq("fromBrokerId", organizationId))
-    : ctx.db.query("offers").withIndex("fromREDId", (q) => q.eq("fromREDId", organizationId));
-  const offers = await offersQuery.collect();
-  return offers.filter((offer) => offer.publicationState === "published" && offer.visibility === "public").length;
+  const packagesQuery = role === "broker"
+    ? ctx.db.query("offerPackages").withIndex("fromBrokerId", (q) => q.eq("fromBrokerId", organizationId))
+    : ctx.db.query("offerPackages").withIndex("fromREDId", (q) => q.eq("fromREDId", organizationId));
+  const offerPackages = await packagesQuery.collect();
+  const counts = await Promise.all(
+    offerPackages.map(async (offerPackage) => {
+      const offerCases = await ctx.db
+        .query("offerCases")
+        .withIndex("offerPackageId", (q) => q.eq("offerPackageId", offerPackage._id))
+        .collect();
+      return offerCases.filter((offerCase) => offerCase.type === "open_offer" && offerCase.stage === "open").length;
+    }),
+  );
+  return counts.reduce((total, value) => total + value, 0);
 }
 
 export async function listPublicPublishedOffersForOrganization(
@@ -66,27 +75,39 @@ export async function listPublicPublishedOffersForOrganization(
   role: "broker" | "developer",
   organizationId: any,
 ) {
-  const offersQuery = role === "broker"
-    ? ctx.db.query("offers").withIndex("fromBrokerId", (q) => q.eq("fromBrokerId", organizationId))
-    : ctx.db.query("offers").withIndex("fromREDId", (q) => q.eq("fromREDId", organizationId));
-  const publishedOffers = await offersQuery.collect();
-  return Promise.all(
-    publishedOffers
-      .filter((offer) => offer.publicationState === "published" && offer.visibility === "public")
-      .map(async (offer) => {
-        const property = await ctx.db.get(offer.propertyId);
-        return {
-          id: offer._id,
-          price: offer.price,
-          status: offer.status,
-          description: offer.description,
-          property: property ? {
-            id: property._id,
-            title: property.title,
-            address: property.address,
-            location: property.location,
-          } : null,
-        };
-      }),
+  const packagesQuery = role === "broker"
+    ? ctx.db.query("offerPackages").withIndex("fromBrokerId", (q) => q.eq("fromBrokerId", organizationId))
+    : ctx.db.query("offerPackages").withIndex("fromREDId", (q) => q.eq("fromREDId", organizationId));
+  const offerPackages = await packagesQuery.collect();
+  const rows = await Promise.all(
+    offerPackages.map(async (offerPackage) => {
+      const openOfferCase = await ctx.db
+        .query("offerCases")
+        .withIndex("offerPackageId", (q) => q.eq("offerPackageId", offerPackage._id))
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("type"), "open_offer"),
+            q.eq(q.field("stage"), "open"),
+          ),
+        )
+        .first();
+      if (!openOfferCase) {
+        return null;
+      }
+      const property = await ctx.db.get(offerPackage.propertyId);
+      return {
+        id: openOfferCase._id,
+        price: offerPackage.askingPrice,
+        status: "pending",
+        description: openOfferCase.summary ?? offerPackage.summary,
+        property: property ? {
+          id: property._id,
+          title: property.title,
+          address: property.address,
+          location: property.location,
+        } : null,
+      };
+    }),
   );
+  return rows.filter(Boolean);
 }

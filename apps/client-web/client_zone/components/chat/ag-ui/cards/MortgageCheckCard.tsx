@@ -1,7 +1,12 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/client_zone/components/ui/card";
 import { Badge } from "@/client_zone/components/ui/badge";
 import { useLocaleDictionary } from "@/client_zone/components/LocaleProvider";
 import { formatCurrency } from "@/client_zone/lib/formatters";
+import {
+  AgUiCardHeading,
+  AgUiCardShell,
+  AgUiMetricTile,
+  CardContent,
+} from "../AgUiCardPrimitives";
 import type { MortgageCheckCardProps } from "../types";
 
 /**
@@ -31,28 +36,18 @@ export function MortgageCheckCard({
           : "Insufficient data";
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle className="text-sm">{title}</CardTitle>
-          <Badge className="rounded-md bg-slate-100 text-slate-700">{statusLabel}</Badge>
-        </div>
-        <CardDescription>{summary}</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <div className="text-xs text-slate-500">{locale === "ar" ? "الميزانية المقترحة" : "Recommended budget"}</div>
-          <div className="mt-2 text-lg font-semibold text-slate-900">
-            {recommendedBudget ? formatCurrency(recommendedBudget, locale) : "—"}
-          </div>
-        </div>
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <div className="text-xs text-slate-500">{locale === "ar" ? "القسط الشهري التقريبي" : "Estimated monthly payment"}</div>
-          <div className="mt-2 text-lg font-semibold text-slate-900">
-            {monthlyInstallmentEstimate ? formatCurrency(monthlyInstallmentEstimate, locale) : "—"}
-          </div>
-        </div>
+    <AgUiCardShell>
+      <AgUiCardHeading title={title} summary={summary} aside={<Badge>{statusLabel}</Badge>} />
+      <CardContent className="grid gap-3 pt-0 sm:grid-cols-2">
+        <AgUiMetricTile
+          label={locale === "ar" ? "الميزانية المقترحة" : "Recommended budget"}
+          value={recommendedBudget ? formatCurrency(recommendedBudget, locale) : "—"}
+        />
+        <AgUiMetricTile
+          label={locale === "ar" ? "القسط الشهري التقريبي" : "Estimated monthly payment"}
+          value={monthlyInstallmentEstimate ? formatCurrency(monthlyInstallmentEstimate, locale) : "—"}
+        />
       </CardContent>
-    </Card>
+    </AgUiCardShell>
   );
 }

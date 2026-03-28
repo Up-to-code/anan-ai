@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 export type BrandWorkspaceTab = {
   href: string;
   label: React.ReactNode;
+  exact?: boolean;
 };
 
 export default function BrandWorkspaceTabs({
@@ -19,29 +20,25 @@ export default function BrandWorkspaceTabs({
   const pathname = usePathname();
 
   return (
-    <div className={cn("border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-6 lg:px-8", className)}>
-      <div className="flex flex-wrap gap-2 py-4">
+    <div className={cn("border-b border-slate-200 bg-white px-6 lg:px-8 dark:border-slate-800 dark:bg-slate-950", className)}>
+      <div className="flex flex-wrap gap-6 py-3">
         {tabs.map((tab) => {
-          const isActive = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+          const isActive = tab.exact
+            ? pathname === tab.href
+            : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
 
           return (
             <Link
               key={tab.href}
               href={tab.href}
               className={cn(
-                "group relative overflow-hidden border px-4 py-3 text-xs font-black tracking-[0.18em] transition",
+                "border-b-2 border-transparent pb-3 text-sm font-medium transition-colors",
                 isActive
-                  ? "border-blue-200 bg-blue-50 text-blue-700"
-                  : "border-slate-200 bg-white text-slate-500 hover:border-blue-200 hover:text-blue-700",
+                  ? "border-slate-950 text-slate-950 dark:border-slate-100 dark:text-slate-100"
+                  : "text-slate-500 hover:border-slate-300 hover:text-slate-900 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-100",
               )}
             >
-              <span className="relative z-10">{tab.label}</span>
-              <span
-                className={cn(
-                  "absolute inset-x-3 bottom-0 h-0.5 origin-right transition-transform duration-200",
-                  isActive ? "scale-x-100 bg-blue-600" : "scale-x-0 bg-blue-400 group-hover:scale-x-100",
-                )}
-              />
+              {tab.label}
             </Link>
           );
         })}

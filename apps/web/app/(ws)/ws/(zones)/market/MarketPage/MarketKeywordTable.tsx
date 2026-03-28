@@ -1,123 +1,80 @@
-"use client";
+import MarketPanel from "./MarketPanel";
 
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-
-type TooltipPayload<Row> = {
-  payload: Row;
-};
-
-type TooltipProps<Row> = {
-  active?: boolean;
-  payload?: TooltipPayload<Row>[];
-};
+type KeywordSource =
+  | "query"
+  | "feature"
+  | "derived_topic"
+  | "research_query"
+  | "research_term"
+  | "search_log";
 
 type KeywordRow = {
   label: string;
   count: number;
-  source: "query" | "feature" | "derived_topic";
+  source: KeywordSource;
 };
 
-type MarketKeywordTableProps = {
+function getSourceLabel(source: KeywordSource): string {
+  switch (source) {
+    case "feature":
+      return "ميزة";
+    case "derived_topic":
+      return "موضوع";
+    case "research_query":
+      return "بحث محفوظ";
+    case "research_term":
+      return "مصطلح بحث";
+    case "search_log":
+      return "سجل بحث";
+    default:
+      return "كلمة";
+  }
+}
+
+/**
+ * WHY:   Keyword helper data should stay simple and directly usable for market exploration.
+ * WHAT:  Renders keyword or helper-query rows with count and source labels.
+ * HOW:   Accepts mixed saved-data sources and presents them as a compact report table.
+ */
+export default function MarketKeywordTable({
+  title,
+  rows,
+  description,
+}: {
   title: string;
   rows: KeywordRow[];
-};
-
-function getSourceLabel(source: KeywordRow["source"]): string {
-  switch (source) {
-    case "query":
-      return "استعلام";
-    case "feature":
-      return "خاصية";
-    default:
-      return "موضوع مشتق";
-  }
-}
-
-/**
- * Custom tooltip to show the exact count and translated source.
- */
-function KeywordTooltip({ active, payload }: TooltipProps<KeywordRow>) {
-  if (active && payload && payload.length) {
-    const data = payload[0].payload;
-    return (
-      <div className="max-w-xs rounded-lg border border-slate-200 bg-white/95 p-4 text-right shadow-xl backdrop-blur-md">
-        <p className="mb-3 text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">
-          {data.label}
-        </p>
-        <div className="space-y-2 text-xs font-semibold text-slate-600">
-          <p className="flex justify-between items-center gap-4"><span className="text-slate-400">العدد:</span> <span className="text-blue-600">{data.count.toLocaleString("en-US")}</span></p>
-          <p className="flex justify-between items-center gap-4"><span className="text-slate-400">المصدر:</span> <span className="text-slate-900">{getSourceLabel(data.source)}</span></p>
-        </div>
-      </div>
-    );
-  }
-  return null;
-}
-
-/**
- * WHY:   Keyword and topic analysis requires graphical representation of frequency to spot dominant trends instantly.
- * WHAT:  Renders a horizontal BarChart for the keyword/topic ranking.
- * HOW:   Accepts pre-filtered rows and maps them to a responsive Recharts graphic.
- */
-export default function MarketKeywordTable({ title, rows }: MarketKeywordTableProps) {
+  description?: string;
+}) {
   if (rows.length === 0) {
     return (
-      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
-          <h2 className="text-base font-bold text-slate-900">{title}</h2>
-        </div>
-        <div className="p-12 text-center flex flex-col items-center justify-center">
-          <div className="text-sm font-bold text-slate-400">لا توجد كلمات أو موضوعات مطابقة لهذا النطاق.</div>
-        </div>
-      </section>
+      <MarketPanel title={title} description={description}>
+        <div className="py-10 text-center text-sm text-slate-500 dark:text-slate-300">لا توجد نتائج مطابقة لهذا النطاق.</div>
+      </MarketPanel>
     );
   }
 
-  // Calculate dynamic height based on number of rows so the bars don't get squished
-  const chartHeight = Math.max(300, rows.length * 40 + 60);
-
   return (
-    <section className="flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
-        <h2 className="text-base font-bold text-slate-900">{title}</h2>
+    <MarketPanel title={title} description={description}>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-slate-200 text-right dark:divide-slate-800">
+          <thead>
+            <tr className="text-sm text-slate-500 dark:text-slate-400">
+              <th className="py-3 font-medium">العبارة</th>
+              <th className="py-3 font-medium">المصدر</th>
+              <th className="py-3 font-medium">التكرار</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            {rows.map((row) => (
+              <tr key={`${row.source}-${row.label}`} className="text-sm text-slate-700 dark:text-slate-200">
+                <td className="py-3 font-medium text-slate-950 dark:text-slate-100">{row.label}</td>
+                <td className="py-3">{getSourceLabel(row.source)}</td>
+                <td className="py-3">{row.count.toLocaleString("en-US")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-      <div className="w-full p-6 pt-6 pb-6 flex-1" dir="rtl">
-        <div style={{ height: chartHeight, width: "100%" }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={rows}
-              layout="vertical"
-              margin={{ top: 0, right: 30, left: 100, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={true} vertical={false} />
-              <XAxis
-                type="number"
-                axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
-                tickLine={false}
-                tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
-              />
-              <YAxis
-                type="category"
-                dataKey="label"
-                axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
-                tickLine={false}
-                tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
-                width={120}
-              />
-              <Tooltip content={<KeywordTooltip />} cursor={{ fill: "#f8fafc" }} />
-              <Bar dataKey="count" fill="#3b82f6" radius={[4, 0, 0, 4]} barSize={24} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </section>
+    </MarketPanel>
   );
 }

@@ -2,11 +2,13 @@
 
 import type { AnanProThread } from "@/server/contracts/ananPro";
 import type { SessionUser } from "@/server/contracts/session";
+import type { WorkspaceAudience } from "@/server/contracts/workspace";
 import { AIMotionLogo, type AIMotionState } from "../../../_components/AIMotion";
 import { motion, LayoutGroup } from "framer-motion";
 import { LandingView, ThreadView, type AssistantComposerProps } from "./WorkspaceAssistantCanvas.sections";
 
 type WorkspaceAssistantCanvasProps = {
+  audience: WorkspaceAudience;
   user: SessionUser;
   thread: AnanProThread | null;
   unavailableThreadId: string | null;
@@ -14,15 +16,22 @@ type WorkspaceAssistantCanvasProps = {
   sendError: string | null;
   isLoadingThread: boolean;
   isSending: boolean;
+  isVoicePanelOpen: boolean;
   isVoiceRecording: boolean;
   isVoiceTranscribing: boolean;
-  voiceProcessingPhase: "idle" | "recording" | "uploading" | "transcribing" | "sending" | "error";
+  voicePermissionState: "unknown" | "unsupported" | "prompt" | "granted" | "denied";
+  voiceProcessingPhase: "idle" | "waiting_for_permission" | "waiting_for_speech" | "recording" | "silence_countdown" | "uploading" | "transcribing" | "sending" | "error";
   canRegenerate: boolean;
+  activeTeamId: string | null;
+  activeAgentName: string | null;
   liveAssistantMotionState: AIMotionState;
   liveStageLabel: string;
   voiceElapsedMs: number;
   voiceLevels: number[];
   onToggleVoiceRecording: () => void;
+  onStopVoiceRecording: () => void | Promise<void>;
+  onCancelVoiceRecording: () => void;
+  onRequestVoicePermission: () => void | Promise<void>;
   onStopStreaming: () => void;
   onRegenerate: () => void;
   onResetUnavailableThread: () => void;
@@ -33,34 +42,26 @@ type WorkspaceAssistantCanvasProps = {
 function LoadingState() {
   return (
     <LayoutGroup id="workspace-assistant-surface">
-      <section className="flex h-full min-h-0 flex-1 flex-col bg-[#fafaf8] px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6">
-          <div className="flex items-center gap-3">
-            <motion.div layoutId="assistant-motion-logo" className="flex h-10 w-10 items-center justify-center rounded-[8px] border border-stone-200 bg-white shadow-sm">
+      <section className="flex h-full min-h-0 flex-1 flex-col bg-background px-4 py-8 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-10 pt-10">
+          <div className="flex items-center gap-4">
+            <motion.div layoutId="assistant-motion-logo" className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border/40 bg-card shadow-sm dark:bg-slate-900 dark:shadow-none">
               <AIMotionLogo state="loading" size="compact" />
             </motion.div>
-            <div className="space-y-2">
-              <div className="h-3 w-28 animate-pulse rounded-[8px] bg-stone-200" />
-              <div className="h-2.5 w-40 animate-pulse rounded-[8px] bg-stone-100" />
+            <div className="space-y-3">
+              <div className="h-4 w-32 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+              <div className="h-3 w-48 animate-pulse rounded-full bg-slate-100 dark:bg-slate-900" />
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="ml-auto h-14 w-[60%] animate-pulse rounded-[8px] bg-slate-900/[0.06]" />
-            <div className="h-20 w-[70%] animate-pulse rounded-[8px] border border-stone-100 bg-white shadow-sm" />
-            <div className="ml-auto h-12 w-[40%] animate-pulse rounded-[8px] bg-slate-900/[0.06]" />
+          <div className="space-y-6">
+            <div className="ml-auto h-20 w-[70%] animate-pulse rounded-t-3xl rounded-br-3xl rounded-bl-lg bg-slate-900/5 dark:bg-slate-50/5" />
+            <div className="h-40 w-[80%] animate-pulse rounded-3xl border border-border/40 bg-card shadow-sm dark:bg-slate-900/50 dark:shadow-none" />
           </div>
 
-          <div className="mx-auto mt-auto w-full max-w-3xl">
-            <div className="animate-pulse rounded-[8px] border border-stone-200 bg-white p-5 shadow-sm">
-              <div className="h-12 rounded-[8px] bg-stone-100" />
-              <div className="mt-3 flex items-center justify-between">
-                <div className="h-3 w-20 rounded-[8px] bg-stone-100" />
-                <div className="flex items-center gap-1.5">
-                  <div className="h-9 w-9 rounded-[8px] bg-stone-100" />
-                  <div className="h-9 w-9 rounded-[8px] bg-stone-100" />
-                </div>
-              </div>
+          <div className="mx-auto mt-auto w-full max-w-3xl translate-y-4">
+            <div className="animate-pulse rounded-[40px] border border-border/40 bg-card p-6 shadow-sm dark:bg-slate-900/50 dark:shadow-none">
+              <div className="h-10 rounded-full bg-slate-100 dark:bg-slate-800/50" />
             </div>
           </div>
         </div>
@@ -71,16 +72,24 @@ function LoadingState() {
 
 function toComposerProps(props: WorkspaceAssistantCanvasProps): AssistantComposerProps {
   return {
+    audience: props.audience,
     value: props.value,
     sendError: props.sendError,
     isSending: props.isSending,
+    isVoicePanelOpen: props.isVoicePanelOpen,
     isVoiceRecording: props.isVoiceRecording,
     isVoiceTranscribing: props.isVoiceTranscribing,
+    voicePermissionState: props.voicePermissionState,
     voiceProcessingPhase: props.voiceProcessingPhase,
     canRegenerate: props.canRegenerate,
+    activeTeamId: props.activeTeamId,
+    activeAgentName: props.activeAgentName,
     voiceElapsedMs: props.voiceElapsedMs,
     voiceLevels: props.voiceLevels,
     onToggleVoiceRecording: props.onToggleVoiceRecording,
+    onStopVoiceRecording: props.onStopVoiceRecording,
+    onCancelVoiceRecording: props.onCancelVoiceRecording,
+    onRequestVoicePermission: props.onRequestVoicePermission,
     onStopStreaming: props.onStopStreaming,
     onRegenerate: props.onRegenerate,
     onChange: props.onChange,

@@ -2,9 +2,14 @@ import { assertDeveloperSession, requireDeveloperSession } from "@/server/auth/g
 import type { ResolvedSession } from "@/server/auth/session";
 import {
   addDealDocumentInputSchema,
+  archiveDealInputSchema,
   createDealInputSchema,
+  type DealSelectorBroker,
+  type DealSelectorClient,
   type DealSummary,
+  type PaginatedDealsResult,
   propertyDealsInputSchema,
+  updateDealInputSchema,
   updateDealFollowUpInputSchema,
   updateDealNotesInputSchema,
   updateDealStageInputSchema,
@@ -65,6 +70,28 @@ export async function listRedDeals(
   return dependencies.crmRepository.listByRedId(redId);
 }
 
+export async function listRedDealsPage(
+  input: { paginationOpts: { cursor: string | null; numItems: number } },
+  dependencies: RedCrmDependencies = defaultDependencies,
+): Promise<PaginatedDealsResult> {
+  const { redId } = await requireRedOwner(dependencies);
+  return dependencies.crmRepository.listPageByRedId(redId, input.paginationOpts);
+}
+
+export async function listRedCrmClients(
+  dependencies: RedCrmDependencies = defaultDependencies,
+): Promise<DealSelectorClient[]> {
+  const { redId } = await requireRedOwner(dependencies);
+  return dependencies.crmRepository.listClientsByRedId(redId);
+}
+
+export async function listRedCrmBrokers(
+  dependencies: RedCrmDependencies = defaultDependencies,
+): Promise<DealSelectorBroker[]> {
+  await requireRedOwner(dependencies);
+  return dependencies.crmRepository.listBrokerSelectorOptions();
+}
+
 export async function listRedDealsByProperty(
   input: unknown,
   dependencies: RedCrmDependencies = defaultDependencies,
@@ -88,6 +115,17 @@ export async function createRedDeal(
   if (parsed.data.propertyId) {
     await requireOwnedProperty(parsed.data.propertyId, dependencies);
   }
+  if (parsed.data.crmClientId) {
+    const client = await dependencies.crmRepository.getClientById(parsed.data.crmClientId);
+    const { redId } = await requireRedOwner(dependencies);
+    if (!client) {
+      throw new DomainError({ code: "NOT_FOUND", message: "Client not found", status: 404 });
+    }
+    const ownedClient = await dependencies.crmRepository.listClientsByRedId(redId);
+    if (!ownedClient.some((entry) => entry.id === parsed.data.crmClientId)) {
+      throw new DomainError({ code: "FORBIDDEN", message: "Cannot access this client", status: 403 });
+    }
+  }
   const { redId, authUserId } = await requireRedOwner(dependencies);
   return dependencies.crmRepository.create({
     redId,
@@ -107,6 +145,34 @@ export async function updateRedDealStage(
   await requireOwnedDeal(parsed.data.dealId, dependencies);
   const { authUserId } = await requireRedOwner(dependencies);
   await dependencies.crmRepository.updateStage({ ...parsed.data, lastUpdatedBy: authUserId });
+}
+
+/**
+ * WHY:   Developer CRM edit screens need one owner-checked path for full deal updates.
+ * WHAT:  Updates the mutable fields of one developer-owned deal.
+ * HOW:   Validates payload shape, confirms deal ownership, validates any linked property, then persists through the repository.
+ */
+export async function updateRedDeal(
+  input: unknown,
+  dependencies: RedCrmDependencies = defaultDependencies,
+): Promise<void> {
+  const parsed = updateDealInputSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError({ code: "INVALID_ARGUMENT", message: parsed.error.issues[0]?.message ?? "Invalid deal payload", status: 400 });
+  }
+  await requireOwnedDeal(parsed.data.dealId, dependencies);
+  if (parsed.data.propertyId) {
+    await requireOwnedProperty(parsed.data.propertyId, dependencies);
+  }
+  if (parsed.data.crmClientId) {
+    const { redId } = await requireRedOwner(dependencies);
+    const ownedClient = await dependencies.crmRepository.listClientsByRedId(redId);
+    if (!ownedClient.some((entry) => entry.id === parsed.data.crmClientId)) {
+      throw new DomainError({ code: "FORBIDDEN", message: "Cannot access this client", status: 403 });
+    }
+  }
+  const { authUserId } = await requireRedOwner(dependencies);
+  await dependencies.crmRepository.update({ ...parsed.data, lastUpdatedBy: authUserId });
 }
 
 export async function updateRedDealNotes(
@@ -146,4 +212,26 @@ export async function addRedDealDocument(
   await requireOwnedDeal(parsed.data.dealId, dependencies);
   const { authUserId } = await requireRedOwner(dependencies);
   await dependencies.crmRepository.addDocument({ ...parsed.data, lastUpdatedBy: authUserId });
+}
+
+/**
+ * WHY:   Developer CRM should archive deals without destructive deletes so historical reporting stays intact.
+ * WHAT:  Soft-archives one developer-owned deal.
+ * HOW:   Verifies ownership first, then stores archive metadata through the repository.
+ */
+export async function archiveRedDeal(
+  input: unknown,
+  dependencies: RedCrmDependencies = defaultDependencies,
+): Promise<void> {
+  const parsed = archiveDealInputSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError({ code: "INVALID_ARGUMENT", message: parsed.error.issues[0]?.message ?? "Invalid archive payload", status: 400 });
+  }
+  await requireOwnedDeal(parsed.data.dealId, dependencies);
+  const { authUserId } = await requireRedOwner(dependencies);
+  await dependencies.crmRepository.archive({
+    ...parsed.data,
+    archivedAt: Date.now(),
+    lastUpdatedBy: authUserId,
+  });
 }

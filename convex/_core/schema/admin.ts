@@ -66,6 +66,7 @@ const adminTables = {
       v.literal("in_review"),
       v.literal("approved"),
       v.literal("rejected"),
+      v.literal("closed"),
     ),
     rulesetId: v.optional(v.id("complianceRulesets")),
     rulesetVersion: v.optional(v.number()),

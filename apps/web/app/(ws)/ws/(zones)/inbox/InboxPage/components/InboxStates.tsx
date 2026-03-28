@@ -9,12 +9,14 @@ import { MessageCircleMore } from "lucide-react";
  */
 export function InboxThreadEmptyState() {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-3 bg-slate-50/60 px-6 text-center">
-      <MessageCircleMore className="h-10 w-10 text-slate-300" />
-      <h2 className="text-lg font-black text-slate-950">اختر محادثة من القائمة</h2>
-      <p className="max-w-sm text-sm font-medium leading-6 text-slate-500">
-        افتح محادثة حالية أو ابحث عن مستخدم جديد لبدء نقاش مباشر من مساحة العمل.
-      </p>
+    <div className="flex h-full items-center justify-center bg-background/50 px-6">
+      <div className="flex max-w-md flex-col items-center gap-4 rounded-3xl border border-border bg-card px-8 py-12 text-center shadow-sm">
+        <MessageCircleMore className="h-10 w-10 text-muted-foreground/40" />
+        <h2 className="text-xl font-black tracking-tight text-foreground">البريد الوارد</h2>
+        <p className="max-w-xs text-[13px] font-medium leading-relaxed text-muted-foreground/80">
+          اختر محادثة من القائمة الجانبية أو ابحث عن مستخدم جديد لبدء نقاش مباشر.
+        </p>
+      </div>
     </div>
   );
 }
@@ -26,8 +28,10 @@ export function InboxThreadEmptyState() {
  */
 export function InboxThreadLoadingState() {
   return (
-    <div className="flex h-full items-center justify-center bg-slate-50/60 px-6 text-sm font-medium text-slate-500">
-      جاري تحميل المحادثة...
+    <div className="flex h-full items-center justify-center bg-background/50 px-6">
+      <div className="rounded-2xl border border-border bg-card px-6 py-4 text-[13px] font-bold text-muted-foreground shadow-sm animate-pulse">
+        جاري تحميل المحادثة...
+      </div>
     </div>
   );
 }

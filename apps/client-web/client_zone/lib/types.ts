@@ -81,6 +81,7 @@ export type ClientProperty = {
   id: string;
   title: string;
   address: string;
+  bankId?: string;
   location?: string;
   area?: string;
   price: number;
@@ -95,6 +96,14 @@ export type ClientProperty = {
     name: string;
     slug: string;
     isVerified: boolean;
+    description?: string;
+    phone?: string;
+    contactEmail?: string;
+    agencyLabel?: string;
+    rating?: number;
+    activeListings?: number;
+    establishedYear?: number;
+    completedProjects?: number;
   };
   aiSummary?: string;
 };
@@ -299,9 +308,10 @@ export type ClientThreadKind = "welcome" | "demo" | "live";
 
 export type ThreadSummary = {
   id: string;
-  kind: Exclude<ClientThreadKind, "welcome">;
   title: string;
   createdAt: number;
+  updatedAt: number;
+  preview?: string;
 };
 
 export type MockConversationThread = {
@@ -310,4 +320,45 @@ export type MockConversationThread = {
   createdAt: number;
   locale: Locale;
   messages: AssistantMessage[];
+};
+
+export type PersistedThreadMessage = {
+  id: string;
+  role: "assistant" | "user";
+  text: string;
+  createdAt: number;
+  properties?: ClientProperty[];
+  cards?: AssistantCard[];
+  activePropertyId?: string;
+  requiresAuthForHandoff?: boolean;
+  suggestedPrompts?: string[];
+};
+
+export type TranscriptSeedMessage = {
+  role: "assistant" | "user";
+  text: string;
+  properties?: ClientProperty[];
+  cards?: AssistantCard[];
+  activePropertyId?: string;
+  requiresAuthForHandoff?: boolean;
+  suggestedPrompts?: string[];
+};
+
+export type ClientOrderDetail = {
+  orderId: string;
+  status:
+    | "new_lead"
+    | "contacted"
+    | "qualified"
+    | "offer_made"
+    | "under_contract"
+    | "closed_won"
+    | "closed_lost";
+  type: "property" | "loan";
+  intent?: string;
+  notes?: string;
+  assignedTo?: string;
+  threadId?: string;
+  sourceChannel?: "whatsapp" | "app" | "web";
+  property: ClientProperty | null;
 };

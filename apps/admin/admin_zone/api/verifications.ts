@@ -7,7 +7,7 @@ import { convexAdminVerificationsRepository } from "@/server/infrastructure/conv
  * WHAT:  Exposes tab loaders, detail loaders, and review mutations for admin verification requests.
  * HOW:   Resolves the current admin session once and delegates to the verifications repository.
  */
-export async function getVerificationsPageData(tab: "new" | "in_review" | "approved" | "rejected") {
+export async function getVerificationsPageData(tab?: "new" | "in_review" | "approved" | "rejected" | "closed") {
   const session = await requireAdminPageSession("/verifications");
   const token = session.token;
 
@@ -41,7 +41,7 @@ export async function getVerificationDetailPageData(requestId: string) {
  */
 export async function reviewVerificationRequest(input: {
   id: string;
-  status: "in_review" | "approved" | "rejected";
+  status: "in_review" | "approved" | "rejected" | "closed";
   reviewerNotes?: string;
 }) {
   "use server";

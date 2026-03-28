@@ -270,11 +270,6 @@ function renderUploadRail(entityLabel: string, setMediaCount: (count: number) =>
   }
 }
 
-/**
- * WHY:   The admin rewrite needs many mocked create/edit screens without introducing duplicated form state logic everywhere.
- * WHAT:  Renders a route-backed admin form with organized sections, mock uploads, and a side summary.
- * HOW:   Groups fields into semantic sections, stores all values locally, and exposes upload/saving interactions without backend writes.
- */
 export default function MockEntityForm({ entityLabel, mode, fields, backHref }: MockEntityFormProps) {
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(fields.map((field) => [field.name, String(field.defaultValue ?? "")])),
@@ -311,48 +306,47 @@ export default function MockEntityForm({ entityLabel, mode, fields, backHref }: 
   return (
     <AdminFormPageLayout
       sidebar={
-        <>
+        <div className="space-y-8">
           <AdminFormSummaryCard
-            title="ملخص سريع"
+            title="ملخص مباشر"
             values={[
               { label: "العنوان", value: displayName },
               { label: "الحالة الحالية", value: currentStatus, tone: "status" },
-              { label: "عدد الوسائط", value: String(mediaCount) },
-              { label: "عدد المستندات", value: String(documentCount) },
+              { label: "الوسائط", value: String(mediaCount) },
+              { label: "المستندات", value: String(documentCount) },
             ]}
           />
           {showUploadPreset(entityLabel) ? renderUploadRail(entityLabel, setMediaCount, setDocumentCount) : null}
-        </>
+        </div>
       }
     >
-      <section className="rounded-[8px] border border-border bg-white p-5">
-        <div className="flex flex-col gap-4 border-b border-border pb-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold text-slate-900">{panelTitle}</h2>
-            <p className="text-sm leading-6 text-slate-500">هذه الصفحة تجريبية، لكن تم تنظيمها لتشبه صفحة تشغيل فعلية داخل الإدارة.</p>
+      <section className="rounded-3xl border border-border/30 bg-card p-10 shadow-sm">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-2">
+            <h2 className="text-3xl font-black tracking-tight text-foreground">{panelTitle}</h2>
+            <p className="text-[13px] font-bold text-muted-foreground/50">هذه صفحة تجريبية منظمة لمحاكاة التشغيل الفعلي للإدارة.</p>
           </div>
-          <div className="text-xs text-slate-500">يمكنك إدخال البيانات، رفع الملفات محليًا، ثم حفظها داخل الواجهة فقط.</div>
-        </div>
-        <div className="mt-4">
-          <AdminFormActionBar
-            submitLabel={submitLabel}
-            backHref={backHref}
-            showDraftAction={showDraftAction(entityLabel)}
-            onSubmit={() => {
-              setDraftSaved(false);
-              setSaved(true);
-            }}
-            onSaveDraft={() => {
-              setSaved(false);
-              setDraftSaved(true);
-            }}
-          />
+          <div className="mt-4 lg:mt-0">
+            <AdminFormActionBar
+              submitLabel={submitLabel}
+              backHref={backHref}
+              showDraftAction={showDraftAction(entityLabel)}
+              onSubmit={() => {
+                setDraftSaved(false);
+                setSaved(true);
+              }}
+              onSaveDraft={() => {
+                setSaved(false);
+                setDraftSaved(true);
+              }}
+            />
+          </div>
         </div>
       </section>
 
       {sections.map((section) => (
         <AdminFormSection key={section.key} title={section.title} description={section.description}>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2">
             {section.fields.map((field) => (
               <AdminFormField
                 key={field.name}
@@ -388,8 +382,17 @@ export default function MockEntityForm({ entityLabel, mode, fields, backHref }: 
         </AdminFormSection>
       ))}
 
-      {saved ? <div className="rounded-[8px] border border-border bg-slate-50 px-4 py-3 text-sm text-slate-700">{completionText}</div> : null}
-      {draftSaved ? <div className="rounded-[8px] border border-border bg-slate-50 px-4 py-3 text-sm text-slate-700">تم حفظ {entityLabel} كمسودة داخل الواجهة التجريبية.</div> : null}
+      {saved ? (
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 border-dashed flex items-center justify-between">
+          <div className="text-sm font-black text-primary">{completionText}</div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-primary/40">Operation Mocked Successfully</div>
+        </div>
+      ) : null}
+      {draftSaved ? (
+        <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-6 border-dashed flex items-center justify-between">
+          <div className="text-sm font-black text-yellow-600">تم حفظ {entityLabel} كمسودة داخل الواجهة التجريبية.</div>
+        </div>
+      ) : null}
     </AdminFormPageLayout>
   );
 }

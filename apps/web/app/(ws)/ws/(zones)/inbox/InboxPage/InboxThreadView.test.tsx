@@ -2,6 +2,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { ComponentProps } from "react";
 import { expect, it, vi } from "vitest";
 import InboxThreadView from "./InboxThreadView";
+import { getInboxThreadMenuActionLabels } from "./components/InboxThreadHeader";
+
+vi.mock("convex/react", () => ({
+  useQuery: vi.fn(() => null),
+}));
 
 vi.mock("@/lib/uploadthing", () => ({
   useUploadThing: vi.fn(() => ({
@@ -15,6 +20,7 @@ const baseConversation = {
   directKey: "auth-a__auth-b",
   updatedAt: Date.now(),
   unreadCount: 0,
+  otherParticipantLastReadAt: null,
   lastMessagePreview: "مرحبا",
   lastMessage: null,
   otherUser: {
@@ -25,6 +31,11 @@ const baseConversation = {
     role: "user",
     brokerId: null,
     redId: null,
+    organizationName: null,
+    organizationType: null,
+    membershipState: null,
+    conversationId: "conversation-1",
+    image: null,
   },
   messages: [],
 };
@@ -36,11 +47,11 @@ type ConversationOverride = Partial<ThreadProps["conversation"]>;
 const baseProps: Omit<ThreadProps, "conversation"> = {
   canUseBusinessActions: false,
   currentUserId: "auth-a",
-  dealOptions: [],
   isSending: false,
-  onCreatePrivateOffer: async () => null,
+  onCreatePrivateOfferDraft: async () => null,
   onSend: async () => {},
-  onShareDeal: async () => {},
+  onPublishConversationOffer: async () => null,
+  onRespondToConversationOffer: async () => null,
   onShareFile: async () => {},
   onShareProject: async () => {},
   projectOptions: [],
@@ -57,6 +68,12 @@ const offerEventConversation: ConversationOverride = {
     username: "broker-a",
     role: "broker",
     brokerId: "broker-1",
+    redId: null,
+    organizationName: "Elite Brokers",
+    organizationType: "broker",
+    membershipState: null,
+    conversationId: "conversation-1",
+    image: null,
   },
   messages: [
     {
@@ -128,7 +145,6 @@ const collaborationCardConversation: ConversationOverride = {
 const collaborationCardProps: Partial<Omit<ThreadProps, "conversation">> = {
   canUseBusinessActions: true,
   currentUserId: "auth-b",
-  dealOptions: [{ id: "deal-1", title: "Deal A", stage: "new" }],
   projectOptions: [{ id: "project-1", title: "Palm Hills", location: "New Cairo" }],
 };
 
@@ -167,10 +183,31 @@ it("renders optimistic messages with a sending label", () => {
   expect(html).toContain("جاري الإرسال");
 });
 
+it("shows seen state on the latest outgoing message once the other participant reads it", () => {
+  const createdAt = Date.now() - 5_000;
+  const html = renderThreadView({}, {
+    otherParticipantLastReadAt: createdAt + 2_000,
+    messages: [
+      {
+        id: "message-1",
+        senderUserId: "auth-a",
+        recipientUserId: "auth-b",
+        type: "text" as const,
+        body: "تمت المراجعة",
+        createdAt,
+        metadata: null,
+      },
+    ],
+  });
+
+  expect(html).toContain("تمت المراجعة");
+  expect(html).toContain("شوهد");
+});
+
 it("renders offer event messages as structured offer cards", () => {
   const html = renderThreadView({ currentUserId: "auth-b" }, offerEventConversation);
 
-  expect(html).toContain("بطاقة عرض");
+  expect(html).toContain("عرض خاص");
   expect(html).toContain("بالم هيلز");
   expect(html).toContain("Elite Brokers");
   expect(html).toContain("950,000");
@@ -182,11 +219,29 @@ it("renders the mobile back affordance when requested", () => {
   expect(html).toContain("aria-label=\"العودة إلى قائمة المحادثات\"");
 });
 
+it("renders the simplified header identity with organization and participant type", () => {
+  const html = renderThreadView({}, offerEventConversation);
+
+  expect(html).toContain("Broker A");
+  expect(html).toContain("Elite Brokers");
+  expect(html).toContain("وسيط");
+  expect(html).toContain("إجراءات");
+});
+
+it("exposes the expected compact header actions when business actions are enabled", () => {
+  expect(
+    getInboxThreadMenuActionLabels({
+      canCreateOffer: true,
+      canShareProjects: true,
+      canUseBusinessActions: true,
+    }),
+  ).toEqual(["إنشاء عرض خاص", "إرسال عقار أو شقة", "إرفاق ملف"]);
+});
+
 it("renders collaboration cards with their deep-link action", () => {
   const html = renderThreadView(collaborationCardProps, collaborationCardConversation);
 
-  expect(html).toContain("مشاركة ملف");
   expect(html).toContain("Scope.pdf");
   expect(html).toContain("افتح الملف");
-  expect(html).toContain("مشاركة مشروع");
+  expect(html).toContain("اكتب رسالتك");
 });

@@ -1,13 +1,14 @@
 import { ConvexError, v } from "convex/values";
-import { mutation, query } from "../../../_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "../../../_generated/server";
 import { requireCurrentProfile } from "../../lib/profile";
+import { requireRole } from "../../../_core/security/accessPolicy";
 import {
   buildOwnerContext,
   resolveTenantOrgIdForOwner,
   type AgenciesRepositoryCtx,
   type OwnerContext,
 } from "./core";
-import { requireManagerAccess } from "./membership";
+import { requireManagerAccess, requireOrganizationMembership } from "./membership";
 import {
   acceptInviteForAuthUserRecord,
   createTeamInviteForOwnerRecord,
@@ -16,6 +17,41 @@ import {
 } from "./invites.helpers";
 import { tenants } from "../../../tenants";
 import { auditLog } from "../../../auditLog";
+
+async function requireSameTenantOrAdmin(args: {
+  ctx: AgenciesRepositoryCtx;
+  owner: OwnerContext;
+  managerOnly?: boolean;
+}): Promise<string> {
+  try {
+    const access = await requireRole(args.ctx as any, ["admin"]);
+    return access.authUserId;
+  } catch (error) {
+    if (
+      !(error instanceof ConvexError) ||
+      !error.data ||
+      typeof error.data !== "object" ||
+      !("code" in error.data) ||
+      error.data.code !== "FORBIDDEN"
+    ) {
+      throw error;
+    }
+  }
+
+  const current = args.managerOnly
+    ? await requireManagerAccess(args.ctx)
+    : await requireOrganizationMembership(args.ctx);
+  const [currentTenantOrgId, targetTenantOrgId] = await Promise.all([
+    resolveTenantOrgIdForOwner(args.ctx, current.owner),
+    resolveTenantOrgIdForOwner(args.ctx, args.owner),
+  ]);
+
+  if (currentTenantOrgId !== targetTenantOrgId) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Cross-organization access is not allowed" });
+  }
+
+  return current.profile.authUserId;
+}
 
 /**
  * WHY:   Team management and directory flows both need the current invite list for one owner.
@@ -32,6 +68,24 @@ export async function listTeamInvitesForOwner(ctx: AgenciesRepositoryCtx, owner:
  * HOW:   Builds the owner context from the args then delegates to the shared invite list helper.
  */
 export const listTeamInvitesByOwner = query({
+  args: {
+    ownerType: v.union(v.literal("broker"), v.literal("RED")),
+    ownerBrokerId: v.optional(v.id("brokers")),
+    ownerREDId: v.optional(v.id("RED")),
+  },
+  handler: async (ctx, args) => {
+    const owner = buildOwnerContext(args);
+    await requireSameTenantOrAdmin({ ctx, owner });
+    return listTeamInvitesForOwnerInternal(ctx, owner);
+  },
+});
+
+/**
+ * WHY:   Gateway/admin flows may still need explicit-owner invite reads without exposing them to clients.
+ * WHAT:  Lists pending and accepted invites for an owner context as an internal-only function.
+ * HOW:   Builds the owner context from args, then delegates to the shared invite list helper.
+ */
+export const listExplicitOwnerTeamInvitesInternal = internalQuery({
   args: {
     ownerType: v.union(v.literal("broker"), v.literal("RED")),
     ownerBrokerId: v.optional(v.id("brokers")),
@@ -58,9 +112,15 @@ export const createTeamInviteForOwner = mutation({
   },
   handler: async (ctx, args) => {
     const owner = buildOwnerContext(args);
-    return createTeamInviteForOwnerRecord(ctx, { owner, email: args.email, role: args.role });
+    const actorAuthUserId = await requireSameTenantOrAdmin({ ctx, owner, managerOnly: true });
+    return createTeamInviteForOwnerRecord(ctx, {
+      owner: { ...owner, authUserId: actorAuthUserId },
+      email: args.email,
+      role: args.role,
+    });
   },
 });
+
 
 /**
  * WHY:   Workspace flows need a current-user invite mutation without exposing owner ids.
@@ -92,13 +152,15 @@ export const cancelTeamInviteForOwner = mutation({
   },
   handler: async (ctx, args) => {
     const owner = buildOwnerContext(args);
-    const tenantOrgId = await resolveTenantOrgIdForOwner(ctx, owner);
+    const actorAuthUserId = await requireSameTenantOrAdmin({ ctx, owner, managerOnly: true });
+    const actingOwner = { ...owner, authUserId: actorAuthUserId };
+    const tenantOrgId = await resolveTenantOrgIdForOwner(ctx, actingOwner);
     const invitation = await tenants.getInvitation(ctx as never, args.inviteId);
-    await tenants.cancelInvitation(ctx as never, owner.authUserId, args.inviteId);
+    await tenants.cancelInvitation(ctx as never, actingOwner.authUserId, args.inviteId);
 
     await auditLog.log(ctx, {
       action: "invitation.canceled",
-      actorId: owner.authUserId,
+      actorId: actingOwner.authUserId,
       resourceType: "tenantInvitations",
       resourceId: args.inviteId,
       severity: "info",
@@ -106,7 +168,7 @@ export const cancelTeamInviteForOwner = mutation({
         tenantOrgId,
         inviteeEmail: invitation?.inviteeIdentifier,
         role: invitation?.role,
-        ownerType: owner.ownerType,
+        ownerType: actingOwner.ownerType,
       },
       tags: ["organizations", "invites"],
     });
@@ -114,6 +176,7 @@ export const cancelTeamInviteForOwner = mutation({
     return tenantOrgId;
   },
 });
+
 
 /**
  * WHY:   Workspace flows need a current-user invite cancel mutation without exposing owner ids.
@@ -176,7 +239,7 @@ export const cancelIncomingTeamInviteForCurrentUser = mutation({
   },
 });
 
-export const acceptTeamInviteForAuthUser = mutation({
+export const acceptTeamInviteForAuthUser = internalMutation({
   args: {
     authUserId: v.string(),
     token: v.string(),

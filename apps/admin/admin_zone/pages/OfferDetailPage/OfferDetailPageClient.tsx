@@ -67,50 +67,67 @@ export default function OfferDetailPageClient({ offer }: OfferDetailPageClientPr
         />
       }
     >
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_320px]">
-        <div className="space-y-6">
-          <WorkspacePanel className="space-y-4">
-            <div className="flex items-center gap-3">
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1.35fr)_340px]">
+        <div className="space-y-8">
+          <WorkspacePanel className="rounded-3xl p-10 space-y-10 border-border/30 bg-card/50 shadow-sm">
+            <div className="flex items-center justify-between pb-8 border-b border-border/10">
+              <div className="space-y-3">
+                <h3 className="text-4xl font-black tracking-tighter text-foreground decoration-primary/20 underline decoration-8 underline-offset-8 decoration-skip-ink-none">{offer.title}</h3>
+                <p className="text-[13px] font-bold text-muted-foreground/40 uppercase tracking-widest leading-relaxed">{offer.body}</p>
+              </div>
               <StatusBadge value={reviewStatus} />
             </div>
+
             <KeyValueGrid
               items={[
-                { label: "المنظمة", value: offer.organizationName },
-                { label: "المرسل", value: offer.submittedBy },
-                { label: "المشروع", value: offer.projectName },
-                { label: "العقار", value: offer.propertyName },
-                { label: "القيمة", value: formatCurrency(offer.amount) },
-                { label: "تاريخ الإنشاء", value: formatDateTime(offer.createdAt) },
+                { label: "المنظمة", value: <span className="font-black text-foreground">{offer.organizationName}</span> },
+                { label: "المرسل", value: <span className="font-black text-primary">{offer.submittedBy}</span> },
+                { label: "المشروع", value: <span className="font-black text-foreground">{offer.projectName}</span> },
+                { label: "العقار", value: <span className="font-black text-foreground">{offer.propertyName}</span> },
+                { label: "القيمة", value: <span className="font-black text-primary text-xl">{formatCurrency(offer.amount)}</span> },
+                { label: "تاريخ الإنشاء", value: <span className="font-bold text-muted-foreground/60">{formatDateTime(offer.createdAt)}</span> },
               ]}
               columns={3}
             />
           </WorkspacePanel>
 
-          <WorkspacePanel className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-900">قرار المراجعة</h2>
-            <div className="space-y-3">
+          <WorkspacePanel className="rounded-3xl p-10 space-y-8 border-border/30 bg-card/30">
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black tracking-tight text-foreground">اتخاذ القرار</h2>
+              <p className="text-[13px] font-bold text-muted-foreground/50">قم بمراجعة البيانات أعلاه ثم سجل قرارك النهائي مع إرفاق الملاحظات.</p>
+            </div>
+            
+            <div className="space-y-6">
               <AdminTextarea
+                className="rounded-2xl border-border/40 focus:border-primary/50 transition-all font-medium min-h-[120px]"
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
-                placeholder="أدخل سبب الرفض عند الحاجة"
+                placeholder="أدخل سبب الرفض أو ملاحظات الاعتماد..."
               />
-              {error ? <div className="text-sm text-rose-600">{error}</div> : null}
-              <div className="flex flex-wrap gap-3">
-                <Button onClick={approveOffer}>اعتماد العرض</Button>
-                <Button variant="outline" onClick={rejectOffer}>رفض العرض</Button>
+              {error ? <div className="text-sm font-black text-destructive">{error}</div> : null}
+              <div className="flex flex-wrap gap-4 pt-4 border-t border-border/5">
+                <Button className="h-12 px-8 rounded-2xl font-black uppercase tracking-widest text-[11px]" onClick={approveOffer}>اعتماد كلي للعرض</Button>
+                <Button variant="outline" className="h-12 px-8 rounded-2xl font-black uppercase tracking-widest text-[11px] border-border/40" onClick={rejectOffer}>رفض الطلب</Button>
               </div>
             </div>
           </WorkspacePanel>
         </div>
 
-        <WorkspacePanel className="space-y-4">
-          <h2 className="text-base font-semibold text-slate-900">سجل المراجعة</h2>
-          <div className="space-y-3">
+        <WorkspacePanel className="rounded-3xl p-10 space-y-8 border-border/30 bg-muted/5 shadow-inner self-start">
+          <div className="space-y-1">
+            <h2 className="text-xl font-black tracking-tight text-foreground">سجل المراجعة</h2>
+            <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/40">Audit Timeline</p>
+          </div>
+
+          <div className="space-y-6 relative before:absolute before:right-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-border/20">
             {history.map((entry) => (
-              <div key={entry.id} className="rounded-[8px] border border-border bg-slate-50 px-4 py-3">
-                <div className="font-medium text-slate-900">{entry.action}</div>
-                <div className="mt-1 text-sm text-slate-600">{entry.note}</div>
-                <div className="mt-2 text-xs text-slate-500">{entry.actor} · {formatDateTime(entry.createdAt)}</div>
+              <div key={entry.id} className="relative pr-8">
+                <div className="absolute right-0 top-1.5 w-4 h-4 rounded-full border-4 border-background bg-primary/40" />
+                <div className="font-black text-foreground text-sm uppercase tracking-tight">{entry.action}</div>
+                <div className="mt-1 text-[13px] text-muted-foreground/80 leading-relaxed font-medium">{entry.note}</div>
+                <div className="mt-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
+                  {entry.actor} <span className="mx-1">•</span> {formatDateTime(entry.createdAt)}
+                </div>
               </div>
             ))}
           </div>

@@ -8,17 +8,17 @@ export default function AgProjectUnitSelector({
   selectedLabel?: string;
 }) {
   return (
-    <section className="w-full max-w-[340px] border border-slate-200 bg-white p-5">
-      <div className="text-[10px] font-black tracking-[0.22em] text-blue-700">اختيار المشروع والوحدة</div>
-      <h3 className="mt-1 text-base font-black text-slate-950">{project}</h3>
+    <section className="w-full max-w-[340px] rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-5">
+      <div className="text-[10px] font-black tracking-[0.22em] text-[var(--workspace-highlight)]">اختيار المشروع والوحدة</div>
+      <h3 className="mt-1 text-base font-black text-[var(--workspace-bubble-other-foreground)]">{project}</h3>
       <div className="mt-4 flex flex-wrap gap-2">
         {units.map((unit) => (
           <div
             key={unit}
             className={
               unit === selectedLabel
-                ? "border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700"
-                : "border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600"
+                ? "rounded-xl border border-[color:color-mix(in_srgb,var(--workspace-highlight)_35%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_12%,transparent)] px-3 py-2 text-xs font-black text-[var(--workspace-highlight)]"
+                : "rounded-xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-3 py-2 text-xs font-bold text-[var(--workspace-muted)]"
             }
           >
             {unit}

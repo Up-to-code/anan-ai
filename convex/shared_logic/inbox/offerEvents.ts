@@ -49,7 +49,7 @@ async function resolveOfferConversationContext(
 async function hasOfferStarterMessage(
   ctx: MutationCtx,
   conversationId: Id<"inboxConversations">,
-  offerId: Id<"offers">
+  offerId: string
 ) {
   return Boolean(await findExistingOfferStarterMessage(ctx, conversationId, offerId));
 }
@@ -112,8 +112,8 @@ type AppendInboxOfferEventArgs = {
   targetUserId?: string;
   recipientBrokerId?: Id<"brokers">;
   recipientREDId?: Id<"RED">;
-  offerId: Id<"offers">;
-  propertyId: Id<"properties">;
+  offerId: string;
+  propertyId: string;
   title: string;
   body: string;
   href: string;

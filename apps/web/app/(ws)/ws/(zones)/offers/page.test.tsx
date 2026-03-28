@@ -19,19 +19,60 @@ vi.mock("../../_lib/workspaceData", () => ({
 }));
 
 const getSnapshot = vi.fn(async () => ({
-  sent: [
+  audience: "developer" as const,
+  queues: [
     {
-      id: "offer-1",
-      propertyId: "property-1",
-      price: 2500000,
-      status: "pending" as const,
-      visibility: "public" as const,
-      message: "عرض تطويري مفتوح",
-      description: "عرض مطور مفتوح",
-      senderName: "شركة ألف للتطوير",
-      property: { id: "property-1", title: "مالقا ريزيدنس", address: "الملقا، الرياض", imageUrl: "https://images.unsplash.com/photo-offer" },
+      key: "open_inventory" as const,
+      label: "Open Inventory Offers",
+      description: "Developer-owned inventory packages currently open.",
+      items: [
+        {
+          id: "offer-1",
+          packageId: "package-1",
+          type: "open_offer" as const,
+          stage: "open" as const,
+          status: "pending" as const,
+          publicationState: "published" as const,
+          visibility: "public" as const,
+          propertyId: "property-1",
+          price: 2500000,
+          message: "عرض تطويري مفتوح",
+          description: "عرض مطور مفتوح",
+          senderName: "شركة ألف للتطوير",
+          recipientAuthUserId: null,
+          sourceConversationId: null,
+          property: {
+            id: "property-1",
+            title: "مالقا ريزيدنس",
+            address: "الملقا، الرياض",
+            imageUrl: "https://images.unsplash.com/photo-offer",
+          },
+          commissionText: "2.5%",
+          permitStatus: "جاهز",
+          productStatus: "متاح",
+          allowedAudience: "both" as const,
+          attachments: [],
+          clientContext: null,
+          participants: [
+            {
+              id: "participant-1",
+              role: "inventory_owner" as const,
+              status: "active" as const,
+              authUserId: "auth-1",
+              organizationId: "red-1",
+              organizationType: "developer" as const,
+              organizationName: "شركة ألف للتطوير",
+              name: "شركة ألف للتطوير",
+            },
+          ],
+          href: "/ws/offers/offer-1",
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      ],
     },
   ],
+  sent: [],
   received: [],
   marketplace: [],
 }));
@@ -45,16 +86,17 @@ vi.mock("@/server/ws/zones", () => ({
 import WorkspaceOffersRoute from "./page";
 
 describe("/ws/offers page", () => {
-  it("renders the server-backed marketplace overview with pagination", async () => {
+  it("renders the server-backed offers queues with pagination", async () => {
     const element = await WorkspaceOffersRoute({
       searchParams: Promise.resolve({}),
     });
     const markup = renderToStaticMarkup(element);
 
-    expect(markup).toContain("عرض تطويري مفتوح");
+    expect(markup).toContain("العروض كحالات تعاون");
+    expect(markup).toContain("عرض مطور مفتوح");
     expect(getSnapshot).toHaveBeenCalled();
     expect(markup).toContain("مالقا ريزيدنس");
+    expect(markup).toContain("Open Inventory Offers");
     expect(markup).toContain("صفحة 1 من 1");
-    expect(markup).toContain("data-slot=\"offers-grid\"");
   });
 });

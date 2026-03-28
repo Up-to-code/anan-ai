@@ -3,6 +3,7 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useState, startTransition, type ReactNode } from "react";
 import Button from "@/components/ui/institutional-button";
+import { capturePostHogEvent } from "@/lib/posthog";
 
 export default function GoogleSignInButton({
   redirectTo,
@@ -22,11 +23,21 @@ export default function GoogleSignInButton({
       className={className}
       onClick={() => {
         setPending(true);
+        capturePostHogEvent("web_google_sign_in_started", {
+          redirectTo,
+        });
         startTransition(() => {
           const resolvedRedirectTo = redirectTo.startsWith("/")
             ? `${window.location.origin}${redirectTo}`
             : redirectTo;
-          signIn("google", { redirectTo: resolvedRedirectTo }).catch(() => setPending(false));
+          signIn("google", { redirectTo: resolvedRedirectTo }).catch((error) => {
+            setPending(false);
+            capturePostHogEvent("web_sign_in_failed", {
+              provider: "google",
+              redirectTo,
+              failureCode: error instanceof Error ? error.message : "sign_in_failed",
+            });
+          });
         });
       }}
     >

@@ -17,7 +17,7 @@ The AI backend is built from declarative agent definitions plus one shared runti
 - `shared/`
   Token tracking, orchestration analytics, retry/error helpers, RAG helpers, and workflows.
 - `scaffold/`
-  Documentation for the developer scaffolding path; CLI generation lives in `/scripts/create-agent.ts`.
+  Documentation for the developer scaffolding path.
 
 ## Rules
 1. Concrete agents are definitions, not custom runtimes.

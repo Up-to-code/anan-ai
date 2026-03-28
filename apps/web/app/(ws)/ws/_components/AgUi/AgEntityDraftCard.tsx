@@ -21,11 +21,11 @@ const DRAFT_ICONS = {
 
 function DraftFieldRow({ field }: { field: DraftField }) {
   const valueClassName = field.emphasized
-    ? "mt-1 text-sm font-black text-slate-950"
-    : "mt-1 text-sm font-bold text-slate-700";
+    ? "mt-1 text-sm font-black text-[var(--workspace-bubble-other-foreground)]"
+    : "mt-1 text-sm font-bold text-[var(--workspace-bubble-other-foreground)]";
   return (
-    <div className="border border-slate-200 bg-slate-50 px-3 py-3">
-      <div className="text-[10px] font-black tracking-[0.22em] text-slate-400">{field.label}</div>
+    <div className="rounded-xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-3 py-3">
+      <div className="text-[10px] font-black tracking-[0.22em] text-[var(--workspace-muted)]">{field.label}</div>
       <div className={valueClassName}>{field.value}</div>
     </div>
   );
@@ -45,16 +45,16 @@ export default function AgEntityDraftCard({
   const Icon = DRAFT_ICONS[kind];
 
   return (
-    <section className="w-full max-w-[340px] border-2 border-slate-200 bg-white p-5">
+    <section className="w-full max-w-[340px] rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
-          <div className="text-[10px] font-black tracking-[0.28em] text-blue-700">
+          <div className="text-[10px] font-black tracking-[0.28em] text-[var(--workspace-highlight)]">
             مسودة جاهزة للمراجعة
           </div>
-          <h3 className="text-base font-black text-slate-950">{title}</h3>
-          <p className="text-xs font-medium leading-6 text-slate-500">{subtitle}</p>
+          <h3 className="text-base font-black text-[var(--workspace-bubble-other-foreground)]">{title}</h3>
+          <p className="text-xs font-medium leading-6 text-[var(--workspace-muted)]">{subtitle}</p>
         </div>
-        <div className="flex h-11 w-11 items-center justify-center border border-blue-100 bg-blue-50 text-blue-700">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[color:color-mix(in_srgb,var(--workspace-highlight)_30%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_12%,transparent)] text-[var(--workspace-highlight)]">
           <Icon className="h-5 w-5" />
         </div>
       </div>
@@ -63,7 +63,7 @@ export default function AgEntityDraftCard({
         {fields.map((field) => <DraftFieldRow key={field.label} field={field} />)}
       </div>
 
-      <div className="mt-5 flex items-center gap-2 text-[10px] font-black tracking-[0.22em] text-blue-700">
+      <div className="mt-5 flex items-center gap-2 text-[10px] font-black tracking-[0.22em] text-[var(--workspace-highlight)]">
         <Sparkles className="h-3.5 w-3.5" />
         هذه المسودة يمكن تعديلها أو اعتمادها مباشرة
       </div>

@@ -10,11 +10,17 @@ import {
 import {
   orgApiClientInputSchema,
   orgApiClientUpdateInputSchema,
+  orgApiDealInputSchema,
+  orgApiDealUpdateInputSchema,
   orgApiPropertyInputSchema,
   orgApiPropertyUpdateInputSchema,
+  type OrgApiBrokerRecord,
   type OrgApiClientInput,
   type OrgApiClientRecord,
   type OrgApiClientUpdateInput,
+  type OrgApiDealInput,
+  type OrgApiDealRecord,
+  type OrgApiDealUpdateInput,
   type OrgApiPropertyInput,
   type OrgApiPropertyRecord,
   type OrgApiPropertyUpdateInput,
@@ -125,6 +131,30 @@ function parsePropertyUpdateInput(input: unknown): OrgApiPropertyUpdateInput {
     throw new DomainError({
       code: "INVALID_ARGUMENT",
       message: parsed.error.issues[0]?.message ?? "Invalid property payload",
+      status: 400,
+    });
+  }
+  return parsed.data;
+}
+
+function parseDealInput(input: unknown): OrgApiDealInput {
+  const parsed = orgApiDealInputSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError({
+      code: "INVALID_ARGUMENT",
+      message: parsed.error.issues[0]?.message ?? "Invalid deal payload",
+      status: 400,
+    });
+  }
+  return parsed.data;
+}
+
+function parseDealUpdateInput(input: unknown): OrgApiDealUpdateInput {
+  const parsed = orgApiDealUpdateInputSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError({
+      code: "INVALID_ARGUMENT",
+      message: parsed.error.issues[0]?.message ?? "Invalid deal payload",
       status: 400,
     });
   }
@@ -257,4 +287,53 @@ export async function deleteOrganizationPropertyByApiKey(
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<void> {
   await runWithKey(rawApiKey, (secretHash, issuedAt) => dependencies.repository.deletePropertyByApiKey(secretHash, propertyId, issuedAt));
+}
+
+export async function listOrganizationDealsByApiKey(
+  rawApiKey: string | null | undefined,
+  dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
+): Promise<OrgApiDealRecord[]> {
+  return runWithKey(rawApiKey, (secretHash, issuedAt) => dependencies.repository.listDealsByApiKey(secretHash, issuedAt));
+}
+
+export async function createOrganizationDealByApiKey(
+  rawApiKey: string | null | undefined,
+  input: unknown,
+  dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
+): Promise<OrgApiDealRecord> {
+  const parsedInput = parseDealInput(input);
+  return runWithKey(rawApiKey, (secretHash, issuedAt) => dependencies.repository.createDealByApiKey(secretHash, parsedInput, issuedAt));
+}
+
+export async function updateOrganizationDealByApiKey(
+  rawApiKey: string | null | undefined,
+  dealId: string,
+  input: unknown,
+  dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
+): Promise<OrgApiDealRecord> {
+  const parsedInput = parseDealUpdateInput(input);
+  return runWithKey(rawApiKey, (secretHash, issuedAt) => dependencies.repository.updateDealByApiKey(secretHash, dealId, parsedInput, issuedAt));
+}
+
+export async function deleteOrganizationDealByApiKey(
+  rawApiKey: string | null | undefined,
+  dealId: string,
+  dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
+): Promise<void> {
+  await runWithKey(rawApiKey, (secretHash, issuedAt) => dependencies.repository.deleteDealByApiKey(secretHash, dealId, issuedAt));
+}
+
+export async function listOrganizationBrokersByApiKey(
+  rawApiKey: string | null | undefined,
+  dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
+): Promise<OrgApiBrokerRecord[]> {
+  return runWithKey(rawApiKey, (secretHash, issuedAt) => dependencies.repository.listBrokersByApiKey(secretHash, issuedAt));
+}
+
+export async function getOrganizationBrokerByApiKey(
+  rawApiKey: string | null | undefined,
+  brokerId: string,
+  dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
+): Promise<OrgApiBrokerRecord> {
+  return runWithKey(rawApiKey, (secretHash, issuedAt) => dependencies.repository.getBrokerByApiKey(secretHash, brokerId, issuedAt));
 }

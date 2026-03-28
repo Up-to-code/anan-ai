@@ -3,8 +3,10 @@ import {
   AgApprovalFooter,
   AgAreaHeatCard,
   AgConstraintSummary,
+  AgDataList,
   AgExecutionResultCard,
   AgFieldRequestList,
+  AgFilterSummary,
   AgLatestUpdateCard,
   AgMarketInsightCard,
   AgMissingDataPrompt,
@@ -13,6 +15,7 @@ import {
   AgPersonRelationCard,
   AgProjectCreateDraft,
   AgProjectUnitSelector,
+  AgTargetSummary,
   AgThreadUpdateCard,
 } from "../cards";
 
@@ -31,6 +34,9 @@ export const AG_UI_COMPONENT_REGISTRY: Record<string, AgUiRegisteredComponent> =
   area_heat: AgAreaHeatCard as AgUiRegisteredComponent,
   constraint_summary: AgConstraintSummary as AgUiRegisteredComponent,
   missing_data_prompt: AgMissingDataPrompt as AgUiRegisteredComponent,
+  data_list: AgDataList as AgUiRegisteredComponent,
+  filter_summary: AgFilterSummary as AgUiRegisteredComponent,
+  target_summary: AgTargetSummary as AgUiRegisteredComponent,
 };
 
 export const DEFAULT_AG_UI_COMPONENT_REGISTRY = AG_UI_COMPONENT_REGISTRY;

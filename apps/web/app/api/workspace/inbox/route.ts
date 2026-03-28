@@ -4,20 +4,26 @@ import {
   createInboxPrivateOfferInConversation,
   getInboxConversation,
   listInboxConversations,
+  publishInboxConversationOffer,
   resolveInboxConversation,
+  respondToInboxConversationOffer,
   shareInboxDealInConversation,
   shareInboxFileInConversation,
   shareInboxProjectInConversation,
   sendInboxMessage,
+  updateInboxPrivateOfferDraft,
 } from "@/server/domains/workspace/inbox/service";
 import {
   bootstrapOfferConversationInputSchema,
   createPrivateOfferInConversationInputSchema,
+  publishConversationOfferInputSchema,
   resolveDirectConversationInputSchema,
+  respondToConversationOfferInputSchema,
   shareDealInConversationInputSchema,
   shareFileInConversationInputSchema,
   shareProjectInConversationInputSchema,
   sendConversationMessageInputSchema,
+  updatePrivateOfferDraftInConversationInputSchema,
 } from "@/server/contracts/inbox";
 import { DomainError, toErrorResponse } from "@/server/contracts/errors";
 import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
@@ -63,6 +69,33 @@ async function handleCreatePrivateOfferIntent(body: unknown) {
   return Response.json(await createInboxPrivateOfferInConversation(payload), { status: 201 });
 }
 
+async function handleUpdatePrivateOfferDraftIntent(body: unknown) {
+  const payload = parsePayloadOrThrow(
+    updatePrivateOfferDraftInConversationInputSchema,
+    body,
+    "Invalid private offer draft payload",
+  );
+  return Response.json(await updateInboxPrivateOfferDraft(payload), { status: 200 });
+}
+
+async function handlePublishConversationOfferIntent(body: unknown) {
+  const payload = parsePayloadOrThrow(
+    publishConversationOfferInputSchema,
+    body,
+    "Invalid conversation offer publish payload",
+  );
+  return Response.json(await publishInboxConversationOffer(payload), { status: 201 });
+}
+
+async function handleRespondToConversationOfferIntent(body: unknown) {
+  const payload = parsePayloadOrThrow(
+    respondToConversationOfferInputSchema,
+    body,
+    "Invalid conversation offer response payload",
+  );
+  return Response.json(await respondToInboxConversationOffer(payload), { status: 200 });
+}
+
 async function handleSendMessageIntent(body: unknown) {
   const payload = parsePayloadOrThrow(sendConversationMessageInputSchema, body, "Invalid message payload");
   return Response.json(await sendInboxMessage(payload), { status: 201 });
@@ -75,7 +108,11 @@ async function handlePostByIntent(body: unknown) {
   if (intent === "shareFile") return handleShareFileIntent(body);
   if (intent === "shareProject") return handleShareProjectIntent(body);
   if (intent === "shareDeal") return handleShareDealIntent(body);
+  if (intent === "updatePrivateOfferDraft") return handleUpdatePrivateOfferDraftIntent(body);
+  if (intent === "publishConversationOffer") return handlePublishConversationOfferIntent(body);
+  if (intent === "respondToConversationOffer") return handleRespondToConversationOfferIntent(body);
   if (intent === "createPrivateOffer") return handleCreatePrivateOfferIntent(body);
+  if (intent === "createPrivateOfferDraft") return handleCreatePrivateOfferIntent(body);
   return handleSendMessageIntent(body);
 }
 

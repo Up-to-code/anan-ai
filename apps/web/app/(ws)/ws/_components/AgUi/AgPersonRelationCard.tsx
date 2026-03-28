@@ -14,13 +14,13 @@ function StatusBadges({ badges }: { badges: Array<"verified" | "vip"> }) {
   return (
     <>
       {badges.includes("verified") ? (
-        <span className="flex items-center gap-1 border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-700">
+        <span className="flex items-center gap-1 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-black text-emerald-300">
           <BadgeCheck className="h-3 w-3" />
           موثق
         </span>
       ) : null}
       {badges.includes("vip") ? (
-        <span className="flex items-center gap-1 border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-700">
+        <span className="flex items-center gap-1 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[10px] font-black text-amber-300">
           <Star className="h-3 w-3" />
           VIP
         </span>
@@ -39,25 +39,25 @@ export default function AgPersonRelationCard({
   badges = [],
 }: AgPersonRelationCardProps) {
   return (
-    <section className="w-full max-w-[300px] border border-slate-200 bg-white p-4">
+    <section className="w-full max-w-[300px] rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-4">
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 items-center justify-center bg-slate-950 text-white">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[color:color-mix(in_srgb,var(--workspace-highlight)_14%,transparent)] text-[var(--workspace-highlight)]">
           <UserRound className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-black text-slate-950">{name}</h3>
+            <h3 className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{name}</h3>
             <StatusBadges badges={badges} />
           </div>
-          <div className="mt-1 text-[11px] font-black tracking-[0.18em] text-blue-700">{role}</div>
-          <p className="mt-2 text-xs font-medium leading-6 text-slate-500">{summary}</p>
+          <div className="mt-1 text-[11px] font-black tracking-[0.18em] text-[var(--workspace-highlight)]">{role}</div>
+          <p className="mt-2 text-xs font-medium leading-6 text-[var(--workspace-muted)]">{summary}</p>
         </div>
       </div>
-      <div className="mt-4 grid gap-2 text-xs font-bold text-slate-700">
-        <div className="border border-slate-200 bg-slate-50 px-3 py-2">{relation}</div>
-        <div className="border border-slate-200 bg-slate-50 px-3 py-2">
+      <div className="mt-4 grid gap-2 text-xs font-bold text-[var(--workspace-bubble-other-foreground)]">
+        <div className="rounded-xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-3 py-2">{relation}</div>
+        <div className="rounded-xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-3 py-2">
           {project}
-          {unit ? <span className="mr-2 text-slate-400">/ {unit}</span> : null}
+          {unit ? <span className="mr-2 text-[var(--workspace-muted)]">/ {unit}</span> : null}
         </div>
       </div>
     </section>

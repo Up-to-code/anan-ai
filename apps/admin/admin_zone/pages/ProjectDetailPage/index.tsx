@@ -43,10 +43,10 @@ export default function ProjectDetailPage({ projectId }: ProjectDetailPageProps)
         />
       }
     >
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_320px]">
-        <div className="space-y-6">
-          <WorkspacePanel className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1.35fr)_340px]">
+        <div className="space-y-8">
+          <WorkspacePanel className="p-8 space-y-6">
+            <div className="flex flex-wrap items-center gap-3 pb-6 border-b border-border/20">
               <StatusBadge value={project.stage} />
               <StatusBadge value={project.assistantEnabled ? "active" : "inactive"} />
             </div>
@@ -63,49 +63,49 @@ export default function ProjectDetailPage({ projectId }: ProjectDetailPageProps)
             />
           </WorkspacePanel>
 
-          <WorkspacePanel className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-900">العقارات داخل المشروع</h2>
-            <div className="space-y-3">
+          <WorkspacePanel className="p-8 space-y-6">
+            <h2 className="text-xl font-black tracking-tight text-foreground underline decoration-primary/20 decoration-4 underline-offset-8">العقارات داخل المشروع</h2>
+            <div className="grid gap-4 md:grid-cols-2">
               {relatedProperties.map((property) => (
-                <div key={property.id} className="rounded-[8px] border border-border bg-slate-50 px-4 py-3">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <Link href={`/sales/properties/${property.id}`} className="font-medium text-slate-900 hover:underline">
+                <Link key={property.id} href={`/sales/properties/${property.id}`} className="group block rounded-2xl border border-border/30 bg-muted/5 p-6 transition-all hover:bg-muted/10 hover:border-primary/30">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="text-lg font-black tracking-tight text-foreground group-hover:text-primary transition-colors">
                         {property.title}
-                      </Link>
-                      <div className="mt-1 text-sm text-slate-500">{property.type} · {property.city}</div>
-                    </div>
-                    <div className="text-left">
-                      <div className="text-sm font-medium text-slate-900">{formatCurrency(property.price)}</div>
-                      <div className="mt-1">
-                        <StatusBadge value={property.publicationStatus} />
                       </div>
+                      <div className="text-[13px] font-bold text-muted-foreground/50">{property.type} · {property.city}</div>
+                    </div>
+                    <div className="text-left space-y-2">
+                      <div className="text-[13px] font-black text-foreground">{formatCurrency(property.price)}</div>
+                      <StatusBadge value={property.publicationStatus} />
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </WorkspacePanel>
         </div>
 
-        <div className="space-y-6">
-          <WorkspacePanel className="space-y-4">
-            <h2 className="text-base font-semibold text-slate-900">العروض المرتبطة</h2>
+        <div className="space-y-8">
+          <WorkspacePanel className="p-8 space-y-6">
+            <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground/40">العروض المرتبطة</h2>
             {relatedOffers.length > 0 ? (
               <div className="space-y-3">
                 {relatedOffers.map((offer) => (
-                  <div key={offer.id} className="rounded-[8px] border border-border bg-white px-4 py-3">
-                    <div className="font-medium text-slate-900">{offer.title}</div>
-                    <div className="mt-1 text-sm text-slate-500">{offer.organizationName}</div>
-                    <div className="mt-2 flex items-center justify-between gap-2">
-                      <StatusBadge value={offer.status} />
-                      <Link href={`/offers/${offer.id}`} className="text-sm text-blue-600 hover:text-blue-700">فتح العرض</Link>
+                  <Link key={offer.id} href={`/offers/${offer.id}`} className="group block rounded-xl border border-border/30 bg-card p-5 shadow-sm hover:border-border transition-colors">
+                    <div className="space-y-1">
+                      <div className="text-[13px] font-black text-foreground group-hover:text-primary transition-colors">{offer.title}</div>
+                      <div className="text-[11px] font-bold text-muted-foreground/50">{offer.organizationName}</div>
                     </div>
-                  </div>
+                    <div className="mt-4 flex items-center justify-between gap-2 border-t border-border/10 pt-4">
+                      <StatusBadge value={offer.status} />
+                      <div className="text-[10px] font-black uppercase tracking-widest text-primary/60 group-hover:text-primary">عرض التفاصيل</div>
+                    </div>
+                  </Link>
                 ))}
               </div>
             ) : (
-              <EmptyState title="لا توجد عروض" description="لم يتم ربط أي عرض بهذا المشروع حتى الآن." />
+              <div className="rounded-xl border border-dashed border-border/40 bg-muted/5 p-8 text-center text-xs font-bold text-muted-foreground/40">لم يتم ربط أي عرض بهذا المشروع حتى الآن.</div>
             )}
           </WorkspacePanel>
         </div>

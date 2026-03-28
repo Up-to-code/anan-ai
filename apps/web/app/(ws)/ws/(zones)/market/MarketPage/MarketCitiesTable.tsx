@@ -1,15 +1,4 @@
-"use client";
-
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
+import MarketPanel from "./MarketPanel";
 
 type MarketCityRow = {
   city: string;
@@ -19,79 +8,73 @@ type MarketCityRow = {
   averagePriceLabel: string | null;
 };
 
-type MarketCitiesTableProps = {
-  rows: MarketCityRow[];
-  title?: string;
-  description?: string;
-};
+function renderBarWidth(value: number, maxValue: number): string {
+  const width = maxValue <= 0 ? 0 : Math.max(8, Math.round((value / maxValue) * 100));
+  return `${Math.min(width, 100)}%`;
+}
 
 /**
- * WHY:   Developers need a ranked graphical view of Saudi cities showing demand relative to inventory.
- * WHAT:  Renders a real BarChart representing the city-level market data instead of a text table.
- * HOW:   Accepts already-filtered rows and maps them to Recharts BarChart data properties.
+ * WHY:   City comparison is still a core market behavior, but it should read like a usable report instead of a decorative chart.
+ * WHAT:  Renders a city ranking table with a compact inline demand bar for quick scanning.
+ * HOW:   Uses server-rendered rows and relative widths derived from the highest demand value in the current result set.
  */
 export default function MarketCitiesTable({
   rows,
-  title = "المدن الأعلى طلباً",
+  title = "ترتيب المدن",
   description,
-}: MarketCitiesTableProps) {
-      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
-          <h2 className="text-base font-bold text-slate-900">{title}</h2>
-          {description ? <p className="mt-1 text-xs font-medium text-slate-500">{description}</p> : null}
-        </div>
-        <div className="p-12 pl-12 text-center flex flex-col items-center justify-center">
-          <div className="text-sm font-bold text-slate-400">لا توجد مدن قابلة للعرض ضمن هذا النطاق.</div>
-        </div>
-      </section>
+}: {
+  rows: MarketCityRow[];
+  title?: string;
+  description?: string;
+}) {
+  if (rows.length === 0) {
+    return (
+      <MarketPanel title={title} description={description}>
+        <div className="py-10 text-center text-sm text-slate-500 dark:text-slate-300">لا توجد مدن مطابقة لهذا النطاق.</div>
+      </MarketPanel>
+    );
+  }
+
+  const maxDemand = Math.max(...rows.map((row) => row.demandSignals), 1);
 
   return (
-    <section className="flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 p-5 text-right bg-slate-50/50">
-        <h2 className="text-base font-bold text-slate-900">{title}</h2>
-        {description ? <p className="mt-1 text-xs font-medium text-slate-500">{description}</p> : null}
+    <MarketPanel title={title} description={description}>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-slate-200 text-right dark:divide-slate-800">
+          <thead>
+            <tr className="text-sm text-slate-500 dark:text-slate-400">
+              <th className="py-3 font-medium">المدينة</th>
+              <th className="py-3 font-medium">الطلب</th>
+              <th className="py-3 font-medium">الأبحاث</th>
+              <th className="py-3 font-medium">المخزون الحالي</th>
+              <th className="py-3 font-medium">متوسط السعر</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            {rows.map((row) => (
+              <tr key={row.city} className="align-top text-sm text-slate-700 dark:text-slate-200">
+                <td className="py-3 font-medium text-slate-950 dark:text-slate-100">{row.city}</td>
+                <td className="py-3">
+                  <div className="min-w-40">
+                    <div className="flex items-center justify-between gap-3">
+                      <span>{row.demandSignals.toLocaleString("en-US")}</span>
+                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                        <div
+                          className="h-full rounded-full bg-slate-900 dark:bg-slate-100"
+                          style={{ width: renderBarWidth(row.demandSignals, maxDemand) }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="py-3">{row.researchRuns.toLocaleString("en-US")}</td>
+                <td className="py-3">{row.inventoryCount.toLocaleString("en-US")}</td>
+                <td className="py-3">{row.averagePriceLabel ?? "غير كافٍ"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-      <div className="h-[400px] w-full p-6 pt-8 pb-8 flex-1" dir="rtl">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={rows}
-            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-            barGap={2}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-            <XAxis
-              dataKey="city"
-              axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
-              tickLine={false}
-              tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
-              dy={10}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
-              dx={-10}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "8px",
-                boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-                fontWeight: 600,
-                fontSize: "12px",
-                padding: "12px",
-              }}
-              itemStyle={{ color: "#334155", paddingBottom: "4px" }}
-              cursor={{ fill: "#f8fafc" }}
-            />
-            <Legend wrapperStyle={{ fontSize: "11px", fontWeight: 600, color: "#64748b", paddingTop: "20px" }} />
-            <Bar dataKey="demandSignals" name="إشارات الطلب" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={40} />
-            <Bar dataKey="inventoryCount" name="المخزون" fill="#0f172a" radius={[4, 4, 0, 0]} maxBarSize={40} />
-            <Bar dataKey="researchRuns" name="أبحاث محفوظة" fill="#94a3b8" radius={[4, 4, 0, 0]} maxBarSize={40} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </section>
+    </MarketPanel>
   );
 }

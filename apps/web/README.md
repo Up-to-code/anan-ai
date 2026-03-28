@@ -63,8 +63,12 @@ To make `/ws/projects/create` uploads work end-to-end in dev:
 1. Set web env vars (`apps/web/.env.local`):
    - `NEXT_PUBLIC_CONVEX_URL=https://<deployment>.convex.cloud`
    - `UPLOADTHING_TOKEN=<your-uploadthing-token>`
+   - `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=<your-posthog-project-token>`
+   - `NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com`
 2. Set Convex deployment env var (active `dev:*` deployment):
    - `npx convex env set UPLOADTHING_API_KEY <your-uploadthing-api-key> --deployment dev:<name>`
+   - `npx convex env set NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN <your-posthog-project-token> --deployment dev:<name>`
+   - `npx convex env set NEXT_PUBLIC_POSTHOG_HOST https://us.i.posthog.com --deployment dev:<name>`
 3. Quick verification:
    - Start web + Convex dev.
    - Open `/ws/projects/create`.
@@ -73,6 +77,10 @@ To make `/ws/projects/create` uploads work end-to-end in dev:
 
 E2E note:
 - `PLAYWRIGHT_WS_STORAGE_STATE` (optional, test-only): absolute path to a pre-authenticated Playwright storage state file used by `tests/projects-upload.spec.ts`.
+
+Analytics note:
+- Public and workspace surfaces emit PostHog browser events from the root layout.
+- Convex emits backend order/AI analytics only when the same PostHog env vars are also present in Convex env.
 
 ---
 

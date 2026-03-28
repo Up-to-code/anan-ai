@@ -1,6 +1,7 @@
 import { ConvexError, v } from "convex/values";
-import { mutation, query } from "../../../_generated/server";
+import { internalQuery, mutation, query } from "../../../_generated/server";
 import { requireCurrentProfile } from "../../lib/profile";
+import { requireRole } from "../../../_core/security/accessPolicy";
 import {
   buildOwnerContext,
   findProfileByAuthUserId,
@@ -42,6 +43,7 @@ async function mapMembershipRecord(
     authUserId: member.userId,
     profileId: profile._id,
     role: normalizeTenantRole(member.role),
+    tenantRole: member.role,
     status: (member.status ?? "active") === "active" ? "active" : "inactive",
     createdAt: member.joinedAt ?? member._creationTime ?? Date.now(),
     updatedAt: member.joinedAt ?? member._creationTime ?? Date.now(),
@@ -72,6 +74,40 @@ export async function requireOrganizationMembership(
 }
 
 /**
+ * WHY:   API key governance differentiates tenant owners from managers and cannot rely on normalized roles alone.
+ * WHAT:  Resolves current organization access with the raw tenant membership role preserved.
+ * HOW:   Reuses current membership resolution, then loads the tenant member directly for owner-sensitive decisions.
+ */
+export async function requireApiKeyAccess(
+  ctx: AgenciesRepositoryCtx,
+): Promise<{
+  profile: UserProfileRecord;
+  owner: OwnerContext;
+  membership: OrganizationMembershipRecord;
+  tenantRole: string;
+}> {
+  const current = await requireOrganizationMembership(ctx);
+  if (!current.owner.tenantOrgId) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Tenant organization required" });
+  }
+
+  const tenantMember = await tenants.getMember(ctx as never, current.owner.tenantOrgId, current.profile.authUserId);
+  if (!tenantMember) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Organization membership required" });
+  }
+
+  const tenantRole = tenantMember.role ?? "";
+  if (!tenantRole || !["owner", "admin", "manager"].includes(tenantRole)) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Manager role required" });
+  }
+
+  return {
+    ...current,
+    tenantRole,
+  };
+}
+
+/**
  * WHY:   Manager-only organization actions should share one authorization guard.
  * WHAT:  Resolves the current organization context and enforces a manager membership role.
  * HOW:   Reuses `requireOrganizationMembership` and rejects non-manager members.
@@ -84,6 +120,39 @@ export async function requireManagerAccess(
     throw new ConvexError({ code: "FORBIDDEN", message: "Manager role required" });
   }
   return current;
+}
+
+async function requireSameTenantOrAdmin(args: {
+  ctx: AgenciesRepositoryCtx;
+  owner: OwnerContext;
+  managerOnly?: boolean;
+}) {
+  try {
+    await requireRole(args.ctx as any, ["admin"]);
+    return;
+  } catch (error) {
+    if (
+      !(error instanceof ConvexError) ||
+      !error.data ||
+      typeof error.data !== "object" ||
+      !("code" in error.data) ||
+      error.data.code !== "FORBIDDEN"
+    ) {
+      throw error;
+    }
+  }
+
+  const current = args.managerOnly
+    ? await requireManagerAccess(args.ctx)
+    : await requireOrganizationMembership(args.ctx);
+  const [currentTenantOrgId, targetTenantOrgId] = await Promise.all([
+    resolveTenantOrgIdForOwner(args.ctx, current.owner),
+    resolveTenantOrgIdForOwner(args.ctx, args.owner),
+  ]);
+
+  if (currentTenantOrgId !== targetTenantOrgId) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Cross-organization access is not allowed" });
+  }
 }
 
 /**
@@ -126,6 +195,24 @@ export async function listTeamMembersForOwner(ctx: AgenciesRepositoryCtx, owner:
  * HOW:   Builds the owner context from the incoming args, then delegates to the shared member projection.
  */
 export const listTeamMembersByOwner = query({
+  args: {
+    ownerType: v.union(v.literal("broker"), v.literal("RED")),
+    ownerBrokerId: v.optional(v.id("brokers")),
+    ownerREDId: v.optional(v.id("RED")),
+  },
+  handler: async (ctx, args) => {
+    const owner = buildOwnerContext(args);
+    await requireSameTenantOrAdmin({ ctx, owner });
+    return listTeamMembersForOwner(ctx, owner);
+  },
+});
+
+/**
+ * WHY:   Gateway/admin flows may still need explicit-owner team reads without exposing them to public clients.
+ * WHAT:  Lists active team members for an explicit owner context as an internal-only function.
+ * HOW:   Builds the owner context from args, then delegates to the shared member projection.
+ */
+export const listTeamMembersByOwnerInternal = internalQuery({
   args: {
     ownerType: v.union(v.literal("broker"), v.literal("RED")),
     ownerBrokerId: v.optional(v.id("brokers")),

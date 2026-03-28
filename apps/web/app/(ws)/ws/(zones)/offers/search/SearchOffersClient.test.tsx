@@ -1,62 +1,79 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import SearchOffersClient, { filterSearchOffers } from "./SearchOffersClient";
-import type { OfferMarketplaceItem } from "../offerTypes";
+import type { WorkspaceOfferSummary } from "../offerTypes";
 
-const SAMPLE_ITEMS: OfferMarketplaceItem[] = [
+const SAMPLE_ITEMS: WorkspaceOfferSummary[] = [
   {
     id: "offer-1",
-    title: "عرض في الرياض",
-    kind: "developer",
-    image: "https://example.com/offer-1.jpg",
-    location: "الرياض",
-    priceLabel: "1,200,000 ر.س",
-    propertyType: "عرض عام",
-    ownerLabel: "شركة النخبة",
-    summary: "تفاصيل العرض الأول",
-    project: {
+    packageId: "package-1",
+    type: "open_offer",
+    stage: "open",
+    status: "pending",
+    publicationState: "published",
+    visibility: "public",
+    propertyId: "project-1",
+    price: 1200000,
+    message: "عرض في الرياض",
+    description: "تفاصيل العرض الأول",
+    senderName: "شركة النخبة",
+    recipientAuthUserId: null,
+    sourceConversationId: null,
+    property: {
       id: "project-1",
       title: "المشروع الأول",
-      rooms: "3",
-      baths: "2",
-      area: "120",
+      address: "الرياض",
+      imageUrl: "https://example.com/offer-1.jpg",
     },
-    projectRefId: "project-1",
-    unit: null,
-    broker: null,
-    demandLabel: null,
+    commissionText: null,
+    permitStatus: null,
+    productStatus: null,
+    allowedAudience: "both",
+    attachments: [],
+    clientContext: null,
+    participants: [],
+    href: "/ws/offers/offer-1",
+    createdAt: 1,
+    updatedAt: 1,
   },
   {
     id: "offer-2",
-    title: "عرض في جدة",
-    kind: "broker",
-    image: "https://example.com/offer-2.jpg",
-    location: "جدة",
-    priceLabel: "900,000 ر.س",
-    propertyType: "عرض خاص",
-    ownerLabel: "وسيط جدة",
-    summary: "تفاصيل العرض الثاني",
-    project: {
+    packageId: "package-2",
+    type: "private_offer",
+    stage: "targeted",
+    status: "pending",
+    publicationState: "published",
+    visibility: "private",
+    propertyId: "project-2",
+    price: 900000,
+    message: "عرض في جدة",
+    description: "تفاصيل العرض الثاني",
+    senderName: "وسيط جدة",
+    recipientAuthUserId: null,
+    sourceConversationId: null,
+    property: {
       id: "project-2",
       title: "المشروع الثاني",
-      rooms: "2",
-      baths: "2",
-      area: "95",
+      address: "جدة",
+      imageUrl: "https://example.com/offer-2.jpg",
     },
-    projectRefId: "project-2",
-    unit: null,
-    broker: null,
-    demandLabel: null,
+    commissionText: null,
+    permitStatus: null,
+    productStatus: null,
+    allowedAudience: "brokers",
+    attachments: [],
+    clientContext: null,
+    participants: [],
+    href: "/ws/offers/offer-2",
+    createdAt: 1,
+    updatedAt: 1,
   },
 ];
 
 describe("SearchOffersClient", () => {
-  it("filters offers by city, type, and kind", () => {
+  it("filters offers by free-text across message, property, and sender name", () => {
     const filtered = filterSearchOffers(SAMPLE_ITEMS, {
-      searchQuery: "",
-      filterCity: "جدة",
-      filterType: "عرض خاص",
-      filterKind: "broker",
+      searchQuery: "جدة",
     });
 
     expect(filtered).toHaveLength(1);
@@ -68,6 +85,6 @@ describe("SearchOffersClient", () => {
     expect(markup).toContain("data-slot=\"offers-grid\"");
     expect(markup).toContain("عرض في الرياض");
     expect(markup).toContain("شركة النخبة");
+    expect(markup).toContain("1,200,000");
   });
 });
-

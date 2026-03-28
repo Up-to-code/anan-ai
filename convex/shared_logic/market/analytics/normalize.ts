@@ -4,7 +4,15 @@ import {
   normalizeSellingFeature,
   parseSaudiGeography,
 } from "../normalizers";
-import { NormalizedProperty, NormalizedResearch, NormalizedSearchSignal, RawProperty, RawResearch, RawSearchLog } from "./types";
+import {
+  MarketDateRange,
+  NormalizedProperty,
+  NormalizedResearch,
+  NormalizedSearchSignal,
+  RawProperty,
+  RawResearch,
+  RawSearchLog,
+} from "./types";
 import { buildConfigurationLabel, isActiveProperty } from "./utils";
 
 export function normalizeProperties(properties: RawProperty[]): NormalizedProperty[] {
@@ -55,10 +63,9 @@ function normalizeResearchFinding(finding: RawResearch["propertyFindings"][numbe
   };
 }
 
-export function normalizeResearchRows(researchRows: RawResearch[], windowDays: 30 | 90 | 180): NormalizedResearch[] {
-  const since = Date.now() - windowDays * 24 * 60 * 60 * 1000;
+export function normalizeResearchRows(researchRows: RawResearch[], dateRange: MarketDateRange): NormalizedResearch[] {
   return researchRows
-    .filter((row) => row.createdAt >= since)
+    .filter((row) => row.createdAt >= dateRange.startMs && row.createdAt <= dateRange.endMs)
     .map((row) => {
       const queryGeo = parseSaudiGeography({ query: row.query });
       const findings = row.propertyFindings.map((finding) => normalizeResearchFinding(finding, row, queryGeo));
@@ -75,10 +82,12 @@ export function normalizeResearchRows(researchRows: RawResearch[], windowDays: 3
     });
 }
 
-export function normalizeSearchSignals(searchLogs: RawSearchLog[], windowDays: 30 | 90 | 180): NormalizedSearchSignal[] {
-  const since = Date.now() - windowDays * 24 * 60 * 60 * 1000;
+export function normalizeSearchSignals(searchLogs: RawSearchLog[], dateRange: MarketDateRange): NormalizedSearchSignal[] {
   return searchLogs
-    .filter((log) => (log._creationTime ?? 0) >= since)
+    .filter((log) => {
+      const createdAt = log._creationTime ?? 0;
+      return createdAt >= dateRange.startMs && createdAt <= dateRange.endMs;
+    })
     .filter((log) => !!log.query)
     .filter((log) => !log.stage || log.stage === "completed" || log.stage === "serper" || log.stage === "db")
     .map((log) => ({ ...parseSaudiGeography({ query: log.query! }), query: log.query }))

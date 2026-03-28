@@ -1,6 +1,7 @@
 "use client";
 
 import { Clock3 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   dealShareMetadataSchema,
   fileShareMetadataSchema,
@@ -20,10 +21,19 @@ import InboxOfferEventCard from "./InboxOfferEventCard";
  */
 export default function InboxMessageItem({
   currentUserId,
+  latestOutgoingMessageId,
   message,
+  otherParticipantLastReadAt,
+  onRespondToConversationOffer,
 }: {
   currentUserId: string;
+  latestOutgoingMessageId: string | null;
   message: ConversationMessage;
+  otherParticipantLastReadAt: number | null;
+  onRespondToConversationOffer: (input: {
+    offerId: string;
+    status: "accepted" | "rejected";
+  }) => Promise<{ ok: true } | void | null>;
 }) {
   const isMe = message.senderUserId === currentUserId;
   const isOptimistic = Boolean(
@@ -69,30 +79,66 @@ export default function InboxMessageItem({
     hour: "numeric",
     minute: "2-digit",
   });
+  const isLatestOutgoingMessage = isMe && latestOutgoingMessageId === message.id;
+  const isSeenByRecipient = Boolean(
+    isLatestOutgoingMessage &&
+      otherParticipantLastReadAt &&
+      otherParticipantLastReadAt >= message.createdAt,
+  );
+  const seenTimeLabel = isSeenByRecipient
+    ? new Date(otherParticipantLastReadAt as number).toLocaleTimeString("ar-SA", {
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : null;
+  const deliveryLabel = isOptimistic
+    ? "جاري الإرسال"
+    : isSeenByRecipient
+      ? `شوهد ${seenTimeLabel}`
+      : isLatestOutgoingMessage
+        ? "تم الإرسال"
+        : null;
 
   return (
     <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[88%] px-4 py-2.5 sm:max-w-[75%] ${isMe
-          ? "rounded-lg rounded-tl-sm bg-blue-600 text-white shadow-sm"
-          : "rounded-lg rounded-tr-sm bg-slate-100 text-slate-900"
-          } ${isOptimistic ? "opacity-80" : ""}`}
+        className={cn(
+          "min-w-0 max-w-[92%] sm:max-w-[75%] transition-all",
+          offerCardMetadata || collaborationMetadata
+            ? ""
+            : cn(
+                "px-5 py-3.5 shadow-sm",
+                isMe
+                  ? "rounded-3xl rounded-tr-sm bg-foreground text-background"
+                  : "rounded-3xl rounded-tl-sm border border-border bg-card text-foreground"
+              ),
+          isOptimistic && "opacity-60"
+        )}
       >
         {offerCardMetadata ? (
-          <InboxOfferEventCard body={message.body} isMe={isMe} metadata={offerCardMetadata} />
+          <InboxOfferEventCard
+            body={message.body}
+            isMe={isMe}
+            metadata={offerCardMetadata}
+            onRespondToConversationOffer={onRespondToConversationOffer}
+          />
         ) : collaborationMetadata ? (
           <InboxCollaborationCard isMe={isMe} metadata={collaborationMetadata} />
         ) : (
-          <div className="text-sm font-medium leading-relaxed">{message.body}</div>
+          <div className="whitespace-pre-wrap break-words text-sm font-medium leading-7 [overflow-wrap:anywhere]">
+            {message.body}
+          </div>
         )}
 
         <div
-          className={`mt-1.5 flex items-center gap-1.5 text-[10px] font-bold ${isMe ? "text-blue-200" : "text-slate-400"
-            }`}
+          className={cn(
+            "mt-2 flex flex-wrap items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider",
+            isMe ? "text-background/60" : "text-muted-foreground/60"
+          )}
         >
-          <Clock3 className="h-2.5 w-2.5" />
+          <Clock3 className="h-3 w-3" />
           <span>{timeLabel}</span>
-          {isOptimistic ? <span>• جاري الإرسال</span> : null}
+          {deliveryLabel ? <span className="opacity-80">• {deliveryLabel}</span> : null}
         </div>
       </div>
     </div>

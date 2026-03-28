@@ -7,12 +7,18 @@ const { getWorkspaceOrganizationTeam } = vi.hoisted(() => ({
 const { listCurrentOrganizationApiKeysForCurrentUser } = vi.hoisted(() => ({
   listCurrentOrganizationApiKeysForCurrentUser: vi.fn(),
 }));
+const { getComplianceRulesetForCurrentOrg } = vi.hoisted(() => ({
+  getComplianceRulesetForCurrentOrg: vi.fn(),
+}));
 
 vi.mock("../../_lib/organizationTeam", () => ({
   getWorkspaceOrganizationTeam,
 }));
 vi.mock("@/server/domains/auth/organizationApiKeys/service", () => ({
   listCurrentOrganizationApiKeysForCurrentUser,
+}));
+vi.mock("@/server/domains/compliance/service", () => ({
+  getComplianceRulesetForCurrentOrg,
 }));
 
 vi.mock("./_components/SettingsHeader", () => ({
@@ -41,14 +47,37 @@ vi.mock("./_components/OrganizationSettingsWorkspace", () => ({
 }));
 
 vi.mock("./_components/MembersWorkspace", () => ({
-  default: () => <div>MEMBERS-WORKSPACE</div>,
+  default: ({
+    initialMembers,
+    invites,
+    canManage,
+    organizationType,
+  }: {
+    initialMembers: Array<unknown>;
+    invites: Array<unknown>;
+    canManage: boolean;
+    organizationType?: string;
+  }) => <div>{`MEMBERS-WORKSPACE:${initialMembers.length}:${invites.length}:${canManage}:${organizationType ?? "none"}`}</div>,
 }));
 vi.mock("./_components/ApiKeysWorkspace", () => ({
-  default: () => <div>API-KEYS-WORKSPACE</div>,
+  default: ({ canCreate, canRevoke, canView }: { canCreate: boolean; canRevoke: boolean; canView: boolean }) => (
+    <div>{`API-KEYS-WORKSPACE:${canCreate}:${canRevoke}:${canView}`}</div>
+  ),
 }));
-
-vi.mock("./_components/InviteMemberForm", () => ({
-  default: () => <div>INVITE-MEMBER-FORM</div>,
+vi.mock("./_components/OrganizationVerificationWorkspace", () => ({
+  default: ({
+    organization,
+    canManage,
+    membersCount,
+    invitesCount,
+  }: {
+    organization: { verificationSummary?: { currentRequestStatus?: string } } | null;
+    canManage: boolean;
+    membersCount: number;
+    invitesCount: number;
+  }) => (
+    <div>{`VERIFICATION-WORKSPACE:${organization?.verificationSummary?.currentRequestStatus ?? "none"}:${canManage}:${membersCount}:${invitesCount}`}</div>
+  ),
 }));
 
 import WorkspaceSettingsPage from "./page";
@@ -57,7 +86,25 @@ beforeEach(() => {
   getWorkspaceOrganizationTeam.mockReset();
   listCurrentOrganizationApiKeysForCurrentUser.mockReset();
   getWorkspaceOrganizationTeam.mockResolvedValue({
-    organization: { name: "منظمة ألف", slug: "alpha", status: "active" },
+    organization: {
+      name: "منظمة ألف",
+      slug: "alpha",
+      status: "active",
+      type: "broker",
+      verificationSummary: {
+        isVerified: false,
+        currentRequestId: "request-1",
+        currentRequestStatus: "in_review",
+        lastSubmittedAt: 1,
+        lastReviewedAt: null,
+        reviewerNotes: null,
+        documentsCount: 2,
+        publishingBlocked: true,
+        attachedDocuments: [],
+        requirements: [],
+        sourceUrls: [],
+      },
+    },
     members: [
       {
         id: "member-1",
@@ -79,8 +126,10 @@ beforeEach(() => {
       },
     ],
     currentMembershipRole: "manager",
+    currentTenantRole: "owner",
   });
   listCurrentOrganizationApiKeysForCurrentUser.mockResolvedValue([]);
+  getComplianceRulesetForCurrentOrg.mockResolvedValue(null);
 });
 
 it("defaults to the organization tab when tab is missing", async () => {
@@ -103,8 +152,7 @@ it("renders members tab content when tab is members", async () => {
   const element = await WorkspaceSettingsPage({ searchParams: Promise.resolve({ tab: "members" }) });
   const markup = renderToStaticMarkup(element);
 
-  expect(markup).toContain("MEMBERS-WORKSPACE");
-  expect(markup).toContain("INVITE-MEMBER-FORM");
+  expect(markup).toContain("MEMBERS-WORKSPACE:1:1:true:broker");
   expect(markup).not.toContain("ORG-WORKSPACE");
 });
 
@@ -112,8 +160,39 @@ it("renders api keys tab content when tab is api-keys", async () => {
   const element = await WorkspaceSettingsPage({ searchParams: Promise.resolve({ tab: "api-keys" }) });
   const markup = renderToStaticMarkup(element);
 
-  expect(markup).toContain("API-KEYS-WORKSPACE");
+  expect(markup).toContain("API-KEYS-WORKSPACE:true:true:true");
   expect(markup).not.toContain("ORG-WORKSPACE");
   expect(markup).not.toContain("MEMBERS-WORKSPACE");
   expect(listCurrentOrganizationApiKeysForCurrentUser).toHaveBeenCalledTimes(1);
+});
+
+it("renders api keys as view-and-revoke only for managers who are not tenant owners", async () => {
+  getWorkspaceOrganizationTeam.mockResolvedValue({
+    organization: {
+      name: "منظمة ألف",
+      slug: "alpha",
+      status: "active",
+      type: "broker",
+    },
+    members: [],
+    invites: [],
+    currentMembershipRole: "manager",
+    currentTenantRole: "admin",
+  });
+
+  const element = await WorkspaceSettingsPage({ searchParams: Promise.resolve({ tab: "api-keys" }) });
+  const markup = renderToStaticMarkup(element);
+
+  expect(markup).toContain("API-KEYS-WORKSPACE:false:true:true");
+  expect(listCurrentOrganizationApiKeysForCurrentUser).toHaveBeenCalledTimes(1);
+});
+
+it("renders verification tab content when tab is verification", async () => {
+  const element = await WorkspaceSettingsPage({ searchParams: Promise.resolve({ tab: "verification" }) });
+  const markup = renderToStaticMarkup(element);
+
+  expect(markup).toContain("VERIFICATION-WORKSPACE:in_review:true:1:1");
+  expect(markup).not.toContain("ORG-WORKSPACE");
+  expect(markup).not.toContain("MEMBERS-WORKSPACE");
+  expect(getComplianceRulesetForCurrentOrg).toHaveBeenCalled();
 });

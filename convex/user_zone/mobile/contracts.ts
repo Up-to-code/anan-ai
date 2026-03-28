@@ -11,6 +11,14 @@ export const mobileOwnerValidator = v.object({
   name: v.string(),
   slug: v.string(),
   isVerified: v.boolean(),
+  description: v.optional(v.string()),
+  phone: v.optional(v.string()),
+  contactEmail: v.optional(v.string()),
+  agencyLabel: v.optional(v.string()),
+  rating: v.optional(v.number()),
+  activeListings: v.optional(v.number()),
+  establishedYear: v.optional(v.number()),
+  completedProjects: v.optional(v.number()),
 });
 
 /**
@@ -22,6 +30,7 @@ export const mobilePropertyFeedItemValidator = v.object({
   id: v.id("properties"),
   title: v.string(),
   address: v.string(),
+  bankId: v.optional(v.id("banks")),
   location: v.optional(v.string()),
   area: v.optional(v.string()),
   price: v.number(),
@@ -96,6 +105,47 @@ const brokerHandoffCardValidator = v.object({
   summary: v.string(),
 });
 
+const brokerProfileCardValidator = v.object({
+  type: v.literal("broker_profile"),
+  title: v.string(),
+  brokerName: v.string(),
+  brokerAgency: v.string(),
+  rating: v.number(),
+  activeListings: v.number(),
+  summary: v.string(),
+});
+
+const developerProfileCardValidator = v.object({
+  type: v.literal("developer_profile"),
+  title: v.string(),
+  developerName: v.string(),
+  establishedYear: v.number(),
+  completedProjects: v.number(),
+  summary: v.string(),
+});
+
+const loanCalculatorCardValidator = v.object({
+  type: v.literal("loan_calculator"),
+  title: v.string(),
+  propertyPrice: v.number(),
+  downPayment: v.number(),
+  loanAmount: v.number(),
+  interestRate: v.number(),
+  years: v.number(),
+  monthlyPayment: v.number(),
+  summary: v.string(),
+});
+
+const bankOfferCardValidator = v.object({
+  type: v.literal("bank_offer"),
+  title: v.string(),
+  bankName: v.string(),
+  rateLabel: v.string(),
+  downPaymentPercent: v.number(),
+  monthlyEstimate: v.number(),
+  summary: v.string(),
+});
+
 /**
  * WHY:   The mobile UI renders tool results as cards instead of markdown blobs.
  * WHAT:  Validates every supported result-card variant for the feed assistant.
@@ -108,6 +158,10 @@ export const mobileAssistantResultCardValidator = v.union(
   permitStatusCardValidator,
   comparisonTableCardValidator,
   brokerHandoffCardValidator,
+  brokerProfileCardValidator,
+  developerProfileCardValidator,
+  loanCalculatorCardValidator,
+  bankOfferCardValidator,
 );
 
 /**

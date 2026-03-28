@@ -7,37 +7,38 @@ type StatusBadgeProps = {
 };
 
 const toneByValue: Record<string, string> = {
-  available: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  sold: "border-border bg-zinc-100 text-zinc-700",
-  reserved: "border-amber-300 bg-amber-50 text-amber-800",
-  new_lead: "border-sky-300 bg-sky-50 text-sky-800",
-  contacted: "border-cyan-300 bg-cyan-50 text-cyan-800",
-  qualified: "border-indigo-300 bg-indigo-50 text-indigo-800",
-  offer_made: "border-violet-300 bg-violet-50 text-violet-800",
-  under_contract: "border-orange-300 bg-orange-50 text-orange-800",
-  closed_won: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  closed_lost: "border-rose-300 bg-rose-50 text-rose-800",
-  failed: "border-rose-300 bg-rose-50 text-rose-800",
-  success: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  active: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  inactive: "border-border bg-zinc-100 text-zinc-700",
-  approved: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  accepted: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  rejected: "border-rose-300 bg-rose-50 text-rose-800",
-  pending: "border-border bg-zinc-100 text-zinc-700",
-  draft: "border-border bg-zinc-100 text-zinc-700",
-  published: "border-sky-300 bg-sky-50 text-sky-800",
-  complete: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  missing_document: "border-rose-300 bg-rose-50 text-rose-800",
-  pending_review: "border-amber-300 bg-amber-50 text-amber-800",
-  in_review: "border-amber-300 bg-amber-50 text-amber-800",
-  new: "border-sky-300 bg-sky-50 text-sky-800",
+  available: "bg-emerald-100/50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-500/10",
+  sold: "bg-slate-100/50 text-slate-500 border-slate-200/50",
+  reserved: "bg-amber-100/50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-500/10",
+  new_lead: "bg-blue-100/50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-500/10",
+  contacted: "bg-cyan-100/50 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-400 border-cyan-500/10",
+  qualified: "bg-indigo-100/50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400 border-indigo-500/10",
+  offer_made: "bg-violet-100/50 text-violet-700 dark:bg-violet-500/20 dark:text-violet-400 border-violet-500/10",
+  under_contract: "bg-orange-100/50 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 border-orange-500/10",
+  closed_won: "bg-emerald-100/50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-500/10",
+  closed_lost: "bg-rose-100/50 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400 border-rose-500/10",
+  failed: "bg-rose-100/50 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400 border-rose-500/10",
+  success: "bg-emerald-100/50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-500/10",
+  active: "bg-emerald-100/50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-500/10",
+  inactive: "bg-slate-100/50 text-slate-500 border-slate-200/50",
+  approved: "bg-emerald-100/50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-500/10",
+  accepted: "bg-emerald-100/50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-500/10",
+  rejected: "bg-rose-100/50 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400 border-rose-500/10",
+  closed: "bg-slate-100/50 text-slate-500 border-slate-200/50 dark:bg-slate-800/60 dark:text-slate-300 dark:border-slate-700",
+  pending: "bg-slate-100/50 text-slate-500 border-slate-200/50",
+  draft: "bg-slate-100/50 text-slate-500 border-slate-200/50",
+  published: "bg-blue-100/50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-500/10",
+  complete: "bg-emerald-100/50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-500/10",
+  missing_document: "bg-rose-100/50 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400 border-rose-500/10",
+  pending_review: "bg-amber-100/50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-500/10",
+  in_review: "bg-amber-100/50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-500/10",
+  new: "bg-blue-100/50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-500/10",
 };
 
 /**
- * WHY:   Status values appear across the admin console and still need a shared visual treatment after the redesign.
- * WHAT:  Renders a compact status tag with the rebuilt neutral palette and mapped status label.
- * HOW:   Applies a tone for known values and falls back to a muted default for unknown states.
+ * WHY:   Status badges in Nexus need high legibility and premium rounded-full geometry.
+ * WHAT:  Modernizes the badge with safer contrast levels and consistent platform geometry.
+ * HOW:   Uses rounded-full with high-contrast font-black tracking-widest for a professional feel.
  */
 export default function StatusBadge({ value, className }: StatusBadgeProps) {
   const normalized = value?.trim() || "unknown";
@@ -45,8 +46,8 @@ export default function StatusBadge({ value, className }: StatusBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex rounded-[8px] border px-2.5 py-1 text-xs font-medium",
-        toneByValue[normalized] ?? "border-border bg-zinc-100 text-zinc-700",
+        "inline-flex items-center rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest transition-all",
+        toneByValue[normalized] ?? "bg-slate-100/50 text-slate-500 border-slate-200/50",
         className,
       )}
     >

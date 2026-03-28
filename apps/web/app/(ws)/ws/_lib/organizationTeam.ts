@@ -14,6 +14,7 @@ function emptyOrganizationTeam(args: { authUserId: string }) {
     invites: [] as OrganizationInviteDisplay[],
     authUserId: args.authUserId,
     currentMembershipRole: null as "manager" | "member" | "viewer" | null,
+    currentTenantRole: null as string | null,
   };
 }
 
@@ -60,6 +61,7 @@ export async function getWorkspaceOrganizationTeam() {
   let members: OrganizationMemberDisplay[] = [];
   let invites: OrganizationInviteDisplay[] = [];
   let currentMembershipRole = currentOrganization?.membership?.role ?? null;
+  let currentTenantRole = currentOrganization?.membership?.tenantRole ?? null;
   try {
     const [rawMembers, rawInvites] = await Promise.all([
       listCurrentOrganizationTeamMembers(),
@@ -72,11 +74,13 @@ export async function getWorkspaceOrganizationTeam() {
       throw error;
     }
     currentMembershipRole = null;
+    currentTenantRole = null;
   }
   return {
     organization,
     authUserId: workspace.session.userId,
     currentMembershipRole,
+    currentTenantRole,
     members,
     invites,
   };

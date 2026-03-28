@@ -1,7 +1,7 @@
 import { mutation } from "../../_generated/server";
 import { ConvexError, v } from "convex/values";
 import { uploadedFileReferenceListValidator } from "../files";
-import { requireOrganizationMembership } from "../agencies/repositories/membership";
+import { requireManagerAccess, requireOrganizationMembership } from "../agencies/repositories/membership";
 import { resolveComplianceRulesetForOwner } from "../compliance/utils";
 
 function buildVerificationSubmittedData(args: {
@@ -59,7 +59,7 @@ export const createVerificationRequestForCurrentOrg = mutation({
     organizationType: v.optional(v.union(v.literal("broker"), v.literal("red"))),
   },
   handler: async (ctx, args) => {
-    const { owner, profile } = await requireOrganizationMembership(ctx);
+    const { owner, profile } = await requireManagerAccess(ctx);
     const { ruleset } = await resolveComplianceRulesetForOwner(ctx, owner);
     const attachedDocuments = requireAttachedDocuments(args.documents, args.proofDocuments);
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/lib/convexApi";
 import type { ConversationDetail, ConversationSummary, UserConversationTarget } from "@/server/contracts/inbox";
@@ -17,6 +16,24 @@ export { useWorkspaceSignalCounts } from "./useWorkspaceSignalCounts";
 const inboxApi = api.shared_logic.inbox;
 
 /**
+ * WHY:   The inbox should only auto-open the first conversation when the user has not already chosen one.
+ * WHAT:  Returns the first conversation id eligible for automatic selection.
+ * HOW:   Skips auto-selection when the route is already pinned to a conversation or when local state already has an active id.
+ */
+export function getInboxAutoSelectedConversationId(args: {
+  activeConversationId: string | null;
+  conversations: Array<{ id: string }>;
+  hasInitializedAutoSelection?: boolean;
+  hasConversationRoute: boolean;
+}) {
+  if (args.hasInitializedAutoSelection || args.hasConversationRoute || args.activeConversationId) {
+    return null;
+  }
+
+  return args.conversations[0]?.id ?? null;
+}
+
+/**
  * WHY:   The inbox workspace needs one live coordinator for subscriptions, route sync, read state, and optimistic sends.
  * WHAT:  Exposes a realtime inbox model for the page orchestrator and keeps view components mostly presentational.
  * HOW:   Subscribes to Convex queries, mirrors route selection into local state, marks reads on visible active threads, and applies optimistic send updates.
@@ -28,7 +45,6 @@ export function useRealtimeInbox({
   initialSelectedConversationId,
   hasConversationRoute,
 }: UseRealtimeInboxArgs): UseRealtimeInboxResult {
-  const router = useRouter();
   const [activeConversationId, setActiveConversationId] = useState<string | null>(
     initialSelectedConversationId ?? initialConversation?.id ?? null,
   );
@@ -36,6 +52,7 @@ export function useRealtimeInbox({
   const [sendError, setSendError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const deferredSearch = useDeferredValue(search.trim());
+  const hasInitializedAutoSelectionRef = useRef(false);
   // Track the last conversation ID for which we successfully received live data
   // to avoid showing the loading spinner on every conversation switch.
   const lastResolvedLiveIdRef = useRef<string | null>(null);
@@ -75,34 +92,56 @@ export function useRealtimeInbox({
 
   useEffect(() => {
     if (initialSelectedConversationId) {
+      hasInitializedAutoSelectionRef.current = true;
       setActiveConversationId(initialSelectedConversationId);
     }
   }, [initialSelectedConversationId]);
 
+  const syncConversationUrl = (conversationId: string | null, method: "push" | "replace" = "push") => {
+    if (typeof window === "undefined") return;
+    const nextUrl = new URL(window.location.href);
+    if (conversationId) {
+      nextUrl.searchParams.set("conversationId", conversationId);
+    } else {
+      nextUrl.searchParams.delete("conversationId");
+    }
+    const nextHref = `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
+    if (method === "replace") {
+      window.history.replaceState(null, "", nextHref);
+      return;
+    }
+    window.history.pushState(null, "", nextHref);
+  };
+
   useEffect(() => {
-    if (hasConversationRoute || conversations.length === 0) {
-      return;
-    }
+    const nextConversationId = getInboxAutoSelectedConversationId({
+      activeConversationId,
+      conversations,
+      hasInitializedAutoSelection: hasInitializedAutoSelectionRef.current,
+      hasConversationRoute,
+    });
 
-    const nextConversationId = conversations[0]?.id ?? null;
     if (!nextConversationId) {
+      if (
+        !hasInitializedAutoSelectionRef.current &&
+        (activeConversationId !== null || hasConversationRoute || conversations.length > 0)
+      ) {
+        hasInitializedAutoSelectionRef.current = true;
+      }
       return;
     }
 
-    if (activeConversationId !== nextConversationId) {
-      setActiveConversationId(nextConversationId);
-    }
-
-    router.replace(`/ws/inbox/${nextConversationId}`);
-  }, [activeConversationId, conversations, hasConversationRoute, router]);
+    hasInitializedAutoSelectionRef.current = true;
+    setActiveConversationId(nextConversationId);
+    syncConversationUrl(nextConversationId, "replace");
+  }, [activeConversationId, conversations, hasConversationRoute]);
 
   useEffect(() => {
     if (!activeConversationId || conversations.length > 0) {
       return;
     }
-
-    router.replace("/ws/inbox");
-  }, [activeConversationId, conversations.length, router]);
+    syncConversationUrl(null, "replace");
+  }, [activeConversationId, conversations.length]);
 
   useEffect(() => {
     if (!hasConversationRoute && conversation && !activeConversationId) {
@@ -126,13 +165,25 @@ export function useRealtimeInbox({
     const nextConversationId = conversations[0]?.id ?? null;
     setActiveConversationId(nextConversationId);
 
-    if (nextConversationId) {
-      router.replace(`/ws/inbox/${nextConversationId}`);
-      return;
-    }
+    syncConversationUrl(nextConversationId, "replace");
+  }, [activeConversationId, conversations]);
 
-    router.replace("/ws/inbox");
-  }, [activeConversationId, conversations, router]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const nextConversationId = params.get("conversationId");
+      if (nextConversationId) {
+        setActiveConversationId(nextConversationId);
+        return;
+      }
+      setActiveConversationId(conversations[0]?.id ?? null);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [conversations]);
 
   useEffect(() => {
     if (!activeConversationId || !conversation || conversation.unreadCount === 0) {
@@ -164,16 +215,18 @@ export function useRealtimeInbox({
   );
 
   const handleSelectConversation = (conversationId: string) => {
+    hasInitializedAutoSelectionRef.current = true;
     setActiveConversationId(conversationId);
-    router.push(`/ws/inbox/${conversationId}`);
+    syncConversationUrl(conversationId);
   };
 
   const handleStartConversation = async (targetUserId: string) => {
     setSendError(null);
     const conversationId = await resolveConversation({ targetUserId });
     setSearch("");
+    hasInitializedAutoSelectionRef.current = true;
     setActiveConversationId(conversationId);
-    router.push(`/ws/inbox/${conversationId}`);
+    syncConversationUrl(conversationId);
   };
 
   const handleSendMessage = async (body: string) => {

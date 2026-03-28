@@ -1,19 +1,26 @@
 import { z } from "zod";
+import {
+  ORGANIZATION_API_KEY_ACTIONS,
+  ORGANIZATION_API_KEY_RESOURCES,
+  isOrganizationApiKeyPermissionAllowed,
+  type OrganizationApiKeyAction,
+  type OrganizationApiKeyPermission,
+  type OrganizationApiKeyResource,
+} from "@/lib/auth/organizationPermissions";
 
-export const organizationApiKeyResourceSchema = z.enum(["clients", "properties"]);
-export const organizationApiKeyActionSchema = z.enum(["read", "create", "update", "delete"]);
+export const organizationApiKeyResourceSchema = z.enum(ORGANIZATION_API_KEY_RESOURCES);
+export const organizationApiKeyActionSchema = z.enum(ORGANIZATION_API_KEY_ACTIONS);
 
 export const organizationApiKeyPermissionSchema = z.object({
   resource: organizationApiKeyResourceSchema,
   action: organizationApiKeyActionSchema,
-});
+}).refine(isOrganizationApiKeyPermissionAllowed, "Unsupported resource/action permission");
 
 export const createOrganizationApiKeyInputSchema = z.object({
   name: z.string().trim().max(120).optional().default(""),
   permissions: z.array(organizationApiKeyPermissionSchema).min(1, "Select at least one permission"),
 });
 
-export type OrganizationApiKeyPermission = z.infer<typeof organizationApiKeyPermissionSchema>;
 export type CreateOrganizationApiKeyInput = z.infer<typeof createOrganizationApiKeyInputSchema>;
 
 export type OrganizationApiKeySummary = {

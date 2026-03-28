@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { useWorkspaceSignalCounts } = vi.hoisted(() => ({
   useWorkspaceSignalCounts: vi.fn(() => ({ notificationCount: 0, inboxCount: 0 })),
 }));
+const { useQuery } = vi.hoisted(() => ({
+  useQuery: vi.fn(() => undefined),
+}));
 
 const { requireWorkspaceData, getLayoutSidebarData, redirect, usePathname, useSearchParams } = vi.hoisted(() => ({
   requireWorkspaceData: vi.fn(),
@@ -22,6 +25,10 @@ vi.mock("next/navigation", () => ({
   redirect,
   usePathname,
   useSearchParams,
+}));
+
+vi.mock("convex/react", () => ({
+  useQuery,
 }));
 
 vi.mock("../inbox/InboxPage/useRealtimeInbox", () => ({
@@ -74,10 +81,10 @@ describe("/ws/crm layout", () => {
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain("data-slot=\"workspace-shell\"");
-    expect(markup).toContain("إدارة العملاء");
+    expect(markup).toContain("إدارة الصفقات");
     expect(markup).toContain("/ws/crm");
-    expect(markup).toContain("خط الأنابيب");
+    expect(markup).toContain("الصفقات");
     expect(markup).toContain("العملاء");
-    expect(markup).toContain("الوسطاء");
+    expect(markup).not.toContain("الوسطاء");
   });
 });

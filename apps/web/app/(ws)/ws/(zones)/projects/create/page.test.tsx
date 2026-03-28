@@ -4,7 +4,6 @@ import type { ProjectFormData } from "@/app/(ws)/ws/public";
 
 const {
   createProperty,
-  publishProperty,
   getCapturedProps,
   setCapturedProps,
 } = vi.hoisted(() => {
@@ -12,7 +11,6 @@ const {
 
   return {
     createProperty: vi.fn(async () => "property-new"),
-    publishProperty: vi.fn(async () => ({ ok: true })),
     getCapturedProps: () => capturedProps,
     setCapturedProps: (props: unknown) => {
       capturedProps = props;
@@ -30,7 +28,6 @@ vi.mock("../../../_lib/workspaceData", () => ({
 vi.mock("@/server/ws/zones", () => ({
   getWorkspacePropertyZone: vi.fn(() => ({
     createProperty,
-    publishProperty,
   })),
 }));
 
@@ -56,10 +53,20 @@ const formInput: ProjectFormData = {
   price: "3,200,000 ر.س",
   location: "الرياض",
   description: "تفاصيل المشروع",
+  shortDescription: "نبذة قصيرة",
+  amenitiesText: "مسبح، نادي",
+  hasParking: true,
+  parkingSpaces: "2",
+  coverImageKey: "file-1",
+  galleryDisplayMode: "fit",
+  galleryAspectRatio: "square",
+  privatePermitSummary: "تصريح للطرف المستلم فقط",
+  privatePermitFiles: [{ key: "permit-1", url: "https://ufs.sh/f/permit-1", name: "permit.pdf" }],
   rooms: "4",
   baths: "5",
   area: "380",
   status: "active",
+  clientVisibility: "public",
   images: [uploadedImage],
   video: null,
   brokerId: null,
@@ -69,11 +76,10 @@ const formInput: ProjectFormData = {
 
 beforeEach(() => {
   createProperty.mockClear();
-  publishProperty.mockClear();
   setCapturedProps(null);
 });
 
-it("saves uploaded images as media and publishes when status is active", async () => {
+it("saves uploaded images as media and buyer-visible publication state separately from status", async () => {
   const element = await CreateProjectPage();
   const markup = renderToStaticMarkup(element);
 
@@ -85,6 +91,23 @@ it("saves uploaded images as media and publishes when status is active", async (
   const result = await props.onSave(formInput);
 
   expect(result).toEqual({ redirectTo: "/ws/projects/property-new" });
-  expect(createProperty).toHaveBeenCalledWith(expect.objectContaining({ media: [uploadedImage] }));
-  expect(publishProperty).toHaveBeenCalledWith({ id: "property-new" });
+  expect(createProperty).toHaveBeenCalledWith(
+    expect.objectContaining({
+      media: [uploadedImage],
+      publicationState: "published",
+      status: "available",
+      body: {
+        presentation: expect.objectContaining({
+          descriptionShort: "نبذة قصيرة",
+          amenities: ["مسبح", "نادي"],
+          parkingSpaces: 2,
+          hasParking: true,
+          coverImageKey: "file-1",
+          galleryDisplayMode: "fit",
+          galleryAspectRatio: "square",
+          privatePermitSummary: "تصريح للطرف المستلم فقط",
+        }),
+      },
+    }),
+  );
 });

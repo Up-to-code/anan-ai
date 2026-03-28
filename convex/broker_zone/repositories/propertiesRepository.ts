@@ -7,6 +7,7 @@ import type { Infer } from "convex/values";
 import { uploadedFileReferenceValidator } from "../../shared_logic/files";
 
 type PropertyStatus = "available" | "sold" | "reserved";
+type PropertyPublicationState = "draft" | "published" | "archived";
 
 type BrokerPropertyWriteFields = {
   title: string;
@@ -19,8 +20,10 @@ type BrokerPropertyWriteFields = {
   location?: string;
   area?: string;
   status?: PropertyStatus;
+  publicationState?: PropertyPublicationState;
   bankId?: Id<"banks">;
   media?: Infer<typeof uploadedFileReferenceValidator>[];
+  body?: unknown;
   adLicenseNumber?: string;
 };
 
@@ -87,7 +90,7 @@ export async function createBrokerProperty(ctx: MutationCtx, args: BrokerPropert
     heroImage,
     searchText,
     brokerId,
-    publicationState: "draft",
+    publicationState: rest.publicationState ?? "draft",
   });
 }
 

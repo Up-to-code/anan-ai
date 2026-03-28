@@ -7,6 +7,7 @@ import { tenants } from "../../tenants";
 import { mapConversationSummary, getConversationParticipant, mapConversationMessage } from "./conversations";
 import { getOrganizationNameByOwner, getUserImageByEmail } from "./profiles";
 import { normalizeComparableText, normalizeDirectPair, normalizeSearchQuery } from "./utils";
+import { hasInboxProjectShareAccess } from "../propertyAccessControl";
 
 export const buildDirectConversationKey = query({
   args: {
@@ -55,6 +56,11 @@ export const getConversation = query({
       ctx,
       membership as Doc<"inboxConversationParticipants">
     );
+    const otherParticipantMembership = await getConversationParticipant(
+      ctx,
+      conversationId,
+      membership.otherUserId,
+    );
     const messages = await ctx.db
       .query("inboxMessages")
       .withIndex("conversationId", (q) => q.eq("conversationId", conversationId))
@@ -62,6 +68,7 @@ export const getConversation = query({
 
     return {
       ...summary,
+      otherParticipantLastReadAt: otherParticipantMembership?.lastReadAt ?? null,
       messages: messages.map(mapConversationMessage),
     };
   },
@@ -79,6 +86,16 @@ export const getInboxUnreadSummary = query({
     return {
       unreadCount: memberships.reduce((sum, item) => sum + item.unreadCount, 0),
     };
+  },
+});
+
+export const hasProjectShareAccess = query({
+  args: {
+    propertyId: v.id("properties"),
+  },
+  handler: async (ctx, { propertyId }) => {
+    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    return hasInboxProjectShareAccess(ctx, access.authUserId, propertyId);
   },
 });
 

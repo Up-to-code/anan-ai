@@ -15,36 +15,6 @@ interface SettingsTabsProps {
   defaultTab?: string;
 }
 
-function SettingsTabLink({
-  href,
-  isActive,
-  tab,
-}: {
-  href: string;
-  isActive: boolean;
-  tab: SettingsTabItem;
-}) {
-  const Icon = tab.icon;
-  return (
-    <Link
-      key={tab.key}
-      href={href}
-      aria-current={isActive ? "page" : undefined}
-      className={cn(
-        "group inline-flex items-center gap-2 border-b-2 px-1 pb-4 text-sm font-black tracking-wide transition-all",
-        isActive
-          ? "border-blue-600 text-blue-600"
-          : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
-      )}
-    >
-      {Icon ? (
-        <Icon className={cn("h-4 w-4", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-500")} />
-      ) : null}
-      {tab.label}
-    </Link>
-  );
-}
-
 function buildSettingsHref(pathname: string | null, searchParams: ReturnType<typeof useSearchParams>, tabKey: string) {
   const nextParams = new URLSearchParams(searchParams?.toString() ?? "");
   nextParams.set("tab", tabKey);
@@ -62,12 +32,28 @@ export default function SettingsTabs({ tabs, defaultTab }: SettingsTabsProps) {
     : defaultTab || tabs[0]?.key;
 
   return (
-    <div className="border-b border-slate-200">
-      <nav className="-mb-px flex flex-wrap gap-6" aria-label="Tabs">
+    <div className="border-b border-border" dir="rtl">
+      <nav className="-mb-px flex flex-wrap gap-1" aria-label="Tabs">
         {tabs.map((tab) => {
           const isActive = currentTab === tab.key;
           const href = buildSettingsHref(pathname, searchParams, tab.key);
-          return <SettingsTabLink key={tab.key} href={href} isActive={isActive} tab={tab} />;
+          const Icon = tab.icon;
+          return (
+            <Link
+              key={tab.key}
+              href={href}
+              aria-current={isActive ? "page" : undefined}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-[13px] font-bold transition-all",
+                isActive
+                  ? "border-b-2 border-foreground bg-muted/50 text-foreground"
+                  : "text-muted-foreground hover:bg-muted/30 hover:text-foreground",
+              )}
+            >
+              {Icon ? <Icon className="h-4 w-4" /> : null}
+              {tab.label}
+            </Link>
+          );
         })}
       </nav>
     </div>

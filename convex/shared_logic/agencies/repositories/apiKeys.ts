@@ -2,24 +2,34 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query } from "../../../_generated/server";
 import { auditLog } from "../../../auditLog";
 import { findProfileByAuthUserId, type OwnerContext } from "./core";
-import { requireManagerAccess } from "./membership";
+import { requireApiKeyAccess } from "./membership";
+import {
+  ORGANIZATION_API_KEY_ACTIONS,
+  ORGANIZATION_API_KEY_RESOURCES,
+  isOrganizationApiKeyPermissionAllowed,
+  type OrganizationApiKeyAction,
+  type OrganizationApiKeyPermission,
+  type OrganizationApiKeyResource,
+} from "../../../../shared/auth/organizationPermissions";
+
+const [firstApiKeyResource, ...restApiKeyResources] = ORGANIZATION_API_KEY_RESOURCES;
+const [firstApiKeyAction, ...restApiKeyActions] = ORGANIZATION_API_KEY_ACTIONS;
 
 const apiKeyPermissionValidator = v.object({
-  resource: v.union(v.literal("clients"), v.literal("properties")),
-  action: v.union(v.literal("read"), v.literal("create"), v.literal("update"), v.literal("delete")),
+  resource: v.union(v.literal(firstApiKeyResource), ...restApiKeyResources.map((resource) => v.literal(resource))),
+  action: v.union(v.literal(firstApiKeyAction), ...restApiKeyActions.map((action) => v.literal(action))),
 });
 
-type ApiKeyPermission = {
-  resource: "clients" | "properties";
-  action: "read" | "create" | "update" | "delete";
-};
-
-function permissionKey(permission: ApiKeyPermission) {
+function permissionKey(permission: OrganizationApiKeyPermission) {
   return `${permission.resource}:${permission.action}`;
 }
 
-function normalizePermissions(permissions: ApiKeyPermission[]): ApiKeyPermission[] {
-  return [
+function machineActorId(apiKey: any) {
+  return `api_key:${apiKey.keyId}`;
+}
+
+function normalizePermissions(permissions: OrganizationApiKeyPermission[]): OrganizationApiKeyPermission[] {
+  const normalized = [
     ...new Map(permissions.map((permission) => [permissionKey(permission), permission])).values(),
   ].sort((left, right) => {
     if (left.resource === right.resource) {
@@ -27,6 +37,17 @@ function normalizePermissions(permissions: ApiKeyPermission[]): ApiKeyPermission
     }
     return left.resource.localeCompare(right.resource);
   });
+
+  for (const permission of normalized) {
+    if (!isOrganizationApiKeyPermissionAllowed(permission)) {
+      throw new ConvexError({
+        code: "INVALID_ARGUMENT",
+        message: `Unsupported API key permission: ${permission.resource}:${permission.action}`,
+      });
+    }
+  }
+
+  return normalized;
 }
 
 async function mapApiKeySummary(ctx: any, apiKey: any) {
@@ -53,6 +74,24 @@ function ownerMatchesApiKey(owner: OwnerContext, apiKey: any) {
   return apiKey.ownerType === "RED" && apiKey.ownerREDId === owner.ownerREDId;
 }
 
+function ownerMatchesClient(owner: OwnerContext, client: any) {
+  return owner.ownerType === "broker"
+    ? client.brokerId === owner.ownerBrokerId
+    : client.REDId === owner.ownerREDId;
+}
+
+function ownerMatchesProperty(owner: OwnerContext, property: any) {
+  return owner.ownerType === "broker"
+    ? property.brokerId === owner.ownerBrokerId
+    : property.REDId === owner.ownerREDId;
+}
+
+function ownerMatchesDeal(owner: OwnerContext, deal: any) {
+  return owner.ownerType === "broker"
+    ? deal.brokerId === owner.ownerBrokerId
+    : deal.REDId === owner.ownerREDId;
+}
+
 async function getCurrentOrganizationApiKeyOrThrow(ctx: any, keyId: string, owner: OwnerContext) {
   const apiKey = await ctx.db
     .query("organizationApiKeys")
@@ -75,7 +114,7 @@ async function getApiKeyBySecretHashOrThrow(ctx: any, secretHash: string) {
   return apiKey;
 }
 
-function requireApiKeyPermission(apiKey: any, resource: "clients" | "properties", action: "read" | "create" | "update" | "delete") {
+function requireApiKeyPermission(apiKey: any, resource: OrganizationApiKeyResource, action: OrganizationApiKeyAction) {
   const granted = new Set((apiKey.permissions ?? []).map((permission: any) => permissionKey(permission)));
   if (!granted.has(permissionKey({ resource, action }))) {
     throw new ConvexError({ code: "FORBIDDEN", message: `Missing API key permission: ${resource}:${action}` });
@@ -109,6 +148,30 @@ async function touchApiKey(ctx: any, apiKeyId: any, now: number) {
   await ctx.db.patch(apiKeyId, { lastUsedAt: now });
 }
 
+async function logMachineMutation(args: {
+  ctx: any;
+  apiKey: any;
+  action: string;
+  resourceType: string;
+  resourceId: string;
+  metadata?: Record<string, unknown>;
+}) {
+  await auditLog.log(args.ctx, {
+    action: args.action,
+    actorId: machineActorId(args.apiKey),
+    resourceType: args.resourceType,
+    resourceId: args.resourceId,
+    severity: "info",
+    tags: ["organizations", "api-keys", "machine-api"],
+    metadata: {
+      apiKeyId: args.apiKey.keyId,
+      createdBy: args.apiKey.createdBy,
+      ownerType: args.apiKey.ownerType,
+      ...args.metadata,
+    },
+  });
+}
+
 function mapClientRecord(client: any) {
   return {
     id: String(client._id),
@@ -116,6 +179,10 @@ function mapClientRecord(client: any) {
     phone: client.phone,
     email: client.email,
     notes: client.notes,
+    sourceSystem: client.sourceSystem,
+    externalId: client.externalId,
+    businessId: client.businessId,
+    sourceClientId: client.sourceClientId,
     brokerId: client.brokerId ? String(client.brokerId) : undefined,
     redId: client.REDId ? String(client.REDId) : undefined,
     createdAt: client.createdAt,
@@ -134,10 +201,102 @@ function mapPropertyRecord(property: any) {
     description: property.description,
     area: property.area,
     location: property.location,
+    sourceSystem: property.sourceSystem,
+    externalId: property.externalId,
+    businessId: property.businessId,
     brokerId: property.brokerId ? String(property.brokerId) : undefined,
     redId: property.REDId ? String(property.REDId) : undefined,
     status: property.status,
     publicationState: property.publicationState,
+  } as const;
+}
+
+function mapBrokerRecord(broker: any) {
+  return {
+    id: String(broker._id),
+    name: broker.name,
+    description: broker.description,
+    phone: broker.phone,
+    isVerified: broker.isVerified === true,
+    status: broker.status,
+  } as const;
+}
+
+function mapDealRelationClient(client: any) {
+  return client
+    ? {
+        id: String(client._id),
+        name: client.name,
+        phone: client.phone,
+        email: client.email,
+        sourceSystem: client.sourceSystem,
+        externalId: client.externalId,
+        businessId: client.businessId,
+        sourceClientId: client.sourceClientId,
+      }
+    : null;
+}
+
+function mapDealRelationProject(property: any) {
+  return property
+    ? {
+        id: String(property._id),
+        title: property.title,
+        address: property.address,
+        location: property.location,
+        price: property.price,
+        publicationState: property.publicationState,
+        status: property.status,
+        sourceSystem: property.sourceSystem,
+        externalId: property.externalId,
+        businessId: property.businessId,
+      }
+    : null;
+}
+
+function mapDealRelationBroker(broker: any) {
+  return broker
+    ? {
+        id: String(broker._id),
+        name: broker.name,
+        description: broker.description,
+        phone: broker.phone,
+        isVerified: broker.isVerified === true,
+        status: broker.status,
+      }
+    : null;
+}
+
+async function mapDealRecord(ctx: any, deal: any) {
+  const [client, property, broker] = await Promise.all([
+    deal.crmClientId ? ctx.db.get(deal.crmClientId) : Promise.resolve(null),
+    deal.propertyId ? ctx.db.get(deal.propertyId) : Promise.resolve(null),
+    deal.relatedBrokerId ? ctx.db.get(deal.relatedBrokerId) : Promise.resolve(null),
+  ]);
+
+  return {
+    id: String(deal._id),
+    title: deal.title,
+    description: deal.description,
+    value: deal.value,
+    nextFollowUpAt: deal.nextFollowUpAt,
+    stage: deal.stage,
+    relationType: deal.relationType,
+    notes: deal.notes,
+    contactName: deal.contactName,
+    contactPhone: deal.contactPhone,
+    sourceSystem: deal.sourceSystem,
+    externalId: deal.externalId,
+    businessId: deal.businessId,
+    brokerId: deal.brokerId ? String(deal.brokerId) : undefined,
+    redId: deal.REDId ? String(deal.REDId) : undefined,
+    clientId: deal.crmClientId ? String(deal.crmClientId) : undefined,
+    projectId: deal.propertyId ? String(deal.propertyId) : undefined,
+    relatedBrokerId: deal.relatedBrokerId ? String(deal.relatedBrokerId) : undefined,
+    createdAt: deal.createdAt ?? deal._creationTime,
+    client: mapDealRelationClient(client),
+    project: mapDealRelationProject(property),
+    broker: mapDealRelationBroker(broker),
   } as const;
 }
 
@@ -147,24 +306,18 @@ async function listClientsForOwner(ctx: any, owner: OwnerContext) {
       .query("crmClients")
       .withIndex("brokerId", (q: any) => q.eq("brokerId", owner.ownerBrokerId))
       .collect();
-    return clients.map(mapClientRecord);
+    return clients.sort((left: any, right: any) => right.updatedAt - left.updatedAt).map(mapClientRecord);
   }
   const clients = await ctx.db
     .query("crmClients")
     .withIndex("REDId", (q: any) => q.eq("REDId", owner.ownerREDId))
     .collect();
-  return clients.map(mapClientRecord);
+  return clients.sort((left: any, right: any) => right.updatedAt - left.updatedAt).map(mapClientRecord);
 }
 
 async function getOwnedClientOrThrow(ctx: any, owner: OwnerContext, clientId: any) {
   const client = await ctx.db.get(clientId);
-  if (!client) {
-    throw new ConvexError({ code: "NOT_FOUND", message: "Client not found" });
-  }
-  const owned = owner.ownerType === "broker"
-    ? client.brokerId === owner.ownerBrokerId
-    : client.REDId === owner.ownerREDId;
-  if (!owned) {
+  if (!client || !ownerMatchesClient(owner, client)) {
     throw new ConvexError({ code: "NOT_FOUND", message: "Client not found" });
   }
   return client;
@@ -199,27 +352,81 @@ async function listPropertiesForOwner(ctx: any, owner: OwnerContext) {
 
 async function getOwnedPropertyOrThrow(ctx: any, owner: OwnerContext, propertyId: any) {
   const property = await ctx.db.get(propertyId);
-  if (!property) {
-    throw new ConvexError({ code: "NOT_FOUND", message: "Property not found" });
-  }
-  const owned = owner.ownerType === "broker"
-    ? property.brokerId === owner.ownerBrokerId
-    : property.REDId === owner.ownerREDId;
-  if (!owned) {
+  if (!property || !ownerMatchesProperty(owner, property)) {
     throw new ConvexError({ code: "NOT_FOUND", message: "Property not found" });
   }
   return property;
 }
 
+async function listDealsForOwner(ctx: any, owner: OwnerContext) {
+  const deals = owner.ownerType === "broker"
+    ? await ctx.db.query("deals").withIndex("brokerId", (q: any) => q.eq("brokerId", owner.ownerBrokerId)).collect()
+    : await ctx.db.query("deals").withIndex("REDId", (q: any) => q.eq("REDId", owner.ownerREDId)).collect();
+
+  return Promise.all(
+    deals
+      .filter((deal: any) => !deal.archivedAt)
+      .sort((left: any, right: any) => (right.createdAt ?? right._creationTime) - (left.createdAt ?? left._creationTime))
+      .map((deal: any) => mapDealRecord(ctx, deal)),
+  );
+}
+
+async function getOwnedDealOrThrow(ctx: any, owner: OwnerContext, dealId: any) {
+  const deal = await ctx.db.get(dealId);
+  if (!deal || deal.archivedAt || !ownerMatchesDeal(owner, deal)) {
+    throw new ConvexError({ code: "NOT_FOUND", message: "Deal not found" });
+  }
+  return deal;
+}
+
+async function getBrokerOrThrow(ctx: any, brokerId: any) {
+  const broker = await ctx.db.get(brokerId);
+  if (!broker || (broker.status ?? "active") === "pending") {
+    throw new ConvexError({ code: "NOT_FOUND", message: "Broker not found" });
+  }
+  return broker;
+}
+
+async function listBrokersDirectory(ctx: any) {
+  const brokers = await ctx.db.query("brokers").collect();
+  return brokers
+    .filter((broker: any) => (broker.status ?? "active") !== "pending")
+    .sort((left: any, right: any) => left.name.localeCompare(right.name, "ar"))
+    .map(mapBrokerRecord);
+}
+
+async function createImplicitClientForDeal(args: {
+  ctx: any;
+  owner: OwnerContext;
+  apiKey: any;
+  now: number;
+  contactName?: string;
+  contactPhone?: string;
+  description?: string;
+}) {
+  if (!args.contactName) return undefined;
+  return args.ctx.db.insert("crmClients", {
+    ownerAuthUserId: args.apiKey.createdBy,
+    brokerId: args.owner.ownerType === "broker" ? args.owner.ownerBrokerId : undefined,
+    REDId: args.owner.ownerType === "RED" ? args.owner.ownerREDId : undefined,
+    name: args.contactName,
+    phone: args.contactPhone,
+    notes: args.description,
+    sourceClientId: args.apiKey.keyId,
+    createdAt: args.now,
+    updatedAt: args.now,
+  });
+}
+
 /**
- * WHY:   Organization settings need a manager-only list of active and revoked API keys.
+ * WHY:   Organization settings need a safe API key control surface with owner-only issuance.
  * WHAT:  Returns the current organization's API keys with creator metadata.
- * HOW:   Enforces manager access, scopes records to the current owner, and maps rows into stable summaries.
+ * HOW:   Uses the dedicated API-key access helper so owners and managers can view metadata.
  */
 export const listCurrentOrganizationApiKeys = query({
   args: {},
   handler: async (ctx) => {
-    const { owner } = await requireManagerAccess(ctx);
+    const { owner } = await requireApiKeyAccess(ctx);
     const apiKeys = owner.ownerType === "broker"
       ? await ctx.db.query("organizationApiKeys").withIndex("ownerBrokerId", (q: any) => q.eq("ownerBrokerId", owner.ownerBrokerId)).collect()
       : await ctx.db.query("organizationApiKeys").withIndex("ownerREDId", (q: any) => q.eq("ownerREDId", owner.ownerREDId)).collect();
@@ -229,9 +436,9 @@ export const listCurrentOrganizationApiKeys = query({
 });
 
 /**
- * WHY:   Managers need to create org-owned machine credentials without exposing raw secrets to Convex logs or storage.
+ * WHY:   API key issuance is higher risk than revocation and should stay restricted to tenant owners.
  * WHAT:  Persists API key metadata and hashed secret for the current organization.
- * HOW:   Requires manager access, stores normalized permissions, and records an audit entry.
+ * HOW:   Resolves raw tenant role, rejects non-owners, normalizes permissions, and records an audit entry.
  */
 export const createCurrentOrganizationApiKey = mutation({
   args: {
@@ -243,7 +450,11 @@ export const createCurrentOrganizationApiKey = mutation({
     now: v.number(),
   },
   handler: async (ctx, args) => {
-    const { owner, profile } = await requireManagerAccess(ctx);
+    const { owner, profile, tenantRole } = await requireApiKeyAccess(ctx);
+    if (tenantRole !== "owner") {
+      throw new ConvexError({ code: "FORBIDDEN", message: "Owner role required" });
+    }
+
     const normalizedPermissions = normalizePermissions(args.permissions);
     const apiKeyId = await ctx.db.insert("organizationApiKeys", {
       keyId: args.keyId,
@@ -270,6 +481,7 @@ export const createCurrentOrganizationApiKey = mutation({
       metadata: {
         keyId: args.keyId,
         ownerType: owner.ownerType,
+        tenantRole,
         permissions: normalizedPermissions,
       },
     });
@@ -279,9 +491,9 @@ export const createCurrentOrganizationApiKey = mutation({
 });
 
 /**
- * WHY:   Managers need a safe revocation path that immediately disables future machine API access.
+ * WHY:   Managers still need an emergency stop path for compromised machine credentials.
  * WHAT:  Revokes one API key belonging to the current organization.
- * HOW:   Confirms owner scope, timestamps revocation, and records an audit entry.
+ * HOW:   Uses the dedicated API-key access helper, confirms owner scope, and records an audit entry.
  */
 export const revokeCurrentOrganizationApiKey = mutation({
   args: {
@@ -289,7 +501,7 @@ export const revokeCurrentOrganizationApiKey = mutation({
     now: v.number(),
   },
   handler: async (ctx, args) => {
-    const { owner, profile } = await requireManagerAccess(ctx);
+    const { owner, profile, tenantRole } = await requireApiKeyAccess(ctx);
     const apiKey = await getCurrentOrganizationApiKeyOrThrow(ctx, args.keyId, owner);
     if (!apiKey.revokedAt) {
       await ctx.db.patch(apiKey._id, {
@@ -306,6 +518,7 @@ export const revokeCurrentOrganizationApiKey = mutation({
         metadata: {
           keyId: apiKey.keyId,
           ownerType: owner.ownerType,
+          tenantRole,
         },
       });
     }
@@ -313,11 +526,6 @@ export const revokeCurrentOrganizationApiKey = mutation({
   },
 });
 
-/**
- * WHY:   Machine integrations need a key-authenticated list endpoint that updates usage metadata.
- * WHAT:  Returns CRM clients owned by the API key's organization.
- * HOW:   Resolves the key from its hash, checks read permission, touches last-used, and scopes by org ownership.
- */
 export const listClientsByApiKey = mutation({
   args: {
     secretHash: v.string(),
@@ -331,11 +539,6 @@ export const listClientsByApiKey = mutation({
   },
 });
 
-/**
- * WHY:   Machine integrations need org-scoped CRM writes without user session context.
- * WHAT:  Creates a CRM client for the organization represented by the API key.
- * HOW:   Verifies create permission, writes owner-linked fields, and updates key last-used metadata.
- */
 export const createClientByApiKey = mutation({
   args: {
     secretHash: v.string(),
@@ -344,6 +547,9 @@ export const createClientByApiKey = mutation({
     phone: v.optional(v.string()),
     email: v.optional(v.string()),
     notes: v.optional(v.string()),
+    sourceSystem: v.optional(v.string()),
+    externalId: v.optional(v.string()),
+    businessId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
@@ -358,19 +564,24 @@ export const createClientByApiKey = mutation({
       email: args.email,
       notes: args.notes,
       sourceClientId: apiKey.keyId,
+      sourceSystem: args.sourceSystem,
+      externalId: args.externalId,
+      businessId: args.businessId,
       createdAt: args.now,
       updatedAt: args.now,
     });
     await touchApiKey(ctx, apiKey._id, args.now);
+    await logMachineMutation({
+      ctx,
+      apiKey,
+      action: "organization.machine_api.client.created",
+      resourceType: "crmClients",
+      resourceId: String(clientId),
+    });
     return { client: mapClientRecord(await ctx.db.get(clientId)) };
   },
 });
 
-/**
- * WHY:   Machine integrations need a safe client update path limited to the owning organization.
- * WHAT:  Updates one CRM client reachable by the API key.
- * HOW:   Verifies update permission, rejects foreign ids, patches fields, and refreshes last-used metadata.
- */
 export const updateClientByApiKey = mutation({
   args: {
     secretHash: v.string(),
@@ -380,6 +591,9 @@ export const updateClientByApiKey = mutation({
     phone: v.optional(v.string()),
     email: v.optional(v.string()),
     notes: v.optional(v.string()),
+    sourceSystem: v.optional(v.string()),
+    externalId: v.optional(v.string()),
+    businessId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
@@ -391,18 +605,23 @@ export const updateClientByApiKey = mutation({
       ...(args.phone !== undefined ? { phone: args.phone } : {}),
       ...(args.email !== undefined ? { email: args.email } : {}),
       ...(args.notes !== undefined ? { notes: args.notes } : {}),
+      ...(args.sourceSystem !== undefined ? { sourceSystem: args.sourceSystem } : {}),
+      ...(args.externalId !== undefined ? { externalId: args.externalId } : {}),
+      ...(args.businessId !== undefined ? { businessId: args.businessId } : {}),
       updatedAt: args.now,
     });
     await touchApiKey(ctx, apiKey._id, args.now);
+    await logMachineMutation({
+      ctx,
+      apiKey,
+      action: "organization.machine_api.client.updated",
+      resourceType: "crmClients",
+      resourceId: String(args.clientId),
+    });
     return { client: mapClientRecord(await ctx.db.get(args.clientId)) };
   },
 });
 
-/**
- * WHY:   Machine integrations need revocable destructive access that never escapes org ownership.
- * WHAT:  Deletes one CRM client owned by the API key's organization.
- * HOW:   Checks delete permission, ensures ownership, removes the row, and touches last-used metadata.
- */
 export const deleteClientByApiKey = mutation({
   args: {
     secretHash: v.string(),
@@ -416,15 +635,17 @@ export const deleteClientByApiKey = mutation({
     await getOwnedClientOrThrow(ctx, owner, args.clientId);
     await ctx.db.delete(args.clientId);
     await touchApiKey(ctx, apiKey._id, args.now);
+    await logMachineMutation({
+      ctx,
+      apiKey,
+      action: "organization.machine_api.client.deleted",
+      resourceType: "crmClients",
+      resourceId: String(args.clientId),
+    });
     return { deleted: true as const };
   },
 });
 
-/**
- * WHY:   Machine integrations need an org-scoped property read endpoint backed by the same key policy model.
- * WHAT:  Returns properties owned by the API key's organization.
- * HOW:   Verifies read permission, scopes by broker/RED ownership, and updates last-used metadata.
- */
 export const listPropertiesByApiKey = mutation({
   args: {
     secretHash: v.string(),
@@ -438,11 +659,6 @@ export const listPropertiesByApiKey = mutation({
   },
 });
 
-/**
- * WHY:   Machine integrations need property creation tied to the owning organization rather than a user profile.
- * WHAT:  Creates a property for the org represented by the API key.
- * HOW:   Checks create permission, writes the owner ids, derives search text, and touches last-used metadata.
- */
 export const createPropertyByApiKey = mutation({
   args: {
     secretHash: v.string(),
@@ -455,6 +671,9 @@ export const createPropertyByApiKey = mutation({
     description: v.string(),
     area: v.optional(v.string()),
     location: v.optional(v.string()),
+    sourceSystem: v.optional(v.string()),
+    externalId: v.optional(v.string()),
+    businessId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
@@ -471,20 +690,25 @@ export const createPropertyByApiKey = mutation({
       description: args.description,
       area: args.area,
       location: args.location,
+      sourceSystem: args.sourceSystem,
+      externalId: args.externalId,
+      businessId: args.businessId,
       publicationState: "draft",
       status: "available",
       searchText: buildPropertySearchText(args),
     });
     await touchApiKey(ctx, apiKey._id, args.now);
+    await logMachineMutation({
+      ctx,
+      apiKey,
+      action: "organization.machine_api.property.created",
+      resourceType: "properties",
+      resourceId: String(propertyId),
+    });
     return { property: mapPropertyRecord(await ctx.db.get(propertyId)) };
   },
 });
 
-/**
- * WHY:   Machine integrations need property updates constrained to org-owned records.
- * WHAT:  Updates one property for the current API key owner.
- * HOW:   Verifies update permission, rejects foreign property ids, recomputes search text, and touches last-used metadata.
- */
 export const updatePropertyByApiKey = mutation({
   args: {
     secretHash: v.string(),
@@ -498,6 +722,9 @@ export const updatePropertyByApiKey = mutation({
     description: v.optional(v.string()),
     area: v.optional(v.string()),
     location: v.optional(v.string()),
+    sourceSystem: v.optional(v.string()),
+    externalId: v.optional(v.string()),
+    businessId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
@@ -523,18 +750,23 @@ export const updatePropertyByApiKey = mutation({
       ...(args.description !== undefined ? { description: args.description } : {}),
       ...(args.area !== undefined ? { area: args.area } : {}),
       ...(args.location !== undefined ? { location: args.location } : {}),
+      ...(args.sourceSystem !== undefined ? { sourceSystem: args.sourceSystem } : {}),
+      ...(args.externalId !== undefined ? { externalId: args.externalId } : {}),
+      ...(args.businessId !== undefined ? { businessId: args.businessId } : {}),
       searchText: buildPropertySearchText(nextProperty),
     });
     await touchApiKey(ctx, apiKey._id, args.now);
+    await logMachineMutation({
+      ctx,
+      apiKey,
+      action: "organization.machine_api.property.updated",
+      resourceType: "properties",
+      resourceId: String(args.propertyId),
+    });
     return { property: mapPropertyRecord(await ctx.db.get(args.propertyId)) };
   },
 });
 
-/**
- * WHY:   Machine integrations need a destructive property path that still respects org boundaries.
- * WHAT:  Deletes one property owned by the API key's organization.
- * HOW:   Checks delete permission, confirms ownership, removes the record, and updates last-used metadata.
- */
 export const deletePropertyByApiKey = mutation({
   args: {
     secretHash: v.string(),
@@ -548,6 +780,246 @@ export const deletePropertyByApiKey = mutation({
     await getOwnedPropertyOrThrow(ctx, owner, args.propertyId);
     await ctx.db.delete(args.propertyId);
     await touchApiKey(ctx, apiKey._id, args.now);
+    await logMachineMutation({
+      ctx,
+      apiKey,
+      action: "organization.machine_api.property.deleted",
+      resourceType: "properties",
+      resourceId: String(args.propertyId),
+    });
     return { deleted: true as const };
+  },
+});
+
+export const listDealsByApiKey = mutation({
+  args: {
+    secretHash: v.string(),
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
+    requireApiKeyPermission(apiKey, "deals", "read");
+    await touchApiKey(ctx, apiKey._id, args.now);
+    return { deals: await listDealsForOwner(ctx, buildOwnerFromApiKey(apiKey)) };
+  },
+});
+
+export const createDealByApiKey = mutation({
+  args: {
+    secretHash: v.string(),
+    now: v.number(),
+    title: v.string(),
+    description: v.optional(v.string()),
+    value: v.optional(v.number()),
+    nextFollowUpAt: v.optional(v.number()),
+    stage: v.union(v.literal("new"), v.literal("contacted"), v.literal("negotiation"), v.literal("won"), v.literal("lost")),
+    contactName: v.optional(v.string()),
+    contactPhone: v.optional(v.string()),
+    relationType: v.union(v.literal("internal_client"), v.literal("broker_managed")),
+    clientId: v.optional(v.id("crmClients")),
+    projectId: v.optional(v.id("properties")),
+    brokerId: v.optional(v.id("brokers")),
+    notes: v.optional(v.string()),
+    sourceSystem: v.optional(v.string()),
+    externalId: v.optional(v.string()),
+    businessId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
+    requireApiKeyPermission(apiKey, "deals", "create");
+    const owner = buildOwnerFromApiKey(apiKey);
+
+    const clientId = args.clientId
+      ? args.clientId
+      : args.relationType === "internal_client"
+        ? await createImplicitClientForDeal({
+            ctx,
+            owner,
+            apiKey,
+            now: args.now,
+            contactName: args.contactName,
+            contactPhone: args.contactPhone,
+            description: args.description,
+          })
+        : undefined;
+
+    if (clientId) {
+      await getOwnedClientOrThrow(ctx, owner, clientId);
+    }
+    if (args.projectId) {
+      await getOwnedPropertyOrThrow(ctx, owner, args.projectId);
+    }
+    if (args.brokerId) {
+      await getBrokerOrThrow(ctx, args.brokerId);
+    }
+
+    const dealId = await ctx.db.insert("deals", {
+      createdAt: args.now,
+      title: args.title,
+      description: args.description,
+      value: args.value,
+      nextFollowUpAt: args.nextFollowUpAt,
+      stage: args.stage,
+      relationType: args.relationType,
+      crmClientId: clientId,
+      relatedBrokerId: args.brokerId,
+      contactName: args.contactName,
+      contactPhone: args.contactPhone,
+      propertyId: args.projectId,
+      REDId: owner.ownerType === "RED" ? owner.ownerREDId : undefined,
+      brokerId: owner.ownerType === "broker" ? owner.ownerBrokerId : undefined,
+      notes: args.notes,
+      sourceSystem: args.sourceSystem,
+      externalId: args.externalId,
+      businessId: args.businessId,
+      lastUpdatedBy: machineActorId(apiKey),
+    });
+    await touchApiKey(ctx, apiKey._id, args.now);
+    await logMachineMutation({
+      ctx,
+      apiKey,
+      action: "organization.machine_api.deal.created",
+      resourceType: "deals",
+      resourceId: String(dealId),
+    });
+    return { deal: await mapDealRecord(ctx, await ctx.db.get(dealId)) };
+  },
+});
+
+export const updateDealByApiKey = mutation({
+  args: {
+    secretHash: v.string(),
+    now: v.number(),
+    dealId: v.id("deals"),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    value: v.optional(v.number()),
+    nextFollowUpAt: v.optional(v.number()),
+    stage: v.optional(v.union(v.literal("new"), v.literal("contacted"), v.literal("negotiation"), v.literal("won"), v.literal("lost"))),
+    contactName: v.optional(v.string()),
+    contactPhone: v.optional(v.string()),
+    relationType: v.optional(v.union(v.literal("internal_client"), v.literal("broker_managed"))),
+    clientId: v.optional(v.id("crmClients")),
+    projectId: v.optional(v.id("properties")),
+    brokerId: v.optional(v.id("brokers")),
+    notes: v.optional(v.string()),
+    sourceSystem: v.optional(v.string()),
+    externalId: v.optional(v.string()),
+    businessId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
+    requireApiKeyPermission(apiKey, "deals", "update");
+    const owner = buildOwnerFromApiKey(apiKey);
+    const deal = await getOwnedDealOrThrow(ctx, owner, args.dealId);
+
+    const nextRelationType = args.relationType ?? deal.relationType;
+    const clientId = args.clientId
+      ? args.clientId
+      : !deal.crmClientId && nextRelationType === "internal_client"
+        ? await createImplicitClientForDeal({
+            ctx,
+            owner,
+            apiKey,
+            now: args.now,
+            contactName: args.contactName ?? deal.contactName,
+            contactPhone: args.contactPhone ?? deal.contactPhone,
+            description: args.description ?? deal.description,
+          })
+        : undefined;
+
+    if (clientId) {
+      await getOwnedClientOrThrow(ctx, owner, clientId);
+    }
+    if (args.projectId) {
+      await getOwnedPropertyOrThrow(ctx, owner, args.projectId);
+    }
+    if (args.brokerId) {
+      await getBrokerOrThrow(ctx, args.brokerId);
+    }
+
+    await ctx.db.patch(args.dealId, {
+      ...(args.title !== undefined ? { title: args.title } : {}),
+      ...(args.description !== undefined ? { description: args.description } : {}),
+      ...(args.value !== undefined ? { value: args.value } : {}),
+      ...(args.nextFollowUpAt !== undefined ? { nextFollowUpAt: args.nextFollowUpAt } : {}),
+      ...(args.stage !== undefined ? { stage: args.stage } : {}),
+      ...(args.contactName !== undefined ? { contactName: args.contactName } : {}),
+      ...(args.contactPhone !== undefined ? { contactPhone: args.contactPhone } : {}),
+      ...(args.relationType !== undefined ? { relationType: args.relationType } : {}),
+      ...(args.clientId !== undefined || clientId !== undefined ? { crmClientId: args.clientId ?? clientId ?? deal.crmClientId } : {}),
+      ...(args.projectId !== undefined ? { propertyId: args.projectId } : {}),
+      ...(args.brokerId !== undefined ? { relatedBrokerId: args.brokerId } : {}),
+      ...(args.notes !== undefined ? { notes: args.notes } : {}),
+      ...(args.sourceSystem !== undefined ? { sourceSystem: args.sourceSystem } : {}),
+      ...(args.externalId !== undefined ? { externalId: args.externalId } : {}),
+      ...(args.businessId !== undefined ? { businessId: args.businessId } : {}),
+      lastUpdatedBy: machineActorId(apiKey),
+    });
+    await touchApiKey(ctx, apiKey._id, args.now);
+    await logMachineMutation({
+      ctx,
+      apiKey,
+      action: "organization.machine_api.deal.updated",
+      resourceType: "deals",
+      resourceId: String(args.dealId),
+    });
+    return { deal: await mapDealRecord(ctx, await ctx.db.get(args.dealId)) };
+  },
+});
+
+export const deleteDealByApiKey = mutation({
+  args: {
+    secretHash: v.string(),
+    now: v.number(),
+    dealId: v.id("deals"),
+  },
+  handler: async (ctx, args) => {
+    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
+    requireApiKeyPermission(apiKey, "deals", "delete");
+    const owner = buildOwnerFromApiKey(apiKey);
+    await getOwnedDealOrThrow(ctx, owner, args.dealId);
+    await ctx.db.patch(args.dealId, {
+      archivedAt: args.now,
+      archivedBy: machineActorId(apiKey),
+      lastUpdatedBy: machineActorId(apiKey),
+    });
+    await touchApiKey(ctx, apiKey._id, args.now);
+    await logMachineMutation({
+      ctx,
+      apiKey,
+      action: "organization.machine_api.deal.deleted",
+      resourceType: "deals",
+      resourceId: String(args.dealId),
+    });
+    return { deleted: true as const };
+  },
+});
+
+export const listBrokersByApiKey = mutation({
+  args: {
+    secretHash: v.string(),
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
+    requireApiKeyPermission(apiKey, "brokers", "read");
+    await touchApiKey(ctx, apiKey._id, args.now);
+    return { brokers: await listBrokersDirectory(ctx) };
+  },
+});
+
+export const getBrokerByApiKey = mutation({
+  args: {
+    secretHash: v.string(),
+    now: v.number(),
+    brokerId: v.id("brokers"),
+  },
+  handler: async (ctx, args) => {
+    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
+    requireApiKeyPermission(apiKey, "brokers", "read");
+    const broker = await getBrokerOrThrow(ctx, args.brokerId);
+    await touchApiKey(ctx, apiKey._id, args.now);
+    return { broker: mapBrokerRecord(broker) };
   },
 });

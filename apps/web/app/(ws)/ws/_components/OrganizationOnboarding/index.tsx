@@ -45,7 +45,7 @@ async function OrganizationOnboardingServerWrapper(
     redRulesetPromise,
   ]);
   return (
-    <div className="flex flex-col bg-white text-slate-900">
+    <div className="flex flex-col bg-background text-foreground">
       <div className="mx-auto w-full max-w-6xl px-6 py-8">
         <OrganizationOnboardingJourney
           {...journeyProps}

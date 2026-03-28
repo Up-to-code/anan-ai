@@ -203,6 +203,7 @@ export const conversationSummarySchema = z.object({
 });
 
 export const conversationDetailSchema = conversationSummarySchema.extend({
+  otherParticipantLastReadAt: z.number().nullable().optional(),
   messages: z.array(conversationMessageSchema),
 });
 
@@ -265,6 +266,27 @@ export const createPrivateOfferInConversationInputSchema = z.object({
   attachments: z.array(uploadedFileReferenceSchema).optional(),
 });
 
+export const updatePrivateOfferDraftInConversationInputSchema = z.object({
+  conversationId: z.string().min(1),
+  offerId: z.string().min(1),
+  propertyId: z.string().min(1),
+  price: z.number().finite(),
+  message: z.string().trim().min(1).optional(),
+  description: z.string().trim().min(1).optional(),
+  attachments: z.array(uploadedFileReferenceSchema).optional(),
+});
+
+export const publishConversationOfferInputSchema = z.object({
+  conversationId: z.string().min(1),
+  offerId: z.string().min(1),
+});
+
+export const respondToConversationOfferInputSchema = z.object({
+  conversationId: z.string().min(1),
+  offerId: z.string().min(1),
+  status: z.enum(["accepted", "rejected"]),
+});
+
 export type UserConversationTarget = z.infer<typeof conversationTargetSchema>;
 export type ConversationMessage = z.infer<typeof conversationMessageSchema>;
 export type ConversationSummary = z.infer<typeof conversationSummarySchema>;
@@ -286,3 +308,6 @@ export type ShareFileInConversationInput = z.infer<typeof shareFileInConversatio
 export type ShareProjectInConversationInput = z.infer<typeof shareProjectInConversationInputSchema>;
 export type ShareDealInConversationInput = z.infer<typeof shareDealInConversationInputSchema>;
 export type CreatePrivateOfferInConversationInput = z.infer<typeof createPrivateOfferInConversationInputSchema>;
+export type UpdatePrivateOfferDraftInConversationInput = z.infer<typeof updatePrivateOfferDraftInConversationInputSchema>;
+export type PublishConversationOfferInput = z.infer<typeof publishConversationOfferInputSchema>;
+export type RespondToConversationOfferInput = z.infer<typeof respondToConversationOfferInputSchema>;

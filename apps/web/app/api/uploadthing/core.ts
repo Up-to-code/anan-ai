@@ -44,7 +44,15 @@ async function trackUploadthingCompletion(args: {
  */
 export const uploadRouter = {
   propertyMedia: f({
-    image: {
+    "image/jpeg": {
+      maxFileCount: 12,
+      maxFileSize: "8MB",
+    },
+    "image/png": {
+      maxFileCount: 12,
+      maxFileSize: "8MB",
+    },
+    "image/webp": {
       maxFileCount: 12,
       maxFileSize: "8MB",
     },
@@ -64,7 +72,12 @@ export const uploadRouter = {
         mime: file.type || undefined,
       };
     }),
-  offerAttachments: f(["image", "pdf"])
+  offerAttachments: f({
+    "image/jpeg": { maxFileSize: "8MB", maxFileCount: 6 },
+    "image/png": { maxFileSize: "8MB", maxFileCount: 6 },
+    "image/webp": { maxFileSize: "8MB", maxFileCount: 6 },
+    "application/pdf": { maxFileSize: "32MB", maxFileCount: 6 },
+  })
     .middleware(async () => requireUploadthingMetadata())
     .onUploadComplete(async ({ file, metadata }) => {
       await trackUploadthingCompletion({
@@ -80,7 +93,12 @@ export const uploadRouter = {
         mime: file.type || undefined,
       };
     }),
-  crmDocuments: f(["image", "pdf", "text"])
+  crmDocuments: f({
+    "image/jpeg": { maxFileSize: "8MB", maxFileCount: 6 },
+    "image/png": { maxFileSize: "8MB", maxFileCount: 6 },
+    "image/webp": { maxFileSize: "8MB", maxFileCount: 6 },
+    "application/pdf": { maxFileSize: "32MB", maxFileCount: 6 },
+  })
     .middleware(async () => requireUploadthingMetadata())
     .onUploadComplete(async ({ file, metadata }) => {
       await trackUploadthingCompletion({
@@ -96,7 +114,12 @@ export const uploadRouter = {
         mime: file.type || undefined,
       };
     }),
-  verificationDocuments: f(["image", "pdf"])
+  verificationDocuments: f({
+    "image/jpeg": { maxFileSize: "8MB", maxFileCount: 6 },
+    "image/png": { maxFileSize: "8MB", maxFileCount: 6 },
+    "image/webp": { maxFileSize: "8MB", maxFileCount: 6 },
+    "application/pdf": { maxFileSize: "32MB", maxFileCount: 6 },
+  })
     .middleware(async () => requireUploadthingMetadata())
     .onUploadComplete(async ({ file, metadata }) => {
       await trackUploadthingCompletion({

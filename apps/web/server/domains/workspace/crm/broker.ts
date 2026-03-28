@@ -2,9 +2,14 @@ import { assertBrokerSession, requireBrokerSession } from "@/server/auth/guards"
 import type { ResolvedSession } from "@/server/auth/session";
 import {
   addDealDocumentInputSchema,
+  archiveDealInputSchema,
   createDealInputSchema,
+  type DealSelectorBroker,
+  type DealSelectorClient,
   type DealSummary,
+  type PaginatedDealsResult,
   propertyDealsInputSchema,
+  updateDealInputSchema,
   updateDealFollowUpInputSchema,
   updateDealNotesInputSchema,
   updateDealStageInputSchema,
@@ -71,6 +76,29 @@ export async function listBrokerDeals(
   return dependencies.crmRepository.listByBrokerId(brokerId);
 }
 
+export async function listBrokerDealsPage(
+  input: { paginationOpts: { cursor: string | null; numItems: number } },
+  dependencies: BrokerCrmDependencies = defaultDependencies,
+): Promise<PaginatedDealsResult> {
+  const { brokerId } = await requireBrokerOwner(dependencies);
+  return dependencies.crmRepository.listPageByBrokerId(brokerId, input.paginationOpts);
+}
+
+export async function listBrokerCrmClients(
+  dependencies: BrokerCrmDependencies = defaultDependencies,
+): Promise<DealSelectorClient[]> {
+  const { brokerId } = await requireBrokerOwner(dependencies);
+  return dependencies.crmRepository.listClientsByBrokerId(brokerId);
+}
+
+export async function listBrokerCrmBrokers(
+  dependencies: BrokerCrmDependencies = defaultDependencies,
+): Promise<DealSelectorBroker[]> {
+  const { brokerId } = await requireBrokerOwner(dependencies);
+  const brokers = await dependencies.crmRepository.listBrokerSelectorOptions();
+  return brokers.filter((broker) => broker.id === brokerId);
+}
+
 export async function listBrokerDealsByProperty(
   input: unknown,
   dependencies: BrokerCrmDependencies = defaultDependencies,
@@ -94,6 +122,13 @@ export async function createBrokerDeal(
   if (parsed.data.propertyId) {
     await requireOwnedProperty(parsed.data.propertyId, dependencies);
   }
+  if (parsed.data.crmClientId) {
+    const { brokerId } = await requireBrokerOwner(dependencies);
+    const ownedClient = await dependencies.crmRepository.listClientsByBrokerId(brokerId);
+    if (!ownedClient.some((entry) => entry.id === parsed.data.crmClientId)) {
+      throw new DomainError({ code: "FORBIDDEN", message: "Cannot access this client", status: 403 });
+    }
+  }
   const { brokerId, authUserId } = await requireBrokerOwner(dependencies);
   return dependencies.crmRepository.create({
     brokerId,
@@ -113,6 +148,34 @@ export async function updateBrokerDealStage(
   await requireOwnedDeal(parsed.data.dealId, dependencies);
   const { authUserId } = await requireBrokerOwner(dependencies);
   await dependencies.crmRepository.updateStage({ ...parsed.data, lastUpdatedBy: authUserId });
+}
+
+/**
+ * WHY:   Broker CRM edit screens need one owner-checked path for full deal updates.
+ * WHAT:  Updates the mutable fields of one broker-owned deal.
+ * HOW:   Validates payload shape, confirms deal ownership, validates any linked property, then persists through the repository.
+ */
+export async function updateBrokerDeal(
+  input: unknown,
+  dependencies: BrokerCrmDependencies = defaultDependencies,
+): Promise<void> {
+  const parsed = updateDealInputSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError({ code: "INVALID_ARGUMENT", message: parsed.error.issues[0]?.message ?? "Invalid deal payload", status: 400 });
+  }
+  await requireOwnedDeal(parsed.data.dealId, dependencies);
+  if (parsed.data.propertyId) {
+    await requireOwnedProperty(parsed.data.propertyId, dependencies);
+  }
+  if (parsed.data.crmClientId) {
+    const { brokerId } = await requireBrokerOwner(dependencies);
+    const ownedClient = await dependencies.crmRepository.listClientsByBrokerId(brokerId);
+    if (!ownedClient.some((entry) => entry.id === parsed.data.crmClientId)) {
+      throw new DomainError({ code: "FORBIDDEN", message: "Cannot access this client", status: 403 });
+    }
+  }
+  const { authUserId } = await requireBrokerOwner(dependencies);
+  await dependencies.crmRepository.update({ ...parsed.data, lastUpdatedBy: authUserId });
 }
 
 export async function updateBrokerDealNotes(
@@ -152,4 +215,26 @@ export async function addBrokerDealDocument(
   await requireOwnedDeal(parsed.data.dealId, dependencies);
   const { authUserId } = await requireBrokerOwner(dependencies);
   await dependencies.crmRepository.addDocument({ ...parsed.data, lastUpdatedBy: authUserId });
+}
+
+/**
+ * WHY:   Broker CRM should archive deals without destructive deletes so historical reporting stays intact.
+ * WHAT:  Soft-archives one broker-owned deal.
+ * HOW:   Verifies ownership first, then stores archive metadata through the repository.
+ */
+export async function archiveBrokerDeal(
+  input: unknown,
+  dependencies: BrokerCrmDependencies = defaultDependencies,
+): Promise<void> {
+  const parsed = archiveDealInputSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new DomainError({ code: "INVALID_ARGUMENT", message: parsed.error.issues[0]?.message ?? "Invalid archive payload", status: 400 });
+  }
+  await requireOwnedDeal(parsed.data.dealId, dependencies);
+  const { authUserId } = await requireBrokerOwner(dependencies);
+  await dependencies.crmRepository.archive({
+    ...parsed.data,
+    archivedAt: Date.now(),
+    lastUpdatedBy: authUserId,
+  });
 }

@@ -1,3 +1,4 @@
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { type Infer, v } from "convex/values";
 import { action } from "../../_generated/server";
 import { api, internal } from "../../_generated/api";
@@ -18,9 +19,16 @@ const ROI_KEYWORDS = ["roi", "yield", "investment", "return", "عائد", "اس�
 const COMPARE_KEYWORDS = ["compare", "comparison", "قارن", "مقارنة"];
 const PERMIT_KEYWORDS = ["permit", "legal", "license", "تصريح", "رخصة", "قانون"];
 const HANDOFF_KEYWORDS = ["advisor", "handoff", "book", "visit", "call", "contact", "مستشار", "زيارة", "احجز", "تواصل"];
+const BROKER_KEYWORDS = ["broker", "advisor", "agent", "وسيط", "مستشار"];
+const DEVELOPER_KEYWORDS = ["developer", "company", "develop", "مطور", "شركة", "المطور"];
+const EXPLICIT_SEARCH_KEYWORDS = ["search", "find", "show me", "browse", "ابحث", "أبحث", "اعرض", "دور"];
 
 function includesIntent(message: string, keywords: string[]) {
   return keywords.some((keyword) => message.includes(keyword));
+}
+
+function isExplicitSearchIntent(message: string) {
+  return includesIntent(message, EXPLICIT_SEARCH_KEYWORDS);
 }
 
 function formatCurrency(value: number, locale: SupportedLocale) {
@@ -55,7 +63,32 @@ function buildSearchPrompts(locale: SupportedLocale) {
         "افحص أهلية التمويل",
         "قارن أفضل خيارين",
         "وصّلني بمستشار",
-      ];
+    ];
+}
+
+function describeFailure(error: unknown) {
+  if (error instanceof Error && error.message.trim()) return error.message;
+  return "unknown_failure";
+}
+
+async function captureAssistantAnalytics(
+  ctx: Parameters<typeof action>[0] extends never ? never : any,
+  args: {
+    event: string;
+    authUserId?: string | null;
+    threadId?: string;
+    properties: Record<string, unknown>;
+  },
+) {
+  try {
+    await ctx.runAction((internal as any)["shared_logic/analytics/posthog"].captureEvent, {
+      event: args.event,
+      distinctId: args.authUserId?.trim() || (args.threadId?.trim() ? `thread:${args.threadId.trim()}` : undefined),
+      properties: args.properties,
+    });
+  } catch (error) {
+    console.warn("[client assistant analytics] capture failed (non-critical):", error);
+  }
 }
 
 function buildMortgageCard(locale: SupportedLocale, salary?: number, priceHint?: number): AssistantCard {
@@ -116,6 +149,48 @@ function buildPaymentPlanCard(locale: SupportedLocale, property: PropertyFeedIte
         monthlyInstallment,
         durationMonths,
         summary: `بدفعة أولى ${formatCurrency(resolvedDownPayment, locale)} يمكن توزيع الباقي على ${durationMonths} شهر بقسط تقريبي ${formatCurrency(monthlyInstallment, locale)}.`,
+      };
+}
+
+function buildLoanCalculatorCard(
+  locale: SupportedLocale,
+  property: PropertyFeedItem,
+  params: { downPayment?: number; interestRate?: number; years?: number },
+): AssistantCard {
+  const downPayment = params.downPayment ?? Math.round(property.price * 0.1);
+  const years = params.years ?? 20;
+  const interestRate = params.interestRate ?? 4.75;
+  const loanAmount = Math.max(0, property.price - downPayment);
+  const monthlyRate = interestRate / 100 / 12;
+  const installments = years * 12;
+  const factor = Math.pow(1 + monthlyRate, installments);
+  const monthlyPayment =
+    monthlyRate > 0
+      ? Math.round((loanAmount * monthlyRate * factor) / (factor - 1))
+      : Math.round(loanAmount / Math.max(installments, 1));
+
+  return locale === "en"
+    ? {
+        type: "loan_calculator",
+        title: "Loan scenario",
+        propertyPrice: property.price,
+        downPayment,
+        loanAmount,
+        interestRate,
+        years,
+        monthlyPayment,
+        summary: `This estimate assumes ${interestRate}% over ${years} years for ${property.title}.`,
+      }
+    : {
+        type: "loan_calculator",
+        title: "حساب التمويل",
+        propertyPrice: property.price,
+        downPayment,
+        loanAmount,
+        interestRate,
+        years,
+        monthlyPayment,
+        summary: `هذا السيناريو يفترض فائدة ${interestRate}% لمدة ${years} سنة على ${property.title}.`,
       };
 }
 
@@ -206,6 +281,107 @@ function buildHandoffCard(locale: SupportedLocale): AssistantCard {
       };
 }
 
+function buildBrokerProfileCard(locale: SupportedLocale, property: PropertyFeedItem): AssistantCard | null {
+  if (property.owner.type !== "broker") return null;
+  return locale === "en"
+    ? {
+        type: "broker_profile",
+        title: "Advisor profile",
+        brokerName: property.owner.name,
+        brokerAgency: property.owner.agencyLabel ?? property.owner.name,
+        rating: property.owner.rating ?? 4.7,
+        activeListings: property.owner.activeListings ?? 1,
+        summary: property.owner.description ?? "This verified advisor can continue the property discussion and next steps.",
+      }
+    : {
+        type: "broker_profile",
+        title: "ملف الوسيط",
+        brokerName: property.owner.name,
+        brokerAgency: property.owner.agencyLabel ?? property.owner.name,
+        rating: property.owner.rating ?? 4.7,
+        activeListings: property.owner.activeListings ?? 1,
+        summary: property.owner.description ?? "هذا الوسيط الموثق يمكنه متابعة التفاصيل والزيارة والخطوات القادمة.",
+      };
+}
+
+function buildDeveloperProfileCard(locale: SupportedLocale, property: PropertyFeedItem): AssistantCard | null {
+  if (property.owner.type !== "RED") return null;
+  return locale === "en"
+    ? {
+        type: "developer_profile",
+        title: "Developer profile",
+        developerName: property.owner.name,
+        establishedYear: property.owner.establishedYear ?? 2012,
+        completedProjects: property.owner.completedProjects ?? Math.max(property.owner.activeListings ?? 1, 1),
+        summary: property.owner.description ?? "This developer is the source of the inventory shown in this result.",
+      }
+    : {
+        type: "developer_profile",
+        title: "ملف المطور",
+        developerName: property.owner.name,
+        establishedYear: property.owner.establishedYear ?? 2012,
+        completedProjects: property.owner.completedProjects ?? Math.max(property.owner.activeListings ?? 1, 1),
+        summary: property.owner.description ?? "هذا المطور هو الجهة المالكة للمخزون الظاهر في هذه النتيجة.",
+      };
+}
+
+function getNumericRule(rule: unknown, keys: string[]) {
+  if (!rule || typeof rule !== "object") return undefined;
+  const record = rule as Record<string, unknown>;
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+  }
+  return undefined;
+}
+
+async function buildBankOfferCards(
+  ctx: any,
+  locale: SupportedLocale,
+  property: PropertyFeedItem,
+  qualification?: Infer<typeof mobileQualificationContextValidator>,
+): Promise<AssistantCard[]> {
+  const bundles = (await ctx.runQuery((api as any)["shared_logic/banks/queries"].getBundles, {
+    bankId: property.bankId as any,
+  })) as Array<{
+    bankName: string;
+    rules?: Record<string, unknown>;
+  }>;
+
+  const shortlisted = bundles.slice(0, 2);
+  return shortlisted.map((bundle, index) => {
+    const downPaymentPercent = getNumericRule(bundle.rules, ["minDownPaymentPercent", "downPaymentPercent"]) ?? (index === 0 ? 10 : 15);
+    const interestRate = getNumericRule(bundle.rules, ["interestRate", "annualRate"]) ?? (index === 0 ? 4.35 : 4.85);
+    const downPayment =
+      qualification?.downPayment ?? Math.round(property.price * (downPaymentPercent / 100));
+    const loanCard = buildLoanCalculatorCard(locale, property, {
+      downPayment,
+      interestRate,
+      years: qualification?.preferredYears ?? 20,
+    }) as Extract<AssistantCard, { type: "loan_calculator" }>;
+
+    return locale === "en"
+      ? {
+          type: "bank_offer",
+          title: index === 0 ? "Best matching bank option" : "Alternative bank option",
+          bankName: bundle.bankName,
+          rateLabel: `${interestRate}%`,
+          downPaymentPercent,
+          monthlyEstimate: loanCard.monthlyPayment,
+          summary: `Estimated against ${property.title} with an initial ${downPaymentPercent}% down payment.`,
+        }
+      : {
+          type: "bank_offer",
+          title: index === 0 ? "أفضل عرض بنكي مبدئي" : "عرض بنكي بديل",
+          bankName: bundle.bankName,
+          rateLabel: `${interestRate}%`,
+          downPaymentPercent,
+          monthlyEstimate: loanCard.monthlyPayment,
+          summary: `تقدير مبدئي على ${property.title} مع دفعة أولى ${downPaymentPercent}%.`,
+        };
+  });
+}
+
 function extractSalary(message: string) {
   const match = message.match(/\d[\d,.]*/);
   if (!match) return undefined;
@@ -219,13 +395,14 @@ function buildAssistantMessage(locale: SupportedLocale, propertyTitle: string, c
   return `حللت ${propertyTitle} وأعددت لك ${cardsCount === 1 ? "بطاقة" : `${cardsCount} بطاقات`} تساعدك على القرار.`;
 }
 
-function buildCardsForProperty(params: {
+async function buildCardsForProperty(params: {
+  ctx: any;
   locale: SupportedLocale;
   message: string;
   property: PropertyFeedItem;
   qualification?: Infer<typeof mobileQualificationContextValidator>;
-}): AssistantCard[] {
-  const { locale, message, property, qualification } = params;
+}): Promise<AssistantCard[]> {
+  const { ctx, locale, message, property, qualification } = params;
   const normalizedMessage = message.toLowerCase();
   const salary = qualification?.monthlySalary ?? extractSalary(normalizedMessage);
   const cards: AssistantCard[] = [];
@@ -234,13 +411,31 @@ function buildCardsForProperty(params: {
   if (includesIntent(normalizedMessage, FINANCE_KEYWORDS)) {
     cards.push(buildMortgageCard(locale, salary, property.price));
     cards.push(buildPaymentPlanCard(locale, property, qualification?.downPayment));
+    cards.push(buildLoanCalculatorCard(locale, property, {
+      downPayment: qualification?.downPayment,
+      years: qualification?.preferredYears ?? 20,
+    }));
+    cards.push(...(await buildBankOfferCards(ctx, locale, property, qualification)));
   }
   if (includesIntent(normalizedMessage, COMPARE_KEYWORDS)) cards.push(buildComparisonCard(locale, property));
   if (includesIntent(normalizedMessage, PERMIT_KEYWORDS)) cards.push(buildPermitCard(locale, property));
   if (includesIntent(normalizedMessage, HANDOFF_KEYWORDS)) cards.push(buildHandoffCard(locale));
+  if (includesIntent(normalizedMessage, BROKER_KEYWORDS)) {
+    const brokerCard = buildBrokerProfileCard(locale, property);
+    if (brokerCard) cards.push(brokerCard);
+  }
+  if (includesIntent(normalizedMessage, DEVELOPER_KEYWORDS)) {
+    const developerCard = buildDeveloperProfileCard(locale, property);
+    if (developerCard) cards.push(developerCard);
+  }
 
   if (cards.length === 0) {
     cards.push(buildPaymentPlanCard(locale, property, qualification?.downPayment));
+    const ownerCard =
+      property.owner.type === "broker"
+        ? buildBrokerProfileCard(locale, property)
+        : buildDeveloperProfileCard(locale, property);
+    if (ownerCard) cards.push(ownerCard);
   }
 
   return cards;
@@ -254,79 +449,205 @@ function buildCardsForProperty(params: {
 export const askClientAssistant = action({
   args: {
     message: v.string(),
+    threadId: v.optional(v.id("assistantThreads")),
     selectedPropertyId: v.optional(v.id("properties")),
     locale: v.optional(clientWebLocaleValidator),
     qualification: v.optional(mobileQualificationContextValidator),
   },
   returns: clientWebAssistantResponseValidator,
   handler: async (ctx, args): Promise<Infer<typeof clientWebAssistantResponseValidator>> => {
+    const authUserId = await getAuthUserId(ctx);
     const locale = args.locale ?? "ar";
-    const normalizedMessage = args.message.trim().toLowerCase();
+    const trimmedMessage = args.message.trim();
+    const normalizedMessage = trimmedMessage.toLowerCase();
+    const startedAt = Date.now();
 
-    const selectedProperty = args.selectedPropertyId
-      ? await ctx.runQuery((api as any)["user_zone/web/properties"].getPropertyDetail, { propertyId: args.selectedPropertyId })
-      : null;
-
-    if (selectedProperty && !includesIntent(normalizedMessage, SEARCH_KEYWORDS)) {
-      const cards = buildCardsForProperty({
+    await captureAssistantAnalytics(ctx, {
+      event: "assistant_action_started",
+      authUserId,
+      threadId: args.threadId ? String(args.threadId) : undefined,
+      properties: {
+        channel: "web",
         locale,
-        message: normalizedMessage,
-        property: selectedProperty,
-        qualification: args.qualification,
-      });
-      return {
-        message: buildAssistantMessage(locale, selectedProperty.title, cards.length),
-        properties: [selectedProperty],
-        cards,
-        suggestedPrompts: buildSearchPrompts(locale),
-        activePropertyId: selectedProperty.id,
-        requiresAuthForHandoff: cards.some((card) => card.type === "broker_handoff"),
-      };
-    }
-
-    const propertySearchResults = await ctx.runQuery((api as any)["shared_logic/properties/search"].search, {
-      query: args.message,
-      limit: 4,
-      onlyAvailable: true,
+        messageLength: trimmedMessage.length,
+        selectedPropertyId: args.selectedPropertyId ? String(args.selectedPropertyId) : undefined,
+        source: "user_zone.web.assistant",
+        status: "started",
+        threadId: args.threadId ? String(args.threadId) : undefined,
+        userId: authUserId ?? undefined,
+      },
     });
 
-    const mappedProperties = (
-      await Promise.all(
-        propertySearchResults.map((result: { _id: string }) =>
-          ctx.runQuery((api as any)["user_zone/web/properties"].getPropertyDetail, { propertyId: result._id }),
-        ),
-      )
-    ).filter(Boolean) as PropertyFeedItem[];
+    try {
+      const selectedProperty = args.selectedPropertyId
+        ? await ctx.runQuery((api as any)["user_zone/web/properties"].getPropertyDetail, { propertyId: args.selectedPropertyId })
+        : null;
 
-    const properties = mappedProperties.length > 0
-      ? mappedProperties
-      : (
-          await ctx.runQuery((api as any)["user_zone/mobile/feed"].listFeed, {
-            paginationOpts: { numItems: 4, cursor: null },
-          })
-        ).page;
-
-    const activeProperty = properties[0];
-    const cards = activeProperty
-      ? buildCardsForProperty({
+      if (selectedProperty && !isExplicitSearchIntent(normalizedMessage)) {
+        const cards = await buildCardsForProperty({
+          ctx,
           locale,
           message: normalizedMessage,
-          property: activeProperty,
+          property: selectedProperty,
           qualification: args.qualification,
-        }).filter((card) =>
-          includesIntent(normalizedMessage, SEARCH_KEYWORDS)
-            ? card.type === "broker_handoff"
-            : true,
-        )
-      : [];
+        });
+        const response = {
+          message: buildAssistantMessage(locale, selectedProperty.title, cards.length),
+          properties: [selectedProperty],
+          cards,
+          suggestedPrompts: buildSearchPrompts(locale),
+          activePropertyId: selectedProperty.id,
+          requiresAuthForHandoff: cards.some((card) => card.type === "broker_handoff"),
+          threadId: undefined,
+        };
+        if (authUserId) {
+          const saved = await ctx.runMutation((internal as any)["user_zone/web/threads"].persistClientConversationTurn, {
+            threadId: args.threadId,
+            userId: authUserId,
+            userMessage: trimmedMessage,
+            userMessageMetadata: {
+              locale,
+              selectedPropertyId: args.selectedPropertyId,
+            },
+            assistantMessage: response.message,
+            assistantMetadata: {
+              properties: response.properties,
+              cards: response.cards,
+              suggestedPrompts: response.suggestedPrompts,
+              activePropertyId: response.activePropertyId,
+              requiresAuthForHandoff: response.requiresAuthForHandoff,
+            },
+          });
+          response.threadId = saved.threadId;
+        }
 
-    return {
-      message: buildPropertySearchMessage(locale, mappedProperties.length),
-      properties,
-      cards,
-      suggestedPrompts: buildSearchPrompts(locale),
-      activePropertyId: activeProperty?.id,
-      requiresAuthForHandoff: cards.some((card) => card.type === "broker_handoff"),
-    };
+        await captureAssistantAnalytics(ctx, {
+          event: "assistant_action_completed",
+          authUserId,
+          threadId: response.threadId ? String(response.threadId) : args.threadId ? String(args.threadId) : undefined,
+          properties: {
+            activePropertyId: String(response.activePropertyId),
+            cardTypes: response.cards.map((card) => card.type),
+            channel: "web",
+            durationMs: Date.now() - startedAt,
+            locale,
+            propertyCount: response.properties.length,
+            requiresAuthForHandoff: response.requiresAuthForHandoff,
+            source: "user_zone.web.assistant",
+            status: "completed",
+            threadId: response.threadId ? String(response.threadId) : args.threadId ? String(args.threadId) : undefined,
+            userId: authUserId ?? undefined,
+          },
+        });
+
+        return response;
+      }
+
+      const propertySearchResults = await ctx.runQuery((api as any)["shared_logic/properties/search"].search, {
+        query: args.message,
+        limit: 4,
+        onlyAvailable: true,
+      });
+
+      const mappedProperties = (
+        await Promise.all(
+          propertySearchResults.map((result: { _id: string }) =>
+            ctx.runQuery((api as any)["user_zone/web/properties"].getPropertyDetail, { propertyId: result._id }),
+          ),
+        )
+      ).filter(Boolean) as PropertyFeedItem[];
+
+      const properties = mappedProperties.length > 0
+        ? mappedProperties
+        : (
+            await ctx.runQuery((api as any)["user_zone/mobile/feed"].listFeed, {
+              paginationOpts: { numItems: 4, cursor: null },
+            })
+          ).page;
+
+      const activeProperty = properties[0];
+      const cards = activeProperty
+        ? (await buildCardsForProperty({
+            ctx,
+            locale,
+            message: normalizedMessage,
+            property: activeProperty,
+            qualification: args.qualification,
+          })).filter((card) =>
+            isExplicitSearchIntent(normalizedMessage)
+              ? card.type === "broker_handoff"
+              : true,
+          )
+        : [];
+
+      const response = {
+        message: buildPropertySearchMessage(locale, mappedProperties.length),
+        properties,
+        cards,
+        suggestedPrompts: buildSearchPrompts(locale),
+        activePropertyId: activeProperty?.id,
+        requiresAuthForHandoff: cards.some((card) => card.type === "broker_handoff"),
+        threadId: undefined,
+      };
+      if (authUserId) {
+        const saved = await ctx.runMutation((internal as any)["user_zone/web/threads"].persistClientConversationTurn, {
+          threadId: args.threadId,
+          userId: authUserId,
+          userMessage: trimmedMessage,
+          userMessageMetadata: {
+            locale,
+            selectedPropertyId: args.selectedPropertyId,
+          },
+          assistantMessage: response.message,
+          assistantMetadata: {
+            properties: response.properties,
+            cards: response.cards,
+            suggestedPrompts: response.suggestedPrompts,
+            activePropertyId: response.activePropertyId,
+            requiresAuthForHandoff: response.requiresAuthForHandoff,
+          },
+        });
+        response.threadId = saved.threadId;
+      }
+
+      await captureAssistantAnalytics(ctx, {
+        event: "assistant_action_completed",
+        authUserId,
+        threadId: response.threadId ? String(response.threadId) : args.threadId ? String(args.threadId) : undefined,
+        properties: {
+          activePropertyId: response.activePropertyId ? String(response.activePropertyId) : undefined,
+          cardTypes: response.cards.map((card) => card.type),
+          channel: "web",
+          durationMs: Date.now() - startedAt,
+          locale,
+          propertyCount: response.properties.length,
+          requiresAuthForHandoff: response.requiresAuthForHandoff,
+          source: "user_zone.web.assistant",
+          status: "completed",
+          threadId: response.threadId ? String(response.threadId) : args.threadId ? String(args.threadId) : undefined,
+          userId: authUserId ?? undefined,
+        },
+      });
+
+      return response;
+    } catch (error) {
+      await captureAssistantAnalytics(ctx, {
+        event: "assistant_action_failed",
+        authUserId,
+        threadId: args.threadId ? String(args.threadId) : undefined,
+        properties: {
+          channel: "web",
+          durationMs: Date.now() - startedAt,
+          failureCode: describeFailure(error),
+          locale,
+          selectedPropertyId: args.selectedPropertyId ? String(args.selectedPropertyId) : undefined,
+          source: "user_zone.web.assistant",
+          status: "failed",
+          threadId: args.threadId ? String(args.threadId) : undefined,
+          userId: authUserId ?? undefined,
+        },
+      });
+      throw error;
+    }
   },
 });

@@ -6,9 +6,11 @@ describe("crmViewModel", () => {
     const nextFollowUpAt = Date.now() + 2 * 60 * 60 * 1000;
     const mapped = mapDealToCrmClientRecord({
       id: "deal-1",
+      createdAt: Date.now(),
       title: "Client One",
       contactName: "Client One",
       stage: "lost",
+      relationType: "internal_client",
       nextFollowUpAt,
     });
 

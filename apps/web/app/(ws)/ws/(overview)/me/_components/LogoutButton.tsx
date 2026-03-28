@@ -26,7 +26,7 @@ export default function LogoutButton() {
         });
       }}
       disabled={isPending}
-      className="inline-flex items-center justify-center gap-2 border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-70"
+      className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-red-500/40 dark:hover:bg-red-500/10 dark:hover:text-red-200"
     >
       <LogOut className="h-4 w-4" />
       {isPending ? "جاري تسجيل الخروج..." : "تسجيل الخروج"}

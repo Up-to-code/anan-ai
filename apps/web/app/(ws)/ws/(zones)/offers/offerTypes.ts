@@ -1,30 +1,23 @@
-import type { BrokerPresence } from "../../_components/Visuals/BrokerPresenceChip";
+import type {
+  OfferLiveState,
+  OfferQueue,
+  OfferQueueKey,
+  OfferSummary,
+  OffersSnapshot,
+} from "@/server/contracts/offers";
 
-export type OfferMarketplaceItem = {
+export type WorkspaceOfferSummary = OfferSummary;
+export type WorkspaceOfferDetail = OfferLiveState;
+export type WorkspaceOfferQueue = OfferQueue;
+export type WorkspaceOffersSnapshot = OffersSnapshot;
+export type WorkspaceOfferQueueKey = OfferQueueKey;
+
+export type OfferPropertyOption = {
   id: string;
   title: string;
-  kind: "developer" | "broker" | "client" | "inbox";
-  image: string;
   location: string;
-  priceLabel: string;
-  propertyType: string;
-  ownerLabel: string;
-  summary: string;
-  project: {
-    id: string;
-    title: string;
-    rooms: string;
-    baths: string;
-    area: string;
-  };
-  projectRefId: string;
-  unit: {
-    id: string;
-    label: string;
-    bedrooms?: number;
-    bathrooms?: number;
-    priceLabel?: string;
-  } | null;
-  broker: BrokerPresence | null;
-  demandLabel: string | null;
+  image: string;
+  expectedPrice: string;
+  shortDescription?: string;
+  publicationState?: "published" | "draft" | "archived";
 };

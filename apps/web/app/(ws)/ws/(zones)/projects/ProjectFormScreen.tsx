@@ -12,6 +12,7 @@ type ProjectFormScreenProps = {
   submitLabel: string;
   onSave: (data: ProjectFormData) => Promise<{ redirectTo: string }>;
   onDelete?: () => Promise<{ redirectTo: string }>;
+  onRevokeViewer?: (viewerAuthUserId: string) => Promise<void>;
 };
 
 function ProjectDeleteModal({
@@ -39,6 +40,7 @@ function useProjectFormActions(args: {
   projectId?: string;
   onSave: (data: ProjectFormData) => Promise<{ redirectTo: string }>;
   onDelete?: () => Promise<{ redirectTo: string }>;
+  onRevokeViewer?: (viewerAuthUserId: string) => Promise<void>;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -74,12 +76,13 @@ function ProjectFormLayout(args: {
   onSave: (data: ProjectFormData) => Promise<void>;
   onCancel: () => void;
   onDelete?: () => void;
+  onRevokeViewer?: (viewerAuthUserId: string) => Promise<void>;
   showDeleteModal: boolean;
   onDeleteClose: () => void;
   onDeleteConfirm: () => void;
 }) {
   return (
-    <div className="flex min-h-full flex-col p-6 lg:p-12">
+    <div className="min-h-full bg-background px-4 py-8 sm:px-6 lg:px-10 lg:py-12">
       <AgPropertyForm
         propertyId={args.projectId}
         initialData={args.initialData}
@@ -89,6 +92,7 @@ function ProjectFormLayout(args: {
         onSave={args.onSave}
         onCancel={args.onCancel}
         onDelete={args.onDelete}
+        onRevokeViewer={args.onRevokeViewer}
       />
       {args.onDelete ? (
         <ProjectDeleteModal open={args.showDeleteModal} onClose={args.onDeleteClose} onConfirm={args.onDeleteConfirm} />
@@ -105,6 +109,7 @@ export default function ProjectFormScreen({
   submitLabel,
   onSave,
   onDelete,
+  onRevokeViewer,
 }: ProjectFormScreenProps) {
   const {
     pending,
@@ -114,7 +119,7 @@ export default function ProjectFormScreen({
     handleDeleteConfirm,
     openDeleteModal,
     closeDeleteModal,
-  } = useProjectFormActions({ projectId, onSave, onDelete });
+  } = useProjectFormActions({ projectId, onSave, onDelete, onRevokeViewer });
 
   return (
     <ProjectFormLayout
@@ -127,6 +132,7 @@ export default function ProjectFormScreen({
       onSave={handleSave}
       onCancel={handleCancel}
       onDelete={onDelete ? openDeleteModal : undefined}
+      onRevokeViewer={onRevokeViewer}
       showDeleteModal={showDeleteModal}
       onDeleteClose={closeDeleteModal}
       onDeleteConfirm={handleDeleteConfirm}

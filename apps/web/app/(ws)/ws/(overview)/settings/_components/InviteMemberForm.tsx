@@ -20,10 +20,10 @@ type DirectoryResult = {
 function MembershipStateBadge({ state }: { state: DirectoryResult["membershipState"] }) {
   const toneClass
     = state === "member"
-      ? "border-green-100 bg-green-50 text-green-700"
+      ? "border-green-100 bg-green-50 text-green-700 dark:border-green-500/20 dark:bg-green-500/10 dark:text-green-300"
       : state === "pending-invite"
-        ? "border-amber-100 bg-amber-50 text-amber-700"
-        : "border-slate-200 bg-slate-50 text-slate-500";
+        ? "border-amber-100 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
+        : "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300";
   const label = state === "member" ? "عضو حالي" : state === "pending-invite" ? "دعوة معلقة" : "ليس عضواً";
   return (
     <span className={cn("shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest", toneClass)}>
@@ -60,7 +60,7 @@ function InviteResultActions({
         <button
           type="button"
           onClick={() => void onMessage(result.authUserId, result.conversationId)}
-          className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-[11px] font-black tracking-widest uppercase text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
+          className="rounded-xl border border-border bg-background px-4 py-2 text-[11px] font-black tracking-widest uppercase text-foreground shadow-sm transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           رسالة
         </button>
@@ -82,13 +82,13 @@ function InviteResultRow({
   onMessage: (targetUserId: string, conversationId?: string | null) => Promise<void>;
 }) {
   return (
-    <div className="p-4 transition hover:bg-slate-50/50">
+    <div className="p-4 transition hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="truncate text-sm font-black text-slate-950">{result.name}</div>
-          <div className="mt-1 truncate text-[11px] font-medium text-slate-500" dir="ltr">{result.email}</div>
+          <div className="truncate text-sm font-black text-slate-950 dark:text-slate-100">{result.name}</div>
+          <div className="mt-1 truncate text-[11px] font-medium text-slate-500 dark:text-slate-400" dir="ltr">{result.email}</div>
           {result.username ? (
-            <div className="mt-1 text-[10px] font-bold text-slate-400" dir="ltr">@{result.username}</div>
+            <div className="mt-1 text-[10px] font-bold text-slate-400 dark:text-slate-500" dir="ltr">@{result.username}</div>
           ) : null}
         </div>
         <MembershipStateBadge state={result.membershipState} />
@@ -169,7 +169,7 @@ export default function InviteMemberForm({
   }
   return (
     <form
-      className="flex flex-col gap-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+      className="flex flex-col gap-6 p-5"
       onSubmit={async (event) => {
         event.preventDefault();
         if (!hasOrganization) {
@@ -195,34 +195,34 @@ export default function InviteMemberForm({
     >
       {showHeader ? (
         <div className="flex flex-col gap-1">
-          <h2 className="text-xl font-black tracking-tight text-slate-950">دعوة عضو جديد</h2>
-          <p className="text-sm font-medium text-slate-500">
+          <h2 className="text-xl font-black tracking-tight text-slate-950 dark:text-slate-100">دعوة عضو جديد</h2>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-300">
             ابحث بالبريد أو اسم المستخدم ثم أرسل الدعوة أو افتح محادثة مباشرة.
           </p>
         </div>
       ) : null}
       {!hasOrganization ? (
-        <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
+        <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
           لا يمكنك إرسال دعوات قبل ربط الحساب بمنظمة.
         </div>
       ) : null}
       <div className="space-y-2">
-        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">البحث بالبريد الكامل أو اسم المستخدم</label>
+        <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">البحث بالبريد الكامل أو اسم المستخدم</label>
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-medium text-slate-950 transition focus:bg-white focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-70"
+          className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm font-medium text-foreground transition focus:bg-background focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           placeholder="name@company.com أو username"
           type="text"
           dir="ltr"
           disabled={!hasOrganization}
         />
-        <p className="text-[10px] font-bold text-slate-400">
+        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
           لن يظهر أي مستخدم إلا إذا كتبت بريده الكامل أو اسم المستخدم المطابق تماماً.
         </p>
       </div>
       <div className="space-y-3">
-        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">الدور</label>
+        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">الدور</label>
         <div className="flex flex-wrap gap-2">
           {(["manager", "member", "viewer"] as const).map((entry) => (
             <button
@@ -231,10 +231,10 @@ export default function InviteMemberForm({
               onClick={() => setRole(entry)}
               disabled={isSubmitting || !hasOrganization}
               className={cn(
-                "rounded-lg border px-4 py-2 text-xs font-black tracking-widest uppercase transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
+                "rounded-xl border px-4 py-2 text-xs font-black tracking-widest uppercase transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 role === entry 
-                  ? "border-blue-600 bg-blue-600 text-white shadow-sm" 
-                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                  ? "border-foreground bg-foreground text-background shadow-sm" 
+                  : "border-border bg-background text-muted-foreground hover:bg-muted"
               )}
             >
               {roleLabels[entry]}
@@ -245,12 +245,12 @@ export default function InviteMemberForm({
       <button
         type="submit"
         disabled={isSearching || !hasOrganization}
-        className="inline-flex w-fit items-center justify-center rounded-lg bg-slate-950 px-6 py-3 text-xs font-black tracking-[0.18em] text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+        className="inline-flex w-fit items-center justify-center rounded-xl bg-foreground px-6 py-3 text-xs font-black tracking-[0.18em] text-background shadow-sm transition hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isSearching ? "جاري البحث..." : "بحث"}
       </button>
       {results.length > 0 ? (
-        <div className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-background shadow-sm">
           {results.map((result) => (
             <InviteResultRow
               key={result.id}
@@ -274,8 +274,8 @@ export default function InviteMemberForm({
         </button>
       ) : null}
       {status ? (
-        <div className="border-t border-slate-100 pt-4">
-          <div aria-live="polite" className="text-xs font-bold text-slate-500">{status}</div>
+        <div className="border-t border-slate-100 pt-4 dark:border-slate-800">
+          <div aria-live="polite" className="text-xs font-bold text-slate-500 dark:text-slate-300">{status}</div>
         </div>
       ) : null}
     </form>

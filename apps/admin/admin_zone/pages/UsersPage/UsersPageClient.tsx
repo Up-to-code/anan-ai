@@ -65,16 +65,18 @@ export default function UsersPageClient({ users }: UsersPageClientProps) {
 
       <DataTable headers={["المستخدم", "الدور", "المنظمة", "التحقق", "الحالة", "آخر نشاط"]}>
         {filteredUsers.map((user) => (
-          <tr key={user.id} className="border-b border-border last:border-b-0">
-            <td className="px-4 py-3">
-              <Link href={`/users/${user.id}`} className="font-medium text-slate-900 hover:text-blue-600">{user.name}</Link>
-              <div className="mt-1 text-xs text-slate-500">{user.email}</div>
+          <tr key={user.id} className="group transition-colors hover:bg-muted/5">
+            <td className="px-5 py-4">
+              <Link href={`/users/${user.id}`} className="block font-black tracking-tight text-foreground hover:text-primary transition-colors">
+                {user.name}
+              </Link>
+              <div className="mt-1 text-[11px] font-bold text-muted-foreground/50">{user.email}</div>
             </td>
-            <td className="px-4 py-3 text-sm text-slate-600">{labelForRole(user.role)}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{user.organizationName}</td>
-            <td className="px-4 py-3"><StatusBadge value={user.verificationStatus} /></td>
-            <td className="px-4 py-3"><StatusBadge value={user.status} /></td>
-            <td className="px-4 py-3 text-sm text-slate-600">{formatDateTime(user.lastActiveAt)}</td>
+            <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">{labelForRole(user.role)}</td>
+            <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">{user.organizationName}</td>
+            <td className="px-5 py-4"><StatusBadge value={user.verificationStatus} /></td>
+            <td className="px-5 py-4"><StatusBadge value={user.status} /></td>
+            <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/50">{formatDateTime(user.lastActiveAt)}</td>
           </tr>
         ))}
       </DataTable>

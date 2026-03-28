@@ -31,7 +31,7 @@ export default function RevokeAppButton({ revokeAction }: RevokeAppButtonProps) 
       type="button"
       onClick={handleClick}
       disabled={isPending}
-      className="inline-flex items-center gap-2 border-2 border-red-200 bg-red-50 px-5 py-2.5 text-sm font-bold uppercase tracking-widest text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-70"
+      className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-5 py-2.5 text-sm font-bold uppercase tracking-widest text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-70 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
     >
       <ShieldBan className="h-4 w-4" />
       {isPending ? "جاري الإلغاء…" : "إلغاء ربط التطبيق"}

@@ -1,19 +1,19 @@
 import type { Doc } from "../../../_generated/dataModel";
-import type { WorkspaceProjectActionState } from "./types";
+import type { WorkspaceActionState, WorkspaceUploadedFileReference } from "./types";
 
 export function getLatestWorkspaceActionState(
   messages: Array<Doc<"assistantMessages">>
-): WorkspaceProjectActionState | null {
+): WorkspaceActionState | null {
   for (let i = messages.length - 1; i >= 0; i -= 1) {
     const message = messages[i];
     if (message.role !== "assistant") continue;
 
     const metadata = (message.metadata ?? {}) as {
-      workspaceActionState?: WorkspaceProjectActionState;
-      meta?: { workspaceActionState?: WorkspaceProjectActionState };
+      workspaceActionState?: WorkspaceActionState;
+      meta?: { workspaceActionState?: WorkspaceActionState };
     };
     const state = metadata.workspaceActionState ?? metadata.meta?.workspaceActionState;
-    if (state?.type === "create_project") {
+    if (state?.type) {
       return state;
     }
   }
@@ -30,9 +30,14 @@ export function buildRecentThreadContext(
   const recent = messages.slice(-limit);
   const lines = recent.map((message) => {
     const roleLabel = message.role === "user" ? "User" : "Assistant";
-    return `- ${roleLabel}: ${message.content.slice(0, 240)}`;
+    const metadata = (message.metadata ?? {}) as {
+      attachments?: WorkspaceUploadedFileReference[];
+    };
+    const attachments = metadata.attachments?.length
+      ? ` [attachments: ${metadata.attachments.map((file) => file.name).join(", ")}]`
+      : "";
+    return `- ${roleLabel}: ${message.content.slice(0, 240)}${attachments}`;
   });
 
   return `[Recent Thread Context]\n${lines.join("\n")}`;
 }
-

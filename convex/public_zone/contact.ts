@@ -1,6 +1,10 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { mutation } from "../_generated/server";
 import { enforceHttpRateLimit } from "../shared_logic/lib/middleware/rateLimit";
+
+function normalizeContactField(value: string, maxLength: number) {
+  return value.trim().replace(/\s+/g, " ").slice(0, maxLength);
+}
 
 /**
  * WHY:   Public inquiries need a persistent record so the team can respond and track demand.
@@ -16,19 +20,38 @@ export const createContactInquiry = mutation({
     userAgent: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const rateKey = args.sourceIp?.trim() ? `contact:${args.sourceIp.trim()}` : `contact:${args.email.trim().toLowerCase()}`;
+    const sourceIp = args.sourceIp?.trim().slice(0, 120) || undefined;
+    const userAgent = args.userAgent?.trim().slice(0, 1_000) || undefined;
+    const normalized = {
+      name: normalizeContactField(args.name, 120),
+      email: args.email.trim().toLowerCase().slice(0, 200),
+      message: args.message.trim().slice(0, 5_000),
+    };
+    if (!normalized.name || !normalized.email || !normalized.message) {
+      throw new ConvexError({ code: "INVALID_ARGUMENT", message: "Contact inquiry is incomplete" });
+    }
+
+    const payloadSize = JSON.stringify({
+      ...normalized,
+      sourceIp,
+      userAgent,
+    }).length;
+    if (payloadSize > 7_500) {
+      throw new ConvexError({ code: "INVALID_ARGUMENT", message: "Contact inquiry is too large" });
+    }
+
+    const rateKey = sourceIp ? `contact:${sourceIp}` : `contact:${normalized.email}`;
     await enforceHttpRateLimit(ctx, { key: rateKey });
 
     const id = await ctx.db.insert("contactInquiries", {
-      name: args.name.trim(),
-      email: args.email.trim().toLowerCase(),
-      message: args.message.trim(),
-      sourceIp: args.sourceIp?.trim() || undefined,
-      userAgent: args.userAgent?.trim() || undefined,
+      name: normalized.name,
+      email: normalized.email,
+      message: normalized.message,
+      sourceIp,
+      userAgent,
       createdAt: Date.now(),
     });
 
     return { id };
   },
 });
-

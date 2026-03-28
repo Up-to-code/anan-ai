@@ -1,4 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/client_zone/components/ui/card";
+import {
+  AgUiCardHeading,
+  AgUiCardShell,
+  AgUiMetricTile,
+  CardContent,
+} from "../AgUiCardPrimitives";
 import type { DeveloperProfileCardProps } from "../types";
 
 /**
@@ -8,25 +13,13 @@ import type { DeveloperProfileCardProps } from "../types";
  */
 export function DeveloperProfileCard(props: DeveloperProfileCardProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm">{props.title}</CardTitle>
-        <CardDescription>{props.summary}</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3 sm:grid-cols-3">
-        <div>
-          <div className="text-xs text-slate-500">Developer</div>
-          <div className="mt-1 text-sm font-semibold text-slate-900">{props.developerName}</div>
-        </div>
-        <div>
-          <div className="text-xs text-slate-500">Established</div>
-          <div className="mt-1 text-sm font-semibold text-slate-900">{props.establishedYear}</div>
-        </div>
-        <div>
-          <div className="text-xs text-slate-500">Completed projects</div>
-          <div className="mt-1 text-sm font-semibold text-slate-900">{props.completedProjects}</div>
-        </div>
+    <AgUiCardShell>
+      <AgUiCardHeading title={props.title} summary={props.summary} />
+      <CardContent className="grid gap-3 pt-0 sm:grid-cols-3">
+        <AgUiMetricTile label="Developer" value={props.developerName} />
+        <AgUiMetricTile label="Established" value={props.establishedYear} />
+        <AgUiMetricTile label="Completed projects" value={props.completedProjects} />
       </CardContent>
-    </Card>
+    </AgUiCardShell>
   );
 }

@@ -11,9 +11,9 @@ type RouteTabsProps = {
 };
 
 /**
- * WHY:   Admin sections still need route-backed secondary navigation, but in a simpler, more product-like style.
- * WHAT:  Renders a horizontal tab row with a plain underline active state.
- * HOW:   Matches the current pathname against each configured route and applies a subtle border indicator.
+ * WHY:   Secondary navigation in Nexus should feel light and modern, using subtle pill indicators.
+ * WHAT:  Modernizes the tab row with high-contrast text and a minimalist active state.
+ * HOW:   Uses rounded-full for a subtle active-background or refined underline to match the platform HUD.
  */
 export default function RouteTabs({ tabs, className }: RouteTabsProps) {
   const pathname = usePathname();
@@ -23,7 +23,7 @@ export default function RouteTabs({ tabs, className }: RouteTabsProps) {
   }
 
   return (
-    <nav className={cn("flex flex-wrap items-center gap-6 border-b border-border", className)} aria-label="section tabs">
+    <nav className={cn("flex flex-wrap items-center gap-2 border-b border-slate-50 dark:border-slate-800/50 pb-1", className)} aria-label="section tabs">
       {tabs.map((tab) => {
         const active = tab.exact ? pathname === tab.href : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
 
@@ -32,10 +32,10 @@ export default function RouteTabs({ tabs, className }: RouteTabsProps) {
             key={tab.href}
             href={tab.href}
             className={cn(
-              "border-b-2 px-1 py-2 text-sm font-medium transition-colors",
+              "px-4 py-2.5 text-[13px] font-black uppercase tracking-widest transition-all rounded-full border border-transparent",
               active
-                ? "border-slate-900 text-slate-900"
-                : "border-transparent text-slate-500 hover:border-slate-500 hover:text-slate-900",
+                ? "bg-slate-900 text-white dark:bg-slate-50 dark:text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100",
             )}
           >
             {tab.label}

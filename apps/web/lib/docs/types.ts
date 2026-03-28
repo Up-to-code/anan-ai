@@ -13,8 +13,21 @@ export type DocsCalloutTone = "info" | "warning" | "success";
 
 export type DocsCodeExample = {
   title: string;
-  language: "bash" | "json" | "http" | "javascript" | "typescript" | "text";
+  language: "bash" | "json" | "http" | "javascript" | "typescript" | "csharp" | "text";
   code: string;
+};
+
+export type DocsCodeExampleGroup = {
+  title: string;
+  description?: string;
+  defaultLanguage?: DocsCodeExample["language"];
+  examples: DocsCodeExample[];
+};
+
+export type DocsRelatedLink = {
+  label: string;
+  href: string;
+  description?: string;
 };
 
 export type DocsScope = {
@@ -24,7 +37,7 @@ export type DocsScope = {
 
 export type DocsEndpoint = {
   title: string;
-  method: "GET" | "POST";
+  method: "GET" | "POST" | "PATCH" | "DELETE";
   path: string;
   description: string;
   requiredScopes?: string[];
@@ -46,9 +59,11 @@ export type DocsSection = {
   paragraphs?: string[];
   bullets?: string[];
   codeExamples?: DocsCodeExample[];
+  codeExampleGroups?: DocsCodeExampleGroup[];
   callouts?: DocsCallout[];
   scopes?: DocsScope[];
   endpoints?: DocsEndpoint[];
+  relatedLinks?: DocsRelatedLink[];
 };
 
 export type DocsPageDefinition = {

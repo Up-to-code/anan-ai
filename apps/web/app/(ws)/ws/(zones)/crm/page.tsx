@@ -9,6 +9,9 @@ export default async function WorkspaceCrmRoute() {
   const ownerContext = workspace.ownerContext ?? null;
   const crmZone = getWorkspaceCrmZone(audience, ownerContext);
   const deals = await crmZone.listDeals();
+  const boardDeals = [...deals]
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, 60);
 
   async function updateStage(input: { dealId: string; stage: "new" | "contacted" | "negotiation" | "won" | "lost" }) {
     "use server";
@@ -25,13 +28,14 @@ export default async function WorkspaceCrmRoute() {
     await getWorkspaceCrmZone(audience, ownerContext).createDeal({
       title: input.name,
       stage: "new",
+      relationType: "internal_client",
       contactName: input.name,
     });
   }
 
   return (
     <CrmPage
-      clients={deals.map(mapDealToCrmClientRecord)}
+      clients={boardDeals.map((deal) => mapDealToCrmClientRecord(deal))}
       onStageChange={updateStage}
       onFollowUpChange={updateFollowUp}
       onCreateClient={createQuickClient}

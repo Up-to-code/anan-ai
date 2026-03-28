@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { RootFontFaces, rootFontClassName } from "@/lib/rootFonts";
+import ThemeProvider from "./theme-provider";
+import PostHogProvider from "./PostHogProvider";
 
 export const metadata: Metadata = {
   title: "Anan - Coming Soon",
@@ -13,10 +16,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl">
-      <body className={rootFontClassName}>
-        <RootFontFaces />
-        {children}
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
+      <body className={`${rootFontClassName} bg-background text-foreground antialiased`}>
+        <ThemeProvider>
+          <Suspense fallback={null}>
+            <PostHogProvider>
+              <RootFontFaces />
+              {children}
+            </PostHogProvider>
+          </Suspense>
+        </ThemeProvider>
       </body>
     </html>
   );

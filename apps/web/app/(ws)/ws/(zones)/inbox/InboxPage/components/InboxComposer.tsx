@@ -1,72 +1,73 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { SendHorizontal } from "lucide-react";
+
+import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import {
+  Building2,
+  FileText,
+  Loader2,
+  Paperclip,
+  SendHorizontal,
+  ShieldCheck,
+  Smile,
+} from "lucide-react";
+import {
+  COMPOSER_ATTACHMENT_ACCEPT,
+  validateSupportedAttachmentFiles,
+} from "@/app/(ws)/ws/_components/attachments/attachmentPresentation";
+import { cn } from "@/lib/utils";
 import { useUploadThing } from "@/lib/uploadthing";
 import type { UploadedFileReference } from "@/server/contracts/files";
+import type { ConversationDetail } from "@/server/contracts/inbox";
+import type { OfferActionResult } from "@/server/contracts/offers";
 import {
-  InboxComposerActions,
-  type ComposerAction,
-  type ComposerDealOption,
+  buildDefaultOfferForm,
+  InboxInlineSharePanel,
+  InboxOfferModal,
+  InboxProjectPickerModal,
+  InboxQuickShareMenu,
   type ComposerOfferFormState,
   type ComposerProjectOption,
+  type InboxShareAction,
 } from "./InboxComposerActions";
-type ShareActionParams = {
-  activeAction: ComposerAction | null;
-  selectedFile: UploadedFileReference | null;
-  shareFileNote: string;
-  selectedProjectId: string;
-  projectNote: string;
-  selectedDealId: string;
-  dealNote: string;
-  offerForm: ComposerOfferFormState;
-  onShareFile: (file: UploadedFileReference, note?: string) => Promise<void>;
-  onShareProject: (propertyId: string, note?: string) => Promise<void>;
-  onShareDeal: (dealId: string, note?: string) => Promise<void>;
-  onCreatePrivateOffer: (input: {
-    propertyId: string;
-    price: number;
-    message?: string;
-    description?: string;
-    attachments?: UploadedFileReference[];
-  }) => Promise<void | null>;
-};
+
 type ShareActionResult = { error: string | null; didMutate: boolean };
+
 function buildOfferPayload(offerForm: ComposerOfferFormState) {
   return {
     propertyId: offerForm.propertyId,
     price: Number(offerForm.price.replace(/[^\d.]/g, "")) || 0,
     message: offerForm.title.trim() || undefined,
     description: offerForm.description.trim() || undefined,
-    attachments: [],
+    attachments: offerForm.attachments ?? [],
   };
 }
-async function executeShareAction(params: ShareActionParams): Promise<ShareActionResult> {
+
+async function executeShareAction(params: {
+  activeAction: Exclude<InboxShareAction, "offer"> | null;
+  selectedFile: UploadedFileReference | null;
+  shareFileNote: string;
+  selectedProjectId: string;
+  projectNote: string;
+  onShareFile: (file: UploadedFileReference, note?: string) => Promise<void>;
+  onShareProject: (propertyId: string, note?: string) => Promise<void>;
+}): Promise<ShareActionResult> {
   if (params.activeAction === "file") {
     if (!params.selectedFile) return { error: "اختر ملفًا قبل الإرسال.", didMutate: false };
-    await params.onShareFile(params.selectedFile, params.shareFileNote);
+    await params.onShareFile(params.selectedFile, params.shareFileNote.trim() || undefined);
     return { error: null, didMutate: true };
   }
+
   if (params.activeAction === "project") {
-    if (!params.selectedProjectId) return { error: "اختر مشروعًا للمشاركة.", didMutate: false };
-    await params.onShareProject(params.selectedProjectId, params.projectNote);
+    if (!params.selectedProjectId) return { error: "اختر عقارًا أو مشروعًا للمشاركة.", didMutate: false };
+    await params.onShareProject(params.selectedProjectId, params.projectNote.trim() || undefined);
     return { error: null, didMutate: true };
   }
-  if (params.activeAction === "deal") {
-    if (!params.selectedDealId) return { error: "اختر صفقة للمشاركة.", didMutate: false };
-    await params.onShareDeal(params.selectedDealId, params.dealNote);
-    return { error: null, didMutate: true };
-  }
-  if (params.activeAction === "offer") {
-    if (!params.offerForm.propertyId || !params.offerForm.price.trim()) {
-      return { error: "اختر مشروعًا وحدد السعر قبل إنشاء العرض.", didMutate: false };
-    }
-    await params.onCreatePrivateOffer(buildOfferPayload(params.offerForm));
-    return { error: null, didMutate: true };
-  }
+
   return { error: null, didMutate: false };
 }
+
 /**
- * WHY:   Composer keyboard behavior should stay testable without a browser-specific test harness.
+ * WHY:   Composer keyboard behavior should stay testable without a browser-specific harness.
  * WHAT:  Resolves whether a given key press should trigger an inbox send action.
  * HOW:   Treats Enter as submit only when Shift is not pressed, leaving all other combinations as normal typing.
  */
@@ -76,68 +77,96 @@ export function getInboxComposerKeyAction(key: string, shiftKey: boolean) {
   }
   return "none";
 }
+
 /**
- * WHY:   The thread composer should expose a single rule for when sending is allowed.
+ * WHY:   The thread composer should expose one stable rule for when sending is allowed.
  * WHAT:  Returns whether the current draft should disable the send action.
- * HOW:   Disables send when the mutation is in flight or the trimmed draft is empty.
+ * HOW:   Disables send when a mutation is in flight or the trimmed draft is empty.
  */
 export function isInboxComposerSendDisabled(draft: string, isSending = false) {
   return isSending || draft.trim().length === 0;
 }
+
+function ShareButton({
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  icon: React.ElementType;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex min-w-0 items-center gap-2 rounded-xl border px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] transition-all duration-300 active:scale-95 shadow-sm",
+        "bg-white border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-slate-50",
+        "dark:bg-white/[0.03] dark:border-white/[0.08] dark:text-white dark:hover:border-white/[0.2] dark:hover:bg-white/[0.06]"
+      )}
+    >
+      <Icon className="h-3.5 w-3.5 shrink-0 opacity-60" />
+      <span className="truncate">{label}</span>
+    </button>
+  );
+}
+
 /**
- * WHY:   Broker↔developer inbox threads need a minimal launcher for sharing business objects without leaving chat.
- * WHAT:  Renders the reply textarea, business-action launcher, and send/share controls for the active thread.
- * HOW:   Keeps text replies lightweight, uses UploadThing for file sharing, and submits business actions through focused callbacks.
+ * WHY:   Broker↔developer inbox threads need one practical composer that keeps messaging and sharing lightweight.
+ * WHAT:  Renders the simplified textarea, compact share menu, and quick offer modal for a selected conversation. (Refined: Modern & Clean).
+ * HOW:   Keeps text replies primary, opens one share flow at a time, and routes all business actions through focused callbacks.
  */
 export default function InboxComposer({
+  activeShareAction,
   canUseBusinessActions = false,
-  dealOptions,
+  conversation,
   initialValue = "",
   isSending = false,
-  onCreatePrivateOffer,
+  onCreatePrivateOfferDraft,
+  onPublishConversationOffer,
   onSend,
-  onShareDeal,
+  onShareActionChange,
   onShareFile,
   onShareProject,
   projectOptions,
   sendError,
 }: {
+  activeShareAction: InboxShareAction | null;
   canUseBusinessActions?: boolean;
-  dealOptions: ComposerDealOption[];
+  conversation: ConversationDetail;
   initialValue?: string;
   isSending?: boolean;
-  onCreatePrivateOffer: (input: {
+  onCreatePrivateOfferDraft: (input: {
     propertyId: string;
     price: number;
     message?: string;
     description?: string;
     attachments?: UploadedFileReference[];
-  }) => Promise<void | null>;
+  }) => Promise<OfferActionResult | void | null>;
+  onPublishConversationOffer: (offerId: string) => Promise<OfferActionResult | void | null>;
   onSend: (message: string) => Promise<void>;
-  onShareDeal: (dealId: string, note?: string) => Promise<void>;
+  onShareActionChange: (action: InboxShareAction | null) => void;
   onShareFile: (file: UploadedFileReference, note?: string) => Promise<void>;
   onShareProject: (propertyId: string, note?: string) => Promise<void>;
   projectOptions: ComposerProjectOption[];
   sendError?: string | null;
 }) {
-  const [activeAction, setActiveAction] = useState<ComposerAction | null>(null);
-  const [dealNote, setDealNote] = useState("");
   const [draft, setDraft] = useState(initialValue);
+  const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const [offerForm, setOfferForm] = useState<ComposerOfferFormState>({
-    propertyId: projectOptions[0]?.id ?? "",
-    title: "",
-    description: "",
-    price: projectOptions[0]?.price ? String(projectOptions[0].price) : "",
-  });
+  const [offerForm, setOfferForm] = useState<ComposerOfferFormState>(() => buildDefaultOfferForm(projectOptions));
   const [projectNote, setProjectNote] = useState("");
-  const [selectedDealId, setSelectedDealId] = useState(dealOptions[0]?.id ?? "");
+  const [isProjectPickerOpen, setIsProjectPickerOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<UploadedFileReference | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState(projectOptions[0]?.id ?? "");
   const [shareFileNote, setShareFileNote] = useState("");
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const offerFileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { startUpload, isUploading } = useUploadThing("offerAttachments");
+
   useEffect(() => {
     if (!textareaRef.current) {
       return;
@@ -145,27 +174,36 @@ export default function InboxComposer({
     textareaRef.current.style.height = "auto";
     textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 220)}px`;
   }, [draft]);
+
+  useEffect(() => {
+    setDraft(initialValue);
+    setLocalError(null);
+    setIsShareMenuOpen(false);
+    setSelectedFile(null);
+    setShareFileNote("");
+    setProjectNote("");
+    setIsProjectPickerOpen(false);
+    setSelectedProjectId(projectOptions[0]?.id ?? "");
+    setOfferForm(buildDefaultOfferForm(projectOptions));
+  }, [conversation.id, initialValue, projectOptions]);
+
   useEffect(() => {
     if (!selectedProjectId && projectOptions[0]?.id) {
       setSelectedProjectId(projectOptions[0].id);
     }
-    if (!offerForm.propertyId && projectOptions[0]?.id) {
-      setOfferForm((current) => ({
-        ...current,
-        propertyId: projectOptions[0].id,
-        price: projectOptions[0].price ? String(projectOptions[0].price) : current.price,
-      }));
-    }
-  }, [offerForm.propertyId, projectOptions, selectedProjectId]);
+  }, [projectOptions, selectedProjectId]);
+
   useEffect(() => {
-    if (!selectedDealId && dealOptions[0]?.id) {
-      setSelectedDealId(dealOptions[0].id);
+    if (!offerForm.propertyId && projectOptions[0]?.id) {
+      setOfferForm(buildDefaultOfferForm(projectOptions));
     }
-  }, [dealOptions, selectedDealId]);
+  }, [offerForm.propertyId, projectOptions]);
+
   const handleSubmit = async () => {
     if (isInboxComposerSendDisabled(draft, isSending)) {
       return;
     }
+
     const message = draft.trim();
     setLocalError(null);
     try {
@@ -175,12 +213,20 @@ export default function InboxComposer({
       setLocalError("تعذر إرسال الرسالة. يمكنك المحاولة مرة أخرى.");
     }
   };
-  const handleUploadFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+
+  const handleUploadFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
     if (files.length === 0) {
       return;
     }
+
     setLocalError(null);
+    const validationError = validateSupportedAttachmentFiles(files);
+    if (validationError) {
+      setLocalError(validationError);
+      event.target.value = "";
+      return;
+    }
     try {
       const uploaded = await startUpload([files[0]]);
       setSelectedFile((uploaded?.[0]?.serverData as UploadedFileReference | undefined) ?? null);
@@ -190,109 +236,302 @@ export default function InboxComposer({
       event.target.value = "";
     }
   };
-  const resetActionState = () => {
-    setActiveAction(null);
+
+  const handleUploadOfferAttachments = async (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length === 0) {
+      return;
+    }
+
+    setLocalError(null);
+    const validationError = validateSupportedAttachmentFiles(files);
+    if (validationError) {
+      setLocalError(validationError);
+      event.target.value = "";
+      return;
+    }
+    try {
+      const uploaded = await startUpload(files);
+      const nextAttachments = uploaded?.map((file) => file.serverData as UploadedFileReference) ?? [];
+      setOfferForm((current) => ({
+        ...current,
+        attachments: [...current.attachments, ...nextAttachments],
+      }));
+    } catch (error) {
+      setLocalError(error instanceof Error ? error.message : "تعذر رفع مرفقات العرض.");
+    } finally {
+      event.target.value = "";
+    }
+  };
+
+  const resetShareState = () => {
     setSelectedFile(null);
     setShareFileNote("");
     setProjectNote("");
-    setDealNote("");
-    setOfferForm({
-      propertyId: projectOptions[0]?.id ?? "",
-      title: "",
-      description: "",
-      price: projectOptions[0]?.price ? String(projectOptions[0].price) : "",
-    });
+    onShareActionChange(null);
+    setIsShareMenuOpen(false);
+    setIsProjectPickerOpen(false);
   };
+
   const handleShareAction = async () => {
     setLocalError(null);
     try {
       const result = await executeShareAction({
-        activeAction,
+        activeAction:
+          activeShareAction === "file" || activeShareAction === "project"
+            ? activeShareAction
+            : null,
         selectedFile,
         shareFileNote,
         selectedProjectId,
         projectNote,
-        selectedDealId,
-        dealNote,
-        offerForm,
         onShareFile,
         onShareProject,
-        onShareDeal,
-        onCreatePrivateOffer,
       });
+
       if (result.error) {
         setLocalError(result.error);
         return;
       }
+
       if (result.didMutate) {
-        resetActionState();
+        resetShareState();
       }
     } catch {
-      // Parent surfaces the stable domain/server message through `sendError`.
+      // Parent surfaces stable server errors through `sendError`.
     }
   };
+
+  const handleSubmitOffer = async () => {
+    if (!offerForm.propertyId || !offerForm.price.trim()) {
+      setLocalError("اختر عقارًا وحدد السعر قبل إرسال العرض.");
+      return;
+    }
+
+    setLocalError(null);
+    try {
+      const created = await onCreatePrivateOfferDraft(buildOfferPayload(offerForm));
+      if (created && typeof created === "object" && "offerId" in created) {
+        await onPublishConversationOffer(created.offerId);
+      }
+      setOfferForm(buildDefaultOfferForm(projectOptions));
+      onShareActionChange(null);
+      setIsShareMenuOpen(false);
+    } catch {
+      // Parent surfaces stable server errors through `sendError`.
+    }
+  };
+
+  const handleSelectOfferProject = (projectId: string) => {
+    const project = projectOptions.find((entry) => entry.id === projectId) ?? null;
+    setOfferForm((current) => ({
+      ...current,
+      propertyId: projectId,
+      title:
+        current.title.trim().length === 0 || current.title.startsWith("عرض خاص على ")
+          ? project?.title
+            ? `عرض خاص على ${project.title}`
+            : current.title
+          : current.title,
+      price: project?.price ? String(project.price) : current.price,
+    }));
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (getInboxComposerKeyAction(event.key, event.shiftKey) === "send") {
+      event.preventDefault();
+      void handleSubmit();
+    }
+  };
+
+  const inlineShareAction =
+    activeShareAction === "file" || activeShareAction === "project" ? activeShareAction : null;
+
+  const handleComposerDrop = async (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDraggingFiles(false);
+    const files = Array.from(event.dataTransfer.files ?? []);
+    if (files.length === 0) {
+      return;
+    }
+
+    const validationError = validateSupportedAttachmentFiles(files);
+    if (validationError) {
+      setLocalError(validationError);
+      return;
+    }
+
+    const target = { files: event.dataTransfer.files, value: "" } as EventTarget & HTMLInputElement;
+    await handleUploadFile({ target } as ChangeEvent<HTMLInputElement>);
+  };
+
   return (
-    <div className="border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
-      <div className="mx-auto max-w-4xl">
-        {sendError || localError ? (
-          <div className="mb-3 border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-            {sendError || localError}
-          </div>
-        ) : null}
-        <InboxComposerActions
-          activeAction={activeAction}
-          canUseBusinessActions={canUseBusinessActions}
-          dealNote={dealNote}
-          dealOptions={dealOptions}
-          fileInputRef={fileInputRef}
-          handleUploadFile={handleUploadFile}
-          isSending={isSending}
-          isUploading={isUploading}
-          offerForm={offerForm}
-          onShareAction={handleShareAction}
-          projectNote={projectNote}
-          projectOptions={projectOptions}
-          selectedDealId={selectedDealId}
-          selectedFile={selectedFile}
-          selectedProjectId={selectedProjectId}
-          setActiveAction={setActiveAction}
-          setDealNote={setDealNote}
-          setOfferForm={setOfferForm}
-          setProjectNote={setProjectNote}
-          setSelectedDealId={setSelectedDealId}
-          setSelectedProjectId={setSelectedProjectId}
-          setShareFileNote={setShareFileNote}
-          shareFileNote={shareFileNote}
-        />
-        <div className="border border-slate-200 bg-white p-3">
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            placeholder="اكتب رسالة واضحة ومباشرة..."
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (getInboxComposerKeyAction(event.key, event.shiftKey) === "send") {
-                event.preventDefault();
-                void handleSubmit();
-              }
+    <>
+      <div className="border-t border-border/40 bg-background px-4 py-8 transition-all sm:px-6">
+        <div className="mx-auto max-w-4xl">
+          {sendError || localError ? (
+            <div className="mb-4 rounded-3xl border border-red-500/10 bg-red-50/50 backdrop-blur-xl px-6 py-4 text-right text-[13px] font-bold text-red-600 dark:bg-red-500/10 dark:text-red-400 shadow-sm transition-all duration-500">
+              {sendError || localError}
+            </div>
+          ) : null}
+
+          {canUseBusinessActions ? (
+            <div className="mb-6 flex flex-wrap flex-row-reverse gap-2">
+              <ShareButton
+                icon={FileText}
+                label="مشاركة ملف"
+                onClick={() => onShareActionChange("file")}
+              />
+              <ShareButton
+                icon={ShieldCheck}
+                label="إرسال عرض خاص"
+                onClick={() => onShareActionChange("offer")}
+              />
+              <ShareButton
+                icon={Building2}
+                label="مشاركة مشروع"
+                onClick={() => onShareActionChange("project")}
+              />
+            </div>
+          ) : null}
+
+          {inlineShareAction ? (
+            <div className="mb-4">
+              <InboxInlineSharePanel
+                activeAction={inlineShareAction}
+                fileInputRef={fileInputRef}
+                handleUploadFile={handleUploadFile}
+                isUploading={isUploading}
+                onClose={resetShareState}
+                onSubmit={handleShareAction}
+                projectNote={projectNote}
+                projectOptions={projectOptions}
+                selectedFile={selectedFile}
+                selectedProjectId={selectedProjectId}
+                setSelectedFile={setSelectedFile}
+                setProjectNote={setProjectNote}
+                setSelectedProjectId={setSelectedProjectId}
+                setShareFileNote={setShareFileNote}
+                shareFileNote={shareFileNote}
+                onOpenProjectPicker={() => setIsProjectPickerOpen(true)}
+              />
+            </div>
+          ) : null}
+
+          <div
+            className={cn(
+              "relative rounded-2xl transition-all duration-500",
+              "bg-white/40 backdrop-blur-3xl border border-white/40 shadow-[0_4px_20px_rgba(0,0,0,0.03)]",
+              "dark:bg-white/[0.03] dark:border-white/[0.08] dark:shadow-none",
+              "focus-within:bg-white/60 dark:focus-within:bg-white/[0.06] focus-within:border-white/60 dark:focus-within:border-white/20 focus-within:shadow-2xl focus-within:shadow-black/[0.02]",
+              isDraggingFiles && "border-blue-400 bg-blue-50/70 dark:border-blue-400/50 dark:bg-blue-500/10",
+              isSending && "opacity-50 grayscale cursor-not-allowed",
+            )}
+            onDragEnter={(event) => {
+              event.preventDefault();
+              if (isSending) return;
+              setIsDraggingFiles(true);
             }}
-            className="max-h-[220px] min-h-[52px] w-full resize-none bg-transparent px-1 py-1 text-sm font-medium leading-7 text-slate-900 outline-none placeholder:text-slate-400"
-          />
-          <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-200 pt-3">
-            <div className="text-xs font-medium text-slate-500">اضغط Enter للإرسال و Shift + Enter لسطر جديد.</div>
-            <button
-              type="button"
-              onClick={() => void handleSubmit()}
-              disabled={isInboxComposerSendDisabled(draft, isSending)}
-              className="inline-flex items-center gap-2 border border-slate-900 bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:border-blue-600 hover:bg-blue-600 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
-            >
-              <SendHorizontal className="h-4 w-4" />
-              {isSending ? "جاري الإرسال" : "إرسال"}
-            </button>
+            onDragOver={(event) => {
+              event.preventDefault();
+              if (isSending) return;
+              event.dataTransfer.dropEffect = "copy";
+            }}
+            onDragLeave={(event) => {
+              event.preventDefault();
+              if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+              setIsDraggingFiles(false);
+            }}
+            onDrop={(event) => void handleComposerDrop(event)}
+          >
+            {isDraggingFiles ? (
+              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-blue-500/8 backdrop-blur-[2px]">
+                <div className="rounded-full border border-blue-300 bg-white px-5 py-2 text-[12px] font-black text-blue-700 shadow-sm dark:border-blue-500/30 dark:bg-slate-950 dark:text-blue-200">
+                  أفلت صورة أو PDF هنا لإرفاقه بسرعة
+                </div>
+              </div>
+            ) : null}
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="اكتب رسالتك لوسيط العقارات..."
+              disabled={isSending}
+              dir="rtl"
+              className={cn(
+                "w-full resize-none bg-transparent px-8 py-6 text-[15px] font-semibold leading-relaxed outline-none ring-0 appearance-none transition-colors",
+                "text-slate-900 placeholder:text-slate-400/50",
+                "dark:text-white dark:[-webkit-text-fill-color:white] dark:placeholder:text-white/20 caret-current"
+              )}
+            />
+            <div className="flex flex-wrap flex-row-reverse items-center justify-between gap-3 px-4 pb-4 pt-1">
+              <button
+                type="button"
+                onClick={() => void handleSubmit()}
+                disabled={isSending || !draft.trim()}
+                className={cn(
+                  "flex h-11 shrink-0 items-center gap-2 rounded-xl px-5 text-[12px] font-black uppercase tracking-[0.15em] transition-all duration-500 active:scale-95 shadow-lg",
+                  draft.trim() 
+                    ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 hover:shadow-xl hover:-translate-y-0.5" 
+                    : "bg-slate-200 text-slate-400 opacity-50 grayscale dark:bg-white/5 dark:text-white/10"
+                )}
+              >
+                {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
+                <span>{isSending ? "جاري الإرسال" : "إرسال"}</span>
+              </button>
+
+              <div className="flex flex-row-reverse items-center gap-1.5 pr-1">
+                <button
+                  type="button"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition-all duration-500 hover:bg-slate-100/50 hover:text-slate-900 dark:text-white/30 dark:hover:bg-white/5 dark:hover:text-white"
+                >
+                  <Smile className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition-all duration-500 hover:bg-slate-100/50 hover:text-slate-900 dark:text-white/30 dark:hover:bg-white/5 dark:hover:text-white"
+                  aria-label="إرفاق ملف"
+                >
+                  <Paperclip className="h-5 w-5" />
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={COMPOSER_ATTACHMENT_ACCEPT}
+                  className="hidden"
+                  onChange={(event) => void handleUploadFile(event)}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <InboxOfferModal
+        conversationLabel={conversation.otherUser.name}
+        fileInputRef={offerFileInputRef}
+        handleUploadOfferAttachments={handleUploadOfferAttachments}
+        handleSelectOfferProject={handleSelectOfferProject}
+        isOpen={activeShareAction === "offer"}
+        isSending={isSending}
+        isUploading={isUploading}
+        offerForm={offerForm}
+        onClose={() => onShareActionChange(null)}
+        onSubmit={handleSubmitOffer}
+        projectOptions={projectOptions}
+        setOfferForm={setOfferForm}
+      />
+
+      <InboxProjectPickerModal
+        isOpen={isProjectPickerOpen}
+        onClose={() => setIsProjectPickerOpen(false)}
+        onSelectProject={setSelectedProjectId}
+        projectOptions={projectOptions}
+        selectedProjectId={selectedProjectId}
+      />
+    </>
   );
 }

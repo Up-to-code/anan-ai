@@ -1,6 +1,12 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/client_zone/components/ui/card";
 import { useLocaleDictionary } from "@/client_zone/components/LocaleProvider";
 import { formatCurrency } from "@/client_zone/lib/formatters";
+import {
+  AgUiCardHeading,
+  AgUiCardShell,
+  AgUiMetricTile,
+  CardContent,
+  agUiInnerPanelClassName,
+} from "../AgUiCardPrimitives";
 import type { LoanCalculatorCardProps } from "../types";
 
 /**
@@ -18,25 +24,19 @@ export function LoanCalculatorCard(props: LoanCalculatorCardProps) {
   ];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm">{props.title}</CardTitle>
-        <CardDescription>{props.summary}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <AgUiCardShell>
+      <AgUiCardHeading title={props.title} summary={props.summary} />
+      <CardContent className="space-y-4 pt-0">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {metrics.map((metric) => (
-            <div key={metric.label} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="text-xs text-slate-500">{metric.label}</div>
-              <div className="mt-2 text-base font-semibold text-slate-900">{metric.value}</div>
-            </div>
+            <AgUiMetricTile key={metric.label} label={metric.label} value={metric.value} />
           ))}
         </div>
-        <div className="flex flex-wrap gap-6 text-sm text-slate-600">
+        <div className={`flex flex-wrap gap-6 px-4 py-3 text-sm font-medium text-[var(--workspace-muted)] ${agUiInnerPanelClassName()}`}>
           <span>{locale === "ar" ? "الفائدة" : "Interest"}: {props.interestRate}%</span>
           <span>{locale === "ar" ? "المدة" : "Term"}: {props.years} {locale === "ar" ? "سنة" : "years"}</span>
         </div>
       </CardContent>
-    </Card>
+    </AgUiCardShell>
   );
 }

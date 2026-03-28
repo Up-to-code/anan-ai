@@ -32,9 +32,9 @@ type OrganizationSnapshot = {
 };
 
 /**
- * WHY:   New users need a guided journey that keeps onboarding simple and professional.
- * WHAT:  Controls a 3-step onboarding flow for invites, org creation, and verification docs.
- * HOW:   Manages step state and renders the appropriate step component with shared context.
+ * WHY:   The Nexus onboarding journey needs to be simple, clean, and premium.
+ * WHAT:  Modernizes the onboarding shell with rounded-3xl geometry and high-contrast typography.
+ * HOW:   Replaces sharp borders with rounded surfaces and adopts a minimalist sidebar navigation.
  */
 export default function OrganizationOnboardingJourney({
   user,
@@ -83,7 +83,6 @@ export default function OrganizationOnboardingJourney({
       setStep(1);
       return;
     }
-
     setStep(nextStep);
   };
 
@@ -105,11 +104,11 @@ export default function OrganizationOnboardingJourney({
   const shouldShowGreeting = greetingName.trim().length > 0;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <div className="text-sm font-black text-slate-900">رحلة التفعيل</div>
-          <p className="text-sm text-slate-500">
+    <div className="mx-auto max-w-5xl space-y-8 py-10">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2">
+        <div className="space-y-1.5">
+          <div className="text-xl font-black tracking-tight text-foreground">رحلة التفعيل</div>
+          <p className="text-sm font-medium text-muted-foreground">
             {shouldShowGreeting ? `${greetingName}، ` : ""}
             خطوات بسيطة لتفعيل مساحة العمل بشكل احترافي.
           </p>
@@ -117,17 +116,17 @@ export default function OrganizationOnboardingJourney({
         <OnboardingLogoutButton variant="ghost" />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
+      <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start">
         <div className="space-y-6">
-          <div className="space-y-3 border-2 border-slate-100 bg-white p-4">
-            <div className="text-xs font-black text-slate-900">لماذا هذه الخطوات؟</div>
-            <p className="text-xs text-slate-500">
+          <div className="rounded-[32px] border border-border bg-card p-6 shadow-sm">
+            <div className="mb-3 text-xs font-black uppercase tracking-widest text-foreground">لماذا هذه الخطوات؟</div>
+            <p className="text-[13px] font-medium leading-relaxed text-muted-foreground">
               نرتّب إنشاء الجهة ودعوات الفريق والتوثيق حتى تبدأ العمل بثقة وبأقل وقت ممكن.
             </p>
           </div>
 
-          <div className="border-2 border-slate-100 bg-white">
-            <div className="divide-y-2 divide-slate-100">
+          <div className="overflow-hidden rounded-[32px] border border-border bg-card shadow-sm">
+            <div className="flex flex-col">
               {steps.map((item) => {
                 const isActive = item.id === activeStep;
                 const isLocked =
@@ -141,20 +140,22 @@ export default function OrganizationOnboardingJourney({
                       handleAdvance(item.id as 1 | 2 | 3);
                     }}
                     disabled={isLocked}
-                    className={`flex w-full items-start gap-3 px-4 py-3 text-right transition ${
-                      isActive ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    } ${isLocked ? "cursor-not-allowed opacity-50 hover:bg-white hover:text-slate-600" : ""}`}
+                    className={`flex items-start gap-4 border-b border-border px-6 py-5 text-right transition-all last:border-0 ${
+                      isActive ? "bg-muted/30" : "hover:bg-muted/20"
+                    } ${isLocked ? "cursor-not-allowed opacity-40" : ""}`}
                   >
                     <span
-                      className={`flex h-7 w-7 items-center justify-center border-2 text-xs font-black ${
-                        isActive ? "border-blue-600 bg-blue-600 text-white" : "border-slate-100 bg-white text-slate-700"
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-black transition-all ${
+                        isActive 
+                          ? "bg-foreground text-background" 
+                          : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {item.id}
                     </span>
-                    <span className="space-y-1">
-                      <span className="block text-sm font-black text-slate-900">{item.title}</span>
-                      <span className="block text-xs text-slate-500">{item.description}</span>
+                    <span className="space-y-1 mt-0.5">
+                      <span className={`block text-[14px] font-black tracking-tight ${isActive ? "text-foreground" : "text-muted-foreground"}`}>{item.title}</span>
+                      <span className="block text-[12px] font-medium text-muted-foreground">{item.description}</span>
                     </span>
                   </button>
                 );
@@ -163,14 +164,14 @@ export default function OrganizationOnboardingJourney({
           </div>
         </div>
 
-        <div className="border-2 border-slate-100 bg-white">
+        <div className="min-h-[500px] overflow-hidden rounded-[40px] border border-border bg-card shadow-sm">
           {errorMessage ? (
-            <div className="border-b-2 border-red-200 bg-red-50 px-6 py-4 text-sm font-bold text-red-700">
+            <div className="border-b border-red-500/20 bg-red-500/10 px-8 py-5 text-sm font-bold text-red-700 dark:text-red-300">
               {errorMessage}
             </div>
           ) : null}
 
-          <div className="px-6 py-6">
+          <div className="px-10 py-10">
             {activeStep === 1 ? (
               <OrganizationInvitesStep
                 invites={incomingInvites}

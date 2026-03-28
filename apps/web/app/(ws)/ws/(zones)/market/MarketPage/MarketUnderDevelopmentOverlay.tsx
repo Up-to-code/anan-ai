@@ -1,21 +1,36 @@
 /**
- * WHY:   The market landing page should communicate clearly that the full overview is not yet available.
- * WHAT:  Renders the centered coming-soon message above the blurred market preview.
- * HOW:   Uses a simple bordered panel and backdrop blur so the preview remains visible but fully non-interactive.
+ * WHY:   The full market zone should stay visibly under development without removing the real analytics UI underneath.
+ * WHAT:  Renders a centered overlay card used across all market routes while the underlying content remains blurred.
+ * HOW:   Accepts the current route title so the message stays relevant no matter which market page is open.
  */
-export default function MarketUnderDevelopmentOverlay() {
+export default function MarketUnderDevelopmentOverlay({
+  pageTitle,
+}: {
+  pageTitle: string;
+}) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-white/40 p-6 backdrop-blur-[2px]">
-      <div className="w-full max-w-md border-2 border-slate-300 bg-white/95 p-6 text-center">
-        <div className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">
-          Coming soon
+    <div className="absolute inset-0 z-10 flex items-center justify-center p-4 md:p-8">
+      <div className="w-full max-w-4xl rounded-xl border border-amber-200 bg-white/95 p-5 shadow-xl backdrop-blur-sm dark:border-amber-500/30 dark:bg-slate-950/95 md:p-6">
+        <div className="grid gap-4 md:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-right dark:border-amber-500/30 dark:bg-amber-500/10">
+            <div className="text-sm font-semibold text-amber-900 dark:text-amber-200">Market marker</div>
+            <p className="mt-2 text-sm leading-6 text-amber-800 dark:text-amber-100">
+              جميع صفحات ذكاء السوق معروضة الآن كواجهة قيد التطوير. المحتوى الحقيقي ما زال موجوداً خلف هذه الطبقة ويمكن تفعيله لاحقاً
+              عبر إزالة هذا الـ overlay فقط.
+            </p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 text-right dark:border-slate-800 dark:bg-slate-900">
+            <div className="text-sm font-semibold text-slate-950 dark:text-slate-100">الصفحة الحالية</div>
+            <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">{pageTitle}</div>
+            <div className="mt-4 text-sm font-semibold text-slate-950 dark:text-slate-100">جاهز لاحقاً</div>
+            <div className="mt-2 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+              <div>تحليل المدن</div>
+              <div>المناطق الساخنة</div>
+              <div>نتائج السوق</div>
+              <div>مساعد الكلمات</div>
+            </div>
+          </div>
         </div>
-        <h2 className="mt-3 text-2xl font-black text-slate-950">
-          هذه الصفحة قريباً
-        </h2>
-        <p className="mt-3 text-sm font-medium leading-7 text-slate-600">
-          هذا القسم ما زال تحت التطوير.
-        </p>
       </div>
     </div>
   );

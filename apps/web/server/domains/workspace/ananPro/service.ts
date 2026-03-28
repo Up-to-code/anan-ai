@@ -8,6 +8,7 @@ import type {
   SendAnanProMessageInput,
   TranscribeVoiceFromStorageInput,
 } from "@/server/contracts/ananPro";
+import type { UploadedFileReference } from "@/server/contracts/files";
 
 type AnanProServiceDependencies = {
   requireSession: typeof requireSessionContext;
@@ -72,4 +73,19 @@ export async function transcribeAnanProVoiceFromStorage(
 ) {
   const session = await dependencies.requireSession();
   return dependencies.repository.transcribeVoiceFromStorage(session.token, input);
+}
+
+export async function finalizeAnanProUploadedFiles(
+  input: {
+    files: Array<{
+      storageId: string;
+      name: string;
+      size?: number;
+      mime?: string;
+    }>;
+  },
+  dependencies: AnanProServiceDependencies = defaultDependencies,
+): Promise<UploadedFileReference[]> {
+  const session = await dependencies.requireSession();
+  return dependencies.repository.finalizeUploadedFiles(session.token, input);
 }

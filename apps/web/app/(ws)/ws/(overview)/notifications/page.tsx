@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import ZonePageIntro from "../../_components/ZoneShell/ZonePageIntro";
 import {
@@ -43,39 +44,41 @@ export default async function WorkspaceNotificationsPage({ searchParams }: Works
         description="تنبيهات حقيقية مرتبطة بالمحادثات والعروض والدعوات داخل نفس مساحة العمل."
       />
 
-      <div className="space-y-4 px-6 py-6 lg:px-8 lg:py-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex border border-slate-200 bg-white p-1">
+      <div className="space-y-6 px-6 py-8 lg:px-10 lg:py-10">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="inline-flex gap-1 rounded-2xl bg-muted/20 p-1.5 border border-border/40">
             <Link
               href="/ws/notifications"
-              className={`px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition ${
+              className={cn(
+                "rounded-xl px-5 py-2 text-[11px] font-black uppercase tracking-widest transition-all",
                 activeFilter === "all"
-                  ? "bg-slate-950 text-white"
-                  : "text-slate-600 hover:bg-slate-50"
-              }`}
+                  ? "bg-foreground text-background shadow-md"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground active:scale-95"
+              )}
             >
               الكل ({notifications.length})
             </Link>
             <Link
               href="/ws/notifications?filter=unread"
-              className={`px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition ${
+              className={cn(
+                "rounded-xl px-5 py-2 text-[11px] font-black uppercase tracking-widest transition-all",
                 activeFilter === "unread"
-                  ? "bg-slate-950 text-white"
-                  : "text-slate-600 hover:bg-slate-50"
-              }`}
+                  ? "bg-foreground text-background shadow-md"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground active:scale-95"
+              )}
             >
               غير المقروءة ({summary.unreadCount})
             </Link>
           </div>
 
-          <div className="text-xs font-bold text-slate-500">
-            {summary.unreadCount > 0 ? `لديك ${summary.unreadCount} إشعارات غير مقروءة.` : "لا توجد إشعارات غير مقروءة."}
+          <div className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/50">
+            {summary.unreadCount > 0 ? `لديك ${summary.unreadCount} إشعارات غير مقروءة` : "لا توجد إشعارات معلقة"}
           </div>
         </div>
 
-        <div className="grid gap-3">
+        <div className="grid gap-2 text-right">
           {filteredNotifications.length === 0 ? (
-            <div className="border border-slate-200 bg-white p-6 text-sm font-bold text-slate-600">
+            <div className="rounded-3xl border border-dashed border-border bg-muted/10 p-12 text-center text-[13px] font-bold text-muted-foreground/60 shadow-sm transition-all hover:bg-muted/15">
               لا توجد إشعارات ضمن هذا الفلتر.
             </div>
           ) : (
@@ -83,32 +86,37 @@ export default async function WorkspaceNotificationsPage({ searchParams }: Works
               <Link
                 key={item.id}
                 href={item.href}
-                className="block border border-slate-200 bg-white p-4 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                className="group relative block rounded-2xl border border-border bg-card p-5 transition-all hover:border-foreground/20 hover:shadow-lg hover:shadow-black/[0.02]"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                <div className="flex items-start justify-between gap-6">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2.5">
                       {!item.isRead ? (
-                        <span aria-hidden="true" className="h-2 w-2 shrink-0 bg-blue-600" />
+                        <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" />
                       ) : (
-                        <span aria-hidden="true" className="h-2 w-2 shrink-0 bg-slate-200" />
+                        <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-border" />
                       )}
-                      <div className="truncate text-sm font-black text-slate-950">
+                      <div className="truncate text-[15px] font-black tracking-tight text-foreground group-hover:text-blue-600 transition-colors">
                         {item.title}
                       </div>
                     </div>
-                    <div className="mt-2 line-clamp-2 text-sm font-medium leading-6 text-slate-600">
+                    <div className="mt-2 line-clamp-2 text-[13px] font-medium leading-[1.6] text-muted-foreground/80">
                       {item.summary}
                     </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                      <span>{item.source}</span>
-                      <span className="h-px w-6 bg-slate-200" />
+                    <div className="mt-4 flex flex-wrap items-center gap-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">
+                      <span className="bg-muted px-2 py-0.5 rounded-md">{item.source}</span>
+                      <div className="h-1 w-1 rounded-full bg-border" />
                       <span>{formatNotificationTimestamp(item.createdAt)}</span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">
-                    {item.isRead ? "افتح" : "جديد"}
-                  </span>
+                  <div className={cn(
+                    "rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-widest transition-all",
+                    item.isRead
+                      ? "bg-muted text-muted-foreground/60"
+                      : "bg-blue-600 text-white shadow-sm group-hover:scale-105"
+                  )}>
+                    {item.isRead ? "تم الاطلاع" : "جديد"}
+                  </div>
                 </div>
               </Link>
             ))

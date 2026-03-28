@@ -1,10 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MarketSnapshot } from "@/server/contracts/market";
 
 function createDefaultSnapshot(): MarketSnapshot {
   return {
-    filters: { city: "الرياض", area: "الملقا", query: "مواقف", windowDays: 90 as const },
+    filters: { city: "الرياض", area: "الملقا", query: "مواقف", dateFrom: "2026-03-01", dateTo: "2026-03-25" },
     availableCities: ["الرياض", "جدة"],
     availableAreas: ["الملقا", "حطين"],
     headline: { selectedCityLabel: "الرياض", selectedAreaLabel: "الملقا", demandSignals: 12, researchRuns: 3, inventoryCount: 4, averagePriceLabel: "1.8M ر.س" },
@@ -12,9 +12,10 @@ function createDefaultSnapshot(): MarketSnapshot {
     topAreas: [{ city: "الرياض", area: "الملقا", demandSignals: 8, inventoryCount: 2, averagePriceLabel: "1.9M ر.س", topProductType: "شقق", topSignalLabel: "مواقف خاصة" }],
     sellingPoints: [{ label: "مواقف خاصة", count: 4, source: "features" as const }],
     keywordInsights: {
+      relatedSearches: [{ label: "أفضل شقق في الملقا", count: 3, source: "research_query" as const }],
       topKeywords: [{ label: "مواقف", count: 4, source: "query" as const }],
       topTopics: [{ label: "شقق", count: 3, source: "derived_topic" as const }],
-      mostResearchedLabel: "مواقف",
+      mostResearchedLabel: "أفضل شقق في الملقا",
     },
     opportunities: [{ city: "الرياض", area: "الملقا", priority: "high" as const, demandSignals: 8, researchRuns: 3, inventoryCount: 2, dominantProductType: "شقق", strongestSellingPoint: "مواقف خاصة", reason: "الطلب أعلى من المعروض في الملقا داخل الرياض مع تكرار واضح لـ مواقف خاصة" }],
     chartSeries: {
@@ -36,19 +37,38 @@ const { getWorkspaceMarketSnapshot } = vi.hoisted(() => ({
   getWorkspaceMarketSnapshot: vi.fn(),
 }));
 vi.mock("@/server/market", () => ({ getWorkspaceMarketSnapshot }));
+vi.mock("./MarketPage/MarketChartPanel", () => ({
+  default: ({ title }: { title: string }) => <div>{title}</div>,
+}));
 
 import WorkspaceMarketRoute from "./page";
 
 function createEmptySnapshot(): MarketSnapshot {
   return {
-    filters: { city: "", area: "", query: "", windowDays: 90 as const },
+    filters: { city: "", area: "", query: "", dateFrom: "2026-03-01", dateTo: "2026-03-25" },
     availableCities: [],
     availableAreas: [],
     headline: { selectedCityLabel: "كل المدن السعودية", selectedAreaLabel: "كل الأحياء", demandSignals: 0, researchRuns: 0, inventoryCount: 0, averagePriceLabel: null },
     topCities: [],
     topAreas: [],
     sellingPoints: [],
-    keywordInsights: { topKeywords: [], topTopics: [], mostResearchedLabel: null },
+    keywordInsights: { relatedSearches: [], topKeywords: [], topTopics: [], mostResearchedLabel: null },
+    opportunities: [],
+    chartSeries: { cityDemand: [], areaDemand: [], keywordCounts: [] },
+    latestUpdate: null,
+  };
+}
+
+function createSparseSnapshot(): MarketSnapshot {
+  return {
+    filters: { city: "", area: "", query: "", dateFrom: "2026-03-01", dateTo: "2026-03-25" },
+    availableCities: [],
+    availableAreas: [],
+    headline: { selectedCityLabel: "كل المدن السعودية", selectedAreaLabel: "كل الأحياء", demandSignals: 0, researchRuns: 0, inventoryCount: 1, averagePriceLabel: null },
+    topCities: [],
+    topAreas: [],
+    sellingPoints: [],
+    keywordInsights: { relatedSearches: [], topKeywords: [], topTopics: [], mostResearchedLabel: null },
     opportunities: [],
     chartSeries: { cityDemand: [], areaDemand: [], keywordCounts: [] },
     latestUpdate: null,
@@ -56,35 +76,43 @@ function createEmptySnapshot(): MarketSnapshot {
 }
 
 function registerMarketPageTests() {
-  let previousFlag: string | undefined;
-
   beforeEach(() => {
-    previousFlag = process.env.NEXT_PUBLIC_MARKET_UNDER_DEVELOPMENT;
-    process.env.NEXT_PUBLIC_MARKET_UNDER_DEVELOPMENT = "true";
     getWorkspaceMarketSnapshot.mockResolvedValue(createDefaultSnapshot());
   });
 
-  it("renders the blurred market overview preview with an under-development overlay", async () => {
-    const element = await WorkspaceMarketRoute({ searchParams: Promise.resolve({ city: "الرياض", area: "الملقا", query: "مواقف", windowDays: "90" }) });
+  it("renders the rebuilt market overview with filters, results, and helper panels", async () => {
+    const element = await WorkspaceMarketRoute({
+      searchParams: Promise.resolve({
+        city: "الرياض",
+        area: "الملقا",
+        query: "مواقف",
+        dateFrom: "2026-03-01",
+        dateTo: "2026-03-25",
+      }),
+    });
     const markup = renderToStaticMarkup(element);
 
-    expect(markup).toContain("Coming soon");
-    expect(markup).toContain("هذه الصفحة قريباً");
-    expect(markup).toContain("المدن الأعلى طلباً");
-    expect(markup).toContain("الفرص الحالية");
-    expect(markup).toContain("أفضل شقق في الملقا");
+    expect(markup).toContain("تحليل السوق");
+    expect(markup).toContain("Market marker");
+    expect(markup).toContain("جميع صفحات ذكاء السوق معروضة الآن كواجهة قيد التطوير");
+    expect(markup).toContain("مساعد الكلمات");
   });
 
   it("renders the honest empty state when no usable data exists", async () => {
     getWorkspaceMarketSnapshot.mockResolvedValueOnce(createEmptySnapshot());
     const element = await WorkspaceMarketRoute({ searchParams: Promise.resolve({}) });
     const markup = renderToStaticMarkup(element);
-    expect(markup).toContain("لا توجد إشارات كافية لهذا النطاق");
+    expect(markup).toContain("بيانات تجريبية");
+    expect(markup).toContain("Market marker");
   });
 
-  afterEach(() => {
-    if (previousFlag === undefined) delete process.env.NEXT_PUBLIC_MARKET_UNDER_DEVELOPMENT;
-    else process.env.NEXT_PUBLIC_MARKET_UNDER_DEVELOPMENT = previousFlag;
+  it("fills sparse real snapshots with mock analytics sections", async () => {
+    getWorkspaceMarketSnapshot.mockResolvedValueOnce(createSparseSnapshot());
+    const element = await WorkspaceMarketRoute({ searchParams: Promise.resolve({}) });
+    const markup = renderToStaticMarkup(element);
+    expect(markup).toContain("بيانات تجريبية");
+    expect(markup).toContain("أفضل عقار في الرياض");
+    expect(markup).toContain("Market marker");
   });
 }
 

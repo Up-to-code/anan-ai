@@ -8,9 +8,11 @@ import { ChatShell } from "@/client_zone/components/chat/ChatShell";
 export function ClientAssistantPage({
   mode = "default",
   initialPrompt,
+  initialThreadId,
 }: {
   mode?: "default" | "search" | "loans";
   initialPrompt?: string | null;
+  initialThreadId?: string | null;
 }) {
-  return <ChatShell mode={mode} initialPrompt={initialPrompt} />;
+  return <ChatShell mode={mode} initialPrompt={initialPrompt} initialThreadId={initialThreadId} />;
 }

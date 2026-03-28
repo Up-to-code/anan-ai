@@ -26,32 +26,39 @@ export default function AgentTeamDetailPage({ teamId }: AgentTeamDetailPageProps
 
   return (
     <SectionScaffold
-      eyebrow="إعدادات الذكاء"
+      eyebrow="فرق وكلاء الذكاء الاصطناعي"
       title={team.name}
       description={team.routingRule}
       tabs={aiSettingsTabs}
       actions={
         <PageActions
           actions={[
-            { label: "تعديل", href: `/ai-settings/agents/${team.id}/edit` },
+            { label: "تعديل الفريق", href: `/ai-settings/agents/${team.id}/edit` },
             { label: "حذف", href: `/ai-settings/agents/${team.id}/delete`, variant: "outline" },
           ]}
         />
       }
     >
-      <WorkspacePanel className="space-y-4">
-        <div className="flex items-center gap-3">
+      <WorkspacePanel className="rounded-3xl p-10 space-y-10 border-border/30 bg-card/50 shadow-sm">
+        <div className="flex items-center justify-between pb-8 border-b border-border/10">
+          <div className="space-y-3">
+            <h3 className="text-4xl font-black tracking-tighter text-foreground decoration-primary/20 underline decoration-8 underline-offset-8 decoration-skip-ink-none">{team.name}</h3>
+            <p className="text-[13px] font-bold text-muted-foreground/40 uppercase tracking-widest">Team Identifier: {team.id}</p>
+          </div>
           <StatusBadge value={team.enabled ? "active" : "inactive"} />
         </div>
-        <KeyValueGrid
-          items={[
-            { label: "النموذج الافتراضي", value: team.defaultModel },
-            { label: "النموذج البديل", value: team.fallbackModel },
-            { label: "حد الميزانية", value: formatNumber(team.budgetLimit) },
-            { label: "الحالة", value: team.enabled ? "مفعّل" : "متوقف" },
-            { label: "المعرّف", value: team.id },
-          ]}
-        />
+
+        <div className="grid gap-8">
+          <KeyValueGrid
+            items={[
+              { label: "النموذج الافتراضي", value: <span className="font-black text-foreground">{team.defaultModel}</span> },
+              { label: "النموذج البديل", value: <span className="font-black text-foreground">{team.fallbackModel}</span> },
+              { label: "حد الميزانية", value: <span className="font-black text-foreground">{formatNumber(team.budgetLimit ?? 0)}</span> },
+              { label: "حالة التفعيل", value: <span className="font-bold text-primary">{team.enabled ? "متصل ومفعّل" : "متوقف حاليًا"}</span> },
+            ]}
+            columns={2}
+          />
+        </div>
       </WorkspacePanel>
     </SectionScaffold>
   );

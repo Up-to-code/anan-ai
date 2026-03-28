@@ -24,9 +24,9 @@ export default function Card({
     children
 }: CardProps) {
     const variants = {
-        default: "bg-white border-2 border-slate-100 hover:border-blue-600",
-        dark: "bg-slate-900 border-2 border-slate-800 text-white",
-        accent: "bg-blue-600/5 border-2 border-blue-600/20 hover:border-blue-600"
+        default: "border-2 border-slate-100 bg-white hover:border-blue-600 dark:border-slate-800 dark:bg-slate-950/80",
+        dark: "border-2 border-slate-800 bg-slate-900 text-white dark:border-slate-700 dark:bg-slate-950",
+        accent: "border-2 border-blue-600/20 bg-blue-600/5 hover:border-blue-600 dark:border-blue-500/30 dark:bg-blue-500/10"
     };
 
     return (
@@ -37,10 +37,10 @@ export default function Card({
                 </div>
             )}
             <div className="space-y-3">
-                <h3 className={`text-xl font-black uppercase leading-[1.1] tracking-normal ${variant === "dark" ? "text-white" : "text-slate-900"}`}>
+                <h3 className={`text-xl font-black uppercase leading-[1.1] tracking-normal ${variant === "dark" ? "text-white" : "text-slate-900 dark:text-slate-100"}`}>
                     {title}
                 </h3>
-                <p className={`text-sm font-bold leading-relaxed ${variant === "dark" ? "text-slate-400" : "text-slate-500"}`}>
+                <p className={`text-sm font-bold leading-relaxed ${variant === "dark" ? "text-slate-400" : "text-slate-500 dark:text-slate-300"}`}>
                     {description}
                 </p>
             </div>

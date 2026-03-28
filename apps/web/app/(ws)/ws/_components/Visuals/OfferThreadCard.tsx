@@ -2,20 +2,20 @@ import type { OfferThreadItem } from "../../_lib/entities";
 
 function resolveStatusTone(status: OfferThreadItem["status"]) {
   if (status === "approved") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300";
   }
   if (status === "awaiting-response") {
-    return "border-amber-200 bg-amber-50 text-amber-700";
+    return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300";
   }
   if (status === "completed") {
-    return "border-blue-200 bg-blue-50 text-blue-700";
+    return "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300";
   }
-  return "border-slate-200 bg-slate-50 text-slate-600";
+  return "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300";
 }
 
 function ThreadCounterpartyBadge({ thread }: { thread: OfferThreadItem }) {
   return (
-    <span className="text-[10px] font-black tracking-widest text-slate-400 border border-slate-200 px-2 py-0.5 whitespace-nowrap">
+    <span className="whitespace-nowrap border border-slate-200 px-2 py-0.5 text-[10px] font-black tracking-widest text-slate-400 dark:border-slate-700 dark:text-slate-500">
       إلى: {thread.recipient.name}
     </span>
   );
@@ -24,7 +24,7 @@ function ThreadCounterpartyBadge({ thread }: { thread: OfferThreadItem }) {
 function ThreadHeader({ thread }: { thread: OfferThreadItem }) {
   return (
     <div className="flex items-center gap-3 mb-1">
-      <h3 className="text-base font-black text-slate-950 truncate">{thread.sender.name}</h3>
+      <h3 className="truncate text-base font-black text-slate-950 dark:text-slate-100">{thread.sender.name}</h3>
       <ThreadCounterpartyBadge thread={thread} />
     </div>
   );
@@ -42,8 +42,8 @@ function ThreadStatusPanel({
       <div className={`border px-3 py-1 text-[10px] font-black tracking-widest ${statusTone}`}>
         {thread.status}
       </div>
-      <div className="text-[11px] font-black tracking-widest text-slate-400 bg-slate-100 px-2 py-1">
-        المشروع: <span className="text-slate-700">{thread.relation.project?.title ?? "غير محدد"}</span>
+      <div className="bg-slate-100 px-2 py-1 text-[11px] font-black tracking-widest text-slate-400 dark:bg-slate-800 dark:text-slate-500">
+        المشروع: <span className="text-slate-700 dark:text-slate-200">{thread.relation.project?.title ?? "غير محدد"}</span>
       </div>
     </div>
   );
@@ -62,15 +62,15 @@ export default function OfferThreadCard({
   const statusTone = resolveStatusTone(thread.status);
 
   return (
-    <article className="group flex flex-col gap-4 border-b border-slate-100 bg-white p-6 transition hover:bg-slate-50 sm:flex-row sm:items-start sm:justify-between cursor-pointer">
+    <article className="group flex cursor-pointer flex-col gap-4 border-b border-slate-100 bg-white p-6 transition hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-900 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex items-start gap-5 sm:items-start w-full max-w-2xl">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-slate-100 text-lg font-black text-slate-600 shadow-none">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-slate-100 text-lg font-black text-slate-600 shadow-none dark:bg-slate-800 dark:text-slate-200">
           {(thread.sender.name || "U").slice(0, 1).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0 pt-1">
           <ThreadHeader thread={thread} />
-          <h4 className="text-sm font-bold text-slate-800 mb-2 truncate">{thread.subject}</h4>
-          <p className="text-sm leading-6 text-slate-500 line-clamp-2">
+          <h4 className="mb-2 truncate text-sm font-bold text-slate-800 dark:text-slate-200">{thread.subject}</h4>
+          <p className="line-clamp-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
             &quot;{thread.summary}&quot;
           </p>
         </div>
@@ -80,7 +80,7 @@ export default function OfferThreadCard({
         <ThreadStatusPanel thread={thread} statusTone={statusTone} />
 
         <div className="w-full flex sm:justify-end mt-2">
-          <button className="border-2 border-slate-200 bg-white px-5 py-2 text-xs font-black tracking-widest text-slate-700 hover:border-blue-600 hover:text-blue-600 transition group-hover:bg-blue-50">
+          <button className="border-2 border-slate-200 bg-white px-5 py-2 text-xs font-black tracking-widest text-slate-700 transition group-hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:group-hover:bg-blue-500/10 dark:hover:border-blue-500 dark:hover:text-blue-300">
             فتح المحادثة
           </button>
         </div>

@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+
 type KeyValueGridProps = {
   items: Array<{ label: string; value: React.ReactNode }>;
   columns?: 2 | 3;
@@ -10,11 +12,11 @@ type KeyValueGridProps = {
  */
 export default function KeyValueGrid({ items, columns = 2 }: KeyValueGridProps) {
   return (
-    <div className={`grid gap-2.5 ${columns === 3 ? "md:grid-cols-2 xl:grid-cols-3" : "md:grid-cols-2"}`}>
+    <div className={cn("grid gap-3", columns === 3 ? "md:grid-cols-2 xl:grid-cols-3" : "md:grid-cols-2")}>
       {items.map((item) => (
-        <div key={String(item.label)} className="rounded-[8px] border border-border bg-slate-50 px-3 py-2.5">
-          <div className="text-[11px] text-slate-500">{item.label}</div>
-          <div className="mt-1 text-sm font-medium leading-5 text-slate-900">{item.value}</div>
+        <div key={String(item.label)} className="rounded-2xl border border-border/30 bg-muted/5 p-4 space-y-1">
+          <div className="text-[10px] font-black uppercase tracking-[0.1em] text-muted-foreground/40 leading-none">{item.label}</div>
+          <div className="text-[13px] font-black leading-tight text-foreground tracking-tight">{item.value}</div>
         </div>
       ))}
     </div>

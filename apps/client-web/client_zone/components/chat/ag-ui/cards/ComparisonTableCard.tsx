@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/client_zone/components/ui/card";
+import { AgUiCardHeading, AgUiCardShell, CardContent, agUiInnerPanelClassName } from "../AgUiCardPrimitives";
 import type { ComparisonTableCardProps } from "../types";
 
 /**
@@ -8,17 +8,15 @@ import type { ComparisonTableCardProps } from "../types";
  */
 export function ComparisonTableCard({ title, columns, rows, summary }: ComparisonTableCardProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm">{title}</CardTitle>
-        {summary ? <CardDescription>{summary}</CardDescription> : null}
-      </CardHeader>
-      <CardContent className="overflow-x-auto">
+    <AgUiCardShell>
+      <AgUiCardHeading title={title} summary={summary} />
+      <CardContent className="pt-0">
+        <div className={`overflow-x-auto ${agUiInnerPanelClassName()}`}>
         <table className="min-w-full border-collapse text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-slate-500">
+            <tr className="border-b border-[color:var(--workspace-border)] text-[var(--workspace-muted)]">
               {columns.map((column) => (
-                <th key={column} className="px-3 py-2 text-start font-medium">
+                <th key={column} className="px-4 py-3 text-start text-[11px] font-black uppercase tracking-[0.16em]">
                   {column}
                 </th>
               ))}
@@ -26,9 +24,9 @@ export function ComparisonTableCard({ title, columns, rows, summary }: Compariso
           </thead>
           <tbody>
             {rows.map((row, index) => (
-              <tr key={`${row[0]}-${index}`} className="border-b border-slate-100 last:border-b-0">
+              <tr key={`${row[0]}-${index}`} className="border-b border-[color:color-mix(in_srgb,var(--workspace-border)_86%,transparent)] last:border-b-0">
                 {row.map((cell, cellIndex) => (
-                  <td key={`${cell}-${cellIndex}`} className="px-3 py-3 text-slate-700">
+                  <td key={`${cell}-${cellIndex}`} className="px-4 py-3 text-[15px] font-medium text-[var(--workspace-bubble-other-foreground)]">
                     {cell}
                   </td>
                 ))}
@@ -36,7 +34,8 @@ export function ComparisonTableCard({ title, columns, rows, summary }: Compariso
             ))}
           </tbody>
         </table>
+        </div>
       </CardContent>
-    </Card>
+    </AgUiCardShell>
   );
 }

@@ -14,6 +14,10 @@ vi.mock("../(zones)/inbox/InboxPage/useRealtimeInbox", () => ({
   useWorkspaceSignalCounts,
 }));
 
+vi.mock("next-themes", () => ({
+  useTheme: () => ({ resolvedTheme: "dark", setTheme: vi.fn() }),
+}));
+
 vi.mock("@/app/ConvexClientProvider", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -21,7 +25,7 @@ vi.mock("@/app/ConvexClientProvider", () => ({
 import WorkspaceTopNavbar from "./WorkspaceTopNavbar";
 
 describe("WorkspaceTopNavbar", () => {
-  it("renders the unified account button with user and organization info", () => {
+  it("renders the organization context control with signal actions", () => {
     const html = renderToStaticMarkup(
       <WorkspaceTopNavbar
         user={{ name: "Ahmed", email: "ahmed@example.com" }}
@@ -36,9 +40,10 @@ describe("WorkspaceTopNavbar", () => {
     );
 
     expect(html).toContain("شركة الواحة");
-    expect(html).toContain("Ahmed");
-    expect(html).toContain("href=\"/ws/me\"");
+    expect(html).toContain("مساحة المطور");
+    expect(html).toContain("href=\"/ws/settings\"");
     expect(html).toContain("href=\"/ws/notifications\"");
     expect(html).toContain("href=\"/ws/inbox\"");
+    expect(html).toContain("data-slot=\"theme-toggle\"");
   });
 });

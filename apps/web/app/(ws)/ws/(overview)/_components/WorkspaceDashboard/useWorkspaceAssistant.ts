@@ -6,6 +6,7 @@ import { useQuery } from "convex/react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { api } from "@/lib/convexApi";
 import type { AnanProInputMode, AnanProStreamStageEvent, AnanProThread } from "@/server/contracts/ananPro";
+import type { UploadedFileReference } from "@/server/contracts/files";
 import {
   getVoiceUploadUrl,
   transcribeVoiceFromStorage,
@@ -44,6 +45,7 @@ type LiveAssistantMessage = {
     uiTurn?: unknown;
     meta?: unknown;
     inputMode?: AnanProInputMode;
+    attachments?: UploadedFileReference[];
   };
   createdAt: number;
 };
@@ -56,6 +58,7 @@ function mapLiveAssistantMessages(messages: LiveAssistantMessage[]) {
     uiTurn: message.metadata?.uiTurn,
     meta: message.metadata?.meta,
     inputMode: message.metadata?.inputMode,
+    attachments: message.metadata?.attachments,
     createdAt: message.createdAt,
   }));
 }
@@ -100,6 +103,10 @@ function isIncomingMessageWeaker(args: {
   }
 
   if (args.currentMessage.inputMode && !args.incomingMessage.inputMode) {
+    return true;
+  }
+
+  if ((args.currentMessage.attachments?.length ?? 0) > (args.incomingMessage.attachments?.length ?? 0)) {
     return true;
   }
 
@@ -230,6 +237,7 @@ export function useWorkspaceAssistant({
   const [stageHistory, setStageHistory] = useState<AnanProStreamStageEvent[]>([]);
   const [streamLifecycleStatus, setStreamLifecycleStatus] = useState<"running" | "completed" | "failed" | "cancelled" | null>(null);
   const [activeTeamId, setActiveTeamId] = useState<string | null>(null);
+  const [activeAgentName, setActiveAgentName] = useState<string | null>(null);
   const [completedTeamIds, setCompletedTeamIds] = useState<string[]>([]);
   const [activeStreamSessionId, setActiveStreamSessionId] = useState<string | null>(null);
   const [isStoppingStream, setIsStoppingStream] = useState(false);
@@ -263,6 +271,7 @@ export function useWorkspaceAssistant({
     setStageHistory([]);
     setStreamLifecycleStatus(null);
     setActiveTeamId(null);
+    setActiveAgentName(null);
     setCompletedTeamIds([]);
     setActiveStreamSessionId(null);
     setIsStoppingStream(false);
@@ -463,6 +472,7 @@ export function useWorkspaceAssistant({
     setStageHistory,
     setStreamLifecycleStatus,
     setActiveTeamId,
+    setActiveAgentName,
     setCompletedTeamIds,
     setActiveStreamSessionId,
     setIsStoppingStream,
@@ -478,7 +488,7 @@ export function useWorkspaceAssistant({
     onTranscriptReady: async (transcript) => {
       setSendError(null);
       setUnavailableThreadId(null);
-      sendWithOptimisticUpdate(transcript, "voice");
+    sendWithOptimisticUpdate(transcript, "voice");
     },
     onError: (message) => {
       setSendError(message);
@@ -520,30 +530,49 @@ export function useWorkspaceAssistant({
     const targetUserMessage = [...thread.messages].reverse().find((message) => message.role === "user");
     if (!targetUserMessage?.content?.trim()) return;
     setSendError(null);
-    sendWithOptimisticUpdate(targetUserMessage.content, targetUserMessage.inputMode, {
-      regenerate: true,
-      regenerateMessageId: targetUserMessage.id,
-    });
+    sendWithOptimisticUpdate(
+      targetUserMessage.content,
+      targetUserMessage.inputMode,
+      {
+        regenerate: true,
+        regenerateMessageId: targetUserMessage.id,
+      },
+      targetUserMessage.attachments,
+    );
   }, [isLoadingThread, isSending, sendWithOptimisticUpdate, thread]);
 
-  const handleSend = (message?: string, inputMode?: AnanProInputMode) => {
+  const handleSend = (
+    message?: string,
+    inputMode?: AnanProInputMode,
+    attachments?: UploadedFileReference[],
+  ) => {
     const nextMessage = (message ?? value).trim();
-    if (!nextMessage || isSending || isLoadingThread) {
+    const hasAttachments = (attachments?.length ?? 0) > 0;
+    if ((!nextMessage && !hasAttachments) || isSending || isLoadingThread) {
       return;
     }
 
-    if (typeof message !== "string") {
-      setValue("");
-    }
+    setValue("");
     setSendError(null);
     setUnavailableThreadId(null);
-    sendWithOptimisticUpdate(nextMessage, inputMode);
+    sendWithOptimisticUpdate(nextMessage, inputMode, undefined, attachments);
   };
 
   const assistantMotionState = getAssistantMotionState(isSending, streamStage);
   const stageLabel = getAssistantStageLabel(isSending, streamStage, streamLifecycleStatus);
+  const handleToggleVoiceRecording = useCallback(() => {
+    setSendError(null);
+    void voiceRecorder.toggleRecording();
+  }, [voiceRecorder, setSendError]);
+  const handleStopVoiceRecording = useCallback(() => {
+    setSendError(null);
+    return voiceRecorder.stopRecording();
+  }, [voiceRecorder, setSendError]);
+  const handleCancelVoiceRecording = useCallback(() => {
+    setSendError(null);
+    voiceRecorder.cancelRecording();
+  }, [voiceRecorder, setSendError]);
 
-  const activeTeamLabel = activeTeamId ? normalizeAssistantTeamLabel(activeTeamId) : null;
   const completedTeamLabels = completedTeamIds.map(normalizeAssistantTeamLabel);
   const canRegenerate = Boolean(thread?.messages.some((message) => message.role === "user")) && !isSending && !isLoadingThread;
 
@@ -555,11 +584,14 @@ export function useWorkspaceAssistant({
     isLoadingThread,
     isStoppingStream,
     isSending,
+    isVoicePanelOpen: voiceRecorder.isPanelOpen,
     isVoiceRecording: voiceRecorder.isRecording,
     isVoiceTranscribing: voiceRecorder.isTranscribing,
+    voicePermissionState: voiceRecorder.permissionState,
     voiceProcessingPhase: voiceRecorder.processingPhase,
     canRegenerate,
-    activeTeamLabel,
+    activeAgentName,
+    activeTeamId,
     completedTeamLabels,
     stageHistory,
     streamLifecycleStatus,
@@ -567,7 +599,10 @@ export function useWorkspaceAssistant({
     liveStageLabel: stageLabel,
     voiceElapsedMs: voiceRecorder.elapsedMs,
     voiceLevels: voiceRecorder.levels,
-    toggleVoiceRecording: voiceRecorder.toggleRecording,
+    toggleVoiceRecording: handleToggleVoiceRecording,
+    stopVoiceRecording: handleStopVoiceRecording,
+    cancelVoiceRecording: handleCancelVoiceRecording,
+    requestVoicePermission: voiceRecorder.requestMicrophonePermission,
     sendError,
     setValue,
     thread,

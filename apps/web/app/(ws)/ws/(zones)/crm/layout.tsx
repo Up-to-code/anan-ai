@@ -35,7 +35,7 @@ export default async function CrmZoneLayout({
         name: primaryOrganization?.name,
         type: primaryOrganization?.type,
         status: primaryOrganization?.status,
-        zoneLabel: "إدارة العملاء",
+        zoneLabel: "إدارة الصفقات",
       })}
     >
       <div className="flex min-h-full flex-col">

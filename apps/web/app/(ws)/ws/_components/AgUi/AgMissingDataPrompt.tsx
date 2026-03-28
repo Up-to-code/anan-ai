@@ -9,9 +9,9 @@ export default function AgMissingDataPrompt({
   prompt: string;
 }) {
   return (
-    <div className="w-full max-w-[380px] border-r-2 border-blue-400 pr-4 py-1">
-      <div className="text-[10px] font-semibold tracking-wider text-blue-600">سؤال متابعة</div>
-      <p className="mt-1 text-sm font-medium leading-7 text-slate-800">{prompt}</p>
+    <div className="w-full max-w-[380px] border-r-2 border-[color:color-mix(in_srgb,var(--workspace-highlight)_40%,transparent)] pr-4 py-1">
+      <div className="text-[10px] font-semibold tracking-wider text-[var(--workspace-highlight)]">سؤال متابعة</div>
+      <p className="mt-1 text-sm font-medium leading-7 text-[var(--workspace-bubble-other-foreground)]">{prompt}</p>
     </div>
   );
 }

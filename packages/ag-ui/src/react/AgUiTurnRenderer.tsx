@@ -62,7 +62,10 @@ export default function AgUiTurnRenderer({
   actionHandlers,
 }: AgUiTurnRendererProps) {
   const registry = mergeAgUiComponentRegistry(components);
-  const rootClassName = ["w-full space-y-4", className].filter(Boolean).join(" ");
+  const rootClassName = [
+    "mt-3 flex w-full max-w-[760px] flex-col gap-3",
+    className,
+  ].filter(Boolean).join(" ");
 
   return (
     <div className={rootClassName}>

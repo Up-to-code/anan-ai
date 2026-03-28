@@ -26,23 +26,19 @@ export default function AgDeleteConfirmModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="relative w-full max-w-md border-2 border-slate-100 bg-white">
-        {/* Red top bar */}
-        <div className="h-1.5 w-full bg-red-600" />
-
-        {/* Header */}
-        <div className="px-8 pt-8 pb-4 flex items-start justify-between">
+      <div className="relative w-full max-w-md rounded-[28px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
+        <div className="flex items-start justify-between gap-4 px-6 pb-4 pt-6 sm:px-7">
           <div className="flex items-start gap-4">
-            <div className="shrink-0 h-12 w-12 bg-red-50 border border-red-100 flex items-center justify-center">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-red-100 bg-red-50">
               <AlertTriangle className="h-6 w-6 text-red-600" />
             </div>
             <div className="text-right">
-              <h2 className="text-xl font-black text-slate-950">{title}</h2>
+              <h2 className="text-xl font-black text-[var(--workspace-bubble-other-foreground)]">{title}</h2>
               {description && (
-                <p className="mt-2 text-sm font-medium text-slate-500 leading-relaxed">
+                <p className="mt-2 text-sm font-medium leading-relaxed text-[var(--workspace-muted)]">
                   {description}
                 </p>
               )}
@@ -51,32 +47,30 @@ export default function AgDeleteConfirmModal({
           <button
             type="button"
             onClick={onClose}
-            className="h-8 w-8 flex items-center justify-center text-slate-400 hover:text-slate-950 transition"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--workspace-muted)] transition hover:bg-[var(--workspace-accent-soft)] hover:text-[var(--workspace-bubble-other-foreground)]"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Warning note */}
-        <div className="mx-8 mb-6 border border-red-100 bg-red-50 p-4">
-          <p className="text-xs font-black text-red-700 text-right leading-relaxed">
-            ⚠ هذا الإجراء لا يمكن التراجع عنه. سيتم حذف جميع البيانات المرتبطة بهذا العنصر.
+        <div className="mx-6 mb-6 rounded-2xl border border-red-100 bg-red-50 p-4 text-right sm:mx-7">
+          <p className="text-sm font-semibold leading-relaxed text-red-700">
+            هذا الإجراء لا يمكن التراجع عنه، وسيتم حذف جميع البيانات المرتبطة بهذا العنصر.
           </p>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-3 px-8 pb-8">
+        <div className="flex flex-col-reverse gap-3 px-6 pb-6 sm:flex-row sm:justify-end sm:px-7">
           <button
             type="button"
             onClick={onClose}
-            className="border border-slate-200 px-6 py-3 text-xs font-black uppercase tracking-[0.18em] text-slate-600 hover:border-slate-400 hover:text-slate-950 transition"
+            className="rounded-2xl border border-[color:var(--workspace-border)] px-5 py-3 text-sm font-bold text-[var(--workspace-muted)] transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] hover:text-[var(--workspace-bubble-other-foreground)]"
           >
             إلغاء
           </button>
           <button
             type="button"
             onClick={() => { onConfirm(); onClose(); }}
-            className="border-2 border-red-600 bg-red-600 px-8 py-3 text-xs font-black uppercase tracking-[0.18em] text-white hover:bg-red-700 hover:border-red-700 transition"
+            className="rounded-2xl border border-red-600 bg-red-600 px-6 py-3 text-sm font-bold text-white transition hover:border-red-700 hover:bg-red-700"
           >
             {confirmLabel}
           </button>

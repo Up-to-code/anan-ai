@@ -1,8 +1,8 @@
 import { mutation, query } from "../_generated/server";
 import { ConvexError, v } from "convex/values";
 import { requireRole } from "../_core/security/accessPolicy";
-type VerificationStatus = "new" | "in_review" | "approved" | "rejected";
-type ReviewStatus = "in_review" | "approved" | "rejected";
+type VerificationStatus = "new" | "in_review" | "approved" | "rejected" | "closed";
+type ReviewStatus = "in_review" | "approved" | "rejected" | "closed";
 type VerificationRequest = Record<string, any>;
 type VerificationLookups = {
   profiles: Array<Record<string, any>>;
@@ -11,7 +11,10 @@ type VerificationLookups = {
   properties: Array<Record<string, any>>;
 };
 
-async function listVerificationRequestsByStatus(ctx: any, status?: "new" | "in_review" | "approved" | "rejected") {
+async function listVerificationRequestsByStatus(
+  ctx: any,
+  status?: "new" | "in_review" | "approved" | "rejected" | "closed",
+) {
   if (status) {
     return ctx.db
       .query("verificationRequests")
@@ -117,7 +120,7 @@ function buildVerificationDecisionHistory(request: VerificationRequest) {
     submittedItem,
     {
       id: `${String(request._id)}-reviewed`,
-      label: "تمت المراجعة",
+      label: request.currentStatus === "closed" ? "تم الإغلاق" : "تمت المراجعة",
       createdAt: request.reviewedAt,
       notes: request.reviewerNotes ?? null,
       status: request.currentStatus,
@@ -187,6 +190,7 @@ export const listVerificationRequests = query({
         v.literal("in_review"),
         v.literal("approved"),
         v.literal("rejected"),
+        v.literal("closed"),
       ),
     ),
   },
@@ -259,6 +263,7 @@ export const verificationStatusSummary = query({
       inReview: requests.filter((request) => request.currentStatus === "in_review").length,
       approved: requests.filter((request) => request.currentStatus === "approved").length,
       rejected: requests.filter((request) => request.currentStatus === "rejected").length,
+      closed: requests.filter((request) => request.currentStatus === "closed").length,
     };
   },
 });
@@ -275,6 +280,7 @@ export const reviewVerificationRequest = mutation({
       v.literal("in_review"),
       v.literal("approved"),
       v.literal("rejected"),
+      v.literal("closed"),
     ),
     reviewerId: v.string(),
     reviewerNotes: v.optional(v.string()),

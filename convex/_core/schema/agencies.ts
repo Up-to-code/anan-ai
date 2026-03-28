@@ -1,5 +1,12 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import {
+    ORGANIZATION_API_KEY_ACTIONS,
+    ORGANIZATION_API_KEY_RESOURCES,
+} from "../../../shared/auth/organizationPermissions";
+
+const [firstOrganizationApiKeyResource, ...restOrganizationApiKeyResources] = ORGANIZATION_API_KEY_RESOURCES;
+const [firstOrganizationApiKeyAction, ...restOrganizationApiKeyActions] = ORGANIZATION_API_KEY_ACTIONS;
 
 /**
  * Agencies Schema (Brokers and REDs)
@@ -78,8 +85,8 @@ const agenciesTables = {
         name: v.string(),
         permissions: v.array(
             v.object({
-                resource: v.union(v.literal("clients"), v.literal("properties")),
-                action: v.union(v.literal("read"), v.literal("create"), v.literal("update"), v.literal("delete")),
+                resource: v.union(v.literal(firstOrganizationApiKeyResource), ...restOrganizationApiKeyResources.map((resource) => v.literal(resource))),
+                action: v.union(v.literal(firstOrganizationApiKeyAction), ...restOrganizationApiKeyActions.map((action) => v.literal(action))),
             }),
         ),
         status: v.union(v.literal("active"), v.literal("revoked")),

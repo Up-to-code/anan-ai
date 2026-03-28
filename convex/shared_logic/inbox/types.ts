@@ -1,10 +1,8 @@
-import type { Id } from "../../_generated/dataModel";
-
 export type OfferCardMetadata = {
   contextType: "offer_card";
   bootstrapSource: "offer_send" | "offer_apply" | "offer_detail";
-  offerId: Id<"offers">;
-  propertyId: Id<"properties">;
+  offerId: string;
+  propertyId: string;
   offerTitle: string;
   authorName: string;
   organizationName: string;
@@ -117,7 +115,7 @@ export type RoleEventMetadata = {
 };
 
 export type EnsureOfferConversationStarterResult = {
-  conversationId: Id<"inboxConversations">;
+  conversationId: string;
   recipientUserId: string;
   starterMessageCreated: boolean;
 };
@@ -140,4 +138,3 @@ export function isOfferCardMetadata(value: unknown): value is OfferCardMetadata 
     typeof candidate.href === "string"
   );
 }
-

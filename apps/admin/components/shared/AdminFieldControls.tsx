@@ -22,7 +22,7 @@ export function AdminInput({ className, ...props }: FieldProps) {
     <input
       {...props}
       className={cn(
-        "h-10 w-full rounded-[8px] border border-border bg-white px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-500",
+        "h-11 w-full rounded-xl border border-border/40 bg-muted/5 px-4 text-sm font-bold text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-4 focus:ring-primary/5 focus:bg-card",
         className,
       )}
     />
@@ -39,7 +39,7 @@ export function AdminSelect({ className, children, ...props }: SelectProps) {
     <select
       {...props}
       className={cn(
-        "h-10 w-full rounded-[8px] border border-border bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-500",
+        "h-11 w-full rounded-xl border border-border/40 bg-muted/5 px-4 text-sm font-bold text-foreground outline-none transition-all focus:border-primary/50 focus:ring-4 focus:ring-primary/5 focus:bg-card appearance-none",
         className,
       )}
     >
@@ -58,7 +58,7 @@ export function AdminTextarea({ className, ...props }: TextareaProps) {
     <textarea
       {...props}
       className={cn(
-        "min-h-28 w-full rounded-[8px] border border-border bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-500",
+        "min-h-28 w-full rounded-xl border border-border/40 bg-muted/5 px-4 py-3 text-sm font-bold text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-4 focus:ring-primary/5 focus:bg-card",
         className,
       )}
     />

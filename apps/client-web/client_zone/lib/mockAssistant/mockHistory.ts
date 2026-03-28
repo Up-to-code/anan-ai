@@ -9,8 +9,9 @@ import { getMockConversationThreads } from "./mockConversation";
 export function getMockThreadSummaries(locale: Locale): ThreadSummary[] {
   return getMockConversationThreads(locale).map((thread) => ({
     id: thread.id,
-    kind: "demo",
     title: thread.title,
     createdAt: thread.createdAt,
+    updatedAt: thread.createdAt,
+    preview: thread.messages.at(-1)?.text,
   }));
 }

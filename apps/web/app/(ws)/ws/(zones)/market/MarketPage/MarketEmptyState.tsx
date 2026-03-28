@@ -11,9 +11,9 @@ export default function MarketEmptyState({
   description?: string;
 }) {
   return (
-    <div className="border border-slate-200 bg-white p-10 text-right">
-      <h2 className="text-lg font-black text-slate-950">{title}</h2>
-      <p className="mt-2 max-w-2xl text-sm font-medium leading-7 text-slate-600">{description}</p>
+    <div className="border border-slate-200 bg-white p-10 text-right dark:border-slate-800 dark:bg-slate-950">
+      <h2 className="text-lg font-black text-slate-950 dark:text-slate-100">{title}</h2>
+      <p className="mt-2 max-w-2xl text-sm font-medium leading-7 text-slate-600 dark:text-slate-300">{description}</p>
     </div>
   );
 }

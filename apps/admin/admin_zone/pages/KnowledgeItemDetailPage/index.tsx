@@ -38,17 +38,23 @@ export default function KnowledgeItemDetailPage({ itemId }: KnowledgeItemDetailP
         />
       }
     >
-      <WorkspacePanel className="space-y-4">
-        <div className="flex items-center gap-3">
+      <WorkspacePanel className="rounded-3xl p-10 space-y-10 border-border/30 bg-card/50 shadow-sm">
+        <div className="flex items-center justify-between pb-8 border-b border-border/10">
+          <div className="space-y-3">
+            <h3 className="text-4xl font-black tracking-tighter text-foreground decoration-primary/20 underline decoration-8 underline-offset-8 decoration-skip-ink-none">{item.title}</h3>
+            <p className="text-[13px] font-bold text-muted-foreground/40 uppercase tracking-widest italic">{item.source}</p>
+          </div>
           <StatusBadge value={item.status} />
         </div>
+
         <KeyValueGrid
           items={[
-            { label: "المصدر", value: item.source },
-            { label: "تم الاقتراح بواسطة", value: item.submittedBy },
-            { label: "الحالة", value: <StatusBadge value={item.status} /> },
-            { label: "المعرّف", value: item.id },
+            { label: "المصدر الأصلي", value: <span className="font-black text-foreground">{item.source}</span> },
+            { label: "تم الاقتراح بواسطة", value: <span className="font-black text-primary">{item.submittedBy}</span> },
+            { label: "الحالة الحالية", value: <StatusBadge value={item.status} /> },
+            { label: "المعرّف الفريد", value: <span className="font-mono text-[11px] text-muted-foreground/50">{item.id}</span> },
           ]}
+          columns={2}
         />
       </WorkspacePanel>
     </SectionScaffold>

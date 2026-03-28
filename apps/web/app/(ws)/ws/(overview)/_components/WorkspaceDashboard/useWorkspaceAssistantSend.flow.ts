@@ -1,6 +1,7 @@
 "use client";
 
 import type { AnanProInputMode, AnanProThread } from "@/server/contracts/ananPro";
+import type { UploadedFileReference } from "@/server/contracts/files";
 import {
   buildStreamState,
   streamAssistantResponse,
@@ -21,6 +22,7 @@ function createOptimisticThread(args: {
   assistantMessageId: string;
   nextMessage: string;
   inputMode?: AnanProInputMode;
+  attachments?: UploadedFileReference[];
   options?: SendOptions;
 }) {
   const optimisticThread: AnanProThread = args.previousThread ?? { id: "", title: null, messages: [] };
@@ -31,6 +33,7 @@ function createOptimisticThread(args: {
       role: "user",
       content: args.nextMessage,
       inputMode: args.inputMode,
+      attachments: args.attachments,
       createdAt: Date.now(),
     });
   }
@@ -48,6 +51,7 @@ function buildSendBody(args: {
   startNewThread?: boolean;
   nextMessage: string;
   inputMode?: AnanProInputMode;
+  attachments?: UploadedFileReference[];
   streamSessionId: string;
   options?: SendOptions;
 }) {
@@ -56,6 +60,7 @@ function buildSendBody(args: {
     threadId: args.previousThread?.id,
     startNewThread: args.startNewThread || undefined,
     inputMode: args.inputMode,
+    attachments: args.attachments,
     streamSessionId: args.streamSessionId,
     regenerate: args.options?.regenerate,
     regenerateMessageId: args.options?.regenerateMessageId,
@@ -89,6 +94,7 @@ async function requestAssistantStream(args: {
   startNewThread?: boolean;
   nextMessage: string;
   inputMode?: AnanProInputMode;
+  attachments?: UploadedFileReference[];
   options?: SendOptions;
   streamSessionId: string;
 }) {
@@ -96,12 +102,13 @@ async function requestAssistantStream(args: {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(
-        buildSendBody({
-          previousThread: args.previousThread,
-          startNewThread: args.startNewThread,
-          nextMessage: args.nextMessage,
-          inputMode: args.inputMode,
-          streamSessionId: args.streamSessionId,
+      buildSendBody({
+        previousThread: args.previousThread,
+        startNewThread: args.startNewThread,
+        nextMessage: args.nextMessage,
+        inputMode: args.inputMode,
+        attachments: args.attachments,
+        streamSessionId: args.streamSessionId,
         options: args.options,
       }),
     ),
@@ -134,6 +141,7 @@ export async function runSendFlow(args: {
   startNewThread?: boolean;
   nextMessage: string;
   inputMode?: AnanProInputMode;
+  attachments?: UploadedFileReference[];
   options?: SendOptions;
   streamSessionId: string;
   assistantMessageId: string;
@@ -143,6 +151,7 @@ export async function runSendFlow(args: {
     assistantMessageId: args.assistantMessageId,
     nextMessage: args.nextMessage,
     inputMode: args.inputMode,
+    attachments: args.attachments,
     options: args.options,
   });
   initializeStreamRun({ params: args.params, streamSessionId: args.streamSessionId, optimisticThread });

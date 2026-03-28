@@ -4,8 +4,6 @@ import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
 import { ArrowUp, Mic, Square } from "lucide-react";
 import { useLocaleDictionary } from "@/client_zone/components/LocaleProvider";
-import { Button } from "@/client_zone/components/ui/button";
-import { Card } from "@/client_zone/components/ui/card";
 import { Textarea } from "@/client_zone/components/ui/textarea";
 
 function useMobileViewportOffset() {
@@ -57,9 +55,9 @@ export function ChatPromptInput({
   onSubmit: () => void;
   disabled?: boolean;
   className?: string;
-  dockRef?: React.Ref<HTMLDivElement>;
+  dockRef?: React.MutableRefObject<HTMLDivElement | null>;
 }) {
-  const { dictionary } = useLocaleDictionary();
+  const { dictionary, locale } = useLocaleDictionary();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const viewportOffset = useMobileViewportOffset();
   const [isRecording, setIsRecording] = useState(false);
@@ -78,12 +76,17 @@ export function ChatPromptInput({
   return (
     <div
       ref={dockRef}
-      className={cn("sticky bottom-0 z-30 border-t border-slate-200 bg-white/96 px-4 pt-3 backdrop-blur", className)}
-      style={{ paddingBottom: `calc(max(0.875rem, env(safe-area-inset-bottom)) + ${viewportOffset}px)` }}
+      data-slot="chat-input"
+      className={cn("pointer-events-none sticky bottom-0 z-30 shrink-0 px-4 pt-3 sm:px-6 lg:px-8", className)}
+      style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + 1.5rem + ${viewportOffset}px)` }}
     >
-      <div className="mx-auto w-full max-w-[900px]">
-        <Card className="rounded-2xl border-slate-200 p-2 shadow-[0_8px_24px_-18px_rgba(15,23,42,0.24)]">
-          <div className="px-2 pt-2">
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 bottom-0 h-[260px] bg-[linear-gradient(to_top,color-mix(in_srgb,var(--workspace-highlight)_22%,transparent)_0%,color-mix(in_srgb,var(--workspace-highlight)_10%,transparent)_35%,transparent_100%)]"
+      />
+      <div className="pointer-events-auto mx-auto w-full max-w-3xl">
+        <div className="overflow-hidden rounded-[32px] border border-[color:color-mix(in_srgb,var(--workspace-border)_90%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_86%,white)] shadow-[0_28px_60px_rgba(15,23,42,0.12)] backdrop-blur-2xl">
+          <div className="px-5 pt-4 sm:px-6">
             <Textarea
               ref={textareaRef}
               value={value}
@@ -91,43 +94,59 @@ export function ChatPromptInput({
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
+                  if (isSubmitDisabled) {
+                    return;
+                  }
                   onSubmit();
                 }
               }}
               aria-label={dictionary.app.composerPlaceholder}
               placeholder={dictionary.app.composerPlaceholder}
               rows={1}
-              className="max-h-48 min-h-[64px] resize-none border-0 px-1 py-2 text-[15px] leading-7 shadow-none focus-visible:ring-0"
+              className="max-h-48 min-h-[56px] resize-none border-0 bg-transparent px-0 py-2 text-[15px] font-semibold leading-relaxed shadow-none focus-visible:ring-0"
             />
           </div>
-          <div className="mt-2 flex items-center justify-between gap-2 border-t border-slate-100 px-2 pb-2 pt-3">
-            <span className="hidden text-xs text-slate-500 sm:block">{dictionary.app.composerHint}</span>
-            <div className="ms-auto flex shrink-0 items-center gap-2">
+          <div
+            className="mt-2 flex items-center justify-between gap-3 border-t border-[color:color-mix(in_srgb,var(--workspace-border)_88%,transparent)] px-4 pb-4 pt-3 sm:px-5"
+            dir={locale === "ar" ? "rtl" : "ltr"}
+          >
+            <span className="hidden text-[11px] font-black uppercase tracking-[0.18em] text-[var(--workspace-muted)] sm:block">
+              {dictionary.app.composerHint}
+            </span>
+            <div className="ms-auto flex shrink-0 items-center gap-2" dir="ltr">
               <div className="relative">
-                {isRecording ? <span className="absolute inset-0 rounded-full border border-red-300 animate-ping" /> : null}
-                <Button
+                {isRecording ? (
+                  <span className="absolute inset-0 rounded-full border border-red-300 animate-ping" />
+                ) : null}
+                <button
                   type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="relative h-9 w-9 rounded-full"
+                  className="relative flex h-11 w-11 items-center justify-center rounded-full border border-transparent text-[var(--workspace-muted)] transition hover:border-[color:var(--workspace-border)] hover:bg-[var(--workspace-panel)] hover:text-[var(--workspace-bubble-other-foreground)]"
                   onClick={() => setIsRecording((current) => !current)}
                   aria-label={isRecording ? "Stop microphone" : "Start microphone"}
                 >
-                  {isRecording ? <Square className="h-4 w-4 text-red-600" /> : <Mic className="h-4 w-4" />}
-                </Button>
+                  {isRecording ? (
+                    <Square className="h-4 w-4 text-red-600" />
+                  ) : (
+                    <Mic className="h-5 w-5" />
+                  )}
+                </button>
               </div>
-              <Button
+              <button
                 onClick={onSubmit}
                 disabled={isSubmitDisabled}
-                size="icon"
-                className="h-10 w-10 rounded-full"
+                className={cn(
+                  "flex h-11 w-11 items-center justify-center rounded-full text-white shadow-md transition-all",
+                  isSubmitDisabled
+                    ? "bg-slate-300 opacity-60"
+                    : "bg-slate-950 hover:bg-[var(--workspace-highlight-strong)]",
+                )}
                 aria-label={dictionary.app.send}
               >
-                <ArrowUp className="h-4 w-4" />
-              </Button>
+                <ArrowUp className="h-5 w-5" />
+              </button>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

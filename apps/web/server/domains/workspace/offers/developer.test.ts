@@ -9,9 +9,20 @@ import { getRedOffersSnapshot } from "./developer";
 describe("red offers server functions", () => {
   it("loads the developer offers snapshot after session validation", async () => {
     const repository = {
-      listSent: vi.fn(async () => [{ id: "offer-1", propertyId: "property-1", price: 1, status: "pending" as const }]),
-      listReceived: vi.fn(async () => []),
-      listMarketplace: vi.fn(async () => []),
+      getQueues: vi.fn(async () => ({
+        audience: "developer" as const,
+        queues: [
+          {
+            key: "open_inventory" as const,
+            label: "Open Inventory Offers",
+            description: "Developer-owned inventory packages currently open.",
+            items: [{ id: "offer-1", propertyId: "property-1", price: 1, status: "pending" as const }],
+          },
+        ],
+        sent: [{ id: "offer-1", propertyId: "property-1", price: 1, status: "pending" as const }],
+        received: [],
+        marketplace: [],
+      })),
       create: vi.fn(async () => ({ offerId: "offer-1", conversationId: null, starterMessageCreated: false, notification: null })),
       publish: vi.fn(async () => ({ ok: true as const })),
       respond: vi.fn(async () => undefined),
@@ -28,8 +39,6 @@ describe("red offers server functions", () => {
     });
 
     expect(snapshot.sent).toHaveLength(1);
-    expect(repository.listSent).toHaveBeenCalled();
-    expect(repository.listReceived).toHaveBeenCalled();
-    expect(repository.listMarketplace).toHaveBeenCalled();
+    expect(repository.getQueues).toHaveBeenCalledWith("token");
   });
 });
