@@ -1,6 +1,8 @@
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import ConvexClientProvider from "../ConvexClientProvider";
 
+export const dynamic = "force-dynamic";
+
 /**
  * WHY:   Every workspace route depends on the authenticated Convex runtime for live hooks and auth actions.
  * WHAT:  Anchors the Convex auth server/client providers at the stable `(ws)` route-group boundary.

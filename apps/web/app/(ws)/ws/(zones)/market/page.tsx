@@ -2,6 +2,8 @@ import MarketPage from "./MarketPage";
 import OverviewTab from "./MarketPage/OverviewTab";
 import { loadMarketPageModel } from "./loadMarketPageModel";
 
+export const dynamic = "force-dynamic";
+
 type MarketPageProps = {
   searchParams: Promise<{
     city?: string | string[];

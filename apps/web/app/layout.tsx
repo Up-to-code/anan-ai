@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { RootFontFaces, rootFontClassName } from "@/lib/rootFonts";
 import ThemeProvider from "./theme-provider";
@@ -18,10 +19,12 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className={`${rootFontClassName} bg-background text-foreground antialiased`}>
         <ThemeProvider>
-          <PostHogProvider>
-            <RootFontFaces />
-            {children}
-          </PostHogProvider>
+          <Suspense fallback={null}>
+            <PostHogProvider>
+              <RootFontFaces />
+              {children}
+            </PostHogProvider>
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>
