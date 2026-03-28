@@ -1,114 +1,307 @@
-# Anan AI — Platform Overview
+# Anan AI
 
-Anan AI is a **multi-surface real estate platform** built on a **Convex-first backend**. It connects **Users (buyers/investors)**, **Brokers**, and **Developers (RED)** through one shared system of data, rules, and AI-driven workflows.
+Anan is a multi-surface real estate infrastructure built around one shared Convex backend. It connects buyers and investors, brokers, and developers (RED) through a single system for data, permissions, workflows, and AI-assisted distribution.
 
-🔒 **Private / closed-source / proprietary.** See `LICENSE` and `NOTICE.md`.
+This repository is the implementation of that platform. The core idea is simple:
 
----
+**surfaces collect intent -> owners translate it -> Convex executes capability -> stable projections update UI and channels**
 
-## What This Repo Contains
+That mental model matters more than any individual folder. If you are new to the repo, start here before you start reading feature code.
 
-Four runtime surfaces, one backend:
-- `apps/web` — public site + broker/developer workspace
-- `apps/admin` — operations console (in-app handbook at `/docs`)
-- `apps/mobile` — buyer-facing Expo app
-- `convex` — schema, auth, access policy, shared logic, AI orchestration, channels, HTTP/OAuth ingress
+Private / closed-source / proprietary. See `LICENSE` and `NOTICE.md`.
 
----
+## Platform Purpose
 
-## Technology + Architecture
+Anan is designed to unify the full real estate operating loop inside one architecture:
 
-**Core stack**
-- Backend: **Convex** for schema, auth, access policy, business logic, AI orchestration, and channels.
-- Web/Admin: **Next.js App Router**.
-- Mobile: **Expo Router**.
-- Language: **TypeScript** across the stack.
+- buyers and investors express demand through AI-first and app-based entry points
+- brokers distribute inventory, collaborate, and manage pipelines
+- developers (RED) publish projects and offers, track demand, and coordinate execution
+- platform operators manage trust, quality, policy, and internal operations
 
-**Architecture model (the circle)**
-Surface → Owning layer → Convex → Capability → Projection → UI.
+The platform is not just a listing site, not just a CRM, and not just an assistant. It is shared infrastructure for discovery, qualification, distribution, collaboration, and execution.
+
+## Main Actors
+
+- Users: buyers and investors searching, comparing, qualifying, and moving toward handoff
+- Brokers: operators of pipelines, client follow-up, project matching, and collaboration
+- Developers (RED): project owners managing inventory, offers, broker access, and performance
+- Platform/Admin: operators responsible for governance, tooling, analytics, and support
+
+Every meaningful architecture decision in this repo should be understandable through that four-party system.
+
+## Runtime Surfaces
+
+The repo contains a few different runtime surfaces, but they all depend on the same backend truth.
+
+### Primary product surfaces
+
+- `apps/web` - public web entry points plus broker and RED workspace experiences
+- `apps/admin` - internal operations console
+- `apps/mobile` - buyer-facing mobile app
+- channel and assistant entry points backed by `convex/ai_zone`
+
+### Supporting surfaces in this repo
+
+- `apps/client-web` - dedicated client-facing web flows
+- `apps/docs` - documentation site
+- `apps/private-docs` - private documentation surface
+- `apps/main-assistant` - assistant-related app workspace
+
+The important rule is that surfaces are not allowed to become independent business systems. They are delivery layers over shared capabilities.
+
+## Architecture Model
+
+Anan is organized around ownership boundaries. A surface can render, collect input, and orchestrate a user flow, but it should not become the source of truth for domain rules.
+
+The platform model is:
+
+**Surface -> owning layer -> Convex -> capability -> projection -> UI**
+
+- Surface: a web page, mobile screen, admin console, or channel entry point
+- Owning layer: the app or zone adapter responsible for translating UI intent into backend calls
+- Convex: the system of record for schema, auth, access policy, business logic, orchestration, and projections
+- Capability: shared domain behavior such as offers, projects, inbox, search, CRM, or AI workflows
+- Projection: stable query shapes optimized for the consuming surface
+- UI: the surface re-renders from projection updates instead of inventing parallel state models
 
 ```mermaid
 graph TD
-    A[Surface: Web, Admin, Mobile, Channel] -->|Delegates| B[Owning Layer: Web Gateway / Direct Convex]
-    B -->|Identity & Policy| C[Convex Backend]
-    C -->|Execute Capability| D[Shared Logic, AI, Owner Zone]
-    D -->|Persist & Project| E[Convex Stable Projections]
-    E -->|Real-time Update| A
+    A["Surface (Web / Admin / Mobile / Channel)"] --> B["Owning Layer"]
+    B --> C["Convex Backend"]
+    C --> D["Capability"]
+    D --> E["Stable Projection"]
+    E --> F["UI / Channel Response"]
+    F --> A
 ```
 
-**Backend zones (ownership boundaries)**
-- `_core` — schema, auth, identity, access policy.
-- `shared_logic` — shared business capabilities (offers, inbox, properties, market, knowledge).
-- `ai_zone` — assistant endpoints, orchestration, channel adapters.
-- `user_zone` — buyer/mobile endpoints.
-- `admin_zone` — admin projections and operations.
-- `broker_zone` — broker-scoped adapters and views.
-- `red_zone` — developer (RED) adapters and views.
-- `public_zone` — unauthenticated/public entry flows.
+In practice this means:
 
----
+- route files and pages stay thin
+- shared business logic is centralized once
+- access policy lives with backend truth, not in scattered UI conditions
+- projections are designed intentionally for the consuming surface
+- new channels should reuse the same domain capabilities instead of forking logic
 
-## How To Use This Repo
+## Why Convex Is the Center
 
-**1) Read the rules first**
-- `ARCHITECTURE.md` — absolute architectural standards.
-- `CONVEX_RULES.md` — rules for Convex queries/mutations/actions and channel handlers.
-- `docs/handbook/README.md` — full handbook by area.
+Convex is not just the database layer in this repo. It is the operational center of the platform.
 
-**2) Install**
+It owns:
+
+- schema and persistence
+- authentication and access policy
+- shared business capabilities
+- AI orchestration and assistant actions
+- channel ingress such as HTTP and OAuth flows
+- real-time projections consumed by apps and assistants
+
+That is why most architecture questions eventually reduce to: which backend zone should own this capability, and what projection should the surface consume?
+
+## Backend Zones
+
+The backend is split into explicit ownership zones. These are not cosmetic folders; they are decision boundaries.
+
+### `convex/_core`
+
+Foundation for the whole platform:
+
+- schema
+- identity and auth
+- access policy
+- shared infrastructure and platform-level primitives
+
+If something defines universal rules or platform-wide invariants, it likely belongs here.
+
+### `convex/shared_logic`
+
+Shared business capabilities used across surfaces and roles:
+
+- offers
+- properties
+- market
+- agencies
+- inbox-related capabilities
+- reusable workflows and domain services
+
+If the same behavior should exist once for multiple surfaces, put it here instead of duplicating it in a role-specific zone.
+
+### `convex/ai_zone`
+
+AI and assistant orchestration:
+
+- agent orchestration
+- tool-enabled assistant flows
+- channel adapters
+- prompt and retrieval workflows
+
+This zone owns AI execution logic, not the entire product domain. It should compose shared capabilities rather than replace them.
+
+### `convex/user_zone`
+
+Buyer and investor-facing behavior:
+
+- user-facing mobile and channel flows
+- user projections and actions
+- consumer-side search and interaction patterns
+
+If a workflow is specifically about the end-user experience rather than shared domain rules, it belongs here.
+
+### `convex/admin_zone`
+
+Internal operations and governance:
+
+- operational dashboards
+- internal tools
+- admin projections
+- moderation, verification, and support workflows
+
+This zone exists to operate the platform, not to duplicate broker or RED product logic.
+
+### `convex/broker_zone`
+
+Broker-scoped behavior and views:
+
+- broker workflows
+- broker-specific projections
+- broker adapters into shared capabilities
+
+This zone should hold broker-owned entry points and composition, while reusable business logic still lives in `shared_logic`.
+
+### `convex/red_zone`
+
+Developer (RED) behavior and views:
+
+- project and offer management entry points
+- RED-specific projections
+- developer-scoped adapters around shared capabilities
+
+If a flow is specifically about how developers operate inside the platform, this is the likely home.
+
+### `convex/public_zone`
+
+Unauthenticated and public entry flows:
+
+- public-facing entry points
+- auth-adjacent public flows
+- surface-safe unauthenticated access patterns
+
+This zone is for public access and entry, not for privileged business workflows.
+
+## Repo Map
+
+A fast way to understand where work belongs:
+
+- `apps/` - runtime surfaces and UI delivery layers
+- `convex/` - backend truth, policy, orchestration, and projections
+- `packages/` - stable shared systems with durable APIs
+- `docs/` - handbook, architecture references, and developer guides
+- `shared/` - cross-cutting local utilities that are not yet independent packages
+- `scripts/` - repo automation and local workflows
+
+Use `packages/*` only for stable shared systems. Large code does not automatically belong in a package. If ownership is still local to one app or one backend zone, keep it local and improve the architecture there.
+
+## Where Different Kinds of Work Belong
+
+- New domain capability reused by multiple roles: `convex/shared_logic`
+- Role-specific backend entry point or projection: the matching role zone
+- Platform-wide auth, schema, or policy rule: `convex/_core`
+- AI orchestration or channel execution: `convex/ai_zone`
+- Surface-specific rendering and interaction: the owning app under `apps/`
+- Durable cross-surface system with stable public APIs: `packages/`
+
+If you are unsure, the safest question is not "where can I make this work?" but "who should own this behavior long-term?"
+
+## How To Work In This Repo
+
+Read these in order when you are orienting yourself:
+
+1. `ARCHITECTURE.md` for the platform architecture and non-negotiable standards
+2. `CONVEX_RULES.md` for backend patterns, Convex rules, and channel-handler guidance
+3. `docs/handbook/README.md` for the handbook index by domain and surface
+
+Then inspect the nearest local `README.md` for the area you are about to change.
+
+## Local Setup
+
+### Install dependencies
+
 ```bash
 pnpm install
 ```
 
-**3) Configure auth redirects (required for Google OAuth)**
-- Set `SITE_URL` (and optionally `ANAN_WEB_URL`) to the public web origin you want after sign-in.
-- Set `ANAN_ADMIN_URL` for the admin app origin.
-- Set `ANAN_MOBILE_URL` for the mobile app origin.
-- If needed, set `ANAN_AUTH_ALLOWED_ORIGINS` (comma-separated) for extra safe redirects.
+### Configure auth redirects
 
-**4) Run locally**
+Google OAuth and related redirects rely on environment configuration:
+
+- `SITE_URL` - primary public web origin after sign-in
+- `ANAN_WEB_URL` - optional explicit web origin
+- `ANAN_ADMIN_URL` - admin app origin
+- `ANAN_MOBILE_URL` - mobile app origin
+- `ANAN_AUTH_ALLOWED_ORIGINS` - optional comma-separated extra safe redirect origins
+
+### Common development commands
+
 ```bash
-pnpm dev          # Convex dev (backend)
-pnpm dev:all      # backend + web + admin
+pnpm dev
+pnpm dev:all
 pnpm dev:web
 pnpm dev:admin
 pnpm mobile:dev
 ```
 
-**5) Build + test**
+What they do:
+
+- `pnpm dev` - run Convex development mode
+- `pnpm dev:all` - run backend, web, and admin together
+- `pnpm dev:web` - run the web app
+- `pnpm dev:admin` - run the admin app
+- `pnpm mobile:dev` - run the mobile app from `apps/mobile`
+
+Other useful workflows:
+
 ```bash
-pnpm build
+pnpm dev:client-web
+pnpm dev:docs
+pnpm dev:private-docs
+pnpm typecheck
 pnpm test:once
+pnpm build
 ```
 
----
+## Documentation Map
 
-## Navigation Links (Rules + Architecture + Guides)
+Use these when you need deeper context:
 
-**Architecture and rules**
-- `ARCHITECTURE.md` — platform architecture and standards.
-- `CONVEX_RULES.md` — Convex “God rules”.
-- `docs/handbook/security/README.md` — authZ and security patterns.
+### Core architecture
 
-**Handbook (by area)**
-- `docs/handbook/README.md` — master index.
-- `docs/handbook/convex/README.md` — Convex mental model + zones.
-- `docs/handbook/web/README.md` — web gateway + SSR rules.
-- `docs/handbook/admin/README.md` — admin app rules.
-- `docs/handbook/mobile/architecture.md` — mobile architecture flow.
+- `ARCHITECTURE.md` - platform architecture and coding standards
+- `CONVEX_RULES.md` - backend rules for queries, mutations, actions, and handlers
+- `docs/handbook/README.md` - handbook entry point
 
-**Project maps**
-- `docs/codebase-knowledge-base.md` — current repo truth by surface.
-- `docs/developer-system-guide.md` — system setup and workflow notes.
-- `docs/llm-data-access-guide.md` — safe LLM access patterns.
+### Handbook by area
 
----
+- `docs/handbook/convex/README.md` - backend mental model and zone guidance
+- `docs/handbook/convex/ai-zone/README.md` - AI zone details
+- `docs/handbook/web/README.md` - web architecture and gateway rules
+- `docs/handbook/admin/README.md` - admin app guidance
+- `docs/handbook/mobile/README.md` - mobile handbook index
+- `docs/handbook/mobile/architecture.md` - mobile architecture flow
+- `docs/handbook/security/README.md` - auth and security patterns
+- `docs/handbook/llm/README.md` - LLM-oriented guidance
 
-## Quick Rules (Summary)
+### Repo truth and working guides
 
-- Keep controllers and routes **thin**.
-- Respect **zone boundaries** (no deep imports across zones).
-- Put shared logic in `convex/shared_logic` once.
-- Put code in `packages/*` only when it is a **stable shared system**, not just a large folder.
-- Use **index-first** and **paginated** queries.
-- Keep public web routes SSR/static-friendly.
+- `docs/codebase-knowledge-base.md` - current codebase map by area
+- `docs/developer-system-guide.md` - local setup and workflow notes
+- `docs/llm-data-access-guide.md` - safe LLM access patterns
+
+## Quick Rules
+
+- Keep routes, controllers, and page entry points thin
+- Respect zone boundaries and avoid deep cross-zone imports
+- Put shared business logic in `convex/shared_logic` once
+- Treat Convex as the source of truth for policy and capability
+- Design projections intentionally for their consuming surfaces
+- Package only stable shared systems, not just large folders
+- Prefer architecture that can support multiple channels without duplicated logic
