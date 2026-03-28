@@ -1,5 +1,14 @@
 import { convexTest } from "convex-test";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+const { mockAuditLog } = vi.hoisted(() => ({
+  mockAuditLog: {
+    log: vi.fn(async () => undefined),
+    logChange: vi.fn(async () => undefined),
+  },
+}));
+vi.mock("../../../auditLog", () => ({
+  auditLog: mockAuditLog,
+}));
 import { api } from "../../../_generated/api";
 import schema from "../../../schema";
 import { modules } from "../../../test.setup";

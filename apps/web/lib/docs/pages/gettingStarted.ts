@@ -5,7 +5,7 @@ export const gettingStartedPage: DocsPageDefinition = {
     title: "Getting Started",
     description: "Fast path from credentials to your first successful API call.",
     summary:
-      "Choose between manager-created organization API keys for broker or developer org data, or OAuth for delegated user access.",
+      "Choose between owner-created organization API keys for broker or developer org data, or OAuth for delegated user access.",
     sections: [
       {
         id: "integration-checklist",
@@ -13,7 +13,8 @@ export const gettingStartedPage: DocsPageDefinition = {
         summary: "Start by choosing the correct auth model, then wire your environment and first request with the smallest possible permission set.",
         bullets: [
           "Choose your auth model first: organization API keys for backend-to-backend access to the current broker or developer organization, or OAuth for delegated user access.",
-          "For organization API keys, create the key in Workspace Settings → API Keys as an organization manager and store it securely because the full secret is shown once.",
+          "For organization API keys, create the key in Workspace Settings → API Keys as an organization owner and store it securely because the full secret is shown once.",
+          "Managers can still view API key metadata and revoke keys, but only owners can create them.",
           "For OAuth, get your `client_id` and `client_secret` from Anan onboarding and register redirect URIs before launch.",
           "Store API keys, access tokens, and refresh tokens securely; rotate or revoke them if you suspect exposure.",
           "Use the minimum permission set required for each integration path.",
@@ -45,6 +46,7 @@ export const gettingStartedPage: DocsPageDefinition = {
         paragraphs: [
           "Anan exposes two integration surfaces. Organization API keys call the workspace machine API under `/api/org/*`, while OAuth delegated integrations use `/authorize`, `/token`, and `/api/oauth/*`.",
           "Prefer organization API keys for first-party internal tools that should only touch the currently selected organization’s data. The key itself carries the organization binding, so requests never send broker, developer, or org ids for scoping.",
+          "The machine API currently covers clients, properties as the project model, deals, and a read-only broker directory.",
         ],
         codeExampleGroups: [
           {

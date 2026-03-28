@@ -7,6 +7,7 @@ import { tenants } from "../../tenants";
 import { mapConversationSummary, getConversationParticipant, mapConversationMessage } from "./conversations";
 import { getOrganizationNameByOwner, getUserImageByEmail } from "./profiles";
 import { normalizeComparableText, normalizeDirectPair, normalizeSearchQuery } from "./utils";
+import { hasInboxProjectShareAccess } from "../propertyAccessControl";
 
 export const buildDirectConversationKey = query({
   args: {
@@ -94,32 +95,7 @@ export const hasProjectShareAccess = query({
   },
   handler: async (ctx, { propertyId }) => {
     const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
-    const memberships = await ctx.db
-      .query("inboxConversationParticipants")
-      .withIndex("userId", (q) => q.eq("userId", access.authUserId))
-      .collect();
-
-    for (const membership of memberships) {
-      const messages = await ctx.db
-        .query("inboxMessages")
-        .withIndex("conversationId", (q) => q.eq("conversationId", membership.conversationId))
-        .collect();
-
-      const hasMatchingShare = messages.some((message) => {
-        if (message.type !== "project_share") {
-          return false;
-        }
-
-        const metadata = message.metadata as { propertyId?: string } | null | undefined;
-        return metadata?.propertyId === propertyId;
-      });
-
-      if (hasMatchingShare) {
-        return true;
-      }
-    }
-
-    return false;
+    return hasInboxProjectShareAccess(ctx, access.authUserId, propertyId);
   },
 });
 

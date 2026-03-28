@@ -1,25 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "../_generated/server";
-import { requireRole } from "../_core/security/accessPolicy";
-
-function isPropertyOwner(property: any, access: Awaited<ReturnType<typeof requireRole>>) {
-  return Boolean(
-    (access.brokerId && property?.brokerId === access.brokerId) ||
-      (access.REDId && property?.REDId === access.REDId),
-  );
-}
-
-async function requireOwnedProperty(ctx: any, propertyId: any) {
-  const access = await requireRole(ctx, ["broker", "developer"]);
-  const property = await ctx.db.get(propertyId);
-  if (!property) {
-    throw new ConvexError({ code: "NOT_FOUND", message: "Property not found" });
-  }
-  if (!isPropertyOwner(property, access)) {
-    throw new ConvexError({ code: "FORBIDDEN", message: "Cannot manage this property" });
-  }
-  return { access, property };
-}
+import { requireOwnedPropertyAccess, requirePropertyReadAccess } from "./propertyAccessControl";
 
 /**
  * WHY:   Private project visibility needs a first-class viewer list that owners can manage after chat sharing.
@@ -31,7 +12,7 @@ export const listPropertyViewers = query({
     propertyId: v.id("properties"),
   },
   handler: async (ctx, args) => {
-    await requireOwnedProperty(ctx, args.propertyId);
+    await requireOwnedPropertyAccess(ctx, args.propertyId);
     const rows = await ctx.db
       .query("propertyViewerAccess")
       .withIndex("propertyId", (q) => q.eq("propertyId", args.propertyId))
@@ -67,21 +48,31 @@ export const hasExplicitProjectViewerAccess = query({
     propertyId: v.id("properties"),
   },
   handler: async (ctx, args) => {
-    const access = await requireRole(ctx, ["broker", "developer", "user", "admin"]);
-    const row = await ctx.db
-      .query("propertyViewerAccess")
-      .withIndex("propertyId_authUserId", (q) =>
-        q.eq("propertyId", args.propertyId).eq("authUserId", access.authUserId),
-      )
-      .unique();
-    return row?.status === "active";
+    try {
+      const result = await requirePropertyReadAccess(ctx, {
+        propertyId: args.propertyId,
+        allowInboxShare: false,
+      });
+      return result.reason === "explicit_viewer";
+    } catch (error) {
+      if (
+        error instanceof ConvexError &&
+        error.data &&
+        typeof error.data === "object" &&
+        "code" in error.data &&
+        error.data.code === "FORBIDDEN"
+      ) {
+        return false;
+      }
+      throw error;
+    }
   },
 });
 
 /**
  * WHY:   Inbox-shared private projects should become manageable from project settings after the first successful open.
- * WHAT:  Promotes the current user into the property's explicit active viewer list.
- * HOW:   Requires the viewer to already be non-owner, then upserts a `chat_share` access row.
+ * WHAT:  Promotes the current user into the property's explicit active viewer list after server-side share validation.
+ * HOW:   Requires the viewer to already be an owner or to hold an inbox-backed `project_share`, then upserts a `chat_share` row.
  */
 export const promoteCurrentUserToProjectViewer = mutation({
   args: {
@@ -89,12 +80,11 @@ export const promoteCurrentUserToProjectViewer = mutation({
     sharedByAuthUserId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const access = await requireRole(ctx, ["broker", "developer", "user", "admin"]);
-    const property = await ctx.db.get(args.propertyId);
-    if (!property) {
-      throw new ConvexError({ code: "NOT_FOUND", message: "Property not found" });
-    }
-    if (isPropertyOwner(property, access)) {
+    const { access, reason } = await requirePropertyReadAccess(ctx, {
+      propertyId: args.propertyId,
+      allowInboxShare: true,
+    });
+    if (reason === "owner") {
       return { alreadyOwner: true, promoted: false } as const;
     }
 
@@ -141,7 +131,7 @@ export const revokePropertyViewer = mutation({
     viewerAuthUserId: v.string(),
   },
   handler: async (ctx, args) => {
-    await requireOwnedProperty(ctx, args.propertyId);
+    await requireOwnedPropertyAccess(ctx, args.propertyId);
     const existing = await ctx.db
       .query("propertyViewerAccess")
       .withIndex("propertyId_authUserId", (q) =>

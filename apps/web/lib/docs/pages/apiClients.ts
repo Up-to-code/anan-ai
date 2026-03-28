@@ -28,7 +28,7 @@ export const apiClientsPage: DocsPageDefinition = {
               code: `{
   "clients": [
     {
-      "_id": "<client-id>",
+      "id": "<client-id>",
       "name": "Alya Trading",
       "email": "ops@alya.example",
       "phone": "+966500000000"
@@ -64,7 +64,7 @@ export const apiClientsPage: DocsPageDefinition = {
               language: "json",
               code: `{
   "client": {
-    "_id": "<client-id>",
+    "id": "<client-id>",
     "name": "Al Noor Investments"
   }
 }`,
@@ -83,7 +83,7 @@ export const apiClientsPage: DocsPageDefinition = {
             title: "TypeScript Definitions",
             language: "typescript",
             code: `export interface Client {
-  _id: string;
+  id: string;
   name: string;
   email?: string;
   phone?: string;

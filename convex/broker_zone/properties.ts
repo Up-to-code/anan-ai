@@ -1,7 +1,8 @@
 import { mutation, query } from "../_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import { uploadedFileReferenceListValidator } from "../shared_logic/files";
+import { requireRole } from "../_core/security/accessPolicy";
 import {
   createBrokerProperty,
   deleteBrokerProperty,
@@ -18,6 +19,29 @@ const publicationStateValidator = v.optional(
   v.union(v.literal("draft"), v.literal("published"), v.literal("archived")),
 );
 
+async function requireBrokerOwnerAccess(ctx: any, brokerId?: string) {
+  const access = await requireRole(ctx, ["broker"]);
+  if (!access.brokerId) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Broker profile not linked" });
+  }
+  if (brokerId && brokerId !== access.brokerId) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Cannot access another broker organization" });
+  }
+  return access;
+}
+
+async function requireBrokerOwnedProperty(ctx: any, propertyId: any) {
+  const access = await requireBrokerOwnerAccess(ctx);
+  const property = await getBrokerPropertyById(ctx, { id: propertyId });
+  if (!property) {
+    throw new ConvexError({ code: "NOT_FOUND", message: "Property not found" });
+  }
+  if (property.brokerId !== access.brokerId) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Cannot access another broker property" });
+  }
+  return { access, property };
+}
+
 /**
  * WHY:   Broker server functions need a private Convex query for broker-owned property pagination.
  * WHAT:  Lists properties for a broker owner id with optional status filtering.
@@ -30,7 +54,8 @@ export const listByBrokerId = query({
     status: v.optional(statusValidator),
   },
   handler: async (ctx, args) => {
-    return await listPropertiesByBrokerId(ctx, args);
+    const access = await requireBrokerOwnerAccess(ctx, args.brokerId);
+    return await listPropertiesByBrokerId(ctx, { ...args, brokerId: access.brokerId! });
   },
 });
 
@@ -42,7 +67,8 @@ export const listByBrokerId = query({
 export const getById = query({
   args: { id: v.id("properties") },
   handler: async (ctx, args) => {
-    return await getBrokerPropertyById(ctx, args);
+    const { property } = await requireBrokerOwnedProperty(ctx, args.id);
+    return property;
   },
 });
 
@@ -71,7 +97,8 @@ export const create = mutation({
     publicationState: publicationStateValidator,
   },
   handler: async (ctx, args) => {
-    return await createBrokerProperty(ctx, args);
+    const access = await requireBrokerOwnerAccess(ctx, args.brokerId);
+    return await createBrokerProperty(ctx, { ...args, brokerId: access.brokerId! });
   },
 });
 
@@ -100,6 +127,7 @@ export const update = mutation({
     publicationState: publicationStateValidator,
   },
   handler: async (ctx, args) => {
+    await requireBrokerOwnedProperty(ctx, args.id);
     return await updateBrokerProperty(ctx, args);
   },
 });
@@ -112,6 +140,7 @@ export const update = mutation({
 export const remove = mutation({
   args: { id: v.id("properties") },
   handler: async (ctx, args) => {
+    await requireBrokerOwnedProperty(ctx, args.id);
     return await deleteBrokerProperty(ctx, args);
   },
 });
@@ -124,6 +153,7 @@ export const remove = mutation({
 export const publish = mutation({
   args: { id: v.id("properties") },
   handler: async (ctx, args) => {
+    await requireBrokerOwnedProperty(ctx, args.id);
     return await publishBrokerProperty(ctx, args);
   },
 });

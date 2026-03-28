@@ -65,7 +65,7 @@ it("returns invalid-json for malformed create payload", async () => {
 });
 
 it("serializes creation errors", async () => {
-  createCurrentOrganizationApiKeyForCurrentUser.mockRejectedValue(new DomainError({ code: "FORBIDDEN", message: "Manager role required", status: 403 }));
+  createCurrentOrganizationApiKeyForCurrentUser.mockRejectedValue(new DomainError({ code: "FORBIDDEN", message: "Owner role required", status: 403 }));
 
   const response = await POST(new Request("http://localhost/api/organizations/current/api-keys", {
     method: "POST",

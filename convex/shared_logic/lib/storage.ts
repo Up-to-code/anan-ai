@@ -1,22 +1,26 @@
-import { mutation, query } from "../../_generated/server";
+import { internalMutation, internalQuery } from "../../_generated/server";
 import { v } from "convex/values";
 
 /**
- * Generate a pre-signed URL for uploading a file to Convex storage.
+ * WHY:   Generic storage upload URLs should only be issued to trusted server-side callers.
+ * WHAT:  Generates a pre-signed URL for uploading a file to Convex storage.
+ * HOW:   Exposes `ctx.storage.generateUploadUrl()` as an internal-only mutation.
  */
-export const generateUploadUrl = mutation({
-    args: {},
-    handler: async (ctx) => {
-        return await ctx.storage.generateUploadUrl();
-    },
+export const generateUploadUrl = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.storage.generateUploadUrl();
+  },
 });
 
 /**
- * Get the public URL for a given storageId.
+ * WHY:   Generic storage URL lookups are infrastructure helpers and should stay off the public API surface.
+ * WHAT:  Returns the public URL for a given storage id.
+ * HOW:   Exposes `ctx.storage.getUrl()` as an internal-only query.
  */
-export const getUrl = query({
-    args: { storageId: v.id("_storage") },
-    handler: async (ctx, { storageId }) => {
-        return await ctx.storage.getUrl(storageId);
-    },
+export const getUrl = internalQuery({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, { storageId }) => {
+    return await ctx.storage.getUrl(storageId);
+  },
 });

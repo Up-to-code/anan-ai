@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import { requireOrganizationMembership } from "./agencies/repositories/membership";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requirePropertyReadAccess } from "./propertyAccessControl";
 
 const organizationAssetCategoryValidator = v.union(
   v.literal("project_image"),
@@ -220,30 +220,10 @@ export const listProjectAssetsForViewer = query({
     propertyId: v.id("properties"),
   },
   handler: async (ctx, args) => {
-    const access = await requireRole(ctx, ["broker", "developer", "user", "admin"]);
-    const property = await ctx.db.get(args.propertyId);
-    if (!property) {
-      return [];
-    }
-
-    const isOwner =
-      (access.brokerId && property.brokerId === access.brokerId) ||
-      (access.REDId && property.REDId === access.REDId);
-
-    let canRead = isOwner;
-    if (!canRead) {
-      const viewerAccess = await ctx.db
-        .query("propertyViewerAccess")
-        .withIndex("propertyId_authUserId", (q) =>
-          q.eq("propertyId", args.propertyId).eq("authUserId", access.authUserId),
-        )
-        .unique();
-      canRead = viewerAccess?.status === "active";
-    }
-
-    if (!canRead) {
-      throw new ConvexError({ code: "FORBIDDEN", message: "Property access not granted" });
-    }
+    await requirePropertyReadAccess(ctx, {
+      propertyId: args.propertyId,
+      allowInboxShare: true,
+    });
 
     const propertyAssets = await ctx.db
       .query("organizationAssets")

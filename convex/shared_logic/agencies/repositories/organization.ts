@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import { mutation, query } from "../../../_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "../../../_generated/server";
 import { requireCurrentProfile } from "../../lib/profile";
 import { auditLog } from "../../../auditLog";
 import { requireSession } from "../../../_core/security/accessPolicy";
@@ -180,7 +180,7 @@ async function buildCurrentOrganizationResponse(ctx: any, owner: any, membership
  * WHAT:  Lists organizations linked to the provided auth user id.
  * HOW:   Loads the persisted profile and returns tenant-backed summaries when active.
  */
-export const listOrganizationsByAuthUserId = query({
+export const listOrganizationsByAuthUserId = internalQuery({
   args: {
     authUserId: v.string(),
   },
@@ -236,7 +236,7 @@ export const getCurrentOrganization = query({
  * WHAT:  Creates an organization for the provided auth user id.
  * HOW:   Delegates to the shared record helper.
  */
-export const createOrganizationForAuthUser = mutation({
+export const createOrganizationForAuthUser = internalMutation({
   args: {
     authUserId: v.string(),
     email: v.optional(v.string()),
@@ -246,6 +246,9 @@ export const createOrganizationForAuthUser = mutation({
   },
   handler: async (ctx, args) => {
     const actor = await requireSession(ctx);
+    if (actor.authUserId !== args.authUserId) {
+      throw new ConvexError({ code: "FORBIDDEN", message: "Cannot create an organization for another user" });
+    }
     return createOrganizationForAuthUserRecord(ctx, {
       ...args,
       actorAuthUserId: actor.authUserId,

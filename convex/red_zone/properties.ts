@@ -1,7 +1,8 @@
 import { mutation, query } from "../_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import { uploadedFileReferenceListValidator } from "../shared_logic/files";
+import { requireRole } from "../_core/security/accessPolicy";
 import {
   createRedProperty,
   deleteRedProperty,
@@ -18,6 +19,29 @@ const publicationStateValidator = v.optional(
   v.union(v.literal("draft"), v.literal("published"), v.literal("archived")),
 );
 
+async function requireRedOwnerAccess(ctx: any, REDId?: string) {
+  const access = await requireRole(ctx, ["developer"]);
+  if (!access.REDId) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Developer (RED) profile not linked" });
+  }
+  if (REDId && REDId !== access.REDId) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Cannot access another developer organization" });
+  }
+  return access;
+}
+
+async function requireRedOwnedProperty(ctx: any, propertyId: any) {
+  const access = await requireRedOwnerAccess(ctx);
+  const property = await getRedPropertyById(ctx, { id: propertyId });
+  if (!property) {
+    throw new ConvexError({ code: "NOT_FOUND", message: "Property not found" });
+  }
+  if (property.REDId !== access.REDId) {
+    throw new ConvexError({ code: "FORBIDDEN", message: "Cannot access another developer property" });
+  }
+  return { access, property };
+}
+
 /**
  * WHY:   Developer server functions need a private Convex query for RED-owned property pagination.
  * WHAT:  Lists properties for a RED owner id with optional status filtering.
@@ -30,7 +54,8 @@ export const listByRedId = query({
     status: v.optional(statusValidator),
   },
   handler: async (ctx, args) => {
-    return await listPropertiesByRedId(ctx, args);
+    const access = await requireRedOwnerAccess(ctx, args.REDId);
+    return await listPropertiesByRedId(ctx, { ...args, REDId: access.REDId! });
   },
 });
 
@@ -42,7 +67,8 @@ export const listByRedId = query({
 export const getById = query({
   args: { id: v.id("properties") },
   handler: async (ctx, args) => {
-    return await getRedPropertyById(ctx, args);
+    const { property } = await requireRedOwnedProperty(ctx, args.id);
+    return property;
   },
 });
 
@@ -71,7 +97,8 @@ export const create = mutation({
     publicationState: publicationStateValidator,
   },
   handler: async (ctx, args) => {
-    return await createRedProperty(ctx, args);
+    const access = await requireRedOwnerAccess(ctx, args.REDId);
+    return await createRedProperty(ctx, { ...args, REDId: access.REDId! });
   },
 });
 
@@ -100,6 +127,7 @@ export const update = mutation({
     publicationState: publicationStateValidator,
   },
   handler: async (ctx, args) => {
+    await requireRedOwnedProperty(ctx, args.id);
     return await updateRedProperty(ctx, args);
   },
 });
@@ -112,6 +140,7 @@ export const update = mutation({
 export const remove = mutation({
   args: { id: v.id("properties") },
   handler: async (ctx, args) => {
+    await requireRedOwnedProperty(ctx, args.id);
     return await deleteRedProperty(ctx, args);
   },
 });
@@ -124,6 +153,7 @@ export const remove = mutation({
 export const publish = mutation({
   args: { id: v.id("properties") },
   handler: async (ctx, args) => {
+    await requireRedOwnedProperty(ctx, args.id);
     return await publishRedProperty(ctx, args);
   },
 });

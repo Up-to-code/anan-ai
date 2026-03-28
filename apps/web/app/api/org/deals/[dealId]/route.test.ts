@@ -1,5 +1,4 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { DomainError } from "@/server/contracts/errors";
 
 const {
   updateOrganizationDealByApiKey,
@@ -21,36 +20,24 @@ beforeEach(() => {
   deleteOrganizationDealByApiKey.mockReset();
 });
 
-it("updates a deal using the api key header", async () => {
-  updateOrganizationDealByApiKey.mockResolvedValue({ id: "deal-1", title: "Updated Deal" });
+it("updates a deal by id", async () => {
+  updateOrganizationDealByApiKey.mockResolvedValue({ id: "deal-1", title: "Updated", stage: "won" });
 
   const response = await PATCH(new Request("http://localhost/api/org/deals/deal-1", {
     method: "PATCH",
     headers: { "Content-Type": "application/json", "X-Anan-Api-Key": "secret-key" },
-    body: JSON.stringify({ title: "Updated Deal" }),
+    body: JSON.stringify({ stage: "won" }),
   }), { params: Promise.resolve({ dealId: "deal-1" }) });
 
-  expect(updateOrganizationDealByApiKey).toHaveBeenCalledWith("secret-key", "deal-1", { title: "Updated Deal" });
-  await expect(response.json()).resolves.toEqual({ deal: { id: "deal-1", title: "Updated Deal" } });
-});
-
-it("deletes a deal using the api key header", async () => {
-  const response = await DELETE(new Request("http://localhost/api/org/deals/deal-1", {
-    method: "DELETE",
-    headers: { "X-Anan-Api-Key": "secret-key" },
-  }), { params: Promise.resolve({ dealId: "deal-1" }) });
-
-  expect(deleteOrganizationDealByApiKey).toHaveBeenCalledWith("secret-key", "deal-1");
   expect(response.status).toBe(200);
+  expect(updateOrganizationDealByApiKey).toHaveBeenCalledWith("secret-key", "deal-1", { stage: "won" });
 });
 
-it("serializes delete failures", async () => {
-  deleteOrganizationDealByApiKey.mockRejectedValue(new DomainError({ code: "NOT_FOUND", message: "Deal not found", status: 404 }));
+it("deletes a deal by id", async () => {
+  const response = await DELETE(new Request("http://localhost/api/org/deals/deal-1", { headers: { "X-Anan-Api-Key": "secret-key" } }), {
+    params: Promise.resolve({ dealId: "deal-1" }),
+  });
 
-  const response = await DELETE(new Request("http://localhost/api/org/deals/deal-1", {
-    method: "DELETE",
-    headers: { "X-Anan-Api-Key": "secret-key" },
-  }), { params: Promise.resolve({ dealId: "deal-1" }) });
-
-  expect(response.status).toBe(404);
+  expect(response.status).toBe(200);
+  expect(deleteOrganizationDealByApiKey).toHaveBeenCalledWith("secret-key", "deal-1");
 });

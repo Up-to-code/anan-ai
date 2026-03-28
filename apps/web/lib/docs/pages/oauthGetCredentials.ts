@@ -5,16 +5,16 @@ export const oauthGetCredentialsPage: DocsPageDefinition = {
     title: "Authentication & Credentials",
     description: "How to obtain and configure your Anan API Keys and OAuth app credentials.",
     summary:
-      "Organization API keys are created by organization managers from workspace settings, while OAuth app credentials remain onboarding-managed for delegated user access.",
+      "Organization API keys are created by organization owners from workspace settings, while OAuth app credentials remain onboarding-managed for delegated user access.",
     sections: [
       {
         id: "organization-api-keys",
         title: "Organization API Keys",
         summary: "Use org API keys when your backend acts on behalf of one organization and does not need delegated end-user consent.",
         paragraphs: [
-          "Use organization API keys for first-party server integrations that should read or write only the current broker or developer organization’s clients and properties.",
-          "Organization managers can create these keys directly from Workspace Settings → API Keys. The secret is shown once and must be stored securely on your side.",
-          "Each key can be limited to specific `clients` or `properties` actions such as `read`, `create`, `update`, and `delete`.",
+          "Use organization API keys for first-party server integrations that should read or write only the current broker or developer organization’s clients, properties, deals, and broker relation data.",
+          "Organization owners can create these keys directly from Workspace Settings → API Keys. Managers can list metadata and revoke keys. The secret is shown once and must be stored securely on your side.",
+          "Each key can be limited to specific resource actions such as `clients:create`, `properties:update`, `deals:read`, or `brokers:read`.",
         ],
         codeExampleGroups: [
           {
@@ -88,7 +88,7 @@ Console.WriteLine(json);`,
         callouts: [
           {
             title: "Self-Service Keys",
-            body: "Organization API keys are created directly by managers in the current broker or developer workspace organization.",
+            body: "Organization API keys are created directly by owners in the current broker or developer workspace organization. Managers can still revoke existing keys.",
             tone: "info",
           },
           {

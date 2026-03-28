@@ -2,7 +2,10 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { DomainError } from "@/server/contracts/errors";
 import {
   createCurrentOrganizationApiKeyForCurrentUser,
+  createOrganizationDealByApiKey,
+  getOrganizationBrokerByApiKey,
   listOrganizationClientsByApiKey,
+  listOrganizationDealsByApiKey,
 } from "./service";
 
 const requireSession = vi.fn(async () => ({ token: "session-token" }));
@@ -113,4 +116,73 @@ it("rejects machine API calls when the key header is missing", async () => {
     code: "UNAUTHORIZED",
     status: 401,
   });
+});
+
+it("rejects unsupported api key permission pairs at create time", async () => {
+  await expect(
+    createCurrentOrganizationApiKeyForCurrentUser(
+      {
+        permissions: [{ resource: "brokers", action: "delete" }],
+      },
+      { requireSession, repository },
+    ),
+  ).rejects.toMatchObject<Partial<DomainError>>({
+    code: "INVALID_ARGUMENT",
+    status: 400,
+  });
+});
+
+it("lists deals using the normalized api key hash", async () => {
+  repository.listDealsByApiKey.mockResolvedValue([{ id: "deal-1", title: "Pipeline Deal", stage: "new" }]);
+
+  const deals = await listOrganizationDealsByApiKey("anan_prefix.secret", { repository });
+
+  expect(deals).toEqual([{ id: "deal-1", title: "Pipeline Deal", stage: "new" }]);
+  expect(repository.listDealsByApiKey).toHaveBeenCalledWith(expect.stringMatching(/^[a-f0-9]{64}$/), expect.any(Number));
+});
+
+it("creates a deal with external references and relation ids", async () => {
+  repository.createDealByApiKey.mockResolvedValue({ id: "deal-1", title: "Pipeline Deal", stage: "contacted" });
+
+  const deal = await createOrganizationDealByApiKey("anan_prefix.secret", {
+    title: "Pipeline Deal",
+    stage: "contacted",
+    relationType: "internal_client",
+    clientId: "client-1",
+    projectId: "property-1",
+    brokerId: "broker-1",
+    sourceSystem: "hubspot",
+    externalId: "ext-1",
+    businessId: "biz-1",
+  }, { repository });
+
+  expect(deal).toEqual({ id: "deal-1", title: "Pipeline Deal", stage: "contacted" });
+  expect(repository.createDealByApiKey).toHaveBeenCalledWith(
+    expect.stringMatching(/^[a-f0-9]{64}$/),
+    expect.objectContaining({
+      title: "Pipeline Deal",
+      stage: "contacted",
+      relationType: "internal_client",
+      clientId: "client-1",
+      projectId: "property-1",
+      brokerId: "broker-1",
+      sourceSystem: "hubspot",
+      externalId: "ext-1",
+      businessId: "biz-1",
+    }),
+    expect.any(Number),
+  );
+});
+
+it("gets a broker using the api key header value", async () => {
+  repository.getBrokerByApiKey.mockResolvedValue({ id: "broker-1", name: "Broker One" });
+
+  const broker = await getOrganizationBrokerByApiKey("anan_prefix.secret", "broker-1", { repository });
+
+  expect(broker).toEqual({ id: "broker-1", name: "Broker One" });
+  expect(repository.getBrokerByApiKey).toHaveBeenCalledWith(
+    expect.stringMatching(/^[a-f0-9]{64}$/),
+    "broker-1",
+    expect.any(Number),
+  );
 });

@@ -15,10 +15,11 @@ beforeEach(() => {
 });
 
 it("lists brokers using the api key header", async () => {
-  listOrganizationBrokersByApiKey.mockResolvedValue([{ id: "broker-1", name: "Broker" }]);
+  listOrganizationBrokersByApiKey.mockResolvedValue([{ id: "broker-1", name: "Broker One" }]);
 
   const response = await GET(new Request("http://localhost/api/org/brokers", { headers: { "X-Anan-Api-Key": "secret-key" } }));
 
+  expect(response.status).toBe(200);
   expect(listOrganizationBrokersByApiKey).toHaveBeenCalledWith("secret-key");
-  await expect(response.json()).resolves.toEqual({ brokers: [{ id: "broker-1", name: "Broker" }] });
+  await expect(response.json()).resolves.toEqual({ brokers: [{ id: "broker-1", name: "Broker One" }] });
 });

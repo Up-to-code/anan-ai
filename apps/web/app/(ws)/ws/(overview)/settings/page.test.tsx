@@ -166,6 +166,27 @@ it("renders api keys tab content when tab is api-keys", async () => {
   expect(listCurrentOrganizationApiKeysForCurrentUser).toHaveBeenCalledTimes(1);
 });
 
+it("renders api keys as view-and-revoke only for managers who are not tenant owners", async () => {
+  getWorkspaceOrganizationTeam.mockResolvedValue({
+    organization: {
+      name: "منظمة ألف",
+      slug: "alpha",
+      status: "active",
+      type: "broker",
+    },
+    members: [],
+    invites: [],
+    currentMembershipRole: "manager",
+    currentTenantRole: "admin",
+  });
+
+  const element = await WorkspaceSettingsPage({ searchParams: Promise.resolve({ tab: "api-keys" }) });
+  const markup = renderToStaticMarkup(element);
+
+  expect(markup).toContain("API-KEYS-WORKSPACE:false:true:true");
+  expect(listCurrentOrganizationApiKeysForCurrentUser).toHaveBeenCalledTimes(1);
+});
+
 it("renders verification tab content when tab is verification", async () => {
   const element = await WorkspaceSettingsPage({ searchParams: Promise.resolve({ tab: "verification" }) });
   const markup = renderToStaticMarkup(element);
