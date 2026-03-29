@@ -20,3 +20,10 @@ Set the same PostHog env vars in Convex for backend buyer funnel and AI analytic
 
 - `npx convex env set NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN <your-posthog-project-token> --deployment dev:<name>`
 - `npx convex env set NEXT_PUBLIC_POSTHOG_HOST https://us.i.posthog.com --deployment dev:<name>`
+
+## E2E tests
+
+- Run: `pnpm --filter client-web test:e2e`
+- Required env: `NEXT_PUBLIC_CONVEX_URL`
+- Optional env: `PLAYWRIGHT_BASE_URL` to point at an existing client-web deployment instead of booting a local dev server
+- Optional env: `PLAYWRIGHT_CLIENT_STORAGE_STATE` with an absolute path to a pre-authenticated Playwright storage state file for the signed-in handoff scenario

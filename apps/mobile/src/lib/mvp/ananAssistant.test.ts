@@ -19,7 +19,7 @@ describe("anan mobile assistant", () => {
     });
 
     expect(reply.cards?.some((card) => card.type === "mortgage_check")).toBe(true);
-    expect(reply.cards?.some((card) => card.type === "payment_plan")).toBe(true);
+    expect(reply.cards?.some((card) => card.type === "loan_calculator")).toBe(true);
   });
 
   it("filters property matches by area", () => {

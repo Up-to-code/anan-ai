@@ -53,6 +53,16 @@ const aiTables = {
         role: v.optional(v.string()),
         /** Whether an error occurred during this call */
         errorOccurred: v.optional(v.boolean()),
+        /** Prompt-composition tokens attributed to durable context blocks */
+        contextTokens: v.optional(v.number()),
+        /** Prompt-composition tokens attributed to user memory */
+        memoryTokens: v.optional(v.number()),
+        /** Prompt-composition tokens attributed to RAG snippets */
+        ragTokens: v.optional(v.number()),
+        /** Prompt-composition tokens attributed to recent history replay */
+        historyTokens: v.optional(v.number()),
+        /** Whether a cached compiled-context artifact was reused */
+        cacheHit: v.optional(v.boolean()),
         /** Timestamp of this usage record */
         createdAt: v.number(),
     })
@@ -73,6 +83,11 @@ const aiTables = {
         totalInputTokens: v.number(),
         totalOutputTokens: v.number(),
         totalTokens: v.number(),
+        contextTokens: v.optional(v.number()),
+        memoryTokens: v.optional(v.number()),
+        ragTokens: v.optional(v.number()),
+        historyTokens: v.optional(v.number()),
+        cacheHit: v.optional(v.boolean()),
         createdAt: v.number(),
     })
         .index("createdAt", ["createdAt"])

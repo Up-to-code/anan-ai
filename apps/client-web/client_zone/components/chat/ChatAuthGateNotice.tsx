@@ -15,7 +15,7 @@ export function ChatAuthGateNotice({ returnTo }: { returnTo: string }) {
   const { dictionary } = useLocaleDictionary();
 
   return (
-    <ClientAssistantColumn>
+    <ClientAssistantColumn data-testid="client-auth-gate">
       <AgUiCardShell className="border-dashed">
         <AgUiCardHeading
           title={dictionary.app.signInPrompt}
@@ -27,7 +27,10 @@ export function ChatAuthGateNotice({ returnTo }: { returnTo: string }) {
           }
         />
         <CardContent className="pt-0">
-          <Link href={`/signin?returnTo=${encodeURIComponent(returnTo)}`}>
+          <Link
+            href={`/signin?returnTo=${encodeURIComponent(returnTo)}`}
+            data-testid="client-auth-gate-signin-link"
+          >
             <Button size="sm">{dictionary.nav.signIn}</Button>
           </Link>
         </CardContent>

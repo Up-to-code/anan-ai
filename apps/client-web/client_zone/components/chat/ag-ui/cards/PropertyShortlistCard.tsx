@@ -38,6 +38,7 @@ export function PropertyShortlistCard({ properties }: PropertyShortlistCardProps
               <Link
                 href={`/app/property/${property.id}`}
                 className="inline-flex text-sm font-black text-[var(--workspace-highlight)] underline underline-offset-4"
+                data-testid="client-property-result-link"
                 data-analytics-event="client_property_selected"
                 data-analytics-owner-type={property.owner.type}
                 data-analytics-property-id={String(property.id)}

@@ -65,6 +65,7 @@ export async function orchestrate(
         ragContext,
         modelOverride,
         channel,
+        promptBudgetMeta,
     } = input;
 
     if (!getAgentLLMConfigSafe("anan")) {
@@ -168,6 +169,11 @@ export async function orchestrate(
                 failedAgents: agentResults.filter((result) => !result.ok).map((result) => result.agentName),
                 totalInputTokens: totalInput + merged.mergeTokens.inputTokens,
                 totalOutputTokens: totalOutput + merged.mergeTokens.outputTokens,
+                contextTokens: promptBudgetMeta?.contextTokens,
+                memoryTokens: promptBudgetMeta?.memoryTokens,
+                ragTokens: promptBudgetMeta?.ragTokens,
+                historyTokens: promptBudgetMeta?.historyTokens,
+                cacheHit: promptBudgetMeta?.cacheHit,
             },
         );
     } catch (error) {

@@ -160,6 +160,24 @@ export const getPropertyContext = internalQuery({
 });
 
 /**
+ * WHY:   Mobile property routes still need a direct public lookup when the feed page is not already in memory.
+ * WHAT:  Returns one published buyer-facing property DTO for the requested id.
+ * HOW:   Reuses the same feed-item builder so feed cards and detail screens stay contract-identical.
+ */
+export const getPropertyDetail = query({
+  args: {
+    propertyId: v.id("properties"),
+  },
+  returns: v.union(mobilePropertyFeedItemValidator, v.null()),
+  handler: async (ctx, { propertyId }) => {
+    const property = await ctx.db.get(propertyId);
+    if (!property) return null;
+    if (property.publicationState && property.publicationState !== "published") return null;
+    return buildMobilePropertyFeedItem(ctx, property as PropertyDoc);
+  },
+});
+
+/**
  * WHY:   Multiple mobile endpoints need one canonical way to shrink property docs into feed cards.
  * WHAT:  Maps a property plus owner record into the mobile feed DTO.
  * HOW:   Prefers uploaded media URLs, falls back to hero image, and synthesizes a concise AI summary.

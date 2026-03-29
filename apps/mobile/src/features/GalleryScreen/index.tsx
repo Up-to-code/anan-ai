@@ -5,7 +5,7 @@ import { Image } from "expo-image";
 import { IconButton } from "@/components/ui/IconButton";
 import { AppText } from "@/components/ui/AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { getPropertyById } from "@/lib/mvp/ananAssistant";
+import { usePropertyDetail } from "@/hooks/usePropertyDetail";
 
 const { width, height } = Dimensions.get("window");
 
@@ -13,15 +13,16 @@ export default function GalleryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { propertyId } = useLocalSearchParams<{ propertyId: string }>();
-  
-  const property = getPropertyById(propertyId);
-  const images = property?.gallery || [];
+  const { property } = usePropertyDetail(propertyId);
+  const images = property?.media ?? [];
 
   return (
     <View className="flex-1 bg-black">
       <View className="absolute z-10 w-full flex-row items-center justify-between px-6" style={{ top: insets.top + 16 }}>
         <IconButton icon={ArrowLeft} onPress={() => router.back()} className="bg-white/10 dark:bg-white/10 border-0 shadow-none" />
-        <AppText className="font-cairo-bold text-white text-[15px]">1 / {Math.max(1, images.length)}</AppText>
+        <AppText className="font-cairo-bold text-white text-[15px]">
+          {property ? property.title : "معرض الصور"}
+        </AppText>
         <View className="w-12" />
       </View>
 

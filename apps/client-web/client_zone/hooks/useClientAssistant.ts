@@ -18,37 +18,34 @@ import type {
 import {
   getLatestThreadProperty,
   toAssistantMessage,
-  toTranscriptSeedMessages,
 } from "../lib/threadPersistence";
 
-const GUEST_THREAD_STORAGE_KEY = "anan-client-guest-thread";
+const GUEST_PUBLIC_SESSION_KEY = "anan-client-public-session";
 
-type GuestThreadSnapshot = {
-  locale: Locale;
-  activeThreadId: string | null;
-  activeThreadKind: Exclude<ClientThreadKind, "demo">;
-  activeProperty: ClientProperty | null;
-  messages: AssistantMessage[];
+type GuestPublicSession = {
+  guestId: string;
+  channelSessionToken: string;
+  expiresAt: number;
 };
 
-function loadGuestThreadSnapshot() {
-  if (typeof window === "undefined") return null as GuestThreadSnapshot | null;
+function loadGuestPublicSession() {
+  if (typeof window === "undefined") return null as GuestPublicSession | null;
   try {
-    const value = window.sessionStorage.getItem(GUEST_THREAD_STORAGE_KEY);
-    return value ? (JSON.parse(value) as GuestThreadSnapshot) : null;
+    const value = window.sessionStorage.getItem(GUEST_PUBLIC_SESSION_KEY);
+    return value ? (JSON.parse(value) as GuestPublicSession) : null;
   } catch {
     return null;
   }
 }
 
-function saveGuestThreadSnapshot(snapshot: GuestThreadSnapshot) {
+function saveGuestPublicSession(session: GuestPublicSession) {
   if (typeof window === "undefined") return;
-  window.sessionStorage.setItem(GUEST_THREAD_STORAGE_KEY, JSON.stringify(snapshot));
+  window.sessionStorage.setItem(GUEST_PUBLIC_SESSION_KEY, JSON.stringify(session));
 }
 
-function clearGuestThreadSnapshot() {
+function clearGuestPublicSession() {
   if (typeof window === "undefined") return;
-  window.sessionStorage.removeItem(GUEST_THREAD_STORAGE_KEY);
+  window.sessionStorage.removeItem(GUEST_PUBLIC_SESSION_KEY);
 }
 
 function describeFailure(error: unknown) {
@@ -108,9 +105,9 @@ function mapThreadSummary(summary: {
 }
 
 /**
- * WHY:   The client assistant page needs one stateful source of truth for guest chat, saved threads, and advisor handoff flow.
- * WHAT:  Manages the active conversation, auth-aware persistence, and guest-to-auth transcript promotion.
- * HOW:   Uses transient browser state for guests and switches to persisted Convex threads once the buyer signs in.
+ * WHY:   The client assistant page now needs one source of truth that works for guest public sessions and promoted authenticated history.
+ * WHAT:  Manages live assistant turns, guest session bootstrap, guest-to-auth promotion, and saved-thread reopening.
+ * HOW:   Uses `ai_zone/assistantPublic` for live orchestration and keeps persisted `anan_main_public` threads as the durable history layer.
  */
 export function useClientAssistant({
   locale,
@@ -121,116 +118,156 @@ export function useClientAssistant({
   initialPrompt?: string | null;
   initialThreadId?: string | null;
 }) {
-  const initialGuestSnapshot = loadGuestThreadSnapshot();
   const router = useRouter();
   const { isAuthenticated } = useConvexAuth();
-  const createQualifiedHandoff = useMutation(api.user_zone.mobile.assistant.createQualifiedHandoff);
-  const askClientAssistant = useAction(api.user_zone.web.assistant.askClientAssistant);
-  const seedClientThreadFromTranscript = useMutation(api.user_zone.web.threads.seedClientThreadFromTranscript);
-  const persistedThreads = useQuery(
-    api.user_zone.web.threads.listClientThreads,
-    isAuthenticated ? {} : "skip",
-  );
-  const persistedMessages = useQuery(
-    api.user_zone.web.threads.getClientThreadMessages,
-    isAuthenticated && initialThreadId ? { threadId: initialThreadId as never } : "skip",
+  const [guestSession, setGuestSession] = useState<GuestPublicSession | null>(
+    () => loadGuestPublicSession(),
   );
   const [draft, setDraft] = useState("");
-  const [messages, setMessages] = useState<AssistantMessage[]>(() => initialGuestSnapshot?.messages ?? []);
-  const [activeProperty, setActiveProperty] = useState<ClientProperty | null>(
-    () => initialGuestSnapshot?.activeProperty ?? null,
-  );
+  const [messages, setMessages] = useState<AssistantMessage[]>([]);
+  const [activeProperty, setActiveProperty] = useState<ClientProperty | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAuthCallout, setShowAuthCallout] = useState(false);
-  const [activeThreadId, setActiveThreadId] = useState<string | null>(
-    initialThreadId ?? initialGuestSnapshot?.activeThreadId ?? null,
-  );
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(initialThreadId ?? null);
   const [activeThreadKind, setActiveThreadKind] = useState<ClientThreadKind>(
-    initialThreadId || initialGuestSnapshot?.messages.length ? "live" : "welcome",
+    initialThreadId ? "live" : "welcome",
   );
   const hasSubmittedInitialPrompt = useRef(false);
-  const hasMigratedGuestThread = useRef(false);
+  const hasPromotedGuestSession = useRef(false);
   const submitInitialPromptRef = useRef<(prompt: string) => void>(() => {});
   submitInitialPromptRef.current = (prompt: string) => {
     void submit(prompt);
   };
 
-  useEffect(() => {
-    if (initialThreadId && activeThreadId !== initialThreadId) {
-      setActiveThreadId(initialThreadId);
-      setActiveThreadKind("live");
-    }
-  }, [activeThreadId, initialThreadId]);
+  const bootstrapPublicSession = useMutation(api.ai_zone.assistantPublic.bootstrapSession);
+  const promoteGuestToAuthenticatedBuyer = useMutation(
+    api.ai_zone.assistantPublic.promoteGuestToAuthenticatedBuyer,
+  );
+  const sendGuestPublicMessage = useAction(api.ai_zone.assistantPublic.sendMessage);
+  const sendAuthenticatedPublicMessage = useAction(
+    api.ai_zone.assistantPublic.sendAuthenticatedMessage,
+  );
+  const createQualifiedHandoff = useMutation(api.user_zone.mobile.assistant.createQualifiedHandoff);
 
-  useEffect(() => {
-    if (!isAuthenticated || !activeThreadId) return;
-    const sourceMessages = initialThreadId === activeThreadId ? persistedMessages : undefined;
-    if (!sourceMessages) return;
-
-    const nextMessages = (sourceMessages as PersistedThreadMessage[]).map(toAssistantMessage);
-    setMessages(nextMessages);
-    setActiveProperty(getLatestThreadProperty(nextMessages));
-    setActiveThreadKind(nextMessages.length > 0 ? "live" : "welcome");
-  }, [activeThreadId, initialThreadId, isAuthenticated, persistedMessages]);
-
-  const activePersistedMessages = useQuery(
-    api.user_zone.web.threads.getClientThreadMessages,
-    isAuthenticated && activeThreadId && activeThreadId !== initialThreadId
-      ? { threadId: activeThreadId as never }
+  const authenticatedAssistantState = useQuery(
+    api.user_zone.web.threads.getClientAssistantState,
+    isAuthenticated
+      ? {
+          threadId: activeThreadId ? (activeThreadId as never) : undefined,
+        }
       : "skip",
   );
 
-  useEffect(() => {
-    if (!isAuthenticated || !activeThreadId || activeThreadId === initialThreadId) return;
-    if (!activePersistedMessages) return;
+  const publicAssistantState = useQuery(
+    api.ai_zone.assistantPublic.getThreadState,
+    !isAuthenticated && guestSession
+      ? {
+          guestId: guestSession.guestId,
+          channelSessionToken: guestSession.channelSessionToken,
+          threadId: activeThreadId ? (activeThreadId as never) : undefined,
+        }
+      : "skip",
+  );
+  async function ensureGuestSession() {
+    const stored = loadGuestPublicSession();
+    if (stored?.guestId && stored.channelSessionToken && stored.expiresAt > Date.now()) {
+      if (!guestSession || guestSession.channelSessionToken !== stored.channelSessionToken) {
+        setGuestSession(stored);
+      }
+      return stored;
+    }
 
-    const nextMessages = (activePersistedMessages as PersistedThreadMessage[]).map(toAssistantMessage);
+    const bootstrapped = await bootstrapPublicSession({
+      guestId: stored?.guestId,
+    });
+    const nextSession = {
+      guestId: bootstrapped.guestId,
+      channelSessionToken: bootstrapped.channelSessionToken,
+      expiresAt: bootstrapped.expiresAt,
+    };
+    saveGuestPublicSession(nextSession);
+    setGuestSession(nextSession);
+    if (!activeThreadId && bootstrapped.threadId) {
+      setActiveThreadId(String(bootstrapped.threadId));
+      setActiveThreadKind("live");
+    }
+    return nextSession;
+  }
+
+  useEffect(() => {
+    if (isAuthenticated || guestSession) return;
+    void ensureGuestSession();
+  }, [guestSession, isAuthenticated]);
+
+  useEffect(() => {
+    if (!initialThreadId || activeThreadId === initialThreadId) return;
+    setActiveThreadId(initialThreadId);
+    setActiveThreadKind("live");
+  }, [activeThreadId, initialThreadId]);
+
+  useEffect(() => {
+    if (!isAuthenticated || hasPromotedGuestSession.current || !guestSession) return;
+
+    hasPromotedGuestSession.current = true;
+    void promoteGuestToAuthenticatedBuyer({
+      guestId: guestSession.guestId,
+      channelSessionToken: guestSession.channelSessionToken,
+    })
+      .then((result) => {
+        if (result.threadId) {
+          setActiveThreadId(String(result.threadId));
+          setActiveThreadKind("live");
+        }
+        clearGuestPublicSession();
+        setGuestSession(null);
+      })
+      .catch(() => {
+        hasPromotedGuestSession.current = false;
+      });
+  }, [guestSession, isAuthenticated, promoteGuestToAuthenticatedBuyer]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !authenticatedAssistantState) return;
+    const resolvedThreadId =
+      activeThreadId ??
+      (authenticatedAssistantState.recentThreads[0]?.id
+        ? String(authenticatedAssistantState.recentThreads[0].id)
+        : null);
+    if (resolvedThreadId && resolvedThreadId !== activeThreadId) {
+      setActiveThreadId(resolvedThreadId);
+    }
+
+    const nextMessages = (authenticatedAssistantState.activeMessages as PersistedThreadMessage[]).map(
+      toAssistantMessage,
+    );
     setMessages(nextMessages);
     setActiveProperty(getLatestThreadProperty(nextMessages));
     setActiveThreadKind(nextMessages.length > 0 ? "live" : "welcome");
-  }, [activePersistedMessages, activeThreadId, initialThreadId, isAuthenticated]);
+  }, [activeThreadId, authenticatedAssistantState, isAuthenticated]);
 
   useEffect(() => {
-    if (isAuthenticated) return;
-    if (messages.length === 0 && activeThreadKind === "welcome" && !activeProperty) {
-      clearGuestThreadSnapshot();
-      return;
+    if (isAuthenticated || !guestSession || !publicAssistantState) return;
+    if (
+      publicAssistantState.thread?._id &&
+      String(publicAssistantState.thread._id) !== activeThreadId
+    ) {
+      setActiveThreadId(String(publicAssistantState.thread._id));
     }
 
-    saveGuestThreadSnapshot({
-      locale,
-      activeThreadId,
-      activeThreadKind: activeThreadKind === "welcome" ? "welcome" : "live",
-      activeProperty,
-      messages,
-    });
-  }, [activeProperty, activeThreadId, activeThreadKind, isAuthenticated, locale, messages]);
+    const nextMessages = (publicAssistantState.messages as PersistedThreadMessage[]).map(
+      toAssistantMessage,
+    );
+    setMessages(nextMessages);
+    setActiveProperty(getLatestThreadProperty(nextMessages));
+    setActiveThreadKind(
+      nextMessages.length > 0 || Boolean(publicAssistantState.thread?._id) ? "live" : "welcome",
+    );
+  }, [activeThreadId, guestSession, isAuthenticated, publicAssistantState]);
 
-  useEffect(() => {
-    if (!isAuthenticated || hasMigratedGuestThread.current) return;
-    const snapshot = loadGuestThreadSnapshot();
-    if (!snapshot || snapshot.messages.length === 0) return;
-
-    hasMigratedGuestThread.current = true;
-    void seedClientThreadFromTranscript({
-      title: snapshot.messages.find((message) => message.role === "user")?.text.slice(0, 80),
-      messages: toTranscriptSeedMessages(snapshot.messages) as never,
-    })
-      .then((result) => {
-        clearGuestThreadSnapshot();
-        setActiveThreadId(String(result.threadId));
-        setActiveThreadKind("live");
-        setMessages(snapshot.messages);
-        setActiveProperty(snapshot.activeProperty);
-      })
-      .catch(() => {
-        hasMigratedGuestThread.current = false;
-      });
-  }, [isAuthenticated, seedClientThreadFromTranscript]);
-
-  async function submit(prompt = draft) {
+  async function submit(prompt = draft, inputMode: "text" | "voice" = "text") {
     const trimmed = prompt.trim();
     if (!trimmed) return;
+
     const startedAt = Date.now();
     const userMessage: AssistantMessage = {
       id: `user-${Date.now()}`,
@@ -238,66 +275,92 @@ export function useClientAssistant({
       text: trimmed,
     };
 
-    const nextMessages = [...messages, userMessage];
-    setMessages(nextMessages);
+    const optimisticMessages = [...messages, userMessage];
+    setMessages(optimisticMessages);
     setDraft("");
     setIsSubmitting(true);
     setActiveThreadKind("live");
+
     capturePostHogEvent("client_assistant_prompt_submitted", {
       hasActiveProperty: Boolean(activeProperty),
       hasThreadId: Boolean(activeThreadId),
       isAuthenticated,
+      inputMode,
       locale,
       messageLength: trimmed.length,
     });
 
     try {
-      const selectedPropertyId =
-        activeProperty ? (activeProperty.id as never) : undefined;
-      const response = await askClientAssistant({
-        message: trimmed,
-        threadId: isAuthenticated && activeThreadId ? (activeThreadId as never) : undefined,
-        selectedPropertyId,
-        locale,
-      });
+      const selectedPropertyId = activeProperty ? (activeProperty.id as never) : undefined;
+      const response = isAuthenticated
+        ? await sendAuthenticatedPublicMessage({
+            message: trimmed,
+            threadId: activeThreadId ? (activeThreadId as never) : undefined,
+            inputMode,
+            selectedPropertyId,
+            locale,
+          })
+        : await sendGuestPublicMessage({
+            ...(await ensureGuestSession()),
+            message: trimmed,
+            threadId: activeThreadId ? (activeThreadId as never) : undefined,
+            inputMode,
+            selectedPropertyId,
+            locale,
+          });
+
       const assistantMessage: AssistantMessage = {
-        id: `assistant-${Date.now()}`,
+        id: String(response.messageId ?? `assistant-${Date.now()}`),
         role: "assistant",
         text: response.message,
-        properties: response.properties as unknown as ClientProperty[],
-        cards: response.cards as unknown as AssistantMessage["cards"],
+        properties: response.properties as ClientProperty[],
+        cards: response.cards as AssistantMessage["cards"],
+        suggestedPrompts: response.suggestedPrompts,
+        activePropertyId: response.activePropertyId ? String(response.activePropertyId) : undefined,
+        requiresAuthForHandoff: response.requiresAuthForHandoff,
         uiTurn: buildClientUiTurn({
           assistantText: response.message,
-          properties: response.properties as unknown as ClientProperty[],
-          cards: response.cards as unknown as NonNullable<AssistantMessage["cards"]>,
+          properties: response.properties as ClientProperty[],
+          cards: response.cards as NonNullable<AssistantMessage["cards"]>,
         }),
       };
 
-      const completeMessages = [...nextMessages, assistantMessage];
+      const completeMessages = [...optimisticMessages, assistantMessage];
       setMessages(completeMessages);
       setShowAuthCallout(response.requiresAuthForHandoff && !isAuthenticated);
       if (response.threadId) {
         setActiveThreadId(String(response.threadId));
       }
 
-      if (assistantMessage.properties?.[0]) {
-        setActiveProperty(assistantMessage.properties[0]);
+      const resolvedActiveProperty =
+        (response.properties as ClientProperty[]).find(
+          (property) => String(property.id) === String(response.activePropertyId ?? ""),
+        ) ??
+        (response.properties?.[0] as ClientProperty | undefined) ??
+        null;
+
+      if (resolvedActiveProperty) {
+        setActiveProperty(resolvedActiveProperty);
       }
+
       capturePostHogEvent("client_assistant_response_succeeded", {
         activePropertyId: response.activePropertyId ? String(response.activePropertyId) : undefined,
-        cardTypes: response.cards.map((card) => card.type),
+        cardTypes: response.cards.map((card: { type: string }) => card.type),
         durationMs: Date.now() - startedAt,
         hasThreadId: Boolean(response.threadId ?? activeThreadId),
+        inputMode,
         isAuthenticated,
         propertyCount: response.properties.length,
         requiresAuthForHandoff: response.requiresAuthForHandoff,
       });
+
       if (response.properties.length > 0) {
         capturePostHogEvent("client_property_results_shown", {
           activePropertyId: response.activePropertyId ? String(response.activePropertyId) : undefined,
           propertyCount: response.properties.length,
         });
       }
+
       trackAssistantCardViews(response.cards as AssistantMessage["cards"]);
     } catch (error) {
       const failureCode = describeFailure(error);
@@ -315,6 +378,7 @@ export function useClientAssistant({
         failureCode,
         hasActiveProperty: Boolean(activeProperty),
         hasThreadId: Boolean(activeThreadId),
+        inputMode,
         isAuthenticated,
       });
       capturePostHogEvent("client_action_failed", {
@@ -333,7 +397,11 @@ export function useClientAssistant({
       ownerType: property.owner.type,
       selectionMode: "ask_about_property",
     });
-    void submit(locale === "ar" ? `أريد تفاصيل أكثر عن ${property.title}` : `Tell me more about ${property.title}`);
+    void submit(
+      locale === "ar"
+        ? `أريد تفاصيل أكثر عن ${property.title}`
+        : `Tell me more about ${property.title}`,
+    );
   }
 
   async function requestAdvisor() {
@@ -343,6 +411,7 @@ export function useClientAssistant({
       isAuthenticated,
       propertyId: String(activeProperty.id),
     });
+
     if (!isAuthenticated) {
       setShowAuthCallout(true);
       capturePostHogEvent("client_advisor_handoff_blocked_by_auth", {
@@ -406,9 +475,6 @@ export function useClientAssistant({
     setActiveThreadId(null);
     setActiveThreadKind("welcome");
     hasSubmittedInitialPrompt.current = true;
-    if (!isAuthenticated) {
-      clearGuestThreadSnapshot();
-    }
   }
 
   useEffect(() => {
@@ -417,7 +483,9 @@ export function useClientAssistant({
     submitInitialPromptRef.current(initialPrompt);
   }, [initialPrompt, initialThreadId]);
 
-  const recentThreads = ((persistedThreads ?? []) as ThreadSummary[]).map(mapThreadSummary);
+  const recentThreads = (
+    ((authenticatedAssistantState?.recentThreads ?? []) as ThreadSummary[])
+  ).map(mapThreadSummary);
 
   return {
     draft,

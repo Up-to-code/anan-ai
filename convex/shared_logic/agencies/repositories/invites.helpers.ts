@@ -57,9 +57,10 @@ async function ensureNoDuplicateInvite(ctx: MutationCtx, tenantOrgId: string, no
   }
 }
 async function findInvitedProfileByEmail(ctx: MutationCtx, normalizedEmail: string) {
-  return (await ctx.db.query("userProfiles").collect()).find(
-    (profile) => normalizeEmail(profile.email ?? "") === normalizedEmail,
-  );
+  return ctx.db
+    .query("userProfiles")
+    .withIndex("email", (q) => q.eq("email", normalizedEmail))
+    .first();
 }
 async function ensureInviteeIsNotActiveMember(
   ctx: MutationCtx,

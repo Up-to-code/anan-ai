@@ -1,7 +1,8 @@
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
 import type { Doc, Id } from "../_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation, query } from "../_generated/server";
-import { internal } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 import {
   createAssistantThread,
   getLatestThread,
@@ -15,6 +16,13 @@ import { transcribeStoredVoiceNote } from "./services/voiceTranscriptionService"
 import { compactAssistantResponse } from "./services/publicAssistantResponse";
 import { synthesizeAssistantVoice as synthesizeAssistantVoiceAudio } from "./services/voiceSynthesisService";
 import { issueChannelSession } from "../_core/security/channelAuth";
+import { buildStructuredBuyerResponse } from "./services/publicBuyerResponse";
+import {
+  buildCompiledBuyerContextPayload,
+  buyerQualificationValidator,
+} from "../shared_logic/buyerContext";
+import { selectRegenerateSource } from "./services/assistantService/promptComposer";
+import { resolveAssistantEntitlementForCurrentProfile } from "../shared_logic/subscriptions/index";
 
 const ASSISTANT_KIND = "anan_main_public" as const;
 const ORCHESTRATOR_NAME = "anan_main_public_orchestrator";
@@ -67,6 +75,19 @@ type PublicSession = {
   expiresAt: number;
 };
 
+type StoredBuyerMessage = {
+  id: Id<"assistantMessages">;
+  role: "assistant" | "user";
+  text: string;
+  createdAt: number;
+  properties?: unknown[];
+  cards?: unknown[];
+  activePropertyId?: Id<"properties">;
+  requiresAuthForHandoff?: boolean;
+  suggestedPrompts?: string[];
+  buyerContext?: unknown;
+};
+
 function describeVoiceSynthesisFallback(error: unknown) {
   if (error instanceof ConvexError) {
     const payload = error.data;
@@ -91,6 +112,51 @@ function describeVoiceSynthesisFallback(error: unknown) {
 
 function buildGuestAuthUserId(guestId: string) {
   return `channel:${PUBLIC_CHANNEL}:${guestId}`;
+}
+
+function readOptionalArray(value: unknown) {
+  return Array.isArray(value) ? value : undefined;
+}
+
+function mapStoredMessage(message: {
+  _id: Id<"assistantMessages">;
+  role: "assistant" | "user";
+  content: string;
+  createdAt: number;
+  metadata?: unknown;
+}): StoredBuyerMessage {
+  const metadata = (message.metadata ?? {}) as Record<string, unknown>;
+  return {
+    id: message._id,
+    role: message.role,
+    text: message.content,
+    createdAt: message.createdAt,
+    properties: readOptionalArray(metadata.properties),
+    cards: readOptionalArray(metadata.cards),
+    activePropertyId:
+      typeof metadata.activePropertyId === "string"
+        ? (metadata.activePropertyId as Id<"properties">)
+        : undefined,
+    requiresAuthForHandoff:
+      typeof metadata.requiresAuthForHandoff === "boolean"
+        ? metadata.requiresAuthForHandoff
+        : undefined,
+    suggestedPrompts: readOptionalArray(metadata.suggestedPrompts) as string[] | undefined,
+    buyerContext: metadata.buyerContext,
+  };
+}
+
+function sanitizeBuyerContext(value: unknown) {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, any>;
+  return {
+    state: record.state ?? null,
+    memory: {
+      summary: record.memory?.summary ?? "",
+      lastSearchSummary: record.memory?.lastSearchSummary ?? null,
+    },
+    summaries: record.summaries ?? {},
+  };
 }
 
 async function ensureGuestUser(ctx: { db: any }, guestId: string) {
@@ -164,6 +230,62 @@ async function resolvePublicSessionForRead(
   };
 }
 
+async function resolveAuthenticatedSessionForRead(
+  ctx: any,
+  args: { threadId?: Id<"assistantThreads"> },
+) {
+  const authUserId = await getAuthUserId(ctx as any);
+  if (!authUserId) {
+    throw new ConvexError({
+      code: "UNAUTHORIZED",
+      message: "Authentication required for saved buyer history.",
+    });
+  }
+
+  const owner: AssistantOwner = {
+    userId: authUserId,
+    ownerType: "user",
+  };
+
+  const thread = args.threadId
+    ? await getThreadById(ctx as any, owner, args.threadId, ASSISTANT_KIND)
+    : await getLatestThread(ctx as any, owner, ASSISTANT_KIND);
+
+  return {
+    authUserId,
+    owner,
+    thread,
+  };
+}
+
+async function resolveAssistantPublicSession(
+  ctx: any,
+  args: {
+    guestId?: string;
+    channelSessionToken?: string;
+    threadId?: Id<"assistantThreads">;
+  },
+) {
+  if (args.guestId && args.channelSessionToken) {
+    return resolvePublicSessionForRead(ctx, {
+      guestId: args.guestId,
+      channelSessionToken: args.channelSessionToken,
+      threadId: args.threadId,
+    });
+  }
+
+  const authenticated = await resolveAuthenticatedSessionForRead(ctx, {
+    threadId: args.threadId,
+  });
+
+  return {
+    ...authenticated,
+    guestId: undefined,
+    sessionToken: undefined,
+    expiresAt: undefined,
+  };
+}
+
 /**
  * WHY:   The public assistant needs a durable guest identity without browser auth.
  * WHAT:  Creates or refreshes an anonymous guest session backed by the shared channelSessions table.
@@ -213,6 +335,21 @@ export const _resolvePublicSession = internalQuery({
   handler: async (ctx, args) => resolvePublicSessionForRead(ctx, args),
 });
 
+export const _listMessagesForOwner = internalQuery({
+  args: {
+    userId: v.string(),
+    threadId: v.id("assistantThreads"),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const owner: AssistantOwner = {
+      userId: args.userId,
+      ownerType: "user",
+    };
+    return listThreadMessages(ctx as any, owner, args.threadId, ASSISTANT_KIND);
+  },
+});
+
 /**
  * WHY:   The public app must load the latest thread without requiring authenticated workspace access.
  * WHAT:  Returns the latest accessible thread plus guest owner information for the public assistant surface.
@@ -225,13 +362,21 @@ export const getThreadSafe = query({
     threadId: v.optional(v.id("assistantThreads")),
   },
   returns: v.any(),
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<any> => {
     const session = await resolvePublicSessionForRead(ctx, args);
+    const buyerContext: unknown = await ctx.runQuery(
+      internal.shared_logic.buyerContext.getBuyerContextInternal,
+      {
+        channel: "web",
+        userId: session.owner.userId,
+      },
+    );
     return {
       thread: session.thread,
       owner: session.owner,
       guestId: session.guestId,
       expiresAt: session.expiresAt,
+      buyerContext: sanitizeBuyerContext(buyerContext),
     };
   },
 });
@@ -251,7 +396,160 @@ export const listMessages = query({
   handler: async (ctx, args) => {
     const session = await resolvePublicSessionForRead(ctx, args);
     const resolvedThreadId = args.threadId ?? session.thread?._id;
-    return listThreadMessages(ctx as any, session.owner, resolvedThreadId, ASSISTANT_KIND);
+    const messages = await listThreadMessages(
+      ctx as any,
+      session.owner,
+      resolvedThreadId,
+      ASSISTANT_KIND,
+    );
+    return messages.map(mapStoredMessage);
+  },
+});
+
+/**
+ * WHY:   Signed-in buyers should reopen saved public-assistant threads through the same `anan_main_public` thread store.
+ * WHAT:  Returns the authenticated buyer's latest or requested public assistant thread plus current buyer context.
+ * HOW:   Resolves the authenticated owner, then reads the public assistant thread and shared buyer state.
+ */
+export const getAuthenticatedThread = query({
+  args: {
+    threadId: v.optional(v.id("assistantThreads")),
+  },
+  returns: v.any(),
+  handler: async (ctx, args): Promise<any> => {
+    const session = await resolveAuthenticatedSessionForRead(ctx, args);
+    const buyerContext: unknown = await ctx.runQuery(
+      internal.shared_logic.buyerContext.getBuyerContextInternal,
+      {
+        channel: "web",
+        userId: session.owner.userId,
+      },
+    );
+    return {
+      thread: session.thread,
+      owner: session.owner,
+      buyerContext: sanitizeBuyerContext(buyerContext),
+    };
+  },
+});
+
+/**
+ * WHY:   Authenticated buyers should read persisted public-assistant transcripts without falling back to session-only browser state.
+ * WHAT:  Lists structured thread messages for one authenticated buyer thread.
+ * HOW:   Reuses the shared assistant thread store and maps metadata into the buyer-web message DTO shape.
+ */
+export const listAuthenticatedMessages = query({
+  args: {
+    threadId: v.optional(v.id("assistantThreads")),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const session = await resolveAuthenticatedSessionForRead(ctx, args);
+    const resolvedThreadId = args.threadId ?? session.thread?._id;
+    const messages = await listThreadMessages(
+      ctx as any,
+      session.owner,
+      resolvedThreadId,
+      ASSISTANT_KIND,
+    );
+    return messages.map(mapStoredMessage);
+  },
+});
+
+/**
+ * WHY:   Buyer chat surfaces should hydrate public-assistant state with one live query per active mode.
+ * WHAT:  Returns the active public-assistant thread, ordered messages, and buyer context for either guest or authenticated buyers.
+ * HOW:   Resolves the appropriate owner/session first, then reads the shared public thread store and buyer context once.
+ */
+export const getThreadState = query({
+  args: {
+    guestId: v.optional(v.string()),
+    channelSessionToken: v.optional(v.string()),
+    threadId: v.optional(v.id("assistantThreads")),
+  },
+  returns: v.any(),
+  handler: async (ctx, args): Promise<any> => {
+    const session = await resolveAssistantPublicSession(ctx, args);
+    const resolvedThreadId = args.threadId ?? session.thread?._id;
+    const [messages, buyerContext] = await Promise.all([
+      resolvedThreadId
+        ? listThreadMessages(ctx as any, session.owner, resolvedThreadId, ASSISTANT_KIND)
+        : [],
+      ctx.runQuery(
+        internal.shared_logic.buyerContext.getBuyerContextInternal,
+        {
+          channel: "web",
+          userId: session.owner.userId,
+        },
+      ),
+    ]);
+
+    return {
+      thread: session.thread,
+      owner: session.owner,
+      guestId: session.guestId,
+      expiresAt: session.expiresAt,
+      messages: messages.map(mapStoredMessage),
+      buyerContext: sanitizeBuyerContext(buyerContext),
+    };
+  },
+});
+
+/**
+ * WHY:   Public assistant sends should resolve all pre-orchestration state through one backend bundle read.
+ * WHAT:  Returns owner, thread, entitlement, transcript history, and read-only compiled buyer context for one send attempt.
+ * HOW:   Resolves the guest/auth session, loads the public thread transcript, computes regenerate context, and compiles buyer context without writes.
+ */
+export const getRuntimeContextBundle = query({
+  args: {
+    guestId: v.optional(v.string()),
+    channelSessionToken: v.optional(v.string()),
+    threadId: v.optional(v.id("assistantThreads")),
+    message: v.string(),
+    regenerate: v.optional(v.boolean()),
+    regenerateMessageId: v.optional(v.string()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args): Promise<any> => {
+    const session = await resolveAssistantPublicSession(ctx, args);
+    const resolvedThreadId = args.threadId ?? session.thread?._id;
+    const existingMessages = resolvedThreadId
+      ? await listThreadMessages(
+          ctx as any,
+          session.owner,
+          resolvedThreadId,
+          ASSISTANT_KIND,
+        )
+      : [];
+    const regenerateSource = selectRegenerateSource({
+      existingMessages: existingMessages as Array<any>,
+      regenerate: args.regenerate,
+      regenerateMessageId: args.regenerateMessageId,
+    });
+    const effectiveUserMessage = regenerateSource?.content ?? args.message;
+    const [entitlement, compiledBuyerContext] = await Promise.all([
+      resolveAssistantEntitlementForCurrentProfile(ctx, { safe: true }),
+      buildCompiledBuyerContextPayload({
+        ctx,
+        channel: "web",
+        userId: session.owner.userId,
+        message: effectiveUserMessage,
+        threadId: resolvedThreadId,
+        persistCompiledCache: false,
+      }),
+    ]);
+
+    return {
+      thread: session.thread,
+      owner: session.owner,
+      guestId: session.guestId,
+      expiresAt: session.expiresAt,
+      entitlement,
+      existingMessages,
+      regenerateSource,
+      effectiveUserMessage,
+      compiledBuyerContext,
+    };
   },
 });
 
@@ -297,10 +595,101 @@ export const generateVoiceUploadUrl = mutation({
   },
 });
 
+async function buildStructuredTurn(args: {
+  ctx: any;
+  owner: AssistantOwner;
+  initialThread: Doc<"assistantThreads"> | null;
+  message: string;
+  inputMode?: "text" | "voice";
+  locale?: "ar" | "en";
+  qualification?: {
+    monthlySalary?: number;
+    downPayment?: number;
+    preferredYears?: number;
+    employmentStatus?: string;
+    notes?: string;
+  };
+  selectedPropertyId?: Id<"properties">;
+  runtimeContextOverride?: {
+    thread?: Doc<"assistantThreads"> | null;
+    owner: AssistantOwner;
+    entitlement?: { mode: "qa" | "action" };
+    existingMessages?: Array<Doc<"assistantMessages">>;
+    regenerateSource?: Doc<"assistantMessages"> | null;
+    effectiveUserMessage?: string;
+    compiledBuyerContext?: {
+      compiledPromptContext: string;
+      promptBudgetMeta: unknown;
+    } | null;
+  };
+}) {
+  const result = await handleAssistantMessage(args.ctx, {
+    message: args.message,
+    threadId: args.initialThread?._id,
+    inputMode: args.inputMode,
+    assistantKind: ASSISTANT_KIND,
+    orchestratorName: ORCHESTRATOR_NAME,
+    promptPrefix: PROMPT_PREFIX,
+    ownerOverride: args.owner,
+    initialThreadOverride: args.initialThread,
+    runtimeContextOverride: args.runtimeContextOverride,
+    saveConversationStepMutationOverride:
+      internal.ai_zone.assistantPublic._saveConversationStep,
+  });
+
+  const compacted = compactAssistantResponse(result.output);
+  if (compacted.changed) {
+    await args.ctx.runMutation(
+      internal.ai_zone.assistantPublic._rewriteAssistantMessage,
+      {
+        messageId: result.messageId as Id<"assistantMessages">,
+        content: compacted.text,
+      },
+    );
+  }
+
+  const structured = await buildStructuredBuyerResponse({
+    ctx: args.ctx,
+    owner: { userId: args.owner.userId },
+    channel: "web",
+    locale: args.locale ?? "ar",
+    message: args.message,
+    assistantText: compacted.text,
+    threadId: result.threadId as Id<"assistantThreads">,
+    selectedPropertyId: args.selectedPropertyId,
+    qualification: args.qualification,
+    promptBudgetMeta: result.promptBudgetMeta as any,
+  });
+
+  await args.ctx.runMutation(
+    internal.ai_zone.assistantPublic._patchAssistantMessageMetadata,
+    {
+      messageId: result.messageId as Id<"assistantMessages">,
+      metadata: {
+        properties: structured.properties,
+        cards: structured.cards,
+        suggestedPrompts: structured.suggestedPrompts,
+        activePropertyId: structured.activePropertyId,
+        requiresAuthForHandoff: structured.requiresAuthForHandoff,
+        buyerContext: structured.buyerContext,
+      },
+    },
+  );
+
+  return {
+    ok: true as const,
+    threadId: String(result.threadId),
+    mode: result.mode,
+    messageId: String(result.messageId),
+    compacted: compacted.changed,
+    ...structured,
+  };
+}
+
 /**
  * WHY:   Public assistant sends should reuse the existing assistant pipeline while keeping output compact for speech.
- * WHAT:  Sends one text or voice-derived message through the shared orchestrator and rewrites overlong replies compactly.
- * HOW:   Resolves the guest session, delegates to `handleAssistantMessage`, then compacts and patches the assistant turn if needed.
+ * WHAT:  Sends one guest message through the shared orchestrator and returns a structured buyer payload for the web app.
+ * HOW:   Resolves the guest session, runs the public orchestrator, then composes shortlist/cards/state metadata for the UI.
  */
 export const sendMessage = action({
   args: {
@@ -309,47 +698,152 @@ export const sendMessage = action({
     message: v.string(),
     threadId: v.optional(v.id("assistantThreads")),
     inputMode: v.optional(v.union(v.literal("text"), v.literal("voice"))),
+    locale: v.optional(v.union(v.literal("ar"), v.literal("en"))),
+    qualification: v.optional(buyerQualificationValidator),
+    selectedPropertyId: v.optional(v.id("properties")),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const runtimeContext = await ctx.runQuery(
+      api.ai_zone.assistantPublic.getRuntimeContextBundle,
+      {
+        guestId: args.guestId,
+        channelSessionToken: args.channelSessionToken,
+        threadId: args.threadId,
+        message: args.message,
+      } as never,
+    ) as any;
+
+    return buildStructuredTurn({
+      ctx,
+      owner: runtimeContext.owner,
+      initialThread: runtimeContext.thread ?? null,
+      message: args.message,
+      inputMode: args.inputMode,
+      locale: args.locale,
+      qualification: args.qualification,
+      selectedPropertyId: args.selectedPropertyId,
+      runtimeContextOverride: runtimeContext,
+    });
+  },
+});
+
+/**
+ * WHY:   Once the buyer signs in, the same public assistant should continue on the authenticated `anan_main_public` thread store.
+ * WHAT:  Sends one authenticated public-web buyer message through the public orchestrator and structured response layer.
+ * HOW:   Resolves the signed-in owner, loads the matching public thread, then reuses the same structured public send flow.
+ */
+export const sendAuthenticatedMessage = action({
+  args: {
+    message: v.string(),
+    threadId: v.optional(v.id("assistantThreads")),
+    inputMode: v.optional(v.union(v.literal("text"), v.literal("voice"))),
+    locale: v.optional(v.union(v.literal("ar"), v.literal("en"))),
+    qualification: v.optional(buyerQualificationValidator),
+    selectedPropertyId: v.optional(v.id("properties")),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const runtimeContext = await ctx.runQuery(
+      api.ai_zone.assistantPublic.getRuntimeContextBundle,
+      {
+        threadId: args.threadId,
+        message: args.message,
+      } as never,
+    ) as any;
+
+    return buildStructuredTurn({
+      ctx,
+      owner: runtimeContext.owner,
+      initialThread: runtimeContext.thread ?? null,
+      message: args.message,
+      inputMode: args.inputMode,
+      locale: args.locale,
+      qualification: args.qualification,
+      selectedPropertyId: args.selectedPropertyId,
+      runtimeContextOverride: runtimeContext,
+    });
+  },
+});
+
+/**
+ * WHY:   The signed-in public buyer flow should inherit the guest conversation instead of starting a blank saved history.
+ * WHAT:  Promotes the guest public assistant thread/state/memory into the authenticated buyer account.
+ * HOW:   Resolves the guest session, requires auth, then patches the stored rows in place so the thread id stays stable.
+ */
+export const promoteGuestToAuthenticatedBuyer = mutation({
+  args: {
+    guestId: v.string(),
+    channelSessionToken: v.string(),
   },
   returns: v.object({
-    ok: v.literal(true),
-    threadId: v.string(),
-    mode: v.union(v.literal("qa"), v.literal("action")),
-    output: v.string(),
-    messageId: v.string(),
-    compacted: v.boolean(),
+    threadId: v.optional(v.id("assistantThreads")),
+    movedThreadIds: v.array(v.id("assistantThreads")),
   }),
-  handler: async (ctx, args) => {
-    const session = (await ctx.runQuery(internal.ai_zone.assistantPublic._resolvePublicSession, {
-      guestId: args.guestId,
-      channelSessionToken: args.channelSessionToken,
-      threadId: args.threadId,
-    })) as PublicSession;
-
-    const result = await handleAssistantMessage(ctx, {
-      message: args.message,
-      threadId: args.threadId ?? session.thread?._id,
-      inputMode: args.inputMode,
-      assistantKind: ASSISTANT_KIND,
-      orchestratorName: ORCHESTRATOR_NAME,
-      promptPrefix: PROMPT_PREFIX,
-      ownerOverride: session.owner,
-      initialThreadOverride: session.thread,
-      saveConversationStepMutationOverride: internal.ai_zone.assistantPublic._saveConversationStep,
-    });
-
-    const compacted = compactAssistantResponse(result.output);
-    if (compacted.changed) {
-      await ctx.runMutation(internal.ai_zone.assistantPublic._rewriteAssistantMessage, {
-        messageId: result.messageId as Id<"assistantMessages">,
-        content: compacted.text,
+  handler: async (ctx, args): Promise<any> => {
+    const session = await resolvePublicSessionForRead(ctx, args);
+    const authUserId = await getAuthUserId(ctx);
+    if (!authUserId) {
+      throw new ConvexError({
+        code: "UNAUTHORIZED",
+        message: "Authentication required to promote guest history.",
       });
     }
 
+    const promoted: {
+      activeThreadId?: Id<"assistantThreads">;
+      movedThreadIds: Array<Id<"assistantThreads">>;
+    } = await ctx.runMutation(
+      internal.shared_logic.buyerContext.promoteBuyerContextInternal,
+      {
+        fromUserId: session.owner.userId,
+        toUserId: authUserId,
+      },
+    );
+
     return {
-      ...result,
-      output: compacted.text,
-      compacted: compacted.changed,
+      threadId: promoted.activeThreadId ?? session.thread?._id,
+      movedThreadIds: promoted.movedThreadIds,
     };
+  },
+});
+
+/**
+ * WHY:   The public buyer UI needs one direct context read for bootstrapping selected property and recent qualification state.
+ * WHAT:  Returns the guest buyer context resolved from the persisted public state + memory store.
+ * HOW:   Validates the guest session, then reads the shared buyer context using the guest owner id.
+ */
+export const getBuyerContext = query({
+  args: {
+    guestId: v.string(),
+    channelSessionToken: v.string(),
+  },
+  returns: v.any(),
+  handler: async (ctx, args): Promise<any> => {
+    const session = await resolvePublicSessionForRead(ctx, args);
+    const buyerContext = await ctx.runQuery(internal.shared_logic.buyerContext.getBuyerContextInternal, {
+      channel: "web",
+      userId: session.owner.userId,
+    });
+    return sanitizeBuyerContext(buyerContext);
+  },
+});
+
+/**
+ * WHY:   Signed-in buyers also need the normalized public buyer context when reopening a saved thread.
+ * WHAT:  Returns the authenticated buyer's public assistant context snapshot.
+ * HOW:   Resolves the auth owner and reads the same shared buyer-context query used by the guest flow.
+ */
+export const getAuthenticatedBuyerContext = query({
+  args: {},
+  returns: v.any(),
+  handler: async (ctx): Promise<any> => {
+    const session = await resolveAuthenticatedSessionForRead(ctx, {});
+    const buyerContext = await ctx.runQuery(internal.shared_logic.buyerContext.getBuyerContextInternal, {
+      channel: "web",
+      userId: session.owner.userId,
+    });
+    return sanitizeBuyerContext(buyerContext);
   },
 });
 
@@ -447,6 +941,26 @@ export const _rewriteAssistantMessage = internalMutation({
   handler: async (ctx, args) => {
     await ctx.db.patch(args.messageId, {
       content: args.content,
+    });
+    return null;
+  },
+});
+
+export const _patchAssistantMessageMetadata = internalMutation({
+  args: {
+    messageId: v.id("assistantMessages"),
+    metadata: v.any(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db.get(args.messageId);
+    if (!existing) return null;
+
+    await ctx.db.patch(args.messageId, {
+      metadata: {
+        ...(typeof existing.metadata === "object" && existing.metadata ? existing.metadata : {}),
+        ...(typeof args.metadata === "object" && args.metadata ? args.metadata : {}),
+      },
     });
     return null;
   },

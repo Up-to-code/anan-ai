@@ -22,6 +22,11 @@ export const trackTokenUsageInternal = internalMutation({
     channel: v.optional(v.string()),
     role: v.optional(v.string()),
     errorOccurred: v.optional(v.boolean()),
+    contextTokens: v.optional(v.number()),
+    memoryTokens: v.optional(v.number()),
+    ragTokens: v.optional(v.number()),
+    historyTokens: v.optional(v.number()),
+    cacheHit: v.optional(v.boolean()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {

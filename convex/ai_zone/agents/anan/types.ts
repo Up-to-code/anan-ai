@@ -37,6 +37,18 @@ export interface OrchestrateInput {
     ragContext?: string;
     /** Override LLM model for intent analysis */
     modelOverride?: string;
+    /** Optional prompt-composition footprint for public buyer context analytics */
+    promptBudgetMeta?: {
+        contextTokens: number;
+        memoryTokens: number;
+        ragTokens: number;
+        historyTokens: number;
+        totalContextTokens: number;
+        budgetCap: number;
+        cacheHit: boolean;
+        includedBlocks: string[];
+        droppedBlocks: string[];
+    };
 }
 
 /**

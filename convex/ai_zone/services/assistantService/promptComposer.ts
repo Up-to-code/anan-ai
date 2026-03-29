@@ -36,9 +36,11 @@ export function buildWorkspaceContextBlock(options: {
   existingMessages: Array<Doc<"assistantMessages">>;
   previousActionState: WorkspaceActionState | null;
 }): string {
-  if (!options.isWorkspaceAssistant) return "";
-
   const recentContext = buildRecentThreadContext(options.existingMessages);
+  if (!options.isWorkspaceAssistant) {
+    return recentContext;
+  }
+
   const actionContext = options.previousActionState
     ? `[Open Action]\n${JSON.stringify(
         options.previousActionState.type === "create_project"
@@ -81,10 +83,14 @@ export function buildBasePrompt(options: {
   promptPrefix: string | undefined;
   effectiveUserMessage: string;
   knowledgeContext: string;
+  buyerContextBlock?: string;
   workspaceContextBlock: string;
   attachmentContext?: string;
 }): string {
   const prefix = options.promptPrefix ? `${options.promptPrefix}\n\n` : "";
+  const buyerContextBlock = options.buyerContextBlock
+    ? `\n\n${options.buyerContextBlock}`
+    : "";
   const workspaceBlock = options.workspaceContextBlock
     ? `\n\n${options.workspaceContextBlock}`
     : "";
@@ -93,8 +99,8 @@ export function buildBasePrompt(options: {
     : "";
 
   if (options.mode === "qa") {
-    return `${prefix}${options.effectiveUserMessage}\n\n[Policy: QA-only mode. Answer questions only. Do not execute actions.]${options.knowledgeContext}${workspaceBlock}${attachmentBlock}`;
+    return `${prefix}${options.effectiveUserMessage}\n\n[Policy: QA-only mode. Answer questions only. Do not execute actions.]${buyerContextBlock}${options.knowledgeContext}${workspaceBlock}${attachmentBlock}`;
   }
 
-  return `${prefix}${options.effectiveUserMessage}${options.knowledgeContext}${workspaceBlock}${attachmentBlock}`;
+  return `${prefix}${options.effectiveUserMessage}${buyerContextBlock}${options.knowledgeContext}${workspaceBlock}${attachmentBlock}`;
 }

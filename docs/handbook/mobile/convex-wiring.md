@@ -28,6 +28,7 @@ This chapter documents:
 ### Environment variable
 
 - `EXPO_PUBLIC_CONVEX_URL` — Convex deployment URL for the mobile app.
+- `EXPO_PUBLIC_CLIENT_WEB_URL` — client-web origin used for sign-in escalation, saved-history sync, and advisor handoff completion.
 
 ### Provider behavior (repo pattern)
 
@@ -50,4 +51,3 @@ Reference:
 
 - Treating `EXPO_PUBLIC_CONVEX_URL` absence as “no-op” and then mixing mock and real data silently.
 - Building mobile UI around mock-only fields that the backend never returns.
-

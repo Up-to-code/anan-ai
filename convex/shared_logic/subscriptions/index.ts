@@ -1,7 +1,7 @@
 import { query } from "../../_generated/server";
 import { requireCurrentProfile } from "../lib/profile";
 
-type AssistantEntitlement = {
+export type AssistantEntitlement = {
   verified: boolean;
   hasActiveSubscription: boolean;
   actionModeEnabled: boolean;
@@ -9,7 +9,7 @@ type AssistantEntitlement = {
   subscription: unknown | null;
 };
 
-function buildDefaultEntitlement(): AssistantEntitlement {
+export function buildDefaultEntitlement(): AssistantEntitlement {
   return {
     verified: false,
     hasActiveSubscription: false,
@@ -49,7 +49,7 @@ async function resolveVerifiedState(ctx: any, profile: any) {
   return true;
 }
 
-async function resolveAssistantEntitlementForProfile(ctx: any, profile: any): Promise<AssistantEntitlement> {
+export async function resolveAssistantEntitlementForProfile(ctx: any, profile: any): Promise<AssistantEntitlement> {
   const [verified, sub] = await Promise.all([
     resolveVerifiedState(ctx, profile),
     getSubscriptionForProfile(ctx, profile),
@@ -65,20 +65,11 @@ async function resolveAssistantEntitlementForProfile(ctx: any, profile: any): Pr
   };
 }
 
-export const getAssistantEntitlement = query({
-  args: {},
-  handler: async (ctx) => {
-    const profile = await requireCurrentProfile(ctx);
-    return resolveAssistantEntitlementForProfile(ctx, profile);
-  },
-});
-
-/**
- * Safe variant for bootstrap: returns a non-throwing entitlement when auth is not ready.
- */
-export const getAssistantEntitlementSafe = query({
-  args: {},
-  handler: async (ctx) => {
+export async function resolveAssistantEntitlementForCurrentProfile(
+  ctx: any,
+  options?: { safe?: boolean },
+): Promise<AssistantEntitlement> {
+  if (options?.safe) {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       return buildDefaultEntitlement();
@@ -86,8 +77,25 @@ export const getAssistantEntitlementSafe = query({
     try {
       const profile = await requireCurrentProfile(ctx);
       return resolveAssistantEntitlementForProfile(ctx, profile);
-    } catch (_e) {
+    } catch (_error) {
       return buildDefaultEntitlement();
     }
-  },
+  }
+
+  const profile = await requireCurrentProfile(ctx);
+  return resolveAssistantEntitlementForProfile(ctx, profile);
+}
+
+export const getAssistantEntitlement = query({
+  args: {},
+  handler: async (ctx) => resolveAssistantEntitlementForCurrentProfile(ctx),
+});
+
+/**
+ * Safe variant for bootstrap: returns a non-throwing entitlement when auth is not ready.
+ */
+export const getAssistantEntitlementSafe = query({
+  args: {},
+  handler: async (ctx) =>
+    resolveAssistantEntitlementForCurrentProfile(ctx, { safe: true }),
 });

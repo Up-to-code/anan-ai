@@ -14,6 +14,7 @@ export {
   getAccessibleThread,
   getAccessibleThread as getThreadById,
   getLatestThread,
+  getLatestThreadPreview,
   getMessageContent,
   listRecentThreads,
   listThreadMessages,

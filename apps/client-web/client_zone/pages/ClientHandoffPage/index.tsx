@@ -47,22 +47,25 @@ export function ClientHandoffPage({ orderId }: { orderId?: string }) {
       };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[var(--workspace-shell)]">
       <ChatHeader isAuthenticated={isAuthenticated} />
-      <main className="mx-auto w-full max-w-3xl px-4 py-8">
+      <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
         {!isAuthenticated ? (
           <ChatAuthGateNotice returnTo={orderId ? `/app/handoff?orderId=${encodeURIComponent(orderId)}` : "/app/handoff"} />
         ) : handoff === undefined ? (
           <div className="h-56 animate-pulse rounded-xl border border-slate-200 bg-white" />
         ) : (
-          <Card>
+          <Card className="rounded-[30px] border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] shadow-[0_20px_44px_rgba(15,23,42,0.06)]">
             <CardHeader>
               <CardTitle>{dictionary.app.handoffTitle}</CardTitle>
               <CardDescription>{dictionary.app.handoffDescription}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {handoff ? (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                <div
+                  data-testid="client-handoff-summary"
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700"
+                >
                   <p>{labels.orderId}: {handoff.orderId}</p>
                   <p>{labels.status}: {handoff.status}</p>
                   <p>{labels.property}: {handoff.property?.title ?? "—"}</p>

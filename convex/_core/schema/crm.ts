@@ -34,7 +34,9 @@ const crmTables = {
         description: v.optional(v.string()),
         value: v.optional(v.number()),
         nextFollowUpAt: v.optional(v.number()),
-        createdAt: v.number(),
+        // Legacy deployments already contain deal rows created before this field existed.
+        // Keep the schema backward-compatible while current write paths continue populating it.
+        createdAt: v.optional(v.number()),
         stage: v.union(
             v.literal("new"),        // فرصة جديدة
             v.literal("contacted"),  // تواصل أولي

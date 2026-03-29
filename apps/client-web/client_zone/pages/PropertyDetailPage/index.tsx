@@ -35,13 +35,17 @@ export function PropertyDetailPage({ propertyId }: { propertyId: string }) {
   }, [property]);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[var(--workspace-shell)]">
       <ChatHeader isAuthenticated={isAuthenticated} />
-      <main className="mx-auto w-full max-w-3xl px-4 py-6">
+      <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
         {property === undefined ? (
           <div className="h-96 animate-pulse rounded-xl border border-slate-200 bg-white" />
         ) : property ? (
-          <Card className="overflow-hidden">
+          <div className="space-y-5">
+            <div className="rounded-full border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-4 py-2 text-[11px] font-black uppercase tracking-[0.2em] text-[var(--workspace-muted)] w-fit ms-auto">
+              {dictionary.app.continueInChat}
+            </div>
+            <Card className="overflow-hidden rounded-[30px] border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] shadow-[0_24px_56px_rgba(15,23,42,0.08)]">
             {property.media[0] ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={property.media[0]} alt={property.title} className="h-56 w-full object-cover" />
@@ -75,6 +79,7 @@ export function PropertyDetailPage({ propertyId }: { propertyId: string }) {
                 </Link>
                 <Link
                   href={`/?prompt=${encodeURIComponent(locale === "ar" ? `أريد خطة تمويل لعقار ${property.title}` : `Show financing options for ${property.title}`)}`}
+                  data-testid="client-property-finance-cta"
                   data-analytics-event="client_property_finance_cta_clicked"
                   data-analytics-property-id={String(property.id)}
                 >
@@ -82,7 +87,8 @@ export function PropertyDetailPage({ propertyId }: { propertyId: string }) {
                 </Link>
               </div>
             </CardContent>
-          </Card>
+            </Card>
+          </div>
         ) : (
           <Card><CardContent className="p-6 text-sm text-slate-600">{dictionary.app.propertyNotFound}</CardContent></Card>
         )}

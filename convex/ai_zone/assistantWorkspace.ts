@@ -11,12 +11,45 @@ import {
   resolveAssistantOwnerSafe,
   saveConversationStep,
 } from "./services/assistantService";
+import { selectRegenerateSource } from "./services/assistantService/promptComposer";
 import { transcribeStoredVoiceNote } from "./services/voiceTranscriptionService";
+import { resolveAssistantEntitlementForCurrentProfile } from "../shared_logic/subscriptions/index";
 
 const ASSISTANT_KIND = "anan_workspace" as const;
 const ORCHESTRATOR_NAME = "anan_workspace_orchestrator";
 const PROMPT_PREFIX =
   "[Anan Workspace Operator]\nYou are the internal workspace operator. Prioritize projects, offers, CRM, organizations, invitations, inbox, and actionable next steps. Only propose actions the current workspace role can perform. Summaries should be operational and approval-ready.";
+
+function scoreSnippet(content: string, terms: string[]) {
+  const lower = content.toLowerCase();
+  return terms.reduce((acc, term) => (lower.includes(term) ? acc + 1 : acc), 0);
+}
+
+async function buildKnowledgeSnippets(ctx: any, queryText: string, limit = 3) {
+  const terms = queryText
+    .toLowerCase()
+    .split(/\s+/)
+    .map((term) => term.trim())
+    .filter(Boolean)
+    .slice(0, 8);
+
+  if (terms.length === 0) {
+    return [];
+  }
+
+  const pages = await ctx.db.query("knowledgePages").collect();
+  return pages
+    .map((page: any) => ({
+      title: page.title,
+      category: page.category ?? null,
+      excerpt: String(page.content ?? "").slice(0, 500),
+      score: scoreSnippet(`${page.title}\n${page.content}\n${page.category ?? ""}`, terms),
+    }))
+    .filter((row: any) => row.score > 0)
+    .sort((a: any, b: any) => b.score - a.score)
+    .slice(0, limit)
+    .map(({ title, category, excerpt }: any) => ({ title, category, excerpt }));
+}
 
 export const getThread = query({
   args: {},
@@ -64,6 +97,50 @@ export const getThreadById = query({
   handler: async (ctx, args) => {
     const owner = await resolveAssistantOwner(ctx);
     return getAccessibleThread(ctx, owner, args.threadId, ASSISTANT_KIND);
+  },
+});
+
+/**
+ * WHY:   Workspace assistant sends should resolve thread, entitlement, history, and knowledge before orchestration through one query bundle.
+ * WHAT:  Returns the workspace assistant runtime bundle for one send attempt.
+ * HOW:   Resolves the current workspace owner, reads the requested or latest thread, computes regenerate context, and loads a bounded knowledge shortlist.
+ */
+export const getRuntimeContextBundle = query({
+  args: {
+    threadId: v.optional(v.id("assistantThreads")),
+    message: v.string(),
+    regenerate: v.optional(v.boolean()),
+    regenerateMessageId: v.optional(v.string()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const owner = await resolveAssistantOwner(ctx);
+    const thread = args.threadId
+      ? await getAccessibleThread(ctx, owner, args.threadId, ASSISTANT_KIND)
+      : await getLatestThread(ctx, owner, ASSISTANT_KIND);
+    const existingMessages = thread
+      ? await listThreadMessages(ctx, owner, thread._id, ASSISTANT_KIND)
+      : [];
+    const regenerateSource = selectRegenerateSource({
+      existingMessages: existingMessages as Array<any>,
+      regenerate: args.regenerate,
+      regenerateMessageId: args.regenerateMessageId,
+    });
+    const effectiveUserMessage = regenerateSource?.content ?? args.message;
+    const [entitlement, knowledge] = await Promise.all([
+      resolveAssistantEntitlementForCurrentProfile(ctx),
+      buildKnowledgeSnippets(ctx, effectiveUserMessage),
+    ]);
+
+    return {
+      owner,
+      thread,
+      entitlement,
+      existingMessages,
+      regenerateSource,
+      effectiveUserMessage,
+      knowledge,
+    };
   },
 });
 

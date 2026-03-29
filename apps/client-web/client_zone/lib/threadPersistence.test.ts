@@ -27,6 +27,9 @@ describe("threadPersistence", () => {
       text: "I reviewed this property for you.",
       createdAt: 1,
       properties: [sampleProperty],
+      activePropertyId: "property-1",
+      suggestedPrompts: ["Show me more options"],
+      requiresAuthForHandoff: true,
       cards: [
         {
           type: "broker_handoff",
@@ -41,6 +44,9 @@ describe("threadPersistence", () => {
 
     expect(message.uiTurn?.cards.length).toBeGreaterThan(0);
     expect(message.properties?.[0]?.title).toBe("Olive Residence");
+    expect(message.activePropertyId).toBe("property-1");
+    expect(message.suggestedPrompts).toEqual(["Show me more options"]);
+    expect(message.requiresAuthForHandoff).toBe(true);
   });
 
   it("preserves transcript order and handoff metadata when seeding a saved thread", () => {

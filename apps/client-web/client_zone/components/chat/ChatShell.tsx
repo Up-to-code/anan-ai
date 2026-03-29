@@ -15,8 +15,11 @@ import { ChatHistorySidebar } from "./ChatHistorySidebar";
 import { AssistantTurn } from "./AssistantTurn";
 import { ThreadWelcome } from "./ThreadWelcome";
 import { ClientAssistantColumn } from "./chatLayout";
+import { Button } from "@/client_zone/components/ui/button";
+import { AgUiCardHeading, AgUiCardShell, CardContent } from "./ag-ui/AgUiCardPrimitives";
 import { useLocaleDictionary } from "@/client_zone/components/LocaleProvider";
 import { useClientAssistant } from "@/client_zone/hooks/useClientAssistant";
+import { useClientVoiceRecorder } from "@/client_zone/hooks/useClientVoiceRecorder";
 import { buildChatSuggestions } from "@/client_zone/lib/chatSuggestions";
 
 function useComposerDockHeight() {
@@ -62,13 +65,19 @@ export function ChatShell({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { isAuthenticated } = useConvexAuth();
-  const { locale } = useLocaleDictionary();
+  const { dictionary, locale } = useLocaleDictionary();
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const { dockRef, dockHeight } = useComposerDockHeight();
   const assistant = useClientAssistant({
     locale,
     initialPrompt: initialPrompt ?? searchParams.get("prompt"),
     initialThreadId: initialThreadId ?? searchParams.get("threadId"),
+  });
+  const voiceRecorder = useClientVoiceRecorder({
+    disabled: assistant.isSubmitting,
+    onTranscriptReady: async (transcript) => {
+      await assistant.submit(transcript, "voice");
+    },
   });
   const suggestions = useMemo(() => buildChatSuggestions(locale, mode), [locale, mode]);
   const returnTo = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
@@ -112,6 +121,24 @@ export function ChatShell({
 
         {assistant.showAuthCallout ? <ChatAuthGateNotice returnTo={returnTo} /> : null}
         {assistant.isSubmitting ? <ChatLoader /> : null}
+        {assistant.activeProperty ? (
+          <ClientAssistantColumn data-testid="client-active-property-cta">
+            <AgUiCardShell>
+              <AgUiCardHeading
+                title={assistant.activeProperty.title}
+                summary={dictionary.app.handoffReady}
+              />
+              <CardContent className="pt-0">
+                <Button
+                  data-testid="client-request-advisor"
+                  onClick={() => void assistant.requestAdvisor()}
+                >
+                  {dictionary.app.requestAdvisor}
+                </Button>
+              </CardContent>
+            </AgUiCardShell>
+          </ClientAssistantColumn>
+        ) : null}
         {assistant.messages.length > 0 ? (
           <ClientAssistantColumn className="pt-2">
             <ChatSuggestions
@@ -127,7 +154,16 @@ export function ChatShell({
         value={assistant.draft}
         onChange={assistant.setDraft}
         onSubmit={() => void assistant.submit()}
-        disabled={assistant.isSubmitting}
+        disabled={assistant.isSubmitting || voiceRecorder.isBusy}
+        voicePermissionState={voiceRecorder.permissionState}
+        voiceProcessingPhase={voiceRecorder.processingPhase}
+        voiceElapsedMs={voiceRecorder.elapsedMs}
+        voiceLevels={voiceRecorder.levels}
+        voiceError={voiceRecorder.errorMessage}
+        isVoiceRecording={voiceRecorder.isRecording}
+        onStartVoiceRecording={() => void voiceRecorder.startRecording()}
+        onStopVoiceRecording={() => void voiceRecorder.stopRecording()}
+        onCancelVoiceRecording={() => voiceRecorder.cancelRecording()}
       />
     </div>
   );

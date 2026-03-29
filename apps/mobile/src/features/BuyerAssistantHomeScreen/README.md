@@ -1,7 +1,7 @@
 # BuyerAssistantHomeScreen
 
-Chat-first buyer home for the Anan mobile MVP.
+Chat-first buyer home for the live mobile buyer experience.
 
-- `index.tsx` orchestrates the assistant header, capability rail, message list, and composer.
-- Conversation behavior lives in `useBuyerAssistant.ts`.
-- Shared chat visuals come from `src/components/chat/`.
+- `index.tsx` orchestrates the assistant header, property discovery, message list, and composer.
+- Conversation behavior lives in `usePropertyAssistant.ts` and `usePropertyFeed.ts`.
+- Shared chat visuals and AG-UI rendering come from `src/components/chat/`.

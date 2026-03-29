@@ -27,15 +27,21 @@ export async function getProfileByOrganizationTarget(
   ctx: ReadCtx,
   args: { brokerId?: Id<"brokers">; REDId?: Id<"RED"> }
 ) {
-  // NOTE: this is currently a full-table scan; indexed lookups can be introduced later.
-  const profiles = await ctx.db.query("userProfiles").collect();
-  return (
-    profiles.find(
-      (profile) =>
-        (args.brokerId && profile.brokerId === args.brokerId) ||
-        (args.REDId && profile.REDId === args.REDId)
-    ) ?? null
-  );
+  if (args.brokerId) {
+    return ctx.db
+      .query("userProfiles")
+      .withIndex("brokerId", (q) => q.eq("brokerId", args.brokerId!))
+      .first();
+  }
+
+  if (args.REDId) {
+    return ctx.db
+      .query("userProfiles")
+      .withIndex("REDId", (q) => q.eq("REDId", args.REDId!))
+      .first();
+  }
+
+  return null;
 }
 
 export async function getOrganizationNameByOwner(
@@ -119,4 +125,3 @@ export async function getCollaborationRecipientProjection(
     organizationName,
   };
 }
-

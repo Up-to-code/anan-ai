@@ -28,10 +28,10 @@ export function SigninPage({ redirectTo }: { redirectTo: string }) {
   }, [isAuthenticated, redirectTo, router]);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[var(--workspace-shell)]">
       <ChatHeader isAuthenticated={isAuthenticated} />
       <main className="flex min-h-[calc(100vh-56px)] items-center justify-center px-4 py-8">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md rounded-[30px] border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] shadow-[0_20px_44px_rgba(15,23,42,0.08)]">
           <CardHeader>
             <CardTitle>{dictionary.app.signInTitle}</CardTitle>
             <CardDescription>{dictionary.app.signInDescription}</CardDescription>

@@ -1,53 +1,55 @@
 import { useState } from "react";
-import { listCatalogProperties } from "@/lib/mvp/ananAssistant";
-import type { PropertyPreview } from "@/types/chat";
+import { getPropertyLocationLabel } from "@/lib/mobileData";
+import { usePropertyFeed } from "@/hooks/usePropertyFeed";
+import type { MobileProperty } from "@/types/mobile";
 
 const ALL_FILTER = "الكل";
 
 /**
- * WHY:   The search screen needs one small source of truth for query and filter state.
- * WHAT:  Exposes search input, filter setters, and filtered property results for the MVP catalog.
- * HOW:   Filters the in-memory catalog by text, city, and property type without mixing in hidden backend fallbacks.
+ * WHY:   Direct property search still needs one focused state source even after mobile moves to the live feed contract.
+ * WHAT:  Exposes query/filter state plus filtered mobile properties ready for list rendering.
+ * HOW:   Reuses the shared live feed hook and filters by text, location label, and owner type on the client.
  */
 export function usePropertySearch() {
+  const feed = usePropertyFeed();
   const [query, setQuery] = useState("");
-  const [selectedCity, setSelectedCity] = useState(ALL_FILTER);
-  const [selectedType, setSelectedType] = useState(ALL_FILTER);
+  const [selectedArea, setSelectedArea] = useState(ALL_FILTER);
+  const [selectedOwnerType, setSelectedOwnerType] = useState(ALL_FILTER);
 
-  const allProperties = listCatalogProperties();
-  const cities = [ALL_FILTER, ...new Set(allProperties.map((property) => property.city))];
-  const types = [ALL_FILTER, "شقة", "فيلا", "دوبلكس", "تاون هاوس", "استوديو"];
+  const allProperties = feed.properties;
+  const areas = [ALL_FILTER, ...new Set(allProperties.map((property) => getPropertyLocationLabel(property)))];
+  const ownerTypes = [ALL_FILTER, "وسيط", "مطور"];
 
   const results = allProperties.filter((property) => {
     const matchesText =
       query.trim().length === 0 ||
       property.title.includes(query) ||
-      property.area.includes(query) ||
-      property.city.includes(query);
-    const matchesCity = selectedCity === ALL_FILTER || property.city === selectedCity;
-    const matchesType = selectedType === ALL_FILTER || matchesTypeLabel(property, selectedType);
+      property.address.includes(query) ||
+      getPropertyLocationLabel(property).includes(query) ||
+      property.owner.name.includes(query);
+    const matchesArea = selectedArea === ALL_FILTER || getPropertyLocationLabel(property) === selectedArea;
+    const matchesOwnerType =
+      selectedOwnerType === ALL_FILTER || matchOwnerTypeLabel(property, selectedOwnerType);
 
-    return matchesText && matchesCity && matchesType;
+    return matchesText && matchesArea && matchesOwnerType;
   });
 
   return {
+    ...feed,
     query,
-    selectedCity,
-    selectedType,
-    cities,
-    types,
+    selectedArea,
+    selectedOwnerType,
+    areas,
+    ownerTypes,
     results,
     setQuery,
-    setSelectedCity,
-    setSelectedType,
+    setSelectedArea,
+    setSelectedOwnerType,
   };
 }
 
-function matchesTypeLabel(property: PropertyPreview, typeLabel: string) {
-  if (typeLabel === "شقة") return property.propertyType === "apartment";
-  if (typeLabel === "فيلا") return property.propertyType === "villa";
-  if (typeLabel === "دوبلكس") return property.propertyType === "duplex";
-  if (typeLabel === "تاون هاوس") return property.propertyType === "townhouse";
-  if (typeLabel === "استوديو") return property.propertyType === "studio";
-  return true;
+function matchOwnerTypeLabel(property: MobileProperty, ownerTypeLabel: string) {
+  if (ownerTypeLabel === "وسيط") return property.owner.type === "broker";
+  if (ownerTypeLabel === "مطور") return property.owner.type === "RED";
+  return ownerTypeLabel === ALL_FILTER;
 }

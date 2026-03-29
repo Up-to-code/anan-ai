@@ -5,9 +5,16 @@
  *
  * The user must exist in Convex Auth first (sign in with Google OAuth).
  */
-import { mutation } from "./_generated/server";
+import { action, internalMutation, mutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { buildPropertySearchText } from "./shared_logic/properties/searchText";
+import {
+  buildSaudiSeedSummary,
+  ensureSaudiPlaygroundNetwork,
+  ensureSaudiSeedBanks,
+  seedSaudiOrganizationChunk,
+} from "./seed/saudiWorkspaceDataset";
 
 export const setAdminByEmail = mutation({
   args: { email: v.string() },
@@ -795,6 +802,232 @@ export const seedArabicDevelopmentEcosystem = mutation({
       properties: properties.length,
       clients: [clientOne, clientTwo].length,
       orders: 2,
+    };
+  },
+});
+
+export const _ensureSaudiSeedBanks = internalMutation({
+  args: {},
+  returns: v.array(v.id("banks")),
+  handler: async (ctx) => {
+    return ensureSaudiSeedBanks(ctx as any);
+  },
+});
+
+export const _seedSaudiOrganizationChunk = internalMutation({
+  args: {
+    batchLabel: v.string(),
+    ownerType: v.union(v.literal("broker"), v.literal("red")),
+    index: v.number(),
+    isPlayground: v.optional(v.boolean()),
+    playgroundOwnerEmail: v.optional(v.string()),
+  },
+  returns: v.object({
+    organizationId: v.string(),
+    ownerAuthUserId: v.string(),
+    tenantOrgId: v.string(),
+    isPlayground: v.boolean(),
+    playgroundStatus: v.optional(v.union(v.literal("created"), v.literal("reused"))),
+  }),
+  handler: async (ctx, args) => {
+    return seedSaudiOrganizationChunk({
+      ctx: ctx as any,
+      batchLabel: args.batchLabel,
+      ownerType: args.ownerType,
+      index: args.index,
+      isPlayground: args.isPlayground,
+      playgroundOwnerEmail: args.playgroundOwnerEmail,
+    });
+  },
+});
+
+export const _ensureSaudiPlaygroundNetwork = internalMutation({
+  args: {
+    batchLabel: v.string(),
+    playgroundOwnerEmail: v.string(),
+  },
+  returns: v.object({
+    playgroundOrganizationId: v.string(),
+    playgroundStatus: v.union(v.literal("created"), v.literal("reused")),
+  }),
+  handler: async (ctx, args) => {
+    return ensureSaudiPlaygroundNetwork(ctx as any, args);
+  },
+});
+
+export const _buildSaudiSeedSummary = internalMutation({
+  args: {
+    batchLabel: v.string(),
+    playgroundOwnerEmail: v.string(),
+  },
+  returns: v.object({
+    batchLabel: v.string(),
+    organizations: v.number(),
+    developers: v.number(),
+    brokers: v.number(),
+    members: v.number(),
+    properties: v.number(),
+    crmClients: v.number(),
+    deals: v.number(),
+    offerPackages: v.number(),
+    offerCases: v.number(),
+    legacyOffers: v.number(),
+    offers: v.number(),
+    conversations: v.number(),
+    messages: v.number(),
+    banks: v.number(),
+    bankProducts: v.number(),
+    orders: v.number(),
+    loanOrders: v.number(),
+    propertyOrders: v.number(),
+    publishedPropertiesWithBank: v.number(),
+    playgroundOrganizationId: v.union(v.string(), v.null()),
+    playgroundStatus: v.union(v.literal("created"), v.literal("reused")),
+  }),
+  handler: async (ctx, args) => {
+    return buildSaudiSeedSummary(ctx as any, args);
+  },
+});
+
+export const seedSaudiWorkspaceDataset: any = action({
+  args: {
+    playgroundOwnerEmail: v.string(),
+    batchLabel: v.optional(v.string()),
+    organizationCount: v.optional(v.number()),
+  },
+  returns: v.object({
+    batchLabel: v.string(),
+    organizations: v.number(),
+    developers: v.number(),
+    brokers: v.number(),
+    members: v.number(),
+    properties: v.number(),
+    crmClients: v.number(),
+    deals: v.number(),
+    offerPackages: v.number(),
+    offerCases: v.number(),
+    legacyOffers: v.number(),
+    offers: v.number(),
+    conversations: v.number(),
+    messages: v.number(),
+    banks: v.number(),
+    bankProducts: v.number(),
+    orders: v.number(),
+    loanOrders: v.number(),
+    propertyOrders: v.number(),
+    publishedPropertiesWithBank: v.number(),
+    playgroundOrganizationId: v.union(v.string(), v.null()),
+    playgroundStatus: v.union(v.literal("created"), v.literal("reused")),
+  }),
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
+    batchLabel: string;
+    organizations: number;
+    developers: number;
+    brokers: number;
+    members: number;
+    properties: number;
+    crmClients: number;
+    deals: number;
+    offerPackages: number;
+    offerCases: number;
+    legacyOffers: number;
+    offers: number;
+    conversations: number;
+    messages: number;
+    banks: number;
+    bankProducts: number;
+    orders: number;
+    loanOrders: number;
+    propertyOrders: number;
+    publishedPropertiesWithBank: number;
+    playgroundOrganizationId: string | null;
+    playgroundStatus: "created" | "reused";
+  }> => {
+    const normalizedEmail = args.playgroundOwnerEmail.trim().toLowerCase();
+    if (!normalizedEmail) {
+      throw new Error("playgroundOwnerEmail is required");
+    }
+    const organizationCount = Math.max(2, Math.floor(args.organizationCount ?? 50));
+    const batchLabel = args.batchLabel?.trim() || `saudi-seed-${Date.now()}`;
+
+    await ctx.runMutation((internal as any).seed._ensureSaudiSeedBanks, {});
+
+    const developerCount = Math.ceil(organizationCount / 2);
+    const brokerCount = organizationCount - developerCount;
+
+    const playgroundSeed: {
+      organizationId: string;
+      ownerAuthUserId: string;
+      tenantOrgId: string;
+      isPlayground: boolean;
+      playgroundStatus?: "created" | "reused";
+    } = await ctx.runMutation((internal as any).seed._seedSaudiOrganizationChunk, {
+      batchLabel,
+      ownerType: "red",
+      index: 0,
+      isPlayground: true,
+      playgroundOwnerEmail: normalizedEmail,
+    });
+
+    for (let index = 0; index < developerCount - 1; index += 1) {
+      await ctx.runMutation((internal as any).seed._seedSaudiOrganizationChunk, {
+        batchLabel,
+        ownerType: "red",
+        index,
+      });
+    }
+
+    for (let index = 0; index < brokerCount; index += 1) {
+      await ctx.runMutation((internal as any).seed._seedSaudiOrganizationChunk, {
+        batchLabel,
+        ownerType: "broker",
+        index,
+      });
+    }
+
+    const playground: {
+      playgroundOrganizationId: string;
+      playgroundStatus: "created" | "reused";
+    } = await ctx.runMutation((internal as any).seed._ensureSaudiPlaygroundNetwork, {
+      batchLabel,
+      playgroundOwnerEmail: normalizedEmail,
+    });
+    const summary: {
+      batchLabel: string;
+      organizations: number;
+      developers: number;
+      brokers: number;
+      members: number;
+      properties: number;
+      crmClients: number;
+      deals: number;
+      offerPackages: number;
+      offerCases: number;
+      legacyOffers: number;
+      offers: number;
+      conversations: number;
+      messages: number;
+      banks: number;
+      bankProducts: number;
+      orders: number;
+      loanOrders: number;
+      propertyOrders: number;
+      publishedPropertiesWithBank: number;
+      playgroundOrganizationId: string | null;
+      playgroundStatus: "created" | "reused";
+    } = await ctx.runMutation((internal as any).seed._buildSaudiSeedSummary, {
+      batchLabel,
+      playgroundOwnerEmail: normalizedEmail,
+    });
+
+    return {
+      ...summary,
+      playgroundOrganizationId: playground.playgroundOrganizationId ?? summary.playgroundOrganizationId,
+      playgroundStatus:
+        playgroundSeed.playgroundStatus === "created" ? "created" : playground.playgroundStatus,
     };
   },
 });

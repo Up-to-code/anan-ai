@@ -19,6 +19,7 @@ export function ChatConversation({
 }) {
   return (
     <section
+      data-testid="client-assistant-thread"
       className={cn(
         "min-h-0 flex-1 overflow-y-auto bg-[var(--workspace-canvas)] px-4 sm:px-6 lg:px-8",
         className,

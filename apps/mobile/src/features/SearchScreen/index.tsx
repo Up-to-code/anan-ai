@@ -7,7 +7,7 @@ import { PropertyResultCard } from "@/components/chat/PropertyResultCard";
 import { AppText } from "@/components/ui/AppText";
 import { IconButton } from "@/components/ui/IconButton";
 import { usePropertySearch } from "@/hooks/usePropertySearch";
-import type { PropertyPreview } from "@/types/chat";
+import type { MobileProperty } from "@/types/mobile";
 
 function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ");
@@ -23,23 +23,21 @@ export default function SearchScreen() {
   const search = usePropertySearch();
   const insets = useSafeAreaInsets();
 
-  function openProperty(property: PropertyPreview) {
+  function openProperty(property: MobileProperty) {
     router.push({ pathname: "/property/[id]", params: { id: property.id } });
   }
 
   return (
-    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      {/* Search Header Container */}
+    <View className="flex-1 bg-slate-100 dark:bg-slate-950">
       <View className="px-6 pb-6 pt-2 relative z-10" style={{ paddingTop: insets.top + 16 }}>
         <View className="flex-row items-center gap-4">
           <IconButton 
             icon={ArrowLeft} 
             onPress={() => router.back()} 
-            tone="light" 
+            tone="panel" 
             className=""
           />
           
-          {/* Pill Search Input */}
           <View className="relative flex-1">
             <TextInput
               value={search.query}
@@ -47,7 +45,7 @@ export default function SearchScreen() {
               placeholder="ابحث عن شقة أو منطقة أو مدينة"
               placeholderTextColor="rgba(148, 163, 184, 0.5)"
               cursorColor="#2563EB"
-              className="h-14 w-full rounded-full bg-slate-100 dark:bg-slate-800 px-12 text-right font-cairo-medium text-[15px] text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-700"
+              className="h-14 w-full rounded-full bg-white dark:bg-slate-900 px-12 text-right font-cairo-medium text-[15px] text-slate-900 dark:text-slate-100"
             />
             <View className="absolute left-4 top-0 h-full items-center justify-center">
               <Search size={18} color="#94A3B8" />
@@ -63,28 +61,35 @@ export default function SearchScreen() {
           </View>
         </View>
 
-        {/* Filter Section */}
+        <View className="mt-6 rounded-[28px] border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900">
+          <AppText className="text-[15px] font-cairo-black text-slate-900 dark:text-slate-50 text-right">
+            ابحث وكأنك تكمل نفس المحادثة
+          </AppText>
+          <AppText className="mt-2 text-[14px] leading-7 text-slate-500 dark:text-slate-400 text-right">
+            اختر المنطقة ونوع الجهة، ثم افتح أي عقار للعودة مباشرة إلى المساعد مع نفس السياق.
+          </AppText>
+        </View>
+
         <View className="mt-8 gap-6">
           <FilterRow
-            title="المدينة"
-            values={search.cities}
-            selectedValue={search.selectedCity}
-            onSelect={search.setSelectedCity}
+            title="المنطقة"
+            values={search.areas}
+            selectedValue={search.selectedArea}
+            onSelect={search.setSelectedArea}
           />
           <FilterRow
-            title="نوع الوحدة"
-            values={search.types}
-            selectedValue={search.selectedType}
-            onSelect={search.setSelectedType}
+            title="نوع الجهة"
+            values={search.ownerTypes}
+            selectedValue={search.selectedOwnerType}
+            onSelect={search.setSelectedOwnerType}
           />
         </View>
       </View>
 
-      {/* Results Section */}
       <View className="flex-1 px-6 pt-8">
         <View className="mb-6 flex-row-reverse items-center justify-between">
           <AppText className="text-2xl font-cairo-black text-slate-900 dark:text-slate-50">نتائج البحث</AppText>
-          <View className="px-3 py-1 bg-slate-200/50 dark:bg-slate-800 rounded-full">
+          <View className="px-3 py-1 bg-white dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800">
             <AppText className="text-[12px] text-slate-500 font-cairo-black">{search.results.length} نتيجة</AppText>
           </View>
         </View>
@@ -100,8 +105,8 @@ export default function SearchScreen() {
             </View>
           )}
           ListEmptyComponent={
-            <View className="items-center rounded-2xl bg-slate-100 dark:bg-slate-800 px-8 py-16">
-              <View className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full items-center justify-center mb-6">
+            <View className="items-center rounded-[28px] border border-slate-200 bg-white px-8 py-16 dark:border-slate-800 dark:bg-slate-900">
+              <View className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full items-center justify-center mb-6">
                 <Search size={24} color="#94A3B8" />
               </View>
               <AppText className="text-xl text-center font-cairo-black text-slate-900 dark:text-slate-50 mb-3">لا توجد نتائج مطابقة</AppText>

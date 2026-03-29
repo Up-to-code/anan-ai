@@ -132,8 +132,11 @@ const knowledgeTables = {
         updatedAt: v.number(),
     })
         .index("userId", ["userId"])
+        .index("userId_assistantKind_updatedAt", ["userId", "assistantKind", "updatedAt"])
         .index("ownerBrokerId", ["ownerBrokerId"])
-        .index("ownerREDId", ["ownerREDId"]),
+        .index("ownerBrokerId_assistantKind_updatedAt", ["ownerBrokerId", "assistantKind", "updatedAt"])
+        .index("ownerREDId", ["ownerREDId"])
+        .index("ownerREDId_assistantKind_updatedAt", ["ownerREDId", "assistantKind", "updatedAt"]),
 
     assistantMessages: defineTable({
         threadId: v.id("assistantThreads"),
@@ -142,7 +145,9 @@ const knowledgeTables = {
         mode: v.union(v.literal("qa"), v.literal("action")),
         metadata: v.optional(v.any()),
         createdAt: v.number(),
-    }).index("threadId", ["threadId"]),
+    })
+        .index("threadId", ["threadId"])
+        .index("threadId_createdAt", ["threadId", "createdAt"]),
 
     assistantStreamEvents: defineTable({
         sessionId: v.string(),

@@ -58,7 +58,10 @@ type ThreadViewProps = AssistantComposerProps & {
   liveStageLabel: string;
 };
 
-const DEFAULT_COMPOSER_DOCK_HEIGHT = 180;
+const DEFAULT_COMPOSER_STACK_HEIGHT = 180;
+const ASSISTANT_COMPOSER_DOCK_INSET = "calc(env(safe-area-inset-bottom) + 2.5rem)";
+const ASSISTANT_SCROLL_BUTTON_GAP = "5px";
+const ASSISTANT_CONTENT_END_GAP = "50px";
 const SUGGESTION_CHIPS = [
   {
     label: "أنشئ عرض سعر لعميل مهتم بمشروع سكني",
@@ -257,26 +260,26 @@ function AssistantComposer(props: AssistantComposerProps) {
   );
 }
 
-function useComposerDockHeight() {
-  const composerDockRef = useRef<HTMLDivElement | null>(null);
-  const [composerDockHeight, setComposerDockHeight] = useState(DEFAULT_COMPOSER_DOCK_HEIGHT);
+function useComposerStackHeight() {
+  const composerStackRef = useRef<HTMLDivElement | null>(null);
+  const [composerStackHeight, setComposerStackHeight] = useState(DEFAULT_COMPOSER_STACK_HEIGHT);
 
   useEffect(() => {
-    const dockElement = composerDockRef.current;
-    if (!dockElement) return;
+    const composerStackElement = composerStackRef.current;
+    if (!composerStackElement) return;
 
     const updateHeight = () => {
-      setComposerDockHeight(dockElement.offsetHeight || DEFAULT_COMPOSER_DOCK_HEIGHT);
+      setComposerStackHeight(composerStackElement.offsetHeight || DEFAULT_COMPOSER_STACK_HEIGHT);
     };
 
     updateHeight();
     if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(() => updateHeight());
-    observer.observe(dockElement);
+    observer.observe(composerStackElement);
     return () => observer.disconnect();
   }, []);
 
-  return { composerDockRef, composerDockHeight };
+  return { composerStackRef, composerStackHeight };
 }
 
 function AssistantSurface({
@@ -287,9 +290,12 @@ function AssistantSurface({
   dockSlot: "landing-composer-dock" | "thread-composer-dock";
   children: React.ReactNode;
 }) {
-  const { composerDockRef, composerDockHeight } = useComposerDockHeight();
+  const { composerStackRef, composerStackHeight } = useComposerStackHeight();
   const surfaceStyle = {
-    ["--assistant-composer-offset" as string]: `${composerDockHeight}px`,
+    ["--assistant-composer-height" as string]: `${composerStackHeight}px`,
+    ["--assistant-composer-dock-inset" as string]: ASSISTANT_COMPOSER_DOCK_INSET,
+    ["--assistant-scroll-button-gap" as string]: ASSISTANT_SCROLL_BUTTON_GAP,
+    ["--assistant-content-end-gap" as string]: ASSISTANT_CONTENT_END_GAP,
   } as CSSProperties;
 
   return (
@@ -301,23 +307,25 @@ function AssistantSurface({
         style={surfaceStyle}
       >
         <Conversation className="min-h-0 flex-1 px-6 sm:px-10 lg:px-16">
-        <ConversationContent className="mx-auto w-full max-w-4xl gap-12 pt-12 pb-[calc(var(--assistant-composer-offset)+6rem)]">
-          {children}
-        </ConversationContent>
-          <ConversationScrollButton alignment="center" className="bottom-[calc(env(safe-area-inset-bottom)+var(--assistant-composer-offset)+5px)] shadow-2xl" />
+          <ConversationContent className="mx-auto w-full max-w-4xl gap-12 pt-12 pb-[calc(var(--assistant-composer-height)+var(--assistant-composer-dock-inset)+var(--assistant-content-end-gap))]">
+            {children}
+          </ConversationContent>
+          <ConversationScrollButton
+            alignment="center"
+            className="bottom-[calc(var(--assistant-composer-height)+var(--assistant-composer-dock-inset)+var(--assistant-scroll-button-gap))] shadow-2xl"
+          />
         </Conversation>
 
         <motion.div
-          ref={composerDockRef}
           layout
           data-slot={dockSlot}
-          className="pointer-events-none sticky bottom-0 z-30 shrink-0 px-6 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] sm:px-10 lg:px-16"
+          className="pointer-events-none sticky bottom-0 z-30 shrink-0 px-6 pb-[var(--assistant-composer-dock-inset)] sm:px-10 lg:px-16"
         >
           <div
             aria-hidden="true"
             className="absolute inset-x-0 bottom-0 h-[280px] bg-[linear-gradient(to_top,color-mix(in_srgb,var(--workspace-highlight)_10%,transparent)_0%,color-mix(in_srgb,var(--workspace-highlight)_5%,transparent)_22%,color-mix(in_srgb,var(--workspace-highlight)_2%,transparent)_48%,transparent_100%)] backdrop-blur-[1.5px]"
           />
-          <div className="mx-auto w-full max-w-3xl pointer-events-auto">
+          <div ref={composerStackRef} className="mx-auto w-full max-w-3xl pointer-events-auto" data-slot="thread-composer-shell">
             <AssistantComposer {...props} />
           </div>
         </motion.div>

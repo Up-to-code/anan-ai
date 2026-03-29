@@ -10,10 +10,14 @@ const { mockOrchestrateDefault, mockOrchestrateWorkspace, mockResolveWorkspaceAg
 const mockedApi = vi.hoisted(() => ({
   api: {
     ai_zone: {
-      assistant: { getThread: Symbol("assistant.getThread") },
+      assistant: {
+        getThread: Symbol("assistant.getThread"),
+        getRuntimeContextBundle: Symbol("assistant.getRuntimeContextBundle"),
+      },
       assistantWorkspace: {
         createThread: Symbol("assistantWorkspace.createThread"),
         getThread: Symbol("assistantWorkspace.getThread"),
+        getRuntimeContextBundle: Symbol("assistantWorkspace.getRuntimeContextBundle"),
         listMessages: Symbol("assistantWorkspace.listMessages"),
       },
     },
@@ -32,9 +36,21 @@ const mockedApi = vi.hoisted(() => ({
     },
   },
   internal: {
+    shared_logic: {
+      buyerContext: {
+        getCompiledBuyerContextInternal: Symbol("buyerContext.getCompiledBuyerContextInternal"),
+      },
+    },
     ai_zone: {
       assistant: { _saveConversationStep: Symbol("assistant._saveConversationStep") },
       assistantWorkspace: { _saveConversationStep: Symbol("assistantWorkspace._saveConversationStep") },
+      agents: {
+        shared: {
+          tokenTrackerActions: {
+            trackTokenUsageInternal: Symbol("tokenTrackerActions.trackTokenUsageInternal"),
+          },
+        },
+      },
     },
   },
 }));
@@ -51,7 +67,21 @@ function resetAssistantMocks() {
 }
 
 function createHandleMessageCtx() {
-  const runQuery = vi.fn(async (ref: unknown) => {
+  const runQuery = vi.fn(async (ref: unknown, args?: any) => {
+    if (
+      ref === mockedApi.api.ai_zone.assistantWorkspace.getRuntimeContextBundle ||
+      ref === mockedApi.api.ai_zone.assistant.getRuntimeContextBundle
+    ) {
+      return {
+        thread: { _id: "thread_123" },
+        owner: { userId: "user_1", ownerType: "broker", ownerBrokerId: "broker_1" },
+        entitlement: { mode: "qa" },
+        existingMessages: [],
+        regenerateSource: null,
+        effectiveUserMessage: args?.message ?? "hello",
+        knowledge: [],
+      };
+    }
     if (
       ref === mockedApi.api.ai_zone.assistantWorkspace.getThread ||
       ref === mockedApi.api.ai_zone.assistant.getThread
@@ -85,25 +115,21 @@ function createHandleMessageCtx() {
 }
 
 function createFreshThreadHandleMessageCtx() {
-  let queryCall = 0;
   let mutationCall = 0;
 
-  const runQuery = vi.fn(async (_ref: unknown, args?: unknown) => {
-    queryCall += 1;
-    if (queryCall === 1) {
+  const runQuery = vi.fn(async (ref: unknown, args?: any) => {
+    if (ref === mockedApi.api.ai_zone.assistantWorkspace.getRuntimeContextBundle) {
       return {
         thread: { _id: "legacy_thread" },
         owner: { userId: "user_1", ownerType: "broker", ownerBrokerId: "broker_1" },
+        entitlement: { mode: "qa" },
+        existingMessages: [],
+        regenerateSource: null,
+        effectiveUserMessage: args?.message ?? "ابدأ محادثة جديدة",
+        knowledge: [],
       };
     }
-    if (queryCall === 2) {
-      return { mode: "qa" };
-    }
-    if (queryCall === 3) {
-      expect(args).toEqual({ threadId: "fresh_thread" });
-      return [];
-    }
-    return [];
+    throw new Error("Unexpected query ref");
   });
 
   const runMutation = vi.fn(async (_ref: unknown, args?: unknown) => {
@@ -129,7 +155,7 @@ function registerWorkspaceAssistantTest() {
     });
 
     expect(mockOrchestrateWorkspace).toHaveBeenCalledTimes(1);
-    expect(ctx.runQuery).toHaveBeenCalledTimes(4);
+    expect(ctx.runQuery).toHaveBeenCalledTimes(1);
     expect(ctx.runMutation).toHaveBeenCalledTimes(1);
 
     const [, workspacePayload] = (ctx.runMutation as any).mock.calls[0] as [unknown, Record<string, unknown>];
@@ -158,7 +184,7 @@ function registerDefaultAssistantTest() {
     const result = await handleAssistantMessage(ctx as any, { message: "hello" });
 
     expect(mockOrchestrateDefault).toHaveBeenCalledTimes(1);
-    expect(ctx.runQuery).toHaveBeenCalledTimes(3);
+    expect(ctx.runQuery).toHaveBeenCalledTimes(1);
     expect(ctx.runMutation).toHaveBeenCalledTimes(1);
 
     const [, defaultPayload] = (ctx.runMutation as any).mock.calls[0] as [unknown, Record<string, unknown>];
@@ -200,6 +226,32 @@ function registerVoiceMetadataTest() {
     const ctx = createHandleMessageCtx();
     const publicSaveMutation = Symbol("assistantPublic._saveConversationStep");
 
+    (ctx.runMutation as any).mockImplementation(async (ref: unknown) => {
+      if (ref === mockedApi.internal.shared_logic.buyerContext.getCompiledBuyerContextInternal) {
+        return {
+          compiledPromptContext: "[Buyer Context Compiler]\nIntent: search",
+          promptBudgetMeta: {
+            contextTokens: 10,
+            memoryTokens: 8,
+            ragTokens: 6,
+            historyTokens: 4,
+            totalContextTokens: 28,
+            budgetCap: 1200,
+            cacheHit: false,
+            includedBlocks: ["search_journey"],
+            droppedBlocks: [],
+          },
+        };
+      }
+      if (ref === mockedApi.internal.ai_zone.agents.shared.tokenTrackerActions.trackTokenUsageInternal) {
+        return null;
+      }
+      return {
+        threadId: "thread_123",
+        assistantMessageId: "assistant_message_1",
+      };
+    });
+
     const result = await handleAssistantMessage(ctx as any, {
       message: "hello from public",
       assistantKind: "anan_main_public",
@@ -223,8 +275,19 @@ function registerVoiceMetadataTest() {
       unknown,
       Record<string, unknown>,
     ];
-    expect(mutationRef).toBe(publicSaveMutation);
+    expect(mutationRef).toBe(mockedApi.internal.shared_logic.buyerContext.getCompiledBuyerContextInternal);
     expect(payload).toEqual(expect.objectContaining({
+      channel: "web",
+      userId: "channel:main_assistant_web:guest_1",
+      message: "hello from public",
+    }));
+
+    const [saveMutationRef, savePayload] = (ctx.runMutation as any).mock.calls[2] as [
+      unknown,
+      Record<string, unknown>,
+    ];
+    expect(saveMutationRef).toBe(publicSaveMutation);
+    expect(savePayload).toEqual(expect.objectContaining({
       userId: "channel:main_assistant_web:guest_1",
       ownerType: "user",
       userMessage: "hello from public",
@@ -234,6 +297,9 @@ function registerVoiceMetadataTest() {
     expect(result).toEqual(expect.objectContaining({
       ok: true,
       output: "default orchestrator output",
+      promptBudgetMeta: expect.objectContaining({
+        totalContextTokens: 28,
+      }),
     }));
   });
 }
@@ -250,7 +316,7 @@ function registerFreshWorkspaceThreadTest() {
     });
 
     expect(mockOrchestrateWorkspace).toHaveBeenCalledTimes(1);
-    expect(ctx.runQuery).toHaveBeenCalledTimes(4);
+    expect(ctx.runQuery).toHaveBeenCalledTimes(1);
     expect(ctx.runMutation).toHaveBeenCalledTimes(2);
 
     const [, createThreadPayload] = (ctx.runMutation as any).mock.calls[0] as [unknown, Record<string, unknown>];

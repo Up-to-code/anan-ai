@@ -38,6 +38,19 @@ export async function handleAssistantMessage(
     streamSessionId?: string;
     ownerOverride?: AssistantOwner;
     initialThreadOverride?: Doc<"assistantThreads"> | null;
+    runtimeContextOverride?: {
+      thread?: Doc<"assistantThreads"> | null;
+      owner: AssistantOwner;
+      entitlement?: { mode: "qa" | "action" };
+      existingMessages?: Array<Doc<"assistantMessages">>;
+      regenerateSource?: Doc<"assistantMessages"> | null;
+      effectiveUserMessage?: string;
+      knowledge?: Array<{ title: string; category?: string | null; excerpt: string }>;
+      compiledBuyerContext?: {
+        compiledPromptContext: string;
+        promptBudgetMeta: unknown;
+      } | null;
+    };
     saveConversationStepMutationOverride?: unknown;
   }
 ): Promise<{
@@ -46,12 +59,28 @@ export async function handleAssistantMessage(
   mode: "qa" | "action";
   output: string;
   messageId: string;
+  promptBudgetMeta?: unknown;
 }> {
   const isWorkspaceAssistant = isWorkspaceKind(args.assistantKind);
+  let runtimeContext = args.runtimeContextOverride ?? null;
+
+  if (!runtimeContext && !isPublicAssistantKind(args.assistantKind)) {
+    runtimeContext = await ctx.runQuery(
+      isWorkspaceAssistant
+        ? api.ai_zone.assistantWorkspace.getRuntimeContextBundle
+        : api.ai_zone.assistant.getRuntimeContextBundle,
+      {
+        threadId: args.threadId,
+        message: args.message,
+        regenerate: args.regenerate,
+        regenerateMessageId: args.regenerateMessageId,
+      },
+    );
+  }
 
   // 1. Resolve thread & owner via query
-  let thread = args.initialThreadOverride ?? null;
-  let owner = args.ownerOverride;
+  let thread = runtimeContext?.thread ?? args.initialThreadOverride ?? null;
+  let owner = runtimeContext?.owner ?? args.ownerOverride;
 
   if (!owner) {
     const resolved = await ctx.runQuery(
@@ -92,7 +121,7 @@ export async function handleAssistantMessage(
     | undefined;
 
   // 2. Get entitlement (determines qa vs action mode)
-  const entitlement = await ctx.runQuery(
+  const entitlement = runtimeContext?.entitlement ?? await ctx.runQuery(
     isPublicAssistantKind(args.assistantKind)
       ? api.shared_logic.subscriptions.index.getAssistantEntitlementSafe
       : api.shared_logic.subscriptions.index.getAssistantEntitlement,
@@ -115,30 +144,53 @@ export async function handleAssistantMessage(
     await workspaceStream.emitThread(activeThreadId);
   }
 
-  const existingMessages =
+  const existingMessages = runtimeContext?.existingMessages ?? (
     isWorkspaceAssistant && activeThreadId
       ? ((await ctx.runQuery(api.ai_zone.assistantWorkspace.listMessages, {
           threadId: activeThreadId,
         })) as Array<Doc<"assistantMessages">>)
-      : [];
+      : isPublicAssistantKind(args.assistantKind) && activeThreadId
+        ? ((await ctx.runQuery(internal.ai_zone.assistantPublic._listMessagesForOwner, {
+            userId: owner.userId,
+            threadId: activeThreadId,
+          })) as Array<Doc<"assistantMessages">>)
+        : []
+  );
 
   const previousActionState = isWorkspaceAssistant
     ? getLatestWorkspaceActionState(existingMessages)
     : null;
 
-  const regenerateSource = selectRegenerateSource({
+  const regenerateSource = runtimeContext?.regenerateSource ?? selectRegenerateSource({
     existingMessages,
     regenerate: args.regenerate,
     regenerateMessageId: args.regenerateMessageId,
   });
 
-  const effectiveUserMessage = regenerateSource?.content ?? args.message;
+  const effectiveUserMessage =
+    runtimeContext?.effectiveUserMessage ?? regenerateSource?.content ?? args.message;
+
+  const compiledBuyerContext = runtimeContext?.compiledBuyerContext ?? (
+    isPublicAssistantKind(args.assistantKind)
+      ? await ctx.runMutation(
+          internal.shared_logic.buyerContext.getCompiledBuyerContextInternal,
+          {
+            channel: "web",
+            userId: owner.userId,
+            message: effectiveUserMessage,
+            threadId: activeThreadId,
+          },
+        )
+      : null
+  );
 
   // 3. Retrieve company knowledge for context
-  const knowledge = await ctx.runQuery(
-    api.shared_logic.knowledge.index.retrieveCompanyKnowledge,
-    { query: effectiveUserMessage, limit: 3 }
-  );
+  const knowledge = compiledBuyerContext
+    ? []
+    : runtimeContext?.knowledge ?? await ctx.runQuery(
+        api.shared_logic.knowledge.index.retrieveCompanyKnowledge,
+        { query: effectiveUserMessage, limit: 3 }
+      );
 
   const knowledgeContext = buildKnowledgeContext(knowledge);
   const workspaceContextBlock = buildWorkspaceContextBlock({
@@ -148,22 +200,51 @@ export async function handleAssistantMessage(
   });
   const attachmentContext = buildAttachmentContext(args.attachments);
 
-  // 4. Build the prompt based on mode
-  const basePrompt = buildBasePrompt({
-    effectiveUserMessage,
-    knowledgeContext,
-    mode,
-    promptPrefix: args.promptPrefix,
-    workspaceContextBlock,
-    attachmentContext,
-  });
-
   // 5. Map ownerType to orchestrator role
   const roleMap: Record<string, "user" | "broker" | "RED" | "admin"> = {
     broker: "broker",
     RED: "RED",
     user: "user",
   };
+
+  // 4. Build the prompt based on mode
+  const basePrompt = buildBasePrompt({
+    effectiveUserMessage,
+    knowledgeContext,
+    buyerContextBlock: compiledBuyerContext?.compiledPromptContext,
+    mode,
+    promptPrefix: args.promptPrefix,
+    workspaceContextBlock,
+    attachmentContext,
+  });
+
+  if (compiledBuyerContext?.promptBudgetMeta) {
+    try {
+      await ctx.runMutation(
+        internal.ai_zone.agents.shared.tokenTrackerActions.trackTokenUsageInternal,
+        {
+          agentName: "anan_public_buyer_context_compiler",
+          teamName: "team_knowledge",
+          promptVersion: "buyer_context_v1",
+          modelName: "internal_context_compiler",
+          inputTokens: compiledBuyerContext.promptBudgetMeta.totalContextTokens,
+          outputTokens: 0,
+          userId: owner.userId,
+          threadId: activeThreadId,
+          channel: "web",
+          role: roleMap[owner.ownerType] ?? "user",
+          errorOccurred: false,
+          contextTokens: compiledBuyerContext.promptBudgetMeta.contextTokens,
+          memoryTokens: compiledBuyerContext.promptBudgetMeta.memoryTokens,
+          ragTokens: compiledBuyerContext.promptBudgetMeta.ragTokens,
+          historyTokens: compiledBuyerContext.promptBudgetMeta.historyTokens,
+          cacheHit: compiledBuyerContext.promptBudgetMeta.cacheHit,
+        },
+      );
+    } catch (error) {
+      console.warn("[assistantService] Public buyer context tracking failed (non-critical):", error);
+    }
+  }
 
   // 6. Run the multi-agent orchestrator
   const directWorkspaceCommand = isWorkspaceAssistant
@@ -214,7 +295,8 @@ export async function handleAssistantMessage(
           userId: owner.userId,
           threadId: activeThreadId,
           ragContext: knowledgeContext || undefined,
-          channel: "app",
+          channel: isPublicAssistantKind(args.assistantKind) ? "web" : "app",
+          promptBudgetMeta: compiledBuyerContext?.promptBudgetMeta,
         });
 
   let assistantText = result.output;
@@ -380,5 +462,6 @@ export async function handleAssistantMessage(
     mode,
     output: assistantText,
     messageId: saved.assistantMessageId,
+    promptBudgetMeta: compiledBuyerContext?.promptBudgetMeta,
   };
 }

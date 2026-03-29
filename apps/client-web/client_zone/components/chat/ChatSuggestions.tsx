@@ -26,7 +26,7 @@ export function ChatSuggestions({
           variant="outline"
           size="sm"
           onClick={() => onSelect(suggestion.prompt)}
-          className="h-auto min-h-11 max-w-full justify-start rounded-full px-4 py-2 text-start text-xs normal-case sm:text-sm"
+          className="h-auto min-h-11 max-w-full justify-start rounded-full border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-4 py-2 text-start text-xs normal-case shadow-sm sm:text-sm"
         >
           {suggestion.label}
         </Button>

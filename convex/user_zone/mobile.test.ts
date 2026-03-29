@@ -86,6 +86,26 @@ function registerListFeedTest() {
     expect(result.page[0]?.title).toBe("Published unit");
     expect(result.page[0]?.owner.isVerified).toBe(true);
   });
+
+  it("getPropertyDetail returns the published mobile property dto", async () => {
+    const t = convexTest(schema, modules);
+    await seedFeedFixtures(t);
+
+    const propertyId = await t.run(async (ctx) => {
+      const property = await ctx.db
+        .query("properties")
+        .withIndex("publicationState", (q: any) => q.eq("publicationState", "published"))
+        .first();
+      return property?._id;
+    });
+
+    const result = await (t as any).query((api as any)["user_zone/mobile/feed"].getPropertyDetail, {
+      propertyId,
+    });
+
+    expect(result?.title).toBe("Published unit");
+    expect(result?.media[0]).toContain("https://");
+  });
 }
 
 function registerAssistantCardsTest() {

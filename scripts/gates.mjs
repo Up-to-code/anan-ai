@@ -6,6 +6,9 @@
  * - pnpm typecheck
  * - pnpm test:once
  * - node scripts/audit/analyze.mjs
+ *
+ * For broader local verification across admin/mobile/private-docs/browser tiers,
+ * use the root `pnpm test:deep*` commands instead of expanding this gate.
  */
 
 import { spawnSync } from "node:child_process";
@@ -25,4 +28,3 @@ run("pnpm", ["-s", "test:once"]);
 run("node", ["scripts/audit/analyze.mjs"]);
 
 process.stdout.write("\n[gates] OK\n");
-

@@ -45,6 +45,11 @@ export interface TrackTokenParams {
     channel?: string;
     role?: string;
     errorOccurred?: boolean;
+    contextTokens?: number;
+    memoryTokens?: number;
+    ragTokens?: number;
+    historyTokens?: number;
+    cacheHit?: boolean;
 }
 
 // ─── Cost Estimation ──────────────────────────────────────────────────────────
@@ -122,6 +127,11 @@ export async function trackTokenUsage(
             channel: params.channel,
             role: params.role,
             errorOccurred: params.errorOccurred ?? false,
+            contextTokens: params.contextTokens,
+            memoryTokens: params.memoryTokens,
+            ragTokens: params.ragTokens,
+            historyTokens: params.historyTokens,
+            cacheHit: params.cacheHit,
             createdAt: Date.now(),
         });
 
@@ -146,6 +156,11 @@ export async function trackTokenUsage(
                     role: params.role,
                     status: params.errorOccurred ? "failed" : "completed",
                     errorFlag: params.errorOccurred ?? false,
+                    contextTokens: params.contextTokens,
+                    memoryTokens: params.memoryTokens,
+                    ragTokens: params.ragTokens,
+                    historyTokens: params.historyTokens,
+                    cacheHit: params.cacheHit,
                 },
             },
         );

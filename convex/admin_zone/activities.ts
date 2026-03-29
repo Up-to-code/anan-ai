@@ -25,13 +25,13 @@ async function loadActivitySources(ctx: any): Promise<ActivitySources> {
     searchLogs,
     verificationRequests,
   ] = await Promise.all([
-    ctx.db.query("workspaceNotifications").collect(),
-    ctx.db.query("inboxMessages").collect(),
-    ctx.db.query("assistantThreads").collect(),
-    ctx.db.query("assistantMessages").collect(),
-    ctx.db.query("knowledgeResearch").collect(),
-    ctx.db.query("searchLogs").collect(),
-    ctx.db.query("verificationRequests").collect(),
+    ctx.db.query("workspaceNotifications").order("desc").take(200),
+    ctx.db.query("inboxMessages").order("desc").take(200),
+    ctx.db.query("assistantThreads").order("desc").take(200),
+    ctx.db.query("assistantMessages").order("desc").take(200),
+    ctx.db.query("knowledgeResearch").order("desc").take(200),
+    ctx.db.query("searchLogs").order("desc").take(200),
+    ctx.db.query("verificationRequests").order("desc").take(200),
   ]);
   const threadUserById: Map<string, string> = new Map(
     assistantThreads.map((thread: ActivityTableRow): [string, string] => [

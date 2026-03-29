@@ -81,6 +81,29 @@ pnpm build
 pnpm test:once
 ```
 
+## Verification Tiers
+
+Use the root deep-test commands when you want broader verification than the default root Vitest run:
+
+- `pnpm test:deep:fast`
+  Root deterministic checks: root typecheck + root Vitest + admin/mobile typechecks + private-docs Vitest.
+- `pnpm test:deep:surfaces`
+  App-local non-browser suites not covered by the root Vitest config: `admin` and `mobile`.
+- `pnpm test:deep:e2e`
+  Stable browser suites: workspace web smoke plus the client-web guest buyer journey.
+- `pnpm test:deep:build`
+  Exhaustive build tier: `web`, `client-web`, `admin`, and `private-docs`.
+- `pnpm test:deep`
+  Runs `fast` → `surfaces` → `e2e`.
+- `pnpm test:deep:optional`
+  Setup-dependent browser scenarios only. These rely on existing self-skip behavior when local prerequisites are absent.
+- `pnpm test:deep:exhaustive`
+  Runs `test:deep`, then `build`, then `optional`.
+
+App-specific setup notes:
+- `apps/web/README.md` documents the authenticated Playwright storage-state flow for workspace upload e2e.
+- `apps/client-web/README.md` documents the buyer-journey Playwright setup, including `PLAYWRIGHT_CLIENT_STORAGE_STATE`.
+
 ---
 
 ## Navigation Links (Rules + Architecture + Guides)

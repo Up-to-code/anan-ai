@@ -19,7 +19,11 @@ export function AgUiTurnRenderer({ turn }: { turn: ClientAgUiTurn }) {
           return null;
         }
 
-        return <Component key={card.id} {...card.props} />;
+        return (
+          <div key={card.id} data-testid={`client-ag-ui-card-${card.componentId}`}>
+            <Component {...card.props} />
+          </div>
+        );
       })}
     </div>
   );

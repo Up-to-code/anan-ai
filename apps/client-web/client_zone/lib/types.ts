@@ -1,4 +1,16 @@
-export type Locale = "ar" | "en";
+import type {
+  BuyerAgUiCard,
+  BuyerAgUiTurn,
+  BuyerAssistantCard,
+  BuyerAssistantLocale,
+  BuyerAssistantMessage,
+  BuyerChatSuggestion,
+  BuyerProperty,
+  BuyerThreadKind,
+  BuyerThreadSummary,
+} from "./buyerAssistantShared";
+
+export type Locale = BuyerAssistantLocale;
 
 export type LocaleDictionary = {
   locale: Locale;
@@ -77,192 +89,12 @@ export type LocaleDictionary = {
   };
 };
 
-export type ClientProperty = {
-  id: string;
-  title: string;
-  address: string;
-  bankId?: string;
-  location?: string;
-  area?: string;
-  price: number;
-  beds: number;
-  baths: number;
-  sqft?: number;
-  status?: string;
-  media: string[];
-  owner: {
-    id: string;
-    type: "broker" | "RED";
-    name: string;
-    slug: string;
-    isVerified: boolean;
-    description?: string;
-    phone?: string;
-    contactEmail?: string;
-    agencyLabel?: string;
-    rating?: number;
-    activeListings?: number;
-    establishedYear?: number;
-    completedProjects?: number;
-  };
-  aiSummary?: string;
-};
-
-export type AssistantCard =
-  | {
-      type: "roi_summary";
-      title: string;
-      purchasePrice: number;
-      estimatedAnnualRent: number;
-      grossYieldPercent: number;
-      summary: string;
-    }
-  | {
-      type: "payment_plan";
-      title: string;
-      downPayment: number;
-      monthlyInstallment: number;
-      durationMonths: number;
-      summary: string;
-    }
-  | {
-      type: "mortgage_check";
-      title: string;
-      estimatedEligibility: "eligible" | "review" | "insufficient_data";
-      recommendedBudget?: number;
-      monthlyInstallmentEstimate?: number;
-      summary: string;
-    }
-  | {
-      type: "permit_status";
-      title: string;
-      permitStatus: "verified" | "pending_review" | "not_available";
-      summary: string;
-    }
-  | {
-      type: "comparison_table";
-      title: string;
-      columns: string[];
-      rows: string[][];
-      summary: string;
-    }
-  | {
-      type: "broker_handoff";
-      title: string;
-      handoffStatus: "qualified" | "needs_more_info";
-      summary: string;
-    }
-  | {
-      type: "broker_profile";
-      title: string;
-      brokerName: string;
-      brokerAgency: string;
-      rating: number;
-      activeListings: number;
-      summary: string;
-    }
-  | {
-      type: "developer_profile";
-      title: string;
-      developerName: string;
-      establishedYear: number;
-      completedProjects: number;
-      summary: string;
-    }
-  | {
-      type: "loan_calculator";
-      title: string;
-      propertyPrice: number;
-      downPayment: number;
-      loanAmount: number;
-      interestRate: number;
-      years: number;
-      monthlyPayment: number;
-      summary: string;
-    }
-  | {
-      type: "roi_projection";
-      title: string;
-      purchasePrice: number;
-      annualRent: number;
-      projectedValue5Years: number;
-      yieldPercent: number;
-      summary: string;
-    }
-  | {
-      type: "market_analysis";
-      title: string;
-      location: string;
-      averagePrice: number;
-      priceTrend: "up" | "flat" | "down";
-      trendPercentage: number;
-      summary: string;
-    }
-  | {
-      type: "bank_offer";
-      title: string;
-      bankName: string;
-      rateLabel: string;
-      downPaymentPercent: number;
-      monthlyEstimate: number;
-      summary: string;
-    }
-  | {
-      type: "insight_brief";
-      title: string;
-      body: string;
-      summary: string;
-    }
-  | {
-      type: "accent_note";
-      title: string;
-      tone: "info" | "success" | "warning";
-      summary: string;
-    };
-
-export type ClientAgUiComponentId =
-  | "property_shortlist"
-  | "comparison_table"
-  | "mortgage_check"
-  | "loan_calculator"
-  | "roi_projection"
-  | "market_analysis"
-  | "bank_offer"
-  | "insight_brief"
-  | "accent_note"
-  | "broker_profile"
-  | "developer_profile"
-  | "permit_status"
-  | "execution_result"
-  | "followup_prompt";
-
-export type ClientAgUiCard = {
-  id: string;
-  componentId: ClientAgUiComponentId;
-  props: Record<string, unknown>;
-};
-
-export type ClientAgUiTurn = {
-  objective: "client_assistant";
-  targetZone: "client_web";
-  assistantText?: string;
-  cards: ClientAgUiCard[];
-};
-
-export type AssistantMessage = {
-  id: string;
-  role: "assistant" | "user";
-  text: string;
-  properties?: ClientProperty[];
-  cards?: AssistantCard[];
-  uiTurn?: ClientAgUiTurn;
-};
-
-export type ChatSuggestion = {
-  id: string;
-  label: string;
-  prompt: string;
-};
+export type ClientProperty = BuyerProperty;
+export type AssistantCard = BuyerAssistantCard;
+export type ClientAgUiCard = BuyerAgUiCard;
+export type ClientAgUiTurn = BuyerAgUiTurn;
+export type AssistantMessage = BuyerAssistantMessage;
+export type ChatSuggestion = BuyerChatSuggestion;
 
 export type ChatRenderItem =
   | {
@@ -304,15 +136,8 @@ export type HistorySnapshot = {
   messages: AssistantMessage[];
 };
 
-export type ClientThreadKind = "welcome" | "demo" | "live";
-
-export type ThreadSummary = {
-  id: string;
-  title: string;
-  createdAt: number;
-  updatedAt: number;
-  preview?: string;
-};
+export type ClientThreadKind = BuyerThreadKind;
+export type ThreadSummary = BuyerThreadSummary;
 
 export type MockConversationThread = {
   id: string;

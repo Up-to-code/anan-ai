@@ -22,7 +22,10 @@ export function ThreadWelcome({
 
   return (
     <ClientAssistantColumn className="flex min-h-[54vh] flex-col items-center justify-center gap-8 px-2 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-[28px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] shadow-sm">
+      <div className="rounded-full border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-4 py-2 text-[11px] font-black uppercase tracking-[0.22em] text-[var(--workspace-muted)]">
+        Buyer Assistant
+      </div>
+      <div className="flex h-20 w-20 items-center justify-center rounded-[30px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] shadow-sm">
         <AnanBrandMark className="h-14 w-14" />
       </div>
       <div className="max-w-2xl space-y-4">

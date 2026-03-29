@@ -1,11 +1,13 @@
 import type { ReactNode } from "react";
-import { Alert, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Image } from "expo-image";
+import * as Linking from "expo-linking";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, Bath, BedDouble, MapPin, Ruler } from "lucide-react-native";
-import { getPropertyById } from "@/lib/mvp/ananAssistant";
-import { formatCurrency } from "@/lib/mvp/formatters";
+import { usePropertyDetail } from "@/hooks/usePropertyDetail";
+import { buildClientWebBridgeUrl, buildMobileAuthBridgePayload, getPropertyHeroImage, getPropertyLocationLabel } from "@/lib/mobileData";
+import { formatCurrency } from "@/lib/formatters";
 import { AppText } from "@/components/ui/AppText";
 import { IconButton } from "@/components/ui/IconButton";
 import { StickyJourneyBar } from "@/features/PropertyDetailScreen/StickyJourneyBar";
@@ -19,7 +21,25 @@ export default function PropertyDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ id: string }>();
-  const property = getPropertyById(params.id);
+  const { property, isLoading } = usePropertyDetail(params.id);
+
+  async function requestAdvisor() {
+    if (!property) return;
+    const payload = buildMobileAuthBridgePayload({
+      messages: [],
+      activeProperty: property,
+      includeHandoff: true,
+    });
+    await Linking.openURL(buildClientWebBridgeUrl(payload));
+  }
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <ActivityIndicator size="large" color="#2563EB" />
+      </View>
+    );
+  }
 
   if (!property) {
     return (
@@ -35,12 +55,11 @@ export default function PropertyDetailScreen() {
   }
 
   return (
-    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
+    <View className="flex-1 bg-slate-100 dark:bg-slate-950">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Full-bleed Hero Gallery */}
         <View className="relative bg-slate-200 dark:bg-slate-800">
           <Image
-            source={property.heroImage}
+            source={getPropertyHeroImage(property)}
             style={{ width: "100%", height: 360 }}
             contentFit="cover"
             transition={200}
@@ -55,8 +74,7 @@ export default function PropertyDetailScreen() {
         </View>
 
         <View className="gap-6 px-6 pb-40 pt-6">
-          {/* Main Title & Price Card */}
-          <View className="gap-2">
+          <View className="rounded-[32px] border border-slate-200 bg-white px-5 py-5 dark:border-slate-800 dark:bg-slate-900">
             <View className="flex-row-reverse items-start justify-between gap-4">
               <View className="flex-1">
                 <AppText className="text-[26px] font-cairo-black leading-tight text-slate-900 dark:text-slate-50 text-right">
@@ -64,7 +82,7 @@ export default function PropertyDetailScreen() {
                 </AppText>
                 <View className="mt-2 flex-row-reverse items-center gap-1.5">
                   <MapPin size={14} color="#64748B" />
-                  <AppText className="text-[14px] text-slate-500 font-bold">{property.address}</AppText>
+                  <AppText className="text-[14px] text-slate-500 font-bold">{getPropertyLocationLabel(property)}</AppText>
                 </View>
               </View>
               <AppText className="text-2xl font-cairo-black text-primary">
@@ -75,12 +93,18 @@ export default function PropertyDetailScreen() {
             <View className="mt-6 flex-row-reverse flex-wrap gap-4 border-t border-slate-50 dark:border-slate-800 pt-6">
               <DetailFact icon={<BedDouble size={18} color="#94A3B8" />} label={`${property.beds} غرف`} />
               <DetailFact icon={<Bath size={18} color="#94A3B8" />} label={`${property.baths} حمامات`} />
-              <DetailFact icon={<Ruler size={18} color="#94A3B8" />} label={`${property.sqft} قدم`} />
+              <DetailFact icon={<Ruler size={18} color="#94A3B8" />} label={`${property.sqft ?? 0} قدم`} />
             </View>
 
-            <View className="mt-6">
-              <Pressable 
-                onPress={() => router.push("/finance")}
+            <View className="mt-6 gap-3">
+              <Pressable
+                onPress={() => router.push({ pathname: "/", params: { propertyId: property.id } })}
+                className="w-full h-14 rounded-full bg-slate-900 items-center justify-center flex-row-reverse gap-2 active:scale-[0.98] transition-transform"
+              >
+                <AppText className="text-[16px] font-cairo-black text-white">واصل في المحادثة</AppText>
+              </Pressable>
+              <Pressable
+                onPress={() => router.push({ pathname: "/finance", params: { propertyId: property.id } })}
                 className="w-full h-14 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center flex-row-reverse gap-2 active:scale-[0.98] transition-transform"
               >
                 <AppText className="text-[16px] font-cairo-black text-slate-900 dark:text-slate-50">حاسبة التمويل العقاري</AppText>
@@ -88,24 +112,22 @@ export default function PropertyDetailScreen() {
             </View>
           </View>
 
-          {/* Quick Summary Card */}
-          <View className="py-2">
+          <View className="rounded-[32px] border border-slate-200 bg-white px-5 py-5 dark:border-slate-800 dark:bg-slate-900">
             <AppText className="text-lg font-cairo-black text-slate-900 dark:text-slate-50 text-right mb-4">
               قراءة سريعة
             </AppText>
             <AppText className="text-[15px] leading-8 text-slate-500 dark:text-slate-400 font-medium text-right">
-              {property.summary}
+              {property.aiSummary ?? "هذا العقار متاح الآن عبر تجربة الموبايل الحية. افتح المحادثة لمراجعة التمويل والعائد والتحويل إلى مستشار."}
             </AppText>
           </View>
 
-          {/* Broker Profile Card Link */}
-          <View className="py-2 gap-4">
+          <View className="gap-4">
             <AppText className="text-lg font-cairo-black text-slate-900 dark:text-slate-50 text-right">
               المسوق العقاري
             </AppText>
             <Pressable 
-              onPress={() => router.push({ pathname: "/broker/[id]", params: { id: "1" } })}
-              className="flex-row-reverse items-center gap-4 bg-slate-100 dark:bg-slate-900 rounded-[24px] p-4 active:scale-[0.98] transition-all"
+              onPress={() => router.push({ pathname: "/broker/[id]", params: { id: property.owner.id || "1", propertyId: property.id } })}
+              className="flex-row-reverse items-center gap-4 bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200 dark:border-slate-800 p-4 active:scale-[0.98] transition-all"
             >
               <Image 
                 source="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=1000&auto=format&fit=crop" 
@@ -113,13 +135,14 @@ export default function PropertyDetailScreen() {
                 contentFit="cover" 
               />
               <View className="flex-1">
-                <AppText className="text-[16px] font-cairo-black text-slate-900 dark:text-slate-50 text-right">خالد عبدالله</AppText>
-                <AppText className="text-[13px] font-medium text-slate-500 text-right">شركة مساكن العقارية</AppText>
+                <AppText className="text-[16px] font-cairo-black text-slate-900 dark:text-slate-50 text-right">{property.owner.name}</AppText>
+                <AppText className="text-[13px] font-medium text-slate-500 text-right">
+                  {property.owner.agencyLabel ?? (property.owner.type === "broker" ? "وسيط موثق" : "مطور موثق")}
+                </AppText>
               </View>
             </Pressable>
           </View>
 
-          {/* Additional Gallery Section */}
           <View className="py-2">
             <AppText className="text-lg font-cairo-black text-slate-900 dark:text-slate-50 mb-6 text-right">
               الصور الداخلية
@@ -130,7 +153,7 @@ export default function PropertyDetailScreen() {
               className="flex-row-reverse"
               contentContainerStyle={{ gap: 16 }}
             >
-              {property.gallery.map((image) => (
+              {property.media.map((image) => (
                 <Pressable 
                   key={image} 
                   onPress={() => router.push({ pathname: "/gallery", params: { propertyId: property.id } })}
@@ -150,8 +173,8 @@ export default function PropertyDetailScreen() {
       </ScrollView>
 
       <StickyJourneyBar
-        onBookViewing={() => Alert.alert("حجز زيارة", "وظيفة الحجز غير متاحة بالنسخة الحالية.")}
-        onTalkToAdvisor={() => Alert.alert("مستشار عنان", "تم طلب التواصل مع المستشار.")}
+        onBookViewing={() => router.push({ pathname: "/", params: { propertyId: property.id } })}
+        onTalkToAdvisor={() => void requestAdvisor()}
       />
     </View>
   );
@@ -165,4 +188,3 @@ function DetailFact({ icon, label }: { icon: ReactNode; label: string }) {
     </View>
   );
 }
-

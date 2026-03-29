@@ -23,6 +23,10 @@ function getThreadScope(thread: Doc<"assistantThreads">): ThreadScope {
     : "user";
 }
 
+function toAssistantKind(kind?: AssistantKind) {
+  return kind ?? "default";
+}
+
 function canAccessThread(
   thread: Doc<"assistantThreads">,
   owner: AssistantOwner,
@@ -75,6 +79,51 @@ async function collectOrganizationThreads(
   return [] as Doc<"assistantThreads">[];
 }
 
+async function collectUserThreadsByKind(
+  ctx: QueryCtx,
+  owner: AssistantOwner,
+  assistantKind: AssistantKind,
+  limit: number,
+) {
+  const rows = await ctx.db
+    .query("assistantThreads")
+    .withIndex("userId_assistantKind_updatedAt", (q: any) =>
+      q.eq("userId", owner.userId).eq("assistantKind", assistantKind),
+    )
+    .collect();
+
+  return rows.slice(-limit);
+}
+
+async function collectOrganizationThreadsByKind(
+  ctx: QueryCtx,
+  owner: AssistantOwner,
+  assistantKind: AssistantKind,
+  limit: number,
+) {
+  if (owner.ownerType === "broker" && owner.ownerBrokerId) {
+    const rows = await ctx.db
+      .query("assistantThreads")
+      .withIndex("ownerBrokerId_assistantKind_updatedAt", (q: any) =>
+        q.eq("ownerBrokerId", owner.ownerBrokerId).eq("assistantKind", assistantKind),
+      )
+      .collect();
+    return rows.slice(-limit);
+  }
+
+  if (owner.ownerType === "RED" && owner.ownerREDId) {
+    const rows = await ctx.db
+      .query("assistantThreads")
+      .withIndex("ownerREDId_assistantKind_updatedAt", (q: any) =>
+        q.eq("ownerREDId", owner.ownerREDId).eq("assistantKind", assistantKind),
+      )
+      .collect();
+    return rows.slice(-limit);
+  }
+
+  return [] as Doc<"assistantThreads">[];
+}
+
 function dedupeAccessibleThreads(
   threads: Doc<"assistantThreads">[],
   owner: AssistantOwner,
@@ -96,8 +145,40 @@ function dedupeAccessibleThreads(
 async function collectAccessibleThreads(
   ctx: QueryCtx,
   owner: AssistantOwner,
-  assistantKind?: AssistantKind
+  assistantKind?: AssistantKind,
+  limit = 24,
 ): Promise<Doc<"assistantThreads">[]> {
+  if (assistantKind && !isWorkspaceKind(assistantKind)) {
+    const exactKindThreads = await collectUserThreadsByKind(
+      ctx,
+      owner,
+      toAssistantKind(assistantKind),
+      limit,
+    );
+    return dedupeAccessibleThreads(exactKindThreads, owner, assistantKind);
+  }
+
+  if (assistantKind && isWorkspaceKind(assistantKind)) {
+    const [userThreadsByKind, organizationThreadsByKind] = await Promise.all([
+      Promise.all(
+        WORKSPACE_KINDS.map((kind) =>
+          collectUserThreadsByKind(ctx, owner, kind, limit),
+        ),
+      ),
+      Promise.all(
+        WORKSPACE_KINDS.map((kind) =>
+          collectOrganizationThreadsByKind(ctx, owner, kind, limit),
+        ),
+      ),
+    ]);
+
+    return dedupeAccessibleThreads(
+      [...userThreadsByKind.flat(), ...organizationThreadsByKind.flat()],
+      owner,
+      assistantKind,
+    );
+  }
+
   const userThreads = await ctx.db
     .query("assistantThreads")
     .withIndex("userId", (q: any) => q.eq("userId", owner.userId))
@@ -115,7 +196,7 @@ export async function getLatestThread(
   assistantKind?: AssistantKind
 ): Promise<Doc<"assistantThreads"> | null> {
   const owner = normalizeOwner(ownerOrUser);
-  const threads = await collectAccessibleThreads(ctx, owner, assistantKind);
+  const threads = await collectAccessibleThreads(ctx, owner, assistantKind, 12);
   if (threads.length === 0) return null;
 
   if (isWorkspaceKind(assistantKind)) {
@@ -140,7 +221,7 @@ export async function listRecentThreads(
   limit = 6
 ) {
   const owner = normalizeOwner(ownerOrUser);
-  const threads = await collectAccessibleThreads(ctx, owner, assistantKind);
+  const threads = await collectAccessibleThreads(ctx, owner, assistantKind, Math.max(limit, 6));
 
   if (!isWorkspaceKind(assistantKind)) {
     return threads.slice(0, limit);
@@ -186,10 +267,25 @@ export async function listThreadMessages(
 
   const messages = await ctx.db
     .query("assistantMessages")
-    .withIndex("threadId", (q) => q.eq("threadId", thread._id))
+    .withIndex("threadId_createdAt", (q) => q.eq("threadId", thread._id))
     .collect();
 
   return messages.sort((a, b) => a.createdAt - b.createdAt);
+}
+
+/**
+ * Reads the latest persisted assistant message preview for one thread using the ordered message index.
+ */
+export async function getLatestThreadPreview(
+  ctx: QueryCtx,
+  threadId: Id<"assistantThreads">,
+) {
+  const messages = await ctx.db
+    .query("assistantMessages")
+    .withIndex("threadId_createdAt", (q) => q.eq("threadId", threadId))
+    .collect();
+
+  return messages.sort((a, b) => a.createdAt - b.createdAt).at(-1)?.content;
 }
 
 /**

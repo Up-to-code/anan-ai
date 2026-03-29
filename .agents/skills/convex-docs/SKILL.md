@@ -12,7 +12,8 @@ Use this skill whenever a task touches Convex in this repo:
 - Setting Convex environment variables or deploying (dev/prod)
 
 ## Primary reference
-- Read: `references/llms.txt` (progressively; search within it for the specific topic).
+- Read: `references/llms.txt` — contains the full Convex docs table of contents and all critical best practices (indexes, `.collect()` rules, query reactivity, index range expressions, `useQuery` patterns) with code examples from official docs.
+- For topics not in the reference, consult: https://docs.convex.dev/
 
 ## Repo-specific workflow notes
 

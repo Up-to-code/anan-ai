@@ -1,6 +1,7 @@
 import type { Doc, Id } from "../../../_generated/dataModel";
 import type { MutationCtx } from "../../../_generated/server";
 import { appendInboxOfferEvent } from "../../inbox";
+import { getProfileByOrganizationTarget } from "../../inbox/profiles";
 import { createWorkspaceNotification } from "../../notifications";
 
 type OfferPartyArgs = {
@@ -9,8 +10,10 @@ type OfferPartyArgs = {
 };
 
 async function findWorkspaceProfileByParty(ctx: MutationCtx, args: OfferPartyArgs) {
-  const profiles = await ctx.db.query("userProfiles").collect();
-  return profiles.find((profile) => (args.brokerId && profile.brokerId === args.brokerId) || (args.redId && profile.REDId === args.redId));
+  return getProfileByOrganizationTarget(ctx, {
+    brokerId: args.brokerId,
+    REDId: args.redId,
+  });
 }
 
 async function findWorkspaceProfileByAuthUserId(ctx: MutationCtx, authUserId?: string) {

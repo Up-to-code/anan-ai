@@ -189,6 +189,7 @@ import type * as ai_zone_services_assistantService_workspaceProjectAction from "
 import type * as ai_zone_services_assistantService_workspaceStream from "../ai_zone/services/assistantService/workspaceStream.js";
 import type * as ai_zone_services_assistantService_workspaceUi from "../ai_zone/services/assistantService/workspaceUi.js";
 import type * as ai_zone_services_publicAssistantResponse from "../ai_zone/services/publicAssistantResponse.js";
+import type * as ai_zone_services_publicBuyerResponse from "../ai_zone/services/publicBuyerResponse.js";
 import type * as ai_zone_services_voiceSynthesisService from "../ai_zone/services/voiceSynthesisService.js";
 import type * as ai_zone_services_voiceTranscriptionService from "../ai_zone/services/voiceTranscriptionService.js";
 import type * as ai_zone_workflows_index from "../ai_zone/workflows/index.js";
@@ -208,6 +209,7 @@ import type * as red_zone_properties from "../red_zone/properties.js";
 import type * as red_zone_repositories_overviewRepository from "../red_zone/repositories/overviewRepository.js";
 import type * as red_zone_repositories_propertiesRepository from "../red_zone/repositories/propertiesRepository.js";
 import type * as seed from "../seed.js";
+import type * as seed_saudiWorkspaceDataset from "../seed/saudiWorkspaceDataset.js";
 import type * as shared_logic_agencies_repositories from "../shared_logic/agencies/repositories.js";
 import type * as shared_logic_agencies_repositories_apiKeys from "../shared_logic/agencies/repositories/apiKeys.js";
 import type * as shared_logic_agencies_repositories_core from "../shared_logic/agencies/repositories/core.js";
@@ -220,6 +222,7 @@ import type * as shared_logic_agencies_repositories_organization from "../shared
 import type * as shared_logic_analytics_posthog from "../shared_logic/analytics/posthog.js";
 import type * as shared_logic_banks_queries from "../shared_logic/banks/queries.js";
 import type * as shared_logic_batch_index from "../shared_logic/batch/index.js";
+import type * as shared_logic_buyerContext from "../shared_logic/buyerContext.js";
 import type * as shared_logic_compliance_index from "../shared_logic/compliance/index.js";
 import type * as shared_logic_compliance_utils from "../shared_logic/compliance/utils.js";
 import type * as shared_logic_content_queries from "../shared_logic/content/queries.js";
@@ -308,6 +311,7 @@ import type * as shared_logic_properties_cache from "../shared_logic/properties/
 import type * as shared_logic_properties_history from "../shared_logic/properties/history.js";
 import type * as shared_logic_properties_search from "../shared_logic/properties/search.js";
 import type * as shared_logic_properties_searchText from "../shared_logic/properties/searchText.js";
+import type * as shared_logic_propertyAccessControl from "../shared_logic/propertyAccessControl.js";
 import type * as shared_logic_subscriptions_index from "../shared_logic/subscriptions/index.js";
 import type * as shared_logic_uploadthing from "../shared_logic/uploadthing.js";
 import type * as shared_logic_users_index from "../shared_logic/users/index.js";
@@ -521,6 +525,7 @@ declare const fullApi: ApiFromModules<{
   "ai_zone/services/assistantService/workspaceStream": typeof ai_zone_services_assistantService_workspaceStream;
   "ai_zone/services/assistantService/workspaceUi": typeof ai_zone_services_assistantService_workspaceUi;
   "ai_zone/services/publicAssistantResponse": typeof ai_zone_services_publicAssistantResponse;
+  "ai_zone/services/publicBuyerResponse": typeof ai_zone_services_publicBuyerResponse;
   "ai_zone/services/voiceSynthesisService": typeof ai_zone_services_voiceSynthesisService;
   "ai_zone/services/voiceTranscriptionService": typeof ai_zone_services_voiceTranscriptionService;
   "ai_zone/workflows/index": typeof ai_zone_workflows_index;
@@ -540,6 +545,7 @@ declare const fullApi: ApiFromModules<{
   "red_zone/repositories/overviewRepository": typeof red_zone_repositories_overviewRepository;
   "red_zone/repositories/propertiesRepository": typeof red_zone_repositories_propertiesRepository;
   seed: typeof seed;
+  "seed/saudiWorkspaceDataset": typeof seed_saudiWorkspaceDataset;
   "shared_logic/agencies/repositories": typeof shared_logic_agencies_repositories;
   "shared_logic/agencies/repositories/apiKeys": typeof shared_logic_agencies_repositories_apiKeys;
   "shared_logic/agencies/repositories/core": typeof shared_logic_agencies_repositories_core;
@@ -552,6 +558,7 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/analytics/posthog": typeof shared_logic_analytics_posthog;
   "shared_logic/banks/queries": typeof shared_logic_banks_queries;
   "shared_logic/batch/index": typeof shared_logic_batch_index;
+  "shared_logic/buyerContext": typeof shared_logic_buyerContext;
   "shared_logic/compliance/index": typeof shared_logic_compliance_index;
   "shared_logic/compliance/utils": typeof shared_logic_compliance_utils;
   "shared_logic/content/queries": typeof shared_logic_content_queries;
@@ -640,6 +647,7 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/properties/history": typeof shared_logic_properties_history;
   "shared_logic/properties/search": typeof shared_logic_properties_search;
   "shared_logic/properties/searchText": typeof shared_logic_properties_searchText;
+  "shared_logic/propertyAccessControl": typeof shared_logic_propertyAccessControl;
   "shared_logic/subscriptions/index": typeof shared_logic_subscriptions_index;
   "shared_logic/uploadthing": typeof shared_logic_uploadthing;
   "shared_logic/users/index": typeof shared_logic_users_index;

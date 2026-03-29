@@ -1,8 +1,10 @@
 import { Text, TextProps } from "react-native";
 import { cn } from "@/lib/cn";
+import { getResponsiveTextStyle, type ResponsiveTextRole, useMobileLayout } from "@/lib/mobileLayout";
 
 type AppTextProps = TextProps & {
   tone?: "body" | "headline" | "label" | "muted";
+  responsiveRole?: ResponsiveTextRole;
 };
 
 const TONE_CLASS_NAMES: Record<NonNullable<AppTextProps["tone"]>, string> = {
@@ -15,16 +17,18 @@ const TONE_CLASS_NAMES: Record<NonNullable<AppTextProps["tone"]>, string> = {
 /**
  * WHY:   The app needs one text primitive that keeps Cairo usage and Arabic alignment consistent.
  * WHAT:  Renders text with semantic tone variants for body, headline, label, and muted copy.
- * HOW:   Applies font family, color, and writing direction centrally so feature code stays compact.
+ * HOW:   Applies font family, color, writing direction, and optional responsive sizing centrally so feature code stays compact.
  */
-export function AppText({ tone = "body", className, style, ...props }: AppTextProps) {
+export function AppText({ tone = "body", responsiveRole, className, style, ...props }: AppTextProps) {
+  const layout = useMobileLayout();
   const toneClassName = TONE_CLASS_NAMES[tone];
+  const responsiveStyle = responsiveRole ? getResponsiveTextStyle(layout, responsiveRole) : null;
 
   return (
     <Text
       {...props}
       className={cn(toneClassName, className)}
-      style={[{ textAlign: "right", writingDirection: "rtl" }, style]}
+      style={[{ textAlign: "right", writingDirection: "rtl" }, responsiveStyle, style]}
     />
   );
 }

@@ -1,6 +1,7 @@
-import { ActivityIndicator, Pressable, PressableProps, View } from "react-native";
+import { ActivityIndicator, Pressable, PressableProps, View, useColorScheme } from "react-native";
 import { AppText } from "@/components/ui/AppText";
 import { cn } from "@/lib/cn";
+import { useMobileLayout } from "@/lib/mobileLayout";
 
 type ButtonProps = PressableProps & {
   label: string;
@@ -14,7 +15,7 @@ type ButtonProps = PressableProps & {
 /**
  * WHY:   The app needs one consistent action primitive for chat, search, and journey CTAs.
  * WHAT:  Renders a compact, modern button with primary, secondary, ghost, or destructive treatment.
- * HOW:   Uses rounded-full geometry (min-h-14 for standard), robust press states, and dark mode support.
+ * HOW:   Uses mobile-safe touch targets, responsive padding, and calm bordered styling so buttons stay usable on smaller phones.
  */
 export function Button({ 
   label, 
@@ -23,49 +24,87 @@ export function Button({
   size = "default",
   className, 
   textClassName,
+  style,
   disabled, 
   ...props 
 }: ButtonProps) {
+  const layout = useMobileLayout();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const isPrimary = variant === "primary";
   const isSecondary = variant === "secondary";
   const isGhost = variant === "ghost";
   const isDestructive = variant === "destructive";
 
-  const sizeClasses = {
-    sm: "min-h-[44px] px-5 py-2",
-    default: "min-h-[56px] px-6 py-3",
-    lg: "min-h-[64px] px-8 py-4",
+  const sizeStyle = {
+    sm: {
+      minHeight: layout.touchTarget,
+      paddingHorizontal: layout.isCompact ? 16 : 20,
+      paddingVertical: 8,
+      borderRadius: 999,
+    },
+    default: {
+      minHeight: layout.touchTarget + 4,
+      paddingHorizontal: layout.isCompact ? 20 : 24,
+      paddingVertical: 10,
+      borderRadius: 999,
+    },
+    lg: {
+      minHeight: layout.touchTarget + 10,
+      paddingHorizontal: layout.isCompact ? 24 : 28,
+      paddingVertical: 12,
+      borderRadius: 999,
+    },
   };
+
+  const resolvedStyle =
+    typeof style === "function"
+      ? (state: Parameters<NonNullable<typeof style>>[0]) => [sizeStyle[size], style(state)]
+      : [sizeStyle[size], style];
 
   return (
     <Pressable
       {...props}
       disabled={disabled || loading}
-      className={cn(
-        "items-center justify-center rounded-full transition-all active:scale-[0.97]",
-        sizeClasses[size],
-        isPrimary ? "bg-slate-900 dark:bg-slate-50" : "",
-        isSecondary ? "bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700" : "",
-        isGhost ? "bg-transparent active:bg-slate-100 dark:active:bg-slate-800" : "",
-        isDestructive ? "bg-red-500" : "",
-        (disabled || loading) ? "opacity-40" : "",
-        className,
-      )}
+      className={cn(className)}
+      style={(state) => {
+        const baseStyle = {
+          alignItems: "center" as const,
+          justifyContent: "center" as const,
+          backgroundColor: isPrimary 
+            ? (isDark ? "#F8FAFC" : "#0F172A") 
+            : isSecondary 
+              ? (isDark ? "#0F172A" : "#FFFFFF") 
+              : isGhost 
+                ? "transparent" 
+                : "#EF4444",
+          borderWidth: isSecondary ? 1.5 : 0,
+          borderColor: isSecondary ? (isDark ? "#1E293B" : "#E2E8F0") : "transparent",
+          opacity: disabled || loading ? 0.4 : 1,
+          transform: [{ scale: state.pressed ? 0.96 : 1 }],
+        };
+
+        if (typeof resolvedStyle === "function") {
+          return [baseStyle, resolvedStyle(state)];
+        }
+
+        return [baseStyle, resolvedStyle];
+      }}
     >
       <View className="flex-row items-center gap-2">
         {loading ? (
           <ActivityIndicator 
             color={
               isPrimary 
-                ? "var(--color-slate-50)" // Will effectively be white in light mode, slate-900 in dark mode (if we had CSS vars in RN). We'll use absolute colors for RN compat.
-                : isDestructive ? "#FFFFFF" : "#64748B"
+                ? (isDark ? "#0F172A" : "#FFFFFF")
+                : isDestructive ? "#FFFFFF" : (isDark ? "#94A3B8" : "#64748B")
             } 
           />
         ) : null}
         <AppText
+          responsiveRole={size === "sm" ? "chip" : size === "lg" ? "title" : "bodyStrong"}
           className={cn(
             "font-cairo-black tracking-tight",
-            size === "sm" ? "text-[14px]" : size === "lg" ? "text-[18px]" : "text-[16px]",
             isPrimary ? "text-white dark:text-slate-900" : "",
             isSecondary ? "text-slate-900 dark:text-slate-100" : "",
             isGhost ? "text-slate-600 dark:text-slate-400" : "",

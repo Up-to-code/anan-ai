@@ -18,6 +18,9 @@ export function toAssistantMessage(message: PersistedThreadMessage): AssistantMe
     text: message.text,
     properties: message.properties,
     cards: message.cards,
+    suggestedPrompts: message.suggestedPrompts,
+    activePropertyId: message.activePropertyId,
+    requiresAuthForHandoff: message.requiresAuthForHandoff,
     uiTurn:
       message.role === "assistant"
         ? buildClientUiTurn({

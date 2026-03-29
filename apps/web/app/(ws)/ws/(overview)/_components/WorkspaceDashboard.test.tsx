@@ -141,5 +141,11 @@ it("renders the conversation stream inline when messages exist", () => {
   expect(markup).toContain("data-layout=\"thread\"");
   expect(markup).toContain("data-slot=\"assistant-surface\"");
   expect(markup).toContain("data-slot=\"thread-composer-dock\"");
+  expect(markup).toContain("data-slot=\"thread-composer-shell\"");
+  expect(markup).toContain("--assistant-composer-height:180px");
+  expect(markup).toContain("--assistant-composer-dock-inset:calc(env(safe-area-inset-bottom) + 2.5rem)");
+  expect(markup).toContain("--assistant-scroll-button-gap:5px");
+  expect(markup).toContain("--assistant-content-end-gap:50px");
+  expect(markup).toContain("pb-[calc(var(--assistant-composer-height)+var(--assistant-composer-dock-inset)+var(--assistant-content-end-gap))]");
   expect(markup).not.toContain("data-slot=\"assistant-landing-panel\"");
 });

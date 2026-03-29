@@ -45,6 +45,8 @@ const userTables = {
         .index("authUserId", ["authUserId"])
         .index("email", ["email"])
         .index("usernameLower", ["usernameLower"])
+        .index("brokerId", ["brokerId"])
+        .index("REDId", ["REDId"])
         .index("role", ["role"])
         .index("roleStatus", ["roleStatus"])
         .index("currentTenantOrgId", ["currentTenantOrgId"]),

@@ -9,6 +9,7 @@ import { action, internalMutation, query, internalQuery } from "../_generated/se
 import {
   resolveAssistantOwner,
   resolveAssistantOwnerSafe,
+  getAccessibleThread,
   getLatestThread,
   listThreadMessages,
   handleAssistantMessage,
@@ -16,6 +17,39 @@ import {
   getMessageContent,
   listRecentThreads,
 } from "./services/assistantService";
+import { selectRegenerateSource } from "./services/assistantService/promptComposer";
+import { resolveAssistantEntitlementForCurrentProfile } from "../shared_logic/subscriptions/index";
+
+function scoreSnippet(content: string, terms: string[]) {
+  const lower = content.toLowerCase();
+  return terms.reduce((acc, term) => (lower.includes(term) ? acc + 1 : acc), 0);
+}
+
+async function buildKnowledgeSnippets(ctx: any, queryText: string, limit = 3) {
+  const terms = queryText
+    .toLowerCase()
+    .split(/\s+/)
+    .map((term) => term.trim())
+    .filter(Boolean)
+    .slice(0, 8);
+
+  if (terms.length === 0) {
+    return [];
+  }
+
+  const pages = await ctx.db.query("knowledgePages").collect();
+  return pages
+    .map((page: any) => ({
+      title: page.title,
+      category: page.category ?? null,
+      excerpt: String(page.content ?? "").slice(0, 500),
+      score: scoreSnippet(`${page.title}\n${page.content}\n${page.category ?? ""}`, terms),
+    }))
+    .filter((row: any) => row.score > 0)
+    .sort((a: any, b: any) => b.score - a.score)
+    .slice(0, limit)
+    .map(({ title, category, excerpt }: any) => ({ title, category, excerpt }));
+}
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
@@ -66,6 +100,50 @@ export const listThreads = query({
   handler: async (ctx, args) => {
     const owner = await resolveAssistantOwner(ctx);
     return listRecentThreads(ctx, owner, "default", args.limit ?? 6);
+  },
+});
+
+/**
+ * WHY:   Assistant actions should gather thread, entitlement, transcript history, and knowledge through one backend read before orchestration.
+ * WHAT:  Returns the pre-orchestration runtime bundle for the default assistant.
+ * HOW:   Resolves the owner and active thread, computes regenerate context, and reads a small knowledge shortlist directly inside one query.
+ */
+export const getRuntimeContextBundle = query({
+  args: {
+    threadId: v.optional(v.id("assistantThreads")),
+    message: v.string(),
+    regenerate: v.optional(v.boolean()),
+    regenerateMessageId: v.optional(v.string()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const owner = await resolveAssistantOwner(ctx);
+    const thread = args.threadId
+      ? await getAccessibleThread(ctx, owner, args.threadId)
+      : await getLatestThread(ctx, owner);
+    const existingMessages = thread
+      ? await listThreadMessages(ctx, owner, thread._id)
+      : [];
+    const regenerateSource = selectRegenerateSource({
+      existingMessages: existingMessages as Array<any>,
+      regenerate: args.regenerate,
+      regenerateMessageId: args.regenerateMessageId,
+    });
+    const effectiveUserMessage = regenerateSource?.content ?? args.message;
+    const [entitlement, knowledge] = await Promise.all([
+      resolveAssistantEntitlementForCurrentProfile(ctx),
+      buildKnowledgeSnippets(ctx, effectiveUserMessage),
+    ]);
+
+    return {
+      owner,
+      thread,
+      entitlement,
+      existingMessages,
+      regenerateSource,
+      effectiveUserMessage,
+      knowledge,
+    };
   },
 });
 

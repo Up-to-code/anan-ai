@@ -284,7 +284,7 @@ export const searchConversationTargets = query({
     const profiles = await ctx.db
       .query("userProfiles")
       .withIndex("roleStatus", (q) => q.eq("roleStatus", "approved"))
-      .collect();
+      .take(200);
     const owner = resolveWorkspaceOwner(access);
     const tenantOrgId = owner ? await resolveTenantOrgIdForOwner(ctx, owner) : null;
     const invites = tenantOrgId ? await tenants.listInvitations(ctx as never, tenantOrgId) : [];

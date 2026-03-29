@@ -1,4 +1,4 @@
-import { Link, Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { View } from "react-native";
 import { AppText } from "@/components/ui/AppText";
 import { Button } from "@/components/ui/Button";
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/Button";
  * HOW:   Uses the same flat surfaces and brand tokens as the rest of the buyer shell.
  */
 export default function NotFoundScreen() {
+  const router = useRouter();
+
   return (
     <>
       <Stack.Screen options={{ title: "غير موجود" }} />
@@ -20,9 +22,7 @@ export default function NotFoundScreen() {
           <AppText className="text-sm leading-6 text-muted">
             ارجع إلى مساحة المحادثة الرئيسية لمتابعة البحث، مقارنة الوحدات، أو طلب تمويل مناسب.
           </AppText>
-          <Link href="/" asChild>
-            <Button label="العودة إلى عنان" />
-          </Link>
+          <Button label="العودة إلى عنان" onPress={() => router.replace("/")} />
         </View>
       </View>
     </>

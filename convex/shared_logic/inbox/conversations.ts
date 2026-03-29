@@ -112,6 +112,7 @@ type ConversationEventArgs = {
   senderUserId: string;
   recipientUserId: string;
   type:
+    | "text"
     | "offer_event"
     | "file_share"
     | "project_share"

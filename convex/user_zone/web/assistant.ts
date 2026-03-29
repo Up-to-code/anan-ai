@@ -451,6 +451,7 @@ export const askClientAssistant = action({
     message: v.string(),
     threadId: v.optional(v.id("assistantThreads")),
     selectedPropertyId: v.optional(v.id("properties")),
+    inputMode: v.optional(v.union(v.literal("text"), v.literal("voice"))),
     locale: v.optional(clientWebLocaleValidator),
     qualification: v.optional(mobileQualificationContextValidator),
   },
@@ -506,6 +507,7 @@ export const askClientAssistant = action({
             userId: authUserId,
             userMessage: trimmedMessage,
             userMessageMetadata: {
+              inputMode: args.inputMode,
               locale,
               selectedPropertyId: args.selectedPropertyId,
             },
@@ -537,6 +539,7 @@ export const askClientAssistant = action({
             status: "completed",
             threadId: response.threadId ? String(response.threadId) : args.threadId ? String(args.threadId) : undefined,
             userId: authUserId ?? undefined,
+            inputMode: args.inputMode ?? "text",
           },
         });
 
@@ -548,22 +551,15 @@ export const askClientAssistant = action({
         limit: 4,
         onlyAvailable: true,
       });
+      const mappedProperties = await ctx.runQuery(
+        (api as any)["user_zone/web/properties"].searchAssistantFeedItems,
+        {
+          query: args.message,
+          limit: 4,
+        },
+      ) as PropertyFeedItem[];
 
-      const mappedProperties = (
-        await Promise.all(
-          propertySearchResults.map((result: { _id: string }) =>
-            ctx.runQuery((api as any)["user_zone/web/properties"].getPropertyDetail, { propertyId: result._id }),
-          ),
-        )
-      ).filter(Boolean) as PropertyFeedItem[];
-
-      const properties = mappedProperties.length > 0
-        ? mappedProperties
-        : (
-            await ctx.runQuery((api as any)["user_zone/mobile/feed"].listFeed, {
-              paginationOpts: { numItems: 4, cursor: null },
-            })
-          ).page;
+      const properties = mappedProperties;
 
       const activeProperty = properties[0];
       const cards = activeProperty
@@ -581,7 +577,10 @@ export const askClientAssistant = action({
         : [];
 
       const response = {
-        message: buildPropertySearchMessage(locale, mappedProperties.length),
+        message: buildPropertySearchMessage(
+          locale,
+          (propertySearchResults as Array<unknown>).length,
+        ),
         properties,
         cards,
         suggestedPrompts: buildSearchPrompts(locale),
@@ -594,10 +593,11 @@ export const askClientAssistant = action({
           threadId: args.threadId,
           userId: authUserId,
           userMessage: trimmedMessage,
-          userMessageMetadata: {
-            locale,
-            selectedPropertyId: args.selectedPropertyId,
-          },
+            userMessageMetadata: {
+              inputMode: args.inputMode,
+              locale,
+              selectedPropertyId: args.selectedPropertyId,
+            },
           assistantMessage: response.message,
           assistantMetadata: {
             properties: response.properties,
@@ -622,12 +622,13 @@ export const askClientAssistant = action({
           locale,
           propertyCount: response.properties.length,
           requiresAuthForHandoff: response.requiresAuthForHandoff,
-          source: "user_zone.web.assistant",
-          status: "completed",
-          threadId: response.threadId ? String(response.threadId) : args.threadId ? String(args.threadId) : undefined,
-          userId: authUserId ?? undefined,
-        },
-      });
+            source: "user_zone.web.assistant",
+            status: "completed",
+            threadId: response.threadId ? String(response.threadId) : args.threadId ? String(args.threadId) : undefined,
+            inputMode: args.inputMode ?? "text",
+            userId: authUserId ?? undefined,
+          },
+        });
 
       return response;
     } catch (error) {

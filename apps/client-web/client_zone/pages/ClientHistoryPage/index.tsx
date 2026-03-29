@@ -20,10 +20,10 @@ export function ClientHistoryPage() {
   const history = useClientHistory();
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[var(--workspace-shell)]">
       <ChatHeader isAuthenticated={isAuthenticated} />
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6">
-        <Card>
+      <main className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-6 sm:px-6">
+        <Card className="rounded-[30px] border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] shadow-[0_20px_44px_rgba(15,23,42,0.06)]">
           <CardHeader>
             <CardTitle>{dictionary.app.historyTitle}</CardTitle>
             <CardDescription>{dictionary.app.historyDescription}</CardDescription>
@@ -36,7 +36,7 @@ export function ClientHistoryPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {history.map((item) => (
-              <Card key={item.id}>
+              <Card key={item.id} className="rounded-[28px] border-[color:var(--workspace-border)] bg-[var(--workspace-panel)]">
                 <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-2">
                     <h2 className="text-sm font-semibold text-slate-900">{item.title}</h2>

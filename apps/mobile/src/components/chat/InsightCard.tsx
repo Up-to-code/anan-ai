@@ -2,12 +2,13 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { CircleCheckBig, Percent, Scale, ShieldCheck, Wallet, User, Building2, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react-native";
 import { View, Pressable } from "react-native";
-import { formatCurrency, formatPercent } from "@/lib/mvp/formatters";
+import { formatCurrency, formatPercent } from "@/lib/formatters";
 import { AppText } from "@/components/ui/AppText";
-import type { CapabilityResultCard } from "@/types/chat";
+import { useMobileLayout } from "@/lib/mobileLayout";
+import type { MobileAssistantCard } from "@/types/mobile";
 
 type InsightCardProps = {
-  card: CapabilityResultCard;
+  card: MobileAssistantCard;
 };
 
 /**
@@ -125,6 +126,40 @@ export function InsightCard({ card }: InsightCardProps) {
     );
   }
 
+  if (card.type === "bank_offer") {
+    return (
+      <CardShell title={card.title} icon={<Wallet size={18} color="#2563EB" />}>
+        <MetricRow label="البنك" value={card.bankName} emphasized />
+        <MetricRow label="البرنامج" value={card.rateLabel} />
+        <MetricRow label="الدفعة الأولى" value={`${card.downPaymentPercent}%`} />
+        <MetricRow label="القسط الشهري التقريبي" value={formatCurrency(card.monthlyEstimate)} />
+        <AppText className="text-[14px] leading-6 text-slate-500 mt-2 px-1">{card.summary}</AppText>
+      </CardShell>
+    );
+  }
+
+  if (card.type === "insight_brief") {
+    return (
+      <CardShell title={card.title} icon={<CircleCheckBig size={18} color="#2563EB" />}>
+        <AppText className="text-[14px] leading-7 text-slate-500 mt-2 px-1">{card.body}</AppText>
+        <AppText className="text-[12px] leading-5 text-slate-400 font-medium mt-3 px-1">{card.summary}</AppText>
+      </CardShell>
+    );
+  }
+
+  if (card.type === "accent_note") {
+    return (
+      <CardShell title={card.title} icon={<CircleCheckBig size={18} color="#2563EB" />}>
+        <MetricRow
+          label="الحالة"
+          value={card.tone === "success" ? "إيجابي" : card.tone === "warning" ? "تنبيه" : "معلومة"}
+          emphasized
+        />
+        <AppText className="text-[14px] leading-7 text-slate-500 mt-2 px-1">{card.summary}</AppText>
+      </CardShell>
+    );
+  }
+
   return (
     <CardShell title={card.title} icon={<CircleCheckBig size={18} color="#2563EB" />}>
       <MetricRow label="حالة التحويل" value={card.handoffStatus === "qualified" ? "جاهز" : "يحتاج تفاصيل"} emphasized />
@@ -207,24 +242,27 @@ function InteractiveRoiCalculator({ card }: { card: any }) {
       
       <View className="py-5 border-b border-slate-50 dark:border-slate-800">
          <AppText className="text-[13px] font-black uppercase text-slate-400 mb-4 text-right">معدل نمو القيمة (5 سنوات)</AppText>
-         <View className="flex-row-reverse bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-full overflow-hidden p-1">
+         <View className="flex-row-reverse bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-full overflow-hidden p-1 gap-1">
             <Pressable 
               onPress={() => setGrowthScenario("conservative")}
-              className={`flex-1 py-2.5 items-center rounded-full ${growthScenario === "conservative" ? "bg-slate-900 text-white" : ""}`}
+              className={`flex-1 py-1.5 px-1 items-center rounded-full justify-center ${growthScenario === "conservative" ? "bg-slate-900 dark:bg-slate-50" : ""}`}
             >
-               <AppText className={`text-[12px] font-cairo-black ${growthScenario === "conservative" ? "text-white" : "text-slate-500 uppercase tracking-widest"}`}>تحفظ 5%</AppText>
+               <AppText className={`text-[10px] font-cairo-black ${growthScenario === "conservative" ? "text-white dark:text-slate-900" : "text-slate-500"}`}>تحفظ</AppText>
+               <AppText className={`text-[10px] font-cairo-black mt-0.5 ${growthScenario === "conservative" ? "text-slate-300 dark:text-slate-600" : "text-slate-400"}`}>5%</AppText>
             </Pressable>
             <Pressable 
               onPress={() => setGrowthScenario("expected")}
-              className={`flex-1 py-2.5 items-center rounded-full ${growthScenario === "expected" ? "bg-slate-900 text-white" : ""}`}
+              className={`flex-1 py-1.5 px-1 items-center rounded-full justify-center ${growthScenario === "expected" ? "bg-slate-900 dark:bg-slate-50" : ""}`}
             >
-               <AppText className={`text-[12px] font-cairo-black ${growthScenario === "expected" ? "text-white" : "text-slate-500 uppercase tracking-widest"}`}>أساسي 15%</AppText>
+               <AppText className={`text-[10px] font-cairo-black ${growthScenario === "expected" ? "text-white dark:text-slate-900" : "text-slate-500"}`}>أساسي</AppText>
+               <AppText className={`text-[10px] font-cairo-black mt-0.5 ${growthScenario === "expected" ? "text-slate-300 dark:text-slate-600" : "text-slate-400"}`}>15%</AppText>
             </Pressable>
             <Pressable 
               onPress={() => setGrowthScenario("aggressive")}
-              className={`flex-1 py-2.5 items-center rounded-full ${growthScenario === "aggressive" ? "bg-slate-900 text-white" : ""}`}
+              className={`flex-1 py-1.5 px-1 items-center rounded-full justify-center ${growthScenario === "aggressive" ? "bg-slate-900 dark:bg-slate-50" : ""}`}
             >
-               <AppText className={`text-[12px] font-cairo-black ${growthScenario === "aggressive" ? "text-white" : "text-slate-500 uppercase tracking-widest"}`}>متفائل 25%</AppText>
+               <AppText className={`text-[10px] font-cairo-black ${growthScenario === "aggressive" ? "text-white dark:text-slate-900" : "text-slate-500"}`}>متفائل</AppText>
+               <AppText className={`text-[10px] font-cairo-black mt-0.5 ${growthScenario === "aggressive" ? "text-slate-300 dark:text-slate-600" : "text-slate-400"}`}>25%</AppText>
             </Pressable>
          </View>
       </View>
@@ -246,13 +284,30 @@ function CardShell({
   icon: ReactNode;
   children: ReactNode;
 }) {
+  const layout = useMobileLayout();
+
   return (
-    <View className="gap-4 w-full py-4">
-      <View className="flex-row-reverse items-center justify-between gap-3 border-b border-slate-50 dark:border-slate-800 pb-4">
-        <AppText className="text-[16px] font-cairo-black text-slate-900 dark:text-slate-100 flex-1 text-right">
+    <View
+      className="w-full gap-4 border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900"
+      style={{ 
+        borderRadius: layout.cardRadius,
+        shadowColor: "#0F172A",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.04,
+        shadowRadius: 12,
+        elevation: 3,
+      }}
+    >
+      <View className="flex-row-reverse items-center justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
+        <AppText responsiveRole="bodyStrong" className="flex-1 text-right font-cairo-black text-slate-900 dark:text-slate-100">
           {title}
         </AppText>
-        <View className="h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-900/20">{icon}</View>
+        <View
+          className="items-center justify-center bg-slate-100 dark:bg-slate-800"
+          style={{ width: layout.touchTarget - 4, height: layout.touchTarget - 4, borderRadius: layout.chipRadius }}
+        >
+          {icon}
+        </View>
       </View>
       {children}
     </View>
@@ -268,10 +323,20 @@ function MetricRow({
   value: string;
   emphasized?: boolean;
 }) {
+  const layout = useMobileLayout();
+
   return (
     <View className="flex-row-reverse items-center justify-between border-b border-slate-50 dark:border-slate-800 py-3 last:border-b-0 w-full">
-      <AppText className="text-[13px] font-bold text-slate-400 dark:text-slate-500 max-w-[50%] uppercase tracking-wider">{label}</AppText>
-      <AppText className={emphasized ? "text-[15px] font-cairo-black text-primary" : "text-[14px] font-cairo-bold text-slate-900 dark:text-slate-100 max-w-[50%] text-left"}>{value}</AppText>
+      <AppText responsiveRole="chip" className="font-bold text-slate-400 dark:text-slate-500 max-w-[50%]">
+        {label}
+      </AppText>
+      <AppText
+        responsiveRole={emphasized ? "bodyStrong" : "body"}
+        className={emphasized ? "font-cairo-black text-primary" : "max-w-[50%] text-left font-cairo-bold text-slate-900 dark:text-slate-100"}
+        style={{ maxWidth: layout.width * 0.42 }}
+      >
+        {value}
+      </AppText>
     </View>
   );
 }

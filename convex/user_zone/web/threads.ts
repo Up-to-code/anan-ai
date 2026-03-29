@@ -1,7 +1,13 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, type Infer, v } from "convex/values";
 import { internalMutation, mutation, query } from "../../_generated/server";
-import { createAssistantThread, listRecentThreads, listThreadMessages, saveConversationStep } from "../../ai_zone/services/assistantService";
+import {
+  createAssistantThread,
+  getLatestThreadPreview,
+  listRecentThreads,
+  listThreadMessages,
+  saveConversationStep,
+} from "../../ai_zone/services/assistantService";
 import {
   clientThreadMessageValidator,
   clientThreadSummaryValidator,
@@ -74,13 +80,21 @@ async function requireAuthenticatedBuyer(ctx: { auth: unknown }, authReader: () 
   return userId;
 }
 
-async function loadThreadPreview(ctx: any, threadId: string) {
-  const messages = await ctx.db
-    .query("assistantMessages")
-    .withIndex("threadId", (q: any) => q.eq("threadId", threadId))
-    .collect();
-  const sorted = messages.sort((a: any, b: any) => a.createdAt - b.createdAt);
-  return sorted.at(-1)?.content;
+async function buildClientThreadSummaries(ctx: any, threads: Array<{
+  _id: string;
+  title?: string;
+  createdAt: number;
+  updatedAt: number;
+}>) {
+  return Promise.all(
+    threads.map(async (thread) => ({
+      id: thread._id as never,
+      title: thread.title?.trim() || "Buyer conversation",
+      createdAt: thread.createdAt,
+      updatedAt: thread.updatedAt,
+      preview: await getLatestThreadPreview(ctx, thread._id as never),
+    })),
+  );
 }
 
 /**
@@ -104,17 +118,7 @@ export const listClientThreads = query({
       args.limit ?? 12,
     );
 
-    const summaries = await Promise.all(
-      threads.map(async (thread) => ({
-        id: thread._id,
-        title: thread.title?.trim() || "Buyer conversation",
-        createdAt: thread.createdAt,
-        updatedAt: thread.updatedAt,
-        preview: await loadThreadPreview(ctx, String(thread._id)),
-      })),
-    );
-
-    return summaries;
+    return buildClientThreadSummaries(ctx, threads as any);
   },
 });
 
@@ -140,6 +144,52 @@ export const getClientThreadMessages = query({
     );
 
     return messages.map(mapStoredMessage);
+  },
+});
+
+/**
+ * WHY:   The buyer web and mobile surfaces should hydrate saved-thread state with one live query instead of separate thread-list and message reads.
+ * WHAT:  Returns recent saved buyer threads plus the active thread transcript for the requested thread id.
+ * HOW:   Uses the indexed assistant thread/message service helpers and projects the payload into the existing client DTO contracts.
+ */
+export const getClientAssistantState = query({
+  args: {
+    threadId: v.optional(v.id("assistantThreads")),
+    limit: v.optional(v.number()),
+  },
+  returns: v.object({
+    recentThreads: v.array(clientThreadSummaryValidator),
+    activeMessages: v.array(clientThreadMessageValidator),
+  }),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return {
+        recentThreads: [],
+        activeMessages: [],
+      };
+    }
+
+    const owner = getClientOwner(userId);
+    const [threads, messages] = await Promise.all([
+      listRecentThreads(
+        ctx as never,
+        owner,
+        CLIENT_ASSISTANT_KIND,
+        args.limit ?? 12,
+      ),
+      listThreadMessages(
+        ctx as never,
+        owner,
+        args.threadId,
+        CLIENT_ASSISTANT_KIND,
+      ),
+    ]);
+
+    return {
+      recentThreads: await buildClientThreadSummaries(ctx, threads as any),
+      activeMessages: messages.map(mapStoredMessage),
+    };
   },
 });
 

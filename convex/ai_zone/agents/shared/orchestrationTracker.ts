@@ -11,6 +11,11 @@ export interface TrackOrchestrationParams {
   failedAgents: string[];
   totalInputTokens: number;
   totalOutputTokens: number;
+  contextTokens?: number;
+  memoryTokens?: number;
+  ragTokens?: number;
+  historyTokens?: number;
+  cacheHit?: boolean;
 }
 
 /**
@@ -34,6 +39,11 @@ export async function trackOrchestrationUsage(
     totalInputTokens: params.totalInputTokens,
     totalOutputTokens: params.totalOutputTokens,
     totalTokens: params.totalInputTokens + params.totalOutputTokens,
+    contextTokens: params.contextTokens,
+    memoryTokens: params.memoryTokens,
+    ragTokens: params.ragTokens,
+    historyTokens: params.historyTokens,
+    cacheHit: params.cacheHit,
     createdAt: Date.now(),
   });
 }
