@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useUploadThing } from "@/lib/uploadthing";
 import type { UploadedFileReference } from "@/server/contracts/files";
-import type { BrokerPresence } from "../Visuals/BrokerPresenceChip";
+import type { BrokerPresence } from "../../Visuals/BrokerPresenceChip";
 import { createInitialFormState, STEP_DEFINITIONS } from "./shared";
 import type { AgPropertyFormState } from "./shared";
 import type { AgPropertyFormProps, ProjectFormData } from "./types";

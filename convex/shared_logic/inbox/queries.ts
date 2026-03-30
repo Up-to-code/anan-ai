@@ -281,28 +281,46 @@ export const searchConversationTargets = query({
       return searchTargetsAsUser(ctx, access, normalizedQuery);
     }
 
-    const profiles = await ctx.db
-      .query("userProfiles")
-      .withIndex("roleStatus", (q) => q.eq("roleStatus", "approved"))
-      .take(200);
     const owner = resolveWorkspaceOwner(access);
     const tenantOrgId = owner ? await resolveTenantOrgIdForOwner(ctx, owner) : null;
     const invites = tenantOrgId ? await tenants.listInvitations(ctx as never, tenantOrgId) : [];
 
-    const results = await Promise.all(
-      profiles.map(async (profile: any) =>
-        hydrateCollaboratorTarget({
-          access,
-          ctx,
-          invites,
-          normalizedQuery,
-          profile,
-          tenantOrgId,
-        })
-      )
-    );
+    const maxProfilesToScan = 1_000;
+    const pageSize = 200;
+    let scannedProfiles = 0;
+    let cursor: string | null = null;
+    const hydrated = [] as Array<Awaited<ReturnType<typeof hydrateCollaboratorTarget>>>;
 
-    return results
+    while (scannedProfiles < maxProfilesToScan) {
+      const page = await ctx.db
+        .query("userProfiles")
+        .withIndex("roleStatus", (q) => q.eq("roleStatus", "approved"))
+        .paginate({ numItems: pageSize, cursor });
+
+      scannedProfiles += page.page.length;
+
+      const pageResults = await Promise.all(
+        page.page.map(async (profile: any) =>
+          hydrateCollaboratorTarget({
+            access,
+            ctx,
+            invites,
+            normalizedQuery,
+            profile,
+            tenantOrgId,
+          })
+        )
+      );
+
+      hydrated.push(...pageResults);
+
+      if (page.isDone || !page.continueCursor) {
+        break;
+      }
+      cursor = page.continueCursor;
+    }
+
+    return hydrated
       .filter((item): item is NonNullable<typeof item> => Boolean(item))
       .sort((left, right) => left.name.localeCompare(right.name, "ar"))
       .slice(0, 20);

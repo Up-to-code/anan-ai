@@ -128,7 +128,7 @@ export default function InboxOfferEventCard({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1 space-y-3">
           <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-widest">
-            <span className={isMe ? "text-foreground/60" : "text-muted-foreground"}>عرض استثنائي</span>
+            <span className={isMe ? "text-foreground/60" : "text-muted-foreground"}>عرض خاص</span>
             <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 tracking-normal", statusClassName(state.status))}>
               <Clock3 className="h-3 w-3" />
               {statusLabel(state.status)}

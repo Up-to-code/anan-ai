@@ -13,7 +13,7 @@ import {
   Video,
   X,
 } from "lucide-react";
-import type { BrokerPresence } from "../Visuals/BrokerPresenceChip";
+import type { BrokerPresence } from "../../Visuals/BrokerPresenceChip";
 import { BrokerAvatar, FieldLabel, ReviewRow, SectionCard, TextArea, TextInput, UploadTile } from "./controls";
 import { GALLERY_ASPECT_OPTIONS, GALLERY_DISPLAY_OPTIONS, STEP_DEFINITIONS } from "./shared";
 import type { AgPropertyFormState } from "./shared";
