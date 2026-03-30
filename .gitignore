@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 **/node_modules/
+.pnpm-store/
 
 # Environment
 .env
@@ -11,6 +12,7 @@ node_modules/
 dist/
 build/
 .convex/
+output/
 *.tsbuildinfo
 .next/
 **/.next/
