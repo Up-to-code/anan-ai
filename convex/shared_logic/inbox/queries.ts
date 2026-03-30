@@ -150,6 +150,10 @@ function buildHaystack(profile: any, organizationName: string | null, role: stri
   ];
 }
 
+function matchesNormalizedQuery(haystack: string[], normalizedQuery: string) {
+  return haystack.some((entry) => entry.includes(normalizedQuery));
+}
+
 async function resolveMembershipState(params: {
   ctx: any;
   tenantOrgId: string | null;
@@ -231,16 +235,30 @@ async function hydrateCollaboratorTarget(params: { ctx: any; access: any; profil
   }
 
   const role = resolveCollaboratorRole(profile);
-  const organizationName = await getOrganizationNameByOwner(ctx, {
-    brokerId: profile.brokerId ?? undefined,
-    REDId: profile.REDId ?? undefined,
-  });
-  const haystack = buildHaystack(profile, organizationName, role);
-  if (!haystack.some((entry) => entry.includes(normalizedQuery))) {
-    return null;
+  const baseHaystack = buildHaystack(profile, null, role);
+  if (!matchesNormalizedQuery(baseHaystack, normalizedQuery)) {
+    const organizationName = await getOrganizationNameByOwner(ctx, {
+      brokerId: profile.brokerId ?? undefined,
+      REDId: profile.REDId ?? undefined,
+    });
+    const fullHaystack = buildHaystack(profile, organizationName, role);
+    if (!matchesNormalizedQuery(fullHaystack, normalizedQuery)) {
+      return null;
+    }
+
+    const [membershipState, conversationId, userImage] = await Promise.all([
+      resolveMembershipState({ ctx, invites, profile, tenantOrgId }),
+      resolveConversationId(ctx, access, profile),
+      getUserImageByEmail(ctx, profile.email),
+    ]);
+    return buildCollaboratorTarget({ profile, role, userImage, organizationName, membershipState, conversationId });
   }
 
-  const [membershipState, conversationId, userImage] = await Promise.all([
+  const [organizationName, membershipState, conversationId, userImage] = await Promise.all([
+    getOrganizationNameByOwner(ctx, {
+      brokerId: profile.brokerId ?? undefined,
+      REDId: profile.REDId ?? undefined,
+    }),
     resolveMembershipState({ ctx, invites, profile, tenantOrgId }),
     resolveConversationId(ctx, access, profile),
     getUserImageByEmail(ctx, profile.email),
@@ -312,7 +330,7 @@ export const searchConversationTargets = query({
         )
       );
 
-      hydrated.push(...pageResults);
+      hydrated.push(...pageResults.filter(Boolean));
 
       if (page.isDone || !page.continueCursor) {
         break;
