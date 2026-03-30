@@ -24,13 +24,13 @@ const brokerOverviewApi = (apiUnsafe["broker_zone/overview"]) as BrokerInternalR
 const brokerPropertiesApi = (apiUnsafe["broker_zone/properties"]) as BrokerInternalRefs;
 
 export type BrokerZoneRepository = {
-  getOverview(brokerId: string): Promise<BrokerOverviewSummary>;
-  listProperties(brokerId: string, filters: PropertyListFilters): Promise<PaginatedPropertiesResult>;
-  getProperty(id: string): Promise<PropertyDetail | null>;
-  createProperty(brokerId: string, input: CreatePropertyInput): Promise<string>;
-  updateProperty(id: string, patch: UpdatePropertyInput): Promise<void>;
-  deleteProperty(id: string): Promise<void>;
-  publishProperty(id: string): Promise<PublishPropertyResult>;
+  getOverview(token: string, brokerId: string): Promise<BrokerOverviewSummary>;
+  listProperties(token: string, brokerId: string, filters: PropertyListFilters): Promise<PaginatedPropertiesResult>;
+  getProperty(token: string, id: string): Promise<PropertyDetail | null>;
+  createProperty(token: string, brokerId: string, input: CreatePropertyInput): Promise<string>;
+  updateProperty(token: string, id: string, patch: UpdatePropertyInput): Promise<void>;
+  deleteProperty(token: string, id: string): Promise<void>;
+  publishProperty(token: string, id: string): Promise<PublishPropertyResult>;
 };
 
 /**
@@ -39,48 +39,48 @@ export type BrokerZoneRepository = {
  * HOW:   Calls internal Convex queries/mutations and returns stable DTOs to the broker server layer.
  */
 export const convexBrokerZoneRepository: BrokerZoneRepository = {
-  async getOverview(brokerId) {
+  async getOverview(token, brokerId) {
     return fetchQuery(brokerOverviewApi.countPropertiesByBrokerId as never, {
       brokerId: brokerId as never,
-    } as never);
+    } as never, { token });
   },
 
-  async listProperties(brokerId, filters) {
+  async listProperties(token, brokerId, filters) {
     return fetchQuery(brokerPropertiesApi.listByBrokerId as never, {
       brokerId: brokerId as never,
       ...filters,
-    } as never) as Promise<PaginatedPropertiesResult>;
+    } as never, { token }) as Promise<PaginatedPropertiesResult>;
   },
 
-  async getProperty(id) {
+  async getProperty(token, id) {
     return fetchQuery(brokerPropertiesApi.getById as never, {
       id: id as never,
-    } as never) as Promise<PropertyDetail | null>;
+    } as never, { token }) as Promise<PropertyDetail | null>;
   },
 
-  async createProperty(brokerId, input) {
+  async createProperty(token, brokerId, input) {
     return fetchMutation(brokerPropertiesApi.create as never, {
       brokerId: brokerId as never,
       ...input,
-    } as never) as Promise<string>;
+    } as never, { token }) as Promise<string>;
   },
 
-  async updateProperty(id, patch) {
+  async updateProperty(token, id, patch) {
     await fetchMutation(brokerPropertiesApi.update as never, {
       id: id as never,
       ...patch,
-    } as never);
+    } as never, { token });
   },
 
-  async deleteProperty(id) {
+  async deleteProperty(token, id) {
     await fetchMutation(brokerPropertiesApi.remove as never, {
       id: id as never,
-    } as never);
+    } as never, { token });
   },
 
-  async publishProperty(id) {
+  async publishProperty(token, id) {
     return fetchMutation(brokerPropertiesApi.publish as never, {
       id: id as never,
-    } as never) as Promise<PublishPropertyResult>;
+    } as never, { token }) as Promise<PublishPropertyResult>;
   },
 };

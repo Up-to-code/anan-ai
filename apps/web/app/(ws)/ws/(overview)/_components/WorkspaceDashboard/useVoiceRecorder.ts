@@ -89,23 +89,40 @@ function createEmptyLevels() {
 }
 
 function useRecorderRefs(): RecorderRefs {
-  return {
-    streamRef: useRef<MediaStream | null>(null),
-    mediaRecorderRef: useRef<MediaRecorder | null>(null),
-    recordedChunksRef: useRef<BlobPart[]>([]),
-    recordStartedAtRef: useRef<number>(0),
-    durationIntervalRef: useRef<number | null>(null),
-    stopTimeoutRef: useRef<number | null>(null),
-    stopPromiseRef: useRef<Promise<Blob> | null>(null),
-    animationFrameRef: useRef<number | null>(null),
-    audioContextRef: useRef<AudioContext | null>(null),
-    analyserRef: useRef<AnalyserNode | null>(null),
-    analyserDataRef: useRef<Uint8Array<ArrayBuffer> | null>(null),
-    hasDetectedSpeechRef: useRef(false),
-    silenceStartedAtRef: useRef<number | null>(null),
-    autoStopRequestedRef: useRef(false),
-    stopInFlightRef: useRef(false),
-  };
+  const streamRef = useRef<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<BlobPart[]>([]);
+  const recordStartedAtRef = useRef<number>(0);
+  const durationIntervalRef = useRef<number | null>(null);
+  const stopTimeoutRef = useRef<number | null>(null);
+  const stopPromiseRef = useRef<Promise<Blob> | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const analyserDataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
+  const hasDetectedSpeechRef = useRef(false);
+  const silenceStartedAtRef = useRef<number | null>(null);
+  const autoStopRequestedRef = useRef(false);
+  const stopInFlightRef = useRef(false);
+  const refs = useRef<RecorderRefs>({
+    streamRef,
+    mediaRecorderRef,
+    recordedChunksRef,
+    recordStartedAtRef,
+    durationIntervalRef,
+    stopTimeoutRef,
+    stopPromiseRef,
+    animationFrameRef,
+    audioContextRef,
+    analyserRef,
+    analyserDataRef,
+    hasDetectedSpeechRef,
+    silenceStartedAtRef,
+    autoStopRequestedRef,
+    stopInFlightRef,
+  });
+
+  return refs.current;
 }
 
 function stopTracks(stream: MediaStream | null) {

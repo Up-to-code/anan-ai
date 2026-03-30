@@ -21,15 +21,15 @@ async function listVerificationRequestsByStatus(
       .withIndex("currentStatus", (query: any) => query.eq("currentStatus", status))
       .collect();
   }
-  return ctx.db.query("verificationRequests").collect();
+  return ctx.db.query("verificationRequests").order("desc").take(500);
 }
 
 async function loadVerificationLookups(ctx: any): Promise<VerificationLookups> {
   const [profiles, brokers, developers, properties] = await Promise.all([
-    ctx.db.query("userProfiles").collect(),
-    ctx.db.query("brokers").collect(),
-    ctx.db.query("RED").collect(),
-    ctx.db.query("properties").collect(),
+    ctx.db.query("userProfiles").order("desc").take(500),
+    ctx.db.query("brokers").order("desc").take(500),
+    ctx.db.query("RED").order("desc").take(500),
+    ctx.db.query("properties").order("desc").take(500),
   ]);
   return { profiles, brokers, developers, properties };
 }
@@ -256,7 +256,7 @@ export const verificationStatusSummary = query({
   args: {},
   handler: async (ctx) => {
     await requireRole(ctx, ["admin"]);
-    const requests = await ctx.db.query("verificationRequests").collect();
+    const requests = await ctx.db.query("verificationRequests").order("desc").take(500);
 
     return {
       new: requests.filter((request) => request.currentStatus === "new").length,

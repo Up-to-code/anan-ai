@@ -12,6 +12,7 @@
 ## Cleanup Decisions In This Pass
 - Keep the zone local and document capability-first entrypoints.
 - Do not package or flatten `shared_logic`; the right next step is targeted internal cleanup, not extraction.
+- Split `buyerContext.ts` into helper/storage/compiler modules and moved offer case services behind `offers/cases/` while keeping the stable entry modules intact.
 
 ## Deferred Follow-Ups
 - Split `inbox.ts` into read-model, action, and formatting modules.

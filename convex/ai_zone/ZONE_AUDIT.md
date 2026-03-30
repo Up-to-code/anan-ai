@@ -12,6 +12,7 @@
 ## Cleanup Decisions In This Pass
 - Keep `ai_zone` local; do not package runtime logic.
 - Document the public path as `assistant*.ts` and webhooks, not individual teams/tools.
+- Split `services/assistantService/workspaceCommandRouter.ts` into parser, formatter, data, and handler modules while preserving the existing import path.
 
 ## Deferred Follow-Ups
 - Split `assistantService.ts` into context assembly, orchestration dispatch, persistence, and response formatting collaborators.

@@ -66,7 +66,7 @@ it("lists RED properties through the repository", async () => {
     { paginationOpts: { cursor: null, numItems: 10 } },
     { requireSession: requireRedSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
   );
-  expect(repository.listProperties).toHaveBeenCalledWith("red-1", {
+  expect(repository.listProperties).toHaveBeenCalledWith("token", "red-1", {
     paginationOpts: { cursor: null, numItems: 10 },
   });
 });
@@ -104,7 +104,7 @@ it("creates a RED property", async () => {
       { requireSession: requireRedSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
     ),
   ).resolves.toBe("property-1");
-  expect(repository.createProperty).toHaveBeenCalledWith("red-1", expect.any(Object));
+  expect(repository.createProperty).toHaveBeenCalledWith("token", "red-1", expect.any(Object));
 });
 
 it("updates an owned RED property", async () => {
@@ -123,7 +123,7 @@ it("updates an owned RED property", async () => {
     { id: "property-1", patch: { price: 200 } },
     { requireSession: requireRedSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
   );
-  expect(repository.updateProperty).toHaveBeenCalledWith("property-1", { price: 200 });
+  expect(repository.updateProperty).toHaveBeenCalledWith("token", "property-1", { price: 200 });
 });
 
 it("deletes an owned RED property", async () => {
@@ -142,7 +142,7 @@ it("deletes an owned RED property", async () => {
     { id: "property-1" },
     { requireSession: requireRedSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
   );
-  expect(repository.deleteProperty).toHaveBeenCalledWith("property-1");
+  expect(repository.deleteProperty).toHaveBeenCalledWith("token", "property-1");
 });
 
 it("publishes an owned RED property", async () => {
@@ -164,4 +164,5 @@ it("publishes an owned RED property", async () => {
       { requireSession: requireRedSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
     ),
   ).resolves.toEqual({ ok: true });
+  expect(repository.publishProperty).toHaveBeenCalledWith("token", "property-1");
 });

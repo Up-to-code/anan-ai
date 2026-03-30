@@ -43,8 +43,12 @@ async function requireOwnedProperty(
   propertyId: string,
   dependencies: BrokerCrmDependencies,
 ) {
-  const { brokerId } = await requireBrokerOwner(dependencies);
-  const property = await dependencies.propertiesRepository.getProperty(propertyId);
+  const session = assertBrokerSession(await dependencies.requireBroker());
+  const brokerId = session.context.brokerId;
+  if (!brokerId) {
+    throw new DomainError({ code: "FORBIDDEN", message: "Broker profile required", status: 403 });
+  }
+  const property = await dependencies.propertiesRepository.getProperty(session.token, propertyId);
   if (!property || property.brokerId !== brokerId) {
     throw new DomainError({
       code: "FORBIDDEN",

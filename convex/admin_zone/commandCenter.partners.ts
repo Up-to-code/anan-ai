@@ -18,13 +18,13 @@ export const partnerHealthAnalytics = query({
     await requireRole(ctx, ["admin"]);
 
     const [brokers, developers, subscriptions, verificationRequests, properties, memberships, offers] = await Promise.all([
-      ctx.db.query("brokers").collect(),
-      ctx.db.query("RED").collect(),
-      ctx.db.query("subscriptions").collect(),
-      ctx.db.query("verificationRequests").collect(),
-      ctx.db.query("properties").collect(),
-      ctx.db.query("organizationMemberships").collect(),
-      ctx.db.query("offers").collect(),
+      ctx.db.query("brokers").order("desc").take(500),
+      ctx.db.query("RED").order("desc").take(500),
+      ctx.db.query("subscriptions").order("desc").take(500),
+      ctx.db.query("verificationRequests").order("desc").take(500),
+      ctx.db.query("properties").order("desc").take(500),
+      ctx.db.query("organizationMemberships").order("desc").take(500),
+      ctx.db.query("offers").order("desc").take(500),
     ]);
 
     const onboardingBuckets = new Map<number, { brokers: number; developers: number }>();

@@ -24,13 +24,13 @@ const redOverviewApi = (apiUnsafe["red_zone/overview"]) as RedInternalRefs;
 const redPropertiesApi = (apiUnsafe["red_zone/properties"]) as RedInternalRefs;
 
 export type RedZoneRepository = {
-  getOverview(redId: string): Promise<DeveloperOverviewSummary>;
-  listProperties(redId: string, filters: PropertyListFilters): Promise<PaginatedPropertiesResult>;
-  getProperty(id: string): Promise<PropertyDetail | null>;
-  createProperty(redId: string, input: CreatePropertyInput): Promise<string>;
-  updateProperty(id: string, patch: UpdatePropertyInput): Promise<void>;
-  deleteProperty(id: string): Promise<void>;
-  publishProperty(id: string): Promise<PublishPropertyResult>;
+  getOverview(token: string, redId: string): Promise<DeveloperOverviewSummary>;
+  listProperties(token: string, redId: string, filters: PropertyListFilters): Promise<PaginatedPropertiesResult>;
+  getProperty(token: string, id: string): Promise<PropertyDetail | null>;
+  createProperty(token: string, redId: string, input: CreatePropertyInput): Promise<string>;
+  updateProperty(token: string, id: string, patch: UpdatePropertyInput): Promise<void>;
+  deleteProperty(token: string, id: string): Promise<void>;
+  publishProperty(token: string, id: string): Promise<PublishPropertyResult>;
 };
 
 /**
@@ -39,48 +39,48 @@ export type RedZoneRepository = {
  * HOW:   Calls internal Convex queries/mutations and returns stable DTOs to the RED server layer.
  */
 export const convexRedZoneRepository: RedZoneRepository = {
-  async getOverview(REDId) {
+  async getOverview(token, REDId) {
     return fetchQuery(redOverviewApi.countPropertiesByRedId as never, {
       REDId: REDId as never,
-    } as never);
+    } as never, { token });
   },
 
-  async listProperties(REDId, filters) {
+  async listProperties(token, REDId, filters) {
     return fetchQuery(redPropertiesApi.listByRedId as never, {
       REDId: REDId as never,
       ...filters,
-    } as never) as Promise<PaginatedPropertiesResult>;
+    } as never, { token }) as Promise<PaginatedPropertiesResult>;
   },
 
-  async getProperty(id) {
+  async getProperty(token, id) {
     return fetchQuery(redPropertiesApi.getById as never, {
       id: id as never,
-    } as never) as Promise<PropertyDetail | null>;
+    } as never, { token }) as Promise<PropertyDetail | null>;
   },
 
-  async createProperty(REDId, input) {
+  async createProperty(token, REDId, input) {
     return fetchMutation(redPropertiesApi.create as never, {
       REDId: REDId as never,
       ...input,
-    } as never) as Promise<string>;
+    } as never, { token }) as Promise<string>;
   },
 
-  async updateProperty(id, patch) {
+  async updateProperty(token, id, patch) {
     await fetchMutation(redPropertiesApi.update as never, {
       id: id as never,
       ...patch,
-    } as never);
+    } as never, { token });
   },
 
-  async deleteProperty(id) {
+  async deleteProperty(token, id) {
     await fetchMutation(redPropertiesApi.remove as never, {
       id: id as never,
-    } as never);
+    } as never, { token });
   },
 
-  async publishProperty(id) {
+  async publishProperty(token, id) {
     return fetchMutation(redPropertiesApi.publish as never, {
       id: id as never,
-    } as never) as Promise<PublishPropertyResult>;
+    } as never, { token }) as Promise<PublishPropertyResult>;
   },
 };

@@ -42,23 +42,16 @@ const defaultDependencies: BrokerPropertiesDependencies = {
   complianceRepository: convexComplianceRepository,
 };
 
-async function requireBrokerOwnerId(
-  dependencies: Pick<BrokerPropertiesDependencies, "requireSession">,
-) : Promise<string> {
+async function requireOwnedBrokerProperty(
+  propertyId: string,
+  dependencies: BrokerPropertiesDependencies,
+): Promise<PropertyDetail> {
   const session = assertBrokerSession(await dependencies.requireSession());
   const brokerId = session.context.brokerId;
   if (!brokerId) {
     throw new DomainError({ code: "FORBIDDEN", message: "Broker profile required", status: 403 });
   }
-  return brokerId;
-}
-
-async function requireOwnedBrokerProperty(
-  propertyId: string,
-  dependencies: BrokerPropertiesDependencies,
-): Promise<PropertyDetail> {
-  const brokerId = await requireBrokerOwnerId(dependencies);
-  const property = await dependencies.repository.getProperty(propertyId);
+  const property = await dependencies.repository.getProperty(session.token, propertyId);
   if (!property) {
     throw new DomainError({
       code: "NOT_FOUND",
@@ -129,8 +122,12 @@ export async function listBrokerProperties(
       status: 400,
     });
   }
-  const brokerId = await requireBrokerOwnerId(dependencies);
-  return dependencies.repository.listProperties(brokerId, parsed.data);
+  const session = assertBrokerSession(await dependencies.requireSession());
+  const brokerId = session.context.brokerId;
+  if (!brokerId) {
+    throw new DomainError({ code: "FORBIDDEN", message: "Broker profile required", status: 403 });
+  }
+  return dependencies.repository.listProperties(session.token, brokerId, parsed.data);
 }
 
 /**
@@ -162,8 +159,12 @@ export async function createBrokerProperty(
       status: 400,
     });
   }
-  const brokerId = await requireBrokerOwnerId(dependencies);
-  return dependencies.repository.createProperty(brokerId, parsed.data);
+  const session = assertBrokerSession(await dependencies.requireSession());
+  const brokerId = session.context.brokerId;
+  if (!brokerId) {
+    throw new DomainError({ code: "FORBIDDEN", message: "Broker profile required", status: 403 });
+  }
+  return dependencies.repository.createProperty(session.token, brokerId, parsed.data);
 }
 
 /**
@@ -183,8 +184,9 @@ export async function updateBrokerProperty(
       status: 400,
     });
   }
+  const session = assertBrokerSession(await dependencies.requireSession());
   await requireOwnedBrokerProperty(input.id, dependencies);
-  await dependencies.repository.updateProperty(input.id, parsed.data);
+  await dependencies.repository.updateProperty(session.token, input.id, parsed.data);
 }
 
 /**
@@ -196,8 +198,9 @@ export async function deleteBrokerProperty(
   input: { id: string },
   dependencies: BrokerPropertiesDependencies = defaultDependencies,
 ): Promise<void> {
+  const session = assertBrokerSession(await dependencies.requireSession());
   await requireOwnedBrokerProperty(input.id, dependencies);
-  await dependencies.repository.deleteProperty(input.id);
+  await dependencies.repository.deleteProperty(session.token, input.id);
 }
 
 /**
@@ -209,7 +212,8 @@ export async function publishBrokerProperty(
   input: { id: string },
   dependencies: BrokerPropertiesDependencies = defaultDependencies,
 ): Promise<PublishPropertyResult> {
+  const session = assertBrokerSession(await dependencies.requireSession());
   const property = await requireOwnedBrokerProperty(input.id, dependencies);
   await requireComplianceForPublish(property, dependencies);
-  return dependencies.repository.publishProperty(input.id);
+  return dependencies.repository.publishProperty(session.token, input.id);
 }

@@ -25,7 +25,7 @@ it("creates a developer deal after property ownership validation", async () => {
     create: vi.fn(async () => "deal-1"),
   };
   const propertiesRepository = {
-    getProperty: vi.fn(async () => ({
+    getProperty: vi.fn(async (_token: string, _propertyId: string) => ({
       _id: "property-1",
       REDId: "red-1",
       title: "Tower",
@@ -53,7 +53,7 @@ it("rejects property-scoped reads for non-owned properties", async () => {
         requireDeveloper: requireDeveloper(),
         crmRepository: {} as never,
         propertiesRepository: {
-          getProperty: vi.fn(async () => ({
+          getProperty: vi.fn(async (_token: string, _propertyId: string) => ({
             _id: "property-1",
             REDId: "red-2",
             title: "Tower",

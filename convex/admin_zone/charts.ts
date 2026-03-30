@@ -36,7 +36,7 @@ export const searchActivityChart = query({
   },
   handler: async (ctx, { range = "week" }) => {
     await requireRole(ctx, ["admin"]);
-    const logs = await ctx.db.query("searchLogs").collect();
+    const logs = await ctx.db.query("searchLogs").order("desc").take(500);
     const bucketMs = getBucketMs(range);
     const lookbackMs = getLookbackMs(range);
     const now = Date.now();
@@ -72,7 +72,7 @@ export const errorHealthChart = query({
   },
   handler: async (ctx, { range = "week" }) => {
     await requireRole(ctx, ["admin"]);
-    const logs = await ctx.db.query("searchLogs").collect();
+    const logs = await ctx.db.query("searchLogs").order("desc").take(500);
     const lookbackMs = getLookbackMs(range);
     const now = Date.now();
     const start = (now - lookbackMs) / 1000;
@@ -103,7 +103,7 @@ export const channelDistribution = query({
   args: {},
   handler: async (ctx) => {
     await requireRole(ctx, ["admin"]);
-    const logs = await ctx.db.query("searchLogs").collect();
+    const logs = await ctx.db.query("searchLogs").order("desc").take(500);
     let whatsapp = 0;
     let app = 0;
     let web = 0;

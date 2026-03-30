@@ -70,7 +70,7 @@ export async function resolveWorkspaceProjectDetail(
   );
 
   if (hasExplicitViewerAccess) {
-    const sharedProperty = await dependencies.rawPropertyRepository.getProperty(input.projectId);
+    const sharedProperty = await dependencies.rawPropertyRepository.getProperty(session.token, input.projectId);
     if (!sharedProperty) {
       return null;
     }
@@ -90,7 +90,7 @@ export async function resolveWorkspaceProjectDetail(
     return null;
   }
 
-  const sharedProperty = await dependencies.rawPropertyRepository.getProperty(input.projectId);
+  const sharedProperty = await dependencies.rawPropertyRepository.getProperty(session.token, input.projectId);
   if (!sharedProperty) {
     return null;
   }

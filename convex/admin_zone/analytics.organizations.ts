@@ -8,10 +8,10 @@ export const brokerAnalytics = query({
   handler: async (ctx, { limit = 10 }) => {
     await requireRole(ctx, ["admin"]);
     const [brokers, profiles, tenantLinks, properties] = await Promise.all([
-      ctx.db.query("brokers").collect(),
-      ctx.db.query("userProfiles").collect(),
-      ctx.db.query("tenantOrgLinks").collect(),
-      ctx.db.query("properties").collect(),
+      ctx.db.query("brokers").order("desc").take(500),
+      ctx.db.query("userProfiles").order("desc").take(500),
+      ctx.db.query("tenantOrgLinks").order("desc").take(500),
+      ctx.db.query("properties").order("desc").take(500),
     ]);
     const tenantOrgIdByBrokerId = new Map<string, string>();
     for (const link of tenantLinks) {
@@ -52,10 +52,10 @@ export const developerAnalytics = query({
   handler: async (ctx, { limit = 10 }) => {
     await requireRole(ctx, ["admin"]);
     const [developers, profiles, tenantLinks, properties] = await Promise.all([
-      ctx.db.query("RED").collect(),
-      ctx.db.query("userProfiles").collect(),
-      ctx.db.query("tenantOrgLinks").collect(),
-      ctx.db.query("properties").collect(),
+      ctx.db.query("RED").order("desc").take(500),
+      ctx.db.query("userProfiles").order("desc").take(500),
+      ctx.db.query("tenantOrgLinks").order("desc").take(500),
+      ctx.db.query("properties").order("desc").take(500),
     ]);
     const tenantOrgIdByRedId = new Map<string, string>();
     for (const link of tenantLinks) {

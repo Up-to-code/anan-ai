@@ -50,11 +50,11 @@ function collectActiveUsers(args: {
 
 async function loadMessageAnalyticsRows(ctx: any) {
   const [assistantThreads, assistantMessages, inboxMessages, profiles, channelUsers] = await Promise.all([
-    ctx.db.query("assistantThreads").collect(),
-    ctx.db.query("assistantMessages").collect(),
-    ctx.db.query("inboxMessages").collect(),
-    ctx.db.query("userProfiles").collect(),
-    ctx.db.query("users").collect(),
+    ctx.db.query("assistantThreads").order("desc").take(500),
+    ctx.db.query("assistantMessages").order("desc").take(500),
+    ctx.db.query("inboxMessages").order("desc").take(500),
+    ctx.db.query("userProfiles").order("desc").take(500),
+    ctx.db.query("users").order("desc").take(500),
   ]);
   return { assistantThreads, assistantMessages, inboxMessages, profiles, channelUsers };
 }
@@ -206,11 +206,11 @@ export const activeUsersAnalytics = query({
     await requireRole(ctx, ["admin"]);
 
     const [assistantThreads, assistantMessages, inboxMessages, knowledgeResearch, searchLogs] = await Promise.all([
-      ctx.db.query("assistantThreads").collect(),
-      ctx.db.query("assistantMessages").collect(),
-      ctx.db.query("inboxMessages").collect(),
-      ctx.db.query("knowledgeResearch").collect(),
-      ctx.db.query("searchLogs").collect(),
+      ctx.db.query("assistantThreads").order("desc").take(500),
+      ctx.db.query("assistantMessages").order("desc").take(500),
+      ctx.db.query("inboxMessages").order("desc").take(500),
+      ctx.db.query("knowledgeResearch").order("desc").take(500),
+      ctx.db.query("searchLogs").order("desc").take(500),
     ]);
 
     const now = Date.now();

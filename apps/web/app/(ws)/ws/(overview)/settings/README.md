@@ -9,3 +9,4 @@ Organization settings surfaces under the overview shell.
 - `page.tsx`: unified tabbed settings page (organization + members/invites).
 - `members/page.tsx`: legacy route redirected to `/ws/settings?tab=members`.
 - `invite/page.tsx`: legacy route redirected to `/ws/settings?tab=members`.
+- `_components/ApiKeysWorkspace/`: folder-backed API key workspace implementation behind the stable `ApiKeysWorkspace.tsx` entry.

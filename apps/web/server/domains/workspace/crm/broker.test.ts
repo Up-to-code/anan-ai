@@ -28,7 +28,7 @@ it("creates a broker deal after property ownership validation", async () => {
     create: vi.fn(async () => "deal-1"),
   };
   const propertiesRepository = {
-    getProperty: vi.fn(async () => ({
+    getProperty: vi.fn(async (_token: string, _propertyId: string) => ({
       _id: "property-1",
       brokerId: "broker-1",
       title: "Villa",
@@ -56,7 +56,7 @@ it("rejects property-scoped reads for non-owned properties", async () => {
         requireBroker: requireBroker(),
         crmRepository: {} as never,
         propertiesRepository: {
-          getProperty: vi.fn(async () => ({
+          getProperty: vi.fn(async (_token: string, _propertyId: string) => ({
             _id: "property-1",
             brokerId: "broker-2",
             title: "Villa",
@@ -106,7 +106,7 @@ it("updates full deal fields and archives only owned broker deals", async () => 
     archive: vi.fn(async () => undefined),
   };
   const propertiesRepository = {
-    getProperty: vi.fn(async () => ({
+    getProperty: vi.fn(async (_token: string, _propertyId: string) => ({
       _id: "property-2",
       brokerId: "broker-1",
       title: "Updated Villa",

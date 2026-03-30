@@ -66,7 +66,7 @@ it("lists broker properties through the repository", async () => {
     { paginationOpts: { cursor: null, numItems: 10 } },
     { requireSession: requireBrokerSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
   );
-  expect(repository.listProperties).toHaveBeenCalledWith("broker-1", {
+  expect(repository.listProperties).toHaveBeenCalledWith("token", "broker-1", {
     paginationOpts: { cursor: null, numItems: 10 },
   });
 });
@@ -104,7 +104,7 @@ it("creates a broker property", async () => {
       { requireSession: requireBrokerSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
     ),
   ).resolves.toBe("property-1");
-  expect(repository.createProperty).toHaveBeenCalledWith("broker-1", expect.any(Object));
+  expect(repository.createProperty).toHaveBeenCalledWith("token", "broker-1", expect.any(Object));
 });
 
 it("updates an owned broker property", async () => {
@@ -123,7 +123,7 @@ it("updates an owned broker property", async () => {
     { id: "property-1", patch: { price: 200 } },
     { requireSession: requireBrokerSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
   );
-  expect(repository.updateProperty).toHaveBeenCalledWith("property-1", { price: 200 });
+  expect(repository.updateProperty).toHaveBeenCalledWith("token", "property-1", { price: 200 });
 });
 
 it("deletes an owned broker property", async () => {
@@ -142,7 +142,7 @@ it("deletes an owned broker property", async () => {
     { id: "property-1" },
     { requireSession: requireBrokerSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
   );
-  expect(repository.deleteProperty).toHaveBeenCalledWith("property-1");
+  expect(repository.deleteProperty).toHaveBeenCalledWith("token", "property-1");
 });
 
 it("publishes an owned broker property", async () => {
@@ -164,4 +164,5 @@ it("publishes an owned broker property", async () => {
       { requireSession: requireBrokerSession(), repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
     ),
   ).resolves.toEqual({ ok: true });
+  expect(repository.publishProperty).toHaveBeenCalledWith("token", "property-1");
 });

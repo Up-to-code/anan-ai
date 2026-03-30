@@ -19,11 +19,11 @@ export const commercialAnalytics = query({
     await requireRole(ctx, ["admin"]);
 
     const [offers, deals, orders, brokers, developers] = await Promise.all([
-      ctx.db.query("offers").collect(),
-      ctx.db.query("deals").collect(),
-      ctx.db.query("orders").collect(),
-      ctx.db.query("brokers").collect(),
-      ctx.db.query("RED").collect(),
+      ctx.db.query("offers").order("desc").take(500),
+      ctx.db.query("deals").order("desc").take(500),
+      ctx.db.query("orders").order("desc").take(500),
+      ctx.db.query("brokers").order("desc").take(500),
+      ctx.db.query("RED").order("desc").take(500),
     ]);
 
     const { currentStart, previousStart } = getWindowBoundaries(range);

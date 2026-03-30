@@ -42,23 +42,16 @@ const defaultDependencies: RedPropertiesDependencies = {
   complianceRepository: convexComplianceRepository,
 };
 
-async function requireRedOwnerId(
-  dependencies: Pick<RedPropertiesDependencies, "requireSession">,
-) : Promise<string> {
+async function requireOwnedRedProperty(
+  propertyId: string,
+  dependencies: RedPropertiesDependencies,
+): Promise<PropertyDetail> {
   const session = assertDeveloperSession(await dependencies.requireSession());
   const redId = session.context.redId;
   if (!redId) {
     throw new DomainError({ code: "FORBIDDEN", message: "Developer profile required", status: 403 });
   }
-  return redId;
-}
-
-async function requireOwnedRedProperty(
-  propertyId: string,
-  dependencies: RedPropertiesDependencies,
-): Promise<PropertyDetail> {
-  const redId = await requireRedOwnerId(dependencies);
-  const property = await dependencies.repository.getProperty(propertyId);
+  const property = await dependencies.repository.getProperty(session.token, propertyId);
   if (!property) {
     throw new DomainError({
       code: "NOT_FOUND",
@@ -129,8 +122,12 @@ export async function listRedProperties(
       status: 400,
     });
   }
-  const redId = await requireRedOwnerId(dependencies);
-  return dependencies.repository.listProperties(redId, parsed.data);
+  const session = assertDeveloperSession(await dependencies.requireSession());
+  const redId = session.context.redId;
+  if (!redId) {
+    throw new DomainError({ code: "FORBIDDEN", message: "Developer profile required", status: 403 });
+  }
+  return dependencies.repository.listProperties(session.token, redId, parsed.data);
 }
 
 /**
@@ -162,8 +159,12 @@ export async function createRedProperty(
       status: 400,
     });
   }
-  const redId = await requireRedOwnerId(dependencies);
-  return dependencies.repository.createProperty(redId, parsed.data);
+  const session = assertDeveloperSession(await dependencies.requireSession());
+  const redId = session.context.redId;
+  if (!redId) {
+    throw new DomainError({ code: "FORBIDDEN", message: "Developer profile required", status: 403 });
+  }
+  return dependencies.repository.createProperty(session.token, redId, parsed.data);
 }
 
 /**
@@ -183,8 +184,9 @@ export async function updateRedProperty(
       status: 400,
     });
   }
+  const session = assertDeveloperSession(await dependencies.requireSession());
   await requireOwnedRedProperty(input.id, dependencies);
-  await dependencies.repository.updateProperty(input.id, parsed.data);
+  await dependencies.repository.updateProperty(session.token, input.id, parsed.data);
 }
 
 /**
@@ -196,8 +198,9 @@ export async function deleteRedProperty(
   input: { id: string },
   dependencies: RedPropertiesDependencies = defaultDependencies,
 ): Promise<void> {
+  const session = assertDeveloperSession(await dependencies.requireSession());
   await requireOwnedRedProperty(input.id, dependencies);
-  await dependencies.repository.deleteProperty(input.id);
+  await dependencies.repository.deleteProperty(session.token, input.id);
 }
 
 /**
@@ -209,7 +212,8 @@ export async function publishRedProperty(
   input: { id: string },
   dependencies: RedPropertiesDependencies = defaultDependencies,
 ): Promise<PublishPropertyResult> {
+  const session = assertDeveloperSession(await dependencies.requireSession());
   const property = await requireOwnedRedProperty(input.id, dependencies);
   await requireComplianceForPublish(property, dependencies);
-  return dependencies.repository.publishProperty(input.id);
+  return dependencies.repository.publishProperty(session.token, input.id);
 }

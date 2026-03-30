@@ -18,10 +18,10 @@ export const queueHealthAnalytics = query({
     await requireRole(ctx, ["admin"]);
 
     const [orders, verificationRequests, searchLogs, notifications] = await Promise.all([
-      ctx.db.query("orders").collect(),
-      ctx.db.query("verificationRequests").collect(),
-      ctx.db.query("searchLogs").collect(),
-      ctx.db.query("workspaceNotifications").collect(),
+      ctx.db.query("orders").order("desc").take(500),
+      ctx.db.query("verificationRequests").order("desc").take(500),
+      ctx.db.query("searchLogs").order("desc").take(500),
+      ctx.db.query("workspaceNotifications").order("desc").take(500),
     ]);
 
     const { currentStart, now } = getWindowBoundaries(range);

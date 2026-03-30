@@ -40,8 +40,12 @@ async function requireRedOwner(dependencies: Pick<RedCrmDependencies, "requireDe
 }
 
 async function requireOwnedProperty(propertyId: string, dependencies: RedCrmDependencies) {
-  const { redId } = await requireRedOwner(dependencies);
-  const property = await dependencies.propertiesRepository.getProperty(propertyId);
+  const session = assertDeveloperSession(await dependencies.requireDeveloper());
+  const redId = session.context.redId;
+  if (!redId) {
+    throw new DomainError({ code: "FORBIDDEN", message: "Developer profile required", status: 403 });
+  }
+  const property = await dependencies.propertiesRepository.getProperty(session.token, propertyId);
   if (!property || property.REDId !== redId) {
     throw new DomainError({
       code: "FORBIDDEN",

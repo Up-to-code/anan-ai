@@ -76,9 +76,9 @@ function toTopOrganizations(stats: Map<string, OfferOrgStat>, limit: number) {
 
 async function loadOfferAnalyticsData(ctx: any) {
   const [offers, brokers, developers] = await Promise.all([
-    ctx.db.query("offers").collect(),
-    ctx.db.query("brokers").collect(),
-    ctx.db.query("RED").collect(),
+    ctx.db.query("offers").order("desc").take(500),
+    ctx.db.query("brokers").order("desc").take(500),
+    ctx.db.query("RED").order("desc").take(500),
   ]);
   return { offers, brokers, developers };
 }
@@ -120,7 +120,7 @@ export const propertyAnalytics = query({
   handler: async (ctx, { range = "month" }) => {
     await requireRole(ctx, ["admin"]);
 
-    const properties = await ctx.db.query("properties").collect();
+    const properties = await ctx.db.query("properties").order("desc").take(500);
     const since = Date.now() - getLookbackMs(range === "week" ? "week" : "month");
     const trendBuckets = new Map<number, number>();
 
