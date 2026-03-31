@@ -105,6 +105,44 @@ it("returns shared read-only access when inbox project sharing grants access", a
   });
 });
 
+it("returns shared read-only access when explicit viewer access already exists", async () => {
+  const property = makeProperty();
+  getProperty.mockResolvedValue(null);
+  const hasExplicitProjectViewerAccess = vi.fn(async () => true);
+  const rawGetProperty = vi.fn(async () => property);
+
+  const result = await resolveWorkspaceProjectDetail(
+    {
+      projectId: "property-1",
+      audience: "broker",
+      ownerContext: { ownerType: "broker", ownerId: "broker-1" },
+    },
+    {
+      requireSession: vi.fn(async () => ({
+        token: "token",
+        context: { userId: "user-1", role: "broker", isActive: true, brokerId: "broker-1" },
+        profile: null,
+      })),
+      inboxRepository: {
+        hasProjectShareAccess: vi.fn(async () => false),
+      },
+      projectAccessRepository: {
+        hasExplicitProjectViewerAccess,
+        promoteCurrentUserToProjectViewer: vi.fn(async () => ({ alreadyOwner: false, promoted: false })),
+      },
+      rawPropertyRepository: { getProperty: rawGetProperty },
+    },
+  );
+
+  expect(hasExplicitProjectViewerAccess).toHaveBeenCalledWith("token", "property-1");
+  expect(rawGetProperty).toHaveBeenCalledWith("token", "property-1");
+  expect(result).toEqual({
+    property,
+    accessMode: "shared",
+    canEdit: false,
+  });
+});
+
 it("returns null when the project is neither owned nor explicitly shared", async () => {
   getProperty.mockResolvedValue(null);
 

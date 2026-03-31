@@ -10,8 +10,8 @@ export function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-border bg-card p-6 md:p-10 shadow-xl shadow-black/[0.02] transition-all">
-      <div className="mb-8 border-b border-border/40 pb-6 text-right">
+    <section className="rounded-2xl border border-border bg-card p-6 md:p-8 transition-all">
+      <div className="mb-6 border-b border-border/40 pb-4 text-right">
         <h3 className="text-xl font-black tracking-tight text-foreground">{title}</h3>
         {description ? <p className="mt-2 text-[14px] font-medium leading-relaxed text-muted-foreground/70">{description}</p> : null}
       </div>

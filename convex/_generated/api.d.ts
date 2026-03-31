@@ -326,6 +326,7 @@ import type * as shared_logic_offers_queries from "../shared_logic/offers/querie
 import type * as shared_logic_offers_recipients from "../shared_logic/offers/recipients.js";
 import type * as shared_logic_organizationAssets from "../shared_logic/organizationAssets.js";
 import type * as shared_logic_projectAccess from "../shared_logic/projectAccess.js";
+import type * as shared_logic_projectDetails from "../shared_logic/projectDetails.js";
 import type * as shared_logic_properties_cache from "../shared_logic/properties/cache.js";
 import type * as shared_logic_properties_history from "../shared_logic/properties/history.js";
 import type * as shared_logic_properties_search from "../shared_logic/properties/search.js";
@@ -681,6 +682,7 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/offers/recipients": typeof shared_logic_offers_recipients;
   "shared_logic/organizationAssets": typeof shared_logic_organizationAssets;
   "shared_logic/projectAccess": typeof shared_logic_projectAccess;
+  "shared_logic/projectDetails": typeof shared_logic_projectDetails;
   "shared_logic/properties/cache": typeof shared_logic_properties_cache;
   "shared_logic/properties/history": typeof shared_logic_properties_history;
   "shared_logic/properties/search": typeof shared_logic_properties_search;

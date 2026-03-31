@@ -56,3 +56,6 @@ Rules for any LLM/human making changes:
 - Admin docs truth: in-app `/docs` backed by `apps/admin/admin_zone/pages/DocsPage/**`
 - Deep docs truth: `docs/handbook/**`
 
+## Reusable prompts
+
+- `docs/handbook/llm/anan-platform-slide-prompt.md` — source resource and compact handoff prompt for generating Anan platform slide decks for developer-facing presentations

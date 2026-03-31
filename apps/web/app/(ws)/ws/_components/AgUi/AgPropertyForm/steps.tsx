@@ -13,10 +13,49 @@ import {
   Video,
   X,
 } from "lucide-react";
+import type { UploadedFileReference } from "@/server/contracts/files";
 import type { BrokerPresence } from "../../Visuals/BrokerPresenceChip";
 import { BrokerAvatar, FieldLabel, ReviewRow, SectionCard, TextArea, TextInput, UploadTile } from "./controls";
 import { GALLERY_ASPECT_OPTIONS, GALLERY_DISPLAY_OPTIONS, STEP_DEFINITIONS } from "./shared";
 import type { AgPropertyFormState } from "./shared";
+
+function StepShell({
+  badge,
+  title,
+  description,
+  checklist,
+  children,
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  checklist: string[];
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-6">
+      <section className="border-b border-border/60 pb-5 text-right">
+        <div className="inline-flex rounded-full border border-border bg-muted/20 px-3 py-1 text-[11px] font-black text-muted-foreground">
+          {badge}
+        </div>
+        <h2 className="mt-3 text-2xl font-black tracking-tight text-foreground">{title}</h2>
+        <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">{description}</p>
+        <div className="mt-4 flex flex-wrap justify-end gap-2">
+          {checklist.map((item) => (
+            <span
+              key={item}
+              className="rounded-full border border-border bg-background px-3 py-1.5 text-[12px] font-semibold text-muted-foreground"
+            >
+              {item}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      {children}
+    </div>
+  );
+}
 
 export function BasicStep({
   formState,
@@ -26,69 +65,76 @@ export function BasicStep({
   setFormState: React.Dispatch<React.SetStateAction<AgPropertyFormState>>;
 }) {
   return (
-    <SectionCard title="البيانات الأساسية" description="ابدأ باسم المشروع، سعره، وموقعه الرئيسي.">
-      <div className="grid gap-5">
-        <div className="grid gap-2">
-          <FieldLabel>اسم المشروع</FieldLabel>
-          <TextInput
-            value={formState.name}
-            onChange={(value) => setFormState((prev) => ({ ...prev, name: value }))}
-            placeholder="مثال: أبراج الياسمين"
-            icon={<Building2 className="h-4 w-4" />}
-          />
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-2">
+    <StepShell
+      badge="الخطوة 1"
+      title="ابدأ بتعريف المشروع بوضوح"
+      description="هذه البطاقة تضع الأساس الذي سيظهر في القوائم وصفحة المشروع ونقاط الوصول داخل المنصة."
+      checklist={["اسم واضح وسهل التذكر", "سعر مكتوب بصياغة مفهومة", "موقع يختصر المنطقة المستهدفة"]}
+    >
+      <SectionCard title="بطاقة تعريف المشروع" description="سجّل البيانات الأساسية كما تريد أن يفهمها الفريق والمستلم من أول نظرة.">
+        <div className="grid gap-5">
           <div className="grid gap-2">
-            <FieldLabel>السعر</FieldLabel>
+            <FieldLabel>اسم المشروع</FieldLabel>
             <TextInput
-              value={formState.price}
-              onChange={(value) => setFormState((prev) => ({ ...prev, price: value }))}
-              placeholder="مثال: 2,500,000 ر.س"
+              value={formState.name}
+              onChange={(value) => setFormState((prev) => ({ ...prev, name: value }))}
+              placeholder="مثال: أبراج الياسمين"
+              icon={<Building2 className="h-4 w-4" />}
             />
           </div>
-          <div className="grid gap-2">
-            <FieldLabel>الموقع</FieldLabel>
-            <TextInput
-              value={formState.location}
-              onChange={(value) => setFormState((prev) => ({ ...prev, location: value }))}
-              placeholder="مثال: جدة، أبحر الشمالية"
-              icon={<MapPin className="h-4 w-4" />}
-            />
-          </div>
-        </div>
 
-        <div className="grid gap-2">
-          <FieldLabel>ظهور العقار في AI والعميل</FieldLabel>
-          <div className="grid gap-3 md:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => setFormState((prev) => ({ ...prev, clientVisibility: "public" }))}
-              className={`rounded-2xl border px-5 py-4 text-right transition ${
-                formState.clientVisibility === "public"
-                  ? "border-emerald-500 bg-emerald-500/10 text-foreground"
-                  : "border-border bg-muted/10 text-muted-foreground"
-              }`}
-            >
-              <div className="text-sm font-black">عام للعميل وAI</div>
-              <div className="mt-1 text-xs font-semibold">يظهر في client-web والمساعد الرئيسي عند النشر.</div>
-            </button>
-            <button
-              type="button"
-              onClick={() => setFormState((prev) => ({ ...prev, clientVisibility: "private" }))}
-              className={`rounded-2xl border px-5 py-4 text-right transition ${
-                formState.clientVisibility === "private"
-                  ? "border-amber-500 bg-amber-500/10 text-foreground"
-                  : "border-border bg-muted/10 text-muted-foreground"
-              }`}
-            >
-              <div className="text-sm font-black">خاص داخل مساحة العمل</div>
-              <div className="mt-1 text-xs font-semibold">يبقى داخلياً للمطور أو الوسيط ولا يظهر للعميل.</div>
-            </button>
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-2">
+              <FieldLabel>السعر</FieldLabel>
+              <TextInput
+                value={formState.price}
+                onChange={(value) => setFormState((prev) => ({ ...prev, price: value }))}
+                placeholder="مثال: 2,500,000 ر.س"
+              />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>الموقع</FieldLabel>
+              <TextInput
+                value={formState.location}
+                onChange={(value) => setFormState((prev) => ({ ...prev, location: value }))}
+                placeholder="مثال: جدة، أبحر الشمالية"
+                icon={<MapPin className="h-4 w-4" />}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <FieldLabel>طريقة الظهور</FieldLabel>
+            <div className="grid gap-3 md:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setFormState((prev) => ({ ...prev, clientVisibility: "public" }))}
+                className={`rounded-2xl border px-5 py-4 text-right transition ${
+                  formState.clientVisibility === "public"
+                    ? "border-emerald-500 bg-emerald-500/10 text-foreground"
+                    : "border-border bg-muted/10 text-muted-foreground"
+                }`}
+              >
+                <div className="text-sm font-black">مرئي للعميل والـ AI</div>
+                <div className="mt-1 text-xs font-semibold">يظهر في القنوات العامة بعد النشر ويصبح جاهزاً للاستخدام البيعي.</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormState((prev) => ({ ...prev, clientVisibility: "private" }))}
+                className={`rounded-2xl border px-5 py-4 text-right transition ${
+                  formState.clientVisibility === "private"
+                    ? "border-amber-500 bg-amber-500/10 text-foreground"
+                    : "border-border bg-muted/10 text-muted-foreground"
+                }`}
+              >
+                <div className="text-sm font-black">داخلي داخل مساحة العمل</div>
+                <div className="mt-1 text-xs font-semibold">يبقى للفريق فقط إلى أن تقرر مشاركته أو نشره لاحقاً.</div>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </SectionCard>
+      </SectionCard>
+    </StepShell>
   );
 }
 
@@ -100,25 +146,30 @@ export function ContentStep({
   setFormState: React.Dispatch<React.SetStateAction<AgPropertyFormState>>;
 }) {
   return (
-    <div className="space-y-6">
-      <SectionCard title="الوصف الكامل" description="اكتب وصفاً واضحاً يفهمه الوسيط أو العميل مباشرة.">
+    <StepShell
+      badge="الخطوة 2"
+      title="اصنع الرسالة التي ستبيع المشروع"
+      description="رتّب النصوص هنا كما لو أنك تسلّم المشروع لفريق المبيعات أو تعرضه في صفحة جاهزة للنشر."
+      checklist={["وصف كامل يشرح الصورة", "ملخص قصير سريع القراءة", "مزايا مفصولة وواضحة"]}
+    >
+      <SectionCard title="الوصف الرئيسي" description="اكتب النص الأساسي الذي يشرح المشروع ونوع الوحدات ونقاط القوة بشكل مباشر.">
         <TextArea
           rows={8}
           value={formState.description}
           onChange={(value) => setFormState((prev) => ({ ...prev, description: value }))}
-          placeholder="اشرح المشروع، نوع الوحدات، الموقع، نقاط القوة، وأي تفاصيل مهمة."
+          placeholder="اشرح المشروع، طبيعة الوحدات، المنطقة، قيمة الشراء، وأي تفاصيل يحتاجها الوسيط أو العميل لفهم العرض."
         />
       </SectionCard>
 
-      <SectionCard title="محتوى الصفحة" description="هذا الجزء يظهر بجوار المعرض وفي بطاقات المشروع.">
+      <SectionCard title="الملخص والمزايا" description="هذه العناصر تساعد على تقديم المشروع بسرعة داخل الصفحة والبطاقات والمشاركات المختصرة.">
         <div className="grid gap-5">
           <div className="grid gap-2">
-            <FieldLabel>وصف قصير</FieldLabel>
+            <FieldLabel>ملخص سريع</FieldLabel>
             <TextArea
               rows={3}
               value={formState.shortDescription}
               onChange={(value) => setFormState((prev) => ({ ...prev, shortDescription: value }))}
-              placeholder="ملخص سريع في سطرين أو ثلاثة."
+              placeholder="اكتب سطرين أو ثلاثة يشرحان قيمة المشروع بسرعة."
             />
           </div>
           <div className="grid gap-2">
@@ -127,13 +178,13 @@ export function ContentStep({
               rows={4}
               value={formState.amenitiesText}
               onChange={(value) => setFormState((prev) => ({ ...prev, amenitiesText: value }))}
-              placeholder="مثال: مواقف خاصة، نادي، مصاعد، حراسة"
+              placeholder="مثال: مواقف خاصة، نادي، مسارات مشي، مصاعد ذكية، حراسة"
             />
-            <p className="text-sm text-muted-foreground">افصل بين كل ميزة بفاصلة أو سطر جديد.</p>
+            <p className="text-sm text-muted-foreground">افصل بين كل ميزة بفاصلة أو سطر جديد حتى تتحول إلى بطاقات واضحة في صفحة المشروع.</p>
           </div>
         </div>
       </SectionCard>
-    </div>
+    </StepShell>
   );
 }
 
@@ -151,8 +202,13 @@ export function GalleryStep(props: {
   uploadError: string | null;
 }) {
   return (
-    <div className="space-y-6">
-      <SectionCard title="إدارة الصور" description="ارفع الصور ثم اختر صورة الغلاف ورتب الصور بالشكل المناسب.">
+    <StepShell
+      badge="الخطوة 3"
+      title="رتّب الصورة البصرية للمشروع"
+      description="املأ هذه الخطوة بالصور التي تريد أن تقود الانطباع الأول، ثم اختر صورة الغلاف وطريقة عرضها."
+      checklist={["صورة غلاف قوية", "ترتيب الصور حسب الأولوية", "أسلوب عرض مناسب لكل لقطة"]}
+    >
+      <SectionCard title="مكتبة الصور" description="ارفع الصور الأساسية ثم اختر الغلاف ورتّب التسلسل كما تريد أن يراه المستلم.">
         <div className="space-y-4">
           <input
             ref={props.inputRef}
@@ -247,7 +303,7 @@ export function GalleryStep(props: {
         </div>
       </SectionCard>
 
-      <SectionCard title="أسلوب عرض المعرض" description="اختر كيف تُعرض الصور داخل المعرض دون الحاجة إلى أداة قص كاملة.">
+      <SectionCard title="طريقة عرض المعرض" description="حدد كيف ستظهر الصور داخل صفحة المشروع حتى تبقى القراءة البصرية متناسقة.">
         <div className="grid gap-5 md:grid-cols-2">
           <div className="grid gap-2">
             <FieldLabel>طريقة عرض الصورة</FieldLabel>
@@ -299,13 +355,13 @@ export function GalleryStep(props: {
               {props.formState.video ? "الفيديو مفعّل" : "تفعيل فيديو توضيحي"}
             </div>
             <div className="mt-1 text-xs font-semibold text-muted-foreground">
-              {props.formState.video ? "يمكنك إيقافه متى شئت." : "خيار اختياري لإرفاق فيديو قصير."}
+              {props.formState.video ? "يمكنك إيقافه أو تركه كإضافة داعمة للعرض." : "خيار إضافي لإرفاق فيديو قصير يدعم العرض البصري."}
             </div>
           </div>
           <Video className={`h-5 w-5 ${props.formState.video ? "text-emerald-300" : "text-muted-foreground"}`} />
         </button>
       </SectionCard>
-    </div>
+    </StepShell>
   );
 }
 
@@ -316,18 +372,23 @@ export function SpecsStep(props: {
   handleLicenseFiles: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   handleLicenseSubmit: () => Promise<void>;
   isLicenseUploading: boolean;
-  licenseDocs: Array<{ key: string; name: string }>;
+  licenseDocs: UploadedFileReference[];
   licenseError: string | null;
   licenseInputRef: React.MutableRefObject<HTMLInputElement | null>;
   licenseSubmitted: boolean;
   licenseSubmitting: boolean;
   propertyId?: string;
   setFormState: React.Dispatch<React.SetStateAction<AgPropertyFormState>>;
-  setLicenseDocs: React.Dispatch<React.SetStateAction<Array<{ key: string; name: string }>>>;
+  setLicenseDocs: React.Dispatch<React.SetStateAction<UploadedFileReference[]>>;
 }) {
   return (
-    <div className="space-y-6">
-      <SectionCard title="المواصفات" description="حدد حالة المشروع والمعلومات الأساسية التي تظهر في البطاقات.">
+    <StepShell
+      badge="الخطوة 4"
+      title="أكمل المواصفات والتوثيق"
+      description="هذه الخطوة تثبّت الحالة التشغيلية للمشروع وتجمع الأرقام والبيانات التي يعتمد عليها العرض والمتابعة."
+      checklist={["حالة تشغيل واضحة", "أرقام دقيقة للغرف والمساحة", "بيانات رخصة جاهزة للمراجعة"]}
+    >
+      <SectionCard title="مواصفات المشروع" description="راجع الحالة الحالية وأدخل التفاصيل الرقمية التي ستظهر في الصفحة وبطاقات المشروع.">
         <div className="grid gap-5">
           <div className="grid gap-2">
             <FieldLabel>حالة المشروع</FieldLabel>
@@ -401,7 +462,7 @@ export function SpecsStep(props: {
         </div>
       </SectionCard>
 
-      <SectionCard title="رخصة الإعلان" description="أدخل رقم الرخصة الآن، وارفع مستندات التوثيق عندما يكون المشروع محفوظاً.">
+      <SectionCard title="ملف الرخصة والتوثيق" description="أدخل رقم الرخصة الآن، ثم أرفق مستندات التوثيق بعد حفظ المشروع لأول مرة.">
         <div className="space-y-4">
           <div className="rounded-2xl border border-border bg-muted/20 p-4">
             <div className="mb-2 flex items-center justify-between gap-3">
@@ -483,7 +544,7 @@ export function SpecsStep(props: {
           )}
         </div>
       </SectionCard>
-    </div>
+    </StepShell>
   );
 }
 
@@ -500,10 +561,15 @@ export function SharingStep(props: {
   setSelectedBrokerId: React.Dispatch<React.SetStateAction<string | null>>;
 }) {
   return (
-    <div className="space-y-6">
+    <StepShell
+      badge="الخطوة 5"
+      title="نظّم الوصول والمشاركة"
+      description="اختر من يمكنه مشاهدة المشروع، وأضف أي تصريح خاص بالمحادثات، ثم اربطه بوسيط إذا كان ذلك مناسباً."
+      checklist={["تحديد مستوى الخصوصية", "إضافة تصريح خاص عند الحاجة", "ربط المشروع بوسيط إن وجد"]}
+    >
       <SectionCard
         title="رؤية المشروع"
-        description="حدد إذا كان المشروع عاماً أو خاصاً، وراجع من يملك حق المشاهدة عندما يكون خاصاً."
+        description="حدد ما إذا كان المشروع عاماً أو داخلياً، وتابع الجهات التي وصلت إليه عندما يكون خاصاً."
       >
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -517,7 +583,7 @@ export function SharingStep(props: {
               }`}
             >
               <div className="text-sm font-black">خاص</div>
-              <div className="mt-1 text-xs opacity-80">لا يظهر إلا للجهات التي يتم السماح لها بالمشاهدة.</div>
+              <div className="mt-1 text-xs opacity-80">يبقى داخل دائرة الوصول المصرح بها فقط.</div>
             </button>
             <button
               type="button"
@@ -529,7 +595,7 @@ export function SharingStep(props: {
               }`}
             >
               <div className="text-sm font-black">عام</div>
-              <div className="mt-1 text-xs opacity-80">يظهر في قنوات العميل والـ AI حسب حالة النشر.</div>
+              <div className="mt-1 text-xs opacity-80">جاهز للظهور في القنوات العامة بحسب حالة المشروع.</div>
             </button>
           </div>
 
@@ -577,7 +643,7 @@ export function SharingStep(props: {
         </div>
       </SectionCard>
 
-      <SectionCard title="تصريح خاص للمحادثة" description="سيظهر فقط للشخص الذي فُتح له المشروع عبر مشاركة خاصة في المحادثات.">
+      <SectionCard title="تصريح خاص للمحادثة" description="أضف ملخصاً أو ملفات لا تظهر إلا للطرف الذي استلم المشروع عبر مشاركة خاصة.">
         <div className="space-y-4">
           <TextArea
             rows={4}
@@ -628,7 +694,7 @@ export function SharingStep(props: {
         </div>
       </SectionCard>
 
-      <SectionCard title="تكليف وسيط" description="اختياري. يمكنك اختيار وسيط واحد لربط المشروع به من هذه الصفحة.">
+      <SectionCard title="ربط المشروع بوسيط" description="اختياري. استخدمه عندما تريد أن يبدأ وسيط محدد من نفس السياق مباشرة.">
         {props.selectedBroker ? (
           <div className="rounded-2xl border border-border bg-muted/20 p-4">
             <div className="flex items-center justify-between gap-3">
@@ -695,7 +761,7 @@ export function SharingStep(props: {
           </div>
         )}
       </SectionCard>
-    </div>
+    </StepShell>
   );
 }
 
@@ -707,8 +773,13 @@ export function ReviewStep(props: {
   submitLabel: string;
 }) {
   return (
-    <div className="space-y-6">
-      <SectionCard title="المراجعة النهائية" description="راجع أهم البيانات قبل الحفظ النهائي.">
+    <StepShell
+      badge="الخطوة 6"
+      title="راجع الصورة النهائية قبل الحفظ"
+      description="هذه المراجعة تجمع أهم ما سيظهر للفريق أو للمستلم حتى تتأكد أن المشروع جاهز للحفظ أو النشر."
+      checklist={["البيانات الأساسية مكتملة", "المعرض يعكس قيمة المشروع", "الخصوصية والحالة مضبوطة"]}
+    >
+      <SectionCard title="ملخص المشروع النهائي" description="تأكد من البيانات الرئيسية قبل تنفيذ الحفظ النهائي.">
         <div className="grid gap-3">
           <ReviewRow label="اسم المشروع" value={props.formState.name || "غير محدد"} />
           <ReviewRow label="السعر" value={props.formState.price || "غير محدد"} />
@@ -762,7 +833,7 @@ export function ReviewStep(props: {
         <div className="flex items-start gap-3 rounded-2xl border border-border bg-card/40 p-4 text-right">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
           <p className="text-sm leading-6 text-muted-foreground">
-            تم تبسيط هذا النموذج ليتصرف بشكل أنظف في Safari أيضاً: عمود واحد، أزرار واضحة، وصور داخل أطر ثابتة.
+            راجع الحالة ونوع الظهور والتصريح الخاص قبل الحفظ. هذه العناصر تحدد أين يظهر المشروع ومن يستطيع الوصول إليه.
           </p>
         </div>
 
@@ -777,19 +848,21 @@ export function ReviewStep(props: {
 
         <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
           <Check className="h-4 w-4" />
-          سيتم حفظ المشروع وفق الحالة المختارة والبيانات الظاهرة أعلاه.
+          سيتم حفظ المشروع وفق البيانات المعروضة هنا مع الحالة ومستوى الوصول المحددين.
         </div>
       </section>
-    </div>
+    </StepShell>
   );
 }
 
 export function StepNavigation({
+  activeStepTitle,
   activeStepSummary,
   currentStepIndex,
   isLastStep,
   setCurrentStepIndex,
 }: {
+  activeStepTitle: string;
   activeStepSummary: string;
   currentStepIndex: number;
   isLastStep: boolean;
@@ -797,20 +870,21 @@ export function StepNavigation({
 }) {
   return (
     <>
-      <section className="rounded-[28px] border border-border bg-card p-5 shadow-[0_12px_40px_rgba(0,0,0,0.2)] sm:p-6">
-        <div className="mb-5 flex items-center justify-between gap-4">
+      <section className="border-b border-border/60 pb-5">
+        <div className="mb-4 flex items-center justify-between gap-4">
           <div className="text-right">
             <div className="text-sm font-black text-foreground">
               الخطوة {currentStepIndex + 1} من {STEP_DEFINITIONS.length}
             </div>
+            <div className="mt-1 text-xl font-black text-foreground">{activeStepTitle}</div>
             <div className="mt-1 text-sm text-muted-foreground">{activeStepSummary}</div>
           </div>
-          <div className="inline-flex h-12 min-w-12 items-center justify-center rounded-full bg-foreground px-3 text-sm font-black text-background">
+          <div className="inline-flex h-11 min-w-11 items-center justify-center rounded-full bg-foreground px-3 text-sm font-black text-background">
             {currentStepIndex + 1}
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
+        <div className="flex flex-wrap gap-2">
           {STEP_DEFINITIONS.map((step, index) => {
             const isActive = index === currentStepIndex;
             const isCompleted = index < currentStepIndex;
@@ -819,47 +893,44 @@ export function StepNavigation({
                 key={step.key}
                 type="button"
                 onClick={() => setCurrentStepIndex(index)}
-                className={`rounded-xl border px-3 py-3 text-right transition ${
+                className={`rounded-full border px-4 py-2 text-right transition ${
                   isActive
-                    ? "border-border-foreground/45 bg-foreground/10 text-foreground"
+                    ? "border-foreground/30 bg-foreground text-background"
                     : isCompleted
-                      ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
-                      : "border-border bg-muted/20 text-foreground hover:border-border hover:bg-muted/40"
+                      ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                      : "border-border bg-background text-foreground hover:bg-muted/40"
                 }`}
               >
                 <div className="text-xs font-black">{step.title}</div>
-                <div className={`mt-1 text-[11px] ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
-                  {step.summary}
-                </div>
               </button>
             );
           })}
         </div>
       </section>
 
-      <section className="rounded-3xl border border-border bg-card p-4 md:p-6 shadow-xl shadow-black/[0.02]">
+      <section className="sticky bottom-4 z-10 rounded-2xl border border-border bg-background/95 p-4 backdrop-blur md:p-5">
         <div className="flex items-center justify-between gap-6">
           <button
             type="button"
             onClick={() => setCurrentStepIndex((current) => Math.max(0, current - 1))}
             disabled={currentStepIndex === 0}
-            className="group inline-flex items-center justify-center gap-2 rounded-2xl border border-border bg-muted/10 px-8 py-4 text-[13px] font-black uppercase tracking-[0.2em] text-foreground transition-all hover:bg-muted active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+            className="group inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-6 py-3 text-[13px] font-black text-foreground transition-all hover:bg-muted active:scale-95 disabled:pointer-events-none disabled:opacity-30"
           >
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            السابق
+            رجوع
           </button>
 
-          <div className="hidden text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 lg:block">
-            {isLastStep ? "المراجعة النهائية" : `التالي: ${STEP_DEFINITIONS[currentStepIndex + 1]?.title ?? ""}`}
+          <div className="hidden text-sm font-semibold text-muted-foreground lg:block">
+            {isLastStep ? "جاهز للحفظ" : `التالي: ${STEP_DEFINITIONS[currentStepIndex + 1]?.title ?? ""}`}
           </div>
 
           <button
             type="button"
             onClick={() => setCurrentStepIndex((current) => Math.min(STEP_DEFINITIONS.length - 1, current + 1))}
             disabled={isLastStep}
-            className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-foreground px-10 py-4 text-[13px] font-black uppercase tracking-[0.2em] text-background shadow-lg shadow-black/10 transition-all hover:opacity-90 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+            className="group inline-flex items-center justify-center gap-2 rounded-xl bg-foreground px-8 py-3 text-[13px] font-black text-background shadow-lg shadow-black/10 transition-all hover:opacity-90 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
           >
-            التالي
+            متابعة
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
           </button>
         </div>

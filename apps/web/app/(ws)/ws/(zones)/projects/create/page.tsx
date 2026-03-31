@@ -47,8 +47,8 @@ export default async function CreateProjectPage() {
 
   return (
     <ProjectFormScreen
-      title="إنشاء مشروع"
-      description="أضف مشروعاً جديداً وارفع صوره ثم احفظه داخل مساحة العمل."
+      title="إعداد مشروع جديد"
+      description="اتبع الخطوات لإدخال بيانات المشروع، ترتيب المعرض، ضبط الوصول، ثم مراجعة النسخة النهائية قبل الحفظ."
       submitLabel="حفظ المشروع"
       onSave={createProject}
     />

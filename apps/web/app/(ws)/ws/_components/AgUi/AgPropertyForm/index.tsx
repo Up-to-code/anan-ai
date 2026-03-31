@@ -106,7 +106,7 @@ export default function AgPropertyForm({
   };
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col pb-12">
+    <div className="flex min-h-full w-full flex-col pb-12">
       {form.showSafetyConfirm ? (
         <AgPropertyFormSafetyOverlay
           savePending={form.savePending}
@@ -122,8 +122,9 @@ export default function AgPropertyForm({
         actions={form.isEditMode ? <AgPropertyFormHeaderActions onCancel={onCancel} onDelete={onDelete} /> : undefined}
       />
 
-      <div className="space-y-6 px-1 py-4 lg:py-6">
+      <div className="space-y-6 py-4 lg:py-6">
         <StepNavigation
+          activeStepTitle={form.activeStep.title}
           activeStepSummary={form.activeStep.summary}
           currentStepIndex={form.currentStepIndex}
           isLastStep={form.isLastStep}
