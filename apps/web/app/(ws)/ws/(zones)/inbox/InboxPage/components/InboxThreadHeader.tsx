@@ -170,7 +170,7 @@ export default function InboxThreadHeader({
             type="button"
             onClick={onBack}
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition hover:bg-muted md:hidden"
-            aria-label="العودة"
+            aria-label="العودة إلى قائمة المحادثات"
           >
             <ArrowRight className="h-4 w-4" />
           </button>

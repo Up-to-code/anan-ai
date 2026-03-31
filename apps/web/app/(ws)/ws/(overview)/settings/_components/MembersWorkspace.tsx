@@ -9,6 +9,7 @@ import OrganizationMemberCard from "../../../_components/Visuals/OrganizationMem
 import type { OrganizationInviteDisplay, OrganizationMemberDisplay } from "../../../_lib/entities";
 import { getOrganizationMemberRoleLabel } from "../../../_lib/organizationMembers";
 import { cn } from "@/lib/utils";
+import type { DirectorySearchResult } from "@/server/contracts/organizations";
 
 const roles = ["manager", "member", "viewer"] as const;
 
@@ -108,12 +109,26 @@ export default function MembersWorkspace({
   canManage,
   hasOrganization,
   organizationType,
+  onCreateInvite,
+  onCancelInvite,
+  onSearchDirectory,
+  onUpdateRole,
 }: {
   initialMembers: OrganizationMemberDisplay[];
   invites: OrganizationInviteDisplay[];
   canManage: boolean;
   hasOrganization: boolean;
   organizationType: OrganizationSummary["type"] | null | undefined;
+  onCreateInvite: (input: {
+    email: string;
+    role: "manager" | "member" | "viewer";
+  }) => Promise<{ ok: true; message: string; inviteId?: string } | { ok: false; message: string }>;
+  onCancelInvite: (inviteId: string) => Promise<{ ok: true; message: string } | { ok: false; message: string }>;
+  onSearchDirectory: (query: string) => Promise<{ ok: true; results: DirectorySearchResult[] } | { ok: false; message: string }>;
+  onUpdateRole: (
+    membershipId: string,
+    input: { role: "manager" | "member" | "viewer" },
+  ) => Promise<{ ok: true; message: string } | { ok: false; message: string }>;
 }) {
   const [members, setMembers] = useState(initialMembers);
   const [pendingInvites, setPendingInvites] = useState(invites);
@@ -123,14 +138,9 @@ export default function MembersWorkspace({
   const handleRoleChange = async (member: OrganizationMemberDisplay, role: OrganizationMemberDisplay["role"]) => {
     if (!canManage || member.role === role) return;
     setStatus("جاري تحديث الدور...");
-    const response = await fetch(`/api/workspace/team-members/${member.membershipId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role }),
-    });
-    if (!response.ok) {
-      const payload = (await response.json()) as { message?: string };
-      setStatus(payload.message ?? "تعذر تحديث الدور.");
+    const result = await onUpdateRole(member.membershipId, { role });
+    if (!result.ok) {
+      setStatus(result.message);
       return;
     }
     setMembers((current) => current.map((entry) => (entry.id === member.id ? { ...entry, role } : entry)));
@@ -140,14 +150,13 @@ export default function MembersWorkspace({
 
   const handleCancelInvite = async (invite: OrganizationInviteDisplay) => {
     setStatus("جاري إلغاء الدعوة...");
-    const response = await fetch(`/api/workspace/team-invites/${invite.id}`, { method: "DELETE" });
-    if (!response.ok) {
-      const payload = (await response.json()) as { message?: string };
-      setStatus(payload.message ?? "تعذر إلغاء الدعوة.");
+    const result = await onCancelInvite(invite.id);
+    if (!result.ok) {
+      setStatus(result.message);
       return;
     }
     setPendingInvites((current) => current.filter((entry) => entry.id !== invite.id));
-    setStatus("تم إلغاء الدعوة.");
+    setStatus(result.message);
     queueStatusClear(setStatus);
   };
 
@@ -176,7 +185,13 @@ export default function MembersWorkspace({
                       </Dialog.Close>
                     </div>
                     <div className="p-1">
-                      <InviteMemberForm canManage={canManage} hasOrganization={hasOrganization} showHeader={false} />
+                      <InviteMemberForm
+                        canManage={canManage}
+                        hasOrganization={hasOrganization}
+                        showHeader={false}
+                        onCreateInvite={onCreateInvite}
+                        onSearchDirectory={onSearchDirectory}
+                      />
                     </div>
                   </div>
                 </Dialog.Popup>

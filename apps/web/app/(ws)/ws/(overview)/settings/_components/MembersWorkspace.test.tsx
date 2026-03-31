@@ -45,12 +45,15 @@ describe("MembersWorkspace", () => {
         canManage
         hasOrganization
         organizationType="broker"
+        onCreateInvite={vi.fn(async () => ({ ok: true as const, message: "ok", inviteId: "invite-1" }))}
+        onCancelInvite={vi.fn(async () => ({ ok: true as const, message: "ok" }))}
+        onSearchDirectory={vi.fn(async () => ({ ok: true as const, results: [] }))}
+        onUpdateRole={vi.fn(async () => ({ ok: true as const, message: "ok" }))}
       />,
     );
 
     expect(markup).toContain("سارة العتيبي");
-    expect(markup).toContain("فريق الوساطة");
-    expect(markup).toContain("إدارة الدور");
+    expect(markup).toContain("نشط");
     expect(markup).toContain("مدير");
     expect(markup).toContain("عضو");
     expect(markup).toContain("مشاهد");
@@ -83,13 +86,17 @@ describe("MembersWorkspace", () => {
         canManage
         hasOrganization
         organizationType="red"
+        onCreateInvite={vi.fn(async () => ({ ok: true as const, message: "ok", inviteId: "invite-1" }))}
+        onCancelInvite={vi.fn(async () => ({ ok: true as const, message: "ok" }))}
+        onSearchDirectory={vi.fn(async () => ({ ok: true as const, results: [] }))}
+        onUpdateRole={vi.fn(async () => ({ ok: true as const, message: "ok" }))}
       />,
     );
 
     expect(markup).toContain("الدعوات المعلقة (1)");
     expect(markup).toContain("new@example.com");
-    expect(markup).toContain("إلغاء الدعوة");
+    expect(markup).toContain("إلغاء");
     expect(markup).toContain("مشاهد");
-    expect(markup).toContain("فريق التطوير");
+    expect(markup).toContain("01/01/2026");
   });
 });

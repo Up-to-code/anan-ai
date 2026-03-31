@@ -35,12 +35,12 @@ export const LICENSE_STATUS_UI = {
 } as const;
 
 export const STEP_DEFINITIONS: StepDefinition[] = [
-  { key: "basic", title: "البيانات الأساسية", summary: "اسم المشروع والسعر والموقع" },
-  { key: "content", title: "الوصف والمحتوى", summary: "الوصف الكامل والوصف القصير والمزايا" },
-  { key: "gallery", title: "المعرض والصور", summary: "الرفع والترتيب وصورة الغلاف" },
-  { key: "specs", title: "المواصفات والترخيص", summary: "الغرف والحالة والمواقف والرخصة" },
-  { key: "sharing", title: "المشاركة الخاصة", summary: "التصريح الخاص وتكليف الوسيط" },
-  { key: "review", title: "المراجعة والحفظ", summary: "مراجعة نهائية قبل الحفظ" },
+  { key: "basic", title: "تعريف المشروع", summary: "الاسم والسعر والموقع وطريقة الظهور" },
+  { key: "content", title: "الرسالة التسويقية", summary: "الوصف المختصر والكامل والمزايا" },
+  { key: "gallery", title: "المعرض البصري", summary: "الصور والغلاف وأسلوب العرض" },
+  { key: "specs", title: "المواصفات والتوثيق", summary: "الحالة والغرف والمساحة والرخصة" },
+  { key: "sharing", title: "المشاركة والوصول", summary: "الخصوصية والتصريح الخاص وتكليف الوسيط" },
+  { key: "review", title: "المراجعة قبل الحفظ", summary: "تأكيد الصورة النهائية قبل حفظ المشروع" },
 ];
 
 export const GALLERY_DISPLAY_OPTIONS: Array<{ value: GalleryDisplayMode; label: string }> = [

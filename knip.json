@@ -1,16 +1,29 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": [
-    "apps/web/public/workspace-push-sw.js",
     "apps/mobile/babel.config.js",
     "apps/mobile/metro.config.js",
     "scripts/audit/analyze.mjs",
     "scripts/audit/generateAudit.mjs",
     "scripts/gates.mjs"
   ],
+  "ignoreDependencies": [
+    "react-native-worklets"
+  ],
+  "ignoreFiles": [
+    "apps/mobile/babel.config.js",
+    "apps/mobile/metro.config.js"
+  ],
+  "ignoreIssues": {
+    "apps/mobile/app.json": [
+      "unlisted"
+    ],
+    "vitest.config.ts": [
+      "unlisted"
+    ]
+  },
   "ignore": [
     "convex/_generated/**",
     "apps/**/.next/**"
   ]
 }
-

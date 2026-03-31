@@ -5,15 +5,22 @@ import type { OrganizationSummary } from "@/server/contracts/organizations";
 
 /**
  * WHY:   Organization settings need one focused client controller for renaming the current organization.
- * WHAT:  Renders the real current-organization form and posts changes to the gateway mutation endpoint.
+ * WHAT:  Renders the real current-organization form and submits changes through a server action.
  * HOW:   Keeps submission state local while the surrounding settings page stays server rendered.
  */
 export default function OrganizationSettingsWorkspace({
   organization,
   canManage,
+  onSave,
 }: {
   organization: OrganizationSummary | null;
   canManage: boolean;
+  onSave: (input: {
+    name: string;
+    description?: string;
+    website?: string;
+    contactEmail?: string;
+  }) => Promise<{ ok: true; message: string } | { ok: false; message: string }>;
 }) {
   const [name, setName] = useState(organization?.name ?? "");
   const [description, setDescription] = useState(organization?.description ?? "");
@@ -64,25 +71,13 @@ export default function OrganizationSettingsWorkspace({
 
           setIsSaving(true);
           setStatus("جاري حفظ بيانات المنظمة...");
-          const response = await fetch("/api/organizations/current", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name,
-              description: description.trim().length > 0 ? description : undefined,
-              website: website.trim().length > 0 ? website : undefined,
-              contactEmail: contactEmail.trim().length > 0 ? contactEmail : undefined,
-            }),
+          const result = await onSave({
+            name,
+            description: description.trim().length > 0 ? description : undefined,
+            website: website.trim().length > 0 ? website : undefined,
+            contactEmail: contactEmail.trim().length > 0 ? contactEmail : undefined,
           });
-          const payload = (await response.json()) as { message?: string };
-
-          if (!response.ok) {
-            setStatus(payload.message ?? "تعذر حفظ بيانات المنظمة.");
-            setIsSaving(false);
-            return;
-          }
-
-          setStatus("تم تحديث بيانات المنظمة.");
+          setStatus(result.message);
           setIsSaving(false);
         }}
       >

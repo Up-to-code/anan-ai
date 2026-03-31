@@ -4,6 +4,7 @@ import { getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapWorkspaceProjectToPropertyInput } from "../projectViewModel";
 import { requireSessionContext } from "@/server/auth/session";
 import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizationAssetsRepository";
+import { toProjectFormActionFailure, validateProjectFormSubmission } from "../projectFormSubmission";
 
 /**
  * WHY:   Projects need a direct-mode creation route to complement AI-driven draft creation.
@@ -18,37 +19,46 @@ export default async function CreateProjectPage() {
   async function createProject(data: import("@/app/(ws)/ws/public").ProjectFormData) {
     "use server";
 
-    const propertiesZone = getWorkspacePropertyZone(audience, ownerContext);
-    const id = await propertiesZone.createProperty(mapWorkspaceProjectToPropertyInput(data));
-    const session = await requireSessionContext();
-    const imageKeys = data.images.map((image) => image.key);
-    const permitKeys = data.privatePermitFiles.map((file) => file.key);
-
-    if (imageKeys.length > 0) {
-      await convexOrganizationAssetsRepository.attachOrganizationAssets(session.token, {
-        keys: imageKeys,
-        attachedEntityType: "project",
-        attachedEntityId: id,
-        visibilityScope: data.clientVisibility === "public" ? "public_project" : "organization",
-      });
+    const validationFeedback = validateProjectFormSubmission(data);
+    if (validationFeedback) {
+      return { ok: false, feedback: validationFeedback } as const;
     }
 
-    if (permitKeys.length > 0) {
-      await convexOrganizationAssetsRepository.attachOrganizationAssets(session.token, {
-        keys: permitKeys,
-        attachedEntityType: "project",
-        attachedEntityId: id,
-        visibilityScope: "project_private_share",
-      });
-    }
+    try {
+      const propertiesZone = getWorkspacePropertyZone(audience, ownerContext);
+      const id = await propertiesZone.createProperty(mapWorkspaceProjectToPropertyInput(data));
+      const session = await requireSessionContext();
+      const imageKeys = data.images.map((image) => image.key);
+      const permitKeys = data.privatePermitFiles.map((file) => file.key);
 
-    return { redirectTo: `/ws/projects/${id}` };
+      if (imageKeys.length > 0) {
+        await convexOrganizationAssetsRepository.attachOrganizationAssets(session.token, {
+          keys: imageKeys,
+          attachedEntityType: "project",
+          attachedEntityId: id,
+          visibilityScope: data.clientVisibility === "public" ? "public_project" : "organization",
+        });
+      }
+
+      if (permitKeys.length > 0) {
+        await convexOrganizationAssetsRepository.attachOrganizationAssets(session.token, {
+          keys: permitKeys,
+          attachedEntityType: "project",
+          attachedEntityId: id,
+          visibilityScope: "project_private_share",
+        });
+      }
+
+      return { ok: true, redirectTo: `/ws/projects/${id}` } as const;
+    } catch (error) {
+      return toProjectFormActionFailure(error);
+    }
   }
 
   return (
     <ProjectFormScreen
-      title="إنشاء مشروع"
-      description="أضف مشروعاً جديداً وارفع صوره ثم احفظه داخل مساحة العمل."
+      title="إعداد مشروع جديد"
+      description="اتبع الخطوات لإدخال بيانات المشروع، ترتيب المعرض، ضبط الوصول، ثم مراجعة النسخة النهائية قبل الحفظ."
       submitLabel="حفظ المشروع"
       onSave={createProject}
     />

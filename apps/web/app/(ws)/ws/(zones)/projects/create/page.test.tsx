@@ -31,6 +31,18 @@ vi.mock("@/server/ws/zones", () => ({
   })),
 }));
 
+vi.mock("@/server/auth/session", () => ({
+  requireSessionContext: vi.fn(async () => ({
+    token: "token",
+  })),
+}));
+
+vi.mock("@/server/infrastructure/convex/organizationAssetsRepository", () => ({
+  convexOrganizationAssetsRepository: {
+    attachOrganizationAssets: vi.fn(async () => undefined),
+  },
+}));
+
 vi.mock("../ProjectFormScreen", () => ({
   default: (props: unknown) => {
     setCapturedProps(props);
@@ -86,11 +98,11 @@ it("saves uploaded images as media and buyer-visible publication state separatel
   expect(markup).toContain("ProjectFormScreenMock");
 
   const props = getCapturedProps() as {
-    onSave: (data: ProjectFormData) => Promise<{ redirectTo: string }>;
+    onSave: (data: ProjectFormData) => Promise<{ ok: true; redirectTo: string } | { ok: false }>;
   };
   const result = await props.onSave(formInput);
 
-  expect(result).toEqual({ redirectTo: "/ws/projects/property-new" });
+  expect(result).toEqual({ ok: true, redirectTo: "/ws/projects/property-new" });
   expect(createProperty).toHaveBeenCalledWith(
     expect.objectContaining({
       media: [uploadedImage],
@@ -108,6 +120,19 @@ it("saves uploaded images as media and buyer-visible publication state separatel
           privatePermitSummary: "تصريح للطرف المستلم فقط",
         }),
       },
+    }),
+  );
+});
+
+it("passes the refreshed guided create copy to the form screen", async () => {
+  const element = await CreateProjectPage();
+  renderToStaticMarkup(element);
+
+  expect(getCapturedProps()).toEqual(
+    expect.objectContaining({
+      title: "إعداد مشروع جديد",
+      description: "اتبع الخطوات لإدخال بيانات المشروع، ترتيب المعرض، ضبط الوصول، ثم مراجعة النسخة النهائية قبل الحفظ.",
+      submitLabel: "حفظ المشروع",
     }),
   );
 });

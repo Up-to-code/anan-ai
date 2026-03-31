@@ -36,7 +36,6 @@
   },
   "dependencies": {
     "@00akshatsinha00/convex-cascading-delete": "^0.1.0",
-    "@ai-sdk/openai": "^2.0.57",
     "@ai-sdk/provider": "^3.0.8",
     "@auth/core": "^0.37.0",
     "@browserbasehq/convex-stagehand": "^0.0.2",
@@ -52,7 +51,6 @@
     "@mzedstudio/llm-cache": "^0.1.0",
     "@mzedstudio/uploadthingtrack": "^0.4.1",
     "@openrouter/ai-sdk-provider": "^1.5.4",
-    "@tabler/icons-react": "",
     "@toon-format/toon": "^2.1.0",
     "@types/web-push": "^3.6.4",
     "ai": "^5.0.82",
@@ -66,6 +64,7 @@
     "@types/node": "^20.14.9",
     "concurrently": "^9.2.1",
     "convex-test": "^0.0.41",
+    "knip": "5.88.1",
     "typescript": "^5.2.2",
     "vitest": "^2.0.0"
   },

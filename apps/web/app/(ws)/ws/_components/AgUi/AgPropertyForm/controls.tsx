@@ -10,8 +10,8 @@ export function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-border bg-card p-6 md:p-10 shadow-xl shadow-black/[0.02] transition-all">
-      <div className="mb-8 border-b border-border/40 pb-6 text-right">
+    <section className="rounded-2xl border border-border bg-card p-6 md:p-8 transition-all">
+      <div className="mb-6 border-b border-border/40 pb-4 text-right">
         <h3 className="text-xl font-black tracking-tight text-foreground">{title}</h3>
         {description ? <p className="mt-2 text-[14px] font-medium leading-relaxed text-muted-foreground/70">{description}</p> : null}
       </div>
@@ -31,6 +31,7 @@ export function TextInput({
   icon,
   type = "text",
   disabled = false,
+  error,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -38,18 +39,25 @@ export function TextInput({
   icon?: React.ReactNode;
   type?: "text" | "number";
   disabled?: boolean;
+  error?: string;
 }) {
   return (
-    <div className="relative">
-      <input
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        disabled={disabled}
-        className="h-14 w-full rounded-2xl border border-border/40 bg-muted/10 px-5 text-[15px] font-bold text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:border-foreground/20 focus:bg-muted/20 disabled:cursor-not-allowed disabled:opacity-50"
-      />
-      {icon ? <div className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground/30">{icon}</div> : null}
+    <div className="grid gap-2">
+      <div className="relative">
+        <input
+          type={type}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          disabled={disabled}
+          aria-invalid={Boolean(error)}
+          className={`h-14 w-full rounded-2xl border bg-muted/10 px-5 text-[15px] font-bold text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:bg-muted/20 disabled:cursor-not-allowed disabled:opacity-50 ${
+            error ? "border-rose-300 focus:border-rose-400" : "border-border/40 focus:border-foreground/20"
+          }`}
+        />
+        {icon ? <div className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground/30">{icon}</div> : null}
+      </div>
+      {error ? <p className="text-sm font-semibold text-rose-700">{error}</p> : null}
     </div>
   );
 }
@@ -59,20 +67,28 @@ export function TextArea({
   onChange,
   placeholder,
   rows = 4,
+  error,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
   rows?: number;
+  error?: string;
 }) {
   return (
-    <textarea
-      rows={rows}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      placeholder={placeholder}
-      className="w-full resize-none rounded-2xl border border-border/40 bg-muted/10 px-5 py-4 text-[15px] font-bold leading-7 text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:border-foreground/20 focus:bg-muted/20"
-    />
+    <div className="grid gap-2">
+      <textarea
+        rows={rows}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        aria-invalid={Boolean(error)}
+        className={`w-full resize-none rounded-2xl border bg-muted/10 px-5 py-4 text-[15px] font-bold leading-7 text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:bg-muted/20 ${
+          error ? "border-rose-300 focus:border-rose-400" : "border-border/40 focus:border-foreground/20"
+        }`}
+      />
+      {error ? <p className="text-sm font-semibold text-rose-700">{error}</p> : null}
+    </div>
   );
 }
 

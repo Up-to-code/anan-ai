@@ -82,6 +82,20 @@ vi.mock("./_components/OrganizationVerificationWorkspace", () => ({
 
 import WorkspaceSettingsPage from "./page";
 
+vi.mock("./actions", async () => {
+  const actual = await vi.importActual("./actions");
+  return {
+    ...actual,
+    cancelOrganizationInviteAction: vi.fn(),
+    createOrganizationApiKeyAction: vi.fn(),
+    createOrganizationInviteAction: vi.fn(),
+    revokeOrganizationApiKeyAction: vi.fn(),
+    saveOrganizationSettingsAction: vi.fn(),
+    searchOrganizationDirectoryAction: vi.fn(),
+    updateOrganizationMemberRoleAction: vi.fn(),
+  };
+});
+
 beforeEach(() => {
   getWorkspaceOrganizationTeam.mockReset();
   listCurrentOrganizationApiKeysForCurrentUser.mockReset();

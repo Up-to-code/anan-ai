@@ -42,10 +42,12 @@ it("renders the project form as a six-step wizard", () => {
   );
 
   expect(markup).toContain("الخطوة 1 من 6");
-  expect(markup).toContain("البيانات الأساسية");
-  expect(markup).toContain("الوصف والمحتوى");
-  expect(markup).toContain("المعرض والصور");
-  expect(markup).toContain("المواصفات والترخيص");
-  expect(markup).toContain("المشاركة الخاصة");
-  expect(markup).toContain("المراجعة والحفظ");
+  expect(markup).toContain("تعريف المشروع");
+  expect(markup).toContain("الرسالة التسويقية");
+  expect(markup).toContain("المعرض البصري");
+  expect(markup).toContain("المواصفات والتوثيق");
+  expect(markup).toContain("المشاركة والوصول");
+  expect(markup).toContain("المراجعة قبل الحفظ");
+  expect(markup).toContain("ابدأ بتعريف المشروع بوضوح");
+  expect(markup).toContain("الاسم والسعر والموقع وطريقة الظهور");
 });

@@ -150,6 +150,10 @@ function buildHaystack(profile: any, organizationName: string | null, role: stri
   ];
 }
 
+function matchesNormalizedQuery(haystack: string[], normalizedQuery: string) {
+  return haystack.some((entry) => entry.includes(normalizedQuery));
+}
+
 async function resolveMembershipState(params: {
   ctx: any;
   tenantOrgId: string | null;
@@ -231,16 +235,30 @@ async function hydrateCollaboratorTarget(params: { ctx: any; access: any; profil
   }
 
   const role = resolveCollaboratorRole(profile);
-  const organizationName = await getOrganizationNameByOwner(ctx, {
-    brokerId: profile.brokerId ?? undefined,
-    REDId: profile.REDId ?? undefined,
-  });
-  const haystack = buildHaystack(profile, organizationName, role);
-  if (!haystack.some((entry) => entry.includes(normalizedQuery))) {
-    return null;
+  const baseHaystack = buildHaystack(profile, null, role);
+  if (!matchesNormalizedQuery(baseHaystack, normalizedQuery)) {
+    const organizationName = await getOrganizationNameByOwner(ctx, {
+      brokerId: profile.brokerId ?? undefined,
+      REDId: profile.REDId ?? undefined,
+    });
+    const fullHaystack = buildHaystack(profile, organizationName, role);
+    if (!matchesNormalizedQuery(fullHaystack, normalizedQuery)) {
+      return null;
+    }
+
+    const [membershipState, conversationId, userImage] = await Promise.all([
+      resolveMembershipState({ ctx, invites, profile, tenantOrgId }),
+      resolveConversationId(ctx, access, profile),
+      getUserImageByEmail(ctx, profile.email),
+    ]);
+    return buildCollaboratorTarget({ profile, role, userImage, organizationName, membershipState, conversationId });
   }
 
-  const [membershipState, conversationId, userImage] = await Promise.all([
+  const [organizationName, membershipState, conversationId, userImage] = await Promise.all([
+    getOrganizationNameByOwner(ctx, {
+      brokerId: profile.brokerId ?? undefined,
+      REDId: profile.REDId ?? undefined,
+    }),
     resolveMembershipState({ ctx, invites, profile, tenantOrgId }),
     resolveConversationId(ctx, access, profile),
     getUserImageByEmail(ctx, profile.email),
@@ -281,28 +299,46 @@ export const searchConversationTargets = query({
       return searchTargetsAsUser(ctx, access, normalizedQuery);
     }
 
-    const profiles = await ctx.db
-      .query("userProfiles")
-      .withIndex("roleStatus", (q) => q.eq("roleStatus", "approved"))
-      .take(200);
     const owner = resolveWorkspaceOwner(access);
     const tenantOrgId = owner ? await resolveTenantOrgIdForOwner(ctx, owner) : null;
     const invites = tenantOrgId ? await tenants.listInvitations(ctx as never, tenantOrgId) : [];
 
-    const results = await Promise.all(
-      profiles.map(async (profile: any) =>
-        hydrateCollaboratorTarget({
-          access,
-          ctx,
-          invites,
-          normalizedQuery,
-          profile,
-          tenantOrgId,
-        })
-      )
-    );
+    const maxProfilesToScan = 1_000;
+    const pageSize = 200;
+    let scannedProfiles = 0;
+    let cursor: string | null = null;
+    const hydrated = [] as Array<Awaited<ReturnType<typeof hydrateCollaboratorTarget>>>;
 
-    return results
+    while (scannedProfiles < maxProfilesToScan) {
+      const page = await ctx.db
+        .query("userProfiles")
+        .withIndex("roleStatus", (q) => q.eq("roleStatus", "approved"))
+        .paginate({ numItems: pageSize, cursor });
+
+      scannedProfiles += page.page.length;
+
+      const pageResults = await Promise.all(
+        page.page.map(async (profile: any) =>
+          hydrateCollaboratorTarget({
+            access,
+            ctx,
+            invites,
+            normalizedQuery,
+            profile,
+            tenantOrgId,
+          })
+        )
+      );
+
+      hydrated.push(...pageResults.filter(Boolean));
+
+      if (page.isDone || !page.continueCursor) {
+        break;
+      }
+      cursor = page.continueCursor;
+    }
+
+    return hydrated
       .filter((item): item is NonNullable<typeof item> => Boolean(item))
       .sort((left, right) => left.name.localeCompare(right.name, "ar"))
       .slice(0, 20);

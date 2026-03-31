@@ -2,6 +2,7 @@ import { requireWorkspaceData } from "../../_lib/workspaceData";
 import { getCurrentProfileForCurrentUser } from "@/server/domains/auth/profiles/service";
 import ProfileWorkspace from "./_components/ProfileWorkspace";
 import ZonePageIntro from "../../_components/ZoneShell/ZonePageIntro";
+import { saveProfileAction } from "./actions";
 
 /**
  * WHY:   The workspace account center should reflect real profile and security state, not a placeholder card.
@@ -39,6 +40,7 @@ export default async function WorkspaceMePage() {
         initialProfile={resolvedProfile}
         fallbackName={workspace.user.name || "مستخدم عنان"}
         fallbackEmail={workspace.user.email || ""}
+        onSave={saveProfileAction}
       />
     </div>
   );

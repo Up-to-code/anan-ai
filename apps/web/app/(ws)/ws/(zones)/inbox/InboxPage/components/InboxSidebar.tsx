@@ -160,7 +160,7 @@ function SearchResultsState({
   if (hasSearch) {
     return (
       <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/5 px-4 py-6 text-center text-[12px] font-bold text-muted-foreground">
-        لا توجد نتائج مطابقة لبحثك.
+        لا توجد نتائج مطابقة.
       </div>
     );
   }

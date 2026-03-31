@@ -1,12 +1,15 @@
 import { requireSessionContext } from "@/server/auth/session";
 import type { PropertyDetail } from "@/server/contracts/properties";
 import type { WorkspaceAudience, WorkspaceOwnerContext } from "@/server/contracts/workspace";
-import { convexBrokerZoneRepository } from "@/server/infrastructure/convex/brokerZoneRepository";
 import { convexInboxRepository, type InboxRepository } from "@/server/infrastructure/convex/inboxRepository";
 import {
   convexProjectAccessRepository,
   type ProjectAccessRepository,
 } from "@/server/infrastructure/convex/projectAccessRepository";
+import {
+  convexSharedProjectDetailsRepository,
+  type SharedProjectDetailsRepository,
+} from "@/server/infrastructure/convex/sharedProjectDetailsRepository";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
 
 export type WorkspaceProjectDetailAccessMode = "owner" | "shared";
@@ -24,14 +27,14 @@ type WorkspaceProjectDetailResolverDependencies = {
     ProjectAccessRepository,
     "hasExplicitProjectViewerAccess" | "promoteCurrentUserToProjectViewer"
   >;
-  rawPropertyRepository: Pick<typeof convexBrokerZoneRepository, "getProperty">;
+  rawPropertyRepository: Pick<SharedProjectDetailsRepository, "getProperty">;
 };
 
 const defaultDependencies: WorkspaceProjectDetailResolverDependencies = {
   requireSession: requireSessionContext,
   inboxRepository: convexInboxRepository,
   projectAccessRepository: convexProjectAccessRepository,
-  rawPropertyRepository: convexBrokerZoneRepository,
+  rawPropertyRepository: convexSharedProjectDetailsRepository,
 };
 
 /**
