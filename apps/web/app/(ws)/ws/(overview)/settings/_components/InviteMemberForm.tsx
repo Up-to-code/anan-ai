@@ -1,22 +1,16 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useMutation } from "convex/react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/convexApi";
+import type { DirectorySearchResult } from "@/server/contracts/organizations";
 const roleLabels: Record<"manager" | "member" | "viewer", string> = {
   manager: "مدير",
   member: "عضو",
   viewer: "مشاهد",
 };
-type DirectoryResult = {
-  id: string;
-  authUserId: string;
-  email: string;
-  name: string;
-  username?: string;
-  membershipState: "not-member" | "pending-invite" | "member";
-  canMessage: boolean;
-  conversationId?: string | null;
-};
+type DirectoryResult = DirectorySearchResult;
 function MembershipStateBadge({ state }: { state: DirectoryResult["membershipState"] }) {
   const toneClass
     = state === "member"
@@ -104,20 +98,28 @@ function InviteResultRow({
   );
 }
 /**
- * WHY:   The workspace settings area needs a simple invite flow that maps to the existing team-invite API.
+ * WHY:   The workspace settings area needs a simple invite flow that stays inside the app boundary.
  * WHAT:  Renders exact-match directory search plus invite/message actions for the current organization.
- * HOW:   Searches only by full email or username, then lets managers invite or open direct conversations from the same result row.
+ * HOW:   Searches only by full email or username, uses server actions for team operations, and opens direct conversations through Convex.
  */
 export default function InviteMemberForm({
   canManage = true,
   showHeader = true,
   hasOrganization = true,
+  onCreateInvite,
+  onSearchDirectory,
 }: {
   canManage?: boolean;
   showHeader?: boolean;
   hasOrganization?: boolean;
+  onCreateInvite: (input: {
+    email: string;
+    role: "manager" | "member" | "viewer";
+  }) => Promise<{ ok: true; message: string; inviteId?: string } | { ok: false; message: string }>;
+  onSearchDirectory: (query: string) => Promise<{ ok: true; results: DirectoryResult[] } | { ok: false; message: string }>;
 }) {
   const router = useRouter();
+  const resolveConversation = useMutation(api.shared_logic.inbox.resolveDirectConversation);
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<"manager" | "member" | "viewer">("member");
   const [results, setResults] = useState<DirectoryResult[]>([]);
@@ -131,18 +133,13 @@ export default function InviteMemberForm({
     }
     setIsSubmitting(true);
     setStatus("جاري إرسال الدعوة...");
-    const response = await fetch("/api/workspace/team-invites", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, role }),
-    });
-    const payload = response.status === 201 ? null : ((await response.json()) as { message?: string });
-    if (!response.ok) {
-      setStatus(payload?.message ?? "تعذر إرسال الدعوة.");
+    const result = await onCreateInvite({ email, role });
+    if (!result.ok) {
+      setStatus(result.message);
       setIsSubmitting(false);
       return;
     }
-    setStatus("تم إرسال الدعوة بنجاح.");
+    setStatus(result.message);
     setResults((current) =>
       current.map((result) =>
         result.email === email ? { ...result, membershipState: "pending-invite" } : result,
@@ -155,17 +152,12 @@ export default function InviteMemberForm({
       router.push(`/ws/inbox/${conversationId}`);
       return;
     }
-    const response = await fetch("/api/workspace/inbox", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ intent: "resolve", targetUserId }),
-    });
-    if (!response.ok) {
+    try {
+      const conversationId = await resolveConversation({ targetUserId });
+      router.push(`/ws/inbox/${conversationId}`);
+    } catch {
       setStatus("تعذر فتح المحادثة.");
-      return;
     }
-    const payload = (await response.json()) as { conversationId: string };
-    router.push(`/ws/inbox/${payload.conversationId}`);
   }
   return (
     <form
@@ -178,18 +170,15 @@ export default function InviteMemberForm({
         }
         setIsSearching(true);
         setStatus("جاري البحث...");
-        const response = await fetch(`/api/workspace/directory?q=${encodeURIComponent(query.trim())}`, {
-          cache: "no-store",
-        });
-        const payload = (await response.json()) as DirectoryResult[] | { message?: string };
-        if (!response.ok) {
+        const result = await onSearchDirectory(query.trim());
+        if (!result.ok) {
           setResults([]);
-          setStatus(("message" in payload ? payload.message : null) ?? "تعذر البحث.");
+          setStatus(result.message);
           setIsSearching(false);
           return;
         }
-        setResults(Array.isArray(payload) ? payload : []);
-        setStatus(Array.isArray(payload) && payload.length === 0 ? "لا توجد نتيجة مطابقة. يمكنك دعوة البريد الكامل مباشرة." : null);
+        setResults(result.results);
+        setStatus(result.results.length === 0 ? "لا توجد نتيجة مطابقة. يمكنك دعوة البريد الكامل مباشرة." : null);
         setIsSearching(false);
       }}
     >

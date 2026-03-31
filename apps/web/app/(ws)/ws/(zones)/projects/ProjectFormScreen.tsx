@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AgDeleteConfirmModal, AgPropertyForm, type ProjectFormData } from "@/app/(ws)/ws/public";
-import { toProjectFormClientResult, type ProjectFormActionResult, type ProjectFormClientResult } from "./projectFormSubmission";
+import type { ProjectFormActionResult, ProjectFormSaveResult } from "./projectFormSubmission";
 
 type ProjectFormScreenProps = {
   projectId?: string;
@@ -47,14 +47,14 @@ function useProjectFormActions(args: {
   const [pending, startTransition] = useTransition();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const cancelHref = args.projectId ? `/ws/projects/${args.projectId}` : "/ws/projects";
-  const handleSave = async (data: ProjectFormData): Promise<ProjectFormClientResult> => {
+  const handleSave = async (data: ProjectFormData): Promise<ProjectFormSaveResult> => {
     const result = await args.onSave(data);
     if (!result.ok) {
-      return toProjectFormClientResult(result);
+      return result;
     }
 
     startTransition(() => router.push(result.redirectTo));
-    return toProjectFormClientResult(result);
+    return { ok: true };
   };
   const handleDeleteConfirm = () => {
     if (!args.onDelete) return;
@@ -80,7 +80,7 @@ function ProjectFormLayout(args: {
   description: string;
   submitLabel: string;
   pending: boolean;
-  onSave: (data: ProjectFormData) => Promise<ProjectFormClientResult>;
+  onSave: (data: ProjectFormData) => Promise<ProjectFormSaveResult>;
   onCancel: () => void;
   onDelete?: () => void;
   onRevokeViewer?: (viewerAuthUserId: string) => Promise<void>;

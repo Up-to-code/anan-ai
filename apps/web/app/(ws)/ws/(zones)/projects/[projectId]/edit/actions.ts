@@ -6,7 +6,6 @@ import { convexProjectAccessRepository } from "@/server/infrastructure/convex/pr
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapWorkspaceProjectToPropertyInput } from "../../projectViewModel";
 import type { ProjectFormData } from "@/app/(ws)/ws/public";
-import { attachProjectFormAssets } from "../../projectFormServer";
 import { toProjectFormActionFailure, validateProjectFormSubmission } from "../../projectFormSubmission";
 
 type WorkspaceActionArgs = {
@@ -23,11 +22,33 @@ export async function saveProjectAction(args: WorkspaceActionArgs, data: Project
 
   try {
     const actionZone = getWorkspacePropertyZone(args.audience, args.ownerContext);
+    const session = await requireSessionContext();
     await actionZone.updateProperty({
       id: args.projectId,
       patch: mapWorkspaceProjectToPropertyInput(data),
     });
-    await attachProjectFormAssets(args.projectId, data);
+
+    const imageKeys = data.images.map((image) => image.key);
+    const permitKeys = data.privatePermitFiles.map((file) => file.key);
+
+    if (imageKeys.length > 0) {
+      await convexOrganizationAssetsRepository.attachOrganizationAssets(session.token, {
+        keys: imageKeys,
+        attachedEntityType: "project",
+        attachedEntityId: args.projectId,
+        visibilityScope: data.clientVisibility === "public" ? "public_project" : "organization",
+      });
+    }
+
+    if (permitKeys.length > 0) {
+      await convexOrganizationAssetsRepository.attachOrganizationAssets(session.token, {
+        keys: permitKeys,
+        attachedEntityType: "project",
+        attachedEntityId: args.projectId,
+        visibilityScope: "project_private_share",
+      });
+    }
+
     return { ok: true, redirectTo: `/ws/projects/${args.projectId}` } as const;
   } catch (error) {
     return toProjectFormActionFailure(error);

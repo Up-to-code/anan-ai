@@ -1,7 +1,7 @@
 import type { UploadedFileReference } from "@/server/contracts/files";
 import type { PropertyViewerSummary } from "@/server/contracts/properties";
 import type { BrokerPresence } from "../../Visuals/BrokerPresenceChip";
-import type { ProjectFormClientResult } from "../../../(zones)/projects/projectFormSubmission";
+import type { ProjectFormSaveResult } from "../../../(zones)/projects/projectFormSubmission";
 
 export type GalleryDisplayMode = "cover" | "fit";
 export type GalleryAspectRatio = "auto" | "landscape" | "square" | "portrait";
@@ -40,7 +40,7 @@ export type AgPropertyFormProps = {
   title?: string;
   description?: string;
   submitLabel?: string;
-  onSave?: (data: ProjectFormData) => Promise<ProjectFormClientResult> | ProjectFormClientResult;
+  onSave?: (data: ProjectFormData) => Promise<ProjectFormSaveResult> | ProjectFormSaveResult;
   onCancel?: () => void;
   onDelete?: () => void;
   onRevokeViewer?: (viewerAuthUserId: string) => Promise<void> | void;

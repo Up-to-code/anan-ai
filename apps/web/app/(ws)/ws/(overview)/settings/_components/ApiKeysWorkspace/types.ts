@@ -2,6 +2,7 @@ import type {
   OrganizationApiKeySecretResult,
   OrganizationApiKeySummary,
 } from "@/server/contracts/organizationApiKeys";
+import type { CreateOrganizationApiKeyInput } from "@/server/contracts/organizationApiKeys";
 
 export type ApiKeysWorkspaceProps = {
   initialKeys: OrganizationApiKeySummary[];
@@ -9,6 +10,10 @@ export type ApiKeysWorkspaceProps = {
   canRevoke: boolean;
   canView: boolean;
   hasOrganization: boolean;
+  onCreateKey: (
+    input: CreateOrganizationApiKeyInput,
+  ) => Promise<{ ok: true; message: string; result: OrganizationApiKeySecretResult } | { ok: false; message: string }>;
+  onRevokeKey: (keyId: string) => Promise<{ ok: true; message: string } | { ok: false; message: string }>;
 };
 
 export type ApiKeysWorkspaceState = {

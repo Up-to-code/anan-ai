@@ -1,10 +1,11 @@
 import ZonePageIntro from "../../../../_components/ZoneShell/ZonePageIntro";
 import InviteMemberForm from "../../../../(overview)/settings/_components/InviteMemberForm";
+import { createOrganizationInviteAction, searchOrganizationDirectoryAction } from "../../../../(overview)/settings/actions";
 
 /**
  * WHY:   Broker invitation should reuse the real organization invite flow rather than a mock form.
  * WHAT:  Renders the shared invite form inside the CRM broker context.
- * HOW:   Posts to the existing workspace invite API so accepted invites appear in the real team list.
+ * HOW:   Reuses the workspace server actions so accepted invites appear in the real team list.
  */
 export default function InviteBrokerPage() {
   return (
@@ -16,7 +17,10 @@ export default function InviteBrokerPage() {
       />
 
       <div className="px-6 py-6 lg:px-8 lg:py-8">
-        <InviteMemberForm />
+        <InviteMemberForm
+          onCreateInvite={createOrganizationInviteAction}
+          onSearchDirectory={searchOrganizationDirectoryAction}
+        />
       </div>
     </div>
   );
