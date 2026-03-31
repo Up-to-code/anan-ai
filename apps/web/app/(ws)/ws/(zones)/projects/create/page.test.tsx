@@ -98,11 +98,11 @@ it("saves uploaded images as media and buyer-visible publication state separatel
   expect(markup).toContain("ProjectFormScreenMock");
 
   const props = getCapturedProps() as {
-    onSave: (data: ProjectFormData) => Promise<{ redirectTo: string }>;
+    onSave: (data: ProjectFormData) => Promise<{ ok: true; redirectTo: string } | { ok: false }>;
   };
   const result = await props.onSave(formInput);
 
-  expect(result).toEqual({ redirectTo: "/ws/projects/property-new" });
+  expect(result).toEqual({ ok: true, redirectTo: "/ws/projects/property-new" });
   expect(createProperty).toHaveBeenCalledWith(
     expect.objectContaining({
       media: [uploadedImage],

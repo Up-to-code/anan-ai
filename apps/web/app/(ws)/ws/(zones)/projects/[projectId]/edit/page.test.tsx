@@ -154,7 +154,7 @@ const saveFormInput: ProjectFormData = {
 
 type CapturedEditProps = {
   initialData: Partial<ProjectFormData>;
-  onSave: (data: ProjectFormData) => Promise<{ redirectTo: string }>;
+  onSave: (data: ProjectFormData) => Promise<{ ok: true; redirectTo: string } | { ok: false }>;
   onDelete: () => Promise<{ redirectTo: string }>;
 };
 
@@ -193,7 +193,7 @@ it("updates project media through the mapped patch without implicit publish side
   ]);
 
   const saveResult = await props.onSave(saveFormInput);
-  expect(saveResult).toEqual({ redirectTo: "/ws/projects/property-1" });
+  expect(saveResult).toEqual({ ok: true, redirectTo: "/ws/projects/property-1" });
   expect(updateProperty).toHaveBeenCalledWith({
     id: "property-1",
     patch: expect.objectContaining({

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import type { UploadedFileReference } from "@/server/contracts/files";
 import type { BrokerPresence } from "../../Visuals/BrokerPresenceChip";
+import type { ProjectFormFieldErrors } from "../../../(zones)/projects/projectFormSubmission";
 import { BrokerAvatar, FieldLabel, ReviewRow, SectionCard, TextArea, TextInput, UploadTile } from "./controls";
 import { GALLERY_ASPECT_OPTIONS, GALLERY_DISPLAY_OPTIONS, STEP_DEFINITIONS } from "./shared";
 import type { AgPropertyFormState } from "./shared";
@@ -59,9 +60,11 @@ function StepShell({
 
 export function BasicStep({
   formState,
+  fieldErrors,
   setFormState,
 }: {
   formState: AgPropertyFormState;
+  fieldErrors: ProjectFormFieldErrors;
   setFormState: React.Dispatch<React.SetStateAction<AgPropertyFormState>>;
 }) {
   return (
@@ -80,6 +83,7 @@ export function BasicStep({
               onChange={(value) => setFormState((prev) => ({ ...prev, name: value }))}
               placeholder="مثال: أبراج الياسمين"
               icon={<Building2 className="h-4 w-4" />}
+              error={fieldErrors.name}
             />
           </div>
 
@@ -90,6 +94,7 @@ export function BasicStep({
                 value={formState.price}
                 onChange={(value) => setFormState((prev) => ({ ...prev, price: value }))}
                 placeholder="مثال: 2,500,000 ر.س"
+                error={fieldErrors.price}
               />
             </div>
             <div className="grid gap-2">
@@ -99,6 +104,7 @@ export function BasicStep({
                 onChange={(value) => setFormState((prev) => ({ ...prev, location: value }))}
                 placeholder="مثال: جدة، أبحر الشمالية"
                 icon={<MapPin className="h-4 w-4" />}
+                error={fieldErrors.location}
               />
             </div>
           </div>
@@ -140,9 +146,11 @@ export function BasicStep({
 
 export function ContentStep({
   formState,
+  fieldErrors,
   setFormState,
 }: {
   formState: AgPropertyFormState;
+  fieldErrors: ProjectFormFieldErrors;
   setFormState: React.Dispatch<React.SetStateAction<AgPropertyFormState>>;
 }) {
   return (
@@ -158,6 +166,7 @@ export function ContentStep({
           value={formState.description}
           onChange={(value) => setFormState((prev) => ({ ...prev, description: value }))}
           placeholder="اشرح المشروع، طبيعة الوحدات، المنطقة، قيمة الشراء، وأي تفاصيل يحتاجها الوسيط أو العميل لفهم العرض."
+          error={fieldErrors.description}
         />
       </SectionCard>
 
@@ -170,6 +179,7 @@ export function ContentStep({
               value={formState.shortDescription}
               onChange={(value) => setFormState((prev) => ({ ...prev, shortDescription: value }))}
               placeholder="اكتب سطرين أو ثلاثة يشرحان قيمة المشروع بسرعة."
+              error={fieldErrors.shortDescription}
             />
           </div>
           <div className="grid gap-2">
@@ -179,6 +189,7 @@ export function ContentStep({
               value={formState.amenitiesText}
               onChange={(value) => setFormState((prev) => ({ ...prev, amenitiesText: value }))}
               placeholder="مثال: مواقف خاصة، نادي، مسارات مشي، مصاعد ذكية، حراسة"
+              error={fieldErrors.amenitiesText}
             />
             <p className="text-sm text-muted-foreground">افصل بين كل ميزة بفاصلة أو سطر جديد حتى تتحول إلى بطاقات واضحة في صفحة المشروع.</p>
           </div>
@@ -189,6 +200,7 @@ export function ContentStep({
 }
 
 export function GalleryStep(props: {
+  fieldErrors: ProjectFormFieldErrors;
   formState: AgPropertyFormState;
   handleImageSelection: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   inputRef: React.MutableRefObject<HTMLInputElement | null>;
@@ -229,6 +241,11 @@ export function GalleryStep(props: {
           {props.uploadError ? (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
               {props.uploadError}
+            </div>
+          ) : null}
+          {props.fieldErrors.images ? (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+              {props.fieldErrors.images}
             </div>
           ) : null}
 
@@ -368,6 +385,7 @@ export function GalleryStep(props: {
 export function SpecsStep(props: {
   adLicenseLabel: string;
   adLicenseTone: string;
+  fieldErrors: ProjectFormFieldErrors;
   formState: AgPropertyFormState;
   handleLicenseFiles: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   handleLicenseSubmit: () => Promise<void>;
@@ -411,6 +429,7 @@ export function SpecsStep(props: {
                 value={props.formState.rooms}
                 onChange={(value) => props.setFormState((prev) => ({ ...prev, rooms: value }))}
                 placeholder="0"
+                error={props.fieldErrors.rooms}
               />
             </div>
             <div className="grid gap-2">
@@ -420,6 +439,7 @@ export function SpecsStep(props: {
                 value={props.formState.baths}
                 onChange={(value) => props.setFormState((prev) => ({ ...prev, baths: value }))}
                 placeholder="0"
+                error={props.fieldErrors.baths}
               />
             </div>
             <div className="grid gap-2">
@@ -428,6 +448,7 @@ export function SpecsStep(props: {
                 value={props.formState.area}
                 onChange={(value) => props.setFormState((prev) => ({ ...prev, area: value }))}
                 placeholder="مثال: 380"
+                error={props.fieldErrors.area}
               />
             </div>
           </div>
@@ -457,6 +478,7 @@ export function SpecsStep(props: {
               onChange={(value) => props.setFormState((prev) => ({ ...prev, parkingSpaces: value }))}
               placeholder="عدد المواقف"
               disabled={!props.formState.hasParking}
+              error={props.fieldErrors.parkingSpaces}
             />
           </div>
         </div>
@@ -480,6 +502,7 @@ export function SpecsStep(props: {
               value={props.formState.adLicenseNumber}
               onChange={(value) => props.setFormState((prev) => ({ ...prev, adLicenseNumber: value }))}
               placeholder="مثال: AD-12345"
+              error={props.fieldErrors.adLicenseNumber}
             />
           </div>
 
@@ -550,6 +573,7 @@ export function SpecsStep(props: {
 
 export function SharingStep(props: {
   brokerSearch: string;
+  fieldErrors: ProjectFormFieldErrors;
   filteredBrokers: BrokerPresence[];
   formState: AgPropertyFormState;
   handlePermitFiles: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
@@ -650,6 +674,7 @@ export function SharingStep(props: {
             value={props.formState.privatePermitSummary}
             onChange={(value) => props.setFormState((prev) => ({ ...prev, privatePermitSummary: value }))}
             placeholder="اكتب ملخصاً قصيراً يشرح هذا التصريح أو التخصيص الخاص."
+            error={props.fieldErrors.privatePermitSummary}
           />
 
           <input
@@ -689,6 +714,11 @@ export function SharingStep(props: {
                   <div className="truncate text-sm font-bold text-foreground">{doc.name}</div>
                 </div>
               ))}
+            </div>
+          ) : null}
+          {props.fieldErrors.privatePermitFiles ? (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+              {props.fieldErrors.privatePermitFiles}
             </div>
           ) : null}
         </div>

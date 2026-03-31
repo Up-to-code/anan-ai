@@ -4,6 +4,11 @@ import { useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useUploadThing } from "@/lib/uploadthing";
 import type { UploadedFileReference } from "@/server/contracts/files";
 import type { BrokerPresence } from "../../Visuals/BrokerPresenceChip";
+import {
+  getFirstProjectFormErrorStep,
+  type ProjectFormSubmissionFeedback,
+  validateProjectFormSubmission,
+} from "../../../(zones)/projects/projectFormSubmission";
 import { createInitialFormState, STEP_DEFINITIONS } from "./shared";
 import type { AgPropertyFormState } from "./shared";
 import type { AgPropertyFormProps, ProjectFormData } from "./types";
@@ -24,6 +29,7 @@ export function useAgPropertyForm({
   const [brokerSearch, setBrokerSearch] = useState("");
   const [showSafetyConfirm, setShowSafetyConfirm] = useState(false);
   const [savePending, setSavePending] = useState(false);
+  const [submissionFeedback, setSubmissionFeedback] = useState<ProjectFormSubmissionFeedback | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -65,6 +71,12 @@ export function useAgPropertyForm({
   const isLastStep = currentStepIndex === STEP_DEFINITIONS.length - 1;
   const previewAspectClass = getGalleryAspectClass(formState.galleryAspectRatio);
   const previewObjectClass = formState.galleryDisplayMode === "fit" ? "object-contain" : "object-cover";
+
+  const clearSubmissionFeedback = () => setSubmissionFeedback(null);
+  const setFormStateWithFeedbackReset: React.Dispatch<React.SetStateAction<AgPropertyFormState>> = (value) => {
+    clearSubmissionFeedback();
+    setFormState(value);
+  };
 
   const setCoverImageKey = (nextCoverImageKey: string | null) => {
     setFormState((prev) => ({
@@ -226,11 +238,26 @@ export function useAgPropertyForm({
       adLicenseStatus,
       visibilityMembers: formState.visibilityMembers,
     };
+    const validationFeedback = validateProjectFormSubmission(payload);
+    if (validationFeedback) {
+      setSubmissionFeedback(validationFeedback);
+      setCurrentStepIndex(getFirstProjectFormErrorStep(validationFeedback.fieldErrors));
+      setShowSafetyConfirm(false);
+      return;
+    }
+
     setSavePending(true);
     try {
       if (onSave) {
-        await onSave(payload);
+        const result = await onSave(payload);
+        if (!result.ok) {
+          setSubmissionFeedback(result.feedback);
+          setCurrentStepIndex(getFirstProjectFormErrorStep(result.feedback.fieldErrors));
+          setShowSafetyConfirm(false);
+          return;
+        }
       }
+      setSubmissionFeedback(null);
       setShowSafetyConfirm(false);
     } finally {
       setSavePending(false);
@@ -269,14 +296,15 @@ export function useAgPropertyForm({
     savePending,
     selectedBroker,
     selectedBrokerId,
+    setCurrentStepIndex,
     setBrokerSearch,
     setCoverImageKey,
-    setCurrentStepIndex,
-    setFormState,
+    setFormState: setFormStateWithFeedbackReset,
     setLicenseDocs,
     setSelectedBrokerId,
     setShowSafetyConfirm,
     showSafetyConfirm,
+    submissionFeedback,
     uploadError,
   };
 }

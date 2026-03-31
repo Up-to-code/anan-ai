@@ -30,7 +30,7 @@ export type ProjectFormActionResult =
   | { ok: true; redirectTo: string }
   | { ok: false; feedback: ProjectFormSubmissionFeedback };
 
-export type ProjectFormClientResult =
+export type ProjectFormSaveResult =
   | { ok: true }
   | { ok: false; feedback: ProjectFormSubmissionFeedback };
 
@@ -126,6 +126,11 @@ function buildFeedback(message: string, fieldErrors: ProjectFormFieldErrors = {}
   };
 }
 
+/**
+ * WHY:   The project wizard needs immediate, field-level feedback before sending writes to the backend.
+ * WHAT:  Validates the raw form payload and returns a normalized message plus field errors when invalid.
+ * HOW:   Uses a Zod schema for required fields and numeric invariants, then flattens issues into UI-friendly keys.
+ */
 export function validateProjectFormSubmission(data: ProjectFormData): ProjectFormSubmissionFeedback | null {
   const parsed = projectFormSchema.safeParse(data);
   if (parsed.success) {
@@ -135,6 +140,11 @@ export function validateProjectFormSubmission(data: ProjectFormData): ProjectFor
   return buildFeedback("راجع الحقول المطلوبة ثم حاول الحفظ مرة أخرى.", buildFieldErrors(parsed.error));
 }
 
+/**
+ * WHY:   Project create/edit routes should not leak raw domain or Convex failures back into the client form.
+ * WHAT:  Maps any thrown server-side error into the shared failed action result shape.
+ * HOW:   Normalizes the error through the gateway error helper and returns a generic feedback payload.
+ */
 export function toProjectFormActionFailure(error: unknown): ProjectFormActionResult {
   const domainError = normalizeDomainError(error);
   return {
@@ -143,14 +153,11 @@ export function toProjectFormActionFailure(error: unknown): ProjectFormActionRes
   };
 }
 
-export function toProjectFormClientResult(result: ProjectFormActionResult): ProjectFormClientResult {
-  if (result.ok) {
-    return { ok: true };
-  }
-
-  return result;
-}
-
+/**
+ * WHY:   Validation errors should move the wizard to the first affected step instead of staying on review.
+ * WHAT:  Resolves the earliest step index touched by the current field errors.
+ * HOW:   Checks the shared field-to-step order and falls back to the review step when only a general message exists.
+ */
 export function getFirstProjectFormErrorStep(fieldErrors: ProjectFormFieldErrors): number {
   const entries = Object.entries(fieldErrors);
   if (entries.length === 0) {
