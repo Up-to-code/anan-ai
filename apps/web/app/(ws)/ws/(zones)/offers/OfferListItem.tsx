@@ -14,6 +14,7 @@ import {
   Phone,
 } from "lucide-react";
 import {
+  buildClientRequirementViewModel,
   buildWhatsAppHref,
   formatOfferMarketplaceLabel,
   formatOfferPrice,
@@ -102,17 +103,22 @@ function OfferPropertyCard({ item }: { item: WorkspaceOfferSummary }) {
 function OfferClientCard({ item }: { item: WorkspaceOfferSummary }) {
   const client = item.clientContext;
   if (!client) return null;
+  const requirement = buildClientRequirementViewModel(client);
+  if (!requirement) return null;
 
   return (
     <div className="rounded-[20px] border border-border/50 bg-background/70 p-4 text-right">
       <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">طلب عميل</div>
-      <div className="mt-1 text-[15px] font-black text-foreground">{client.clientName}</div>
-      <div className="mt-2 text-[13px] leading-6 text-muted-foreground">{client.clientNeed}</div>
+      <div className="mt-2 text-[13px] leading-6 text-muted-foreground">{requirement.summary}</div>
 
       <div className="mt-3 flex flex-wrap justify-end gap-2">
-        {client.clientBudget ? <InfoRow icon={Tag} label="الميزانية" value={client.clientBudget} /> : null}
-        {client.clientPhone ? <InfoRow icon={Phone} label="الهاتف" value={client.clientPhone} /> : null}
-        {item.property?.title ? <InfoRow icon={Building2} label="العقار" value={item.property.title} /> : null}
+        {requirement.budgetLabel ? <InfoRow icon={Tag} label="الميزانية" value={requirement.budgetLabel} /> : null}
+        {requirement.location ? <InfoRow icon={MapPin} label="الموقع" value={requirement.location} /> : null}
+        {requirement.area ? <InfoRow icon={Building2} label="المنطقة" value={requirement.area} /> : null}
+        {requirement.bedsLabel ? <InfoRow icon={Building2} label="الغرف" value={requirement.bedsLabel} /> : null}
+        {requirement.bathsLabel ? <InfoRow icon={Building2} label="الحمامات" value={requirement.bathsLabel} /> : null}
+        {requirement.sqftLabel ? <InfoRow icon={Building2} label="المساحة" value={requirement.sqftLabel} /> : null}
+        {requirement.phone ? <InfoRow icon={Phone} label="الهاتف" value={requirement.phone} /> : null}
       </div>
     </div>
   );

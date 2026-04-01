@@ -47,6 +47,12 @@ const getSnapshot = vi.fn(async () => ({
             id: "property-1",
             title: "مالقا ريزيدنس",
             address: "الملقا، الرياض",
+            price: 2500000,
+            beds: 3,
+            baths: 3,
+            sqft: 190,
+            location: "الرياض",
+            area: "الملقا",
             imageUrl: "https://images.unsplash.com/photo-offer",
           },
           propertyGallery: ["https://images.unsplash.com/photo-offer"],
@@ -100,6 +106,12 @@ const getSnapshot = vi.fn(async () => ({
             id: "property-2",
             title: "برج الأعمال",
             address: "شمال الرياض",
+            price: 1800000,
+            beds: 2,
+            baths: 2,
+            sqft: 120,
+            location: "الرياض",
+            area: "العليا",
             imageUrl: null,
           },
           propertyGallery: [],
@@ -149,6 +161,12 @@ const getSnapshot = vi.fn(async () => ({
             id: "property-1",
             title: "مالقا ريزيدنس",
             address: "الملقا، الرياض",
+            price: 2500000,
+            beds: 3,
+            baths: 3,
+            sqft: 190,
+            location: "الرياض",
+            area: "الملقا",
             imageUrl: "https://images.unsplash.com/photo-offer",
           },
           propertyGallery: [],
@@ -227,5 +245,21 @@ describe("/ws/offers page", () => {
     expect(markup).toContain("عرض ثانٍ");
     expect(markup).toContain("عرض مكرر محدث");
     expect(markup.indexOf("عرض ثانٍ")).toBeLessThan(markup.indexOf("عرض مكرر محدث"));
+  });
+
+  it("applies structured filters on the root offers page", async () => {
+    const element = await WorkspaceOffersRoute({
+      searchParams: Promise.resolve({ location: "الرياض", area: "الملقا", bedsMin: "3", budgetMin: "2400000" }),
+    });
+    const markup = renderToStaticMarkup(
+      <WebLocaleProvider locale="ar" dictionary={getWebDictionary("ar")}>
+        {element}
+      </WebLocaleProvider>,
+    );
+
+    expect(markup).toContain("عرض مكرر محدث");
+    expect(markup).not.toContain("عرض ثانٍ");
+    expect(markup).toContain("الملقا");
+    expect(markup).toContain("الميزانية من");
   });
 });

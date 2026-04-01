@@ -4,7 +4,7 @@ import Link from "next/link";
 import OfferPaginationNav from "../OfferPaginationNav";
 import OfferListItem from "../OfferListItem";
 import type { WorkspaceOfferSummary } from "../offerTypes";
-import type { OffersSortValue, PaginatedCollection } from "../offersPageData";
+import type { OffersPageFilters, OffersSortValue, PaginatedCollection } from "../offersPageData";
 
 function sortLabel(sort: OffersSortValue) {
   return sort === "updated_asc" ? "الأقدم أولاً" : "الأحدث أولاً";
@@ -21,12 +21,14 @@ export default function OfferOverviewPage({
   routeBase,
   searchQuery,
   sort,
+  filters,
 }: {
   items: WorkspaceOfferSummary[];
   pagination: PaginatedCollection<WorkspaceOfferSummary>;
   routeBase: string;
   searchQuery: string;
   sort: OffersSortValue;
+  filters: OffersPageFilters;
 }) {
   return (
     <div className="flex min-h-full flex-col pb-32">
@@ -43,13 +45,13 @@ export default function OfferOverviewPage({
           </div>
         </div>
 
-        <form action="/ws/offers" className="grid gap-3 rounded-[20px] border border-border/60 bg-card p-4 shadow-sm lg:grid-cols-[minmax(0,1fr)_200px_auto] lg:items-center">
+        <form action="/ws/offers" className="grid gap-3 rounded-[20px] border border-border/60 bg-card p-4 shadow-sm lg:grid-cols-4">
           <input
             type="text"
             name="q"
             defaultValue={searchQuery}
             placeholder="ابحث في العروض..."
-            className="w-full rounded-full bg-background px-4 py-3 text-right text-[14px] font-medium text-foreground outline-none ring-1 ring-border placeholder:text-muted-foreground"
+            className="w-full rounded-full bg-background px-4 py-3 text-right text-[14px] font-medium text-foreground outline-none ring-1 ring-border placeholder:text-muted-foreground lg:col-span-2"
           />
           <select
             name="sort"
@@ -65,6 +67,62 @@ export default function OfferOverviewPage({
           >
             تطبيق
           </button>
+          <input
+            type="text"
+            name="location"
+            defaultValue={filters.location}
+            placeholder="الموقع"
+            className="w-full rounded-full bg-background px-4 py-3 text-right text-[14px] font-medium text-foreground outline-none ring-1 ring-border placeholder:text-muted-foreground"
+          />
+          <input
+            type="text"
+            name="area"
+            defaultValue={filters.area}
+            placeholder="المنطقة"
+            className="w-full rounded-full bg-background px-4 py-3 text-right text-[14px] font-medium text-foreground outline-none ring-1 ring-border placeholder:text-muted-foreground"
+          />
+          <input
+            type="text"
+            name="budgetMin"
+            defaultValue={filters.budgetMin ?? ""}
+            placeholder="الميزانية من"
+            className="w-full rounded-full bg-background px-4 py-3 text-right text-[14px] font-medium text-foreground outline-none ring-1 ring-border placeholder:text-muted-foreground"
+          />
+          <input
+            type="text"
+            name="budgetMax"
+            defaultValue={filters.budgetMax ?? ""}
+            placeholder="الميزانية إلى"
+            className="w-full rounded-full bg-background px-4 py-3 text-right text-[14px] font-medium text-foreground outline-none ring-1 ring-border placeholder:text-muted-foreground"
+          />
+          <input
+            type="text"
+            name="bedsMin"
+            defaultValue={filters.bedsMin ?? ""}
+            placeholder="الغرف من"
+            className="w-full rounded-full bg-background px-4 py-3 text-right text-[14px] font-medium text-foreground outline-none ring-1 ring-border placeholder:text-muted-foreground"
+          />
+          <input
+            type="text"
+            name="bathsMin"
+            defaultValue={filters.bathsMin ?? ""}
+            placeholder="الحمامات من"
+            className="w-full rounded-full bg-background px-4 py-3 text-right text-[14px] font-medium text-foreground outline-none ring-1 ring-border placeholder:text-muted-foreground"
+          />
+          <input
+            type="text"
+            name="sqftMin"
+            defaultValue={filters.sqftMin ?? ""}
+            placeholder="المساحة من"
+            className="w-full rounded-full bg-background px-4 py-3 text-right text-[14px] font-medium text-foreground outline-none ring-1 ring-border placeholder:text-muted-foreground"
+          />
+          <input
+            type="text"
+            name="sqftMax"
+            defaultValue={filters.sqftMax ?? ""}
+            placeholder="المساحة إلى"
+            className="w-full rounded-full bg-background px-4 py-3 text-right text-[14px] font-medium text-foreground outline-none ring-1 ring-border placeholder:text-muted-foreground"
+          />
         </form>
 
         <div className="flex items-center justify-between gap-3 text-[13px] text-muted-foreground">

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   buildOffersRouteBase,
+  filterOffers,
   filterOffersByQuery,
   flattenOffers,
+  resolveFilters,
   sortOffers,
 } from "./offersPageData";
 import type { WorkspaceOfferQueue, WorkspaceOfferSummary } from "./offerTypes";
@@ -15,6 +17,13 @@ function buildOffer(args: {
   propertyTitle?: string;
   senderName?: string;
   organizationName?: string;
+  propertyPrice?: number;
+  propertyBeds?: number;
+  propertyBaths?: number;
+  propertySqft?: number;
+  propertyLocation?: string;
+  propertyArea?: string;
+  clientContext?: WorkspaceOfferSummary["clientContext"];
 }) {
   const offer: WorkspaceOfferSummary = {
     id: args.id,
@@ -34,7 +43,13 @@ function buildOffer(args: {
     property: {
       id: `property-${args.id}`,
       title: args.propertyTitle ?? args.message,
-      address: "الرياض",
+      address: args.propertyLocation ?? "الرياض",
+      price: args.propertyPrice ?? 1000000,
+      beds: args.propertyBeds,
+      baths: args.propertyBaths,
+      sqft: args.propertySqft,
+      location: args.propertyLocation,
+      area: args.propertyArea,
       imageUrl: null,
     },
     propertyGallery: [],
@@ -44,7 +59,7 @@ function buildOffer(args: {
     productStatus: null,
     allowedAudience: "both",
     attachments: [],
-    clientContext: null,
+    clientContext: args.clientContext ?? null,
     primaryOrganization: {
       id: "org-1",
       name: args.organizationName ?? "شركة افتراضية",
@@ -140,9 +155,87 @@ describe("offersPageData", () => {
     const filtered = filterOffersByQuery([propertyOffer, otherOffer], "شركة الرياض");
 
     expect(filtered.map((item) => item.id)).toEqual(["offer-1"]);
-    expect(buildOffersRouteBase({ searchQuery: "الرياض", sort: "updated_desc" })).toBe("/ws/offers?q=%D8%A7%D9%84%D8%B1%D9%8A%D8%A7%D8%B6");
-    expect(buildOffersRouteBase({ searchQuery: "جدة", sort: "updated_asc" })).toBe(
+    expect(
+      buildOffersRouteBase({
+        searchQuery: "الرياض",
+        sort: "updated_desc",
+        filters: { area: "", location: "" },
+      }),
+    ).toBe("/ws/offers?q=%D8%A7%D9%84%D8%B1%D9%8A%D8%A7%D8%B6");
+    expect(
+      buildOffersRouteBase({
+        searchQuery: "جدة",
+        sort: "updated_asc",
+        filters: { area: "", location: "" },
+      }),
+    ).toBe(
       "/ws/offers?q=%D8%AC%D8%AF%D8%A9&sort=updated_asc",
     );
+  });
+
+  it("resolves and applies structured filters to property and client requirement offers", () => {
+    const propertyOffer = buildOffer({
+      id: "offer-1",
+      message: "فيلا جاهزة",
+      updatedAt: 1,
+      propertyTitle: "فيلا جاهزة",
+      propertyPrice: 4200000,
+      propertyBeds: 4,
+      propertyBaths: 4,
+      propertySqft: 320,
+      propertyLocation: "الرياض",
+      propertyArea: "الياسمين",
+    });
+    const clientRequirementOffer = buildOffer({
+      id: "offer-2",
+      message: "عميل يبحث عن شقة",
+      updatedAt: 2,
+      propertyTitle: "بدون عقار",
+      clientContext: {
+        clientName: "عميل يبحث عن شقة",
+        clientNeed: "شقة واسعة وجاهزة",
+        clientBudget: "2,900,000 ر.س",
+        budgetMin: 2400000,
+        budgetMax: 2900000,
+        location: "الرياض",
+        area: "الملقا",
+        bedsMin: 3,
+        bathsMin: 3,
+        sqftMin: 180,
+        sqftMax: 240,
+      },
+    });
+
+    const filters = resolveFilters({
+      budgetMin: "2300000",
+      budgetMax: "3000000",
+      bedsMin: "3",
+      bathsMin: "3",
+      sqftMin: "170",
+      sqftMax: "250",
+      location: "الرياض",
+      area: "الملقا",
+    });
+
+    expect(
+      filterOffers([propertyOffer, clientRequirementOffer], {
+        searchQuery: "",
+        filters,
+      }).map((item) => item.id),
+    ).toEqual(["offer-2"]);
+
+    expect(
+      filterOffers([propertyOffer, clientRequirementOffer], {
+        searchQuery: "",
+        filters: {
+          budgetMin: 4000000,
+          bedsMin: 4,
+          bathsMin: 4,
+          sqftMin: 300,
+          area: "الياسمين",
+          location: "الرياض",
+        },
+      }).map((item) => item.id),
+    ).toEqual(["offer-1"]);
   });
 });

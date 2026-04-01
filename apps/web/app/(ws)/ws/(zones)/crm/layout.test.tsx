@@ -15,6 +15,9 @@ const { requireWorkspaceData, getLayoutSidebarData, redirect, usePathname, useSe
   usePathname: vi.fn(),
   useSearchParams: vi.fn(() => new URLSearchParams()),
 }));
+const { useRouter } = vi.hoisted(() => ({
+  useRouter: vi.fn(() => ({ replace: vi.fn(), refresh: vi.fn(), push: vi.fn() })),
+}));
 
 vi.mock("../../_lib/workspaceData", () => ({
   requireWorkspaceData,
@@ -25,6 +28,7 @@ vi.mock("next/navigation", () => ({
   redirect,
   usePathname,
   useSearchParams,
+  useRouter,
 }));
 
 vi.mock("convex/react", () => ({

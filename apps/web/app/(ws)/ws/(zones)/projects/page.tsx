@@ -2,6 +2,8 @@ import ProjectsPage from "./ProjectsPage";
 import { requireWorkspaceData } from "../../_lib/workspaceData";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapPropertyToWorkspaceProject } from "./projectViewModel";
+import { normalizeDomainError } from "@/server/contracts/errors";
+import type { ProjectMutationActionResult } from "./ProjectsPage/actionTypes";
 
 /**
  * WHY:   The projects root route should stay SSR-first while keeping broker-vs-developer branching out of the UI.
@@ -17,16 +19,28 @@ export default async function WorkspaceProjectsRoute() {
     paginationOpts: { cursor: null, numItems: 100 },
   });
 
-  async function deleteProject(projectId: string) {
+  async function deleteProject(projectId: string): Promise<ProjectMutationActionResult> {
     "use server";
 
-    await getWorkspacePropertyZone(audience, ownerContext).deleteProperty({ id: projectId });
+    try {
+      await getWorkspacePropertyZone(audience, ownerContext).deleteProperty({ id: projectId });
+      return { ok: true };
+    } catch (error) {
+      const domainError = normalizeDomainError(error);
+      return { ok: false, code: domainError.code, message: domainError.message };
+    }
   }
 
-  async function publishProject(projectId: string) {
+  async function publishProject(projectId: string): Promise<ProjectMutationActionResult> {
     "use server";
 
-    await getWorkspacePropertyZone(audience, ownerContext).publishProperty({ id: projectId });
+    try {
+      await getWorkspacePropertyZone(audience, ownerContext).publishProperty({ id: projectId });
+      return { ok: true };
+    } catch (error) {
+      const domainError = normalizeDomainError(error);
+      return { ok: false, code: domainError.code, message: domainError.message };
+    }
   }
 
   return (

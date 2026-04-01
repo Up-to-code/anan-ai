@@ -5,7 +5,7 @@ import CrmRouteTabs from "./CrmRouteTabs";
 import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
 import { buildComplianceBanner } from "../../_lib/complianceBanner";
 import { cookies } from "next/headers";
-import { resolveLocale } from "@/lib/locale";
+import { resolveLocale, type AppLocale } from "@/lib/locale";
 
 export default async function CrmZoneLayout({
   children,
@@ -17,7 +17,13 @@ export default async function CrmZoneLayout({
     getLayoutSidebarData("/ws/crm"),
     getComplianceRulesetForCurrentOrg().catch(() => null),
   ]);
-  const locale = resolveLocale((await cookies()).get("anan_web_locale")?.value);
+  let locale: AppLocale = "ar";
+  try {
+    const cookieStore = await cookies();
+    locale = resolveLocale(cookieStore.get("anan_web_locale")?.value);
+  } catch {
+    locale = "ar";
+  }
   const primaryOrganization = chrome.organizations?.[0];
 
   if (!primaryOrganization) {

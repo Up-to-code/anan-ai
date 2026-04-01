@@ -53,6 +53,14 @@ export default async function WorkspaceOfferEditRoute({
       clientPhone?: string;
       clientBudget?: string;
       clientNeed: string;
+      budgetMin?: number;
+      budgetMax?: number;
+      location?: string;
+      area?: string;
+      bedsMin?: number;
+      bathsMin?: number;
+      sqftMin?: number;
+      sqftMax?: number;
     };
     attachments: UploadedFileReference[];
   }) {
@@ -102,6 +110,20 @@ export default async function WorkspaceOfferEditRoute({
         clientName: resolvedOffer.clientContext?.clientName ?? undefined,
         clientPhone: resolvedOffer.clientContext?.clientPhone ?? undefined,
         clientBudget: resolvedOffer.clientContext?.clientBudget ?? undefined,
+        clientBudgetMin:
+          resolvedOffer.clientContext?.budgetMin != null ? String(resolvedOffer.clientContext.budgetMin) : undefined,
+        clientBudgetMax:
+          resolvedOffer.clientContext?.budgetMax != null ? String(resolvedOffer.clientContext.budgetMax) : undefined,
+        clientLocation: resolvedOffer.clientContext?.location ?? undefined,
+        clientArea: resolvedOffer.clientContext?.area ?? undefined,
+        clientBedsMin:
+          resolvedOffer.clientContext?.bedsMin != null ? String(resolvedOffer.clientContext.bedsMin) : undefined,
+        clientBathsMin:
+          resolvedOffer.clientContext?.bathsMin != null ? String(resolvedOffer.clientContext.bathsMin) : undefined,
+        clientSqftMin:
+          resolvedOffer.clientContext?.sqftMin != null ? String(resolvedOffer.clientContext.sqftMin) : undefined,
+        clientSqftMax:
+          resolvedOffer.clientContext?.sqftMax != null ? String(resolvedOffer.clientContext.sqftMax) : undefined,
         clientNeed: resolvedOffer.clientContext?.clientNeed ?? undefined,
         attachments: resolvedOffer.attachments ?? [],
       }}

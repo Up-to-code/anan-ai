@@ -32,6 +32,11 @@ const baseOffer = {
     title: "مالقا ريزيدنس",
     address: "الملقا، الرياض",
     price: 2500000,
+    beds: 3,
+    baths: 3,
+    sqft: 185,
+    location: "الرياض",
+    area: "الملقا",
     imageUrl: null,
   },
   propertyGallery: [
@@ -106,6 +111,11 @@ describe("OfferDetailPage", () => {
     expect(markup).toContain("مالقا ريزيدنس");
     expect(markup).toContain("تاريخ العمليات");
     expect(markup).toContain("data-slot=\"offer-gallery\"");
+    expect(markup).toContain("data-slot=\"offer-detail-sidebar\"");
+    expect(markup).toContain("data-slot=\"offer-detail-hero\"");
+    expect(markup).toContain("بطاقة العقار");
+    expect(markup).toContain("3 غرف");
+    expect(markup).toContain("185 م²");
   });
 
   it("renders client-specific data as the primary structured block when client context exists", () => {
@@ -113,10 +123,16 @@ describe("OfferDetailPage", () => {
       <OfferDetailPage
         offer={{
           ...baseOffer,
+          message: "باحث عن شقة جاهزة",
           clientContext: {
-            clientName: "عميل جاد",
-            clientNeed: "شقة جاهزة في شمال الرياض",
+            clientName: "باحث عن شقة جاهزة",
+            clientNeed: "شقة جاهزة في شمال الرياض\nالموقع المطلوب: شمال الرياض",
             clientBudget: "2,700,000 ر.س",
+            area: "الملقا",
+            bedsMin: 3,
+            bathsMin: 3,
+            sqftMin: 180,
+            sqftMax: 220,
             clientPhone: "+966500000000",
           },
         }}
@@ -125,9 +141,18 @@ describe("OfferDetailPage", () => {
       />,
     );
 
-    expect(markup).toContain("عميل جاد");
+    expect(markup).toContain("باحث عن شقة جاهزة");
     expect(markup).toContain("شقة جاهزة في شمال الرياض");
     expect(markup).toContain("2,700,000 ر.س");
+    expect(markup).toContain("الموقع");
+    expect(markup).toContain("شمال الرياض");
+    expect(markup).toContain("المنطقة");
+    expect(markup).toContain("الملقا");
+    expect(markup).toContain("الغرف");
+    expect(markup).toContain("3+");
+    expect(markup).toContain("الحمامات");
+    expect(markup).toContain("المساحة");
+    expect(markup).toContain("180-220 م²");
     expect(markup).toContain("+966500000000");
     expect(markup).not.toContain("data-slot=\"offer-gallery\"");
   });

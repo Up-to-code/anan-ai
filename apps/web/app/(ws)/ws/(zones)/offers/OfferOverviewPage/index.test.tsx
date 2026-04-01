@@ -73,6 +73,7 @@ describe("OfferOverviewPage", () => {
           routeBase="/ws/offers"
           searchQuery=""
           sort="updated_desc"
+          filters={{ area: "", location: "" }}
         />
       </WebLocaleProvider>,
     );
@@ -128,6 +129,7 @@ describe("OfferOverviewPage", () => {
           routeBase="/ws/offers"
           searchQuery="الرياض"
           sort="updated_asc"
+          filters={{ area: "", location: "الرياض" }}
         />
       </WebLocaleProvider>,
     );

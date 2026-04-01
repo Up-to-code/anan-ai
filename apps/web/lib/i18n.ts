@@ -105,6 +105,7 @@ export type WebDictionary = {
     deleteTitle: string;
     deleteDescription: string;
     deleteConfirm: string;
+    actionFailed: string;
   };
   offers: {
     eyebrow: string;
@@ -585,6 +586,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       deleteTitle: "حذف مشروع",
       deleteDescription: "سيتم إزالة المشروع من المحفظة بشكل نهائي مع كافة البيانات المرتبطة به.",
       deleteConfirm: "حذف المشروع",
+      actionFailed: "تعذر إكمال العملية. حاول مرة أخرى.",
     },
     offers: {
       eyebrow: "العروض 2.0",
@@ -1063,6 +1065,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       deleteTitle: "Delete project",
       deleteDescription: "This project will be permanently removed from the portfolio along with its related data.",
       deleteConfirm: "Delete project",
+      actionFailed: "Could not complete the action. Please try again.",
     },
     offers: {
       eyebrow: "Offers 2.0",
@@ -1541,6 +1544,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       deleteTitle: "Supprimer le projet",
       deleteDescription: "Ce projet sera supprimé définitivement du portefeuille avec toutes les données associées.",
       deleteConfirm: "Supprimer le projet",
+      actionFailed: "Impossible d'effectuer l'action. Veuillez réessayer.",
     },
     offers: {
       eyebrow: "Offres 2.0",

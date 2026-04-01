@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Archive,
+  Bath,
+  BedDouble,
   Building2,
   Calendar,
   ExternalLink,
@@ -13,10 +15,12 @@ import {
   Mail,
   MapPin,
   MessageCircle,
+  Ruler,
   ShieldCheck,
   Tag,
 } from "lucide-react";
 import {
+  buildClientRequirementViewModel,
   buildWhatsAppHref,
   formatOfferMarketplaceLabel,
   formatOfferPrice,
@@ -70,6 +74,21 @@ function DetailRow({
   );
 }
 
+function InfoChip({
+  icon: Icon,
+  value,
+}: {
+  icon: LucideIcon;
+  value: string;
+}) {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-bold text-foreground shadow-sm">
+        <Icon className="h-4 w-4" />
+      <span>{value}</span>
+    </div>
+  );
+}
+
 function PropertyGallery({ offer }: { offer: WorkspaceOfferDetail }) {
   if (offer.propertyGallery.length === 0) {
     return null;
@@ -106,44 +125,81 @@ function PropertyGallery({ offer }: { offer: WorkspaceOfferDetail }) {
 
 function OfferPrimaryData({ offer }: { offer: WorkspaceOfferDetail }) {
   if (offer.clientContext) {
+    const requirement = buildClientRequirementViewModel(offer.clientContext);
+    if (!requirement) return null;
     return (
       <div className="rounded-[24px] bg-muted/10 px-5 py-4">
         <div className="text-right">
           <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">طلب العميل</div>
-          <div className="mt-1.5 text-[18px] font-black text-foreground">{offer.clientContext.clientName}</div>
-          <div className="mt-2 text-[14px] leading-7 text-muted-foreground">{offer.clientContext.clientNeed}</div>
+          <div className="mt-2 text-[14px] leading-7 text-muted-foreground">{requirement.summary}</div>
         </div>
 
         <div className="mt-4 grid gap-x-6 sm:grid-cols-2 xl:grid-cols-3">
-          {offer.clientContext.clientBudget ? (
-            <DetailRow icon={Tag} label="الميزانية" value={offer.clientContext.clientBudget} />
+          {requirement.budgetLabel ? <DetailRow icon={Tag} label="الميزانية" value={requirement.budgetLabel} /> : null}
+          {requirement.location ? (
+            <DetailRow icon={MapPin} label="الموقع" value={requirement.location} />
           ) : null}
-          {offer.clientContext.clientPhone ? (
-            <DetailRow icon={Mail} label="الهاتف" value={offer.clientContext.clientPhone} />
-          ) : null}
-          <DetailRow icon={Building2} label="العقار" value={offer.propertyTitle} helper={offer.propertyAddress} />
+          {requirement.area ? <DetailRow icon={Building2} label="المنطقة" value={requirement.area} /> : null}
+          {requirement.bedsLabel ? <DetailRow icon={Building2} label="الغرف" value={requirement.bedsLabel} /> : null}
+          {requirement.bathsLabel ? <DetailRow icon={Building2} label="الحمامات" value={requirement.bathsLabel} /> : null}
+          {requirement.sqftLabel ? <DetailRow icon={Building2} label="المساحة" value={requirement.sqftLabel} /> : null}
+          {requirement.phone ? <DetailRow icon={Mail} label="الهاتف" value={requirement.phone} /> : null}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-[24px] bg-muted/10 px-5 py-4">
-      <div className="grid gap-x-6 sm:grid-cols-2 xl:grid-cols-4">
-        <DetailRow icon={Building2} label="العقار" value={offer.propertyTitle} helper={offer.propertyAddress} />
-        <DetailRow icon={MapPin} label="الموقع" value={offer.propertyAddress} />
-        <DetailRow
-          icon={Tag}
-          label="السعر والعمولة"
-          value={formatOfferPrice(offer.price)}
-          helper={offer.commissionText ?? "بدون عمولة إضافية"}
-        />
-        <DetailRow
-          icon={ShieldCheck}
-          label="التصريح"
-          value={offer.permitStatus ?? "غير متوفر"}
-          helper={offer.productStatus ?? "بدون حالة إضافية"}
-        />
+    <div className="space-y-5 rounded-[24px] border border-border/60 bg-card p-5 shadow-sm">
+      <div className="text-right">
+        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">بطاقة العقار</div>
+        <div className="mt-2 text-xl font-black text-foreground">{offer.propertyTitle}</div>
+        <div className="mt-1 inline-flex items-center gap-2 text-[13px] text-muted-foreground">
+          <MapPin className="h-4 w-4" />
+          {offer.propertyAddress}
+        </div>
+      </div>
+
+      <PropertyGallery offer={offer} />
+
+      <div className="flex flex-wrap justify-end gap-2">
+        <InfoChip icon={Tag} value={formatOfferPrice(offer.price)} />
+        {offer.property?.beds != null ? <InfoChip icon={BedDouble} value={`${offer.property.beds} غرف`} /> : null}
+        {offer.property?.baths != null ? <InfoChip icon={Bath} value={`${offer.property.baths} حمامات`} /> : null}
+        {offer.property?.sqft != null ? <InfoChip icon={Ruler} value={`${offer.property.sqft} م²`} /> : null}
+        {offer.property?.area ? <InfoChip icon={Building2} value={offer.property.area} /> : null}
+        <InfoChip icon={ShieldCheck} value={offer.permitStatus ?? "غير متوفر"} />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="rounded-2xl border border-border bg-background/70 p-4 text-right">
+          <div className="text-[11px] font-bold text-muted-foreground">السعر والعمولة</div>
+          <div className="mt-2 text-[15px] font-black text-foreground">{formatOfferPrice(offer.price)}</div>
+          <div className="mt-1 text-[13px] leading-6 text-muted-foreground">
+            {offer.commissionText ?? "بدون عمولة إضافية"}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-border bg-background/70 p-4 text-right">
+          <div className="text-[11px] font-bold text-muted-foreground">الموقع</div>
+          <div className="mt-2 text-[15px] font-black text-foreground">{offer.propertyAddress}</div>
+          <div className="mt-1 text-[13px] leading-6 text-muted-foreground">
+            {offer.property?.location ?? offer.property?.area ?? "بدون منطقة إضافية"}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-border bg-background/70 p-4 text-right">
+          <div className="text-[11px] font-bold text-muted-foreground">التصريح والحالة</div>
+          <div className="mt-2 text-[15px] font-black text-foreground">{offer.permitStatus ?? "غير متوفر"}</div>
+          <div className="mt-1 text-[13px] leading-6 text-muted-foreground">
+            {offer.productStatus ?? "بدون حالة إضافية"}
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-background/50 p-4 text-right">
+        <div className="text-[11px] font-bold text-muted-foreground">وصف العقار</div>
+        <div className="mt-2 text-[14px] leading-7 text-foreground">
+          {offer.propertySummary ?? offer.description ?? "لا يوجد وصف إضافي لهذه الوحدة حالياً."}
+        </div>
       </div>
     </div>
   );
@@ -183,7 +239,7 @@ function OfferBrandPanel({
     offer.allowedActions.canCloseLost;
 
   return (
-    <aside className="order-2 space-y-4 lg:order-1">
+    <aside data-slot="offer-detail-sidebar" className="order-2 space-y-4 lg:order-1 lg:sticky lg:top-6 lg:self-start">
       <div className="rounded-[24px] border border-border/60 bg-card p-5 text-right shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
@@ -450,7 +506,7 @@ export default function OfferDetailPage({
           />
 
           <main className="order-1 space-y-6 lg:order-2">
-            <section className="rounded-[24px] border border-border/60 bg-card p-6 shadow-sm lg:p-8">
+            <section data-slot="offer-detail-hero" className="rounded-[24px] border border-border/60 bg-card p-6 shadow-sm lg:p-8">
               <div className="space-y-5 text-right">
                 <div className="space-y-3">
                   <div className="text-[12px] font-semibold text-muted-foreground">
@@ -466,8 +522,6 @@ export default function OfferDetailPage({
                     </div>
                   ) : null}
                 </div>
-
-                {!offer.clientContext ? <PropertyGallery offer={offer} /> : null}
 
                 <OfferPrimaryData offer={offer} />
               </div>

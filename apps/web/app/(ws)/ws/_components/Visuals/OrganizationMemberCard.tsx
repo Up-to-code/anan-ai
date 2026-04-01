@@ -26,12 +26,14 @@ export default function OrganizationMemberCard({
   const roleLabel = getOrganizationMemberRoleLabel(member.role);
   const avatarLabel = getOrganizationMemberInitials(member.name);
   const isActive = member.statusLabel === "نشط";
+  const usernameLabel = member.username ? `@${member.username}` : null;
 
   return (
     <article
       dir="rtl"
       className={cn(
         "rounded-2xl border border-border bg-card p-4 transition-all hover:bg-muted/30",
+        theme.borderClassName,
         className,
       )}
     >
@@ -48,6 +50,20 @@ export default function OrganizationMemberCard({
 
         {/* Info */}
         <div className="min-w-0 flex-1">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-black",
+                theme.roleClassName,
+              )}
+            >
+              <span className={cn("h-1.5 w-1.5 rounded-full", theme.accentDotClassName)} aria-hidden="true" />
+              {theme.accentLabel}
+            </span>
+            {usernameLabel ? (
+              <span className="text-[11px] font-semibold text-muted-foreground">{usernameLabel}</span>
+            ) : null}
+          </div>
           <div className="flex items-center gap-2">
             <h3 className="truncate text-[14px] font-bold text-foreground">{member.name}</h3>
             <span

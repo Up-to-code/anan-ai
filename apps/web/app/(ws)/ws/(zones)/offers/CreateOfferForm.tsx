@@ -38,6 +38,14 @@ type FormState = {
   clientName: string;
   clientPhone: string;
   clientBudget: string;
+  clientBudgetMin: string;
+  clientBudgetMax: string;
+  clientLocation: string;
+  clientArea: string;
+  clientBedsMin: string;
+  clientBathsMin: string;
+  clientSqftMin: string;
+  clientSqftMax: string;
   clientNeed: string;
 };
 
@@ -58,6 +66,14 @@ type SubmitPayload = {
     clientPhone?: string;
     clientBudget?: string;
     clientNeed: string;
+    budgetMin?: number;
+    budgetMax?: number;
+    location?: string;
+    area?: string;
+    bedsMin?: number;
+    bathsMin?: number;
+    sqftMin?: number;
+    sqftMax?: number;
   };
   attachments: UploadedFileReference[];
 };
@@ -66,6 +82,7 @@ type CreateOfferFormProps = {
   properties: OfferPropertyOption[];
   audience: WorkspaceAudience;
   organization?: OrganizationSummary | null;
+  simplifiedFieldsOnly?: boolean;
   pageTitle?: string;
   pageDescription?: string;
   submitLabel?: string;
@@ -77,6 +94,13 @@ type CreateOfferFormProps = {
   onSubmit: (data: SubmitPayload) => Promise<{ redirectTo: string }>;
   onArchive?: () => Promise<{ redirectTo: string }>;
 };
+
+function parseOptionalNumberInput(value: string) {
+  const normalized = value.trim().replace(/[^\d.]/g, "");
+  if (!normalized) return undefined;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
 
 function buildInitialState(
   properties: OfferPropertyOption[],
@@ -103,33 +127,73 @@ function buildInitialState(
     clientName: initialData?.clientName ?? "",
     clientPhone: initialData?.clientPhone ?? "",
     clientBudget: initialData?.clientBudget ?? "",
+    clientBudgetMin: initialData?.clientBudgetMin ?? "",
+    clientBudgetMax: initialData?.clientBudgetMax ?? "",
+    clientLocation: initialData?.clientLocation ?? "",
+    clientArea: initialData?.clientArea ?? "",
+    clientBedsMin: initialData?.clientBedsMin ?? "",
+    clientBathsMin: initialData?.clientBathsMin ?? "",
+    clientSqftMin: initialData?.clientSqftMin ?? "",
+    clientSqftMax: initialData?.clientSqftMax ?? "",
     clientNeed: initialData?.clientNeed ?? "",
   };
 }
 
-function buildSubmitPayload(form: FormState, attachments: UploadedFileReference[]): SubmitPayload {
-  const isClientRequirement = form.mode === "collaboration_case";
-  const isTargetedBrokerShare = form.mode === "open_offer";
+export function buildSubmitPayload(
+  form: FormState,
+  attachments: UploadedFileReference[],
+  options?: { simplifiedFieldsOnly?: boolean; properties?: OfferPropertyOption[] },
+): SubmitPayload {
+  const selectedProperty = options?.properties?.find((item) => item.id === form.propertyId) ?? null;
+  const isSimplified = options?.simplifiedFieldsOnly === true;
+  const effectiveMode: OfferCaseType = isSimplified
+    ? form.mode === "collaboration_case"
+      ? "collaboration_case"
+      : "open_offer"
+    : form.mode;
+  const isClientRequirement = effectiveMode === "collaboration_case";
+  const isTargetedBrokerShare = effectiveMode === "open_offer";
+  const trimmedDescription = form.description.trim();
+  const trimmedLocation = form.clientLocation.trim();
+  const combinedClientNeed =
+    trimmedLocation.length > 0 ? `${trimmedDescription}\nالموقع المطلوب: ${trimmedLocation}` : trimmedDescription;
+  const budgetMin = parseOptionalNumberInput(form.clientBudgetMin);
+  const budgetMax =
+    parseOptionalNumberInput(form.clientBudgetMax) ??
+    (isClientRequirement ? parseOptionalNumberInput(form.price) : undefined);
+  const bedsMin = parseOptionalNumberInput(form.clientBedsMin);
+  const bathsMin = parseOptionalNumberInput(form.clientBathsMin);
+  const sqftMin = parseOptionalNumberInput(form.clientSqftMin);
+  const sqftMax = parseOptionalNumberInput(form.clientSqftMax);
+  const area = form.clientArea.trim() || undefined;
 
   return {
-    propertyId: isClientRequirement ? undefined : form.propertyId || undefined,
-    mode: form.mode,
-    title: form.title.trim(),
+    propertyId: effectiveMode === "collaboration_case" ? undefined : form.propertyId || undefined,
+    mode: effectiveMode,
+    title: isSimplified ? selectedProperty?.title ?? form.title.trim() : form.title.trim(),
     description: form.description.trim(),
     price: form.price,
     allowedAudience: "brokers",
-    commissionText: isClientRequirement ? undefined : form.commissionText.trim() || undefined,
-    permitStatus: isClientRequirement ? undefined : form.permitStatus.trim() || undefined,
-    productStatus: isClientRequirement ? undefined : form.productStatus.trim() || undefined,
-    recipientEmail: isTargetedBrokerShare ? form.recipientEmail.trim() || undefined : undefined,
-    recipientPhone: isTargetedBrokerShare ? form.recipientPhone.trim() || undefined : undefined,
+    commissionText: isClientRequirement || isSimplified ? undefined : form.commissionText.trim() || undefined,
+    permitStatus: isClientRequirement || isSimplified ? undefined : form.permitStatus.trim() || undefined,
+    productStatus: isClientRequirement || isSimplified ? undefined : form.productStatus.trim() || undefined,
+    recipientEmail: isTargetedBrokerShare && !isSimplified ? form.recipientEmail.trim() || undefined : undefined,
+    recipientPhone: isTargetedBrokerShare && !isSimplified ? form.recipientPhone.trim() || undefined : undefined,
     clientContext:
-      form.mode === "collaboration_case"
+      effectiveMode === "collaboration_case"
         ? {
-            clientName: form.clientName.trim(),
+            clientName: isSimplified ? form.title.trim() : form.clientName.trim(),
             clientPhone: form.clientPhone.trim() || undefined,
-            clientBudget: form.clientBudget.trim() || undefined,
-            clientNeed: form.clientNeed.trim(),
+            clientBudget: isSimplified ? form.price.trim() || undefined : form.clientBudget.trim() || undefined,
+            clientNeed: isSimplified ? combinedClientNeed : form.clientNeed.trim(),
+            budgetMin,
+            budgetMax,
+            location: trimmedLocation || undefined,
+            area,
+            bedsMin,
+            bathsMin,
+            sqftMin,
+            sqftMax,
           }
         : undefined,
     attachments,
@@ -140,6 +204,7 @@ export default function CreateOfferForm({
   properties,
   audience,
   organization,
+  simplifiedFieldsOnly = false,
   pageTitle,
   pageDescription,
   submitLabel,
@@ -162,9 +227,14 @@ export default function CreateOfferForm({
   const whatsappHref = buildWhatsAppHref(organization?.phone);
   const isBrokerAudience = audience === "broker";
   const isDeveloperAudience = audience === "developer";
-  const isClientRequestMode = isBrokerAudience && form.mode === "collaboration_case";
+  const effectiveMode: OfferCaseType = simplifiedFieldsOnly
+    ? form.mode === "collaboration_case"
+      ? "collaboration_case"
+      : "open_offer"
+    : form.mode;
+  const isClientRequestMode = isBrokerAudience && effectiveMode === "collaboration_case";
   const requiresPropertySelection = !isClientRequestMode;
-  const canTargetSpecificParty = isBrokerAudience && !isClientRequestMode;
+  const canTargetSpecificParty = isBrokerAudience && !isClientRequestMode && !simplifiedFieldsOnly;
 
   const copy = {
     pageTitle:
@@ -212,6 +282,14 @@ export default function CreateOfferForm({
     clientName: locale === "en" ? "Client name" : "اسم العميل",
     clientPhone: locale === "en" ? "Client phone" : "هاتف العميل",
     clientBudget: locale === "en" ? "Client budget" : "ميزانية العميل",
+    clientBudgetMin: locale === "en" ? "Budget from" : "الميزانية من",
+    clientBudgetMax: locale === "en" ? "Budget to" : "الميزانية إلى",
+    clientLocation: locale === "en" ? "Preferred location" : "الموقع المطلوب",
+    clientArea: locale === "en" ? "Preferred area" : "المنطقة المطلوبة",
+    clientBedsMin: locale === "en" ? "Minimum rooms" : "الحد الأدنى للغرف",
+    clientBathsMin: locale === "en" ? "Minimum bathrooms" : "الحد الأدنى للحمامات",
+    clientSqftMin: locale === "en" ? "Space from" : "المساحة من",
+    clientSqftMax: locale === "en" ? "Space to" : "المساحة إلى",
     clientNeed: locale === "en" ? "Client need" : "احتياج العميل",
     uploadAttachments: locale === "en" ? "Upload attachments" : "رفع المرفقات",
     uploadingFiles: locale === "en" ? "Uploading files" : "جارٍ رفع الملفات",
@@ -259,7 +337,7 @@ export default function CreateOfferForm({
         },
       ];
 
-  const showModeSelection = modeCards.length > 1;
+  const showModeSelection = !simplifiedFieldsOnly && modeCards.length > 1;
   const selectedProperty = properties.find((property) => property.id === form.propertyId) ?? null;
 
   async function handleFiles(event: ChangeEvent<HTMLInputElement>) {
@@ -353,7 +431,12 @@ export default function CreateOfferForm({
             setError(null);
             startTransition(async () => {
               try {
-                const result = await onSubmit(buildSubmitPayload(form, attachments));
+                const result = await onSubmit(
+                  buildSubmitPayload(form, attachments, {
+                    simplifiedFieldsOnly,
+                    properties,
+                  }),
+                );
                 router.push(result.redirectTo);
               } catch (submitError) {
                 setError(submitError instanceof Error ? submitError.message : copy.saveFailed);
@@ -361,50 +444,82 @@ export default function CreateOfferForm({
             });
           }}
         >
-          <section className="rounded-[20px] border border-border/60 bg-card p-5 shadow-sm">
-            <div className={`text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground ${isRtl ? "text-right" : "text-left"}`}>
-              1. نوع العرض
-            </div>
-
-            {showModeSelection ? (
-              <>
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  {modeCards.map((card) => {
-                    const Icon = card.icon;
-                    const isActive = form.mode === card.value;
-                    return (
-                      <button
-                        key={card.value}
-                        type="button"
-                        onClick={() => updateMode(card.value)}
-                        className={isActive
-                          ? "inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-[13px] font-bold text-background"
-                          : "inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-[13px] font-bold text-foreground"}
-                      >
-                        <Icon className="h-4 w-4" />
-                        {card.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className={`mt-3 text-[13px] leading-6 text-muted-foreground ${isRtl ? "text-right" : "text-left"}`}>
-                  {modeCards.find((card) => card.value === form.mode)?.description}
-                </p>
-              </>
-            ) : (
-              <div className="mt-4 flex items-start gap-3 rounded-2xl border border-border bg-background px-4 py-4">
-                <Building2 className="mt-0.5 h-5 w-5 text-foreground" />
-                <div className={isRtl ? "text-right" : "text-left"}>
-                  <div className="text-[14px] font-bold text-foreground">{modeCards[0]?.label}</div>
-                  <div className="mt-1 text-[13px] leading-6 text-muted-foreground">{modeCards[0]?.description}</div>
-                </div>
+          {!simplifiedFieldsOnly ? (
+            <section className="rounded-[20px] border border-border/60 bg-card p-5 shadow-sm">
+              <div className={`text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground ${isRtl ? "text-right" : "text-left"}`}>
+                1. نوع العرض
               </div>
-            )}
-          </section>
+
+              {showModeSelection ? (
+                <>
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    {modeCards.map((card) => {
+                      const Icon = card.icon;
+                      const isActive = effectiveMode === card.value;
+                      return (
+                        <button
+                          key={card.value}
+                          type="button"
+                          onClick={() => updateMode(card.value)}
+                          className={isActive
+                            ? "inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-[13px] font-bold text-background"
+                            : "inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-[13px] font-bold text-foreground"}
+                        >
+                          <Icon className="h-4 w-4" />
+                          {card.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className={`mt-3 text-[13px] leading-6 text-muted-foreground ${isRtl ? "text-right" : "text-left"}`}>
+                    {modeCards.find((card) => card.value === effectiveMode)?.description}
+                  </p>
+                </>
+              ) : (
+                <div className="mt-4 flex items-start gap-3 rounded-2xl border border-border bg-background px-4 py-4">
+                  <Building2 className="mt-0.5 h-5 w-5 text-foreground" />
+                  <div className={isRtl ? "text-right" : "text-left"}>
+                    <div className="text-[14px] font-bold text-foreground">{modeCards[0]?.label}</div>
+                    <div className="mt-1 text-[13px] leading-6 text-muted-foreground">{modeCards[0]?.description}</div>
+                  </div>
+                </div>
+              )}
+            </section>
+          ) : isBrokerAudience ? (
+            <section className="rounded-[20px] border border-border/60 bg-card p-5 shadow-sm">
+              <div className={`text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground ${isRtl ? "text-right" : "text-left"}`}>
+                1. نوع الطلب
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {modeCards.map((card) => {
+                  const Icon = card.icon;
+                  const isActive = effectiveMode === card.value;
+                  return (
+                    <button
+                      key={card.value}
+                      type="button"
+                      onClick={() => updateMode(card.value)}
+                      className={isActive
+                        ? "inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-[13px] font-bold text-background"
+                        : "inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-[13px] font-bold text-foreground"}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {card.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className={`mt-3 text-[13px] leading-6 text-muted-foreground ${isRtl ? "text-right" : "text-left"}`}>
+                {modeCards.find((card) => card.value === effectiveMode)?.description}
+              </p>
+            </section>
+          ) : null}
 
           <section className="rounded-[20px] border border-border/60 bg-card p-5 shadow-sm">
             <div className={`text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground ${isRtl ? "text-right" : "text-left"}`}>
-              2. {isClientRequestMode ? "بيانات طلب العميل" : "بيانات عرض العقار"}
+              {simplifiedFieldsOnly
+                ? `${isBrokerAudience ? "2" : "1"}. التفاصيل الأساسية`
+                : `2. ${isClientRequestMode ? "بيانات طلب العميل" : "بيانات عرض العقار"}`}
             </div>
 
             <div className="mt-4 grid gap-5">
@@ -441,17 +556,23 @@ export default function CreateOfferForm({
                 )
               ) : null}
 
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                  {copy.title}
-                </label>
-                <input
-                  value={form.title}
-                  onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-                  className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
-                  placeholder={isClientRequestMode ? copy.clientTitlePlaceholder : copy.propertyTitlePlaceholder}
-                />
-              </div>
+              {!simplifiedFieldsOnly || isClientRequestMode ? (
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                    {copy.title}
+                  </label>
+                  <input
+                    value={form.title}
+                    onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+                    className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                    placeholder={
+                      isClientRequestMode
+                          ? copy.clientTitlePlaceholder
+                          : copy.propertyTitlePlaceholder
+                    }
+                  />
+                </div>
+              ) : null}
 
               <div>
                 <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
@@ -478,7 +599,7 @@ export default function CreateOfferForm({
                 />
               </div>
 
-              {!isClientRequestMode ? (
+              {!isClientRequestMode && !simplifiedFieldsOnly ? (
                 <>
                   <div>
                     <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
@@ -515,15 +636,110 @@ export default function CreateOfferForm({
                   </div>
                 </>
               ) : null}
+
+              {simplifiedFieldsOnly && isClientRequestMode ? (
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                      {copy.clientBudgetMin}
+                    </label>
+                    <input
+                      value={form.clientBudgetMin}
+                      onChange={(event) => setForm((current) => ({ ...current, clientBudgetMin: event.target.value }))}
+                      className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                      placeholder={copy.clientBudgetMin}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                      {copy.clientBudgetMax}
+                    </label>
+                    <input
+                      value={form.clientBudgetMax}
+                      onChange={(event) => setForm((current) => ({ ...current, clientBudgetMax: event.target.value }))}
+                      className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                      placeholder={copy.clientBudgetMax}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                      {copy.clientLocation}
+                    </label>
+                    <input
+                      value={form.clientLocation}
+                      onChange={(event) => setForm((current) => ({ ...current, clientLocation: event.target.value }))}
+                      className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                      placeholder={copy.clientLocation}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                      {copy.clientArea}
+                    </label>
+                    <input
+                      value={form.clientArea}
+                      onChange={(event) => setForm((current) => ({ ...current, clientArea: event.target.value }))}
+                      className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                      placeholder={copy.clientArea}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                      {copy.clientBedsMin}
+                    </label>
+                    <input
+                      value={form.clientBedsMin}
+                      onChange={(event) => setForm((current) => ({ ...current, clientBedsMin: event.target.value }))}
+                      className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                      placeholder={copy.clientBedsMin}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                      {copy.clientBathsMin}
+                    </label>
+                    <input
+                      value={form.clientBathsMin}
+                      onChange={(event) => setForm((current) => ({ ...current, clientBathsMin: event.target.value }))}
+                      className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                      placeholder={copy.clientBathsMin}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                      {copy.clientSqftMin}
+                    </label>
+                    <input
+                      value={form.clientSqftMin}
+                      onChange={(event) => setForm((current) => ({ ...current, clientSqftMin: event.target.value }))}
+                      className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                      placeholder={copy.clientSqftMin}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                      {copy.clientSqftMax}
+                    </label>
+                    <input
+                      value={form.clientSqftMax}
+                      onChange={(event) => setForm((current) => ({ ...current, clientSqftMax: event.target.value }))}
+                      className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                      placeholder={copy.clientSqftMax}
+                    />
+                  </div>
+                </div>
+              ) : null}
             </div>
           </section>
 
           <section className="rounded-[20px] border border-border/60 bg-card p-5 shadow-sm">
             <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              3. {isClientRequestMode ? "التواصل والمرفقات" : "المعاينة والتواصل"}
+              {simplifiedFieldsOnly
+                ? `${isBrokerAudience ? "3" : "2"}. المعاينة والمرفقات`
+                : `3. ${isClientRequestMode ? "التواصل والمرفقات" : "المعاينة والتواصل"}`}
             </div>
 
-            {requiresPropertySelection && selectedProperty ? (
+            {requiresPropertySelection && selectedProperty && !simplifiedFieldsOnly ? (
               <div className="mt-4 space-y-3 rounded-2xl border border-border bg-background p-4">
                 <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                   {copy.propertyCard}
@@ -568,7 +784,7 @@ export default function CreateOfferForm({
               </div>
             ) : null}
 
-            {isClientRequestMode ? (
+            {isClientRequestMode && !simplifiedFieldsOnly ? (
               <div className="mt-5 border-t border-border/60 pt-5">
                 <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                   {copy.clientFile}
@@ -604,17 +820,19 @@ export default function CreateOfferForm({
             ) : null}
 
             <div className="mt-5 border-t border-border/60 pt-5">
-              <div className="mb-4 rounded-2xl border border-border bg-background px-4 py-4">
-                <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                  سينشر باسم
+              {!simplifiedFieldsOnly ? (
+                <div className="mb-4 rounded-2xl border border-border bg-background px-4 py-4">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                    سينشر باسم
+                  </div>
+                  <div className="mt-2 text-[15px] font-bold text-foreground">
+                    {organization?.name ?? "المنظمة الحالية"}
+                  </div>
+                  <div className="mt-1 text-[13px] text-muted-foreground">
+                    هذا العرض يتبع المنظمة وليس الحساب الفردي.
+                  </div>
                 </div>
-                <div className="mt-2 text-[15px] font-bold text-foreground">
-                  {organization?.name ?? "المنظمة الحالية"}
-                </div>
-                <div className="mt-1 text-[13px] text-muted-foreground">
-                  هذا العرض يتبع المنظمة وليس الحساب الفردي.
-                </div>
-              </div>
+              ) : null}
 
               <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFiles} />
               <button

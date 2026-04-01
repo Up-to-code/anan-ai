@@ -157,6 +157,11 @@ async function buildCaseSummary(
           title: property.title,
           address: property.address ?? property.location ?? "غير محدد",
           price: property.price,
+          beds: property.beds,
+          baths: property.baths,
+          sqft: property.sqft,
+          location: property.location,
+          area: property.area,
           imageUrl: property.heroImage?.url ?? property.media?.[0]?.url,
         }
       : null,
@@ -175,6 +180,14 @@ async function buildCaseSummary(
           clientPhone: offerCase.clientContext.clientPhone ?? null,
           clientBudget: offerCase.clientContext.clientBudget ?? null,
           clientNeed: offerCase.clientContext.clientNeed,
+          budgetMin: offerCase.clientContext.budgetMin,
+          budgetMax: offerCase.clientContext.budgetMax,
+          location: offerCase.clientContext.location ?? null,
+          area: offerCase.clientContext.area ?? null,
+          bedsMin: offerCase.clientContext.bedsMin,
+          bathsMin: offerCase.clientContext.bathsMin,
+          sqftMin: offerCase.clientContext.sqftMin,
+          sqftMax: offerCase.clientContext.sqftMax,
         }
       : null,
     primaryOrganization: await buildPrimaryOrganization({

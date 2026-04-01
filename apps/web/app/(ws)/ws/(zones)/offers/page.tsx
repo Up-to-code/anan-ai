@@ -3,11 +3,12 @@ import { requireWorkspaceData } from "../../_lib/workspaceData";
 import { getWorkspaceOffersZone } from "@/server/ws/zones";
 import {
   buildOffersRouteBase,
-  filterOffersByQuery,
+  filterOffers,
   flattenOffers,
   OFFERS_PAGE_SIZE,
   paginateItems,
   resolvePage,
+  resolveFilters,
   resolveSearchQuery,
   resolveSort,
   sortOffers,
@@ -30,9 +31,10 @@ export default async function WorkspaceOffersRoute({
   const page = resolvePage(resolvedSearchParams);
   const searchQuery = resolveSearchQuery(resolvedSearchParams);
   const sort = resolveSort(resolvedSearchParams);
+  const filters = resolveFilters(resolvedSearchParams);
   const items = paginateItems(
     sortOffers(
-      filterOffersByQuery(flattenOffers(snapshot.queues), searchQuery),
+      filterOffers(flattenOffers(snapshot.queues), { searchQuery, filters }),
       sort,
     ),
     page,
@@ -43,9 +45,10 @@ export default async function WorkspaceOffersRoute({
     <OfferOverviewPage
       items={items.items}
       pagination={items}
-      routeBase={buildOffersRouteBase({ searchQuery, sort })}
+      routeBase={buildOffersRouteBase({ searchQuery, sort, filters })}
       searchQuery={searchQuery}
       sort={sort}
+      filters={filters}
     />
   );
 }

@@ -169,35 +169,44 @@ export default function WorkspaceShell({
           }
         />
 
-        {complianceBanner ? (
-            <div
-              className={cn(
-                "border-b border-amber-200 bg-amber-50 px-6 py-4 dark:border-amber-500/30 dark:bg-amber-500/10",
-                isRtl ? "text-right" : "text-left",
-              )}
-              dir={direction}
-            >
-            <div className="text-sm font-black text-amber-900">{complianceBanner.title}</div>
-            <div className="mt-1 text-xs font-semibold text-amber-800 dark:text-amber-200">{complianceBanner.body}</div>
-            {complianceBanner.ctaLabel ? (
-              <div className="mt-3">
-                <a
-                  href={complianceBanner.ctaHref ?? "/ws?onboarding=verification"}
-                  className="inline-flex items-center rounded-[8px] border border-amber-300 bg-white px-3 py-1.5 text-[10px] font-black tracking-[0.18em] text-amber-900 dark:border-amber-400/40 dark:bg-slate-950 dark:text-amber-200"
-                >
-                  {complianceBanner.ctaLabel}
-                </a>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
         <main
           className={cn(
             "min-h-0 min-w-0 flex-1 motion-safe:animate-zone-page-enter",
             isAssistantHome ? "overflow-hidden" : "overflow-auto",
           )}
         >
+          {complianceBanner ? (
+            <div
+              className={cn(
+                "px-4 pt-4 sm:px-6 lg:px-8",
+                isRtl ? "text-right" : "text-left",
+              )}
+              dir={direction}
+            >
+              <div
+                data-slot="workspace-compliance-banner"
+                className="ms-auto w-full max-w-3xl rounded-[22px] border border-amber-200/80 bg-amber-50/90 px-5 py-4 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="text-sm font-black text-amber-900 dark:text-amber-100">{complianceBanner.title}</div>
+                    <div className="mt-1 text-xs font-semibold leading-6 text-amber-800 dark:text-amber-200">
+                      {complianceBanner.body}
+                    </div>
+                  </div>
+                  {complianceBanner.ctaLabel ? (
+                    <a
+                      href={complianceBanner.ctaHref ?? "/ws?onboarding=verification"}
+                      className="inline-flex shrink-0 items-center justify-center rounded-full border border-amber-300 bg-white px-4 py-2 text-[11px] font-black tracking-[0.14em] text-amber-900 transition hover:bg-amber-100 dark:border-amber-400/40 dark:bg-slate-950 dark:text-amber-200"
+                    >
+                      {complianceBanner.ctaLabel}
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           {children}
         </main>
 

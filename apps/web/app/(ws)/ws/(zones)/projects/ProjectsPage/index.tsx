@@ -1,10 +1,11 @@
 import type { WorkspaceProject } from "../projectTypes";
+import type { ProjectMutationActionResult } from "./actionTypes";
 import ProjectsWorkspace from "./ProjectsWorkspace";
 
 type ProjectsPageProps = {
   projects: WorkspaceProject[];
-  onDeleteProject?: (projectId: string) => Promise<void>;
-  onPublishProject?: (projectId: string) => Promise<void>;
+  onDeleteProject?: (projectId: string) => Promise<ProjectMutationActionResult>;
+  onPublishProject?: (projectId: string) => Promise<ProjectMutationActionResult>;
 };
 
 /**

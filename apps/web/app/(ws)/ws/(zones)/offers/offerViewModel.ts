@@ -59,6 +59,83 @@ export function buildWhatsAppHref(phone?: string | null) {
   return `https://wa.me/${normalized}`;
 }
 
+export function parseClientRequirementDetails(clientNeed?: string | null) {
+  const trimmed = clientNeed?.trim() ?? "";
+  if (!trimmed) {
+    return { summary: "", location: null as string | null };
+  }
+
+  const locationPrefixes = ["الموقع المطلوب:", "Preferred location:"];
+  const lines = trimmed
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  let location: string | null = null;
+  const summaryLines = lines.filter((line) => {
+    const prefix = locationPrefixes.find((candidate) => line.startsWith(candidate));
+    if (!prefix) return true;
+    location = line.slice(prefix.length).trim() || null;
+    return false;
+  });
+
+  return {
+    summary: summaryLines.join("\n").trim() || trimmed,
+    location,
+  };
+}
+
+type ClientRequirementLike = NonNullable<WorkspaceOfferSummary["clientContext"]>;
+
+function formatRequirementBudgetLabel(client: ClientRequirementLike) {
+  if (typeof client.budgetMin === "number" && typeof client.budgetMax === "number") {
+    if (client.budgetMin === client.budgetMax) {
+      return formatOfferPrice(client.budgetMax);
+    }
+    return `${formatOfferPrice(client.budgetMin)} - ${formatOfferPrice(client.budgetMax)}`;
+  }
+  if (typeof client.budgetMin === "number") {
+    return `${formatOfferPrice(client.budgetMin)}+`;
+  }
+  if (typeof client.budgetMax === "number") {
+    return formatOfferPrice(client.budgetMax);
+  }
+  return client.clientBudget?.trim() || null;
+}
+
+function formatRequirementSpaceLabel(client: ClientRequirementLike) {
+  if (typeof client.sqftMin === "number" && typeof client.sqftMax === "number") {
+    if (client.sqftMin === client.sqftMax) {
+      return `${client.sqftMax} م²`;
+    }
+    return `${client.sqftMin}-${client.sqftMax} م²`;
+  }
+  if (typeof client.sqftMin === "number") {
+    return `${client.sqftMin}+ م²`;
+  }
+  if (typeof client.sqftMax === "number") {
+    return `${client.sqftMax} م²`;
+  }
+  return null;
+}
+
+export function buildClientRequirementViewModel(client?: WorkspaceOfferSummary["clientContext"] | null) {
+  if (!client) return null;
+
+  const parsed = parseClientRequirementDetails(client.clientNeed);
+
+  return {
+    summary: parsed.summary,
+    location: client.location?.trim() || parsed.location,
+    budgetLabel: formatRequirementBudgetLabel(client),
+    area: client.area?.trim() || null,
+    bedsLabel: typeof client.bedsMin === "number" ? `${client.bedsMin}+` : null,
+    bathsLabel: typeof client.bathsMin === "number" ? `${client.bathsMin}+` : null,
+    sqftLabel: formatRequirementSpaceLabel(client),
+    phone: client.clientPhone?.trim() || null,
+  };
+}
+
 export function mapPropertyToOfferOption(property: PropertyDetail): OfferPropertyOption {
   const presentation = parsePropertyBody(property.body)?.presentation;
 

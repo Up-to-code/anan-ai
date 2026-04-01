@@ -137,8 +137,13 @@ function VerificationTabSection(args: {
 export default async function WorkspaceSettingsPage(props: {
   searchParams: Promise<{ tab?: string }>;
 }) {
-  const cookieStore = await cookies();
-  const locale = resolveLocale(cookieStore.get(WEB_LOCALE_COOKIE)?.value);
+  let locale = resolveLocale(undefined);
+  try {
+    const cookieStore = await cookies();
+    locale = resolveLocale(cookieStore.get(WEB_LOCALE_COOKIE)?.value);
+  } catch {
+    locale = resolveLocale(undefined);
+  }
   const dictionary = getWebDictionary(locale);
   const searchParams = await props.searchParams;
   const currentTab: SettingsTabKey =

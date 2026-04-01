@@ -86,12 +86,12 @@ export function getStepDefinitions(locale: AppLocale): StepDefinition[] {
   }
 
   return [
-    { key: "basic", title: "البيانات الأساسية", summary: "اسم المشروع والسعر والموقع" },
-    { key: "content", title: "الوصف والمحتوى", summary: "الوصف الكامل والوصف القصير والمزايا" },
-    { key: "gallery", title: "المعرض والصور", summary: "الرفع والترتيب وصورة الغلاف" },
-    { key: "specs", title: "المواصفات والترخيص", summary: "الغرف والحالة والمواقف والرخصة" },
-    { key: "sharing", title: "المشاركة الخاصة", summary: "التصريح الخاص وتكليف الوسيط" },
-    { key: "review", title: "المراجعة والحفظ", summary: "مراجعة نهائية قبل الحفظ" },
+    { key: "basic", title: "تعريف المشروع", summary: "الاسم والسعر والموقع وطريقة الظهور" },
+    { key: "content", title: "الرسالة التسويقية", summary: "الوصف الكامل والملخص السريع والمزايا" },
+    { key: "gallery", title: "المعرض البصري", summary: "رفع الصور وترتيبها واختيار الغلاف" },
+    { key: "specs", title: "المواصفات والتوثيق", summary: "الحالة والغرف والمواقف والرخصة" },
+    { key: "sharing", title: "المشاركة والوصول", summary: "الوصول الخاص والملفات وتكليف الوسيط" },
+    { key: "review", title: "المراجعة قبل الحفظ", summary: "مراجعة نهائية قبل اعتماد المشروع" },
   ];
 }
 

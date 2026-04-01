@@ -82,7 +82,7 @@ export function permissionKey(permission: OrganizationApiKeyPermission) {
   return `${permission.resource}:${permission.action}`;
 }
 
-export function permissionLabel(permission: OrganizationApiKeyPermission, locale: AppLocale) {
+export function permissionLabel(permission: OrganizationApiKeyPermission, locale: AppLocale = "ar") {
   const resourceLabel = getPermissionCatalog(locale).find((entry) => entry.resource === permission.resource)?.label ?? permission.resource;
   const actionLabel = getActionCatalog(locale).find((entry) => entry.action === permission.action)?.label ?? permission.action;
   return `${resourceLabel} · ${actionLabel}`;

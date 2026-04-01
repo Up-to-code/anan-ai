@@ -5,7 +5,6 @@ import { getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapWorkspaceProjectToPropertyInput } from "../projectViewModel";
 import { requireSessionContext } from "@/server/auth/session";
 import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizationAssetsRepository";
-import { getWebDictionary } from "@/lib/i18n";
 import { type AppLocale, resolveLocale, WEB_LOCALE_COOKIE } from "@/lib/locale";
 import { toProjectFormActionFailure, validateProjectFormSubmission } from "../projectFormSubmission";
 
@@ -22,10 +21,21 @@ export default async function CreateProjectPage() {
   } catch {
     locale = "ar";
   }
-  const dictionary = getWebDictionary(locale);
   const workspace = await requireWorkspaceData("/ws/projects/create");
   const audience = workspace.audience;
   const ownerContext = workspace.ownerContext ?? null;
+  const title =
+    locale === "fr"
+      ? "Configurer un nouveau projet"
+      : locale === "en"
+        ? "Set up a new project"
+        : "إعداد مشروع جديد";
+  const description =
+    locale === "fr"
+      ? "Suivez les etapes pour saisir les details du projet, organiser la galerie, definir l'acces, puis revoir la version finale avant d'enregistrer."
+      : locale === "en"
+        ? "Follow the steps to enter project details, organize the gallery, set access, and review the final version before saving."
+        : "اتبع الخطوات لإدخال بيانات المشروع، ترتيب المعرض، ضبط الوصول، ثم مراجعة النسخة النهائية قبل الحفظ.";
 
   async function createProject(data: import("@/app/(ws)/ws/public").ProjectFormData) {
     "use server";
@@ -68,8 +78,8 @@ export default async function CreateProjectPage() {
 
   return (
     <ProjectFormScreen
-      title={dictionary.projects.create}
-      description={dictionary.projects.description}
+      title={title}
+      description={description}
       submitLabel={locale === "fr" ? "Enregistrer le projet" : locale === "en" ? "Save project" : "حفظ المشروع"}
       onSave={createProject}
     />

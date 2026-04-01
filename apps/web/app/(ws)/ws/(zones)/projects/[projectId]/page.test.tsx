@@ -101,6 +101,8 @@ it("renders the owner project detail page", async () => {
   expect(markup).toContain("مواقف ضيوف");
   expect(markup).toContain("المستندات الخاصة لا تظهر هنا بشكل عام");
   expect(markup).toContain("الرؤية والوصول");
+  expect(markup).toContain("data-slot=\"project-detail-sidebar\"");
+  expect(markup).toContain("data-slot=\"project-detail-hero\"");
 });
 
 it("renders shared projects as read-only", async () => {
@@ -144,6 +146,7 @@ it("renders shared projects as read-only", async () => {
   expect(markup).toContain("تصريح خاص بهذه المحادثة");
   expect(markup).toContain("permit.pdf");
   expect(markup).toContain("الملفات المرتبطة");
+  expect(markup).toContain("data-slot=\"project-detail-main\"");
 });
 
 it("returns not found when the project is not accessible", async () => {

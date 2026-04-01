@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { useWorkspaceSignalCounts } = vi.hoisted(() => ({
   useWorkspaceSignalCounts: vi.fn(() => ({ notificationCount: 0, inboxCount: 0 })),
 }));
+const { useQuery } = vi.hoisted(() => ({
+  useQuery: vi.fn(() => undefined),
+}));
 
 const { requireWorkspaceData, getLayoutSidebarData, redirect, usePathname, useSearchParams } = vi.hoisted(() => ({
   requireWorkspaceData: vi.fn(),
@@ -11,6 +14,9 @@ const { requireWorkspaceData, getLayoutSidebarData, redirect, usePathname, useSe
   redirect: vi.fn(),
   usePathname: vi.fn(),
   useSearchParams: vi.fn(() => new URLSearchParams()),
+}));
+const { useRouter } = vi.hoisted(() => ({
+  useRouter: vi.fn(() => ({ replace: vi.fn(), refresh: vi.fn(), push: vi.fn() })),
 }));
 
 vi.mock("../../_lib/workspaceData", () => ({
@@ -22,6 +28,11 @@ vi.mock("next/navigation", () => ({
   redirect,
   usePathname,
   useSearchParams,
+  useRouter,
+}));
+
+vi.mock("convex/react", () => ({
+  useQuery,
 }));
 
 vi.mock("../inbox/InboxPage/useRealtimeInbox", () => ({

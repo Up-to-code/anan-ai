@@ -111,4 +111,29 @@ describe("WorkspaceShell", () => {
     expect(markup).toContain("data-slot=\"workspace-sidebar-trigger\"");
     expect(markup).toContain("data-slot=\"theme-toggle\"");
   });
+
+  it("renders compliance messaging as a compact in-content card instead of a full-width strip", () => {
+    const markup = renderToStaticMarkup(
+      <WebLocaleProvider locale="ar" dictionary={getWebDictionary("ar")}>
+        <WorkspaceShell
+          user={{ name: "Ahmed", email: "ahmed@example.com" }}
+          visibleZoneKeys={["overview", "offers", "inbox", "settings"]}
+          organization={{ name: "Alpha", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
+          complianceBanner={{
+            title: "التوثيق مطلوب قبل النشر",
+            body: "يرجى إكمال مستندات التحقق لإظهار العقارات ونشرها.",
+            ctaLabel: "إكمال التوثيق",
+            ctaHref: "/ws/settings?tab=verification",
+          }}
+        >
+          <div>Body</div>
+        </WorkspaceShell>
+      </WebLocaleProvider>,
+    );
+
+    expect(markup).toContain("data-slot=\"workspace-compliance-banner\"");
+    expect(markup).toContain("التوثيق مطلوب قبل النشر");
+    expect(markup).toContain("إكمال التوثيق");
+    expect(markup).toContain("/ws/settings?tab=verification");
+  });
 });

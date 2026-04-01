@@ -34,12 +34,22 @@ export const offerQueueKeySchema = z.enum([
   "targeted_shares",
 ]);
 
+const optionalRequirementNumberSchema = z.number().finite().nonnegative().optional();
+
 export const offerClientContextSchema = z.object({
   crmClientId: z.string().optional(),
   clientName: z.string().trim().min(1),
   clientPhone: z.string().trim().min(1).optional(),
   clientBudget: z.string().trim().min(1).optional(),
   clientNeed: z.string().trim().min(1),
+  budgetMin: optionalRequirementNumberSchema,
+  budgetMax: optionalRequirementNumberSchema,
+  location: z.string().trim().min(1).optional(),
+  area: z.string().trim().min(1).optional(),
+  bedsMin: optionalRequirementNumberSchema,
+  bathsMin: optionalRequirementNumberSchema,
+  sqftMin: optionalRequirementNumberSchema,
+  sqftMax: optionalRequirementNumberSchema,
 });
 
 export const createOfferInputSchema = z.object({
@@ -113,6 +123,11 @@ export type OfferPropertySummary = {
   title: string;
   address: string;
   price?: number;
+  beds?: number;
+  baths?: number;
+  sqft?: number;
+  location?: string;
+  area?: string;
   imageUrl?: string;
 };
 

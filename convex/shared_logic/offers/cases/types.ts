@@ -19,6 +19,14 @@ export type OfferClientContext = {
   clientPhone?: string;
   clientBudget?: string;
   clientNeed: string;
+  budgetMin?: number;
+  budgetMax?: number;
+  location?: string;
+  area?: string;
+  bedsMin?: number;
+  bathsMin?: number;
+  sqftMin?: number;
+  sqftMax?: number;
 };
 
 export type CreateOfferCaseArgs = {
