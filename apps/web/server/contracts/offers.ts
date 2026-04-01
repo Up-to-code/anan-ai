@@ -43,7 +43,7 @@ export const offerClientContextSchema = z.object({
 });
 
 export const createOfferInputSchema = z.object({
-  propertyId: z.string().min(1),
+  propertyId: z.string().min(1).optional(),
   price: z.number().finite(),
   message: z.string().trim().min(1).optional(),
   description: z.string().trim().min(1).optional(),
@@ -75,7 +75,7 @@ export const publishConversationOfferInputSchema = z.object({
 export const updateOfferDraftInputSchema = z.object({
   id: z.string().min(1),
   conversationId: z.string().min(1).optional(),
-  propertyId: z.string().min(1),
+  propertyId: z.string().min(1).optional(),
   price: z.number().finite(),
   message: z.string().trim().min(1).optional(),
   description: z.string().trim().min(1).optional(),
@@ -114,6 +114,16 @@ export type OfferPropertySummary = {
   address: string;
   price?: number;
   imageUrl?: string;
+};
+
+export type OfferPrimaryOrganization = {
+  id: string | null;
+  name: string;
+  type: "broker" | "developer" | null;
+  logoUrl: string | null;
+  website: string | null;
+  contactEmail: string | null;
+  phone?: string | null;
 };
 
 export type OfferParticipantSummary = {
@@ -158,7 +168,7 @@ export type OfferSummary = {
   status: z.infer<typeof offerStatusSchema>;
   publicationState: z.infer<typeof offerPublicationStateSchema>;
   visibility: z.infer<typeof offerVisibilitySchema>;
-  propertyId: string;
+  propertyId: string | null;
   price: number;
   message: string;
   description: string | null;
@@ -166,12 +176,15 @@ export type OfferSummary = {
   recipientAuthUserId: string | null;
   sourceConversationId: string | null;
   property: OfferPropertySummary | null;
+  propertyGallery: string[];
+  propertySummary: string | null;
   commissionText: string | null;
   permitStatus: string | null;
   productStatus: string | null;
   allowedAudience: z.infer<typeof offerAllowedAudienceSchema>;
   attachments: UploadedFileReference[];
   clientContext: OfferClientContext | null;
+  primaryOrganization: OfferPrimaryOrganization | null;
   participants: OfferParticipantSummary[];
   href: string;
   createdAt: number;

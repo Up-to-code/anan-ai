@@ -43,7 +43,7 @@ const offersTables = {
         .index("publicationState", ["publicationState"])
         .index("sourceConversationId", ["sourceConversationId"]),
     offerPackages: defineTable({
-        propertyId: v.id("properties"),
+        propertyId: v.optional(v.id("properties")),
         ownerAuthUserId: v.string(),
         fromBrokerId: v.optional(v.id("brokers")),
         fromREDId: v.optional(v.id("RED")),

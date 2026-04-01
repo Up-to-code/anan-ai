@@ -43,6 +43,7 @@ export type OrganizationSummary = {
   description?: string;
   website?: string;
   contactEmail?: string;
+  phone?: string;
   verificationSummary?: OrganizationVerificationSummary;
 };
 
@@ -128,6 +129,10 @@ export const updateOrganizationInputSchema = z.object({
   contactEmail: z.preprocess(
     (value) => (typeof value === "string" && value.trim().length === 0 ? undefined : value),
     z.string().trim().email("Organization contact email must be valid").max(200).optional(),
+  ),
+  phone: z.preprocess(
+    (value) => (typeof value === "string" && value.trim().length === 0 ? undefined : value),
+    z.string().trim().max(40, "Organization phone must be at most 40 characters").optional(),
   ),
 });
 

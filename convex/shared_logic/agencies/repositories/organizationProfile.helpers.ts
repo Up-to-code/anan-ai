@@ -30,6 +30,7 @@ function toOrganizationSummary(base: {
     description: ownerRecord?.description,
     website: ownerRecord?.website,
     contactEmail: ownerRecord?.contactEmail,
+    phone: ownerRecord?.phone,
   };
 }
 
@@ -105,8 +106,9 @@ function buildOrganizationPatch(args: {
   description?: string;
   website?: string;
   contactEmail?: string;
+  phone?: string;
 }) {
-  const patch: { name: string; description?: string; website?: string; contactEmail?: string } = {
+  const patch: { name: string; description?: string; website?: string; contactEmail?: string; phone?: string } = {
     name: normalizeOrganizationName(args.name),
   };
   if ("description" in args) {
@@ -120,6 +122,10 @@ function buildOrganizationPatch(args: {
     const normalized = normalizeEmail(args.contactEmail ?? "");
     patch.contactEmail = normalized && normalized.length > 0 ? normalized : undefined;
   }
+  if ("phone" in args) {
+    const normalized = args.phone?.trim();
+    patch.phone = normalized && normalized.length > 0 ? normalized : undefined;
+  }
   return patch;
 }
 
@@ -131,6 +137,7 @@ export async function updateOrganizationForOwner(
     description?: string;
     website?: string;
     contactEmail?: string;
+    phone?: string;
   },
 ) {
   const patch = buildOrganizationPatch(args);

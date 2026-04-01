@@ -1,13 +1,27 @@
 "use client";
 
 import { useRef, useState, useTransition, type ChangeEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, BriefcaseBusiness, Building2, FileText, Handshake, Upload, UserRoundSearch, X } from "lucide-react";
+import {
+  ArrowLeft,
+  BriefcaseBusiness,
+  Building2,
+  FileText,
+  Handshake,
+  MessageCircle,
+  Upload,
+  UserRoundSearch,
+  X,
+} from "lucide-react";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { useUploadThing } from "@/lib/uploadthing";
 import type { UploadedFileReference } from "@/server/contracts/files";
 import type { OfferAllowedAudience, OfferCaseType } from "@/server/contracts/offers";
+import type { OrganizationSummary } from "@/server/contracts/organizations";
+import type { WorkspaceAudience } from "@/server/contracts/workspace";
 import type { OfferPropertyOption } from "./offerTypes";
+import { buildWhatsAppHref } from "./offerViewModel";
 
 type FormState = {
   propertyId: string;
@@ -28,7 +42,7 @@ type FormState = {
 };
 
 type SubmitPayload = {
-  propertyId: string;
+  propertyId?: string;
   mode: OfferCaseType;
   title: string;
   description: string;
@@ -50,10 +64,13 @@ type SubmitPayload = {
 
 type CreateOfferFormProps = {
   properties: OfferPropertyOption[];
+  audience: WorkspaceAudience;
+  organization?: OrganizationSummary | null;
   pageTitle?: string;
   pageDescription?: string;
   submitLabel?: string;
   backHref?: string;
+  settingsHref?: string;
   initialData?: Partial<FormState> & {
     attachments?: UploadedFileReference[];
   };
@@ -65,15 +82,19 @@ function buildInitialState(
   properties: OfferPropertyOption[],
   initialData?: CreateOfferFormProps["initialData"],
 ): FormState {
-  const defaultProperty = initialData?.propertyId ?? properties[0]?.id ?? "";
+  const isClientRequestDraft = initialData?.mode === "collaboration_case";
+  const defaultProperty = isClientRequestDraft
+    ? (initialData?.propertyId ?? "")
+    : (initialData?.propertyId ?? properties[0]?.id ?? "");
   const property = properties.find((item) => item.id === defaultProperty);
+
   return {
     propertyId: defaultProperty,
-    mode: initialData?.mode ?? "open_offer",
+    mode: initialData?.mode === "collaboration_case" ? "collaboration_case" : "open_offer",
     title: initialData?.title ?? "",
     description: initialData?.description ?? "",
     price: initialData?.price ?? property?.expectedPrice ?? "",
-    allowedAudience: initialData?.allowedAudience ?? "both",
+    allowedAudience: "brokers",
     commissionText: initialData?.commissionText ?? "",
     permitStatus: initialData?.permitStatus ?? "",
     productStatus: initialData?.productStatus ?? "",
@@ -87,18 +108,21 @@ function buildInitialState(
 }
 
 function buildSubmitPayload(form: FormState, attachments: UploadedFileReference[]): SubmitPayload {
+  const isClientRequirement = form.mode === "collaboration_case";
+  const isTargetedBrokerShare = form.mode === "open_offer";
+
   return {
-    propertyId: form.propertyId,
+    propertyId: isClientRequirement ? undefined : form.propertyId || undefined,
     mode: form.mode,
     title: form.title.trim(),
     description: form.description.trim(),
     price: form.price,
-    allowedAudience: form.allowedAudience,
-    commissionText: form.commissionText.trim() || undefined,
-    permitStatus: form.permitStatus.trim() || undefined,
-    productStatus: form.productStatus.trim() || undefined,
-    recipientEmail: form.mode === "open_offer" ? undefined : form.recipientEmail.trim() || undefined,
-    recipientPhone: form.mode === "open_offer" ? undefined : form.recipientPhone.trim() || undefined,
+    allowedAudience: "brokers",
+    commissionText: isClientRequirement ? undefined : form.commissionText.trim() || undefined,
+    permitStatus: isClientRequirement ? undefined : form.permitStatus.trim() || undefined,
+    productStatus: isClientRequirement ? undefined : form.productStatus.trim() || undefined,
+    recipientEmail: isTargetedBrokerShare ? form.recipientEmail.trim() || undefined : undefined,
+    recipientPhone: isTargetedBrokerShare ? form.recipientPhone.trim() || undefined : undefined,
     clientContext:
       form.mode === "collaboration_case"
         ? {
@@ -114,10 +138,13 @@ function buildSubmitPayload(form: FormState, attachments: UploadedFileReference[
 
 export default function CreateOfferForm({
   properties,
+  audience,
+  organization,
   pageTitle,
   pageDescription,
   submitLabel,
   backHref = "/ws/offers",
+  settingsHref = "/ws/settings?tab=org",
   initialData,
   onSubmit,
   onArchive,
@@ -132,42 +159,66 @@ export default function CreateOfferForm({
   const [isArchivePending, startArchiveTransition] = useTransition();
   const { startUpload, isUploading } = useUploadThing("offerAttachments");
 
+  const whatsappHref = buildWhatsAppHref(organization?.phone);
+  const isBrokerAudience = audience === "broker";
+  const isDeveloperAudience = audience === "developer";
+  const isClientRequestMode = isBrokerAudience && form.mode === "collaboration_case";
+  const requiresPropertySelection = !isClientRequestMode;
+  const canTargetSpecificParty = isBrokerAudience && !isClientRequestMode;
+
   const copy = {
-    brand: locale === "fr" ? "Offres 2.0" : locale === "en" ? "Offers 2.0" : "العروض 2.0",
-    pageTitle: pageTitle ?? (locale === "fr" ? "Créer un nouveau cas d'offre" : locale === "en" ? "Create a new offer case" : "إنشاء حالة عروض جديدة"),
-    pageDescription: pageDescription ?? (locale === "fr" ? "Commencez par l'actif immobilier puis construisez le package, la relation et la collaboration souhaitée." : locale === "en" ? "Start from the property asset, then build the package, relationship, and collaboration you need." : "ابدأ من الأصل العقاري ثم ابنِ فوقه الحزمة والعلاقة والتعاون المطلوب."),
-    back: locale === "fr" ? "Retour" : locale === "en" ? "Back" : "العودة",
-    saveFailed: locale === "fr" ? "Impossible d'enregistrer le cas." : locale === "en" ? "Could not save the case." : "تعذر حفظ الحالة.",
-    uploadFailed: locale === "fr" ? "Impossible de téléverser les fichiers." : locale === "en" ? "Could not upload the files." : "تعذر رفع الملفات.",
-    property: locale === "fr" ? "Actif immobilier" : locale === "en" ? "Property asset" : "الأصل العقاري",
-    caseTitle: locale === "fr" ? "Titre du cas" : locale === "en" ? "Case title" : "عنوان الحالة",
-    caseTitlePlaceholder: locale === "fr" ? "Exemple : Pack de partage rapide pour un projet" : locale === "en" ? "Example: Fast sharing package for a project" : "مثال: حزمة مشاركة سريعة لمشروع كذا",
-    offeredValue: locale === "fr" ? "Valeur proposée" : locale === "en" ? "Offered value" : "القيمة المطروحة",
-    practicalDescription: locale === "fr" ? "Description pratique" : locale === "en" ? "Practical description" : "الوصف العملي",
-    practicalDescriptionPlaceholder: locale === "fr" ? "Quel est le besoin ? Qu'est-ce qui rend ce package utile ? Et quelles sont les conditions de collaboration ?" : locale === "en" ? "What is needed? What makes this package useful? And what are the collaboration terms?" : "ما المطلوب؟ ما الذي يجعل هذه الحزمة مفيدة؟ وما شروط التعاون؟",
-    commission: locale === "fr" ? "Commission / part" : locale === "en" ? "Commission / share" : "العمولة / الحصة",
-    commissionPlaceholder: locale === "fr" ? "Exemple : 2.5% + bonus" : locale === "en" ? "Example: 2.5% + bonus" : "مثال: 2.5% + مكافأة",
-    permitStatus: locale === "fr" ? "Statut du permis" : locale === "en" ? "Permit status" : "حالة التصريح",
-    permitPlaceholder: locale === "fr" ? "Exemple : Prêt à partager" : locale === "en" ? "Example: Ready to share" : "مثال: جاهز للمشاركة",
-    productStatus: locale === "fr" ? "Statut du produit" : locale === "en" ? "Product status" : "حالة المنتج",
-    productPlaceholder: locale === "fr" ? "Exemple : Prêt à conclure" : locale === "en" ? "Example: Ready to close" : "مثال: جاهز للإغلاق",
-    allowedAudience: locale === "fr" ? "Audience autorisée" : locale === "en" ? "Allowed audience" : "الجمهور المسموح",
-    propertyCard: locale === "fr" ? "Fiche de l'actif" : locale === "en" ? "Asset card" : "بطاقة الأصل",
-    noExtraDescription: locale === "fr" ? "Aucune description supplémentaire." : locale === "en" ? "No extra description." : "بدون وصف إضافي.",
-    targetParty: locale === "fr" ? "Partie ciblée" : locale === "en" ? "Target party" : "الطرف المستهدف",
-    recipientEmail: locale === "fr" ? "E-mail de la partie ciblée" : locale === "en" ? "Target party email" : "البريد الإلكتروني للطرف المستهدف",
-    recipientPhone: locale === "fr" ? "Téléphone de la partie ciblée" : locale === "en" ? "Target party phone number" : "رقم الهاتف للطرف المستهدف",
-    clientFile: locale === "fr" ? "Dossier client" : locale === "en" ? "Client file" : "ملف العميل",
-    clientName: locale === "fr" ? "Nom du client" : locale === "en" ? "Client name" : "اسم العميل",
-    clientPhone: locale === "fr" ? "Téléphone du client" : locale === "en" ? "Client phone" : "هاتف العميل",
-    clientBudget: locale === "fr" ? "Budget du client" : locale === "en" ? "Client budget" : "ميزانية العميل",
-    clientNeed: locale === "fr" ? "Quel est le besoin réel du client ?" : locale === "en" ? "What is the client's actual need?" : "ما الاحتياج الفعلي للعميل؟",
-    uploadAttachments: locale === "fr" ? "Téléverser les pièces jointes" : locale === "en" ? "Upload attachments" : "رفع المرفقات",
-    uploadingFiles: locale === "fr" ? "Téléversement des fichiers" : locale === "en" ? "Uploading files" : "جارٍ رفع الملفات",
-    archive: locale === "fr" ? "Archiver le cas" : locale === "en" ? "Archive case" : "أرشفة الحالة",
-    archiving: locale === "fr" ? "Archivage..." : locale === "en" ? "Archiving..." : "جارٍ الأرشفة",
-    saving: locale === "fr" ? "Enregistrement..." : locale === "en" ? "Saving..." : "جارٍ الحفظ",
-    submit: submitLabel ?? (locale === "fr" ? "Enregistrer et continuer" : locale === "en" ? "Save and continue" : "حفظ ومتابعة"),
+    pageTitle:
+      pageTitle ??
+      (locale === "en" ? "Create organization offer" : "إنشاء عرض باسم المنظمة"),
+    pageDescription:
+      pageDescription ??
+      (locale === "en"
+        ? "Choose the offer path that matches your organization workflow, then publish it under the organization."
+        : "اختر مسار العرض المناسب لطريقة عمل منظمتك، ثم انشره باسم المنظمة وليس باسم الحساب الفردي."),
+    back: locale === "en" ? "Back" : "العودة",
+    saveFailed: locale === "en" ? "Could not save the offer." : "تعذر حفظ العرض.",
+    uploadFailed: locale === "en" ? "Could not upload files." : "تعذر رفع الملفات.",
+    property: locale === "en" ? "Property" : "العقار",
+    title: locale === "en" ? "Offer title" : "العنوان",
+    propertyTitlePlaceholder:
+      locale === "en" ? "Example: Ready apartment for broker network" : "مثال: شقة جاهزة للمشاركة مع شبكة الوسطاء",
+    clientTitlePlaceholder:
+      locale === "en" ? "Example: Looking for 3-bedroom apartment in New Cairo" : "مثال: أبحث عن شقة 3 غرف في التجمع الخامس",
+    value: locale === "en" ? "Value / budget" : "القيمة / الميزانية",
+    description: locale === "en" ? "Offer description" : "وصف العرض",
+    descriptionPlaceholder:
+      locale === "en"
+        ? "Explain the property, the target buyer, and how cooperation will work."
+        : "اشرح العقار، العميل المناسب، وكيف سيتم التعاون أو التقسيم.",
+    clientDescriptionPlaceholder:
+      locale === "en"
+        ? "Explain the client requirements, location, budget, and what you need from other brokers."
+        : "اشرح متطلبات العميل، المنطقة، الميزانية، وما الذي تحتاجه من الوسطاء الآخرين.",
+    commission: locale === "en" ? "Commission / split" : "العمولة / نسبة التقسيم",
+    commissionPlaceholder: locale === "en" ? "Example: 2.5% + bonus" : "مثال: 2.5% + مكافأة",
+    permitStatus: locale === "en" ? "Permit status" : "حالة التصريح",
+    permitPlaceholder: locale === "en" ? "Example: Ready to share" : "مثال: جاهز للمشاركة",
+    productStatus: locale === "en" ? "Availability status" : "حالة الإتاحة",
+    productPlaceholder: locale === "en" ? "Example: Ready to close" : "مثال: جاهز للإغلاق",
+    noProperties:
+      locale === "en"
+        ? "You need at least one property in your organization before creating a property offer."
+        : "تحتاج إلى عقار واحد على الأقل داخل المنظمة قبل إنشاء عرض عقار.",
+    propertyCard: locale === "en" ? "Selected property" : "العقار المختار",
+    noExtraDescription: locale === "en" ? "No extra description." : "بدون وصف إضافي.",
+    recipientEmail: locale === "en" ? "Other broker organization email" : "بريد منظمة الوسيط الأخرى",
+    recipientPhone: locale === "en" ? "Other broker organization phone" : "هاتف منظمة الوسيط الأخرى",
+    clientFile: locale === "en" ? "Client requirement" : "طلب العميل",
+    clientName: locale === "en" ? "Client name" : "اسم العميل",
+    clientPhone: locale === "en" ? "Client phone" : "هاتف العميل",
+    clientBudget: locale === "en" ? "Client budget" : "ميزانية العميل",
+    clientNeed: locale === "en" ? "Client need" : "احتياج العميل",
+    uploadAttachments: locale === "en" ? "Upload attachments" : "رفع المرفقات",
+    uploadingFiles: locale === "en" ? "Uploading files" : "جارٍ رفع الملفات",
+    archive: locale === "en" ? "Archive draft" : "أرشفة المسودة",
+    archiving: locale === "en" ? "Archiving..." : "جارٍ الأرشفة",
+    saving: locale === "en" ? "Saving..." : "جارٍ الحفظ",
+    submit: submitLabel ?? (locale === "en" ? "Save and continue" : "حفظ ومتابعة"),
   };
 
   const modeCards: Array<{
@@ -175,33 +226,40 @@ export default function CreateOfferForm({
     label: string;
     description: string;
     icon: typeof Building2;
-  }> = [
-    {
-      value: "open_offer",
-      label: locale === "fr" ? "Offre ouverte" : locale === "en" ? "Open offer" : "عرض مفتوح",
-      description: locale === "fr" ? "Stock disponible pour le réseau selon l'audience visée." : locale === "en" ? "Inventory available to the network based on the chosen audience." : "مخزون متاح للشبكة حسب جمهور العرض.",
-      icon: Building2,
-    },
-    {
-      value: "private_offer",
-      label: locale === "fr" ? "Partage privé" : locale === "en" ? "Private share" : "مشاركة خاصة",
-      description: locale === "fr" ? "Partager l'inventaire directement avec une partie précise." : locale === "en" ? "Share inventory directly with a specific party." : "مشاركة مخزون مع طرف محدد مباشرة.",
-      icon: BriefcaseBusiness,
-    },
-    {
-      value: "collaboration_case",
-      label: locale === "fr" ? "Cas de collaboration" : locale === "en" ? "Collaboration case" : "حالة تعاون",
-      description: locale === "fr" ? "Client réel + besoin clair + partenaire d'exécution ciblé." : locale === "en" ? "Real client + clear need + targeted execution partner." : "عميل حقيقي + احتياج واضح + طرف تنفيذي مستهدف.",
-      icon: Handshake,
-    },
-  ];
+  }> = isDeveloperAudience
+    ? [
+        {
+          value: "open_offer",
+          label: locale === "en" ? "Create property offer" : "إنشاء عرض عقار",
+          description:
+            locale === "en"
+              ? "Developers publish one property offer from the organization to the broker marketplace."
+              : "المطور ينشر عرض عقار واحد من المنظمة إلى سوق الوسطاء.",
+          icon: Building2,
+        },
+      ]
+    : [
+        {
+          value: "open_offer",
+          label: locale === "en" ? "Share property" : "مشاركة عقار",
+          description:
+            locale === "en"
+              ? "You already have a property and want other brokers to bring a buyer or split the deal."
+              : "لديك عقار وتريد من وسطاء آخرين جلب العميل أو مشاركة الصفقة.",
+          icon: BriefcaseBusiness,
+        },
+        {
+          value: "collaboration_case",
+          label: locale === "en" ? "Client requirement" : "طلب عميل",
+          description:
+            locale === "en"
+              ? "You have a client need and want other brokers to match it, without selecting a property now."
+              : "لديك احتياج عميل وتريد من وسطاء آخرين مطابقته، بدون اختيار عقار الآن.",
+          icon: Handshake,
+        },
+      ];
 
-  const audienceOptions: Array<{ value: OfferAllowedAudience; label: string }> = [
-    { value: "both", label: locale === "fr" ? "Courtiers et promoteurs" : locale === "en" ? "Brokers and developers" : "وسطاء ومطورون" },
-    { value: "brokers", label: locale === "fr" ? "Courtiers seulement" : locale === "en" ? "Brokers only" : "وسطاء فقط" },
-    { value: "developers", label: locale === "fr" ? "Promoteurs seulement" : locale === "en" ? "Developers only" : "مطوّرون فقط" },
-  ];
-
+  const showModeSelection = modeCards.length > 1;
   const selectedProperty = properties.find((property) => property.id === form.propertyId) ?? null;
 
   async function handleFiles(event: ChangeEvent<HTMLInputElement>) {
@@ -219,14 +277,27 @@ export default function CreateOfferForm({
     }
   }
 
+  function updateMode(nextMode: OfferCaseType) {
+    setForm((current) => {
+      const fallbackPropertyId = current.propertyId || properties[0]?.id || "";
+      return {
+        ...current,
+        mode: nextMode,
+        propertyId: nextMode === "collaboration_case" ? "" : fallbackPropertyId,
+        recipientEmail: nextMode === "collaboration_case" ? "" : current.recipientEmail,
+        recipientPhone: nextMode === "collaboration_case" ? "" : current.recipientPhone,
+        allowedAudience: "brokers",
+      };
+    });
+  }
+
   return (
     <div className="flex min-h-full flex-col pb-24">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-6 lg:px-8 lg:py-8">
-        <header className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-6 shadow-sm lg:flex-row lg:items-end lg:justify-between">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-6 lg:px-8 lg:py-8">
+        <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{copy.brand}</div>
-            <h1 className="mt-2 text-3xl font-black text-foreground">{copy.pageTitle}</h1>
-            <p className="mt-3 max-w-3xl text-[14px] leading-7 text-muted-foreground">{copy.pageDescription}</p>
+            <h1 className="text-3xl font-black text-foreground">{copy.pageTitle}</h1>
+            <p className="mt-2 max-w-3xl text-[14px] leading-7 text-muted-foreground">{copy.pageDescription}</p>
           </div>
           <button
             type="button"
@@ -238,8 +309,45 @@ export default function CreateOfferForm({
           </button>
         </header>
 
+        {organization ? (
+          <section className="rounded-[20px] border border-border/60 bg-card p-5 shadow-sm">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className={isRtl ? "text-right" : "text-left"}>
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  المنظمة المالكة للعرض
+                </div>
+                <div className="mt-1 text-xl font-black text-foreground">{organization.name}</div>
+                <div className="mt-1 text-[13px] text-muted-foreground">
+                  {organization.type === "red" ? "مطور" : "وسيط"}
+                  {organization.phone ? ` • ${organization.phone}` : ""}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {whatsappHref ? (
+                  <a
+                    href={whatsappHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-bold text-foreground transition hover:bg-muted"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    واتساب
+                  </a>
+                ) : null}
+                <Link
+                  href={settingsHref}
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-bold text-foreground transition hover:bg-muted"
+                >
+                  إعدادات المنظمة
+                </Link>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
         <form
-          className="grid gap-8"
+          className="grid gap-6"
           onSubmit={(event) => {
             event.preventDefault();
             setError(null);
@@ -253,238 +361,295 @@ export default function CreateOfferForm({
             });
           }}
         >
-          <section className="grid gap-4 lg:grid-cols-3">
-            {modeCards.map((card) => {
-              const Icon = card.icon;
-              const isActive = form.mode === card.value;
-              return (
-                <button
-                  key={card.value}
-                  type="button"
-                  onClick={() => setForm((current) => ({ ...current, mode: card.value }))}
-                  className={isActive
-                    ? `rounded-3xl border border-foreground bg-foreground p-5 ${isRtl ? "text-right" : "text-left"} text-background shadow-sm`
-                    : `rounded-3xl border border-border bg-card p-5 ${isRtl ? "text-right" : "text-left"} text-foreground shadow-sm`}
-                >
-                  <Icon className="h-6 w-6" />
-                  <div className="mt-4 text-lg font-black">{card.label}</div>
-                  <div className={isActive ? "mt-2 text-[13px] leading-6 text-background/80" : "mt-2 text-[13px] leading-6 text-muted-foreground"}>
-                    {card.description}
-                  </div>
-                </button>
-              );
-            })}
+          <section className="rounded-[20px] border border-border/60 bg-card p-5 shadow-sm">
+            <div className={`text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground ${isRtl ? "text-right" : "text-left"}`}>
+              1. نوع العرض
+            </div>
+
+            {showModeSelection ? (
+              <>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  {modeCards.map((card) => {
+                    const Icon = card.icon;
+                    const isActive = form.mode === card.value;
+                    return (
+                      <button
+                        key={card.value}
+                        type="button"
+                        onClick={() => updateMode(card.value)}
+                        className={isActive
+                          ? "inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-[13px] font-bold text-background"
+                          : "inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-[13px] font-bold text-foreground"}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {card.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className={`mt-3 text-[13px] leading-6 text-muted-foreground ${isRtl ? "text-right" : "text-left"}`}>
+                  {modeCards.find((card) => card.value === form.mode)?.description}
+                </p>
+              </>
+            ) : (
+              <div className="mt-4 flex items-start gap-3 rounded-2xl border border-border bg-background px-4 py-4">
+                <Building2 className="mt-0.5 h-5 w-5 text-foreground" />
+                <div className={isRtl ? "text-right" : "text-left"}>
+                  <div className="text-[14px] font-bold text-foreground">{modeCards[0]?.label}</div>
+                  <div className="mt-1 text-[13px] leading-6 text-muted-foreground">{modeCards[0]?.description}</div>
+                </div>
+              </div>
+            )}
           </section>
 
-          <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-            <section className="grid gap-6 rounded-3xl border border-border bg-card p-6 shadow-sm">
+          <section className="rounded-[20px] border border-border/60 bg-card p-5 shadow-sm">
+            <div className={`text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground ${isRtl ? "text-right" : "text-left"}`}>
+              2. {isClientRequestMode ? "بيانات طلب العميل" : "بيانات عرض العقار"}
+            </div>
+
+            <div className="mt-4 grid gap-5">
+              {requiresPropertySelection ? (
+                properties.length > 0 ? (
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                      {copy.property}
+                    </label>
+                    <select
+                      value={form.propertyId}
+                      onChange={(event) => {
+                        const propertyId = event.target.value;
+                        const property = properties.find((item) => item.id === propertyId);
+                        setForm((current) => ({
+                          ...current,
+                          propertyId,
+                          price: property?.expectedPrice ?? current.price,
+                        }));
+                      }}
+                      className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                    >
+                      {properties.map((property) => (
+                        <option key={property.id} value={property.id}>
+                          {property.title} - {property.location}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-border bg-background px-4 py-4 text-[13px] leading-6 text-muted-foreground">
+                    {copy.noProperties}
+                  </div>
+                )
+              ) : null}
+
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{copy.property}</label>
-                <select
-                  value={form.propertyId}
-                  onChange={(event) => {
-                    const propertyId = event.target.value;
-                    const property = properties.find((item) => item.id === propertyId);
-                    setForm((current) => ({
-                      ...current,
-                      propertyId,
-                      price: property?.expectedPrice ?? current.price,
-                    }));
-                  }}
+                <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  {copy.title}
+                </label>
+                <input
+                  value={form.title}
+                  onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
                   className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
-                >
-                  {properties.map((property) => (
-                    <option key={property.id} value={property.id}>
-                      {property.title} - {property.location}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid gap-6 md:grid-cols-2">
-                <div>
-                  <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{copy.caseTitle}</label>
-                  <input
-                    value={form.title}
-                    onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-                    className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
-                    placeholder={copy.caseTitlePlaceholder}
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{copy.offeredValue}</label>
-                  <input
-                    value={form.price}
-                    onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
-                    className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{copy.practicalDescription}</label>
-                <textarea
-                  rows={6}
-                  value={form.description}
-                  onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-                  className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] leading-7 text-foreground"
-                  placeholder={copy.practicalDescriptionPlaceholder}
+                  placeholder={isClientRequestMode ? copy.clientTitlePlaceholder : copy.propertyTitlePlaceholder}
                 />
               </div>
 
-              <div className="grid gap-6 md:grid-cols-3">
-                <div>
-                  <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{copy.commission}</label>
-                  <input
-                    value={form.commissionText}
-                    onChange={(event) => setForm((current) => ({ ...current, commissionText: event.target.value }))}
-                    className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
-                    placeholder={copy.commissionPlaceholder}
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{copy.permitStatus}</label>
-                  <input
-                    value={form.permitStatus}
-                    onChange={(event) => setForm((current) => ({ ...current, permitStatus: event.target.value }))}
-                    className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
-                    placeholder={copy.permitPlaceholder}
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{copy.productStatus}</label>
-                  <input
-                    value={form.productStatus}
-                    onChange={(event) => setForm((current) => ({ ...current, productStatus: event.target.value }))}
-                    className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
-                    placeholder={copy.productPlaceholder}
-                  />
-                </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  {copy.value}
+                </label>
+                <input
+                  value={form.price}
+                  onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
+                  className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                  placeholder={isClientRequestMode ? "مثال: 5,000,000" : undefined}
+                />
               </div>
 
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{copy.allowedAudience}</label>
-                <div className="mt-3 grid gap-3 md:grid-cols-3">
-                  {audienceOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setForm((current) => ({ ...current, allowedAudience: option.value }))}
-                      className={form.allowedAudience === option.value
-                        ? "rounded-2xl bg-foreground px-4 py-3 text-[13px] font-bold text-background"
-                        : "rounded-2xl border border-border bg-background px-4 py-3 text-[13px] font-bold text-foreground"}
+                <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  {isClientRequestMode ? copy.clientNeed : copy.description}
+                </label>
+                <textarea
+                  rows={isClientRequestMode ? 5 : 6}
+                  value={form.description}
+                  onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+                  className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] leading-7 text-foreground"
+                  placeholder={isClientRequestMode ? copy.clientDescriptionPlaceholder : copy.descriptionPlaceholder}
+                />
+              </div>
+
+              {!isClientRequestMode ? (
+                <>
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                      {copy.commission}
+                    </label>
+                    <input
+                      value={form.commissionText}
+                      onChange={(event) => setForm((current) => ({ ...current, commissionText: event.target.value }))}
+                      className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                      placeholder={copy.commissionPlaceholder}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                      {copy.permitStatus}
+                    </label>
+                    <input
+                      value={form.permitStatus}
+                      onChange={(event) => setForm((current) => ({ ...current, permitStatus: event.target.value }))}
+                      className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                      placeholder={copy.permitPlaceholder}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                      {copy.productStatus}
+                    </label>
+                    <input
+                      value={form.productStatus}
+                      onChange={(event) => setForm((current) => ({ ...current, productStatus: event.target.value }))}
+                      className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                      placeholder={copy.productPlaceholder}
+                    />
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="rounded-[20px] border border-border/60 bg-card p-5 shadow-sm">
+            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              3. {isClientRequestMode ? "التواصل والمرفقات" : "المعاينة والتواصل"}
+            </div>
+
+            {requiresPropertySelection && selectedProperty ? (
+              <div className="mt-4 space-y-3 rounded-2xl border border-border bg-background p-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  {copy.propertyCard}
+                </div>
+                <div className="overflow-hidden rounded-[18px] bg-muted/20">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={selectedProperty.image} alt={selectedProperty.title} className="h-48 w-full object-cover" />
+                </div>
+                <div className={isRtl ? "text-right" : "text-left"}>
+                  <div className="text-lg font-black text-foreground">{selectedProperty.title}</div>
+                  <div className="mt-1 text-[13px] text-muted-foreground">{selectedProperty.location}</div>
+                  <div className="mt-2 text-[13px] leading-6 text-foreground">
+                    {selectedProperty.shortDescription ?? copy.noExtraDescription}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {canTargetSpecificParty ? (
+              <div className="mt-5 border-t border-border/60 pt-5">
+                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  <UserRoundSearch className="h-4 w-4" />
+                  إرسال مباشر إلى منظمة وسيط أخرى
+                </div>
+                <p className="mt-2 text-[13px] leading-6 text-muted-foreground">
+                  اترك هذه الحقول فارغة إذا كان العرض موجهاً إلى سوق الوسطاء بشكل عام.
+                </p>
+                <div className="mt-4 grid gap-3">
+                  <input
+                    value={form.recipientEmail}
+                    onChange={(event) => setForm((current) => ({ ...current, recipientEmail: event.target.value }))}
+                    className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                    placeholder={copy.recipientEmail}
+                  />
+                  <input
+                    value={form.recipientPhone}
+                    onChange={(event) => setForm((current) => ({ ...current, recipientPhone: event.target.value }))}
+                    className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                    placeholder={copy.recipientPhone}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            {isClientRequestMode ? (
+              <div className="mt-5 border-t border-border/60 pt-5">
+                <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  {copy.clientFile}
+                </div>
+                <div className="mt-4 grid gap-3">
+                  <input
+                    value={form.clientName}
+                    onChange={(event) => setForm((current) => ({ ...current, clientName: event.target.value }))}
+                    className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                    placeholder={copy.clientName}
+                  />
+                  <input
+                    value={form.clientPhone}
+                    onChange={(event) => setForm((current) => ({ ...current, clientPhone: event.target.value }))}
+                    className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                    placeholder={copy.clientPhone}
+                  />
+                  <input
+                    value={form.clientBudget}
+                    onChange={(event) => setForm((current) => ({ ...current, clientBudget: event.target.value }))}
+                    className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
+                    placeholder={copy.clientBudget}
+                  />
+                  <textarea
+                    rows={4}
+                    value={form.clientNeed}
+                    onChange={(event) => setForm((current) => ({ ...current, clientNeed: event.target.value }))}
+                    className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] leading-7 text-foreground"
+                    placeholder={copy.clientNeed}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-5 border-t border-border/60 pt-5">
+              <div className="mb-4 rounded-2xl border border-border bg-background px-4 py-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  سينشر باسم
+                </div>
+                <div className="mt-2 text-[15px] font-bold text-foreground">
+                  {organization?.name ?? "المنظمة الحالية"}
+                </div>
+                <div className="mt-1 text-[13px] text-muted-foreground">
+                  هذا العرض يتبع المنظمة وليس الحساب الفردي.
+                </div>
+              </div>
+
+              <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFiles} />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-background px-4 py-5 text-[13px] font-bold text-foreground transition hover:bg-muted"
+              >
+                <Upload className="h-4 w-4" />
+                {isUploading ? copy.uploadingFiles : copy.uploadAttachments}
+              </button>
+
+              {attachments.length > 0 ? (
+                <div className="mt-4 grid gap-3">
+                  {attachments.map((attachment) => (
+                    <div
+                      key={attachment.key}
+                      className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3"
                     >
-                      {option.label}
-                    </button>
+                      <div className="flex items-center gap-2 text-[13px] font-bold text-foreground">
+                        <FileText className="h-4 w-4" />
+                        {attachment.name}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAttachments((current) => current.filter((item) => item.key !== attachment.key))}
+                        className="rounded-full border border-border p-1 text-muted-foreground"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
                   ))}
                 </div>
-              </div>
-            </section>
-
-            <section className="grid gap-6">
-              <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-                <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{copy.propertyCard}</div>
-                {selectedProperty ? (
-                  <div className="mt-4 overflow-hidden rounded-3xl border border-border">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={selectedProperty.image} alt={selectedProperty.title} className="h-52 w-full object-cover" />
-                    <div className="grid gap-2 p-4">
-                      <div className="text-lg font-black text-foreground">{selectedProperty.title}</div>
-                      <div className="text-[13px] text-muted-foreground">{selectedProperty.location}</div>
-                      <div className="text-[13px] font-bold text-foreground">{selectedProperty.shortDescription ?? copy.noExtraDescription}</div>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-
-              {form.mode !== "open_offer" ? (
-                <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-                  <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                    <UserRoundSearch className="h-4 w-4" />
-                    {copy.targetParty}
-                  </div>
-                  <div className="mt-4 grid gap-4">
-                    <input
-                      value={form.recipientEmail}
-                      onChange={(event) => setForm((current) => ({ ...current, recipientEmail: event.target.value }))}
-                      className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
-                      placeholder={copy.recipientEmail}
-                    />
-                    <input
-                      value={form.recipientPhone}
-                      onChange={(event) => setForm((current) => ({ ...current, recipientPhone: event.target.value }))}
-                      className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-[14px] font-bold text-foreground"
-                      placeholder={copy.recipientPhone}
-                    />
-                  </div>
-                </div>
               ) : null}
-
-              {form.mode === "collaboration_case" ? (
-                <div className="rounded-3xl border border-sky-200 bg-sky-50/70 p-6 shadow-sm">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-700">{copy.clientFile}</div>
-                  <div className="mt-4 grid gap-4">
-                    <input
-                      value={form.clientName}
-                      onChange={(event) => setForm((current) => ({ ...current, clientName: event.target.value }))}
-                      className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3 text-[14px] font-bold text-foreground"
-                      placeholder={copy.clientName}
-                    />
-                    <input
-                      value={form.clientPhone}
-                      onChange={(event) => setForm((current) => ({ ...current, clientPhone: event.target.value }))}
-                      className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3 text-[14px] font-bold text-foreground"
-                      placeholder={copy.clientPhone}
-                    />
-                    <input
-                      value={form.clientBudget}
-                      onChange={(event) => setForm((current) => ({ ...current, clientBudget: event.target.value }))}
-                      className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3 text-[14px] font-bold text-foreground"
-                      placeholder={copy.clientBudget}
-                    />
-                    <textarea
-                      rows={4}
-                      value={form.clientNeed}
-                      onChange={(event) => setForm((current) => ({ ...current, clientNeed: event.target.value }))}
-                      className="w-full rounded-2xl border border-sky-200 bg-white px-4 py-3 text-[14px] leading-7 text-foreground"
-                      placeholder={copy.clientNeed}
-                    />
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-                <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFiles} />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-background px-4 py-6 text-[13px] font-bold text-foreground transition hover:bg-muted"
-                >
-                  <Upload className="h-4 w-4" />
-                  {isUploading ? copy.uploadingFiles : copy.uploadAttachments}
-                </button>
-                {attachments.length > 0 ? (
-                  <div className="mt-4 grid gap-3">
-                    {attachments.map((attachment) => (
-                      <div key={attachment.key} className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3">
-                        <div className="flex items-center gap-2 text-[13px] font-bold text-foreground">
-                          <FileText className="h-4 w-4" />
-                          {attachment.name}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setAttachments((current) => current.filter((item) => item.key !== attachment.key))}
-                          className="rounded-full border border-border p-1 text-muted-foreground"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            </section>
-          </div>
+            </div>
+          </section>
 
           {error ? (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] font-bold text-rose-700">
@@ -506,10 +671,13 @@ export default function CreateOfferForm({
               >
                 {isArchivePending ? copy.archiving : copy.archive}
               </button>
-            ) : <span />}
+            ) : (
+              <span />
+            )}
+
             <button
               type="submit"
-              disabled={isPending || isUploading}
+              disabled={isPending || isUploading || (requiresPropertySelection && properties.length === 0)}
               className="rounded-2xl bg-foreground px-5 py-3 text-[13px] font-bold text-background transition hover:bg-foreground/90 disabled:opacity-50"
             >
               {isPending ? copy.saving : copy.submit}

@@ -35,6 +35,7 @@ export default function OrganizationSettingsWorkspace({
     description?: string;
     website?: string;
     contactEmail?: string;
+    phone?: string;
   }) => Promise<{ ok: true; message: string } | { ok: false; message: string }>;
 }) {
   const { locale, dictionary, direction, isRtl } = useWebLocale();
@@ -42,6 +43,7 @@ export default function OrganizationSettingsWorkspace({
   const [description, setDescription] = useState(organization?.description ?? "");
   const [website, setWebsite] = useState(organization?.website ?? "");
   const [contactEmail, setContactEmail] = useState(organization?.contactEmail ?? "");
+  const [phone, setPhone] = useState(organization?.phone ?? "");
   const [status, setStatus] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -109,6 +111,7 @@ export default function OrganizationSettingsWorkspace({
                 description: description.trim().length > 0 ? description : undefined,
                 website: website.trim().length > 0 ? website : undefined,
                 contactEmail: contactEmail.trim().length > 0 ? contactEmail : undefined,
+                phone: phone.trim().length > 0 ? phone : undefined,
               });
               setStatus(result.message);
               setIsSaving(false);
@@ -159,6 +162,19 @@ export default function OrganizationSettingsWorkspace({
                   onChange={(event) => setContactEmail(event.target.value)}
                   disabled={!canManage || isSaving}
                   placeholder="contact@example.com"
+                  dir="ltr"
+                  className="w-full rounded-[18px] border border-border/70 bg-background/80 px-4 py-3 text-[14px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-[13px] font-semibold text-foreground">رقم واتساب / الهاتف</label>
+                <input
+                  type="text"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  disabled={!canManage || isSaving}
+                  placeholder="+966500000000"
                   dir="ltr"
                   className="w-full rounded-[18px] border border-border/70 bg-background/80 px-4 py-3 text-[14px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
                 />

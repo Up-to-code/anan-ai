@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import CreateOfferForm from "../../CreateOfferForm";
 import { requireWorkspaceData } from "../../../../_lib/workspaceData";
+import { getWorkspaceOrganizationTeam } from "../../../../_lib/organizationTeam";
 import { getWorkspaceOffersZone, getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapPropertyToOfferOption } from "../../offerViewModel";
 import type { UploadedFileReference } from "@/server/contracts/files";
@@ -23,9 +24,10 @@ export default async function WorkspaceOfferEditRoute({
   const ownerContext = workspace.ownerContext ?? null;
   const offersZone = getWorkspaceOffersZone(audience, ownerContext);
   const propertyZone = getWorkspacePropertyZone(audience, ownerContext);
-  const [offer, properties] = await Promise.all([
+  const [offer, properties, organizationTeam] = await Promise.all([
     offersZone.getOfferLiveState(offerId),
     propertyZone.listProperties({ paginationOpts: { cursor: null, numItems: 100 } }),
+    getWorkspaceOrganizationTeam(),
   ]);
 
   if (!offer || !offer.canEditDraft) {
@@ -35,7 +37,7 @@ export default async function WorkspaceOfferEditRoute({
   const resolvedOffer = offer;
 
   async function updateOffer(data: {
-    propertyId: string;
+    propertyId?: string;
     mode: "open_offer" | "private_offer" | "collaboration_case";
     title: string;
     description: string;
@@ -81,12 +83,14 @@ export default async function WorkspaceOfferEditRoute({
   return (
     <CreateOfferForm
       properties={properties.page.map(mapPropertyToOfferOption)}
+      audience={audience}
+      organization={organizationTeam.organization}
       pageTitle="تعديل مسودة العرض"
-      pageDescription="حدّث تفاصيل الحزمة، العلاقة، وملف العميل قبل نشر الحالة."
+      pageDescription="حدّث العرض المنشور باسم المنظمة، سواء كان عرض عقار أو مشاركة موجّهة أو طلب عميل."
       submitLabel="حفظ المسودة"
       backHref={`/ws/offers/${offerId}`}
       initialData={{
-        propertyId: resolvedOffer.propertyId,
+        propertyId: resolvedOffer.propertyId ?? undefined,
         mode: resolvedOffer.type,
         title: resolvedOffer.message ?? "",
         description: resolvedOffer.description ?? undefined,

@@ -33,14 +33,30 @@ export function formatOfferStageLabel(stage: WorkspaceOfferSummary["stage"]) {
 export function formatOfferTypeLabel(type: WorkspaceOfferSummary["type"]) {
   switch (type) {
     case "open_offer":
-      return "عرض مفتوح";
+      return "عرض عقار";
     case "private_offer":
-      return "مشاركة خاصة";
+      return "مشاركة عقار";
     case "collaboration_case":
-      return "حالة تعاون";
+      return "طلب عميل";
     default:
       return type;
   }
+}
+
+export function formatOfferMarketplaceLabel(offer: Pick<WorkspaceOfferSummary, "clientContext" | "primaryOrganization">) {
+  if (offer.clientContext) {
+    return "طلب عميل";
+  }
+  if (offer.primaryOrganization?.type === "developer") {
+    return "عرض عقار من مطور";
+  }
+  return "مشاركة عقار بين الوسطاء";
+}
+
+export function buildWhatsAppHref(phone?: string | null) {
+  const normalized = phone?.replace(/[^\d]/g, "") ?? "";
+  if (!normalized) return null;
+  return `https://wa.me/${normalized}`;
 }
 
 export function mapPropertyToOfferOption(property: PropertyDetail): OfferPropertyOption {

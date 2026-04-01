@@ -12,7 +12,7 @@ async function createDealForAgreedCase(
   args: {
     offerCase: Doc<"offerCases">;
     offerPackage: Doc<"offerPackages">;
-    property: Doc<"properties">;
+    property: Doc<"properties"> | null;
     access: Awaited<ReturnType<typeof requireSender>>;
   },
 ) {
@@ -21,7 +21,7 @@ async function createDealForAgreedCase(
   const clientOwner = participants.find((participant) => participant.role === "client_owner");
   const dealId = await ctx.db.insert("deals", {
     createdAt: Date.now(),
-    title: args.offerCase.headline ?? args.property.title,
+    title: args.offerCase.headline ?? args.property?.title ?? "Client requirement",
     description: args.offerCase.summary ?? args.offerPackage.summary,
     value: args.offerPackage.askingPrice,
     stage: "new",
@@ -56,9 +56,12 @@ async function createOfferCase(
   options: { draft: boolean },
 ) {
   const access = options.draft ? await requireSender(ctx) : await requireVerifiedSender(ctx);
-  const property = await loadPropertySummary(ctx, args.propertyId);
   const caseType = resolveCaseType(args);
   const packageVisibility = resolveVisibility(args);
+  const property = args.propertyId ? await loadPropertySummary(ctx, args.propertyId) : null;
+  if (caseType !== "collaboration_case") {
+    assert(args.propertyId, "Property is required for property offers", "INVALID_ARGUMENT");
+  }
   if (caseType === "collaboration_case") {
     assert(args.clientContext?.clientName && args.clientContext.clientNeed, "Client context is required for collaboration cases");
   }
@@ -98,7 +101,7 @@ async function createOfferCase(
       visibility: packageVisibility,
       initiatedByAuthUserId: access.authUserId,
       sourceConversationId: args.sourceConversationId,
-      headline: args.message ?? property.title,
+      headline: args.message ?? property?.title ?? "Client requirement",
       summary: args.description,
       clientContext: args.clientContext,
       createdAt: now,
@@ -172,7 +175,7 @@ async function createOfferCase(
     visibility: packageVisibility,
     initiatedByAuthUserId: access.authUserId,
     sourceConversationId: args.sourceConversationId,
-    headline: args.message ?? property.title,
+    headline: args.message ?? property?.title ?? "Property offer",
     summary: args.description,
     clientContext: undefined,
     createdAt: now,
@@ -223,6 +226,9 @@ export async function updateOfferDraftService(ctx: MutationCtx, args: UpdateOffe
   }
   const offerPackage = await ctx.db.get(offerCase.offerPackageId);
   assert(offerPackage, "Offer package not found", "NOT_FOUND");
+  if (offerCase.type !== "collaboration_case") {
+    assert(args.propertyId ?? offerPackage.propertyId, "Property is required for property offers", "INVALID_ARGUMENT");
+  }
   await ctx.db.patch(offerCase._id, {
     headline: args.message,
     summary: args.description,
@@ -231,7 +237,7 @@ export async function updateOfferDraftService(ctx: MutationCtx, args: UpdateOffe
     lastActivityAt: Date.now(),
   });
   await ctx.db.patch(offerPackage._id, {
-    propertyId: args.propertyId,
+    ...(args.propertyId ? { propertyId: args.propertyId } : {}),
     title: args.message,
     summary: args.description,
     askingPrice: args.price,
@@ -424,7 +430,7 @@ export async function advanceOfferCaseStageService(
   assert(isOwnerOrClientOwner, "Only the owning side can advance this case", "FORBIDDEN");
   const offerPackage = await ctx.db.get(offerCase.offerPackageId);
   assert(offerPackage, "Offer package not found", "NOT_FOUND");
-  const property = await loadPropertySummary(ctx, offerPackage.propertyId);
+  const property = offerPackage.propertyId ? await loadPropertySummary(ctx, offerPackage.propertyId) : null;
 
   if (args.action === "mark_agreed") {
     assert(offerCase.stage === "engaged", "Only engaged cases can move to agreed");

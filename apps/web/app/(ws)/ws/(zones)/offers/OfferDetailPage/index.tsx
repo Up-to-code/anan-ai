@@ -5,69 +5,370 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Archive,
-  CheckCircle2,
-  Handshake,
+  Building2,
+  Calendar,
+  ExternalLink,
+  Globe,
+  type LucideIcon,
   Mail,
   MapPin,
+  MessageCircle,
   ShieldCheck,
   Tag,
-  Target,
-  Trophy,
-  XCircle,
 } from "lucide-react";
-import { formatOfferPrice, formatOfferStageLabel, formatOfferTypeLabel } from "../offerViewModel";
+import {
+  buildWhatsAppHref,
+  formatOfferMarketplaceLabel,
+  formatOfferPrice,
+  formatOfferStageLabel,
+  formatOfferTypeLabel,
+} from "../offerViewModel";
 import type { WorkspaceOfferDetail } from "../offerTypes";
 import type { OfferActionResult } from "@/server/contracts/offers";
 
 type DetailActionResult = { redirectTo?: string } | { ok: true } | OfferActionResult | void;
 
-function DetailSection({
-  eyebrow,
-  title,
-  description,
-  children,
-}: {
-  eyebrow?: string;
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
+function formatOrganizationTypeLabel(type: "broker" | "developer" | null) {
+  if (type === "broker") return "وسيط";
+  if (type === "developer") return "مطور";
+  return "جهة";
+}
+
+function organizationInitial(name?: string | null) {
+  const trimmed = name?.trim();
+  return trimmed ? Array.from(trimmed)[0] : "؟";
+}
+
+function DetailBadge({ value }: { value: string }) {
   return (
-    <section className="border-t border-border/70 pt-6 first:border-t-0 first:pt-0">
-      <div className="space-y-2 text-right">
-        {eyebrow ? (
-          <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{eyebrow}</div>
-        ) : null}
-        <h2 className="text-xl font-black text-foreground">{title}</h2>
-        {description ? <p className="max-w-3xl text-[14px] leading-7 text-muted-foreground">{description}</p> : null}
-      </div>
-      <div className="mt-6">{children}</div>
-    </section>
+    <span className="rounded-full border border-border bg-background px-3 py-1 text-[11px] font-bold text-foreground">
+      {value}
+    </span>
   );
 }
 
-function DetailRows({
-  rows,
+function DetailRow({
+  icon: Icon,
+  label,
+  value,
+  helper,
 }: {
-  rows: Array<{ label: string; value: string; helper?: string }>;
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  helper?: string | null;
 }) {
   return (
-    <div className="grid gap-3">
-      {rows.map((row) => (
-        <div key={row.label} className="border-b border-border/60 pb-3 text-right last:border-b-0 last:pb-0">
-          <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{row.label}</div>
-          <div className="mt-2 text-[15px] font-black text-foreground">{row.value}</div>
-          {row.helper ? <div className="mt-1 text-[13px] leading-6 text-muted-foreground">{row.helper}</div> : null}
+    <div className="border-b border-border/50 py-3 text-right last:border-b-0 last:pb-0 first:pt-0">
+      <div className="flex items-center justify-end gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </div>
+      <div className="mt-1.5 text-[15px] font-black text-foreground">{value}</div>
+      {helper ? <div className="mt-1 text-[13px] leading-6 text-muted-foreground/90">{helper}</div> : null}
+    </div>
+  );
+}
+
+function PropertyGallery({ offer }: { offer: WorkspaceOfferDetail }) {
+  if (offer.propertyGallery.length === 0) {
+    return null;
+  }
+
+  if (offer.propertyGallery.length === 1) {
+    return (
+      <div data-slot="offer-gallery" className="overflow-hidden rounded-[24px] bg-muted/10">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={offer.propertyGallery[0]}
+          alt={offer.propertyTitle}
+          className="h-72 w-full object-cover"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div data-slot="offer-gallery" className="grid gap-3 sm:grid-cols-2">
+      {offer.propertyGallery.slice(0, 4).map((image, index) => (
+        <div key={image} className={index === 0 ? "sm:col-span-2" : ""}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={image}
+            alt={`${offer.propertyTitle} ${index + 1}`}
+            className={`w-full rounded-[24px] bg-muted/10 object-cover ${index === 0 ? "h-72" : "h-40"}`}
+          />
         </div>
       ))}
     </div>
   );
 }
 
+function OfferPrimaryData({ offer }: { offer: WorkspaceOfferDetail }) {
+  if (offer.clientContext) {
+    return (
+      <div className="rounded-[24px] bg-muted/10 px-5 py-4">
+        <div className="text-right">
+          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">طلب العميل</div>
+          <div className="mt-1.5 text-[18px] font-black text-foreground">{offer.clientContext.clientName}</div>
+          <div className="mt-2 text-[14px] leading-7 text-muted-foreground">{offer.clientContext.clientNeed}</div>
+        </div>
+
+        <div className="mt-4 grid gap-x-6 sm:grid-cols-2 xl:grid-cols-3">
+          {offer.clientContext.clientBudget ? (
+            <DetailRow icon={Tag} label="الميزانية" value={offer.clientContext.clientBudget} />
+          ) : null}
+          {offer.clientContext.clientPhone ? (
+            <DetailRow icon={Mail} label="الهاتف" value={offer.clientContext.clientPhone} />
+          ) : null}
+          <DetailRow icon={Building2} label="العقار" value={offer.propertyTitle} helper={offer.propertyAddress} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-[24px] bg-muted/10 px-5 py-4">
+      <div className="grid gap-x-6 sm:grid-cols-2 xl:grid-cols-4">
+        <DetailRow icon={Building2} label="العقار" value={offer.propertyTitle} helper={offer.propertyAddress} />
+        <DetailRow icon={MapPin} label="الموقع" value={offer.propertyAddress} />
+        <DetailRow
+          icon={Tag}
+          label="السعر والعمولة"
+          value={formatOfferPrice(offer.price)}
+          helper={offer.commissionText ?? "بدون عمولة إضافية"}
+        />
+        <DetailRow
+          icon={ShieldCheck}
+          label="التصريح"
+          value={offer.permitStatus ?? "غير متوفر"}
+          helper={offer.productStatus ?? "بدون حالة إضافية"}
+        />
+      </div>
+    </div>
+  );
+}
+
+function OfferBrandPanel({
+  offer,
+  editHref,
+  pendingAction,
+  runAction,
+  onMessage,
+  onArchive,
+  onPublish,
+  onEngage,
+  onRespond,
+  onAdvanceStage,
+}: {
+  offer: WorkspaceOfferDetail;
+  editHref?: string | null;
+  pendingAction: string | null;
+  runAction: (actionKey: string, callback: () => Promise<DetailActionResult>) => Promise<void>;
+  onMessage: () => Promise<{ conversationId: string }>;
+  onArchive?: () => Promise<{ redirectTo: string }>;
+  onPublish?: () => Promise<DetailActionResult>;
+  onEngage?: () => Promise<DetailActionResult>;
+  onRespond?: (status: "accepted" | "rejected") => Promise<DetailActionResult>;
+  onAdvanceStage?: (action: "mark_agreed" | "close_won" | "close_lost") => Promise<DetailActionResult>;
+}) {
+  const router = useRouter();
+  const organization = offer.primaryOrganization;
+  const whatsappHref = buildWhatsAppHref(organization?.phone);
+  const hasWorkflowActions =
+    offer.allowedActions.canEngage ||
+    offer.allowedActions.canRespond ||
+    offer.allowedActions.canMarkAgreed ||
+    offer.allowedActions.canCloseWon ||
+    offer.allowedActions.canCloseLost;
+
+  return (
+    <aside className="order-2 space-y-4 lg:order-1">
+      <div className="rounded-[24px] border border-border/60 bg-card p-5 text-right shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-2">
+            <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">المنظمة الناشرة</div>
+            <div className="text-xl font-black text-foreground">
+              {organization?.name ?? offer.senderName ?? "جهة غير محددة"}
+            </div>
+            <div className="text-[13px] font-medium text-muted-foreground">
+              {formatOrganizationTypeLabel(organization?.type ?? null)}
+            </div>
+            {organization?.phone ? (
+              <div className="text-[13px] font-medium text-muted-foreground">{organization.phone}</div>
+            ) : null}
+          </div>
+          {organization?.logoUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={organization.logoUrl}
+              alt={organization.name}
+              className="h-16 w-16 rounded-2xl bg-muted/20 object-contain p-2"
+            />
+          ) : (
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/20 text-xl font-black text-muted-foreground">
+              {organizationInitial(organization?.name ?? offer.senderName)}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-5 flex flex-wrap justify-end gap-2">
+          {whatsappHref ? (
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-2 text-[12px] font-bold text-foreground transition hover:bg-muted/70"
+            >
+              <MessageCircle className="h-4 w-4" />
+              واتساب
+            </a>
+          ) : null}
+          {organization?.website ? (
+            <a
+              href={organization.website}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-2 text-[12px] font-bold text-foreground transition hover:bg-muted/70"
+            >
+              <Globe className="h-4 w-4" />
+              الموقع
+            </a>
+          ) : null}
+          {organization?.contactEmail ? (
+            <a
+              href={`mailto:${organization.contactEmail}`}
+              className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-2 text-[12px] font-bold text-foreground transition hover:bg-muted/70"
+            >
+              <Mail className="h-4 w-4" />
+              البريد
+            </a>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="rounded-[24px] border border-border/60 bg-card p-5 shadow-sm">
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={() =>
+              void runAction("message", async () => {
+                const result = await onMessage();
+                router.push(`/ws/inbox/${result.conversationId}`);
+              })
+            }
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-foreground px-4 py-3 text-[13px] font-bold text-background transition hover:bg-foreground/90"
+          >
+            <Mail className="h-4 w-4" />
+            فتح المحادثة
+          </button>
+
+          {editHref ? (
+            <button
+              type="button"
+              onClick={() => router.push(editHref)}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-muted/70"
+            >
+              <ExternalLink className="h-4 w-4" />
+              تعديل المسودة
+            </button>
+          ) : null}
+
+          {offer.canPublish && onPublish ? (
+            <button
+              type="button"
+              onClick={() => void runAction("publish", onPublish)}
+              className="w-full rounded-full bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-muted/70"
+            >
+              {pendingAction === "publish" ? "جارٍ النشر..." : "نشر الحالة"}
+            </button>
+          ) : null}
+
+          {offer.allowedActions.canEngage && onEngage ? (
+            <button
+              type="button"
+              onClick={() => void runAction("engage", onEngage)}
+              className="w-full rounded-full bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-muted/70"
+            >
+              {pendingAction === "engage" ? "جارٍ فتح التعاون..." : "بدء التعاون"}
+            </button>
+          ) : null}
+
+          {offer.allowedActions.canRespond && onRespond ? (
+            <div className="grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => void runAction("accept", () => onRespond("accepted"))}
+                className="rounded-full bg-emerald-600 px-4 py-3 text-[13px] font-bold text-white transition hover:bg-emerald-700"
+              >
+                {pendingAction === "accept" ? "جارٍ القبول..." : "قبول"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void runAction("reject", () => onRespond("rejected"))}
+                className="rounded-full bg-rose-50 px-4 py-3 text-[13px] font-bold text-rose-700 transition hover:bg-rose-100"
+              >
+                {pendingAction === "reject" ? "جارٍ الرفض..." : "رفض"}
+              </button>
+            </div>
+          ) : null}
+
+          {offer.allowedActions.canMarkAgreed && onAdvanceStage ? (
+            <button
+              type="button"
+              onClick={() => void runAction("mark_agreed", () => onAdvanceStage("mark_agreed"))}
+              className="w-full rounded-full bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-muted/70"
+            >
+              {pendingAction === "mark_agreed" ? "جارٍ الحفظ..." : "اعتماد الاتفاق"}
+            </button>
+          ) : null}
+
+          {offer.allowedActions.canCloseWon && onAdvanceStage ? (
+            <button
+              type="button"
+              onClick={() => void runAction("close_won", () => onAdvanceStage("close_won"))}
+              className="w-full rounded-full bg-emerald-600 px-4 py-3 text-[13px] font-bold text-white transition hover:bg-emerald-700"
+            >
+              {pendingAction === "close_won" ? "جارٍ الإغلاق..." : "إغلاق ناجح"}
+            </button>
+          ) : null}
+
+          {offer.allowedActions.canCloseLost && onAdvanceStage ? (
+            <button
+              type="button"
+              onClick={() => void runAction("close_lost", () => onAdvanceStage("close_lost"))}
+              className="w-full rounded-full bg-rose-50 px-4 py-3 text-[13px] font-bold text-rose-700 transition hover:bg-rose-100"
+            >
+              {pendingAction === "close_lost" ? "جارٍ الإغلاق..." : "إغلاق غير مكتمل"}
+            </button>
+          ) : null}
+
+          {offer.canArchive && onArchive ? (
+            <button
+              type="button"
+              onClick={() => void runAction("archive", onArchive)}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-muted/70"
+            >
+              <Archive className="h-4 w-4" />
+              {pendingAction === "archive" ? "جارٍ الأرشفة..." : "أرشفة"}
+            </button>
+          ) : null}
+
+          {!hasWorkflowActions && !offer.canPublish && !offer.canArchive ? (
+            <div className="rounded-[18px] bg-background px-4 py-4 text-center text-[13px] font-semibold text-muted-foreground">
+              لا توجد إجراءات متاحة في هذه المرحلة حالياً.
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 /**
- * WHY:   Each offer case needs one action-oriented workspace page where brokers and developers can move collaboration forward.
- * WHAT:  Renders the case detail, participants, package data, activity, and role-based case actions.
- * HOW:   Treats server actions as async callbacks, handling redirect-capable and refresh-only responses in one place.
+ * WHY:   Offer details should start with the actual property/client context instead of decorative legacy sections.
+ * WHAT:  Renders a two-column detail page with brand/contact on one side and gallery + offer data on the other.
+ * HOW:   Uses the shared offer DTO to render property media when present and keep client-driven cases focused on the request card.
  */
 export default function OfferDetailPage({
   offer,
@@ -109,369 +410,108 @@ export default function OfferDetailPage({
     }
   }
 
-  const hasWorkflowActions =
-    offer.allowedActions.canEngage ||
-    offer.allowedActions.canRespond ||
-    offer.allowedActions.canMarkAgreed ||
-    offer.allowedActions.canCloseWon ||
-    offer.allowedActions.canCloseLost;
-
   return (
-    <div className="flex min-h-full flex-col pb-32">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-6 lg:px-8 lg:py-8">
-        <header className="border-b border-border/70 pb-8">
-          <div className="flex flex-col gap-6 border-b border-border/60 pb-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-4 text-right">
-              <button
-                type="button"
-                onClick={() => router.push("/ws/offers")}
-                className="inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.2em] text-muted-foreground"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                العودة للعروض
-              </button>
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <span className="rounded-full border border-border bg-muted/30 px-3 py-1 text-[11px] font-bold text-muted-foreground">
-                  {formatOfferTypeLabel(offer.type)}
-                </span>
-                <span className="rounded-full border border-border bg-card/80 px-3 py-1 text-[11px] font-bold text-foreground">
-                  {formatOfferStageLabel(offer.stage)}
-                </span>
-              </div>
-              <div>
-                <h1 className="text-3xl font-black tracking-tight text-foreground">{offer.message}</h1>
-                <p className="mt-3 max-w-3xl text-[15px] leading-8 text-muted-foreground">
-                  {offer.description ?? offer.property?.address ?? "بدون وصف إضافي."}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center justify-end gap-3 text-[13px] font-medium text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5">
-                  <Tag className="h-4 w-4" />
-                  {formatOfferPrice(offer.price)}
-                </span>
-                <span className="text-border">•</span>
-                <span className="inline-flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4" />
-                  {offer.propertyAddress}
-                </span>
-              </div>
-            </div>
+    <div className="flex min-h-full flex-col bg-background/50 pb-24">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-8 lg:px-8">
+        <nav className="flex flex-wrap items-center justify-between gap-4">
+          <button
+            type="button"
+            onClick={() => router.push("/ws/offers")}
+            className="inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.2em] text-muted-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            العودة للعروض
+          </button>
 
-            <div className="flex flex-wrap gap-3 lg:justify-end">
-              {offer.canPublish && onPublish ? (
-                <button
-                  type="button"
-                  onClick={() => void runAction("publish", onPublish)}
-                  className="rounded-2xl bg-foreground px-4 py-3 text-[13px] font-bold text-background shadow-sm"
-                >
-                  {pendingAction === "publish" ? "جارٍ النشر" : "نشر الحالة"}
-                </button>
-              ) : null}
-              {editHref ? (
-                <button
-                  type="button"
-                  onClick={() => router.push(editHref)}
-                  className="rounded-2xl border border-border bg-background px-4 py-3 text-[13px] font-bold text-foreground shadow-sm"
-                >
-                  تعديل المسودة
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() =>
-                  void runAction("message", async () => {
-                    const result = await onMessage();
-                    router.push(`/ws/inbox/${result.conversationId}`);
-                  })
-                }
-                className="rounded-2xl border border-border bg-background px-4 py-3 text-[13px] font-bold text-foreground shadow-sm"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  فتح المحادثة
-                </span>
-              </button>
-              {offer.canArchive && onArchive ? (
-                <button
-                  type="button"
-                  onClick={() => void runAction("archive", onArchive)}
-                  className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] font-bold text-rose-700 shadow-sm"
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <Archive className="h-4 w-4" />
-                    {pendingAction === "archive" ? "جارٍ الأرشفة" : "أرشفة"}
-                  </span>
-                </button>
-              ) : null}
-            </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <DetailBadge value={formatOfferTypeLabel(offer.type)} />
+            <DetailBadge value={formatOfferStageLabel(offer.stage)} />
           </div>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="text-right">
-              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">الأصل المرتبط</div>
-              <div className="mt-2 text-[15px] font-black text-foreground">{offer.propertyTitle}</div>
-              <div className="mt-1 text-[13px] text-muted-foreground">{offer.propertyAddress}</div>
-            </div>
-            <div className="text-right">
-              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">السعر والعمولة</div>
-              <div className="mt-2 text-[15px] font-black text-foreground">{formatOfferPrice(offer.price)}</div>
-              <div className="mt-1 text-[13px] text-muted-foreground">{offer.commissionText ?? "بدون عمولة محددة"}</div>
-            </div>
-            <div className="text-right">
-              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">الحالة الحالية</div>
-              <div className="mt-2 text-[15px] font-black text-foreground">{formatOfferStageLabel(offer.stage)}</div>
-              <div className="mt-1 text-[13px] text-muted-foreground">{offer.permitStatus ?? "بدون تصريح خاص"}</div>
-            </div>
-          </div>
-        </header>
+        </nav>
 
         {error ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] font-bold text-rose-700">
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-right text-[13px] font-bold text-rose-700">
             {error}
           </div>
         ) : null}
 
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="grid gap-6">
-            <section className="overflow-hidden rounded-[24px]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={
-                  offer.propertyImageUrl ??
-                  offer.property?.imageUrl ??
-                  "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1200&q=80"
-                }
-                alt={offer.propertyTitle}
-                className="h-72 w-full object-cover lg:h-[420px]"
-              />
+        <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:[direction:ltr]">
+          <OfferBrandPanel
+            offer={offer}
+            editHref={editHref}
+            pendingAction={pendingAction}
+            runAction={runAction}
+            onMessage={onMessage}
+            onArchive={onArchive}
+            onPublish={onPublish}
+            onEngage={onEngage}
+            onRespond={onRespond}
+            onAdvanceStage={onAdvanceStage}
+          />
+
+          <main className="order-1 space-y-6 lg:order-2">
+            <section className="rounded-[24px] border border-border/60 bg-card p-6 shadow-sm lg:p-8">
+              <div className="space-y-5 text-right">
+                <div className="space-y-3">
+                  <div className="text-[12px] font-semibold text-muted-foreground">
+                    {formatOfferMarketplaceLabel(offer)}
+                  </div>
+                  <h1 className="text-3xl font-black tracking-tight text-foreground">{offer.message}</h1>
+                  <p className="text-[15px] leading-8 text-muted-foreground/90">
+                    {offer.description ?? "لا يوجد وصف إضافي لهذه الحالة."}
+                  </p>
+                  {offer.propertySummary ? (
+                    <div className="text-[13px] leading-6 text-muted-foreground">
+                      {offer.propertySummary}
+                    </div>
+                  ) : null}
+                </div>
+
+                {!offer.clientContext ? <PropertyGallery offer={offer} /> : null}
+
+                <OfferPrimaryData offer={offer} />
+              </div>
             </section>
 
-            <DetailSection
-              eyebrow="Offer Details"
-              title="تفاصيل العرض"
-              description="قراءة سريعة للعناصر الأساسية التي يحتاجها الفريق لفهم الحالة واتخاذ الإجراء المناسب."
-            >
-              <div className="grid gap-4 lg:grid-cols-2">
-                <DetailRows
-                  rows={[
-                    {
-                      label: "الأصل المرتبط",
-                      value: offer.propertyTitle,
-                      helper: offer.propertyAddress,
-                    },
-                    {
-                      label: "السعر",
-                      value: formatOfferPrice(offer.price),
-                      helper: offer.commissionText ?? "بدون عمولة محددة",
-                    },
-                  ]}
-                />
-                <DetailRows
-                  rows={[
-                    {
-                      label: "التصريح",
-                      value: offer.permitStatus ?? "بدون تصريح",
-                      helper: offer.productStatus ?? "بدون حالة منتج",
-                    },
-                    {
-                      label: "الوصف المختصر",
-                      value: offer.description ?? "بدون وصف إضافي.",
-                    },
-                  ]}
-                />
-              </div>
-            </DetailSection>
-
-            {offer.clientContext ? (
-              <DetailSection
-                eyebrow="Client Context"
-                title="ملف العميل"
-                description="هذا القسم يلخص احتياج العميل المرتبط بالحالة لمساعدة الطرف المنفذ على فهم السياق بسرعة."
-              >
-                <div className="border-r-2 border-sky-300 bg-sky-50/50 p-5 text-right">
-                  <div className="text-xl font-black text-sky-950">{offer.clientContext.clientName}</div>
-                  <div className="mt-3 text-[14px] leading-7 text-sky-900/80">{offer.clientContext.clientNeed}</div>
-                  <div className="mt-4 flex flex-wrap justify-end gap-3 text-[13px] font-bold text-sky-900/80">
-                    {offer.clientContext.clientPhone ? (
-                      <span className="bg-white/70 px-3 py-1.5">
-                        {offer.clientContext.clientPhone}
-                      </span>
-                    ) : null}
-                    {offer.clientContext.clientBudget ? (
-                      <span className="bg-white/70 px-3 py-1.5">
-                        {offer.clientContext.clientBudget}
-                      </span>
-                    ) : null}
-                  </div>
+            <section className="rounded-[24px] border border-border/60 bg-card p-6 shadow-sm lg:p-8">
+              <div className="space-y-5">
+                <div className="text-right">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Activity Log</div>
+                  <h2 className="mt-2 text-2xl font-black text-foreground">تاريخ العمليات</h2>
                 </div>
-              </DetailSection>
-            ) : null}
 
-            <DetailSection
-              eyebrow="Participants"
-              title="الأطراف"
-              description="الأطراف المرتبطة بهذه الحالة والجهات المسؤولة عن التقدم فيها."
-            >
-              {offer.participants.length > 0 ? (
-                <div className="grid gap-5 md:grid-cols-2">
-                  {offer.participants.map((participant) => (
-                    <div key={participant.id} className="border-b border-border/60 pb-4 text-right">
-                      <div className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                        <ShieldCheck className="h-4 w-4" />
-                        {participant.role}
-                      </div>
-                      <div className="mt-2 text-[16px] font-black text-foreground">{participant.organizationName}</div>
-                      <div className="mt-1 text-[13px] text-muted-foreground">{participant.name}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="px-4 py-8 text-center text-[13px] font-semibold text-muted-foreground">
-                  لا توجد أطراف إضافية مسجلة لهذه الحالة حالياً.
-                </div>
-              )}
-            </DetailSection>
-
-            <DetailSection
-              eyebrow="Timeline"
-              title="التسلسل"
-              description="سجل الأحداث المرتبطة بالحالة من الإنشاء وحتى آخر تفاعل."
-            >
-              <div className="grid gap-4">
                 {offer.activity.length > 0 ? (
-                  offer.activity.map((activity) => (
-                    <div key={activity.id} className="border-b border-border/60 pb-4 text-right last:border-b-0 last:pb-0">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="text-[14px] font-black text-foreground">{activity.message ?? activity.kind}</div>
-                        <div className="text-[12px] font-medium text-muted-foreground">
-                          {new Intl.DateTimeFormat("ar-SA", {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          }).format(new Date(activity.createdAt))}
+                  <div className="grid gap-3">
+                    {offer.activity.map((activity) => (
+                      <div key={activity.id} className="border-b border-border/50 py-4 last:border-b-0 last:pb-0 first:pt-0">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="text-[12px] font-bold tabular-nums text-muted-foreground">
+                            {new Intl.DateTimeFormat("ar-SA", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            }).format(new Date(activity.createdAt))}
+                          </div>
+                          <div className="flex-1 text-right">
+                            <div className="text-[15px] font-black text-foreground">{activity.message ?? activity.kind}</div>
+                            {activity.actorName ? (
+                              <div className="mt-1 text-[13px] text-muted-foreground">{activity.actorName}</div>
+                            ) : null}
+                          </div>
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted/40 text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                          </div>
                         </div>
                       </div>
-                      {activity.actorName ? (
-                        <div className="mt-2 text-[13px] text-muted-foreground">{activity.actorName}</div>
-                      ) : null}
-                    </div>
-                  ))
+                    ))}
+                  </div>
                 ) : (
-                  <div className="p-2 text-[13px] text-muted-foreground">
+                  <div className="rounded-[18px] bg-muted/10 px-4 py-6 text-center text-[13px] font-semibold text-muted-foreground">
                     لا توجد أحداث مسجلة بعد.
                   </div>
                 )}
               </div>
-            </DetailSection>
-          </div>
-
-          <aside className="grid gap-6">
-            <DetailSection
-              eyebrow="Quick Panel"
-              title="الحالة والإجراءات"
-              description="الإجراءات المتاحة هنا تعتمد على دورك الحالي ومرحلة هذه الحالة."
-            >
-              <div className="grid gap-3">
-                <div className="border-b border-border/60 pb-3 text-right">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">نوع الحالة</div>
-                  <div className="mt-2 text-[15px] font-black text-foreground">{formatOfferTypeLabel(offer.type)}</div>
-                </div>
-                <div className="border-b border-border/60 pb-3 text-right">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">مرحلة التنفيذ</div>
-                  <div className="mt-2 text-[15px] font-black text-foreground">{formatOfferStageLabel(offer.stage)}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">سعر العرض</div>
-                  <div className="mt-2 text-[15px] font-black text-foreground">{formatOfferPrice(offer.price)}</div>
-                  <div className="mt-1 text-[13px] text-muted-foreground">{offer.productStatus ?? "بدون حالة منتج"}</div>
-                </div>
-              </div>
-
-              <div className="mt-6 grid gap-3">
-                {offer.allowedActions.canEngage && onEngage ? (
-                  <button
-                    type="button"
-                    onClick={() => void runAction("engage", onEngage)}
-                    className="rounded-2xl bg-foreground px-4 py-3 text-[13px] font-bold text-background"
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <Handshake className="h-4 w-4" />
-                      {pendingAction === "engage" ? "جارٍ فتح التعاون" : "ابدأ التعاون"}
-                    </span>
-                  </button>
-                ) : null}
-
-                {offer.allowedActions.canRespond && onRespond ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => void runAction("accept", () => onRespond("accepted"))}
-                      className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] font-bold text-emerald-700"
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4" />
-                        {pendingAction === "accept" ? "جارٍ القبول" : "قبول الحالة"}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void runAction("reject", () => onRespond("rejected"))}
-                      className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] font-bold text-rose-700"
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        <XCircle className="h-4 w-4" />
-                        {pendingAction === "reject" ? "جارٍ الرفض" : "رفض الحالة"}
-                      </span>
-                    </button>
-                  </>
-                ) : null}
-
-                {offer.allowedActions.canMarkAgreed && onAdvanceStage ? (
-                  <button
-                    type="button"
-                    onClick={() => void runAction("mark_agreed", () => onAdvanceStage("mark_agreed"))}
-                    className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-[13px] font-bold text-sky-700"
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <Target className="h-4 w-4" />
-                      {pendingAction === "mark_agreed" ? "جارٍ اعتماد الاتفاق" : "تحويل إلى تم الاتفاق"}
-                    </span>
-                  </button>
-                ) : null}
-
-                {offer.allowedActions.canCloseWon && onAdvanceStage ? (
-                  <button
-                    type="button"
-                    onClick={() => void runAction("close_won", () => onAdvanceStage("close_won"))}
-                    className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] font-bold text-emerald-700"
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <Trophy className="h-4 w-4" />
-                      {pendingAction === "close_won" ? "جارٍ الإغلاق" : "إغلاق ناجح"}
-                    </span>
-                  </button>
-                ) : null}
-
-                {offer.allowedActions.canCloseLost && onAdvanceStage ? (
-                  <button
-                    type="button"
-                    onClick={() => void runAction("close_lost", () => onAdvanceStage("close_lost"))}
-                    className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] font-bold text-rose-700"
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <XCircle className="h-4 w-4" />
-                      {pendingAction === "close_lost" ? "جارٍ الإغلاق" : "إغلاق غير مكتمل"}
-                    </span>
-                  </button>
-                ) : null}
-
-                {!hasWorkflowActions ? (
-                  <div className="px-2 py-4 text-center text-[13px] font-semibold text-muted-foreground">
-                    لا توجد إجراءات إضافية متاحة في هذه المرحلة حالياً.
-                  </div>
-                ) : null}
-              </div>
-            </DetailSection>
-          </aside>
+            </section>
+          </main>
         </div>
       </div>
     </div>

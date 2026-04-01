@@ -1,7 +1,15 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import SearchOffersClient, { filterSearchOffers } from "./SearchOffersClient";
 import type { WorkspaceOfferSummary } from "../offerTypes";
+
+vi.mock("next/link", () => ({
+  default: ({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) => (
+    <a href={href} className={className}>
+      {children}
+    </a>
+  ),
+}));
 
 const SAMPLE_ITEMS: WorkspaceOfferSummary[] = [
   {
@@ -25,12 +33,22 @@ const SAMPLE_ITEMS: WorkspaceOfferSummary[] = [
       address: "الرياض",
       imageUrl: "https://example.com/offer-1.jpg",
     },
+    propertyGallery: ["https://example.com/offer-1.jpg"],
+    propertySummary: "نبذة عن مشروع الرياض",
     commissionText: null,
     permitStatus: null,
     productStatus: null,
     allowedAudience: "both",
     attachments: [],
     clientContext: null,
+    primaryOrganization: {
+      id: "org-1",
+      name: "شركة النخبة",
+      type: "developer",
+      logoUrl: null,
+      website: null,
+      contactEmail: null,
+    },
     participants: [],
     href: "/ws/offers/offer-1",
     createdAt: 1,
@@ -57,12 +75,22 @@ const SAMPLE_ITEMS: WorkspaceOfferSummary[] = [
       address: "جدة",
       imageUrl: "https://example.com/offer-2.jpg",
     },
+    propertyGallery: ["https://example.com/offer-2.jpg"],
+    propertySummary: "نبذة عن مشروع جدة",
     commissionText: null,
     permitStatus: null,
     productStatus: null,
     allowedAudience: "brokers",
     attachments: [],
     clientContext: null,
+    primaryOrganization: {
+      id: "org-2",
+      name: "وسيط جدة",
+      type: "broker",
+      logoUrl: null,
+      website: null,
+      contactEmail: null,
+    },
     participants: [],
     href: "/ws/offers/offer-2",
     createdAt: 1,
@@ -85,6 +113,6 @@ describe("SearchOffersClient", () => {
     expect(markup).toContain("data-slot=\"offers-grid\"");
     expect(markup).toContain("عرض في الرياض");
     expect(markup).toContain("شركة النخبة");
-    expect(markup).toContain("1,200,000");
+    expect(markup).toContain("فتح التفاصيل");
   });
 });

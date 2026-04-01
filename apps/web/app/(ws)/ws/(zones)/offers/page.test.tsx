@@ -17,7 +17,7 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("../../_lib/workspaceData", () => ({
-  requireWorkspaceData: vi.fn(async () => ({ audience: "developer" })),
+  requireWorkspaceData: vi.fn(async () => ({ audience: "developer", ownerContext: undefined })),
 }));
 
 const getSnapshot = vi.fn(async () => ({
@@ -38,7 +38,7 @@ const getSnapshot = vi.fn(async () => ({
           visibility: "public" as const,
           propertyId: "property-1",
           price: 2500000,
-          message: "عرض تطويري مفتوح",
+          message: "عرض مكرر محدث",
           description: "عرض مطور مفتوح",
           senderName: "شركة ألف للتطوير",
           recipientAuthUserId: null,
@@ -49,12 +49,22 @@ const getSnapshot = vi.fn(async () => ({
             address: "الملقا، الرياض",
             imageUrl: "https://images.unsplash.com/photo-offer",
           },
+          propertyGallery: ["https://images.unsplash.com/photo-offer"],
+          propertySummary: "واجهة سكنية هادئة مع نبذة قصيرة وواضحة.",
           commissionText: "2.5%",
           permitStatus: "جاهز",
           productStatus: "متاح",
           allowedAudience: "both" as const,
           attachments: [],
           clientContext: null,
+          primaryOrganization: {
+            id: "red-1",
+            name: "شركة ألف للتطوير",
+            type: "developer" as const,
+            logoUrl: "https://example.com/logo.png",
+            website: "https://example.com",
+            contactEmail: "offers@example.com",
+          },
           participants: [
             {
               id: "participant-1",
@@ -67,6 +77,97 @@ const getSnapshot = vi.fn(async () => ({
               name: "شركة ألف للتطوير",
             },
           ],
+          href: "/ws/offers/offer-1",
+          createdAt: 1,
+          updatedAt: 10,
+        },
+        {
+          id: "offer-2",
+          packageId: "package-2",
+          type: "private_offer" as const,
+          stage: "targeted" as const,
+          status: "pending" as const,
+          publicationState: "published" as const,
+          visibility: "private" as const,
+          propertyId: "property-2",
+          price: 1800000,
+          message: "عرض ثانٍ",
+          description: "عرض وسيط خاص",
+          senderName: "وسيط الرياض",
+          recipientAuthUserId: null,
+          sourceConversationId: null,
+          property: {
+            id: "property-2",
+            title: "برج الأعمال",
+            address: "شمال الرياض",
+            imageUrl: null,
+          },
+          propertyGallery: [],
+          propertySummary: null,
+          commissionText: null,
+          permitStatus: null,
+          productStatus: null,
+          allowedAudience: "both" as const,
+          attachments: [],
+          clientContext: null,
+          primaryOrganization: {
+            id: "broker-1",
+            name: "وسيط الرياض",
+            type: "broker" as const,
+            logoUrl: null,
+            website: null,
+            contactEmail: null,
+          },
+          participants: [],
+          href: "/ws/offers/offer-2",
+          createdAt: 2,
+          updatedAt: 5,
+        },
+      ],
+    },
+    {
+      key: "targeted_shares" as const,
+      label: "Targeted Shares",
+      description: "Targeted cases you created from your inventory.",
+      items: [
+        {
+          id: "offer-1",
+          packageId: "package-1",
+          type: "open_offer" as const,
+          stage: "open" as const,
+          status: "pending" as const,
+          publicationState: "published" as const,
+          visibility: "public" as const,
+          propertyId: "property-1",
+          price: 2500000,
+          message: "عرض قديم مكرر",
+          description: "نسخة أقدم يجب إخفاؤها",
+          senderName: "شركة ألف للتطوير",
+          recipientAuthUserId: null,
+          sourceConversationId: null,
+          property: {
+            id: "property-1",
+            title: "مالقا ريزيدنس",
+            address: "الملقا، الرياض",
+            imageUrl: "https://images.unsplash.com/photo-offer",
+          },
+          propertyGallery: [],
+          propertySummary: "واجهة قديمة",
+          commissionText: "2.5%",
+          permitStatus: "جاهز",
+          productStatus: "متاح",
+          allowedAudience: "both" as const,
+          attachments: [],
+          clientContext: null,
+          primaryOrganization: {
+            id: "red-1",
+            name: "شركة ألف للتطوير",
+            type: "developer" as const,
+            logoUrl: "https://example.com/logo.png",
+            website: "https://example.com",
+            contactEmail: "offers@example.com",
+          },
+          participants: [],
           href: "/ws/offers/offer-1",
           createdAt: 1,
           updatedAt: 1,
@@ -88,7 +189,7 @@ vi.mock("@/server/ws/zones", () => ({
 import WorkspaceOffersRoute from "./page";
 
 describe("/ws/offers page", () => {
-  it("renders the server-backed offers queues with pagination", async () => {
+  it("renders one flat deduplicated list ordered by newest update first", async () => {
     const element = await WorkspaceOffersRoute({
       searchParams: Promise.resolve({}),
     });
@@ -98,11 +199,33 @@ describe("/ws/offers page", () => {
       </WebLocaleProvider>,
     );
 
-    expect(markup).toContain("العروض كحالات تعاون");
-    expect(markup).toContain("عرض مطور مفتوح");
+    expect(markup).toContain("العروض");
+    expect(markup).toContain("عرض مكرر محدث");
+    expect(markup).toContain("عرض ثانٍ");
     expect(getSnapshot).toHaveBeenCalled();
     expect(markup).toContain("مالقا ريزيدنس");
-    expect(markup).toContain("Open Inventory Offers");
+    expect(markup).toContain("عرض مطور مفتوح");
+    expect(markup).toContain("offers@example.com");
     expect(markup).toContain("صفحة 1 من 1");
+    expect(markup).not.toContain("Open Inventory Offers");
+    expect(markup).not.toContain("عرض قديم مكرر");
+    expect(markup.indexOf("عرض مكرر محدث")).toBeLessThan(markup.indexOf("عرض ثانٍ"));
+  });
+
+  it("applies query filtering and oldest-first sorting", async () => {
+    const element = await WorkspaceOffersRoute({
+      searchParams: Promise.resolve({ q: "الرياض", sort: "updated_asc" }),
+    });
+    const markup = renderToStaticMarkup(
+      <WebLocaleProvider locale="ar" dictionary={getWebDictionary("ar")}>
+        {element}
+      </WebLocaleProvider>,
+    );
+
+    expect(markup).toContain("نتائج البحث: الرياض");
+    expect(markup).toContain("الأقدم أولاً");
+    expect(markup).toContain("عرض ثانٍ");
+    expect(markup).toContain("عرض مكرر محدث");
+    expect(markup.indexOf("عرض ثانٍ")).toBeLessThan(markup.indexOf("عرض مكرر محدث"));
   });
 });

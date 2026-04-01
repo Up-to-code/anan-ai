@@ -22,7 +22,7 @@ export type OfferClientContext = {
 };
 
 export type CreateOfferCaseArgs = {
-  propertyId: Id<"properties">;
+  propertyId?: Id<"properties">;
   price: number;
   message?: string;
   description?: string;
@@ -45,7 +45,7 @@ export type CreateOfferCaseArgs = {
 export type UpdateOfferCaseDraftArgs = {
   id: Id<"offerCases">;
   conversationId?: Id<"inboxConversations">;
-  propertyId: Id<"properties">;
+  propertyId?: Id<"properties">;
   price: number;
   message?: string;
   description?: string;

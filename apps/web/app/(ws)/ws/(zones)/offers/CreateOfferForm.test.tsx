@@ -8,6 +8,14 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
+vi.mock("next/link", () => ({
+  default: ({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) => (
+    <a href={href} className={className}>
+      {children}
+    </a>
+  ),
+}));
+
 vi.mock("@/lib/uploadthing", () => ({
   useUploadThing: vi.fn(() => ({
     startUpload: vi.fn(async () => []),
@@ -15,9 +23,19 @@ vi.mock("@/lib/uploadthing", () => ({
   })),
 }));
 
-it("renders the visual project selector and attachment dropzone copy", () => {
+it("renders organization-owned marketplace copy with organization settings and property card", () => {
   const html = renderToStaticMarkup(
     <CreateOfferForm
+      audience="broker"
+      organization={{
+        id: "org-1",
+        type: "broker",
+        name: "شركة النخبة",
+        slug: "elite",
+        status: "active",
+        isVerified: true,
+        phone: "+966500000000",
+      }}
       properties={[
         {
           id: "project-1",
@@ -26,7 +44,6 @@ it("renders the visual project selector and attachment dropzone copy", () => {
           image: "https://example.com/image.jpg",
           expectedPrice: "2500000",
           shortDescription: "واجهة معاصرة ووحدات جاهزة",
-          organizationName: "شركة النخبة",
           publicationState: "published",
         },
       ]}
@@ -34,8 +51,12 @@ it("renders the visual project selector and attachment dropzone copy", () => {
     />,
   );
 
-  expect(html).toContain("استعراض");
-  expect(html).toContain("يمكنك البحث أو فتح مشاريع أخرى لنفس المطور عندما تكون القائمة طويلة.");
-  expect(html).toContain("إرفاق صور أو PDF للعرض");
-  expect(html).toContain("اسحب الملفات هنا أو اخترها يدويًا");
+  expect(html).toContain("إنشاء عرض باسم المنظمة");
+  expect(html).toContain("المنظمة المالكة للعرض");
+  expect(html).toContain("إعدادات المنظمة");
+  expect(html).toContain("واتساب");
+  expect(html).toContain("مشاركة عقار");
+  expect(html).toContain("طلب عميل");
+  expect(html).toContain("العقار المختار");
+  expect(html).toContain("رفع المرفقات");
 });

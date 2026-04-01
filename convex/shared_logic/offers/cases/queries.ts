@@ -59,6 +59,60 @@ function buildQueueDefinition(audience: "broker" | "developer") {
       ];
 }
 
+function extractPropertySummary(property: Doc<"properties"> | null) {
+  const presentation = property?.body?.presentation;
+  if (
+    presentation &&
+    typeof presentation === "object" &&
+    "descriptionShort" in presentation &&
+    typeof presentation.descriptionShort === "string"
+  ) {
+    const trimmed = presentation.descriptionShort.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  return null;
+}
+
+function extractPropertyGallery(property: Doc<"properties"> | null) {
+  if (!property) return [];
+
+  const urls = [
+    property.heroImage?.url ?? null,
+    ...(property.media?.map((media) => media.url ?? null) ?? []),
+  ].filter((url): url is string => typeof url === "string" && url.length > 0);
+
+  return [...new Set(urls)];
+}
+
+async function buildPrimaryOrganization(args: {
+  ctx: QueryCtx;
+  ownerParticipant: Doc<"offerCaseParticipants"> | null;
+  ownerSummary: Awaited<ReturnType<typeof buildParticipantSummary>> | null;
+}) {
+  const { ctx, ownerParticipant, ownerSummary } = args;
+  if (!ownerParticipant && !ownerSummary) {
+    return null;
+  }
+
+  const broker = ownerParticipant?.brokerId ? await ctx.db.get(ownerParticipant.brokerId) : null;
+  const red = ownerParticipant?.REDId ? await ctx.db.get(ownerParticipant.REDId) : null;
+  const logoId = broker?.logoId ?? red?.logoId ?? null;
+
+  return {
+    id: ownerParticipant?.brokerId
+      ? String(ownerParticipant.brokerId)
+      : ownerParticipant?.REDId
+        ? String(ownerParticipant.REDId)
+        : ownerSummary?.organizationId ?? null,
+    name: ownerSummary?.organizationName ?? broker?.name ?? red?.name ?? "طرف غير معروف",
+    type: broker ? "broker" : red ? "developer" : ownerSummary?.organizationType ?? null,
+    logoUrl: logoId ? await ctx.storage.getUrl(logoId) : null,
+    website: broker?.website ?? red?.website ?? null,
+    contactEmail: broker?.contactEmail ?? red?.contactEmail ?? null,
+    phone: broker?.phone ?? red?.phone ?? null,
+  };
+}
+
 async function buildCaseSummary(
   ctx: QueryCtx,
   offerCase: Doc<"offerCases">,
@@ -68,9 +122,10 @@ async function buildCaseSummary(
   if (!offerPackage) {
     throw new ConvexError({ code: "NOT_FOUND", message: "Offer package not found" });
   }
-  const property = await ctx.db.get(offerPackage.propertyId);
+  const property = offerPackage.propertyId ? await ctx.db.get(offerPackage.propertyId) : null;
   const participants = await listParticipantsForCase(ctx, offerCase._id);
   const participantSummaries = await Promise.all(participants.map((participant) => buildParticipantSummary(ctx, participant)));
+  const ownerParticipant = participants.find((participant) => participant.role === "inventory_owner") ?? participants[0] ?? null;
   const owner = participantSummaries.find((participant) => participant.role === "inventory_owner") ?? participantSummaries[0] ?? null;
   const targeted = participants.find((participant) => participant.role === "execution_partner") ?? null;
   const isVisible =
@@ -90,7 +145,7 @@ async function buildCaseSummary(
     status: legacyStatusFromStage(offerCase.stage),
     publicationState: legacyPublicationStateFromStage(offerCase.stage),
     visibility: legacyVisibilityFromPackage(offerPackage.visibility),
-    propertyId: String(offerPackage.propertyId),
+    propertyId: offerPackage.propertyId ? String(offerPackage.propertyId) : null,
     message: offerCase.headline ?? offerPackage.title ?? property?.title ?? "Offer case",
     description: offerCase.summary ?? offerPackage.summary ?? null,
     senderName: owner?.organizationName ?? null,
@@ -105,6 +160,8 @@ async function buildCaseSummary(
           imageUrl: property.heroImage?.url ?? property.media?.[0]?.url,
         }
       : null,
+    propertyGallery: extractPropertyGallery(property),
+    propertySummary: extractPropertySummary(property),
     price: offerPackage.askingPrice,
     commissionText: offerPackage.commissionText ?? null,
     permitStatus: offerPackage.permitStatus ?? null,
@@ -120,6 +177,11 @@ async function buildCaseSummary(
           clientNeed: offerCase.clientContext.clientNeed,
         }
       : null,
+    primaryOrganization: await buildPrimaryOrganization({
+      ctx,
+      ownerParticipant,
+      ownerSummary: owner,
+    }),
     participants: participantSummaries,
     href: `/ws/offers/${offerCase._id}`,
     createdAt: offerCase.createdAt,

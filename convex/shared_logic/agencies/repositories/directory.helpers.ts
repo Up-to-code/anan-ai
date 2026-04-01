@@ -94,7 +94,7 @@ export async function listPublicPublishedOffersForOrganization(
       if (!openOfferCase) {
         return null;
       }
-      const property = await ctx.db.get(offerPackage.propertyId);
+      const property = offerPackage.propertyId ? await ctx.db.get(offerPackage.propertyId) : null;
       return {
         id: openOfferCase._id,
         price: offerPackage.askingPrice,

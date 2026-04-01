@@ -1,10 +1,13 @@
-import type { WorkspaceOfferQueue, WorkspaceOfferQueueKey } from "./offerTypes";
+import type { WorkspaceOfferQueue, WorkspaceOfferSummary } from "./offerTypes";
 
 export const OFFERS_PAGE_SIZE = 8;
+export const OFFERS_SORT_VALUES = ["updated_desc", "updated_asc"] as const;
+export type OffersSortValue = (typeof OFFERS_SORT_VALUES)[number];
 
 export type OffersPageSearchParams = {
   page?: string | string[];
-  queue?: string | string[];
+  q?: string | string[];
+  sort?: string | string[];
 };
 
 export type PaginatedCollection<T> = {
@@ -26,15 +29,13 @@ export function resolvePage(searchParams: OffersPageSearchParams): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 }
 
-export function resolveQueue(
-  searchParams: OffersPageSearchParams,
-  availableKeys: WorkspaceOfferQueueKey[],
-) {
-  const selected = pickString(searchParams.queue);
-  if (!selected) return "all" as const;
-  return availableKeys.includes(selected as WorkspaceOfferQueueKey)
-    ? (selected as WorkspaceOfferQueueKey)
-    : ("all" as const);
+export function resolveSearchQuery(searchParams: OffersPageSearchParams) {
+  return (pickString(searchParams.q) ?? "").trim();
+}
+
+export function resolveSort(searchParams: OffersPageSearchParams): OffersSortValue {
+  const selected = pickString(searchParams.sort);
+  return selected === "updated_asc" ? "updated_asc" : "updated_desc";
 }
 
 export function paginateItems<T>(
@@ -57,13 +58,75 @@ export function paginateItems<T>(
   };
 }
 
-export function paginateQueues(
-  queues: WorkspaceOfferQueue[],
-  page: number,
-  pageSize: number,
+function searchableOfferText(item: WorkspaceOfferSummary) {
+  return [
+    item.message,
+    item.description ?? "",
+    item.propertySummary ?? "",
+    item.property?.title ?? "",
+    item.property?.address ?? "",
+    item.senderName ?? "",
+    item.primaryOrganization?.name ?? "",
+    item.clientContext?.clientName ?? "",
+    item.clientContext?.clientNeed ?? "",
+    item.clientContext?.clientBudget ?? "",
+    item.clientContext?.clientPhone ?? "",
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+export function flattenOffers(queues: WorkspaceOfferQueue[]) {
+  const byId = new Map<string, WorkspaceOfferSummary>();
+  for (const queue of queues) {
+    for (const item of queue.items) {
+      const existing = byId.get(item.id);
+      if (!existing || item.updatedAt > existing.updatedAt) {
+        byId.set(item.id, item);
+      }
+    }
+  }
+  return [...byId.values()];
+}
+
+export function filterOffersByQuery(
+  items: WorkspaceOfferSummary[],
+  searchQuery: string,
 ) {
-  return queues.map((queue) => ({
-    ...queue,
-    pagination: paginateItems(queue.items, page, pageSize),
-  }));
+  const normalized = searchQuery.trim().toLowerCase();
+  if (!normalized) return items;
+  return items.filter((item) => searchableOfferText(item).includes(normalized));
+}
+
+export function sortOffers(
+  items: WorkspaceOfferSummary[],
+  sort: OffersSortValue,
+) {
+  const sorted = [...items];
+  sorted.sort((left, right) => {
+    const timeDelta =
+      sort === "updated_asc"
+        ? left.updatedAt - right.updatedAt
+        : right.updatedAt - left.updatedAt;
+    if (timeDelta !== 0) return timeDelta;
+    return sort === "updated_asc"
+      ? left.createdAt - right.createdAt
+      : right.createdAt - left.createdAt;
+  });
+  return sorted;
+}
+
+export function buildOffersRouteBase(args: {
+  searchQuery: string;
+  sort: OffersSortValue;
+}) {
+  const params = new URLSearchParams();
+  if (args.searchQuery.trim().length > 0) {
+    params.set("q", args.searchQuery.trim());
+  }
+  if (args.sort !== "updated_desc") {
+    params.set("sort", args.sort);
+  }
+  const query = params.toString();
+  return query ? `/ws/offers?${query}` : "/ws/offers";
 }

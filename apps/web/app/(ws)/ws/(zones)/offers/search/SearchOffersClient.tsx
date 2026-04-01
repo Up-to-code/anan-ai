@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Search } from "lucide-react";
-import { formatOfferPrice, formatOfferStageLabel } from "../offerViewModel";
+import OfferListItem from "../OfferListItem";
 import type { WorkspaceOfferSummary } from "../offerTypes";
 
 export type SearchOfferFilters = {
@@ -14,7 +13,18 @@ export function filterSearchOffers(items: WorkspaceOfferSummary[], filters: Sear
   const query = filters.searchQuery.trim().toLowerCase();
   if (!query) return items;
   return items.filter((item) =>
-    `${item.message} ${item.description ?? ""} ${item.property?.title ?? ""} ${item.property?.address ?? ""} ${item.senderName ?? ""}`
+    [
+      item.message,
+      item.description ?? "",
+      item.propertySummary ?? "",
+      item.property?.title ?? "",
+      item.property?.address ?? "",
+      item.senderName ?? "",
+      item.primaryOrganization?.name ?? "",
+      item.clientContext?.clientName ?? "",
+      item.clientContext?.clientNeed ?? "",
+    ]
+      .join(" ")
       .toLowerCase()
       .includes(query),
   );
@@ -46,31 +56,7 @@ export default function SearchOffersClient({ items }: { items: WorkspaceOfferSum
         </div>
 
         <div className="grid gap-4" data-slot="offers-grid">
-          {filteredItems.map((item) => (
-            <Link
-              key={item.id}
-              href={`/ws/offers/${item.id}`}
-              className="rounded-3xl border border-border bg-card p-5 shadow-sm transition hover:bg-muted/20"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <div className="text-lg font-black text-foreground">{item.message}</div>
-                  <div className="mt-2 text-[13px] text-muted-foreground">
-                    {item.property?.title ?? "أصل عقاري"} • {item.property?.address ?? "غير محدد"}
-                  </div>
-                  {item.senderName ? (
-                    <div className="mt-2 text-[13px] font-bold text-foreground/75">{item.senderName}</div>
-                  ) : null}
-                </div>
-                <div className="text-right">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                    {formatOfferStageLabel(item.stage)}
-                  </div>
-                  <div className="mt-1 text-[15px] font-black text-foreground">{formatOfferPrice(item.price)}</div>
-                </div>
-              </div>
-            </Link>
-          ))}
+          {filteredItems.map((item) => <OfferListItem key={item.id} item={item} />)}
         </div>
       </div>
     </div>

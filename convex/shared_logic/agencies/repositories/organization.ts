@@ -91,6 +91,7 @@ function mapOrganizationSummary(owner: any, organization: any) {
     description: organization.description,
     website: organization.website,
     contactEmail: organization.contactEmail,
+    phone: organization.phone,
   } as const;
 }
 
@@ -289,6 +290,7 @@ export const updateCurrentOrganization = mutation({
     description: v.optional(v.string()),
     website: v.optional(v.string()),
     contactEmail: v.optional(v.string()),
+    phone: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { owner, profile } = await requireManagerAccess(ctx);
@@ -303,6 +305,7 @@ export const updateCurrentOrganization = mutation({
       description: args.description,
       website: args.website,
       contactEmail: args.contactEmail,
+      phone: args.phone,
     });
     if (!organization) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Organization not found" });

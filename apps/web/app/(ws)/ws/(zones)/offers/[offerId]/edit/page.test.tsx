@@ -29,11 +29,14 @@ const {
       senderName: "شركة ألف للتطوير",
       attachments: [{ key: "file-1", url: "https://files.test/file-1", name: "offer.pdf" }],
       recipientAuthUserId: null,
+      propertyGallery: [],
+      propertySummary: null,
       commissionText: "2%",
       permitStatus: "جاهز",
       productStatus: "متاح",
       allowedAudience: "both" as const,
       clientContext: null,
+      primaryOrganization: null,
       participants: [],
       href: "/ws/offers/offer-1",
       createdAt: 1,
@@ -81,6 +84,12 @@ vi.mock("../../../../_lib/workspaceData", () => ({
   requireWorkspaceData: vi.fn(async () => ({
     audience: "developer",
     ownerContext: { ownerType: "developer", ownerId: "red-1" },
+  })),
+}));
+
+vi.mock("../../../../_lib/organizationTeam", () => ({
+  getWorkspaceOrganizationTeam: vi.fn(async () => ({
+    organization: { id: "red-1", type: "red", name: "شركة ألف للتطوير", slug: "alpha-dev", status: "active", isVerified: true },
   })),
 }));
 
@@ -187,12 +196,15 @@ it("returns 404 when the offer draft is not editable", async () => {
     senderName: "شركة ألف للتطوير",
     recipientAuthUserId: null,
     sourceConversationId: null,
+    propertyGallery: [],
+    propertySummary: null,
     commissionText: null,
     permitStatus: null,
     productStatus: null,
     allowedAudience: "both" as const,
     attachments: [],
     clientContext: null,
+    primaryOrganization: null,
     participants: [],
     href: "/ws/offers/offer-1",
     createdAt: 1,

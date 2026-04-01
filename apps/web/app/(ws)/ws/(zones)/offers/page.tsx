@@ -1,12 +1,23 @@
 import OfferOverviewPage from "./OfferOverviewPage";
 import { requireWorkspaceData } from "../../_lib/workspaceData";
 import { getWorkspaceOffersZone } from "@/server/ws/zones";
-import { OFFERS_PAGE_SIZE, paginateQueues, resolvePage, resolveQueue, type OffersPageSearchParams } from "./offersPageData";
+import {
+  buildOffersRouteBase,
+  filterOffersByQuery,
+  flattenOffers,
+  OFFERS_PAGE_SIZE,
+  paginateItems,
+  resolvePage,
+  resolveSearchQuery,
+  resolveSort,
+  sortOffers,
+  type OffersPageSearchParams,
+} from "./offersPageData";
 
 /**
- * WHY:   The offers root route should now present role-based collaboration queues instead of the legacy marketplace buckets.
- * WHAT:  Loads the offers 2.0 queue snapshot and renders queue sections for the active workspace audience.
- * HOW:   Resolves the workspace once, reads the queue snapshot from the offers zone, and paginates each queue locally for the route.
+ * WHY:   The offers root route should read like one simple searchable timeline rather than multiple queue sections.
+ * WHAT:  Loads the visible offers snapshot, flattens and deduplicates it, then applies search/sort/pagination.
+ * HOW:   Uses queue snapshots as the source of truth but projects them into one flat list ordered by update time.
  */
 export default async function WorkspaceOffersRoute({
   searchParams,
@@ -17,11 +28,24 @@ export default async function WorkspaceOffersRoute({
   const snapshot = await getWorkspaceOffersZone(workspace.audience, workspace.ownerContext).getSnapshot();
   const resolvedSearchParams = await searchParams;
   const page = resolvePage(resolvedSearchParams);
-  const selectedQueue = resolveQueue(
-    resolvedSearchParams,
-    snapshot.queues.map((queue) => queue.key),
+  const searchQuery = resolveSearchQuery(resolvedSearchParams);
+  const sort = resolveSort(resolvedSearchParams);
+  const items = paginateItems(
+    sortOffers(
+      filterOffersByQuery(flattenOffers(snapshot.queues), searchQuery),
+      sort,
+    ),
+    page,
+    OFFERS_PAGE_SIZE,
   );
-  const queues = paginateQueues(snapshot.queues, page, OFFERS_PAGE_SIZE);
 
-  return <OfferOverviewPage queues={queues} selectedQueue={selectedQueue} />;
+  return (
+    <OfferOverviewPage
+      items={items.items}
+      pagination={items}
+      routeBase={buildOffersRouteBase({ searchQuery, sort })}
+      searchQuery={searchQuery}
+      sort={sort}
+    />
+  );
 }
