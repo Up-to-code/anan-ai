@@ -1,9 +1,12 @@
 import ProjectFormScreen from "../ProjectFormScreen";
+import { cookies } from "next/headers";
 import { requireWorkspaceData } from "../../../_lib/workspaceData";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapWorkspaceProjectToPropertyInput } from "../projectViewModel";
 import { requireSessionContext } from "@/server/auth/session";
 import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizationAssetsRepository";
+import { getWebDictionary } from "@/lib/i18n";
+import { type AppLocale, resolveLocale, WEB_LOCALE_COOKIE } from "@/lib/locale";
 
 /**
  * WHY:   Projects need a direct-mode creation route to complement AI-driven draft creation.
@@ -11,6 +14,14 @@ import { convexOrganizationAssetsRepository } from "@/server/infrastructure/conv
  * HOW:   Resolves workspace behavior once, then saves through the audience-specific property server functions.
  */
 export default async function CreateProjectPage() {
+  let locale: AppLocale = "ar";
+  try {
+    const cookieStore = await cookies();
+    locale = resolveLocale(cookieStore.get(WEB_LOCALE_COOKIE)?.value);
+  } catch {
+    locale = "ar";
+  }
+  const dictionary = getWebDictionary(locale);
   const workspace = await requireWorkspaceData("/ws/projects/create");
   const audience = workspace.audience;
   const ownerContext = workspace.ownerContext ?? null;
@@ -47,9 +58,9 @@ export default async function CreateProjectPage() {
 
   return (
     <ProjectFormScreen
-      title="إنشاء مشروع"
-      description="أضف مشروعاً جديداً وارفع صوره ثم احفظه داخل مساحة العمل."
-      submitLabel="حفظ المشروع"
+      title={dictionary.projects.create}
+      description={dictionary.projects.description}
+      submitLabel={locale === "fr" ? "Enregistrer le projet" : locale === "en" ? "Save project" : "حفظ المشروع"}
       onSave={createProject}
     />
   );

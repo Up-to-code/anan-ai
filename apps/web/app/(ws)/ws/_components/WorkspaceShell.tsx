@@ -15,6 +15,7 @@ import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
 import type { AnanProThreadSummary } from "@/server/contracts/ananPro";
 import { cn } from "@/lib/utils";
 import { getWorkspaceZonesForKeys } from "../_lib/zones";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 
 export type WorkspaceShellVariant = "default" | "assistant";
 
@@ -53,7 +54,9 @@ export default function WorkspaceShell({
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const pathname = usePathname();
+  const { dictionary, direction, isRtl } = useWebLocale();
   const isAssistantVariant = variant === "assistant";
+  const isAssistantHome = isAssistantVariant && pathname === "/ws";
   const visibleZones = getWorkspaceZonesForKeys(visibleZoneKeys ?? ["overview"]);
 
   return (
@@ -74,7 +77,9 @@ export default function WorkspaceShell({
         <div
           className={cn(
             "absolute inset-0 motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-out",
-            sidebarCollapsed ? "pointer-events-none translate-x-2 opacity-0" : "translate-x-0 opacity-100",
+            sidebarCollapsed
+              ? cn("pointer-events-none opacity-0", isRtl ? "-translate-x-2" : "translate-x-2")
+              : "translate-x-0 opacity-100",
           )}
         >
           <Sidebar
@@ -91,17 +96,19 @@ export default function WorkspaceShell({
           onClick={() => setSidebarCollapsed((value) => !value)}
           className={cn(
             "absolute top-6 z-10 inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-2 text-[var(--workspace-muted)] shadow-sm transition hover:bg-[var(--workspace-elevated)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_30%,transparent)]",
-            sidebarCollapsed ? "left-1/2 -translate-x-1/2" : "left-6",
+            sidebarCollapsed ? "left-1/2 -translate-x-1/2" : isRtl ? "right-6" : "left-6",
           )}
-          aria-label={sidebarCollapsed ? "إظهار القائمة" : "إخفاء القائمة"}
-          title={sidebarCollapsed ? "إظهار القائمة" : "إخفاء القائمة"}
+          aria-label={sidebarCollapsed ? dictionary.nav.showSidebar : dictionary.nav.hideSidebar}
+          title={sidebarCollapsed ? dictionary.nav.showSidebar : dictionary.nav.hideSidebar}
         >
           {sidebarCollapsed ? <PanelLeft className="h-5 w-5" /> : <PanelLeftClose className="h-4 w-4" />}
         </button>
         <div
           className={cn(
             "hidden h-full w-full flex-col items-center border-e border-[color:var(--workspace-border)] bg-[var(--workspace-sidebar)] px-2 pb-4 pt-16 lg:flex motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-out",
-            sidebarCollapsed ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-3 opacity-0",
+            sidebarCollapsed
+              ? "translate-x-0 opacity-100"
+              : cn("pointer-events-none opacity-0", isRtl ? "translate-x-3" : "-translate-x-3"),
           )}
           aria-hidden={!sidebarCollapsed}
         >
@@ -109,13 +116,13 @@ export default function WorkspaceShell({
             <Link
               href="/ws"
               className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)] bg-[var(--workspace-panel)] text-[var(--workspace-bubble-other-foreground)] shadow-sm transition hover:bg-[var(--workspace-elevated)]"
-              aria-label="محادثة جديدة"
-              title="محادثة جديدة"
+              aria-label={dictionary.nav.newChat}
+              title={dictionary.nav.newChat}
             >
               <PenSquare className="h-4 w-4" />
             </Link>
           </div>
-          <nav aria-label="Workspace collapsed navigation" className="mt-5 flex w-full flex-1 flex-col items-center gap-2">
+          <nav aria-label={dictionary.nav.workspaceNavigation} className="mt-5 flex w-full flex-1 flex-col items-center gap-2">
             {visibleZones.map((item) => {
               const Icon = item.icon;
               const isActive =
@@ -143,7 +150,7 @@ export default function WorkspaceShell({
         </div>
       </div>
 
-      <div className="relative flex min-w-0 flex-1 flex-col bg-transparent lg:max-h-svh lg:overflow-hidden">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-transparent lg:max-h-svh lg:overflow-hidden">
         <WorkspaceTopNavbar
           user={user}
           organization={organization}
@@ -163,7 +170,13 @@ export default function WorkspaceShell({
         />
 
         {complianceBanner ? (
-          <div className="border-b border-amber-200 bg-amber-50 px-6 py-4 text-right dark:border-amber-500/30 dark:bg-amber-500/10">
+            <div
+              className={cn(
+                "border-b border-amber-200 bg-amber-50 px-6 py-4 dark:border-amber-500/30 dark:bg-amber-500/10",
+                isRtl ? "text-right" : "text-left",
+              )}
+              dir={direction}
+            >
             <div className="text-sm font-black text-amber-900">{complianceBanner.title}</div>
             <div className="mt-1 text-xs font-semibold text-amber-800 dark:text-amber-200">{complianceBanner.body}</div>
             {complianceBanner.ctaLabel ? (
@@ -181,8 +194,8 @@ export default function WorkspaceShell({
 
         <main
           className={cn(
-            "min-w-0 flex-1 motion-safe:animate-zone-page-enter",
-            isAssistantVariant ? "overflow-hidden" : "overflow-visible lg:overflow-auto",
+            "min-h-0 min-w-0 flex-1 motion-safe:animate-zone-page-enter",
+            isAssistantHome ? "overflow-hidden" : "overflow-auto",
           )}
         >
           {children}

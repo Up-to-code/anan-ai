@@ -7,6 +7,7 @@ import type {
   PublishConversationOfferInput,
   ResolveDirectConversationInput,
   RespondToConversationOfferInput,
+  SetConversationArchivedInput,
   SendConversationMessageInput,
   ShareDealInConversationInput,
   ShareFileInConversationInput,
@@ -38,10 +39,11 @@ const defaultDependencies: InboxServiceDependencies = {
  * HOW:   Resolves the current session token once, then delegates the read to the inbox repository adapter.
  */
 export async function listInboxConversations(
+  archived = false,
   dependencies: InboxServiceDependencies = defaultDependencies,
 ) {
   const session = await dependencies.requireSession();
-  return dependencies.repository.list(session.token);
+  return dependencies.repository.list(session.token, archived);
 }
 
 /**
@@ -119,6 +121,14 @@ export async function markInboxConversationRead(
 ) {
   const session = await dependencies.requireSession();
   return dependencies.repository.markRead(session.token, input);
+}
+
+export async function setInboxConversationArchived(
+  input: SetConversationArchivedInput,
+  dependencies: InboxServiceDependencies = defaultDependencies,
+) {
+  const session = await dependencies.requireSession();
+  return dependencies.repository.setArchived(session.token, input);
 }
 
 /**

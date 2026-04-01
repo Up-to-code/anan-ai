@@ -18,14 +18,18 @@ export default function InboxThreadView({
   canUseBusinessActions = false,
   conversation,
   currentUserId,
+  isArchivingConversation = false,
+  isSidebarCollapsed = false,
   isSending,
   onCreatePrivateOfferDraft,
   onBack,
   onPublishConversationOffer,
   onRespondToConversationOffer,
+  onSetConversationArchived,
   onShareFile,
   onShareProject,
   onSend,
+  onToggleSidebarCollapsed,
   projectOptions,
   sendError,
   showBackButton = false,
@@ -33,6 +37,8 @@ export default function InboxThreadView({
   canUseBusinessActions?: boolean;
   conversation: ConversationDetail;
   currentUserId: string;
+  isArchivingConversation?: boolean;
+  isSidebarCollapsed?: boolean;
   isSending?: boolean;
   onCreatePrivateOfferDraft: (input: {
     propertyId: string;
@@ -47,9 +53,11 @@ export default function InboxThreadView({
     offerId: string;
     status: "accepted" | "rejected";
   }) => Promise<{ ok: true } | void | null>;
+  onSetConversationArchived: (conversationId: string, archived: boolean) => Promise<void>;
   onShareFile: (file: UploadedFileReference, note?: string) => Promise<void>;
   onShareProject: (propertyId: string, note?: string) => Promise<void>;
   onSend: (message: string) => Promise<void>;
+  onToggleSidebarCollapsed?: () => void;
   projectOptions: ComposerProjectOption[];
   sendError?: string | null;
   showBackButton?: boolean;
@@ -76,8 +84,12 @@ export default function InboxThreadView({
         canShareProjects={projectOptions.length > 0}
         canUseBusinessActions={canUseBusinessActions}
         conversation={conversation}
+        isArchivingConversation={isArchivingConversation}
+        isSidebarCollapsed={isSidebarCollapsed}
         onBack={onBack}
         onOpenShareAction={setActiveShareAction}
+        onSetConversationArchived={onSetConversationArchived}
+        onToggleSidebarCollapsed={onToggleSidebarCollapsed}
         showBackButton={showBackButton}
       />
       <InboxMessageList

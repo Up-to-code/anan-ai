@@ -1,8 +1,12 @@
 import { mutation, query } from "../_generated/server";
 import { ConvexError, v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
-import { uploadedFileReferenceListValidator } from "../shared_logic/files";
 import { requireRole } from "../_core/security/accessPolicy";
+import {
+  optionalPropertyStatusValidator,
+  ownerScopedPropertyCreateFields,
+  ownerScopedPropertyUpdateFields,
+} from "../shared_logic/properties/types/validation";
 import {
   createBrokerProperty,
   deleteBrokerProperty,
@@ -11,13 +15,6 @@ import {
   publishBrokerProperty,
   updateBrokerProperty,
 } from "./repositories/propertiesRepository";
-
-const statusValidator = v.optional(
-  v.union(v.literal("available"), v.literal("sold"), v.literal("reserved")),
-);
-const publicationStateValidator = v.optional(
-  v.union(v.literal("draft"), v.literal("published"), v.literal("archived")),
-);
 
 async function requireBrokerOwnerAccess(ctx: any, brokerId?: string) {
   const access = await requireRole(ctx, ["broker"]);
@@ -51,7 +48,7 @@ export const listByBrokerId = query({
   args: {
     brokerId: v.id("brokers"),
     paginationOpts: paginationOptsValidator,
-    status: v.optional(statusValidator),
+    status: optionalPropertyStatusValidator,
   },
   handler: async (ctx, args) => {
     const access = await requireBrokerOwnerAccess(ctx, args.brokerId);
@@ -80,21 +77,7 @@ export const getById = query({
 export const create = mutation({
   args: {
     brokerId: v.id("brokers"),
-    title: v.string(),
-    address: v.string(),
-    price: v.number(),
-    beds: v.number(),
-    baths: v.number(),
-    sqft: v.optional(v.number()),
-    description: v.string(),
-    location: v.optional(v.string()),
-    area: v.optional(v.string()),
-    status: v.optional(statusValidator),
-    bankId: v.optional(v.id("banks")),
-    media: v.optional(uploadedFileReferenceListValidator),
-    body: v.optional(v.any()),
-    adLicenseNumber: v.optional(v.string()),
-    publicationState: publicationStateValidator,
+    ...ownerScopedPropertyCreateFields,
   },
   handler: async (ctx, args) => {
     const access = await requireBrokerOwnerAccess(ctx, args.brokerId);
@@ -109,22 +92,7 @@ export const create = mutation({
  */
 export const update = mutation({
   args: {
-    id: v.id("properties"),
-    title: v.optional(v.string()),
-    address: v.optional(v.string()),
-    price: v.optional(v.number()),
-    beds: v.optional(v.number()),
-    baths: v.optional(v.number()),
-    sqft: v.optional(v.number()),
-    description: v.optional(v.string()),
-    location: v.optional(v.string()),
-    area: v.optional(v.string()),
-    status: v.optional(statusValidator),
-    bankId: v.optional(v.id("banks")),
-    media: v.optional(uploadedFileReferenceListValidator),
-    body: v.optional(v.any()),
-    adLicenseNumber: v.optional(v.string()),
-    publicationState: publicationStateValidator,
+    ...ownerScopedPropertyUpdateFields,
   },
   handler: async (ctx, args) => {
     await requireBrokerOwnedProperty(ctx, args.id);

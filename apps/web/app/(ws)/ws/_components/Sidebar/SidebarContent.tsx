@@ -4,6 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { getLocaleDateFormat } from "@/lib/locale";
 import { cn } from "@/lib/utils";
 import type { AnanProThreadSummary } from "@/server/contracts/ananPro";
 import type { SidebarProps } from "./types";
@@ -29,13 +31,13 @@ const THREAD_CARD_ACTIVE_CLASS_NAME =
 const THREAD_CARD_IDLE_CLASS_NAME =
   "border-[color:transparent] bg-transparent hover:border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] hover:bg-[var(--workspace-panel)]";
 
-function getThreadLabel(thread: AnanProThreadSummary) {
+function getThreadLabel(thread: AnanProThreadSummary, fallbackLabel: string) {
   const title = thread.title?.trim();
-  return title && title.length > 0 ? title : "محادثة بدون عنوان";
+  return title && title.length > 0 ? title : fallbackLabel;
 }
 
-function formatThreadDate(timestamp: number) {
-  return new Date(timestamp).toLocaleString("ar-SA", {
+function formatThreadDate(timestamp: number, locale: string) {
+  return new Date(timestamp).toLocaleString(locale, {
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -53,10 +55,11 @@ export default function SidebarContent({
 }: Pick<SidebarProps, "user" | "organization" | "visibleZoneKeys" | "recentAssistantThreads" | "allAssistantThreads" | "mode" | "onNavigate" | "titleId">) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { locale, dictionary, direction, isRtl } = useWebLocale();
   const [threadPickerOpen, setThreadPickerOpen] = useState(false);
   const [threadQuery, setThreadQuery] = useState("");
   const [threadPage, setThreadPage] = useState(1);
-  const allItems = getWorkspaceZonesForKeys(visibleZoneKeys ?? ["overview"]);
+  const allItems = getWorkspaceZonesForKeys(visibleZoneKeys ?? ["overview"], locale);
   const mainItems = allItems.filter((item) => item.href !== "/ws/settings");
   const settingsItems = allItems.filter((item) => item.href === "/ws/settings");
   const identitySubtitle = organization?.sidebarSubtitle?.trim() || "";
@@ -70,14 +73,14 @@ export default function SidebarContent({
       ? requestedThreadId
       : null;
   const recentThreads = assistantThreads.slice(0, Math.max(recentAssistantThreads.length, 3));
-  const normalizedThreadQuery = threadQuery.trim().toLocaleLowerCase("ar");
+  const normalizedThreadQuery = threadQuery.trim().toLocaleLowerCase(locale);
   const filteredAssistantThreads = useMemo(() => {
     if (!normalizedThreadQuery) return assistantThreads;
 
     return assistantThreads.filter((thread) =>
-      getThreadLabel(thread).toLocaleLowerCase("ar").includes(normalizedThreadQuery),
+      getThreadLabel(thread, dictionary.nav.untitledConversation).toLocaleLowerCase(locale).includes(normalizedThreadQuery),
     );
-  }, [assistantThreads, normalizedThreadQuery]);
+  }, [assistantThreads, dictionary.nav.untitledConversation, locale, normalizedThreadQuery]);
   const threadsPerPage = 10;
   const totalThreadPages = Math.max(1, Math.ceil(filteredAssistantThreads.length / threadsPerPage));
   const safeThreadPage = Math.min(threadPage, totalThreadPages);
@@ -126,6 +129,7 @@ export default function SidebarContent({
 
   return (
     <div
+      dir={direction}
       className={cn(
         "flex min-h-full flex-col",
         SIDEBAR_SHELL_CLASS_NAME,
@@ -153,7 +157,8 @@ export default function SidebarContent({
               SIDEBAR_PANEL_CLASS_NAME,
               "hover:bg-[var(--workspace-elevated)] hover:text-[var(--workspace-bubble-other-foreground)]",
             )}
-            aria-label="محادثة جديدة"
+            aria-label={dictionary.nav.newChat}
+            title={dictionary.nav.newChat}
           >
             <PenSquare className="h-4 w-4" />
           </Link>
@@ -182,7 +187,7 @@ export default function SidebarContent({
                   )}
                 >
                   <Icon className="h-[18px] w-[18px] shrink-0" />
-                  <span className="flex-1 truncate text-right">{item.label}</span>
+          <span className={cn("flex-1 truncate", isRtl ? "text-right" : "text-left")}>{item.label}</span>
                 </Link>
               </li>
             );
@@ -208,7 +213,7 @@ export default function SidebarContent({
                   )}
                 >
                   <Icon className="h-[18px] w-[18px] shrink-0" />
-                  <span className="flex-1 truncate text-right">{item.label}</span>
+                  <span className={cn("flex-1 truncate", isRtl ? "text-right" : "text-left")}>{item.label}</span>
                 </Link>
               </li>
             );
@@ -230,7 +235,7 @@ export default function SidebarContent({
               )}
             >
               <PenSquare className="h-3 w-3" />
-              <span>جديد</span>
+              <span>{dictionary.nav.newLabel}</span>
             </Link>
             <div className="flex items-center gap-2">
               {assistantThreads.length > 0 ? (
@@ -241,7 +246,7 @@ export default function SidebarContent({
                       SIDEBAR_SUBTLE_PANEL_CLASS_NAME,
                       "text-[var(--workspace-bubble-other-foreground)] hover:bg-[var(--workspace-panel)]",
                     )}
-                    aria-label={`عرض كل المحادثات ${recentThreads.length} من ${assistantThreads.length}`}
+                    aria-label={`${dictionary.nav.allThreadsCount} ${recentThreads.length} ${dictionary.nav.ofLabel} ${assistantThreads.length}`}
                   >
                     {recentThreads.length}/{assistantThreads.length}
                   </Dialog.Trigger>
@@ -249,17 +254,17 @@ export default function SidebarContent({
                     <Dialog.Backdrop className="fixed inset-0 z-50 bg-background/60 backdrop-blur-md transition-opacity duration-300 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
                     <Dialog.Popup className="fixed inset-0 z-50 flex items-center justify-center p-4 outline-none transition-all duration-300 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
                       <div className="flex h-[min(78vh,720px)] w-full max-w-3xl flex-col overflow-hidden rounded-[28px] border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-sidebar)] text-[var(--workspace-bubble-other-foreground)] shadow-2xl shadow-black/20">
-                        <div className="flex items-start justify-between border-b border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] px-6 py-5" dir="rtl">
+                        <div className="flex items-start justify-between border-b border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] px-6 py-5">
                           <div className="min-w-0">
                             <Dialog.Title className="text-lg font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
-                              كل المحادثات
+                              {dictionary.nav.allThreads}
                             </Dialog.Title>
                             <p className="mt-1 text-[12px] font-medium text-[var(--workspace-muted)]">
-                              اختر محادثة للمتابعة أو ابحث بعنوانها
+                              {dictionary.nav.chooseConversation}
                             </p>
                           </div>
                           <Dialog.Close
-                            aria-label="إغلاق"
+                            aria-label={dictionary.nav.close}
                             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[var(--workspace-muted)] transition-all hover:bg-[var(--workspace-elevated)] hover:text-[var(--workspace-bubble-other-foreground)] active:scale-95"
                           >
                             <X className="h-5 w-5" />
@@ -267,7 +272,7 @@ export default function SidebarContent({
                         </div>
                         <div className="border-b border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] px-6 py-4">
                           <label className="relative block">
-                            <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--workspace-muted)]" />
+                            <Search className={cn("pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--workspace-muted)]", isRtl ? "right-3" : "left-3")} />
                             <input
                               type="search"
                               value={threadQuery}
@@ -275,8 +280,12 @@ export default function SidebarContent({
                                 setThreadQuery(event.target.value);
                                 setThreadPage(1);
                               }}
-                              placeholder="ابحث بعنوان المحادثة"
-                              className="h-12 w-full rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-panel)] pr-10 pl-4 text-right text-sm font-medium text-[var(--workspace-bubble-other-foreground)] placeholder:text-[color:color-mix(in_srgb,var(--workspace-muted)_86%,transparent)] outline-none transition focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_16%,transparent)]"
+                              placeholder={dictionary.nav.searchThreadsPlaceholder}
+                              dir={direction}
+                              className={cn(
+                                "h-12 w-full rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-panel)] text-sm font-medium text-[var(--workspace-bubble-other-foreground)] placeholder:text-[color:color-mix(in_srgb,var(--workspace-muted)_86%,transparent)] outline-none transition focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_16%,transparent)]",
+                                isRtl ? "pr-10 pl-4 text-right" : "pl-10 pr-4 text-left",
+                              )}
                             />
                           </label>
                         </div>
@@ -284,7 +293,7 @@ export default function SidebarContent({
                           <div className="space-y-2.5">
                             {paginatedAssistantThreads.length === 0 ? (
                               <div className="rounded-2xl border border-dashed border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] px-4 py-8 text-center text-sm font-bold text-[var(--workspace-muted)]">
-                                لا توجد محادثات بهذا العنوان
+                                {dictionary.nav.noMatchingThreads}
                               </div>
                             ) : paginatedAssistantThreads.map((thread) => (
                               <Dialog.Close key={thread.id} render={<div />}>
@@ -293,18 +302,18 @@ export default function SidebarContent({
                                   prefetch={false}
                                   onClick={(event) => handleAssistantLinkClick(event, `/ws?threadId=${encodeURIComponent(thread.id)}`)}
                                   className={cn(
-                                    "group flex min-h-[76px] items-center gap-4 rounded-2xl border px-4 py-4 text-right transition-all",
+                                    "group flex min-h-[76px] items-center gap-4 rounded-2xl border px-4 py-4 transition-all",
                                     activeAssistantThreadId === thread.id
                                       ? THREAD_CARD_ACTIVE_CLASS_NAME
                                       : THREAD_CARD_IDLE_CLASS_NAME,
                                   )}
                                 >
-                                  <div className="min-w-0 flex-1 text-right">
+                                  <div className={cn("min-w-0 flex-1", isRtl ? "text-right" : "text-left")}>
                                     <div className="truncate text-[14px] font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
-                                      {getThreadLabel(thread)}
+                                      {getThreadLabel(thread, dictionary.nav.untitledConversation)}
                                     </div>
-                                    <div className="mt-1 flex items-center justify-end gap-2 text-[11px] font-medium text-[var(--workspace-muted)]">
-                                      <span>{formatThreadDate(thread.updatedAt)}</span>
+                                    <div className={cn("mt-1 flex items-center gap-2 text-[11px] font-medium text-[var(--workspace-muted)]", isRtl ? "justify-end" : "justify-start")}>
+                                      <span>{formatThreadDate(thread.updatedAt, getLocaleDateFormat(locale))}</span>
                                       <span className="h-1 w-1 rounded-full bg-[color:var(--workspace-border)]" />
                                       <span>#{thread.id.slice(0, 8)}</span>
                                     </div>
@@ -319,7 +328,7 @@ export default function SidebarContent({
                         </div>
                         <div className="flex items-center justify-between border-t border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] px-6 py-4">
                           <div className="text-[11px] font-bold text-[var(--workspace-muted)]">
-                            صفحة {safeThreadPage} من {totalThreadPages}
+                            {dictionary.nav.pageLabel} {safeThreadPage} {dictionary.nav.ofLabel} {totalThreadPages}
                           </div>
                           <div className="flex items-center gap-2">
                             <button
@@ -327,19 +336,19 @@ export default function SidebarContent({
                               onClick={() => setThreadPage((page) => Math.max(1, page - 1))}
                               disabled={safeThreadPage <= 1}
                               className="inline-flex items-center gap-2 rounded-xl border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-panel)] px-3 py-2 text-[12px] font-bold text-[var(--workspace-bubble-other-foreground)] transition disabled:cursor-not-allowed disabled:opacity-40"
-                              aria-label="الصفحة السابقة"
+                              aria-label={dictionary.nav.previousPage}
                             >
                               <ChevronRight className="h-4 w-4" />
-                              السابق
+                              {dictionary.nav.previousPage}
                             </button>
                             <button
                               type="button"
                               onClick={() => setThreadPage((page) => Math.min(totalThreadPages, page + 1))}
                               disabled={safeThreadPage >= totalThreadPages}
                               className="inline-flex items-center gap-2 rounded-xl border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-panel)] px-3 py-2 text-[12px] font-bold text-[var(--workspace-bubble-other-foreground)] transition disabled:cursor-not-allowed disabled:opacity-40"
-                              aria-label="الصفحة التالية"
+                              aria-label={dictionary.nav.nextPage}
                             >
-                              التالي
+                              {dictionary.nav.nextPage}
                               <ChevronLeft className="h-4 w-4" />
                             </button>
                           </div>
@@ -350,7 +359,7 @@ export default function SidebarContent({
                 </Dialog.Root>
               ) : null}
               <span className="text-[10px] font-black uppercase tracking-[0.1em] text-[var(--workspace-muted)]">
-                آخر 3 محادثات
+                {dictionary.nav.recentThreads}
               </span>
             </div>
           </div>
@@ -376,11 +385,11 @@ export default function SidebarContent({
                       : "text-[var(--workspace-muted)] group-hover:text-[var(--workspace-bubble-other-foreground)]",
                   )}
                 >
-                  {getThreadLabel(thread)}
+                  {getThreadLabel(thread, dictionary.nav.untitledConversation)}
                 </div>
                 <div className="mt-1 flex items-center gap-1.5 text-[9px] font-bold text-[var(--workspace-muted)]">
                   <MessageSquareText className="h-3 w-3" />
-                  <span>{formatThreadDate(thread.updatedAt)}</span>
+                  <span>{formatThreadDate(thread.updatedAt, getLocaleDateFormat(locale))}</span>
                 </div>
               </Link>
             ))}

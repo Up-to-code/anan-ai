@@ -20,13 +20,18 @@ export type UseRealtimeInboxResult = {
   activeConversationId: string | null;
   conversation: ConversationDetail | null;
   conversations: ConversationSummary[];
+  archivedConversations: ConversationSummary[];
+  isArchivingConversation: boolean;
   isLiveConversationLoading: boolean;
+  isShowingArchived: boolean;
   isSending: boolean;
   isSearching: boolean;
   search: string;
   searchResults: UserConversationTarget[];
   sendError: string | null;
+  setShowArchived: (value: boolean) => void;
   setSearch: (value: string) => void;
+  handleSetConversationArchived: (conversationId: string, archived: boolean) => Promise<void>;
   handleSelectConversation: (conversationId: string) => void;
   handleStartConversation: (targetUserId: string) => Promise<void>;
   handleSendMessage: (body: string) => Promise<void>;
@@ -141,7 +146,7 @@ function applyOptimisticConversationSummary(args: {
   optimisticStoreMessage: ConversationMessage;
   updatedAt: number;
 }) {
-  const conversations = args.localStore.getQuery<ConversationSummary[]>(args.inboxApi.listConversations, {});
+  const conversations = args.localStore.getQuery<ConversationSummary[]>(args.inboxApi.listConversations, { archived: false });
   if (!conversations) return;
   const summary: ConversationSummary = {
     id: args.optimisticConversation.id,
@@ -151,8 +156,9 @@ function applyOptimisticConversationSummary(args: {
     updatedAt: args.updatedAt,
     lastMessage: buildSummaryPreview(args.optimisticStoreMessage),
     lastMessagePreview: args.optimisticStoreMessage.body,
+    archivedAt: null,
   };
-  args.localStore.setQuery(args.inboxApi.listConversations, {}, upsertConversationSummary(conversations, summary));
+  args.localStore.setQuery(args.inboxApi.listConversations, { archived: false }, upsertConversationSummary(conversations, summary));
 }
 
 export function createOptimisticSendConversationUpdate(args: { currentUserId: string; inboxApi: InboxApiRefs }) {

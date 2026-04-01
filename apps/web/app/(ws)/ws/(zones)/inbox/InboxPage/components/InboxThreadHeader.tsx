@@ -1,37 +1,36 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Building2, ChevronDown, FileUp, Tag, UserRound } from "lucide-react";
+import { Archive, ArrowRight, Building2, FileUp, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Tag } from "lucide-react";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { cn } from "@/lib/utils";
 import type { ConversationDetail } from "@/server/contracts/inbox";
 import type { InboxShareAction } from "./InboxComposerActions";
 
-function getParticipantTypeLabel(conversation: ConversationDetail) {
+function getParticipantTypeLabel(conversation: ConversationDetail, dictionary: ReturnType<typeof useWebLocale>["dictionary"]) {
   if (conversation.otherUser.organizationType === "broker") {
-    return "وسيط";
+    return dictionary.inbox.broker;
   }
 
   if (conversation.otherUser.organizationType === "developer") {
-    return "مطور";
+    return dictionary.inbox.developer;
   }
 
   const role = conversation.otherUser.role?.trim();
-  return role || "مستخدم";
+  return role || dictionary.inbox.userLabel;
 }
 
 export function getInboxThreadMenuActionLabels(args: {
   canCreateOffer: boolean;
   canShareProjects: boolean;
   canUseBusinessActions: boolean;
+  isArchived: boolean;
 }) {
-  if (!args.canUseBusinessActions) {
-    return [];
-  }
-
   return [
-    args.canCreateOffer ? "إنشاء عرض خاص" : null,
-    args.canShareProjects ? "إرسال عقار أو شقة" : null,
-    "إرفاق ملف",
+    args.canUseBusinessActions && args.canCreateOffer ? "إنشاء عرض خاص" : null,
+    args.canUseBusinessActions && args.canShareProjects ? "إرسال عقار أو شقة" : null,
+    args.canUseBusinessActions ? "إرفاق ملف" : null,
+    args.isArchived ? "إلغاء الأرشفة" : "نقل إلى الأرشيف",
   ].filter((value): value is string => Boolean(value));
 }
 
@@ -59,11 +58,12 @@ function HeaderIdentity({
 }: {
   conversation: ConversationDetail;
 }) {
+  const { dictionary, isRtl } = useWebLocale();
   const organizationLabel = conversation.otherUser.organizationName;
-  const participantType = getParticipantTypeLabel(conversation);
+  const participantType = getParticipantTypeLabel(conversation, dictionary);
 
   return (
-    <div className="min-w-0 flex-1">
+    <div className={cn("min-w-0 flex-1", isRtl ? "text-right" : "text-left")}>
       <div className="truncate text-[15px] font-black tracking-tight text-foreground">
         {conversation.otherUser.name}
       </div>
@@ -80,39 +80,6 @@ function HeaderIdentity({
   );
 }
 
-function HeaderActionButton({
-  action,
-  disabled = false,
-  label,
-  onClick,
-}: {
-  action: InboxShareAction;
-  disabled?: boolean;
-  label: string;
-  onClick: (action: InboxShareAction) => void;
-}) {
-  const Icon = action === "offer" ? Tag : action === "project" ? Building2 : FileUp;
-
-  return (
-    <button
-      type="button"
-      onClick={() => onClick(action)}
-      disabled={disabled}
-      className="flex w-full items-start gap-3 rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)] px-3 py-3 text-right transition hover:bg-[var(--workspace-panel)] disabled:cursor-not-allowed disabled:opacity-55"
-    >
-      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-[var(--workspace-highlight)]" />
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-black text-[var(--workspace-bubble-other-foreground)]">
-          {label}
-        </span>
-        <span className="mt-1 block text-[11px] font-medium text-[var(--workspace-muted)]">
-          {disabled ? "غير متاح لهذه المحادثة حاليًا." : "افتح هذا الإجراء من نفس الشاشة."}
-        </span>
-      </span>
-    </button>
-  );
-}
-
 /**
  * WHY:   The active thread header should identify the person first, then expose just a few practical actions.
  * WHAT:  Renders the thread header with avatar, name, organization, type, and a compact action dropdown.
@@ -123,20 +90,30 @@ export default function InboxThreadHeader({
   canShareProjects = false,
   canUseBusinessActions = false,
   conversation,
+  isArchivingConversation = false,
+  isSidebarCollapsed = false,
   onBack,
   onOpenShareAction,
+  onSetConversationArchived,
+  onToggleSidebarCollapsed,
   showBackButton = false,
 }: {
   canCreateOffer?: boolean;
   canShareProjects?: boolean;
   canUseBusinessActions?: boolean;
   conversation: ConversationDetail;
+  isArchivingConversation?: boolean;
+  isSidebarCollapsed?: boolean;
   onBack?: () => void;
   onOpenShareAction?: (action: InboxShareAction) => void;
+  onSetConversationArchived: (conversationId: string, archived: boolean) => Promise<void>;
+  onToggleSidebarCollapsed?: () => void;
   showBackButton?: boolean;
 }) {
+  const { dictionary, isRtl, direction } = useWebLocale();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const isArchived = Boolean(conversation.archivedAt);
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -162,21 +139,34 @@ export default function InboxThreadHeader({
     onOpenShareAction?.(action);
   };
 
+  const handleArchiveToggle = () => {
+    setIsMenuOpen(false);
+    void onSetConversationArchived(conversation.id, !isArchived);
+  };
+
   return (
-    <header className="sticky top-0 z-10 border-b border-border/40 bg-background/80 px-6 py-4 backdrop-blur-xl">
-      <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-10 border-b border-border/40 bg-background/80 px-6 py-4 backdrop-blur-xl" dir={direction}>
+      <div className={cn("flex items-center gap-4", !isRtl && "flex-row-reverse")}>
         {showBackButton ? (
           <button
             type="button"
             onClick={onBack}
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition hover:bg-muted md:hidden"
-            aria-label="العودة"
+            aria-label={isRtl ? "العودة إلى قائمة المحادثات" : "Back to conversation list"}
           >
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className={cn("h-4 w-4", !isRtl && "rotate-180")} />
           </button>
         ) : null}
 
-        <div className="flex min-w-0 flex-1 items-center gap-4">
+        <div className={cn("flex min-w-0 flex-1 items-center gap-4", !isRtl && "flex-row-reverse")}>
+          <button
+            type="button"
+            onClick={onToggleSidebarCollapsed}
+            aria-label={isSidebarCollapsed ? (isRtl ? "فتح قائمة المحادثات" : "Open inbox sidebar") : (isRtl ? "إخفاء قائمة المحادثات" : "Collapse inbox sidebar")}
+            className="hidden h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition hover:bg-muted md:inline-flex"
+          >
+            {isSidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
           <ThreadAvatar image={conversation.otherUser.image} name={conversation.otherUser.name} />
           <HeaderIdentity conversation={conversation} />
 
@@ -185,51 +175,57 @@ export default function InboxThreadHeader({
               type="button"
               onClick={() => setIsMenuOpen((current) => !current)}
               className={cn(
-                "inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-[13px] font-bold transition-all",
+                "inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-all",
                 isMenuOpen
                   ? "border-foreground bg-foreground text-background"
                   : "border-border bg-card text-foreground hover:bg-muted"
               )}
+              aria-label={dictionary.inbox.threadMenuLabel}
               aria-expanded={isMenuOpen}
               aria-haspopup="menu"
             >
-              إجراءات
-              <ChevronDown className={cn("h-4 w-4 transition-transform", isMenuOpen && "rotate-180")} />
+              <MoreHorizontal className="h-4 w-4" />
             </button>
 
             {isMenuOpen ? (
-              <div className="absolute left-0 top-[calc(100%+12px)] z-20 w-[240px] rounded-2xl border border-border bg-card p-2 shadow-xl shadow-black/10">
-                {canUseBusinessActions ? (
-                  <div className="space-y-1" role="menu">
+              <div className={cn("absolute top-[calc(100%+12px)] z-20 w-[240px] rounded-2xl border border-border bg-card p-2 shadow-xl shadow-black/10", isRtl ? "right-0" : "left-0")}>
+                <div className="space-y-1" role="menu">
+                  {canUseBusinessActions ? (
+                    <>
                     <button
                       onClick={() => handleAction("offer")}
                       disabled={!canCreateOffer}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-right text-[13px] font-bold text-foreground transition hover:bg-muted disabled:opacity-40"
+                      className={cn("flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-bold text-foreground transition hover:bg-muted disabled:opacity-40", isRtl ? "text-right" : "flex-row-reverse text-left")}
                     >
                       <Tag className="h-4 w-4" />
-                      إنشاء عرض خاص
+                      {dictionary.inbox.threadActionOffer}
                     </button>
                     <button
                       onClick={() => handleAction("project")}
                       disabled={!canShareProjects}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-right text-[13px] font-bold text-foreground transition hover:bg-muted disabled:opacity-40"
+                      className={cn("flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-bold text-foreground transition hover:bg-muted disabled:opacity-40", isRtl ? "text-right" : "flex-row-reverse text-left")}
                     >
                       <Building2 className="h-4 w-4" />
-                      إرسال مشروع
+                      {dictionary.inbox.threadActionProject}
                     </button>
                     <button
                       onClick={() => handleAction("file")}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-right text-[13px] font-bold text-foreground transition hover:bg-muted"
+                      className={cn("flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-bold text-foreground transition hover:bg-muted", isRtl ? "text-right" : "flex-row-reverse text-left")}
                     >
                       <FileUp className="h-4 w-4" />
-                      إرفاق ملف
+                      {dictionary.inbox.threadActionFile}
                     </button>
-                  </div>
-                ) : (
-                  <div className="p-3 text-center text-[12px] font-medium text-muted-foreground">
-                    لا توجد إجراءات متاحة
-                  </div>
-                )}
+                    </>
+                  ) : null}
+                  <button
+                    onClick={handleArchiveToggle}
+                    disabled={isArchivingConversation}
+                    className={cn("flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-bold text-foreground transition hover:bg-muted disabled:opacity-40", isRtl ? "text-right" : "flex-row-reverse text-left")}
+                  >
+                    <Archive className="h-4 w-4" />
+                    {isArchived ? (isRtl ? "إلغاء الأرشفة" : "Unarchive") : (isRtl ? "نقل إلى الأرشيف" : "Archive contact")}
+                  </button>
+                </div>
               </div>
             ) : null}
           </div>

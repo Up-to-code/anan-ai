@@ -50,6 +50,8 @@ export function useRealtimeInbox({
   );
   const [search, setSearch] = useState("");
   const [sendError, setSendError] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(() => Boolean(initialConversation?.archivedAt));
+  const [isArchivingConversation, setIsArchivingConversation] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const deferredSearch = useDeferredValue(search.trim());
   const hasInitializedAutoSelectionRef = useRef(false);
@@ -57,7 +59,8 @@ export function useRealtimeInbox({
   // to avoid showing the loading spinner on every conversation switch.
   const lastResolvedLiveIdRef = useRef<string | null>(null);
 
-  const liveConversations = useQuery(inboxApi.listConversations, {});
+  const liveConversations = useQuery(inboxApi.listConversations, { archived: false });
+  const liveArchivedConversations = useQuery(inboxApi.listConversations, { archived: true });
   const liveConversation = useQuery(
     inboxApi.getConversation,
     activeConversationId ? { conversationId: activeConversationId as Id<"inboxConversations"> } : "skip",
@@ -69,6 +72,7 @@ export function useRealtimeInbox({
 
   const resolveConversation = useMutation(inboxApi.resolveDirectConversation);
   const markConversationRead = useMutation(inboxApi.markConversationRead);
+  const setConversationArchived = useMutation(inboxApi.setConversationArchived);
   const baseSendConversationMessage = useMutation(inboxApi.sendConversationMessage);
   const sendConversationMessage = useMemo(
     () =>
@@ -78,7 +82,9 @@ export function useRealtimeInbox({
     [baseSendConversationMessage, currentUserId],
   );
 
-  const conversations = liveConversations ?? initialConversations;
+  const activeConversations = liveConversations ?? initialConversations;
+  const archivedConversations = liveArchivedConversations ?? [];
+  const conversations = showArchived ? archivedConversations : activeConversations;
   const initialConversationForActiveThread =
     initialConversation?.id === activeConversationId ? initialConversation : null;
   const conversation = liveConversation ?? initialConversationForActiveThread;
@@ -94,8 +100,9 @@ export function useRealtimeInbox({
     if (initialSelectedConversationId) {
       hasInitializedAutoSelectionRef.current = true;
       setActiveConversationId(initialSelectedConversationId);
+      setShowArchived(Boolean(initialConversation?.archivedAt));
     }
-  }, [initialSelectedConversationId]);
+  }, [initialConversation?.archivedAt, initialSelectedConversationId]);
 
   const syncConversationUrl = (conversationId: string | null, method: "push" | "replace" = "push") => {
     if (typeof window === "undefined") return;
@@ -114,9 +121,13 @@ export function useRealtimeInbox({
   };
 
   useEffect(() => {
+    if (showArchived) {
+      return;
+    }
+
     const nextConversationId = getInboxAutoSelectedConversationId({
       activeConversationId,
-      conversations,
+      conversations: activeConversations,
       hasInitializedAutoSelection: hasInitializedAutoSelectionRef.current,
       hasConversationRoute,
     });
@@ -124,7 +135,7 @@ export function useRealtimeInbox({
     if (!nextConversationId) {
       if (
         !hasInitializedAutoSelectionRef.current &&
-        (activeConversationId !== null || hasConversationRoute || conversations.length > 0)
+        (activeConversationId !== null || hasConversationRoute || activeConversations.length > 0)
       ) {
         hasInitializedAutoSelectionRef.current = true;
       }
@@ -134,14 +145,18 @@ export function useRealtimeInbox({
     hasInitializedAutoSelectionRef.current = true;
     setActiveConversationId(nextConversationId);
     syncConversationUrl(nextConversationId, "replace");
-  }, [activeConversationId, conversations, hasConversationRoute]);
+  }, [activeConversationId, activeConversations, hasConversationRoute, showArchived]);
 
   useEffect(() => {
-    if (!activeConversationId || conversations.length > 0) {
+    if (showArchived) {
+      return;
+    }
+
+    if (!activeConversationId || activeConversations.length > 0) {
       return;
     }
     syncConversationUrl(null, "replace");
-  }, [activeConversationId, conversations.length]);
+  }, [activeConversationId, activeConversations.length, showArchived]);
 
   useEffect(() => {
     if (!hasConversationRoute && conversation && !activeConversationId) {
@@ -153,20 +168,28 @@ export function useRealtimeInbox({
   }, [activeConversationId, conversation, hasConversationRoute]);
 
   useEffect(() => {
-    if (!activeConversationId || conversations.length === 0) {
+    const scopedConversations = showArchived ? archivedConversations : activeConversations;
+    if (!activeConversationId) {
+      if (scopedConversations.length === 0) {
+        return;
+      }
+
+      const nextConversationId = scopedConversations[0]?.id ?? null;
+      setActiveConversationId(nextConversationId);
+      syncConversationUrl(nextConversationId, "replace");
       return;
     }
 
-    const stillExists = conversations.some((item) => item.id === activeConversationId);
+    const stillExists = scopedConversations.some((item) => item.id === activeConversationId);
     if (stillExists) {
       return;
     }
 
-    const nextConversationId = conversations[0]?.id ?? null;
+    const nextConversationId = scopedConversations[0]?.id ?? null;
     setActiveConversationId(nextConversationId);
 
     syncConversationUrl(nextConversationId, "replace");
-  }, [activeConversationId, conversations]);
+  }, [activeConversationId, activeConversations, archivedConversations, showArchived]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -175,18 +198,20 @@ export function useRealtimeInbox({
       const params = new URLSearchParams(window.location.search);
       const nextConversationId = params.get("conversationId");
       if (nextConversationId) {
+        setShowArchived(archivedConversations.some((item) => item.id === nextConversationId));
         setActiveConversationId(nextConversationId);
         return;
       }
-      setActiveConversationId(conversations[0]?.id ?? null);
+      setShowArchived(false);
+      setActiveConversationId(activeConversations[0]?.id ?? null);
     };
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [conversations]);
+  }, [activeConversations, archivedConversations]);
 
   useEffect(() => {
-    if (!activeConversationId || !conversation || conversation.unreadCount === 0) {
+    if (!activeConversationId || !conversation || conversation.unreadCount === 0 || conversation.archivedAt) {
       return;
     }
 
@@ -216,6 +241,7 @@ export function useRealtimeInbox({
 
   const handleSelectConversation = (conversationId: string) => {
     hasInitializedAutoSelectionRef.current = true;
+    setShowArchived(archivedConversations.some((item) => item.id === conversationId));
     setActiveConversationId(conversationId);
     syncConversationUrl(conversationId);
   };
@@ -224,9 +250,37 @@ export function useRealtimeInbox({
     setSendError(null);
     const conversationId = await resolveConversation({ targetUserId });
     setSearch("");
+    setShowArchived(false);
     hasInitializedAutoSelectionRef.current = true;
     setActiveConversationId(conversationId);
     syncConversationUrl(conversationId);
+  };
+
+  const handleSetConversationArchived = async (conversationId: string, archived: boolean) => {
+    setIsArchivingConversation(true);
+    try {
+      await setConversationArchived({
+        conversationId: conversationId as Id<"inboxConversations">,
+        archived,
+      });
+
+      if (archived) {
+        const nextConversationId =
+          activeConversationId === conversationId
+            ? activeConversations.find((item) => item.id !== conversationId)?.id ?? null
+            : activeConversationId;
+        setShowArchived(false);
+        setActiveConversationId(nextConversationId);
+        syncConversationUrl(nextConversationId, "replace");
+        return;
+      }
+
+      setShowArchived(false);
+      setActiveConversationId(conversationId);
+      syncConversationUrl(conversationId, "replace");
+    } finally {
+      setIsArchivingConversation(false);
+    }
   };
 
   const handleSendMessage = async (body: string) => {
@@ -270,14 +324,19 @@ export function useRealtimeInbox({
 
   return {
     activeConversationId,
+    archivedConversations: archivedConversations as unknown as ConversationSummary[],
     conversation: normalizedConversation,
     conversations: normalizedConversations,
+    handleSetConversationArchived,
+    isArchivingConversation,
     isLiveConversationLoading,
+    isShowingArchived: showArchived,
     isSending,
     isSearching: deferredSearch.length > 0 && liveSearchResults === undefined,
     search,
     searchResults: normalizedSearchResults,
     sendError,
+    setShowArchived,
     setSearch,
     handleSelectConversation,
     handleStartConversation,

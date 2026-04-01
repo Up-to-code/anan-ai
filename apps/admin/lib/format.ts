@@ -1,10 +1,12 @@
+import { getDateLocale, getNumberLocale, type AdminLocale } from "./locale";
+
 /**
  * WHY:   Admin pages repeat the same operational value formatting across metrics, tables, and detail panels.
  * WHAT:  Exposes small formatting helpers for numbers, percentages, currency, and timestamps.
  * HOW:   Uses the browser internationalization APIs with stable defaults for the admin console.
  */
-export function formatNumber(value: number | null | undefined) {
-  return new Intl.NumberFormat("ar-SA").format(value ?? 0);
+export function formatNumber(value: number | null | undefined, locale: AdminLocale = "ar") {
+  return new Intl.NumberFormat(getNumberLocale(locale)).format(value ?? 0);
 }
 
 /**
@@ -12,8 +14,8 @@ export function formatNumber(value: number | null | undefined) {
  * WHAT:  Formats a numeric amount as SAR currency.
  * HOW:   Delegates to `Intl.NumberFormat` with a fixed currency style.
  */
-export function formatCurrency(value: number | null | undefined) {
-  return new Intl.NumberFormat("en-SA", {
+export function formatCurrency(value: number | null | undefined, locale: AdminLocale = "ar") {
+  return new Intl.NumberFormat(getNumberLocale(locale), {
     style: "currency",
     currency: "SAR",
     maximumFractionDigits: 0,
@@ -25,8 +27,8 @@ export function formatCurrency(value: number | null | undefined) {
  * WHAT:  Formats a decimal rate as a percentage with one fractional digit.
  * HOW:   Multiplies the input by 100 and appends `%`.
  */
-export function formatPercent(rate: number | null | undefined) {
-  return new Intl.NumberFormat("ar-SA", {
+export function formatPercent(rate: number | null | undefined, locale: AdminLocale = "ar") {
+  return new Intl.NumberFormat(getNumberLocale(locale), {
     style: "percent",
     maximumFractionDigits: 1,
   }).format(rate ?? 0);
@@ -37,12 +39,12 @@ export function formatPercent(rate: number | null | undefined) {
  * WHAT:  Formats a unix-millisecond timestamp or returns a fallback for missing values.
  * HOW:   Uses a short date-time formatter in the Cairo locale context.
  */
-export function formatDateTime(value: number | null | undefined) {
+export function formatDateTime(value: number | null | undefined, locale: AdminLocale = "ar") {
   if (!value) {
     return "غير متوفر";
   }
 
-  return new Intl.DateTimeFormat("ar-SA", {
+  return new Intl.DateTimeFormat(getDateLocale(locale), {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));

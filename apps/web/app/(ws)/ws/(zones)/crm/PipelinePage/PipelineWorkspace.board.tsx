@@ -1,8 +1,9 @@
 "use client";
 
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import BrandEmptyState from "../../../_components/WorkspaceBrand/BrandEmptyState";
 import type { CrmClientRecord, PipelineStage } from "../crmTypes";
-import { STAGE_LABELS, STAGE_ORDER } from "./PipelineWorkspace.helpers";
+import { STAGE_ORDER, getStageLabel } from "./PipelineWorkspace.helpers";
 import { PipelineClientCard } from "./PipelineWorkspace.card";
 
 type PipelineBoardProps = {
@@ -90,9 +91,10 @@ function getStageColumnClassName(isActive: boolean) {
 }
 
 function StageColumnHeader({ stage, count }: { stage: PipelineStage; count: number }) {
+  const { locale } = useWebLocale();
   return (
     <div className="flex items-center justify-between px-1">
-      <h2 className="text-sm font-bold text-foreground">{STAGE_LABELS[stage]}</h2>
+      <h2 className="text-sm font-bold text-foreground">{getStageLabel(stage, locale)}</h2>
       <span className="text-xs font-bold text-muted-foreground">{count}</span>
     </div>
   );
@@ -113,6 +115,7 @@ function StageClientList({
   onFollowUpDraftChange: (clientId: string, value: string) => void;
   onSaveFollowUp: (clientId: string) => void;
 }) {
+  const { locale } = useWebLocale();
   return (
     <div className="flex flex-col gap-3">
       {clients.map((client) => (
@@ -127,7 +130,16 @@ function StageClientList({
         />
       ))}
       {clients.length === 0 ? (
-        <BrandEmptyState title="لا توجد بطاقات" description="اسحب بطاقة إلى هذا العمود أو أنشئ بطاقة جديدة." />
+        <BrandEmptyState
+          title={locale === "fr" ? "Aucune carte" : locale === "en" ? "No cards yet" : "لا توجد بطاقات"}
+          description={
+            locale === "fr"
+              ? "Glissez une carte dans cette colonne ou creez-en une nouvelle."
+              : locale === "en"
+                ? "Drag a card into this column or create a new one."
+                : "اسحب بطاقة إلى هذا العمود أو أنشئ بطاقة جديدة."
+          }
+        />
       ) : null}
     </div>
   );

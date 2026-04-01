@@ -11,7 +11,6 @@ describe("anan orchestrationConfig", () => {
         "team_finance",
         "team_knowledge",
         "team_platform",
-        "team_trainer",
       ]),
     );
   });
@@ -29,7 +28,6 @@ describe("anan orchestrationConfig", () => {
         "anan_knowledge",
         "anan_memory",
         "anan_platform_docs",
-        "anan_trainer",
       ]),
     );
   });

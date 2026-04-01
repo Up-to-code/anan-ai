@@ -162,8 +162,8 @@ export async function addToProductionRAG(
 /**
  * addToRecommendationRAG — Agent pushes suggested training data for review.
  *
- * WHY:   anan_trainer extracts useful data from conversations and suggests
- *        it as new training material. Admin must approve before it goes live.
+ * WHY:   Internal suggestion flows can stage new training material for
+ *        admin review before it goes live.
  * WHAT:  Inserts text into the recommendation namespace.
  * HOW:   Same as production but different namespace. Admin dashboard
  *        shows pending entries for review.

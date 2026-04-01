@@ -1,5 +1,6 @@
 import { QueryCtx } from "../../_generated/server";
 import { Id } from "../../_generated/dataModel";
+import { countOwnerScopedProperties } from "../../shared_logic/properties/ownerScoped";
 
 /**
  * WHY:   Broker server functions still need one low-level way to count properties for a broker owner id.
@@ -10,11 +11,8 @@ export async function countBrokerOverviewStats(
   ctx: QueryCtx,
   { brokerId }: { brokerId: Id<"brokers"> },
 ) {
-  const properties = await ctx.db
-    .query("properties")
-    .withIndex("brokerId", (q) => q.eq("brokerId", brokerId))
-    .collect();
-  return {
-    properties: properties.length,
-  };
+  return countOwnerScopedProperties(ctx, {
+    ownerField: "brokerId",
+    ownerId: brokerId,
+  });
 }

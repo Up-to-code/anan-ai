@@ -1,6 +1,8 @@
 "use client";
 
 import { ArrowUpLeft } from "lucide-react";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { formatLocaleNumber } from "@/lib/locale";
 import { cn } from "@/lib/utils";
 import type {
   DealShareMetadata,
@@ -17,32 +19,32 @@ type CollaborationMetadata =
   | InviteEventMetadata
   | RoleEventMetadata;
 
-function getCardLabel(metadata: CollaborationMetadata) {
+function getCardLabel(metadata: CollaborationMetadata, dictionary: ReturnType<typeof useWebLocale>["dictionary"]) {
   switch (metadata.contextType) {
     case "file_share":
-      return "مشاركة ملف";
+      return dictionary.inbox.fileShareLabel;
     case "project_share":
-      return "مشاركة مشروع";
+      return dictionary.inbox.projectShareLabel;
     case "deal_share":
-      return "مشاركة صفقة";
+      return dictionary.inbox.dealShareLabel;
     case "invite_event":
-      return "تحديث دعوة";
+      return dictionary.inbox.inviteUpdateLabel;
     case "role_event":
-      return "تحديث صلاحية";
+      return dictionary.inbox.roleUpdateLabel;
   }
 }
 
-function getMetaDetails(metadata: CollaborationMetadata) {
+function getMetaDetails(metadata: CollaborationMetadata, locale: ReturnType<typeof useWebLocale>["locale"], dictionary: ReturnType<typeof useWebLocale>["dictionary"]) {
   switch (metadata.contextType) {
     case "file_share":
       return metadata.file.mime
         ? `${metadata.file.name} · ${metadata.file.mime}`
         : metadata.file.name;
     case "project_share":
-      return metadata.location ?? "مشروع مرتبط بالمساحة";
+      return metadata.location ?? dictionary.inbox.workspaceProject;
     case "deal_share":
       return metadata.value
-        ? `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(metadata.value)} ر.س`
+        ? `${formatLocaleNumber(locale, metadata.value, { maximumFractionDigits: 0 })} ر.س`
         : metadata.stage;
     case "invite_event":
       return `${metadata.organizationName} · ${metadata.inviteRole}`;
@@ -60,6 +62,7 @@ export default function InboxCollaborationCard({
   isMe: boolean;
   metadata: CollaborationMetadata;
 }) {
+  const { dictionary, locale } = useWebLocale();
   return (
     <div
       className={cn(
@@ -74,7 +77,7 @@ export default function InboxCollaborationCard({
           "text-[11px] font-black uppercase tracking-widest",
           isMe ? "text-foreground/60" : "text-foreground/70"
         )}>
-          {getCardLabel(metadata)}
+          {getCardLabel(metadata, dictionary)}
         </div>
         <div className="break-words text-sm font-black leading-6 [overflow-wrap:anywhere]">{metadata.title}</div>
       </div>
@@ -91,7 +94,7 @@ export default function InboxCollaborationCard({
         {metadata.summary}
       </div>
       <div className={cn("break-words text-[13px] font-black [overflow-wrap:anywhere]", isMe ? "text-foreground" : "text-foreground")}>
-        {getMetaDetails(metadata)}
+        {getMetaDetails(metadata, locale, dictionary)}
       </div>
       <a
         href={metadata.action.href}

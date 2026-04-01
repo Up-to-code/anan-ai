@@ -1,6 +1,9 @@
+import { cookies } from "next/headers";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import ZonePageIntro from "../../_components/ZoneShell/ZonePageIntro";
+import { getWebDictionary } from "@/lib/i18n";
+import { getLocaleDateFormat, resolveLocale, WEB_LOCALE_COOKIE } from "@/lib/locale";
 import {
   getWorkspaceNotificationSummary,
   listWorkspaceNotifications,
@@ -12,8 +15,8 @@ type WorkspaceNotificationsPageProps = {
   }>;
 };
 
-function formatNotificationTimestamp(timestamp: number) {
-  return new Date(timestamp).toLocaleString("ar-SA", {
+function formatNotificationTimestamp(timestamp: number, locale: string) {
+  return new Date(timestamp).toLocaleString(locale, {
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -27,6 +30,9 @@ function formatNotificationTimestamp(timestamp: number) {
  * HOW:   Loads notifications on the server and renders a filterable list without extra dashboard chrome.
  */
 export default async function WorkspaceNotificationsPage({ searchParams }: WorkspaceNotificationsPageProps) {
+  const cookieStore = await cookies();
+  const locale = resolveLocale(cookieStore.get(WEB_LOCALE_COOKIE)?.value);
+  const dictionary = getWebDictionary(locale);
   const [{ filter }, notifications, summary] = await Promise.all([
     searchParams,
     listWorkspaceNotifications(30),
@@ -39,9 +45,9 @@ export default async function WorkspaceNotificationsPage({ searchParams }: Works
   return (
     <div className="flex min-h-full flex-col">
       <ZonePageIntro
-        eyebrow="الإشعارات"
-        title="مركز التنبيهات"
-        description="تنبيهات حقيقية مرتبطة بالمحادثات والعروض والدعوات داخل نفس مساحة العمل."
+        eyebrow={dictionary.notifications.eyebrow}
+        title={dictionary.notifications.title}
+        description={dictionary.notifications.description}
       />
 
       <div className="space-y-6 px-6 py-8 lg:px-10 lg:py-10">
@@ -56,7 +62,7 @@ export default async function WorkspaceNotificationsPage({ searchParams }: Works
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground active:scale-95"
               )}
             >
-              الكل ({notifications.length})
+              {dictionary.notifications.all} ({notifications.length})
             </Link>
             <Link
               href="/ws/notifications?filter=unread"
@@ -67,19 +73,21 @@ export default async function WorkspaceNotificationsPage({ searchParams }: Works
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground active:scale-95"
               )}
             >
-              غير المقروءة ({summary.unreadCount})
+              {dictionary.notifications.unread} ({summary.unreadCount})
             </Link>
           </div>
 
           <div className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/50">
-            {summary.unreadCount > 0 ? `لديك ${summary.unreadCount} إشعارات غير مقروءة` : "لا توجد إشعارات معلقة"}
+            {summary.unreadCount > 0
+              ? dictionary.notifications.unreadSummary.replace("{count}", String(summary.unreadCount))
+              : dictionary.notifications.noPending}
           </div>
         </div>
 
         <div className="grid gap-2 text-right">
           {filteredNotifications.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-border bg-muted/10 p-12 text-center text-[13px] font-bold text-muted-foreground/60 shadow-sm transition-all hover:bg-muted/15">
-              لا توجد إشعارات ضمن هذا الفلتر.
+              {dictionary.notifications.empty}
             </div>
           ) : (
             filteredNotifications.map((item) => (
@@ -106,7 +114,7 @@ export default async function WorkspaceNotificationsPage({ searchParams }: Works
                     <div className="mt-4 flex flex-wrap items-center gap-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">
                       <span className="bg-muted px-2 py-0.5 rounded-md">{item.source}</span>
                       <div className="h-1 w-1 rounded-full bg-border" />
-                      <span>{formatNotificationTimestamp(item.createdAt)}</span>
+                      <span>{formatNotificationTimestamp(item.createdAt, getLocaleDateFormat(locale))}</span>
                     </div>
                   </div>
                   <div className={cn(
@@ -115,7 +123,7 @@ export default async function WorkspaceNotificationsPage({ searchParams }: Works
                       ? "bg-muted text-muted-foreground/60"
                       : "bg-blue-600 text-white shadow-sm group-hover:scale-105"
                   )}>
-                    {item.isRead ? "تم الاطلاع" : "جديد"}
+                    {item.isRead ? dictionary.notifications.read : dictionary.notifications.new}
                   </div>
                 </div>
               </Link>

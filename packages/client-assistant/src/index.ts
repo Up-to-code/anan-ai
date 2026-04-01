@@ -1,4 +1,4 @@
-export type BuyerAssistantLocale = "ar" | "en";
+export type BuyerAssistantLocale = "ar" | "en" | "fr";
 
 export type BuyerProperty = {
   id: string;
@@ -210,7 +210,11 @@ function toShortlistCard(properties: BuyerProperty[]): BuyerAgUiCard | null {
   };
 }
 
-function mapCardToUiCard(card: BuyerAssistantCard, index: number): BuyerAgUiCard | null {
+function mapCardToUiCard(
+  card: BuyerAssistantCard,
+  index: number,
+  locale: BuyerAssistantLocale,
+): BuyerAgUiCard | null {
   switch (card.type) {
     case "comparison_table":
       return { id: `comparison-table-${index}`, componentId: "comparison_table", props: card };
@@ -271,7 +275,18 @@ function mapCardToUiCard(card: BuyerAssistantCard, index: number): BuyerAgUiCard
         props: {
           title: card.title,
           summary: card.summary,
-          actionLabel: card.handoffStatus === "qualified" ? "اطلب مستشاراً" : "أكمل التأهيل",
+          actionLabel:
+            card.handoffStatus === "qualified"
+              ? locale === "ar"
+                ? "اطلب مستشاراً"
+                : locale === "fr"
+                  ? "Demander un conseiller"
+                  : "Request advisor"
+              : locale === "ar"
+                ? "أكمل التأهيل"
+                : locale === "fr"
+                  ? "Compléter la qualification"
+                  : "Complete qualification",
         },
       };
     case "market_analysis":
@@ -286,8 +301,10 @@ export function buildBuyerUiTurn(args: {
   properties?: BuyerProperty[];
   cards?: BuyerAssistantCard[];
   targetZone?: BuyerAgUiTurn["targetZone"];
+  locale?: BuyerAssistantLocale;
 }): BuyerAgUiTurn | undefined {
   const uiCards: BuyerAgUiCard[] = [];
+  const locale = args.locale ?? "ar";
   const shortlistCard = toShortlistCard(args.properties ?? []);
 
   if (shortlistCard) {
@@ -295,7 +312,7 @@ export function buildBuyerUiTurn(args: {
   }
 
   (args.cards ?? []).forEach((card, index) => {
-    const uiCard = mapCardToUiCard(card, index);
+    const uiCard = mapCardToUiCard(card, index, locale);
     if (uiCard) {
       uiCards.push(uiCard);
     }
@@ -316,44 +333,68 @@ export function buildBuyerChatSuggestions(
   mode: "default" | "search" | "loans",
 ): BuyerChatSuggestion[] {
   if (mode === "search") {
-    return locale === "ar"
-      ? [
-          { id: "s1", label: "شقة في الرياض", prompt: "أبحث عن شقة في الرياض" },
-          { id: "s2", label: "قارن الخيارات", prompt: "قارن أفضل الخيارات" },
-          { id: "s3", label: "استثمار", prompt: "أريد خيارات مناسبة للاستثمار" },
-        ]
-      : [
-          { id: "s1", label: "Riyadh apartment", prompt: "Find an apartment in Riyadh" },
-          { id: "s2", label: "Compare options", prompt: "Compare the best options" },
-          { id: "s3", label: "Investment", prompt: "Show investment-friendly options" },
-        ];
+    if (locale === "ar") {
+      return [
+        { id: "s1", label: "شقة في الرياض", prompt: "أبحث عن شقة في الرياض" },
+        { id: "s2", label: "قارن الخيارات", prompt: "قارن أفضل الخيارات" },
+        { id: "s3", label: "استثمار", prompt: "أريد خيارات مناسبة للاستثمار" },
+      ];
+    }
+    if (locale === "fr") {
+      return [
+        { id: "s1", label: "Appartement à Riyad", prompt: "Trouve-moi un appartement à Riyad" },
+        { id: "s2", label: "Comparer", prompt: "Compare les meilleures options" },
+        { id: "s3", label: "Investissement", prompt: "Montre-moi des options adaptées à l'investissement" },
+      ];
+    }
+    return [
+      { id: "s1", label: "Riyadh apartment", prompt: "Find an apartment in Riyadh" },
+      { id: "s2", label: "Compare options", prompt: "Compare the best options" },
+      { id: "s3", label: "Investment", prompt: "Show investment-friendly options" },
+    ];
   }
 
   if (mode === "loans") {
-    return locale === "ar"
-      ? [
-          { id: "l1", label: "فحص الأهلية", prompt: "هل راتبي 15000 مناسب للتمويل؟" },
-          { id: "l2", label: "خطة سداد", prompt: "اعرض خطة سداد مبدئية" },
-          { id: "l3", label: "قرض لشقة", prompt: "أريد تمويل لشقة في الرياض" },
-        ]
-      : [
-          { id: "l1", label: "Check eligibility", prompt: "Does a SAR 15,000 salary qualify me?" },
-          { id: "l2", label: "Payment plan", prompt: "Show me a starter payment plan" },
-          { id: "l3", label: "Loan for apartment", prompt: "I need financing for an apartment in Riyadh" },
-        ];
+    if (locale === "ar") {
+      return [
+        { id: "l1", label: "فحص الأهلية", prompt: "هل راتبي 15000 مناسب للتمويل؟" },
+        { id: "l2", label: "خطة سداد", prompt: "اعرض خطة سداد مبدئية" },
+        { id: "l3", label: "قرض لشقة", prompt: "أريد تمويل لشقة في الرياض" },
+      ];
+    }
+    if (locale === "fr") {
+      return [
+        { id: "l1", label: "Vérifier l'éligibilité", prompt: "Un salaire de 15 000 SAR me permet-il d'obtenir un financement ?" },
+        { id: "l2", label: "Plan de paiement", prompt: "Montre-moi un plan de paiement initial" },
+        { id: "l3", label: "Financer un appartement", prompt: "J'ai besoin d'un financement pour un appartement à Riyad" },
+      ];
+    }
+    return [
+      { id: "l1", label: "Check eligibility", prompt: "Does a SAR 15,000 salary qualify me?" },
+      { id: "l2", label: "Payment plan", prompt: "Show me a starter payment plan" },
+      { id: "l3", label: "Loan for apartment", prompt: "I need financing for an apartment in Riyadh" },
+    ];
   }
 
-  return locale === "ar"
-    ? [
-        { id: "d1", label: "أبحث عن شقة", prompt: "أبحث عن شقة في الرياض" },
-        { id: "d2", label: "فحص التمويل", prompt: "هل راتبي 15000 مناسب للتمويل؟" },
-        { id: "d3", label: "قارن الخيارات", prompt: "قارن أفضل الخيارات" },
-      ]
-    : [
-        { id: "d1", label: "Find apartment", prompt: "Find an apartment in Riyadh" },
-        { id: "d2", label: "Check financing", prompt: "Does a SAR 15,000 salary qualify me?" },
-        { id: "d3", label: "Compare options", prompt: "Compare the best options" },
-      ];
+  if (locale === "ar") {
+    return [
+      { id: "d1", label: "أبحث عن شقة", prompt: "أبحث عن شقة في الرياض" },
+      { id: "d2", label: "فحص التمويل", prompt: "هل راتبي 15000 مناسب للتمويل؟" },
+      { id: "d3", label: "قارن الخيارات", prompt: "قارن أفضل الخيارات" },
+    ];
+  }
+  if (locale === "fr") {
+    return [
+      { id: "d1", label: "Trouver un appartement", prompt: "Trouve-moi un appartement à Riyad" },
+      { id: "d2", label: "Vérifier le financement", prompt: "Un salaire de 15 000 SAR me permet-il d'obtenir un financement ?" },
+      { id: "d3", label: "Comparer", prompt: "Compare les meilleures options" },
+    ];
+  }
+  return [
+    { id: "d1", label: "Find apartment", prompt: "Find an apartment in Riyadh" },
+    { id: "d2", label: "Check financing", prompt: "Does a SAR 15,000 salary qualify me?" },
+    { id: "d3", label: "Compare options", prompt: "Compare the best options" },
+  ];
 }
 
 export function buildBuyerThreadTitle(messages: BuyerAssistantMessage[]) {

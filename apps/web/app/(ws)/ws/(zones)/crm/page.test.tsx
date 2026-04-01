@@ -1,5 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { WebLocaleProvider } from "@/app/_components/WebLocaleProvider";
+import { getWebDictionary } from "@/lib/i18n";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
@@ -45,7 +47,11 @@ import WorkspaceCrmRoute from "./page";
 describe("/ws/crm page", () => {
   it("renders the real CRM pipeline projection", async () => {
     const element = await WorkspaceCrmRoute();
-    const markup = renderToStaticMarkup(element);
+    const markup = renderToStaticMarkup(
+      <WebLocaleProvider locale="ar" dictionary={getWebDictionary("ar")}>
+        {element}
+      </WebLocaleProvider>,
+    );
 
     expect(markup).toContain("الصفقات");
     expect(markup).toContain("منى الغامدي");

@@ -1,6 +1,12 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, it, vi } from "vitest";
 
+vi.mock("next/headers", () => ({
+  cookies: vi.fn(async () => ({
+    get: () => undefined,
+  })),
+}));
+
 const { getWorkspaceOrganizationTeam } = vi.hoisted(() => ({
   getWorkspaceOrganizationTeam: vi.fn(),
 }));

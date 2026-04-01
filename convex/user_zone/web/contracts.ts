@@ -6,11 +6,11 @@ import {
 } from "../mobile/contracts";
 
 /**
- * WHY:   The client web assistant needs an explicit locale contract for bilingual replies.
+ * WHY:   The client web assistant needs an explicit locale contract for Arabic, English, and French replies.
  * WHAT:  Validates the supported assistant locales.
- * HOW:   Restricts the assistant surface to Arabic or English until wider locale coverage exists.
+ * HOW:   Restricts the assistant surface to the current supported product locales.
  */
-export const clientWebLocaleValidator = v.union(v.literal("ar"), v.literal("en"));
+export const clientWebLocaleValidator = v.union(v.literal("ar"), v.literal("en"), v.literal("fr"));
 
 /**
  * WHY:   The client assistant needs one stable response envelope for cards, property results, and next prompts.

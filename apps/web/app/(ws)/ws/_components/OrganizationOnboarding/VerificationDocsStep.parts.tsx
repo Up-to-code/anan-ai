@@ -1,8 +1,10 @@
 "use client";
 
-import { Upload, Search, X, Check } from "lucide-react";
+import { Upload, Search, Check } from "lucide-react";
 import type { UploadedFileReference } from "@/server/contracts/files";
 import type { RequirementItem, RequirementSourceLink } from "./requirements";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { cn } from "@/lib/utils";
 
 type RequirementsChecklistProps = {
   countryLabel?: string | null;
@@ -16,15 +18,28 @@ type RequirementsChecklistProps = {
 };
 
 function RequirementBadge({ required }: { required: boolean }) {
+  const { locale } = useWebLocale();
+  const label = required
+    ? locale === "fr"
+      ? "Requis"
+      : locale === "en"
+        ? "Required"
+        : "أساسي"
+    : locale === "fr"
+      ? "Optionnel"
+      : locale === "en"
+        ? "Optional"
+        : "اختياري";
+
   return (
     <span
       className={`rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${
-        required 
-          ? "border border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300" 
+        required
+          ? "border border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300"
           : "border border-border bg-muted text-muted-foreground"
       }`}
     >
-      {required ? "أساسي" : "اختياري"}
+      {label}
     </span>
   );
 }
@@ -34,24 +49,27 @@ function RequirementItemsList(args: {
   filteredRequirements: RequirementItem[];
   onToggleRequirement: (id: string) => void;
 }) {
+  const { locale, direction, isRtl } = useWebLocale();
+
   if (args.filteredRequirements.length === 0) {
     return (
       <div className="rounded-2xl border border-border bg-muted/30 px-5 py-4 text-center text-sm font-medium text-muted-foreground">
-        لا توجد نتائج مطابقة.
+        {locale === "fr" ? "Aucun résultat correspondant." : locale === "en" ? "No matching results." : "لا توجد نتائج مطابقة."}
       </div>
     );
   }
-  
+
   return args.filteredRequirements.map((item) => {
     const isChecked = Boolean(args.selected[item.id]);
     return (
-      <button 
-        key={item.id} 
+      <button
+        key={item.id}
         type="button"
+        dir={direction}
         onClick={() => args.onToggleRequirement(item.id)}
-        className={`flex items-start gap-4 rounded-2xl border-2 p-4 text-right transition-all ${
-          isChecked 
-            ? "border-foreground bg-card shadow-sm" 
+        className={`flex items-start gap-4 rounded-2xl border-2 p-4 transition-all ${
+          isChecked
+            ? "border-foreground bg-card shadow-sm"
             : "border-border bg-background hover:bg-muted/20"
         }`}
       >
@@ -60,7 +78,7 @@ function RequirementItemsList(args: {
         }`}>
           {isChecked && <Check size={12} color="white" strokeWidth={4} />}
         </div>
-        <span className="space-y-1.5 flex-1">
+        <span className={cn("space-y-1.5 flex-1", isRtl ? "text-right" : "text-left")}>
           <span className="flex flex-wrap items-center gap-3 text-[15px] font-black text-foreground">
             {item.label}
             <RequirementBadge required={item.required} />
@@ -73,16 +91,18 @@ function RequirementItemsList(args: {
 }
 
 function RequirementSources({ sources }: Pick<RequirementsChecklistProps, "sources">) {
+  const { locale, isRtl } = useWebLocale();
+
   return (
     <div className="text-[13px] font-medium text-muted-foreground">
-      المصادر الرسمية:
-      <span className="mr-3 inline-flex flex-wrap gap-4">
+      {locale === "fr" ? "Sources officielles:" : locale === "en" ? "Official sources:" : "المصادر الرسمية:"}
+      <span className={cn("inline-flex flex-wrap gap-4", isRtl ? "mr-3" : "ml-3")}>
         {sources.map((source) => (
-          <a 
-            key={source.id} 
-            href={source.url} 
-            target="_blank" 
-            rel="noreferrer" 
+          <a
+            key={source.id}
+            href={source.url}
+            target="_blank"
+            rel="noreferrer"
             className="font-bold text-foreground underline decoration-border underline-offset-4 transition hover:text-primary hover:decoration-primary/40"
           >
             {source.label}
@@ -103,31 +123,46 @@ export function RequirementsChecklist({
   onToggleRequirement,
   sources,
 }: RequirementsChecklistProps) {
+  const { locale, direction, isRtl } = useWebLocale();
+  const guideTitle =
+    locale === "fr"
+      ? `Référence des exigences ${countryLabel ?? "de conformité"}`
+      : locale === "en"
+        ? `Requirements reference ${countryLabel ?? "for compliance"}`
+        : `مرجع المتطلبات ${countryLabel ?? "للامتثال"}`;
+  const currentListLabel =
+    locale === "fr"
+      ? `Liste actuelle : ${typeLabel}`
+      : locale === "en"
+        ? `Current list: ${typeLabel}`
+        : `القائمة الحالية: ${typeLabel}`;
+
   return (
-    <div className="space-y-6 rounded-[32px] border border-border bg-card p-8 shadow-sm">
-      <div className="space-y-1.5 text-right">
-        <div className="text-sm font-black uppercase tracking-widest text-foreground">
-          مرجع المتطلبات {countryLabel ?? "للامتثال"}
-        </div>
-        <div className="text-[13px] font-bold uppercase text-muted-foreground">القائمة الحالية: {typeLabel}</div>
+    <div className="space-y-6 rounded-[32px] border border-border bg-card p-6 shadow-sm sm:p-8" dir={direction}>
+      <div className={cn("space-y-1.5", isRtl ? "text-right" : "text-left")}>
+        <div className="text-sm font-black uppercase tracking-widest text-foreground">{guideTitle}</div>
+        <div className="text-[13px] font-bold uppercase text-muted-foreground">{currentListLabel}</div>
       </div>
-      
+
       <div className="relative">
         <input
           type="search"
-          placeholder="ابحث عن مستند أو متطلب..."
+          placeholder={locale === "fr" ? "Rechercher un document ou une exigence..." : locale === "en" ? "Search for a document or requirement..." : "ابحث عن مستند أو متطلب..."}
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          className="w-full rounded-full border border-border bg-muted/30 px-12 py-3.5 text-sm font-medium text-foreground outline-none transition-all placeholder:text-muted-foreground/50 focus:border-ring focus:bg-background"
+          className={cn(
+            "w-full rounded-full border border-border bg-muted/30 py-3.5 text-sm font-medium text-foreground outline-none transition-all placeholder:text-muted-foreground/50 focus:border-ring focus:bg-background",
+            isRtl ? "px-12 text-right" : "px-12 text-left",
+          )}
         />
-        <Search className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className={cn("absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground", isRtl ? "right-4" : "left-4")} />
       </div>
 
       <div className="grid gap-3">
-        <RequirementItemsList 
-          selected={selected} 
-          filteredRequirements={filteredRequirements} 
-          onToggleRequirement={onToggleRequirement} 
+        <RequirementItemsList
+          selected={selected}
+          filteredRequirements={filteredRequirements}
+          onToggleRequirement={onToggleRequirement}
         />
       </div>
 
@@ -161,22 +196,24 @@ export function DocumentsCard({
   inputRef,
   onFilesChange,
 }: DocumentsCardProps) {
+  const { locale, direction, isRtl } = useWebLocale();
+
   return (
-    <div className="space-y-6 rounded-[32px] border border-border bg-card p-8 shadow-sm">
-      <div className="space-y-1.5 text-right">
+    <div className="space-y-6 rounded-[32px] border border-border bg-card p-6 shadow-sm sm:p-8" dir={direction}>
+      <div className={cn("space-y-1.5", isRtl ? "text-right" : "text-left")}>
         <div className="text-[15px] font-black tracking-tight text-foreground">{title}</div>
         <div className="text-[13px] font-medium text-muted-foreground">{subtitle}</div>
       </div>
 
       <input ref={inputRef} type="file" multiple className="hidden" onChange={(event) => void onFilesChange(event)} />
-      
-      <button 
-        type="button" 
-        onClick={() => inputRef.current?.click()} 
+
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
         className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border bg-muted/20 px-4 py-8 text-sm font-bold text-muted-foreground transition hover:border-ring/40 hover:bg-muted/30"
       >
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-           <Upload size={18} />
+          <Upload size={18} />
         </div>
         {isUploading ? uploadingLabel : idleLabel}
       </button>
@@ -184,13 +221,13 @@ export function DocumentsCard({
       <div className="grid gap-2">
         {docs.map((doc) => (
           <div key={doc.key} className="group flex items-center justify-between rounded-xl border border-border bg-background py-2.5 pl-3 pr-4 text-[13px] font-medium text-foreground transition hover:border-ring/40">
-            <span className="truncate max-w-[200px]">{doc.name}</span>
-            <button 
-              type="button" 
-              onClick={() => onRemoveDoc(doc.key)} 
+            <span className="max-w-[200px] truncate">{doc.name}</span>
+            <button
+              type="button"
+              onClick={() => onRemoveDoc(doc.key)}
               className="rounded-lg px-2.5 py-1 text-[11px] font-black uppercase text-muted-foreground transition hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400"
             >
-              إزالة
+              {locale === "fr" ? "Supprimer" : locale === "en" ? "Remove" : "إزالة"}
             </button>
           </div>
         ))}
@@ -207,30 +244,42 @@ type StepActionsProps = {
 };
 
 export function StepActions({ isSubmitting, onBack, onSkip, onSubmit }: StepActionsProps) {
+  const { locale } = useWebLocale();
+
   return (
     <div className="flex items-center justify-between pt-6">
-      <button 
-        type="button" 
-        onClick={onBack} 
+      <button
+        type="button"
+        onClick={onBack}
         className="rounded-full bg-muted px-8 py-3.5 text-xs font-black uppercase tracking-widest text-foreground transition hover:bg-muted/80"
       >
-        رجوع
+        {locale === "fr" ? "Retour" : locale === "en" ? "Back" : "رجوع"}
       </button>
       <div className="flex items-center gap-4">
-        <button 
-          type="button" 
-          onClick={onSkip} 
+        <button
+          type="button"
+          onClick={onSkip}
           className="rounded-full border border-border bg-background px-8 py-3.5 text-xs font-black uppercase tracking-widest text-muted-foreground transition hover:bg-muted/20"
         >
-          تخطي الآن
+          {locale === "fr" ? "Passer maintenant" : locale === "en" ? "Skip for now" : "تخطي الآن"}
         </button>
-        <button 
-          type="button" 
-          onClick={onSubmit} 
-          disabled={isSubmitting} 
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={isSubmitting}
           className="rounded-full bg-foreground px-10 py-3.5 text-xs font-black uppercase tracking-widest text-background shadow-sm transition hover:bg-foreground/90 disabled:opacity-50"
         >
-          {isSubmitting ? "جارٍ الإرسال..." : "إرسال الطلب"}
+          {isSubmitting
+            ? locale === "fr"
+              ? "Envoi..."
+              : locale === "en"
+                ? "Submitting..."
+                : "جارٍ الإرسال..."
+            : locale === "fr"
+              ? "Envoyer la demande"
+              : locale === "en"
+                ? "Submit request"
+                : "إرسال الطلب"}
         </button>
       </div>
     </div>
@@ -257,5 +306,5 @@ export async function postVerificationRequest(args: {
   });
   if (response.ok) return;
   const payload = await response.json().catch(() => null);
-  throw new Error(payload?.message ?? "تعذر إرسال الطلب.");
+  throw new Error(payload?.message ?? "Unable to submit request.");
 }

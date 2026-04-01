@@ -17,7 +17,7 @@ const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 function getOrganizationType(owner: OwnerContext) {
   return owner.ownerType === "broker" ? ("broker" as const) : ("developer" as const);
 }
-export function normalizeTenantRole(role?: string): "manager" | "member" | "viewer" {
+function normalizeTenantRole(role?: string): "manager" | "member" | "viewer" {
   if (role === "owner" || role === "admin" || role === "manager") return "manager";
   if (role === "viewer") return "viewer";
   return "member";

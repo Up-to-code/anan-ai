@@ -95,8 +95,8 @@ it("renders the owner project detail page", async () => {
   });
   const markup = renderToStaticMarkup(element);
 
-  expect(markup).toContain("تعديل المشروع");
-  expect(markup).toContain("حقائق المشروع");
+  expect(markup).toContain("تعديل بيانات المشروع");
+  expect(markup).toContain("تفاصيل المشروع");
   expect(markup).toContain("المزايا والخدمات");
   expect(markup).toContain("مواقف ضيوف");
   expect(markup).toContain("المستندات الخاصة لا تظهر هنا بشكل عام");
@@ -138,10 +138,11 @@ it("renders shared projects as read-only", async () => {
   const markup = renderToStaticMarkup(element);
 
   expect(markup).toContain("مشاهدة فقط");
-  expect(markup).not.toContain("تعديل المشروع");
+  expect(markup).not.toContain("تعديل بيانات المشروع");
   expect(markup).toContain("فتح المحادثات");
   expect(markup).toContain("تصريح خاص بهذه المحادثة");
   expect(markup).toContain("permit.pdf");
+  expect(markup).toContain("الملفات المرتبطة");
 });
 
 it("returns not found when the project is not accessible", async () => {

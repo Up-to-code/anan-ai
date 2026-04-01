@@ -32,7 +32,7 @@ function isExplicitSearchIntent(message: string) {
 }
 
 function formatCurrency(value: number, locale: SupportedLocale) {
-  return new Intl.NumberFormat(locale === "ar" ? "ar-SA" : "en-SA", {
+  return new Intl.NumberFormat(locale === "ar" ? "ar-SA" : locale === "fr" ? "fr-FR" : "en-SA", {
     style: "currency",
     currency: "SAR",
     maximumFractionDigits: 0,
@@ -40,6 +40,11 @@ function formatCurrency(value: number, locale: SupportedLocale) {
 }
 
 function buildPropertySearchMessage(locale: SupportedLocale, count: number) {
+  if (locale === "fr") {
+    return count > 0
+      ? `J'ai trouvé ${count} options qui correspondent à cette demande. Ouvrez un bien pour continuer avec le financement, le rendement ou le transfert vers un conseiller.`
+      : "Je n'ai pas trouvé de correspondance directe, j'ai donc préparé les options vérifiées les plus proches pour continuer.";
+  }
   if (locale === "en") {
     return count > 0
       ? `I found ${count} options that fit this request. Open any property to continue with financing, ROI, or advisor handoff.`
@@ -51,6 +56,14 @@ function buildPropertySearchMessage(locale: SupportedLocale, count: number) {
 }
 
 function buildSearchPrompts(locale: SupportedLocale) {
+  if (locale === "fr") {
+    return [
+      "Montre-moi des appartements à Riyad",
+      "Vérifie mon éligibilité au financement",
+      "Compare les deux meilleures options",
+      "Mets-moi en relation avec un conseiller",
+    ];
+  }
   return locale === "en"
     ? [
         "Show me apartments in Riyadh",
@@ -97,6 +110,21 @@ function buildMortgageCard(locale: SupportedLocale, salary?: number, priceHint?:
   const recommendedBudget = salary ? salary * 55 : priceHint;
   const monthlyInstallmentEstimate = recommendedBudget ? Math.round(recommendedBudget / (20 * 12)) : undefined;
 
+  if (locale === "fr") {
+    return {
+      type: "mortgage_check",
+      title: "Éligibilité au financement",
+      estimatedEligibility,
+      recommendedBudget,
+      monthlyInstallmentEstimate,
+      summary:
+        estimatedEligibility === "eligible"
+          ? "Votre profil initial semble favorable pour un suivi de financement."
+          : estimatedEligibility === "review"
+            ? "Vous pouvez être éligible, mais il nous faut encore vos engagements et le détail de l'apport."
+            : "Partagez votre salaire, votre apport ou la durée visée pour obtenir une estimation plus fiable.",
+    };
+  }
   if (locale === "en") {
     return {
       type: "mortgage_check",
@@ -142,7 +170,16 @@ function buildPaymentPlanCard(locale: SupportedLocale, property: PropertyFeedIte
         durationMonths,
         summary: `With a ${formatCurrency(resolvedDownPayment, locale)} down payment, the remaining balance can be spread over ${durationMonths} months at about ${formatCurrency(monthlyInstallment, locale)} per month.`,
       }
-    : {
+    : locale === "fr"
+      ? {
+          type: "payment_plan",
+          title: "Plan de paiement initial",
+          downPayment: resolvedDownPayment,
+          monthlyInstallment,
+          durationMonths,
+          summary: `Avec un apport de ${formatCurrency(resolvedDownPayment, locale)}, le reste peut être réparti sur ${durationMonths} mois pour environ ${formatCurrency(monthlyInstallment, locale)} par mois.`,
+        }
+      : {
         type: "payment_plan",
         title: "خطة السداد المبدئية",
         downPayment: resolvedDownPayment,
@@ -181,7 +218,19 @@ function buildLoanCalculatorCard(
         monthlyPayment,
         summary: `This estimate assumes ${interestRate}% over ${years} years for ${property.title}.`,
       }
-    : {
+    : locale === "fr"
+      ? {
+          type: "loan_calculator",
+          title: "Simulation de prêt",
+          propertyPrice: property.price,
+          downPayment,
+          loanAmount,
+          interestRate,
+          years,
+          monthlyPayment,
+          summary: `Cette estimation suppose ${interestRate}% sur ${years} ans pour ${property.title}.`,
+        }
+      : {
         type: "loan_calculator",
         title: "حساب التمويل",
         propertyPrice: property.price,
@@ -207,7 +256,16 @@ function buildRoiCard(locale: SupportedLocale, property: PropertyFeedItem): Assi
         grossYieldPercent,
         summary: `This property could generate about ${grossYieldPercent}% gross yield based on current pricing assumptions.`,
       }
-    : {
+    : locale === "fr"
+      ? {
+          type: "roi_summary",
+          title: "Aperçu du rendement",
+          purchasePrice: property.price,
+          estimatedAnnualRent,
+          grossYieldPercent,
+          summary: `Ce bien pourrait générer environ ${grossYieldPercent}% de rendement brut selon les hypothèses actuelles.`,
+        }
+      : {
         type: "roi_summary",
         title: "ملخص العائد الاستثماري",
         purchasePrice: property.price,
@@ -231,7 +289,20 @@ function buildComparisonCard(locale: SupportedLocale, property: PropertyFeedItem
         ],
         summary: "This gives you the core decision inputs before comparing it with another option.",
       }
-    : {
+    : locale === "fr"
+      ? {
+          type: "comparison_table",
+          title: "Base de comparaison rapide",
+          columns: ["Indicateur", "Valeur"],
+          rows: [
+            ["Prix", formatCurrency(property.price, locale)],
+            ["Zone", property.area ?? property.location ?? "Non précisée"],
+            ["Chambres", String(property.beds)],
+            ["Salles de bain", String(property.baths)],
+          ],
+          summary: "Cela vous donne les éléments clés avant une comparaison avec une autre option.",
+        }
+      : {
         type: "comparison_table",
         title: "مقارنة سريعة",
         columns: ["البند", "القيمة"],
@@ -255,7 +326,16 @@ function buildPermitCard(locale: SupportedLocale, property: PropertyFeedItem): A
           ? `${property.owner.name} is verified in Anan. Final permit validation still depends on project documents.`
           : "The listing is visible, but permit validation still needs a formal document review.",
       }
-    : {
+    : locale === "fr"
+      ? {
+          type: "permit_status",
+          title: "Statut de vérification",
+          permitStatus: property.owner.isVerified ? "verified" : "pending_review",
+          summary: property.owner.isVerified
+            ? `${property.owner.name} est vérifié sur Anan. La validation finale dépend encore des documents du projet.`
+            : "L'annonce est visible, mais la validation des autorisations nécessite encore une revue documentaire.",
+        }
+      : {
         type: "permit_status",
         title: "حالة التحقق",
         permitStatus: property.owner.isVerified ? "verified" : "pending_review",
@@ -273,7 +353,14 @@ function buildHandoffCard(locale: SupportedLocale): AssistantCard {
         handoffStatus: "qualified",
         summary: "The request is ready for an advisor handoff once you sign in and confirm your contact details.",
       }
-    : {
+    : locale === "fr"
+      ? {
+          type: "broker_handoff",
+          title: "Transfert vers un conseiller",
+          handoffStatus: "qualified",
+          summary: "La demande est prête pour un transfert vers un conseiller dès que vous vous connectez et confirmez vos coordonnées.",
+        }
+      : {
         type: "broker_handoff",
         title: "تحويل إلى مستشار",
         handoffStatus: "qualified",
@@ -293,7 +380,17 @@ function buildBrokerProfileCard(locale: SupportedLocale, property: PropertyFeedI
         activeListings: property.owner.activeListings ?? 1,
         summary: property.owner.description ?? "This verified advisor can continue the property discussion and next steps.",
       }
-    : {
+    : locale === "fr"
+      ? {
+          type: "broker_profile",
+          title: "Profil du conseiller",
+          brokerName: property.owner.name,
+          brokerAgency: property.owner.agencyLabel ?? property.owner.name,
+          rating: property.owner.rating ?? 4.7,
+          activeListings: property.owner.activeListings ?? 1,
+          summary: property.owner.description ?? "Ce conseiller vérifié peut poursuivre la discussion et les prochaines étapes.",
+        }
+      : {
         type: "broker_profile",
         title: "ملف الوسيط",
         brokerName: property.owner.name,
@@ -315,7 +412,16 @@ function buildDeveloperProfileCard(locale: SupportedLocale, property: PropertyFe
         completedProjects: property.owner.completedProjects ?? Math.max(property.owner.activeListings ?? 1, 1),
         summary: property.owner.description ?? "This developer is the source of the inventory shown in this result.",
       }
-    : {
+    : locale === "fr"
+      ? {
+          type: "developer_profile",
+          title: "Profil du promoteur",
+          developerName: property.owner.name,
+          establishedYear: property.owner.establishedYear ?? 2012,
+          completedProjects: property.owner.completedProjects ?? Math.max(property.owner.activeListings ?? 1, 1),
+          summary: property.owner.description ?? "Ce promoteur est la source du stock affiché dans ce résultat.",
+        }
+      : {
         type: "developer_profile",
         title: "ملف المطور",
         developerName: property.owner.name,
@@ -370,7 +476,17 @@ async function buildBankOfferCards(
           monthlyEstimate: loanCard.monthlyPayment,
           summary: `Estimated against ${property.title} with an initial ${downPaymentPercent}% down payment.`,
         }
-      : {
+      : locale === "fr"
+        ? {
+            type: "bank_offer",
+            title: index === 0 ? "Meilleure option bancaire" : "Option bancaire alternative",
+            bankName: bundle.bankName,
+            rateLabel: `${interestRate}%`,
+            downPaymentPercent,
+            monthlyEstimate: loanCard.monthlyPayment,
+            summary: `Estimation pour ${property.title} avec un apport initial de ${downPaymentPercent}%.`,
+          }
+        : {
           type: "bank_offer",
           title: index === 0 ? "أفضل عرض بنكي مبدئي" : "عرض بنكي بديل",
           bankName: bundle.bankName,
@@ -389,6 +505,9 @@ function extractSalary(message: string) {
 }
 
 function buildAssistantMessage(locale: SupportedLocale, propertyTitle: string, cardsCount: number) {
+  if (locale === "fr") {
+    return `J'ai analysé ${propertyTitle} et préparé ${cardsCount} carte${cardsCount === 1 ? "" : "s"} d'aide à la décision pour vous.`;
+  }
   if (locale === "en") {
     return `I reviewed ${propertyTitle} and prepared ${cardsCount} decision card${cardsCount === 1 ? "" : "s"} for you.`;
   }

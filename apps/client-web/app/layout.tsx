@@ -1,69 +1,43 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { cookies } from "next/headers";
-import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import "./globals.css";
-import ConvexClientProvider from "./ConvexClientProvider";
-import PostHogProvider from "./PostHogProvider";
 import { RootFontFaces, rootFontClassName } from "@/lib/rootFonts";
-import { getClientWebBaseUrl } from "@/lib/site";
-import { LocaleProvider } from "@/client_zone/components/LocaleProvider";
-import { getDictionary } from "@/client_zone/i18n/dictionaries";
-import { isRtlLocale, resolveLocale } from "@/client_zone/i18n/locale";
-
-const metadataBase = getClientWebBaseUrl();
+import { getDictionary } from "@/lib/i18n";
+import { isRtlLocale, resolveLocale, WEB_LOCALE_COOKIE } from "@/lib/locale";
+import { LocaleProvider } from "./_components/LocaleProvider";
+import ThemeProvider from "./theme-provider";
+import PostHogProvider from "./PostHogProvider";
+import ConvexClientProvider from "./ConvexClientProvider";
 
 export const metadata: Metadata = {
-  metadataBase,
-  title: {
-    default: "Anan Client Assistant",
-    template: "%s | Anan Client Assistant",
-  },
-  description: "Search live properties, check financing, and request advisor follow-up from one buyer-friendly Anan experience.",
-  applicationName: "Anan Client Assistant",
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: metadataBase,
-    siteName: "Anan Client Assistant",
-    title: "Anan Client Assistant",
-    description:
-      "Search live properties, check financing, and request advisor follow-up from one buyer-friendly Anan experience.",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Anan Client Assistant",
-    description:
-      "Search live properties, check financing, and request advisor follow-up from one buyer-friendly Anan experience.",
-  },
+  title: "Anan - Public Assistant",
+  description: "Advanced Institutional Real Estate Intelligence",
 };
 
-/**
- * WHY:   The client web app needs one root shell that resolves locale, fonts, and Convex auth providers.
- * WHAT:  Wraps the entire application with Cairo typography, locale context, and Convex providers.
- * HOW:   Reads the locale cookie on the server, sets `lang/dir`, then initializes auth and browser Convex clients.
- */
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const cookieStore = await cookies();
-  const locale = resolveLocale(cookieStore.get("anan_client_locale")?.value);
+  const locale = resolveLocale(cookieStore.get(WEB_LOCALE_COOKIE)?.value);
   const dictionary = getDictionary(locale);
-
   return (
-    <html lang={locale} dir={isRtlLocale(locale) ? "rtl" : "ltr"}>
-      <body className={rootFontClassName}>
-        <RootFontFaces />
-        <ConvexAuthNextjsServerProvider>
-          <ConvexClientProvider>
-            <PostHogProvider>
+    <html lang={locale} dir={isRtlLocale(locale) ? "rtl" : "ltr"} suppressHydrationWarning>
+      <body className={`${rootFontClassName} bg-background text-foreground antialiased`}>
+        <ConvexClientProvider>
+          <ThemeProvider>
+            <Suspense fallback={null}>
               <LocaleProvider locale={locale} dictionary={dictionary}>
-                {children}
+                <PostHogProvider>
+                  <RootFontFaces />
+                  {children}
+                </PostHogProvider>
               </LocaleProvider>
-            </PostHogProvider>
-          </ConvexClientProvider>
-        </ConvexAuthNextjsServerProvider>
+            </Suspense>
+          </ThemeProvider>
+        </ConvexClientProvider>
       </body>
     </html>
   );

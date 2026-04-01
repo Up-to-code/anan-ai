@@ -12,7 +12,6 @@ import {
   ananKnowledgeDefinition,
   ananMemoryDefinition,
   ananPlatformDocsDefinition,
-  ananTrainerDefinition,
 } from "./orchestrationAgentsKnowledge";
 
 export { MODEL_CATALOG, TOOL_CATALOG } from "./orchestrationCatalog";
@@ -28,7 +27,6 @@ export {
   ananKnowledgeDefinition,
   ananMemoryDefinition,
   ananPlatformDocsDefinition,
-  ananTrainerDefinition,
 } from "./orchestrationAgentsKnowledge";
 
 export const AGENT_REGISTRY = buildAgentRegistry([
@@ -41,7 +39,6 @@ export const AGENT_REGISTRY = buildAgentRegistry([
   ananKnowledgeDefinition,
   ananMemoryDefinition,
   ananPlatformDocsDefinition,
-  ananTrainerDefinition,
 ]);
 
 export const TEAM_REGISTRY = buildTeamRegistry([
@@ -74,11 +71,5 @@ export const TEAM_REGISTRY = buildTeamRegistry([
     allowedRoles: ["broker", "RED", "admin"],
     failureMode: "soft",
     agents: [ananPlatformDocsDefinition],
-  }),
-  defineTeamConfig({
-    id: "team_trainer",
-    allowedRoles: ["admin"],
-    failureMode: "soft",
-    agents: [ananTrainerDefinition],
   }),
 ]);

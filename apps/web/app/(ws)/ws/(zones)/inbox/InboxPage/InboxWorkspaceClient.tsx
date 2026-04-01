@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { PanelLeftOpen } from "lucide-react";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { cn } from "@/lib/utils";
 import type { UploadedFileReference } from "@/server/contracts/files";
 import type { OfferActionResult } from "@/server/contracts/offers";
@@ -29,8 +31,10 @@ export default function InboxWorkspaceClient({
   incomingInvites,
   projectOptions,
 }: InboxWorkspaceClientProps) {
+  const { direction, isRtl } = useWebLocale();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false);
   const [pendingInvites, setPendingInvites] = useState(incomingInvites);
   const [isMobileThreadVisible, setIsMobileThreadVisible] = useState(
     () => hasConversationRoute || Boolean(initialStartUserId && initialStartUserId !== currentUserId),
@@ -48,17 +52,22 @@ export default function InboxWorkspaceClient({
   } = useInboxBusinessActions();
   const {
     activeConversationId,
+    archivedConversations,
     conversation,
     conversations,
+    handleSetConversationArchived,
     handleSelectConversation,
     handleSendMessage,
     handleStartConversation,
+    isArchivingConversation,
     isLiveConversationLoading,
+    isShowingArchived,
     isSending,
     isSearching,
     search,
     searchResults,
     sendError,
+    setShowArchived,
     setSearch,
   } = useRealtimeInbox({
     currentUserId,
@@ -237,17 +246,25 @@ export default function InboxWorkspaceClient({
   };
 
   return (
-    <div className="flex h-[calc(100svh-65px)] w-full overflow-hidden bg-[var(--workspace-shell)] lg:h-[calc(100svh-73px)]">
+    <div
+      className="flex h-[calc(100svh-65px)] w-full overflow-hidden bg-[var(--workspace-shell)] lg:h-[calc(100svh-73px)]"
+      dir={direction}
+    >
       <div
         className={cn(
-          "min-w-0 border-l border-[color:var(--workspace-border)] bg-[var(--workspace-sidebar)] md:flex md:w-[340px] md:shrink-0 xl:w-[380px]",
+          "min-w-0 bg-[var(--workspace-sidebar)] md:flex md:w-[340px] md:shrink-0 xl:w-[380px]",
+          isRtl ? "border-l" : "border-r",
+          "border-[color:var(--workspace-border)]",
           isThreadPaneVisible ? "hidden md:flex" : "flex w-full",
+          isDesktopSidebarCollapsed && "md:hidden",
         )}
       >
         <InboxSidebar
           conversations={conversations}
           activeId={activeConversationId}
+          archivedCount={archivedConversations.length}
           invites={pendingInvites}
+          isShowingArchived={isShowingArchived}
           isSearching={isSearching}
           onAcceptInvite={(invite) => void handleAcceptInvite(invite)}
           onCancelInvite={(inviteId) => void handleCancelInvite(inviteId)}
@@ -255,6 +272,8 @@ export default function InboxWorkspaceClient({
           onSearchChange={setSearch}
           onSelect={handleShowConversation}
           onStartConversation={handleCreateConversation}
+          onToggleCollapsed={() => setIsDesktopSidebarCollapsed(true)}
+          onToggleShowArchived={setShowArchived}
           search={search}
           searchResults={searchResults}
         />
@@ -262,10 +281,23 @@ export default function InboxWorkspaceClient({
 
       <div
         className={cn(
-          "min-w-0 flex-1 bg-[var(--workspace-canvas)]",
+          "relative min-w-0 flex-1 bg-[var(--workspace-canvas)]",
           isThreadPaneVisible ? "flex" : "hidden md:flex",
         )}
       >
+        {isDesktopSidebarCollapsed ? (
+          <button
+            type="button"
+            onClick={() => setIsDesktopSidebarCollapsed(false)}
+            className={cn(
+              "absolute top-4 z-20 hidden items-center gap-2 rounded-xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-3 py-2 text-[12px] font-bold text-[var(--workspace-muted)] shadow-sm transition hover:text-foreground md:inline-flex",
+              isRtl ? "right-4" : "left-4",
+            )}
+          >
+            <PanelLeftOpen className="h-4 w-4" />
+            {isRtl ? "فتح القائمة" : "Open inbox"}
+          </button>
+        ) : null}
         <div className="flex h-full w-full flex-col">
           {conversation ? (
             <InboxThreadView
@@ -273,14 +305,18 @@ export default function InboxWorkspaceClient({
               canUseBusinessActions={canUseBusinessActions}
               conversation={conversation}
               currentUserId={currentUserId}
+              isArchivingConversation={isArchivingConversation}
+              isSidebarCollapsed={isDesktopSidebarCollapsed}
               isSending={isSending || isPending || isBusinessActionPending}
               onCreatePrivateOfferDraft={handleCreatePrivateOfferDraft}
               onBack={() => setIsMobileThreadVisible(false)}
               onPublishConversationOffer={handlePublishConversationOffer}
               onRespondToConversationOffer={handleRespondToConversationOffer}
+              onSetConversationArchived={handleSetConversationArchived}
               onShareFile={handleShareFile}
               onShareProject={handleShareProject}
               onSend={handleSendMessage}
+              onToggleSidebarCollapsed={() => setIsDesktopSidebarCollapsed((current) => !current)}
               projectOptions={projectOptions}
               sendError={businessActionError || sendError}
               showBackButton={isThreadPaneVisible}

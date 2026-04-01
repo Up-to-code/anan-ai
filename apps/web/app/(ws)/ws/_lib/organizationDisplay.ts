@@ -1,8 +1,12 @@
+import type { AppLocale } from "@/lib/locale";
+import { getWebDictionary } from "@/lib/i18n";
+
 type OrganizationDisplayInput = {
   name: string | null | undefined;
   type?: string | null;
   status?: string | null;
   zoneLabel?: string | null;
+  locale?: AppLocale;
 };
 
 export type WorkspaceOrganizationDisplay = {
@@ -23,7 +27,7 @@ const BANNED_NAME_FRAGMENTS = [
  * WHAT:  Normalizes an organization name for display by stripping banned fragments, decorative punctuation, and repeated separators.
  * HOW:   Applies a deterministic cleanup pipeline and falls back to a safe Arabic label when nothing usable remains.
  */
-export function formatWorkspaceOrganizationName(name: string | null | undefined) {
+export function formatWorkspaceOrganizationName(name: string | null | undefined, locale: AppLocale = "ar") {
   const initialValue = (name ?? "").trim();
   const withoutBannedWords = BANNED_NAME_FRAGMENTS.reduce(
     (value, pattern) => value.replace(pattern, " "),
@@ -37,15 +41,17 @@ export function formatWorkspaceOrganizationName(name: string | null | undefined)
     .replace(/\s+/g, " ")
     .trim();
 
-  return cleanedValue || "مساحة العمل";
+  return cleanedValue || getWebDictionary(locale).nav.workspaceFallback;
 }
 
-function formatOrganizationType(type?: string | null) {
-  return type === "red" ? "مطور" : "وسيط";
+function formatOrganizationType(type: string | null | undefined, locale: AppLocale) {
+  const dictionary = getWebDictionary(locale);
+  return type === "red" ? dictionary.status.developer : dictionary.status.broker;
 }
 
-function formatOrganizationStatus(status?: string | null) {
-  return status === "active" ? "نشط" : "قيد المراجعة";
+function formatOrganizationStatus(status: string | null | undefined, locale: AppLocale) {
+  const dictionary = getWebDictionary(locale);
+  return status === "active" ? dictionary.status.active : dictionary.status.pendingReview;
 }
 
 /**
@@ -58,9 +64,10 @@ export function getWorkspaceOrganizationDisplay({
   type,
   status,
   zoneLabel,
+  locale = "ar",
 }: OrganizationDisplayInput): WorkspaceOrganizationDisplay {
-  const sanitizedName = formatWorkspaceOrganizationName(name);
-  const navbarSubtitle = `${formatOrganizationType(type)} · ${formatOrganizationStatus(status)}`;
+  const sanitizedName = formatWorkspaceOrganizationName(name, locale);
+  const navbarSubtitle = `${formatOrganizationType(type, locale)} · ${formatOrganizationStatus(status, locale)}`;
 
   return {
     name: sanitizedName,

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import type { DealRelationType } from "@/server/contracts/deals";
 import type {
   DealFormBrokerOption,
@@ -23,14 +24,6 @@ type DealFormData = {
   notes: string;
 };
 
-const DEAL_STAGE_OPTIONS: Array<{ value: DealFormData["stage"]; label: string }> = [
-  { value: "new", label: "جديد" },
-  { value: "contacted", label: "تم التواصل" },
-  { value: "negotiation", label: "مفاوضة" },
-  { value: "won", label: "مغلقة" },
-  { value: "lost", label: "خسارة" },
-];
-
 function matchesText(value: string, query: string) {
   if (!query.trim()) return true;
   return value.toLowerCase().includes(query.trim().toLowerCase());
@@ -49,6 +42,7 @@ function ProjectPicker({
   onQueryChange: (value: string) => void;
   onSelect: (projectId: string) => void;
 }) {
+  const { locale } = useWebLocale();
   const filteredProjects = useMemo(
     () =>
       projects.filter((project) =>
@@ -64,12 +58,12 @@ function ProjectPicker({
     <div className="space-y-4">
       <div className="space-y-2">
         <label className="block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">
-          المشروع المرتبط
+          {locale === "fr" ? "Projet lié" : locale === "en" ? "Linked project" : "المشروع المرتبط"}
         </label>
         <input
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="ابحث بالاسم أو الموقع أو الوصف"
+          placeholder={locale === "fr" ? "Rechercher par nom, lieu ou description" : locale === "en" ? "Search by name, location, or description" : "ابحث بالاسم أو الموقع أو الوصف"}
           className="w-full rounded-xl border border-border/40 bg-muted/10 px-4 py-3 text-[14px] font-medium text-foreground outline-none transition-all focus:border-foreground/20 focus:bg-muted/20"
         />
       </div>
@@ -97,7 +91,7 @@ function ProjectPicker({
             !selectedProjectId ? "border-foreground bg-foreground text-background" : "border-border bg-card text-foreground"
           }`}
         >
-          بدون مشروع
+          {locale === "fr" ? "Sans projet" : locale === "en" ? "No project" : "بدون مشروع"}
         </button>
         {filteredProjects.map((project) => (
           <button
@@ -132,6 +126,7 @@ function RelationTypeTabs({
   value: DealRelationType;
   onChange: (value: DealRelationType) => void;
 }) {
+  const { locale } = useWebLocale();
   return (
     <div className="grid grid-cols-2 gap-3">
       <button
@@ -141,7 +136,7 @@ function RelationTypeTabs({
           value === "internal_client" ? "border-foreground bg-foreground text-background" : "border-border bg-card text-foreground"
         }`}
       >
-        عميل داخلي
+        {locale === "fr" ? "Client interne" : locale === "en" ? "Internal client" : "عميل داخلي"}
       </button>
       <button
         type="button"
@@ -150,7 +145,7 @@ function RelationTypeTabs({
           value === "broker_managed" ? "border-foreground bg-foreground text-background" : "border-border bg-card text-foreground"
         }`}
       >
-        عميل عبر وسيط
+        {locale === "fr" ? "Client via courtier" : locale === "en" ? "Broker-managed client" : "عميل عبر وسيط"}
       </button>
     </div>
   );
@@ -169,6 +164,7 @@ function InternalClientPicker({
   onQueryChange: (value: string) => void;
   onSelect: (clientId: string) => void;
 }) {
+  const { locale } = useWebLocale();
   const filteredClients = useMemo(
     () =>
       clients.filter((client) =>
@@ -183,14 +179,14 @@ function InternalClientPicker({
       <input
         value={query}
         onChange={(event) => onQueryChange(event.target.value)}
-        placeholder="ابحث باسم العميل أو هاتفه"
+        placeholder={locale === "fr" ? "Rechercher par nom ou téléphone du client" : locale === "en" ? "Search by client name or phone" : "ابحث باسم العميل أو هاتفه"}
         className="w-full rounded-xl border border-border/40 bg-muted/10 px-4 py-3 text-[14px] font-medium text-foreground outline-none transition-all focus:border-foreground/20 focus:bg-muted/20"
       />
       {selectedClient ? (
         <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-right">
           <div className="text-sm font-black text-foreground">{selectedClient.name}</div>
-          <div className="mt-1 text-xs font-bold text-muted-foreground">{selectedClient.phone ?? "بدون هاتف"}</div>
-          <div className="mt-2 text-xs font-medium leading-6 text-foreground/80">{selectedClient.notes ?? "سجل داخلي جاهز للربط."}</div>
+          <div className="mt-1 text-xs font-bold text-muted-foreground">{selectedClient.phone ?? (locale === "fr" ? "Sans téléphone" : locale === "en" ? "No phone" : "بدون هاتف")}</div>
+          <div className="mt-2 text-xs font-medium leading-6 text-foreground/80">{selectedClient.notes ?? (locale === "fr" ? "Fiche interne prête à être liée." : locale === "en" ? "Internal record ready to link." : "سجل داخلي جاهز للربط.")}</div>
         </div>
       ) : null}
       <div className="max-h-64 space-y-3 overflow-y-auto rounded-2xl border border-border/60 bg-muted/5 p-3">
@@ -201,7 +197,7 @@ function InternalClientPicker({
             !selectedClientId ? "border-foreground bg-foreground text-background" : "border-border bg-card text-foreground"
           }`}
         >
-          إنشاء/استخدام عميل جديد من الاسم المكتوب
+          {locale === "fr" ? "Créer ou utiliser un nouveau client à partir du nom saisi" : locale === "en" ? "Create or use a new client from the entered name" : "إنشاء/استخدام عميل جديد من الاسم المكتوب"}
         </button>
         {filteredClients.map((client) => (
           <button
@@ -213,8 +209,8 @@ function InternalClientPicker({
             }`}
           >
             <div className="text-sm font-black text-foreground">{client.name}</div>
-            <div className="mt-1 text-[12px] font-bold text-muted-foreground">{client.phone ?? "بدون هاتف"}</div>
-            <div className="mt-2 line-clamp-2 text-[12px] font-medium leading-5 text-foreground/80">{client.notes ?? "عميل داخلي."}</div>
+            <div className="mt-1 text-[12px] font-bold text-muted-foreground">{client.phone ?? (locale === "fr" ? "Sans téléphone" : locale === "en" ? "No phone" : "بدون هاتف")}</div>
+            <div className="mt-2 line-clamp-2 text-[12px] font-medium leading-5 text-foreground/80">{client.notes ?? (locale === "fr" ? "Client interne." : locale === "en" ? "Internal client." : "عميل داخلي.")}</div>
           </button>
         ))}
       </div>
@@ -235,6 +231,7 @@ function BrokerPicker({
   onQueryChange: (value: string) => void;
   onSelect: (brokerId: string) => void;
 }) {
+  const { locale } = useWebLocale();
   const filteredBrokers = useMemo(
     () =>
       brokers.filter((broker) =>
@@ -249,7 +246,7 @@ function BrokerPicker({
       <input
         value={query}
         onChange={(event) => onQueryChange(event.target.value)}
-        placeholder="ابحث باسم الوسيط"
+        placeholder={locale === "fr" ? "Rechercher par nom du courtier" : locale === "en" ? "Search by broker name" : "ابحث باسم الوسيط"}
         className="w-full rounded-xl border border-border/40 bg-muted/10 px-4 py-3 text-[14px] font-medium text-foreground outline-none transition-all focus:border-foreground/20 focus:bg-muted/20"
       />
       {selectedBroker ? (
@@ -257,17 +254,17 @@ function BrokerPicker({
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-sm font-black text-foreground">{selectedBroker.name}</div>
-              <div className="mt-1 text-xs font-bold text-muted-foreground">{selectedBroker.phone ?? "بدون هاتف"}</div>
+              <div className="mt-1 text-xs font-bold text-muted-foreground">{selectedBroker.phone ?? (locale === "fr" ? "Sans téléphone" : locale === "en" ? "No phone" : "بدون هاتف")}</div>
             </div>
             <div className="rounded-xl border border-blue-500/20 bg-white px-3 py-2 text-sm font-black text-blue-700">
               {selectedBroker.avatarLabel}
             </div>
           </div>
           <div className="mt-3 text-xs font-medium leading-6 text-foreground/80">
-            {selectedBroker.description ?? "سيتم عرض حالة متابعة الوسيط لهذا العميل عند الربط."}
+            {selectedBroker.description ?? (locale === "fr" ? "Le suivi du courtier apparaîtra ici une fois lié au client." : locale === "en" ? "The broker follow-up status will appear here once linked to the client." : "سيتم عرض حالة متابعة الوسيط لهذا العميل عند الربط.")}
           </div>
           <div className="mt-2 text-[11px] font-black tracking-[0.12em] text-blue-700">
-            {selectedBroker.stateLabel ?? "حالة الوسيط ستظهر في البطاقة"}
+            {selectedBroker.stateLabel ?? (locale === "fr" ? "Le statut du courtier apparaîtra sur la carte" : locale === "en" ? "Broker status will appear on the card" : "حالة الوسيط ستظهر في البطاقة")}
           </div>
         </div>
       ) : null}
@@ -284,8 +281,8 @@ function BrokerPicker({
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-black text-foreground">{broker.name}</div>
-                <div className="mt-1 text-[12px] font-bold text-muted-foreground">{broker.phone ?? "بدون هاتف"}</div>
-                <div className="mt-2 line-clamp-2 text-[12px] font-medium leading-5 text-foreground/80">{broker.description ?? "وسيط متاح للربط."}</div>
+                <div className="mt-1 text-[12px] font-bold text-muted-foreground">{broker.phone ?? (locale === "fr" ? "Sans téléphone" : locale === "en" ? "No phone" : "بدون هاتف")}</div>
+                <div className="mt-2 line-clamp-2 text-[12px] font-medium leading-5 text-foreground/80">{broker.description ?? (locale === "fr" ? "Courtier disponible pour la liaison." : locale === "en" ? "Broker available for linking." : "وسيط متاح للربط.")}</div>
               </div>
               <div className="rounded-xl border border-blue-500/20 bg-white px-3 py-2 text-sm font-black text-blue-700">
                 {broker.avatarLabel}
@@ -326,6 +323,14 @@ export default function DealFormScreen({
   onSubmit: (data: DealFormData) => Promise<{ redirectTo: string }>;
   onArchive?: () => Promise<{ redirectTo: string }>;
 }) {
+  const { locale, dictionary } = useWebLocale();
+  const stageOptions: Array<{ value: DealFormData["stage"]; label: string }> = [
+    { value: "new", label: locale === "fr" ? "Nouveau" : locale === "en" ? "New" : "جديد" },
+    { value: "contacted", label: locale === "fr" ? "Contacté" : locale === "en" ? "Contacted" : "تم التواصل" },
+    { value: "negotiation", label: locale === "fr" ? "Négociation" : locale === "en" ? "Negotiation" : "مفاوضة" },
+    { value: "won", label: locale === "fr" ? "Conclu" : locale === "en" ? "Won" : "مغلقة" },
+    { value: "lost", label: locale === "fr" ? "Perdu" : locale === "en" ? "Lost" : "خسارة" },
+  ];
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [archivePending, startArchiveTransition] = useTransition();
@@ -353,7 +358,7 @@ export default function DealFormScreen({
                   const result = await onSubmit(form);
                   router.push(result.redirectTo);
                 } catch (submitError) {
-                  setError(submitError instanceof Error ? submitError.message : "تعذر حفظ الصفقة الآن.");
+                  setError(submitError instanceof Error ? submitError.message : (locale === "fr" ? "Impossible d'enregistrer l'opportunité maintenant." : locale === "en" ? "Could not save the deal right now." : "تعذر حفظ الصفقة الآن."));
                 }
               });
             }}
@@ -370,7 +375,7 @@ export default function DealFormScreen({
 
                 <div className="space-y-4">
                   <label className="block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">
-                    نوع الربط
+                    {locale === "fr" ? "Type de relation" : locale === "en" ? "Relation type" : "نوع الربط"}
                   </label>
                   <RelationTypeTabs
                     value={form.relationType}
@@ -420,7 +425,7 @@ export default function DealFormScreen({
 
               <div className="space-y-6">
                 <div>
-                  <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">اسم العميل / عنوان الصفقة</label>
+                  <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">{locale === "fr" ? "Nom du client / titre de l'opportunité" : locale === "en" ? "Client name / deal title" : "اسم العميل / عنوان الصفقة"}</label>
                   <input
                     value={form.name}
                     onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
@@ -431,7 +436,7 @@ export default function DealFormScreen({
 
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div>
-                    <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">رقم الهاتف</label>
+                    <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">{locale === "fr" ? "Téléphone" : locale === "en" ? "Phone number" : "رقم الهاتف"}</label>
                     <input
                       value={form.phone}
                       onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
@@ -439,7 +444,7 @@ export default function DealFormScreen({
                     />
                   </div>
                   <div>
-                    <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">الميزانية</label>
+                    <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">{dictionary.crm.budget}</label>
                     <input
                       value={form.budget}
                       onChange={(event) => setForm((current) => ({ ...current, budget: event.target.value }))}
@@ -450,13 +455,13 @@ export default function DealFormScreen({
 
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div>
-                    <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">المرحلة</label>
+                    <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">{locale === "fr" ? "Étape" : locale === "en" ? "Stage" : "المرحلة"}</label>
                     <select
                       value={form.stage}
                       onChange={(event) => setForm((current) => ({ ...current, stage: event.target.value as DealFormData["stage"] }))}
                       className="w-full rounded-xl border border-border/40 bg-muted/10 px-4 py-3.5 text-[15px] font-bold text-foreground outline-none transition-all focus:border-foreground/20 focus:bg-muted/20"
                     >
-                      {DEAL_STAGE_OPTIONS.map((option) => (
+                      {stageOptions.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>
@@ -464,7 +469,7 @@ export default function DealFormScreen({
                     </select>
                   </div>
                   <div>
-                    <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">موعد المتابعة</label>
+                    <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">{locale === "fr" ? "Suivi" : locale === "en" ? "Follow-up time" : "موعد المتابعة"}</label>
                     <input
                       type="datetime-local"
                       value={form.nextFollowUpAt}
@@ -475,7 +480,7 @@ export default function DealFormScreen({
                 </div>
 
                 <div>
-                  <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">الوصف / الاهتمام</label>
+                  <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">{locale === "fr" ? "Description / intérêt" : locale === "en" ? "Description / interest" : "الوصف / الاهتمام"}</label>
                   <textarea
                     rows={4}
                     value={form.preference}
@@ -485,7 +490,7 @@ export default function DealFormScreen({
                 </div>
 
                 <div>
-                  <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">الملاحظات</label>
+                  <label className="mb-2.5 block text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">{locale === "fr" ? "Notes" : locale === "en" ? "Notes" : "الملاحظات"}</label>
                   <textarea
                     rows={4}
                     value={form.notes}
@@ -508,14 +513,14 @@ export default function DealFormScreen({
                 disabled={pending}
                 className="flex-1 rounded-2xl bg-foreground px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-background shadow-md transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
               >
-                {pending ? "جارٍ الحفظ..." : submitLabel}
+                {pending ? (locale === "fr" ? "Enregistrement..." : locale === "en" ? "Saving..." : "جارٍ الحفظ...") : submitLabel}
               </button>
               <button
                 type="button"
                 onClick={() => router.push(cancelHref)}
                 className="flex-1 rounded-2xl border border-border px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-[0.98]"
               >
-                إلغاء
+                {locale === "fr" ? "Annuler" : locale === "en" ? "Cancel" : "إلغاء"}
               </button>
               {onArchive ? (
                 <button
@@ -528,13 +533,13 @@ export default function DealFormScreen({
                         const result = await onArchive();
                         router.push(result.redirectTo);
                       } catch (archiveError) {
-                        setError(archiveError instanceof Error ? archiveError.message : "تعذر أرشفة الصفقة الآن.");
+                        setError(archiveError instanceof Error ? archiveError.message : (locale === "fr" ? "Impossible d'archiver l'opportunité maintenant." : locale === "en" ? "Could not archive the deal right now." : "تعذر أرشفة الصفقة الآن."));
                       }
                     });
                   }}
                   className="rounded-2xl border border-rose-500/30 px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.2em] text-rose-600 transition-all hover:bg-rose-50 active:scale-[0.98] disabled:opacity-50"
                 >
-                  {archivePending ? "جارٍ الأرشفة..." : "أرشفة الصفقة"}
+                  {archivePending ? (locale === "fr" ? "Archivage..." : locale === "en" ? "Archiving..." : "جارٍ الأرشفة...") : (locale === "fr" ? "Archiver l'opportunité" : locale === "en" ? "Archive deal" : "أرشفة الصفقة")}
                 </button>
               ) : null}
             </div>

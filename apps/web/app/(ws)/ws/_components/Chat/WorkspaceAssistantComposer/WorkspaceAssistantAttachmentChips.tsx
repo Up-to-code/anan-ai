@@ -6,6 +6,7 @@ import {
   getAttachmentPresentationMeta,
 } from "@/app/(ws)/ws/_components/attachments/attachmentPresentation";
 import { cn } from "@/lib/utils";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 
 export type PendingWorkspaceAttachment = {
   id: string;
@@ -24,17 +25,20 @@ export function WorkspaceAssistantAttachmentChips({
   attachments,
   disabled = false,
   onRemove,
+  direction = "rtl",
 }: {
   attachments: PendingWorkspaceAttachment[];
   disabled?: boolean;
   onRemove: (attachmentId: string) => void;
+  direction?: "rtl" | "ltr";
 }) {
+  const { dictionary, isRtl } = useWebLocale();
   if (attachments.length === 0) {
     return null;
   }
 
   return (
-    <div className="border-b border-slate-200/70 px-4 pb-3 pt-4 dark:border-white/10" dir="rtl">
+    <div className="border-b border-slate-200/70 px-4 pb-3 pt-4 dark:border-white/10" dir={direction}>
       <div className="flex flex-wrap gap-3">
         {attachments.map((attachment) => {
           const isUploading = attachment.status === "uploading";
@@ -80,14 +84,18 @@ export function WorkspaceAssistantAttachmentChips({
                           : "bg-white/90 text-slate-700",
                     )}
                   >
-                    {isUploading ? "جاري الرفع" : hasError ? "تعذر الرفع" : "جاهز"}
+                    {isUploading
+                      ? dictionary.assistant.statusUploading
+                      : hasError
+                        ? dictionary.assistant.statusUploadFailed
+                        : dictionary.assistant.statusReady}
                   </span>
                   <button
                     type="button"
                     disabled={disabled || isUploading}
                     onClick={() => onRemove(attachment.id)}
                     className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-950/75 text-white transition hover:bg-slate-950 disabled:cursor-not-allowed disabled:opacity-40"
-                    aria-label={`إزالة ${attachment.file.name}`}
+                    aria-label={dictionary.assistant.removeAttachment.replace("{name}", attachment.file.name)}
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -98,13 +106,13 @@ export function WorkspaceAssistantAttachmentChips({
                   </div>
                 ) : null}
               </div>
-              <div className="space-y-1 px-3 py-2 text-right">
+              <div className={cn("space-y-1 px-3 py-2", isRtl ? "text-right" : "text-left")}>
                 <div className="line-clamp-2 break-words text-[12px] font-bold text-slate-700 dark:text-slate-200 [overflow-wrap:anywhere]">
                   {attachment.file.name}
                 </div>
                 {hasError ? (
                   <p className="line-clamp-2 text-[10px] font-medium leading-4 text-red-600 dark:text-red-300">
-                    {attachment.error || "تعذر رفع الملف. حاول مرة أخرى."}
+                    {attachment.error || dictionary.assistant.attachmentRetryHint}
                   </p>
                 ) : (
                   <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400">

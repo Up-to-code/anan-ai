@@ -1,15 +1,19 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { WebLocaleProvider } from "@/app/_components/WebLocaleProvider";
+import { getWebDictionary } from "@/lib/i18n";
 
-const { usePathname, useSearchParams, useQuery } = vi.hoisted(() => ({
+const { usePathname, useSearchParams, useRouter, useQuery } = vi.hoisted(() => ({
   usePathname: vi.fn(),
   useSearchParams: vi.fn(),
+  useRouter: vi.fn(() => ({ refresh: vi.fn() })),
   useQuery: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
   usePathname,
   useSearchParams,
+  useRouter,
 }));
 
 vi.mock("convex/react", () => ({
@@ -60,13 +64,15 @@ describe("WorkspaceShell", () => {
 
   it("renders the desktop sidebar shell and mobile nav trigger", () => {
     const markup = renderToStaticMarkup(
-      <WorkspaceShell
-        user={{ name: "Ahmed", email: "ahmed@example.com" }}
-        visibleZoneKeys={["overview", "offers", "inbox", "settings"]}
-        organization={{ name: "Alpha", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
-      >
-        <div>Body</div>
-      </WorkspaceShell>,
+      <WebLocaleProvider locale="ar" dictionary={getWebDictionary("ar")}>
+        <WorkspaceShell
+          user={{ name: "Ahmed", email: "ahmed@example.com" }}
+          visibleZoneKeys={["overview", "offers", "inbox", "settings"]}
+          organization={{ name: "Alpha", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
+        >
+          <div>Body</div>
+        </WorkspaceShell>
+      </WebLocaleProvider>,
     );
 
     expect(markup).toContain("data-slot=\"workspace-shell\"");
@@ -83,15 +89,17 @@ describe("WorkspaceShell", () => {
 
   it("renders assistant-first chrome when the overview variant is requested", () => {
     const markup = renderToStaticMarkup(
-      <WorkspaceShell
-        user={{ name: "Ahmed", email: "ahmed@example.com" }}
-        visibleZoneKeys={["overview", "offers", "inbox", "settings"]}
-        organization={{ name: "Alpha", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
-        variant="assistant"
-        headerTitle="مساعد عنان"
-      >
-        <div>Assistant Body</div>
-      </WorkspaceShell>,
+      <WebLocaleProvider locale="ar" dictionary={getWebDictionary("ar")}>
+        <WorkspaceShell
+          user={{ name: "Ahmed", email: "ahmed@example.com" }}
+          visibleZoneKeys={["overview", "offers", "inbox", "settings"]}
+          organization={{ name: "Alpha", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
+          variant="assistant"
+          headerTitle="مساعد عنان"
+        >
+          <div>Assistant Body</div>
+        </WorkspaceShell>
+      </WebLocaleProvider>,
     );
 
     expect(markup).toContain("data-slot=\"workspace-shell\"");

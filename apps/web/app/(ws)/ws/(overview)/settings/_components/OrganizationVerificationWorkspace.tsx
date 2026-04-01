@@ -14,6 +14,9 @@ import {
   RequirementsChecklist,
 } from "../../../_components/OrganizationOnboarding/VerificationDocsStep.parts";
 import { filterRequirements } from "../../../_components/OrganizationOnboarding/requirements";
+import { formatLocaleDateTime } from "@/lib/locale";
+import { formatWebCopy } from "@/lib/i18n";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 
 type OrganizationVerificationWorkspaceProps = {
   organization: OrganizationSummary | null;
@@ -39,18 +42,32 @@ const emptyVerificationSummary: OrganizationVerificationSummary = {
   sourceUrls: [],
 };
 
-function formatDateLabel(value: number | null) {
-  if (!value) return "غير متوفر";
-  return new Date(value).toLocaleString("ar-EG");
-}
-
-function verificationStatusLabel(status: OrganizationVerificationSummary["currentRequestStatus"]) {
-  if (status === "approved") return "معتمد";
-  if (status === "in_review") return "قيد المراجعة";
-  if (status === "rejected") return "مرفوض";
-  if (status === "closed") return "مغلق";
-  if (status === "new") return "تم الإرسال";
-  return "لم يتم الإرسال";
+function verificationStatusLabel(
+  status: OrganizationVerificationSummary["currentRequestStatus"],
+  locale: "ar" | "en" | "fr",
+) {
+  if (locale === "ar") {
+    if (status === "approved") return "معتمد";
+    if (status === "in_review") return "قيد المراجعة";
+    if (status === "rejected") return "مرفوض";
+    if (status === "closed") return "مغلق";
+    if (status === "new") return "تم الإرسال";
+    return "لم يتم الإرسال";
+  }
+  if (locale === "fr") {
+    if (status === "approved") return "Approuvé";
+    if (status === "in_review") return "En révision";
+    if (status === "rejected") return "Refusé";
+    if (status === "closed") return "Clôturé";
+    if (status === "new") return "Envoyé";
+    return "Non envoyé";
+  }
+  if (status === "approved") return "Approved";
+  if (status === "in_review") return "In review";
+  if (status === "rejected") return "Rejected";
+  if (status === "closed") return "Closed";
+  if (status === "new") return "Submitted";
+  return "Not submitted";
 }
 
 function verificationStatusTone(status: OrganizationVerificationSummary["currentRequestStatus"]) {
@@ -62,33 +79,53 @@ function verificationStatusTone(status: OrganizationVerificationSummary["current
   return "border-border bg-muted/50 text-muted-foreground";
 }
 
-function buildTimeline(summary: OrganizationVerificationSummary) {
+function buildLocalizedTimeline(summary: OrganizationVerificationSummary, locale: "ar" | "en" | "fr") {
+  const copy =
+    locale === "fr"
+      ? {
+          submitted: "Demande envoyée",
+          inReview: "Demande en cours de révision",
+          approved: "Organisation approuvée",
+          closed: "Vérification clôturée",
+          rejected: "Demande refusée",
+          updated: "Statut de vérification mis à jour",
+        }
+      : locale === "en"
+        ? {
+            submitted: "Request submitted",
+            inReview: "Request under review",
+            approved: "Organization approved",
+            closed: "Verification closed",
+            rejected: "Request rejected",
+            updated: "Verification status updated",
+          }
+        : {
+            submitted: "تم إرسال الطلب",
+            inReview: "الطلب قيد المراجعة",
+            approved: "تم اعتماد المنظمة",
+            closed: "تم إغلاق التوثيق",
+            rejected: "تم رفض الطلب",
+            updated: "تم تحديث حالة التوثيق",
+          };
+
   const items: Array<{ id: string; label: string; at: number; note?: string | null }> = [];
   if (summary.lastSubmittedAt) {
-    items.push({
-      id: "submitted",
-      label: "تم إرسال الطلب",
-      at: summary.lastSubmittedAt,
-    });
+    items.push({ id: "submitted", label: copy.submitted, at: summary.lastSubmittedAt });
   }
   if (summary.currentRequestStatus === "in_review" && summary.lastSubmittedAt) {
-    items.push({
-      id: "in_review",
-      label: "الطلب قيد المراجعة",
-      at: summary.lastSubmittedAt,
-    });
+    items.push({ id: "in_review", label: copy.inReview, at: summary.lastSubmittedAt });
   }
   if (summary.lastReviewedAt) {
     items.push({
       id: "reviewed",
       label:
         summary.currentRequestStatus === "approved"
-          ? "تم اعتماد المنظمة"
+          ? copy.approved
           : summary.currentRequestStatus === "closed"
-            ? "تم إغلاق التوثيق"
+            ? copy.closed
             : summary.currentRequestStatus === "rejected"
-              ? "تم رفض الطلب"
-              : "تم تحديث حالة التوثيق",
+              ? copy.rejected
+              : copy.updated,
       at: summary.lastReviewedAt,
       note: summary.reviewerNotes,
     });
@@ -109,7 +146,7 @@ async function uploadVerificationDocuments(args: {
     const nextDocs = uploaded?.map((file) => file.serverData as UploadedFileReference) ?? [];
     args.setDocs((current) => [...current, ...nextDocs]);
   } catch (error) {
-    args.setError(error instanceof Error ? error.message : "تعذر رفع الملفات.");
+    args.setError(error instanceof Error ? error.message : "Upload failed.");
   }
 }
 
@@ -127,6 +164,7 @@ export default function OrganizationVerificationWorkspace({
   invitesCount,
   roleLabel,
 }: OrganizationVerificationWorkspaceProps) {
+  const { locale, dictionary, direction } = useWebLocale();
   const [summary, setSummary] = useState(verificationSummary);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Record<string, boolean>>(
@@ -145,79 +183,94 @@ export default function OrganizationVerificationWorkspace({
     () => filterRequirements(ruleset?.requirements ?? [], query),
     [query, ruleset?.requirements],
   );
-  const timeline = buildTimeline(summary);
-  const organizationTypeLabel = organization?.type === "red" ? "مطور عقاري" : "وسيط عقاري";
+  const timeline = buildLocalizedTimeline(summary, locale);
+  const organizationTypeLabel =
+    organization?.type === "red"
+      ? locale === "fr"
+        ? "Promoteur immobilier"
+        : locale === "en"
+          ? "Real estate developer"
+          : "مطور عقاري"
+      : locale === "fr"
+        ? "Courtier immobilier"
+        : locale === "en"
+          ? "Real estate broker"
+          : "وسيط عقاري";
+  const formatDateLabel = (value: number | null) =>
+    value ? formatLocaleDateTime(locale, value, { dateStyle: "medium", timeStyle: "short" }) : dictionary.settings.unavailable;
 
   if (!organization) {
     return (
       <section className="rounded-2xl border border-border bg-card p-6">
-        <h2 className="text-lg font-bold text-foreground">توثيق المنظمة</h2>
-        <p className="mt-2 text-sm text-muted-foreground">لا توجد منظمة مرتبطة بالحساب الحالي.</p>
+        <h2 className="text-lg font-bold text-foreground">{dictionary.settings.verificationTitle}</h2>
+        <p className="mt-2 text-sm text-muted-foreground">{dictionary.settings.verificationEmptyOrganization}</p>
       </section>
     );
   }
 
   return (
-    <section className="space-y-6 pb-12" dir="rtl">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+    <section className="space-y-6 pb-12" dir={direction}>
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+        <div className="space-y-5">
+          <div className="rounded-[28px] border border-border/70 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--workspace-panel)_95%,transparent)_0%,color-mix(in_srgb,var(--workspace-elevated)_98%,transparent)_100%)] p-6 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-2">
-              <h2 className="text-lg font-bold text-foreground">توثيق المنظمة</h2>
-              <p className="text-sm font-medium text-muted-foreground">
-                هذا التوثيق يخص المنظمة كاملة. يمكن للمدير إرسال أو إعادة إرسال المستندات، بينما يعتمد الأدمن فقط الطلب أو يغلقه.
+              <h2 className="text-lg font-bold text-foreground">{dictionary.settings.verificationTitle}</h2>
+              <p className="max-w-2xl text-sm font-medium leading-7 text-muted-foreground">
+                {formatWebCopy(dictionary.settings.verificationSubmitDescription, { organizationType: organizationTypeLabel })}
               </p>
             </div>
             <span className={`rounded-full border px-3 py-1 text-[11px] font-black ${verificationStatusTone(summary.currentRequestStatus)}`}>
-              {verificationStatusLabel(summary.currentRequestStatus)}
+              {verificationStatusLabel(summary.currentRequestStatus, locale)}
             </span>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-border bg-background p-4">
-              <div className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">حالة النشر</div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[22px] border border-border/70 bg-background/80 p-4">
+              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">{dictionary.settings.publishingStatus}</div>
               <div className="mt-2 text-sm font-bold text-foreground">
-                {summary.publishingBlocked ? "النشر متوقف حتى اعتماد التوثيق" : "لا يوجد حظر نشر من توثيق المنظمة"}
+                {summary.publishingBlocked ? dictionary.settings.publishingBlocked : dictionary.settings.publishingAllowed}
               </div>
             </div>
-            <div className="rounded-2xl border border-border bg-background p-4">
-              <div className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">آخر إرسال</div>
+            <div className="rounded-[22px] border border-border/70 bg-background/80 p-4">
+              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">{dictionary.settings.lastSubmission}</div>
               <div className="mt-2 text-sm font-bold text-foreground">{formatDateLabel(summary.lastSubmittedAt)}</div>
             </div>
-            <div className="rounded-2xl border border-border bg-background p-4">
-              <div className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">عدد الملفات</div>
-              <div className="mt-2 text-sm font-bold text-foreground">{summary.documentsCount} ملف</div>
+            <div className="rounded-[22px] border border-border/70 bg-background/80 p-4">
+              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">{dictionary.settings.filesCount}</div>
+              <div className="mt-2 text-sm font-bold text-foreground">{summary.documentsCount}</div>
             </div>
-            <div className="rounded-2xl border border-border bg-background p-4">
-              <div className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">ملخص الفريق</div>
+            <div className="rounded-[22px] border border-border/70 bg-background/80 p-4">
+              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">{dictionary.settings.teamSummary}</div>
               <div className="mt-2 text-sm font-bold text-foreground">
-                {membersCount} أعضاء، {invitesCount} دعوات، وصلاحيتك الحالية: {roleLabel}
+                {formatWebCopy(dictionary.settings.teamSummary, { members: membersCount, invites: invitesCount, roleLabel })}
               </div>
             </div>
           </div>
 
           {summary.reviewerNotes ? (
-            <div className="mt-4 rounded-2xl border border-border bg-muted/30 p-4">
-              <div className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">ملاحظات المراجعة</div>
+            <div className="mt-4 rounded-[22px] border border-border/70 bg-muted/20 p-4">
+              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">{dictionary.settings.reviewNotes}</div>
               <p className="mt-2 text-sm font-medium leading-relaxed text-foreground">{summary.reviewerNotes}</p>
             </div>
           ) : null}
         </div>
+        </div>
 
-        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-          <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground">الخط الزمني</h3>
+        <div className="rounded-[28px] border border-border/70 bg-card p-6 shadow-sm">
+          <h3 className="text-sm font-black uppercase tracking-[0.22em] text-muted-foreground">{dictionary.settings.verificationTimeline}</h3>
           <div className="mt-4 space-y-3">
             {timeline.length > 0 ? (
               timeline.map((item) => (
-                <div key={item.id} className="rounded-2xl border border-border bg-background p-4">
+                <div key={item.id} className="rounded-[22px] border border-border/70 bg-background/80 p-4">
                   <div className="text-sm font-bold text-foreground">{item.label}</div>
                   <div className="mt-1 text-xs font-medium text-muted-foreground">{formatDateLabel(item.at)}</div>
                   {item.note ? <p className="mt-2 text-sm font-medium leading-relaxed text-muted-foreground">{item.note}</p> : null}
                 </div>
               ))
             ) : (
-              <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-sm font-medium text-muted-foreground">
-                لا يوجد طلب توثيق مرسل حتى الآن.
+                <div className="rounded-[22px] border border-dashed border-border/70 bg-muted/20 p-6 text-sm font-medium text-muted-foreground">
+                {dictionary.settings.verificationNoTimeline}
               </div>
             )}
           </div>
@@ -225,8 +278,8 @@ export default function OrganizationVerificationWorkspace({
       </div>
 
       {summary.attachedDocuments.length > 0 ? (
-        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-          <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground">المستندات المرفوعة في آخر طلب</h3>
+        <div className="rounded-[28px] border border-border/70 bg-card p-6 shadow-sm">
+          <h3 className="text-sm font-black uppercase tracking-[0.22em] text-muted-foreground">{dictionary.settings.latestDocuments}</h3>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {summary.attachedDocuments.map((document) => (
               <a
@@ -234,11 +287,11 @@ export default function OrganizationVerificationWorkspace({
                 href={document.url}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-2xl border border-border bg-background p-4 transition hover:border-ring/40 hover:bg-muted/20"
+                className="rounded-[22px] border border-border/70 bg-background/80 p-4 transition hover:border-ring/40 hover:bg-muted/20"
               >
                 <div className="text-sm font-bold text-foreground">{document.name}</div>
                 <div className="mt-1 text-xs font-medium text-muted-foreground">
-                  {document.mime ?? "مستند"}{document.size ? ` • ${Math.ceil(document.size / 1024)} KB` : ""}
+                  {document.mime ?? dictionary.settings.unknownDocumentType}{document.size ? ` • ${Math.ceil(document.size / 1024)} KB` : ""}
                 </div>
               </a>
             ))}
@@ -246,11 +299,11 @@ export default function OrganizationVerificationWorkspace({
         </div>
       ) : null}
 
-      <div className="space-y-4 rounded-3xl border border-border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-[28px] border border-border/70 bg-card p-6 shadow-sm">
         <div className="space-y-2">
-          <h3 className="text-lg font-bold text-foreground">إرسال أو إعادة إرسال مستندات التوثيق</h3>
-          <p className="text-sm font-medium text-muted-foreground">
-            نوع الجهة الحالي: {organizationTypeLabel}. يمكن للمدير فقط استخدام هذا النموذج، بينما تظهر قرارات المراجعة من لوحة الأدمن.
+          <h3 className="text-lg font-bold text-foreground">{dictionary.settings.verificationSubmitTitle}</h3>
+          <p className="max-w-2xl text-sm font-medium leading-7 text-muted-foreground">
+            {formatWebCopy(dictionary.settings.verificationSubmitDescription, { organizationType: organizationTypeLabel })}
           </p>
         </div>
 
@@ -267,10 +320,10 @@ export default function OrganizationVerificationWorkspace({
 
         <div className="grid gap-6 xl:grid-cols-2">
           <DocumentsCard
-            title="المستندات الأساسية"
-            subtitle="ملفات الهوية والسجلات النظامية الأساسية."
-            uploadingLabel="جارٍ رفع الملفات..."
-            idleLabel="رفع ملفات PDF أو صور"
+            title={dictionary.settings.requiredDocsTitle}
+            subtitle={dictionary.settings.requiredDocsSubtitle}
+            uploadingLabel={dictionary.settings.uploadingFiles}
+            idleLabel={dictionary.settings.uploadFilesIdle}
             docs={requiredDocs}
             isUploading={isUploading}
             onRemoveDoc={(docKey) => setRequiredDocs((current) => current.filter((item) => item.key !== docKey))}
@@ -286,10 +339,10 @@ export default function OrganizationVerificationWorkspace({
             }}
           />
           <DocumentsCard
-            title="إثبات العمل (اختياري)"
-            subtitle="نماذج أعمال أو مستندات داعمة لنشاط المنظمة."
-            uploadingLabel="جارٍ رفع الملفات..."
-            idleLabel="أضف مستندات داعمة"
+            title={dictionary.settings.proofDocsTitle}
+            subtitle={dictionary.settings.proofDocsSubtitle}
+            uploadingLabel={dictionary.settings.uploadingFiles}
+            idleLabel={dictionary.settings.uploadProofIdle}
             docs={proofDocs}
             isUploading={isUploading}
             onRemoveDoc={(docKey) => setProofDocs((current) => current.filter((item) => item.key !== docKey))}
@@ -307,32 +360,32 @@ export default function OrganizationVerificationWorkspace({
         </div>
 
         {errorMessage ? (
-          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-bold text-red-700 dark:text-red-300">
+          <div className="rounded-[22px] border border-red-500/20 bg-red-500/10 p-4 text-sm font-bold text-red-700 dark:text-red-300">
             {errorMessage}
           </div>
         ) : null}
         {statusMessage ? (
-          <div className="rounded-2xl border border-border bg-muted/30 p-4 text-sm font-bold text-foreground">
+          <div className="rounded-[22px] border border-border/70 bg-muted/20 p-4 text-sm font-bold text-foreground">
             {statusMessage}
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-4">
           <p className="text-xs font-medium text-muted-foreground">
             {canManage
-              ? "بعد الإرسال سيظهر الطلب في لوحة الأدمن للمراجعة. لا توجد أي أزرار اعتماد أو إغلاق هنا."
-              : "العرض هنا للمتابعة فقط. تحتاج صلاحية مدير لإرسال أو إعادة إرسال المستندات."}
+              ? dictionary.settings.managerOnlySubmissionHint
+              : dictionary.settings.viewerSubmissionHint}
           </p>
           <button
             type="button"
             disabled={!canManage || isSubmitting || isUploading}
             onClick={async () => {
               if (requiredDocs.length === 0) {
-                setErrorMessage("الرجاء رفع مستند واحد على الأقل من المستندات الأساسية.");
+                setErrorMessage(dictionary.settings.verificationRequiredDocsError);
                 return;
               }
               setErrorMessage(null);
-              setStatusMessage("جاري إرسال طلب التوثيق...");
+              setStatusMessage(dictionary.settings.verificationSubmitting);
               setIsSubmitting(true);
               try {
                 await postVerificationRequest({
@@ -357,19 +410,23 @@ export default function OrganizationVerificationWorkspace({
                   requirements: Object.keys(selected).filter((key) => selected[key]),
                   sourceUrls: (ruleset?.sources ?? []).map((source) => source.url),
                 });
-                setStatusMessage("تم إرسال طلب التوثيق بنجاح. سيتم مراجعته من لوحة الأدمن.");
+                setStatusMessage(dictionary.settings.verificationSubmitted);
                 setRequiredDocs([]);
                 setProofDocs([]);
               } catch (error) {
                 setStatusMessage(null);
-                setErrorMessage(error instanceof Error ? error.message : "تعذر إرسال طلب التوثيق.");
+                setErrorMessage(error instanceof Error ? error.message : dictionary.settings.verificationSubmitFailed);
               } finally {
                 setIsSubmitting(false);
               }
             }}
-            className="rounded-full bg-foreground px-6 py-3 text-xs font-black uppercase tracking-[0.18em] text-background transition hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full bg-[var(--workspace-highlight)] px-6 py-3 text-xs font-black uppercase tracking-[0.18em] text-white shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isSubmitting ? "جارٍ الإرسال..." : summary.currentRequestStatus === "not_submitted" ? "إرسال الطلب" : "إعادة إرسال المستندات"}
+            {isSubmitting
+              ? dictionary.settings.verificationSubmitting
+              : summary.currentRequestStatus === "not_submitted"
+                ? dictionary.settings.verificationSubmit
+                : dictionary.settings.verificationResubmit}
           </button>
         </div>
       </div>

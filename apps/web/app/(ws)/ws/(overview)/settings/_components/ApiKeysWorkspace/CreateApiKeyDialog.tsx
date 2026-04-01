@@ -3,9 +3,10 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { Copy, KeyRound, Plus, X } from "lucide-react";
 import type { FormEvent } from "react";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { cn } from "@/lib/utils";
 import type { OrganizationApiKeyPermission } from "@/lib/auth/organizationPermissions";
-import { actionCatalog, buildPresetPermissions, permissionCatalog, permissionKey } from "./catalog";
+import { getActionCatalog, getPermissionCatalog, permissionKey } from "./catalog";
 
 /**
  * WHY:   API key creation combines permission design, submission, and one-time secret reveal in one contained flow.
@@ -45,10 +46,14 @@ export function CreateApiKeyDialog({
   selectedPermissionKeys: string[];
   status: string | null;
 }) {
+  const { dictionary, locale } = useWebLocale();
+  const actionCatalog = getActionCatalog(locale);
+  const permissionCatalog = getPermissionCatalog(locale);
+
   if (!canCreate) {
     return (
       <div className="max-w-xs rounded-2xl border border-border bg-muted/20 px-4 py-3 text-[12px] text-muted-foreground">
-        إنشاء المفاتيح متاح لمالك المنظمة فقط. يمكنك من هنا مراجعة المفاتيح الحالية وإلغاؤها عند الحاجة.
+        {dictionary.settings.apiKeysCreateOwnerOnly}
       </div>
     );
   }
@@ -57,7 +62,7 @@ export function CreateApiKeyDialog({
     <Dialog.Root open={isModalOpen} onOpenChange={onOpenChange}>
       <Dialog.Trigger className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-[13px] font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-95">
         <Plus className="h-4 w-4" />
-        إنشاء مفتاح جديد
+        {dictionary.settings.apiKeysCreateButton}
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-opacity duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
@@ -65,10 +70,10 @@ export function CreateApiKeyDialog({
           <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-2xl">
             <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-5">
               <Dialog.Title className="text-lg font-bold">
-                {revealedResult ? "تم إنشاء المفتاح بنجاح" : "إنشاء مفتاح API جديد"}
+                {revealedResult ? dictionary.settings.apiKeysCreatedTitle : dictionary.settings.apiKeysCreateDialogTitle}
               </Dialog.Title>
               <Dialog.Close
-                aria-label="إغلاق"
+                aria-label={dictionary.settings.apiKeysClose}
                 onClick={onClose}
                 className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground"
               >
@@ -82,9 +87,9 @@ export function CreateApiKeyDialog({
                   <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                     <KeyRound className="h-8 w-8" />
                   </div>
-                  <h3 className="mb-2 text-xl font-bold text-foreground">احتفظ بهذا المفتاح بسرية</h3>
+                  <h3 className="mb-2 text-xl font-bold text-foreground">{dictionary.settings.apiKeysSecretTitle}</h3>
                   <p className="mb-8 max-w-sm text-[13px] text-muted-foreground">
-                    هذه هي المرة الوحيدة التي سنعرض فيها القيمة السرية الكاملة، يُرجى نسخها وحفظها في مكان آمن.
+                    {dictionary.settings.apiKeysSecretDescription}
                   </p>
 
                   <div className="w-full max-w-md rounded-2xl border border-border bg-muted/30 p-4">
@@ -98,7 +103,7 @@ export function CreateApiKeyDialog({
                         className="flex shrink-0 items-center gap-2 rounded-xl bg-background px-3 py-2 text-[12px] font-semibold text-foreground shadow-sm transition-all hover:bg-muted active:scale-95"
                       >
                         <Copy className="h-4 w-4" />
-                        {copied ? "تم النسخ" : "نسخ"}
+                        {copied ? dictionary.settings.apiKeysCopied : dictionary.settings.apiKeysCopy}
                       </button>
                     </div>
                   </div>
@@ -108,20 +113,20 @@ export function CreateApiKeyDialog({
                       onClick={onClose}
                       className="inline-flex items-center justify-center rounded-xl bg-primary px-8 py-3 text-[14px] font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 active:scale-95"
                     >
-                      تم، قمت بنسخ المفتاح
+                      {dictionary.settings.apiKeysCopiedConfirm}
                     </Dialog.Close>
                   </div>
                 </div>
               ) : (
                 <form onSubmit={(event) => void onCreateKey(event)} className="flex flex-col gap-8">
                   <div className="flex flex-col gap-2">
-                    <label className="text-[13px] font-semibold text-foreground">اسم المفتاح (اختياري)</label>
+                    <label className="text-[13px] font-semibold text-foreground">{dictionary.settings.apiKeysNameLabel}</label>
                     <input
                       type="text"
                       value={name}
                       onChange={(event) => onNameChange(event.target.value)}
                       disabled={isSubmitting}
-                      placeholder="مثلاً: مزامنة الـ CRM الداخلي"
+                      placeholder={dictionary.settings.apiKeysNamePlaceholder}
                       className="w-full rounded-xl border border-border bg-background px-4 py-3 text-[14px] text-foreground transition-all focus:border-primary/50 focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:opacity-50"
                     />
                   </div>
@@ -129,19 +134,19 @@ export function CreateApiKeyDialog({
                   <div className="flex flex-col gap-4">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                       <div>
-                        <label className="text-[13px] font-semibold text-foreground">الصلاحيات</label>
-                        <p className="mt-1 text-[12px] text-muted-foreground">اختر الإجراءات المسموح بها، وبعض الموارد متاحة بقراءة فقط في هذا الإصدار.</p>
+                        <label className="text-[13px] font-semibold text-foreground">{dictionary.settings.apiKeysPermissionsLabel}</label>
+                        <p className="mt-1 text-[12px] text-muted-foreground">{dictionary.settings.apiKeysPermissionsHint}</p>
                       </div>
                       <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-border bg-muted/30 p-1">
-                        <button type="button" onClick={() => onApplyPreset("read")} className="rounded-lg px-3 py-1.5 text-[11.5px] font-semibold text-muted-foreground transition hover:bg-background hover:text-foreground hover:shadow-sm">قراءة فقط</button>
-                        <button type="button" onClick={() => onApplyPreset("write")} className="rounded-lg px-3 py-1.5 text-[11.5px] font-semibold text-muted-foreground transition hover:bg-background hover:text-foreground hover:shadow-sm">قراءة وكتابة</button>
-                        <button type="button" onClick={() => onApplyPreset("full")} className="rounded-lg px-3 py-1.5 text-[11.5px] font-semibold text-muted-foreground transition hover:bg-background hover:text-foreground hover:shadow-sm">شامل</button>
+                        <button type="button" onClick={() => onApplyPreset("read")} className="rounded-lg px-3 py-1.5 text-[11.5px] font-semibold text-muted-foreground transition hover:bg-background hover:text-foreground hover:shadow-sm">{dictionary.settings.apiKeysReadOnly}</button>
+                        <button type="button" onClick={() => onApplyPreset("write")} className="rounded-lg px-3 py-1.5 text-[11.5px] font-semibold text-muted-foreground transition hover:bg-background hover:text-foreground hover:shadow-sm">{dictionary.settings.apiKeysReadWrite}</button>
+                        <button type="button" onClick={() => onApplyPreset("full")} className="rounded-lg px-3 py-1.5 text-[11.5px] font-semibold text-muted-foreground transition hover:bg-background hover:text-foreground hover:shadow-sm">{dictionary.settings.apiKeysFullAccess}</button>
                       </div>
                     </div>
 
                     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
                       <div className="grid grid-cols-[120px_1fr_1fr_1fr_1fr] items-center border-b border-border bg-muted/40 text-center text-[12px] font-semibold text-muted-foreground sm:grid-cols-[140px_1fr_1fr_1fr_1fr]">
-                        <div className="px-4 py-3 text-right">المورد</div>
+                        <div className="px-4 py-3 text-right">{dictionary.settings.apiKeysResourceColumn}</div>
                         {actionCatalog.map((action) => (
                           <div key={action.action} className="px-2 py-3">{action.label}</div>
                         ))}
@@ -212,7 +217,7 @@ export function CreateApiKeyDialog({
                       disabled={isSubmitting}
                       className="inline-flex shrink-0 items-center justify-center rounded-xl bg-primary px-6 py-3 text-[13px] font-bold tracking-wide text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {isSubmitting ? "جارٍ الإنشاء..." : "إنشاء المفتاح"}
+                      {isSubmitting ? dictionary.settings.apiKeysCreatingStatus : dictionary.settings.apiKeysCreateButton}
                     </button>
                   </div>
                 </form>

@@ -77,7 +77,7 @@ it("renders the sign-in screen when no session exists", async () => {
   });
   const markup = renderToStaticMarkup(element);
 
-  expect(markup).toContain("دخول النظام المؤسسي");
+  expect(markup).toContain("دخول مساحة العمل");
   expect(markup).toContain("Google:/ws");
 });
 
@@ -93,6 +93,6 @@ it("renders the sign-in screen when session lookup fails with auth configuration
   });
   const markup = renderToStaticMarkup(element);
 
-  expect(markup).toContain("دخول النظام المؤسسي");
+  expect(markup).toContain("دخول مساحة العمل");
   expect(markup).toContain("Google:/ws");
 });

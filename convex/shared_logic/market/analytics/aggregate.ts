@@ -1,4 +1,11 @@
-import { AreaAggregate, CityAggregate, NormalizedProperty, NormalizedResearch, NormalizedSearchSignal } from "./types";
+import {
+  AreaAggregate,
+  CityAggregate,
+  NormalizedConversationDemand,
+  NormalizedProperty,
+  NormalizedResearch,
+  NormalizedSearchSignal,
+} from "./types";
 import { incrementCount } from "./utils";
 
 function ensureCityAggregate(cityAggregates: Map<string, CityAggregate>, city: string): CityAggregate {
@@ -91,10 +98,45 @@ function applyResearchAggregate(
   }
 }
 
+function applyConversationDemandAggregate(
+  cityAggregates: Map<string, CityAggregate>,
+  areaAggregates: Map<string, AreaAggregate>,
+  demand: NormalizedConversationDemand,
+) {
+  const citySignals = new Set<string>(demand.cities);
+  for (const areaEntry of demand.areas) {
+    if (areaEntry.city) citySignals.add(areaEntry.city);
+  }
+
+  for (const cityName of citySignals) {
+    ensureCityAggregate(cityAggregates, cityName).demandSignals += 1;
+  }
+
+  for (const areaEntry of demand.areas) {
+    if (!areaEntry.city) continue;
+    const area = ensureAreaAggregate(areaAggregates, areaEntry.city, areaEntry.area);
+    area.demandSignals += 1;
+    for (const propertyType of demand.propertyTypes) {
+      incrementCount(area.productTypeCounts, propertyType);
+      incrementCount(area.signalCounts, propertyType);
+    }
+    for (const configuration of demand.configurations) {
+      incrementCount(area.signalCounts, configuration);
+    }
+    for (const feature of demand.mustHaveFeatures) {
+      incrementCount(area.signalCounts, feature);
+    }
+    for (const constraint of demand.strongConstraints) {
+      incrementCount(area.signalCounts, constraint);
+    }
+  }
+}
+
 export function aggregateCitiesAndAreas(args: {
   properties: NormalizedProperty[];
   researchRows: NormalizedResearch[];
   searchSignals: NormalizedSearchSignal[];
+  conversationDemands?: NormalizedConversationDemand[];
 }): {
   cityAggregates: Map<string, CityAggregate>;
   areaAggregates: Map<string, AreaAggregate>;
@@ -105,6 +147,9 @@ export function aggregateCitiesAndAreas(args: {
   for (const property of args.properties) applyPropertyAggregate(cityAggregates, areaAggregates, property);
   for (const signal of args.searchSignals) applySearchSignalAggregate(cityAggregates, areaAggregates, signal);
   for (const research of args.researchRows) applyResearchAggregate(cityAggregates, areaAggregates, research);
+  for (const demand of args.conversationDemands ?? []) {
+    applyConversationDemandAggregate(cityAggregates, areaAggregates, demand);
+  }
   return {
     cityAggregates,
     areaAggregates,

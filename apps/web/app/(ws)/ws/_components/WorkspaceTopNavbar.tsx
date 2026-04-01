@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, ChevronDown, Mail } from "lucide-react";
+import WebLocaleSwitcher from "@/app/_components/WebLocaleSwitcher";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
 import type { WorkspaceOrganizationDisplay } from "../_lib/organizationDisplay";
 import { cn } from "@/lib/utils";
@@ -47,17 +49,19 @@ function WorkspaceTopNavbarInner({
   mobileNavigation?: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { dictionary, direction, isRtl } = useWebLocale();
   const signalCounts = useWorkspaceSignalCounts(initialSignalCounts);
   const isInboxActive = pathname.startsWith("/ws/inbox");
   const canUseInbox = (visibleZoneKeys ?? []).includes("inbox");
   const isAssistantVariant = variant === "assistant";
-  const resolvedTitle = title ?? (isAssistantVariant ? "مساعد عنان" : "نظرة عامة");
-  const orgSubtitle = organization.navbarSubtitle?.trim() || organization.sidebarSubtitle?.trim() || "مساحة العمل";
+  const resolvedTitle = title ?? (isAssistantVariant ? dictionary.nav.assistantTitle : dictionary.nav.overviewTitle);
+  const orgSubtitle = organization.navbarSubtitle?.trim() || organization.sidebarSubtitle?.trim() || dictionary.nav.workspaceFallback;
 
   return (
     <header
       data-slot="workspace-top-navbar"
       data-variant={variant}
+      dir={direction}
       className={cn(
         "flex shrink-0 items-center justify-between border-b transition-colors",
         isAssistantVariant
@@ -79,11 +83,12 @@ function WorkspaceTopNavbarInner({
 
       {/* End side (left in RTL): Signal buttons + unified account */}
       <div className={cn("flex items-center", isAssistantVariant ? "gap-3" : "gap-4")}>
+        <WebLocaleSwitcher />
         <ThemeToggle className="h-9 w-9 rounded-[8px]" />
         {/* Action Group */}
         <div className={cn("flex items-center gap-1 border-s border-[color:var(--workspace-border)]", isAssistantVariant ? "ps-3" : "ps-4")}>
           <SignalButton
-            label="الإشعارات"
+            label={dictionary.nav.notifications}
             count={signalCounts.notificationCount}
             href="/ws/notifications"
             icon={<Bell className="h-5 w-5" />}
@@ -91,7 +96,7 @@ function WorkspaceTopNavbarInner({
           />
           {canUseInbox ? (
             <SignalButton
-              label="الرسائل"
+              label={dictionary.nav.inbox}
               count={signalCounts.inboxCount}
               href="/ws/inbox"
               isActive={isInboxActive}
@@ -103,16 +108,20 @@ function WorkspaceTopNavbarInner({
         <Link
           href="/ws/settings"
           className={cn(
-            "flex items-center gap-3 rounded-[10px] border px-3 py-2 text-right transition",
+            "flex items-center gap-3 rounded-[10px] border px-3 py-2 transition",
             "border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] hover:bg-[var(--workspace-accent-soft)]",
             isAssistantVariant ? "min-w-[160px]" : "min-w-[210px]",
           )}
         >
+          <ChevronDown className={cn("h-4 w-4 text-muted-foreground", !isRtl && "order-2")} />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-xs font-black text-foreground">{organization.name}</div>
-            <div className="truncate text-[11px] text-muted-foreground">{orgSubtitle}</div>
+            <div className={cn("truncate text-xs font-black text-foreground", isRtl ? "text-right" : "text-left")}>
+              {organization.name}
+            </div>
+            <div className={cn("truncate text-[11px] text-muted-foreground", isRtl ? "text-right" : "text-left")}>
+              {orgSubtitle}
+            </div>
           </div>
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
         </Link>
       </div>
     </header>

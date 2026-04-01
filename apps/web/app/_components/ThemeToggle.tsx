@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
+import { useWebLocale } from "./WebLocaleProvider";
 
 /**
  * WHY:   Users need a quick, visible control for switching between light and dark appearance anywhere in the web app.
@@ -16,6 +17,7 @@ export default function ThemeToggle({
   className?: string;
 }) {
   const { resolvedTheme, setTheme } = useTheme();
+  const { dictionary } = useWebLocale();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -29,8 +31,8 @@ export default function ThemeToggle({
     <button
       type="button"
       data-slot="theme-toggle"
-      aria-label={isDark ? "تفعيل الوضع الفاتح" : "تفعيل الوضع الداكن"}
-      title={isDark ? "تفعيل الوضع الفاتح" : "تفعيل الوضع الداكن"}
+      aria-label={isDark ? dictionary.nav.activateLightMode : dictionary.nav.activateDarkMode}
+      title={isDark ? dictionary.nav.activateLightMode : dictionary.nav.activateDarkMode}
       onClick={() => setTheme(isDark ? "light" : "dark")}
       className={cn(
         "inline-flex h-10 w-10 items-center justify-center rounded-[10px] border border-border bg-background text-foreground shadow-sm transition-all hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",

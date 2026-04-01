@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Briefcase, Building2, Search, ShieldCheck, User, Users } from "lucide-react";
+import { Archive, Briefcase, Building2, PanelLeftClose, Search, ShieldCheck, User, Users } from "lucide-react";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import type { AppLocale } from "@/lib/locale";
+import { formatLocaleDateTime } from "@/lib/locale";
 import { cn } from "@/lib/utils";
 import type { IncomingOrganizationInvite } from "@/server/contracts/organizations";
 import type { ConversationSummary, UserConversationTarget } from "@/server/contracts/inbox";
 import InboxInviteQueue from "./InboxInviteQueue";
 
-function formatConversationTime(value: number) {
-  return new Date(value).toLocaleString("ar-SA", {
+function formatConversationTime(value: number, locale: AppLocale) {
+  return formatLocaleDateTime(locale, value, {
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -16,9 +19,9 @@ function formatConversationTime(value: number) {
   });
 }
 
-function formatMembershipState(value: UserConversationTarget["membershipState"]) {
-  if (value === "member") return "عضو";
-  if (value === "pending-invite") return "دعوة معلقة";
+function formatMembershipState(value: UserConversationTarget["membershipState"], locale: AppLocale) {
+  if (value === "member") return locale === "fr" ? "Membre" : locale === "en" ? "Member" : "عضو";
+  if (value === "pending-invite") return locale === "fr" ? "Invitation en attente" : locale === "en" ? "Pending invite" : "دعوة معلقة";
   return null;
 }
 
@@ -29,12 +32,12 @@ function roleOrganizationLabel(conversation: ConversationSummary) {
   return `${conversation.otherUser.role} · ${conversation.otherUser.organizationName}`;
 }
 
-function getParticipantTypeLabel(role: string) {
+function getParticipantTypeLabel(role: string, locale: AppLocale) {
   const lower = role.toLowerCase();
-  if (lower.includes("developer") || lower.includes("مطور")) return "مطور";
-  if (lower.includes("broker") || lower.includes("وسيط")) return "وسيط";
-  if (lower.includes("admin") || lower.includes("مدير")) return "مدير";
-  return "مستخدم";
+  if (lower.includes("developer") || lower.includes("مطور")) return locale === "fr" ? "Promoteur" : locale === "en" ? "Developer" : "مطور";
+  if (lower.includes("broker") || lower.includes("وسيط")) return locale === "fr" ? "Courtier" : locale === "en" ? "Broker" : "وسيط";
+  if (lower.includes("admin") || lower.includes("مدير")) return locale === "fr" ? "Admin" : locale === "en" ? "Admin" : "مدير";
+  return locale === "fr" ? "Utilisateur" : locale === "en" ? "User" : "مستخدم";
 }
 
 function RoleIcon({ role }: { role: string }) {
@@ -103,6 +106,8 @@ function SearchResultsList({
   onStartConversation: (targetUserId: string) => void;
   searchResults: UserConversationTarget[];
 }) {
+  const { dictionary, locale } = useWebLocale();
+
   return (
     <div className="mt-4 space-y-2">
       {searchResults.map((result) => (
@@ -120,17 +125,17 @@ function SearchResultsList({
             <div className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
               <RoleIcon role={result.role} />
               <span className="truncate">
-                {result.organizationName ? `${getParticipantTypeLabel(result.role)} · ${result.organizationName}` : result.role}
+                {result.organizationName ? `${getParticipantTypeLabel(result.role, locale)} · ${result.organizationName}` : result.role}
               </span>
             </div>
-            {formatMembershipState(result.membershipState) ? (
+            {formatMembershipState(result.membershipState, locale) ? (
               <div className="mt-1 text-[10px] font-bold text-foreground/60 uppercase tracking-wider">
-                {formatMembershipState(result.membershipState)}
+                {formatMembershipState(result.membershipState, locale)}
               </div>
             ) : null}
           </div>
           <span className="rounded-full border border-border bg-muted/20 px-3 py-1 text-[11px] font-bold text-foreground">
-            بدء
+            {dictionary.inbox.start}
           </span>
         </button>
       ))}
@@ -149,18 +154,20 @@ function SearchResultsState({
   onStartConversation: (targetUserId: string) => void;
   searchResults: UserConversationTarget[];
 }) {
+  const { dictionary } = useWebLocale();
+
   if (searchResults.length > 0) {
     return <SearchResultsList onStartConversation={onStartConversation} searchResults={searchResults} />;
   }
 
   if (isSearching) {
-    return <div className="mt-4 text-[11px] font-bold text-muted-foreground/60">جاري البحث...</div>;
+    return <div className="mt-4 text-[11px] font-bold text-muted-foreground/60">{dictionary.inbox.searching}</div>;
   }
 
   if (hasSearch) {
     return (
       <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/5 px-4 py-6 text-center text-[12px] font-bold text-muted-foreground">
-        لا توجد نتائج مطابقة لبحثك.
+        {dictionary.inbox.noMatchingResults}
       </div>
     );
   }
@@ -177,6 +184,8 @@ function ConversationRow({
   isActive: boolean;
   onSelect: (conversationId: string) => void;
 }) {
+  const { dictionary, locale } = useWebLocale();
+
   return (
     <button
       type="button"
@@ -203,7 +212,7 @@ function ConversationRow({
             </div>
           </div>
           <div className="shrink-0 pt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/40">
-            {formatConversationTime(conversation.updatedAt)}
+            {formatConversationTime(conversation.updatedAt, locale)}
           </div>
         </div>
 
@@ -212,7 +221,7 @@ function ConversationRow({
             "min-w-0 flex-1 truncate text-[13px] font-medium leading-relaxed",
             conversation.unreadCount > 0 ? "font-bold text-foreground" : "text-muted-foreground/60"
           )}>
-            {conversation.lastMessagePreview || "ابدأ المحادثة"}
+            {conversation.lastMessagePreview || dictionary.inbox.lastMessageFallback}
           </p>
           {conversation.unreadCount > 0 ? (
             <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-foreground px-1 text-[9px] font-black text-background">
@@ -234,13 +243,14 @@ function ConversationsPane({
   conversations: ConversationSummary[];
   onSelect: (conversationId: string) => void;
 }) {
+  const { dictionary } = useWebLocale();
   const filteredConversations = conversations;
 
   if (filteredConversations.length === 0) {
     return (
       <div className="rounded-3xl border border-dashed border-border bg-muted/10 px-6 py-8 text-center">
         <p className="text-[13px] font-bold text-muted-foreground leading-relaxed">
-          لا توجد محادثات في هذا القسم حاليًا.
+          {dictionary.inbox.noConversationsInSection}
         </p>
       </div>
     );
@@ -263,55 +273,88 @@ function ConversationsPane({
 type InboxSidebarProps = {
   conversations: ConversationSummary[];
   activeId?: string | null;
+  archivedCount: number;
   invites: IncomingOrganizationInvite[];
   isSearching?: boolean;
+  isShowingArchived: boolean;
   onAcceptInvite: (invite: IncomingOrganizationInvite) => void;
   onCancelInvite: (inviteId: string) => void;
   onInviteMessage: (invite: IncomingOrganizationInvite) => void;
   onSearchChange: (value: string) => void;
   onSelect: (conversationId: string) => void;
   onStartConversation: (targetUserId: string) => void;
+  onToggleCollapsed: () => void;
+  onToggleShowArchived: (value: boolean) => void;
   search: string;
   searchResults: UserConversationTarget[];
 };
 
 export default function InboxSidebar({
   activeId = null,
+  archivedCount,
   conversations,
   invites,
   isSearching,
+  isShowingArchived,
   onAcceptInvite,
   onCancelInvite,
   onInviteMessage,
   onSearchChange,
   onSelect,
   onStartConversation,
+  onToggleCollapsed,
+  onToggleShowArchived,
   search,
   searchResults,
 }: InboxSidebarProps) {
+  const { locale, direction, isRtl } = useWebLocale();
   const hasSearch = search.trim().length > 0;
+  const title = locale === "fr" ? "Boite de reception" : locale === "en" ? "Inbox" : "البريد الوارد";
+  const searchPlaceholder =
+    locale === "fr"
+      ? "Rechercher une conversation..."
+      : locale === "en"
+        ? "Search conversations..."
+        : "ابحث عن محادثة...";
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col bg-background text-foreground border-l border-border/40">
+    <aside
+      className={cn(
+        "flex h-full min-h-0 w-full flex-col bg-background text-foreground border-border/40",
+        isRtl ? "border-l" : "border-r",
+      )}
+      dir={direction}
+    >
       <div className="px-6 py-8">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-xl font-black tracking-tight text-foreground">البريد الوارد</h1>
+          <h1 className="text-xl font-black tracking-tight text-foreground">{title}</h1>
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-muted/20 px-3 py-1 text-[11px] font-bold text-muted-foreground">
               {conversations.length}
             </span>
+            <button
+              type="button"
+              onClick={onToggleCollapsed}
+              aria-label={isRtl ? "إخفاء قائمة المحادثات" : "Collapse inbox sidebar"}
+              className="hidden h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition hover:bg-muted md:inline-flex"
+            >
+              <PanelLeftClose className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
         <div className="mt-6 flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
+            <Search className={cn("pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60", isRtl ? "right-4" : "left-4")} />
             <input
               id="workspace-inbox-search"
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="ابحث عن محادثة..."
-              className="w-full rounded-2xl border border-border bg-muted/10 py-3 pl-5 pr-11 text-[13px] font-bold text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:border-foreground/20 focus:bg-background"
+              placeholder={searchPlaceholder}
+              className={cn(
+                "w-full rounded-2xl border border-border bg-muted/10 py-3 text-[13px] font-bold text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:border-foreground/20 focus:bg-background",
+                isRtl ? "pl-5 pr-11 text-right" : "pl-11 pr-5 text-left",
+              )}
             />
           </div>
         </div>
@@ -322,6 +365,30 @@ export default function InboxSidebar({
           onStartConversation={onStartConversation}
           searchResults={searchResults}
         />
+
+        {(archivedCount > 0 || isShowingArchived) ? (
+          <button
+            type="button"
+            onClick={() => onToggleShowArchived(!isShowingArchived)}
+            className={cn(
+              "mt-4 flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-[12px] font-bold transition-all",
+              isShowingArchived
+                ? "border-foreground bg-foreground text-background"
+                : "border-border bg-muted/5 text-foreground hover:bg-muted/10",
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <Archive className="h-4 w-4" />
+              {isRtl ? "المؤرشف" : "Archived"}
+            </span>
+            <span className={cn(
+              "rounded-full px-2 py-0.5 text-[10px] font-black",
+              isShowingArchived ? "bg-background/15 text-background" : "bg-muted/30 text-muted-foreground",
+            )}>
+              {archivedCount}
+            </span>
+          </button>
+        ) : null}
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">

@@ -21,7 +21,6 @@ import { storeInteraction } from "../team_knowledge/tools/storeInteraction";
 import { storeUserPreference } from "../team_knowledge/tools/storeUserPreference";
 
 import { getDeveloperHandbookSnippets } from "../team_platform/tools/getDeveloperHandbookSnippets";
-import { suggestTrainingEntry } from "../team_trainer/tools/suggestTrainingEntry";
 
 export const MODEL_CATALOG = defineModels({
   defaultModel: "google/gemini-2.5-flash",
@@ -107,11 +106,6 @@ export const TOOL_CATALOG = defineTools({
     key: "platform_handbook_snippets",
     description: "Fetch developer handbook snippets for platform guidance.",
     factory: getDeveloperHandbookSnippets,
-  },
-  trainer_suggest_entry: {
-    key: "trainer_suggest_entry",
-    description: "Suggest a training entry based on conversation data.",
-    factory: suggestTrainingEntry,
   },
 });
 

@@ -1,5 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, it, vi } from "vitest";
+import { WebLocaleProvider } from "@/app/_components/WebLocaleProvider";
+import { getWebDictionary } from "@/lib/i18n";
 
 const { usePathname, useSearchParams, useQuery } = vi.hoisted(() => ({
   usePathname: vi.fn(),
@@ -36,6 +38,14 @@ vi.mock("next/link", () => ({
 
 import Sidebar from "./index";
 
+function renderSidebar(element: React.ReactNode) {
+  return renderToStaticMarkup(
+    <WebLocaleProvider locale="ar" dictionary={getWebDictionary("ar")}>
+      {element}
+    </WebLocaleProvider>,
+  );
+}
+
 beforeEach(() => {
   usePathname.mockReset();
   usePathname.mockReturnValue("/ws");
@@ -46,7 +56,7 @@ beforeEach(() => {
 });
 
 it("shows the projects navigation entry for developer roles", () => {
-  const markup = renderToStaticMarkup(
+  const markup = renderSidebar(
     <Sidebar
       user={{ name: "Ahmed", email: "ahmed@example.com" }}
       organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
@@ -69,7 +79,7 @@ it("shows the projects navigation entry for developer roles", () => {
 });
 
 it("shows the core zones for broker roles", () => {
-  const markup = renderToStaticMarkup(
+  const markup = renderSidebar(
     <Sidebar
       user={{ name: "Ahmed", email: "ahmed@example.com" }}
       organization={{ name: "Broker Org", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "وسيط · نشط" }}
@@ -84,7 +94,7 @@ it("shows the core zones for broker roles", () => {
 });
 
 it("falls back to overview/settings and AI when the role has no business zones", () => {
-  const markup = renderToStaticMarkup(
+  const markup = renderSidebar(
     <Sidebar
       user={{ name: "Ahmed", email: "ahmed@example.com" }}
       organization={{ name: "Admin Org", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "وسيط · نشط" }}
@@ -101,7 +111,7 @@ it("falls back to overview/settings and AI when the role has no business zones",
 });
 
 it("renders the drawer variant with the shared navigation content", () => {
-  const markup = renderToStaticMarkup(
+  const markup = renderSidebar(
     <Sidebar
       user={{ name: "Ahmed", email: "ahmed@example.com" }}
       organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
@@ -117,7 +127,7 @@ it("renders the drawer variant with the shared navigation content", () => {
 });
 
 it("keeps the new-thread entry as a bare /ws draft action", () => {
-  const markup = renderToStaticMarkup(
+  const markup = renderSidebar(
     <Sidebar
       user={{ name: "Ahmed", email: "ahmed@example.com" }}
       organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
@@ -136,7 +146,7 @@ it("renders the last three threads in the sidebar rail when available", () => {
   usePathname.mockReturnValue("/ws");
   useSearchParams.mockReturnValue(new URLSearchParams("threadId=thread-2"));
 
-  const markup = renderToStaticMarkup(
+  const markup = renderSidebar(
     <Sidebar
       user={{ name: "Ahmed", email: "ahmed@example.com" }}
       organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
@@ -159,7 +169,7 @@ it("renders the last three threads in the sidebar rail when available", () => {
 });
 
 it("keeps the sidebar subtitle without leaking the organization name", () => {
-  const markup = renderToStaticMarkup(
+  const markup = renderSidebar(
     <Sidebar
       user={{ name: "Ahmed", email: "ahmed@example.com" }}
       organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}

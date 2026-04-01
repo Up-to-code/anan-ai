@@ -2,6 +2,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MarketSnapshot } from "@/server/contracts/market";
 
+vi.mock("next/headers", () => ({
+  cookies: vi.fn(async () => ({
+    get: () => undefined,
+  })),
+}));
+
 function createDefaultSnapshot(): MarketSnapshot {
   return {
     filters: { city: "الرياض", area: "الملقا", query: "مواقف", dateFrom: "2026-03-01", dateTo: "2026-03-25" },

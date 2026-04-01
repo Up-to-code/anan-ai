@@ -1,12 +1,10 @@
 "use client";
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { cn } from "@/lib/utils";
-const roleLabels: Record<"manager" | "member" | "viewer", string> = {
-  manager: "مدير",
-  member: "عضو",
-  viewer: "مشاهد",
-};
+
 type DirectoryResult = {
   id: string;
   authUserId: string;
@@ -17,20 +15,29 @@ type DirectoryResult = {
   canMessage: boolean;
   conversationId?: string | null;
 };
+
 function MembershipStateBadge({ state }: { state: DirectoryResult["membershipState"] }) {
-  const toneClass
-    = state === "member"
+  const { dictionary } = useWebLocale();
+  const toneClass =
+    state === "member"
       ? "border-green-100 bg-green-50 text-green-700 dark:border-green-500/20 dark:bg-green-500/10 dark:text-green-300"
       : state === "pending-invite"
         ? "border-amber-100 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
         : "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300";
-  const label = state === "member" ? "عضو حالي" : state === "pending-invite" ? "دعوة معلقة" : "ليس عضواً";
+  const label =
+    state === "member"
+      ? dictionary.settings.currentMember
+      : state === "pending-invite"
+        ? dictionary.inbox.pendingInvite
+        : dictionary.settings.nonMember;
+
   return (
     <span className={cn("shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest", toneClass)}>
       {label}
     </span>
   );
 }
+
 function InviteResultActions({
   result,
   canManage,
@@ -44,6 +51,8 @@ function InviteResultActions({
   onInvite: (email: string) => Promise<void>;
   onMessage: (targetUserId: string, conversationId?: string | null) => Promise<void>;
 }) {
+  const { dictionary } = useWebLocale();
+
   return (
     <div className="mt-4 flex flex-wrap gap-2">
       {result.membershipState === "not-member" && canManage ? (
@@ -53,7 +62,7 @@ function InviteResultActions({
           disabled={isSubmitting}
           className="rounded-lg bg-blue-600 px-4 py-2 text-[11px] font-black tracking-widest uppercase text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          دعوة
+          {dictionary.settings.sendInvite}
         </button>
       ) : null}
       {result.canMessage ? (
@@ -62,12 +71,13 @@ function InviteResultActions({
           onClick={() => void onMessage(result.authUserId, result.conversationId)}
           className="rounded-xl border border-border bg-background px-4 py-2 text-[11px] font-black tracking-widest uppercase text-foreground shadow-sm transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          رسالة
+          {dictionary.settings.openConversation}
         </button>
       ) : null}
     </div>
   );
 }
+
 function InviteResultRow({
   result,
   canManage,
@@ -86,9 +96,13 @@ function InviteResultRow({
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="truncate text-sm font-black text-slate-950 dark:text-slate-100">{result.name}</div>
-          <div className="mt-1 truncate text-[11px] font-medium text-slate-500 dark:text-slate-400" dir="ltr">{result.email}</div>
+          <div className="mt-1 truncate text-[11px] font-medium text-slate-500 dark:text-slate-400" dir="ltr">
+            {result.email}
+          </div>
           {result.username ? (
-            <div className="mt-1 text-[10px] font-bold text-slate-400 dark:text-slate-500" dir="ltr">@{result.username}</div>
+            <div className="mt-1 text-[10px] font-bold text-slate-400 dark:text-slate-500" dir="ltr">
+              @{result.username}
+            </div>
           ) : null}
         </div>
         <MembershipStateBadge state={result.membershipState} />
@@ -103,11 +117,7 @@ function InviteResultRow({
     </div>
   );
 }
-/**
- * WHY:   The workspace settings area needs a simple invite flow that maps to the existing team-invite API.
- * WHAT:  Renders exact-match directory search plus invite/message actions for the current organization.
- * HOW:   Searches only by full email or username, then lets managers invite or open direct conversations from the same result row.
- */
+
 export default function InviteMemberForm({
   canManage = true,
   showHeader = true,
@@ -117,6 +127,7 @@ export default function InviteMemberForm({
   showHeader?: boolean;
   hasOrganization?: boolean;
 }) {
+  const { dictionary, direction } = useWebLocale();
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<"manager" | "member" | "viewer">("member");
@@ -124,25 +135,30 @@ export default function InviteMemberForm({
   const [status, setStatus] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   async function handleInvite(email: string) {
     if (!canManage) {
-      setStatus("صلاحية المدير مطلوبة لإرسال الدعوات.");
+      setStatus(dictionary.settings.managerPermissionRequired);
       return;
     }
+
     setIsSubmitting(true);
-    setStatus("جاري إرسال الدعوة...");
+    setStatus(dictionary.settings.inviteSending);
+
     const response = await fetch("/api/workspace/team-invites", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, role }),
     });
     const payload = response.status === 201 ? null : ((await response.json()) as { message?: string });
+
     if (!response.ok) {
-      setStatus(payload?.message ?? "تعذر إرسال الدعوة.");
+      setStatus(payload?.message ?? dictionary.settings.inviteFailed);
       setIsSubmitting(false);
       return;
     }
-    setStatus("تم إرسال الدعوة بنجاح.");
+
+    setStatus(dictionary.settings.inviteSent);
     setResults((current) =>
       current.map((result) =>
         result.email === email ? { ...result, membershipState: "pending-invite" } : result,
@@ -150,79 +166,90 @@ export default function InviteMemberForm({
     );
     setIsSubmitting(false);
   }
+
   async function handleMessage(targetUserId: string, conversationId?: string | null) {
     if (conversationId) {
       router.push(`/ws/inbox/${conversationId}`);
       return;
     }
+
     const response = await fetch("/api/workspace/inbox", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ intent: "resolve", targetUserId }),
     });
+
     if (!response.ok) {
-      setStatus("تعذر فتح المحادثة.");
+      setStatus(dictionary.settings.openConversationFailed);
       return;
     }
+
     const payload = (await response.json()) as { conversationId: string };
     router.push(`/ws/inbox/${payload.conversationId}`);
   }
+
   return (
     <form
       className="flex flex-col gap-6 p-5"
+      dir={direction}
       onSubmit={async (event) => {
         event.preventDefault();
+
         if (!hasOrganization) {
-          setStatus("لا توجد منظمة مرتبطة بالحساب الحالي.");
+          setStatus(dictionary.settings.noOrganizationLinked);
           return;
         }
+
         setIsSearching(true);
-        setStatus("جاري البحث...");
+        setStatus(dictionary.settings.searchingDirectory);
         const response = await fetch(`/api/workspace/directory?q=${encodeURIComponent(query.trim())}`, {
           cache: "no-store",
         });
         const payload = (await response.json()) as DirectoryResult[] | { message?: string };
+
         if (!response.ok) {
           setResults([]);
-          setStatus(("message" in payload ? payload.message : null) ?? "تعذر البحث.");
+          setStatus(("message" in payload ? payload.message : null) ?? dictionary.settings.searchFailed);
           setIsSearching(false);
           return;
         }
+
         setResults(Array.isArray(payload) ? payload : []);
-        setStatus(Array.isArray(payload) && payload.length === 0 ? "لا توجد نتيجة مطابقة. يمكنك دعوة البريد الكامل مباشرة." : null);
+        setStatus(Array.isArray(payload) && payload.length === 0 ? dictionary.settings.noMatchingDirectoryResult : null);
         setIsSearching(false);
       }}
     >
       {showHeader ? (
         <div className="flex flex-col gap-1">
-          <h2 className="text-xl font-black tracking-tight text-slate-950 dark:text-slate-100">دعوة عضو جديد</h2>
+          <h2 className="text-xl font-black tracking-tight text-slate-950 dark:text-slate-100">{dictionary.settings.inviteMemberTitle}</h2>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-300">
-            ابحث بالبريد أو اسم المستخدم ثم أرسل الدعوة أو افتح محادثة مباشرة.
+            {dictionary.settings.inviteMemberDescription}
           </p>
         </div>
       ) : null}
+
       {!hasOrganization ? (
         <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-          لا يمكنك إرسال دعوات قبل ربط الحساب بمنظمة.
+          {dictionary.settings.cannotInviteWithoutOrganization}
         </div>
       ) : null}
+
       <div className="space-y-2">
-        <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">البحث بالبريد الكامل أو اسم المستخدم</label>
+        <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">{dictionary.settings.inviteSearchLabel}</label>
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm font-medium text-foreground transition focus:bg-background focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          placeholder="name@company.com أو username"
+          placeholder={dictionary.settings.inviteSearchPlaceholder}
           type="text"
           dir="ltr"
           disabled={!hasOrganization}
         />
-        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
-          لن يظهر أي مستخدم إلا إذا كتبت بريده الكامل أو اسم المستخدم المطابق تماماً.
-        </p>
+        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500">{dictionary.settings.inviteSearchHint}</p>
       </div>
+
       <div className="space-y-3">
-        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">الدور</label>
+        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{dictionary.settings.roleLabel}</label>
         <div className="flex flex-wrap gap-2">
           {(["manager", "member", "viewer"] as const).map((entry) => (
             <button
@@ -232,23 +259,25 @@ export default function InviteMemberForm({
               disabled={isSubmitting || !hasOrganization}
               className={cn(
                 "rounded-xl border px-4 py-2 text-xs font-black tracking-widest uppercase transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                role === entry 
-                  ? "border-foreground bg-foreground text-background shadow-sm" 
-                  : "border-border bg-background text-muted-foreground hover:bg-muted"
+                role === entry
+                  ? "border-foreground bg-foreground text-background shadow-sm"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted",
               )}
             >
-              {roleLabels[entry]}
+              {entry === "manager" ? dictionary.settings.manager : entry === "viewer" ? dictionary.settings.viewer : dictionary.settings.member}
             </button>
           ))}
         </div>
       </div>
+
       <button
         type="submit"
         disabled={isSearching || !hasOrganization}
         className="inline-flex w-fit items-center justify-center rounded-xl bg-foreground px-6 py-3 text-xs font-black tracking-[0.18em] text-background shadow-sm transition hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {isSearching ? "جاري البحث..." : "بحث"}
+        {isSearching ? dictionary.settings.searchingDirectory : dictionary.assistant.search}
       </button>
+
       {results.length > 0 ? (
         <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-background shadow-sm">
           {results.map((result) => (
@@ -263,6 +292,7 @@ export default function InviteMemberForm({
           ))}
         </div>
       ) : null}
+
       {!results.length && query.includes("@") && canManage && hasOrganization ? (
         <button
           type="button"
@@ -270,12 +300,15 @@ export default function InviteMemberForm({
           disabled={isSubmitting}
           className="inline-flex w-fit items-center justify-center rounded-lg bg-blue-600 px-6 py-3 text-xs font-black tracking-[0.18em] text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {isSubmitting ? "جاري إرسال الدعوة..." : "دعوة هذا البريد مباشرة"}
+          {isSubmitting ? dictionary.settings.inviteSending : dictionary.settings.sendInvite}
         </button>
       ) : null}
+
       {status ? (
         <div className="border-t border-slate-100 pt-4 dark:border-slate-800">
-          <div aria-live="polite" className="text-xs font-bold text-slate-500 dark:text-slate-300">{status}</div>
+          <div aria-live="polite" className="text-xs font-bold text-slate-500 dark:text-slate-300">
+            {status}
+          </div>
         </div>
       ) : null}
     </form>

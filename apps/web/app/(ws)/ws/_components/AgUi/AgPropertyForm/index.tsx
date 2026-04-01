@@ -1,5 +1,6 @@
 "use client";
 
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import ZonePageIntro from "../../ZoneShell/ZonePageIntro";
 import { AgPropertyFormHeaderActions } from "../AgPropertyFormHeaderActions";
 import { AgPropertyFormSafetyOverlay } from "../AgPropertyFormSafetyOverlay";
@@ -24,15 +25,49 @@ export default function AgPropertyForm({
   propertyId,
   initialData,
   brokers = [],
-  title = "إدارة المشروع",
-  description = "أنشئ صفحة مشروع واضحة وسهلة التحديث مع صور، وصف، ومعلومات المشاركة الخاصة.",
-  submitLabel = "حفظ المشروع",
+  title,
+  description,
+  submitLabel,
   onSave,
   onCancel,
   onDelete,
   onRevokeViewer,
 }: AgPropertyFormProps) {
+  const { locale } = useWebLocale();
   const form = useAgPropertyForm({ propertyId, initialData, brokers, onSave });
+  const resolvedTitle =
+    title ??
+    (locale === "fr"
+      ? "Gerer le projet"
+      : locale === "en"
+        ? "Manage project"
+        : "إدارة المشروع");
+  const resolvedDescription =
+    description ??
+    (locale === "fr"
+      ? "Creez une page projet claire et facile a mettre a jour avec images, description et acces prive."
+      : locale === "en"
+        ? "Create a clear, easy-to-update project page with images, description, and private sharing details."
+        : "أنشئ صفحة مشروع واضحة وسهلة التحديث مع صور، وصف، ومعلومات المشاركة الخاصة.");
+  const resolvedSubmitLabel =
+    submitLabel ??
+    (locale === "fr"
+      ? "Enregistrer le projet"
+      : locale === "en"
+        ? "Save project"
+        : "حفظ المشروع");
+  const eyebrow =
+    form.isEditMode
+      ? locale === "fr"
+        ? "Modifier le projet"
+        : locale === "en"
+          ? "Edit project"
+          : "تعديل المشروع"
+      : locale === "fr"
+        ? "Nouveau projet"
+        : locale === "en"
+          ? "Create project"
+          : "إنشاء مشروع جديد";
 
   const renderCurrentStep = () => {
     if (form.activeStep.key === "basic") {
@@ -95,14 +130,14 @@ export default function AgPropertyForm({
       );
     }
     return (
-      <ReviewStep
-        formState={form.formState}
-        savePending={form.savePending}
-        selectedBroker={form.selectedBroker}
-        setShowSafetyConfirm={form.setShowSafetyConfirm}
-        submitLabel={submitLabel}
-      />
-    );
+        <ReviewStep
+          formState={form.formState}
+          savePending={form.savePending}
+          selectedBroker={form.selectedBroker}
+          setShowSafetyConfirm={form.setShowSafetyConfirm}
+          submitLabel={resolvedSubmitLabel}
+        />
+      );
   };
 
   return (
@@ -116,9 +151,9 @@ export default function AgPropertyForm({
       ) : null}
 
       <ZonePageIntro
-        eyebrow={form.isEditMode ? "تعديل المشروع" : "إنشاء مشروع جديد"}
-        title={title}
-        description={description}
+        eyebrow={eyebrow}
+        title={resolvedTitle}
+        description={resolvedDescription}
         actions={form.isEditMode ? <AgPropertyFormHeaderActions onCancel={onCancel} onDelete={onDelete} /> : undefined}
       />
 

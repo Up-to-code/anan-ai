@@ -13,16 +13,6 @@ export default async function NotFound() {
   const cookieStore = await cookies();
   const locale = resolveLocale(cookieStore.get("anan_client_locale")?.value);
   const dictionary = getDictionary(locale);
-  const copy =
-    locale === "ar"
-      ? {
-          title: "هذه الصفحة غير متاحة",
-          description: "قد يكون الرابط غير صحيح أو أن هذا المحتوى لم يعد منشوراً حالياً.",
-        }
-      : {
-          title: "This page is not available",
-          description: "The link may be incorrect, or this content is no longer currently published.",
-        };
 
   return (
     <main
@@ -31,8 +21,12 @@ export default async function NotFound() {
     >
       <div className="w-full max-w-lg rounded-[32px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-8 text-center shadow-sm">
         <p className="text-xs font-black uppercase tracking-[0.24em] text-[var(--workspace-muted)]">404</p>
-        <h1 className="mt-4 text-3xl font-black text-[var(--workspace-bubble-other-foreground)]">{copy.title}</h1>
-        <p className="mt-3 text-sm leading-7 text-[var(--workspace-muted)]">{copy.description}</p>
+        <h1 className="mt-4 text-3xl font-black text-[var(--workspace-bubble-other-foreground)]">
+          {dictionary.app.notFoundTitle}
+        </h1>
+        <p className="mt-3 text-sm leading-7 text-[var(--workspace-muted)]">
+          {dictionary.app.notFoundDescription}
+        </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link href="/app">
             <Button>{dictionary.app.backToAssistant}</Button>

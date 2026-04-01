@@ -8,6 +8,8 @@ import type { SidebarUser } from "./Sidebar/types";
 import type { WorkspaceOrganizationDisplay } from "../_lib/organizationDisplay";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
 import type { AnanProThreadSummary } from "@/server/contracts/ananPro";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { cn } from "@/lib/utils";
 
 /**
  * WHY:   Small screens need reliable access to workspace navigation without depending on the desktop sidebar rail.
@@ -31,12 +33,13 @@ export default function WorkspaceSidebarDrawer({
   const drawerId = useId();
   const dialogTitleId = useId();
   const sidebarTitleId = useId();
+  const { dictionary, isRtl } = useWebLocale();
 
   return (
     <>
       <button
         type="button"
-        aria-label="فتح قائمة التنقل"
+        aria-label={dictionary.nav.openNavigation}
         aria-expanded={open}
         aria-controls={drawerId}
         data-slot="workspace-sidebar-trigger"
@@ -55,13 +58,18 @@ export default function WorkspaceSidebarDrawer({
           <Dialog.Popup
             id={drawerId}
             data-slot="workspace-sidebar-mobile-drawer"
-            className="fixed inset-y-0 right-0 z-50 flex w-[min(22rem,100vw)] max-w-full outline-none transition-transform duration-300 ease-out data-[ending-style]:translate-x-full data-[starting-style]:translate-x-full lg:hidden"
+            className={cn(
+              "fixed inset-y-0 z-50 flex w-[min(22rem,100vw)] max-w-full outline-none transition-transform duration-300 ease-out lg:hidden",
+              isRtl
+                ? "right-0 data-[ending-style]:translate-x-full data-[starting-style]:translate-x-full"
+                : "left-0 data-[ending-style]:-translate-x-full data-[starting-style]:-translate-x-full",
+            )}
           >
             <Dialog.Title id={dialogTitleId} className="sr-only">
-              تنقل مساحة العمل
+              {dictionary.nav.workspaceNavigation}
             </Dialog.Title>
             <Dialog.Description className="sr-only">
-              القائمة الرئيسية الخاصة بمنطقة العمل الحالية.
+              {dictionary.nav.currentWorkspaceSection}
             </Dialog.Description>
 
             <div className="relative flex h-full w-full shadow-2xl shadow-black/45">
@@ -78,8 +86,11 @@ export default function WorkspaceSidebarDrawer({
               />
 
               <Dialog.Close
-                aria-label="إغلاق القائمة"
-                className="absolute left-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-[8px] border border-white/10 bg-black/20 text-white/75 backdrop-blur-sm transition-all hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_30%,transparent)] hover:bg-black/35 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] active:scale-95"
+                aria-label={dictionary.nav.close}
+                className={cn(
+                  "absolute top-3 inline-flex h-9 w-9 items-center justify-center rounded-[8px] border border-white/10 bg-black/20 text-white/75 backdrop-blur-sm transition-all hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_30%,transparent)] hover:bg-black/35 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] active:scale-95",
+                  isRtl ? "left-3" : "right-3",
+                )}
               >
                 <X className="h-4 w-4" />
               </Dialog.Close>

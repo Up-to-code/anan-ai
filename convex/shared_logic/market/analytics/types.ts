@@ -158,6 +158,27 @@ export type RawSearchLog = {
   status?: string;
 };
 
+export type RawConversationAnalysis = {
+  status: "draft" | "processing" | "done" | "failed";
+  lastMessageAt: number;
+  output?: {
+    hotCities: string[];
+    hotAreas: Array<{ city?: string; area: string }>;
+    propertyTypes: string[];
+    budgetBands: string[];
+    paymentIntents: Array<"cash" | "installments" | "mortgage" | "mixed" | "unknown">;
+    configurations: string[];
+    bedroomCounts: string[];
+    bathroomCounts: string[];
+    timelineSignals: string[];
+    mustHaveFeatures: string[];
+    strongConstraints: string[];
+    intent: "investment" | "residential" | "mixed" | "unknown";
+    repeatedKeywords: string[];
+    repeatedTopics: string[];
+  };
+};
+
 export type NormalizedProperty = {
   city?: string;
   area?: string;
@@ -193,6 +214,24 @@ export type NormalizedSearchSignal = {
   city?: string;
   area?: string;
   query?: string;
+};
+
+export type NormalizedConversationDemand = {
+  createdAt: number;
+  cities: string[];
+  areas: Array<{ city?: string; area: string }>;
+  propertyTypes: string[];
+  budgetBands: string[];
+  paymentIntents: Array<"cash" | "installments" | "mortgage" | "mixed">;
+  configurations: string[];
+  bedroomCounts: string[];
+  bathroomCounts: string[];
+  timelineSignals: string[];
+  mustHaveFeatures: string[];
+  strongConstraints: string[];
+  intent: "investment" | "residential" | "mixed" | "unknown";
+  repeatedKeywords: string[];
+  repeatedTopics: string[];
 };
 
 export type AreaAggregate = {

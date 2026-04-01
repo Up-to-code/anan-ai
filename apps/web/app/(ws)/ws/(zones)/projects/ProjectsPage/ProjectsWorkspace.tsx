@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Pencil, Trash2, UploadCloud } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import FilterChipBar from "../../../_components/Visuals/FilterChipBar";
 import PropertyCard from "../../../_components/Visuals/PropertyCard";
 import type { WorkspaceProject } from "../projectTypes";
@@ -27,6 +28,7 @@ export default function ProjectsWorkspace({
   onPublishProject,
 }: ProjectsWorkspaceProps) {
   const router = useRouter();
+  const { dictionary } = useWebLocale();
   const [projects, setProjects] = useState(initialProjects);
   const [filterKey, setFilterKey] = useState("all");
   const [deleteTarget, setDeleteTarget] = useState<WorkspaceProject | null>(null);
@@ -47,16 +49,16 @@ export default function ProjectsWorkspace({
   return (
     <div className="flex min-h-full flex-col">
       <ZonePageIntro
-        eyebrow="المشاريع"
-        title="المشاريع"
-        description="إدارة محفظتك العقارية والمشاريع المسجلة."
+        eyebrow={dictionary.projects.eyebrow}
+        title={dictionary.projects.title}
+        description={dictionary.projects.description}
         actions={
           <Link
             href="/ws/projects/create"
             className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-[13px] font-bold text-background transition hover:bg-foreground/90 shadow-sm"
           >
             <UploadCloud className="h-4 w-4" />
-            إنشاء مشروع جديد
+            {dictionary.projects.create}
           </Link>
         }
       />
@@ -64,10 +66,10 @@ export default function ProjectsWorkspace({
       <div className="space-y-6 px-6 py-6 lg:px-8 lg:py-8">
         <FilterChipBar
           chips={[
-            { key: "all", label: "الكل" },
-            { key: "linked", label: "مرتبط بعميل" },
-            { key: "idle", label: "وسيط بدون عميل" },
-            { key: "empty", label: "بدون وسطاء" },
+            { key: "all", label: dictionary.projects.all },
+            { key: "linked", label: dictionary.projects.linkedClient },
+            { key: "idle", label: dictionary.projects.idleBroker },
+            { key: "empty", label: dictionary.projects.noBrokers },
           ]}
           activeKey={filterKey}
           onChange={setFilterKey}
@@ -83,9 +85,9 @@ export default function ProjectsWorkspace({
               priceLabel={project.priceLabel}
               summary={project.summary}
               specs={[
-                { label: "الغرف", value: project.specs.rooms },
-                { label: "الحمامات", value: project.specs.baths },
-                { label: "المساحة", value: project.specs.area },
+                { label: dictionary.projects.rooms, value: project.specs.rooms },
+                { label: dictionary.projects.baths, value: project.specs.baths },
+                { label: dictionary.projects.area, value: project.specs.area },
               ]}
               density="flexible"
               footer={
@@ -123,7 +125,7 @@ export default function ProjectsWorkspace({
                         }
                         className="rounded-xl border border-border bg-foreground px-4 py-2 text-[12px] font-bold text-background transition hover:bg-foreground/90 disabled:opacity-50 shadow-sm"
                       >
-                        نشر
+                        {dictionary.projects.publish}
                       </button>
                     ) : null}
                   </div>
@@ -131,7 +133,7 @@ export default function ProjectsWorkspace({
                     href={`/ws/projects/${project.id}`}
                     className="rounded-xl border border-border bg-card px-4 py-2 text-[12px] font-bold text-foreground transition hover:bg-muted shadow-sm"
                   >
-                    فتح المشروع
+                    {dictionary.projects.openProject}
                   </Link>
                 </div>
               }
@@ -153,9 +155,9 @@ export default function ProjectsWorkspace({
             });
           });
         }}
-        title={`حذف مشروع: ${deleteTarget?.title ?? ""}`}
-        description="سيتم إزالة المشروع من المحفظة بشكل نهائي مع كافة البيانات المرتبطة به."
-        confirmLabel="حذف المشروع"
+        title={`${dictionary.projects.deleteTitle}: ${deleteTarget?.title ?? ""}`}
+        description={dictionary.projects.deleteDescription}
+        confirmLabel={dictionary.projects.deleteConfirm}
       />
     </div>
   );

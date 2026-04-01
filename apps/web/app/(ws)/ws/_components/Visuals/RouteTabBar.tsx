@@ -1,3 +1,5 @@
+"use client";
+
 import BrandWorkspaceTabs, { type BrandWorkspaceTab } from "../WorkspaceBrand/BrandWorkspaceTabs";
 
 export type RouteTab = {

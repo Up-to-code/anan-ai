@@ -6,7 +6,7 @@ import {
   type AdminDashboardRange,
 } from "./commandCenter.helpers";
 
-export type OrganizationSnapshot = {
+type OrganizationSnapshot = {
   organizationKey: string;
   ownerType: "broker" | "red";
   name: string;
@@ -357,4 +357,3 @@ export function buildAlerts(args: {
     .sort((left, right) => right.createdAt - left.createdAt)
     .slice(0, args.limit);
 }
-

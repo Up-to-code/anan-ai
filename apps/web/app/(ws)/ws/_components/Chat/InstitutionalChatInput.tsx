@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef } from "react";
 import { ArrowUp, Mic, Search, Sparkles, Loader2, Paperclip } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 
 interface InstitutionalChatInputProps {
   value: string;
@@ -39,12 +40,13 @@ export default function InstitutionalChatInput({
   onChange,
   onSend,
   isSending = false,
-  placeholder = "اسأل عنان عن السوق العقاري، أنشئ عرض سعر، أو تابع أداء فريقك...",
+  placeholder,
   onMicToggle,
   isMicRecording = false,
   isMicProcessing = false,
   micLevels = [],
 }: InstitutionalChatInputProps) {
+  const { dictionary, direction, isRtl } = useWebLocale();
   const isBusy = isSending || isMicProcessing;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -104,26 +106,26 @@ export default function InstitutionalChatInput({
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={isBusy}
-            placeholder={placeholder}
+            placeholder={placeholder ?? dictionary.assistant.placeholderDefault}
             className={cn(
               "w-full resize-none border-0 bg-transparent p-0 py-2 pt-3 text-[15px] font-semibold leading-relaxed outline-none ring-0 appearance-none transition-colors",
               "text-slate-900 placeholder:text-slate-400/50",
               "dark:text-white dark:placeholder:text-white/20"
             )}
             style={{ minHeight: "48px", maxHeight: "200px" }}
-            dir="rtl"
+            dir={direction}
             rows={1}
           />
         </div>
 
-        <div className="flex items-center justify-between px-4 pb-4 pt-1" dir="rtl">
-          <div className="flex items-center gap-1.5 pl-1">
+        <div className="flex items-center justify-between px-4 pb-4 pt-1" dir={direction}>
+          <div className={cn("flex items-center gap-1.5", !isRtl && "order-2")}>
             <button
               type="button"
               className="flex h-10 items-center gap-2 rounded-full px-4 text-slate-500 transition-all hover:bg-slate-100/50 hover:text-slate-900 dark:text-white/40 dark:hover:bg-white/5 dark:hover:text-white font-bold text-[12px] uppercase tracking-wider"
             >
               <Paperclip className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">إرفاق</span>
+              <span className="hidden sm:inline">{dictionary.assistant.attach}</span>
             </button>
             <div className="h-4 w-[1px] bg-slate-200 dark:bg-white/10 mx-1 hidden sm:block" />
             <button
@@ -131,18 +133,18 @@ export default function InstitutionalChatInput({
               className="hidden sm:flex h-9 items-center gap-2 rounded-full px-3 text-slate-500 transition-colors hover:bg-slate-100/50 hover:text-slate-900 dark:text-white/40 dark:hover:bg-white/5 dark:hover:text-white font-black text-[10px] uppercase tracking-[0.15em]"
             >
               <Search className="h-3 w-3" />
-              بحث
+              {dictionary.assistant.search}
             </button>
             <button
               type="button"
               className="hidden sm:flex h-9 items-center gap-2 rounded-full px-3 text-slate-500 transition-colors hover:bg-slate-100/50 hover:text-slate-900 dark:text-white/40 dark:hover:bg-white/5 dark:hover:text-white font-black text-[10px] uppercase tracking-[0.15em]"
             >
               <Sparkles className="h-3 w-3" />
-              بحث عميق
+              {dictionary.assistant.deepSearch}
             </button>
           </div>
 
-          <div className="flex items-center gap-2.5" dir="ltr">
+          <div className={cn("flex items-center gap-2.5", !isRtl && "order-1")} dir="ltr">
             <AnimatePresence>
               {isMicRecording && (
                 <motion.div
@@ -156,7 +158,7 @@ export default function InstitutionalChatInput({
                     onClick={onMicToggle}
                     className="text-[10px] font-black uppercase tracking-[0.15em] text-red-600 dark:text-red-400"
                   >
-                    إيقاف
+                    {dictionary.assistant.stop}
                   </button>
                   <MicMeter levels={micLevels} />
                 </motion.div>

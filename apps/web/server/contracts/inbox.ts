@@ -200,6 +200,7 @@ export const conversationSummarySchema = z.object({
   lastMessagePreview: z.string(),
   updatedAt: z.number(),
   unreadCount: z.number().int().nonnegative(),
+  archivedAt: z.number().nullable().optional(),
 });
 
 export const conversationDetailSchema = conversationSummarySchema.extend({
@@ -228,6 +229,11 @@ export const inboxUnreadSummarySchema = z.object({
 
 export const markConversationReadInputSchema = z.object({
   conversationId: z.string().min(1),
+});
+
+export const setConversationArchivedInputSchema = z.object({
+  conversationId: z.string().min(1),
+  archived: z.boolean(),
 });
 
 export const bootstrapOfferConversationInputSchema = z.object({
@@ -301,6 +307,7 @@ export type RoleEventMetadata = z.infer<typeof roleEventMetadataSchema>;
 export type ResolveDirectConversationInput = z.infer<typeof resolveDirectConversationInputSchema>;
 export type SendConversationMessageInput = z.infer<typeof sendConversationMessageInputSchema>;
 export type MarkConversationReadInput = z.infer<typeof markConversationReadInputSchema>;
+export type SetConversationArchivedInput = z.infer<typeof setConversationArchivedInputSchema>;
 export type InboxUnreadSummary = z.infer<typeof inboxUnreadSummarySchema>;
 export type BootstrapOfferConversationInput = z.infer<typeof bootstrapOfferConversationInputSchema>;
 export type BootstrapOfferConversationResult = z.infer<typeof bootstrapOfferConversationResultSchema>;

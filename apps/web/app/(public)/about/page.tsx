@@ -3,6 +3,8 @@
 import { motion } from "framer-motion";
 import { Target, Shield, Users, ArrowRight } from "lucide-react";
 import { ButtonLink, FeatureCardGrid, MetricGrid, Section } from "@/app/(public)/public";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { cn } from "@/lib/utils";
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -33,8 +35,10 @@ const itemVariants = {
  * HOW:   Uses framer-motion for premium entrance animations and refined layouts.
  */
 export default function AboutPage() {
+    const { locale, dictionary, direction, isRtl } = useWebLocale();
+
     return (
-        <main className="overflow-x-hidden">
+        <main className="overflow-x-hidden" dir={direction}>
             <Section bg="none" className="relative overflow-hidden bg-white pt-48 pb-32 dark:bg-slate-950">
                 {/* Dynamic Background Patterns */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -57,7 +61,7 @@ export default function AboutPage() {
                     >
                         <motion.div variants={itemVariants} className="flex justify-center">
                             <span className="px-4 py-1.5 border border-blue-100 bg-blue-50 text-blue-600 text-sm font-black tracking-widest uppercase dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
-                                من نحن
+                                {dictionary.about.badge}
                             </span>
                         </motion.div>
 
@@ -65,9 +69,9 @@ export default function AboutPage() {
                             variants={itemVariants}
                             className="text-6xl md:text-8xl font-black tracking-tight text-slate-900 dark:text-slate-100"
                         >
-                            عن عنان <br />
+                            {dictionary.about.title} <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400">
-                                شركة تبني مساحة عمل أوضح
+                                {dictionary.about.titleAccent}
                             </span>
                         </motion.h1>
 
@@ -76,13 +80,14 @@ export default function AboutPage() {
                             className="max-w-3xl mx-auto space-y-8 text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300 md:text-2xl"
                         >
                             <p>
-                                عنان هي الصفحة العامة لمساحة عمل تجمع المطورين والوسطاء حول أدوات أوضح، متابعة أسهل، وتعريف مباشر بما تفعله الشركة ولماذا توجد.
+                                {dictionary.about.description}
                             </p>
                         </motion.div>
 
                         <motion.div variants={itemVariants} className="pt-4">
                             <ButtonLink href="/contact" variant="primary" className="px-10 py-5 text-lg">
-                                تواصل معنا <ArrowRight className="mr-2 h-5 w-5 rotate-180" />
+                                {dictionary.about.contact}
+                                <ArrowRight className={cn("h-5 w-5", isRtl ? "mr-2 rotate-180" : "ml-2")} />
                             </ButtonLink>
                         </motion.div>
                     </motion.div>
@@ -101,20 +106,20 @@ export default function AboutPage() {
                         items={[
                             {
                                 icon: Target,
-                                title: "مهمتنا",
-                                description: "تبسيط العمل بين المطورين والوسطاء عبر مساحة واحدة تجعل التواصل والمعلومات والمهام أقرب وأسهل.",
+                                title: dictionary.about.missionTitle,
+                                description: dictionary.about.missionDescription,
                                 className: "hover:scale-[1.02] transition-transform duration-500"
                             },
                             {
                                 icon: Shield,
-                                title: "قيمنا",
-                                description: "الوضوح، التنظيم، والموثوقية في كل جزء من الواجهة العامة ومساحة العمل الداخلية.",
+                                title: dictionary.about.valuesTitle,
+                                description: dictionary.about.valuesDescription,
                                 className: "hover:scale-[1.02] transition-transform duration-500"
                             },
                             {
                                 icon: Users,
-                                title: "أسلوب العمل",
-                                description: "نبني صفحات عامة تشرح المنتج، ومساحة داخلية تساعد الفرق على تنفيذ العمل اليومي من دون تشتيت.",
+                                title: dictionary.about.workStyleTitle,
+                                description: dictionary.about.workStyleDescription,
                                 className: "hover:scale-[1.02] transition-transform duration-500"
                             },
                         ]}
@@ -134,17 +139,17 @@ export default function AboutPage() {
                 >
                     <div className="space-y-8">
                         <h2 className="text-5xl font-black leading-tight tracking-tight text-slate-900 dark:text-slate-100">
-                            لماذا <br />
-                            <span className="text-blue-600">هذه المساحة</span>
+                            {dictionary.about.whyTitle} <br />
+                            <span className="text-blue-600">{dictionary.about.whyAccent}</span>
                         </h2>
                         <div className="w-20 h-2 bg-blue-600" />
                     </div>
                     <div className="space-y-8 text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300">
                         <p>
-                            بدأنا من ملاحظة بسيطة: الفرق تحتاج إلى مساحة عمل تتكلم بلغتها، وتعرض ما يهمها بوضوح، وتساعدها على التحرك من دون فوضى أو ازدواجية بين الأدوات.
+                            {dictionary.about.whyDescriptionPrimary}
                         </p>
                         <p className="text-lg opacity-80">
-                            لذلك صممنا عنان لتكون واجهة عامة تعرف بالشركة، ثم مساحة عمل تساعد المطورين والوسطاء على متابعة ما يحدث فعلاً داخل المنتج.
+                            {dictionary.about.whyDescriptionSecondary}
                         </p>
                     </div>
                 </motion.div>
@@ -163,10 +168,10 @@ export default function AboutPage() {
                         valueClassName="text-6xl font-black text-blue-600 tracking-tighter"
                         labelClassName="block text-xs font-black uppercase tracking-[0.2em] text-slate-400"
                         items={[
-                            { value: "١", label: "مساحة موحدة" },
-                            { value: "٢", label: "فئتان أساسيتان" },
-                            { value: "٢٤/٧", label: "وصول مستمر" },
-                            { value: "واضح", label: "من أول زيارة" },
+                            { value: "1", label: dictionary.about.metricsUnified },
+                            { value: "2", label: dictionary.about.metricsAudience },
+                            { value: "24/7", label: dictionary.about.metricsAvailability },
+                            { value: locale === "fr" ? "Clair" : locale === "en" ? "Clear" : "واضح", label: dictionary.about.metricsClarity },
                         ]}
                     />
                 </motion.div>
@@ -176,15 +181,15 @@ export default function AboutPage() {
                 <div className="absolute inset-0 bg-blue-600/5 mix-blend-overlay" />
                 <div className="absolute top-0 right-1/4 h-[500px] w-[500px] bg-blue-600/10 blur-[100px]" />
 
-                <div className="max-w-5xl mx-auto space-y-20 text-right relative z-10">
+                <div className={cn("max-w-5xl mx-auto space-y-20 relative z-10", isRtl ? "text-right" : "text-left")}>
                     <motion.h2
                         initial={{ opacity: 0, scale: 0.95 }}
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
                         className="text-5xl md:text-7xl font-black text-white leading-tight"
                     >
-                        كيف نعرّف <br />
-                        <span className="text-blue-500">أنفسنا اليوم</span>
+                        {dictionary.about.identityTitle} <br />
+                        <span className="text-blue-500">{dictionary.about.identityAccent}</span>
                     </motion.h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-16 text-slate-400 font-bold leading-relaxed text-xl">
@@ -194,7 +199,7 @@ export default function AboutPage() {
                             viewport={{ once: true }}
                             transition={{ delay: 0.2 }}
                         >
-                            عنان ليست مجرد صفحة هبوط، وليست مجرد أداة داخلية. هي نقطة بداية تشرح من نحن، ثم توجه المطورين والوسطاء إلى مساحة عمل تساعدهم على التنظيم والمتابعة والتعاون.
+                            {dictionary.about.identityDescriptionPrimary}
                         </motion.p>
                         <motion.p
                             initial={{ opacity: 0, y: 20 }}
@@ -202,7 +207,7 @@ export default function AboutPage() {
                             viewport={{ once: true }}
                             transition={{ delay: 0.3 }}
                         >
-                            هذا هو الأساس الذي نبني عليه: منتج واضح، رسالة واضحة، وتجربة عامة لا تبالغ في الوعود بل تشرح القيمة الحقيقية للمساحة التي نقدمها.
+                            {dictionary.about.identityDescriptionSecondary}
                         </motion.p>
                     </div>
 
@@ -214,10 +219,10 @@ export default function AboutPage() {
                         className="pt-16 mt-16 border-t border-slate-800/50 flex flex-wrap justify-start gap-6"
                     >
                         <ButtonLink href="/contact" variant="primary" className="px-12 py-4">
-                            تحدث مع الفريق
+                            {dictionary.about.talkToTeam}
                         </ButtonLink>
                         <ButtonLink href="/developer" variant="outline" className="px-8 py-4 border-slate-700 text-slate-400 hover:text-white hover:border-blue-500 transition-colors !bg-transparent">
-                            مساحة المطورين
+                            {dictionary.about.developerSpace}
                         </ButtonLink>
                     </motion.div>
                 </div>

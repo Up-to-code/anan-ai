@@ -55,6 +55,7 @@ async function createDirectConversation(ctx: MutationCtx, args: {
       otherUserId: args.pair.secondParticipantUserId,
       joinedAt: now,
       unreadCount: 0,
+      archivedAt: undefined,
     }),
     ctx.db.insert("inboxConversationParticipants", {
       conversationId,
@@ -62,6 +63,7 @@ async function createDirectConversation(ctx: MutationCtx, args: {
       otherUserId: args.pair.firstParticipantUserId,
       joinedAt: now,
       unreadCount: 0,
+      archivedAt: undefined,
     }),
   ]);
   return conversationId;
@@ -268,6 +270,7 @@ export async function mapConversationSummary(
     lastMessagePreview: conversation.lastMessagePreview ?? latestMessage?.body ?? "",
     updatedAt: conversation.updatedAt,
     unreadCount: participant.unreadCount,
+    archivedAt: participant.archivedAt ?? null,
   };
 }
 

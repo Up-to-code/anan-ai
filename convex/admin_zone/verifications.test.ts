@@ -115,3 +115,97 @@ it("closes organization verification and clears verified access", async () => {
   expect(request?.currentStatus).toBe("closed");
   expect(request?.reviewerNotes).toBe("تم إغلاق التوثيق لإعادة التقديم.");
 });
+
+it("approves property verification and syncs the property ad-license status", async () => {
+  const t = convexTest(schema, modules);
+  let propertyId = "" as any;
+  let requestId = "" as any;
+
+  await t.run(async (ctx) => {
+    propertyId = await ctx.db.insert("properties", {
+      title: "Property Approval",
+      address: "Riyadh",
+      description: "Property approval target",
+      price: 100,
+      beds: 3,
+      baths: 2,
+      adLicenseStatus: "pending",
+      publicationState: "draft",
+      searchText: "Property Approval Riyadh Property approval target",
+    } as any);
+    requestId = await ctx.db.insert("verificationRequests", {
+      requestType: "property",
+      subjectPropertyId: propertyId,
+      authUserId: "auth-prop",
+      title: "طلب توثيق إعلان عقاري",
+      currentStatus: "new",
+      submittedData: { adLicenseNumber: "AD-123" },
+      attachedDocuments: [],
+      submittedAt: Date.now(),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    } as any);
+  });
+
+  await t.mutation(
+    api.admin_zone.verifications.reviewVerificationRequest as never,
+    { id: requestId, status: "approved", reviewerId: "admin-auth" } as never,
+  );
+
+  const property = (await t.run((ctx) => ctx.db.get(propertyId))) as Doc<"properties"> | null;
+  const request = (await t.run((ctx) => ctx.db.get(requestId))) as Doc<"verificationRequests"> | null;
+
+  expect(property?.adLicenseStatus).toBe("approved");
+  expect(property?.adLicenseNumber).toBe("AD-123");
+  expect(property?.adLicenseVerificationRequestId).toBe(requestId);
+  expect(request?.currentStatus).toBe("approved");
+});
+
+it("returns verification detail with subject metadata and decision history", async () => {
+  const t = convexTest(schema, modules);
+  let brokerId = "" as any;
+  let profileId = "" as any;
+  let requestId = "" as any;
+
+  await t.run(async (ctx) => {
+    brokerId = await ctx.db.insert("brokers", {
+      name: "Broker Detail",
+      slug: "broker-detail",
+      isVerified: false,
+      status: "pending",
+    } as any);
+    profileId = await ctx.db.insert("userProfiles", {
+      authUserId: "auth-detail",
+      brokerId,
+      name: "Broker Detail User",
+      email: "detail@example.com",
+      role: "broker",
+      roleStatus: "pending",
+    } as any);
+    requestId = await ctx.db.insert("verificationRequests", {
+      requestType: "broker",
+      subjectProfileId: profileId,
+      subjectBrokerId: brokerId,
+      authUserId: "auth-detail",
+      title: "طلب توثيق جهة",
+      currentStatus: "approved",
+      submittedData: {},
+      attachedDocuments: [{ key: "doc-1", url: "https://files.test/doc.pdf", name: "doc.pdf" }],
+      submittedAt: Date.now() - 5000,
+      reviewedAt: Date.now() - 1000,
+      reviewerNotes: "Approved",
+      createdAt: Date.now() - 5000,
+      updatedAt: Date.now() - 1000,
+    } as any);
+  });
+
+  const detail = await t.query(
+    api.admin_zone.verifications.getVerificationRequest as never,
+    { id: requestId } as never,
+  );
+
+  expect((detail as any)?.subject?.profile?.email).toBe("detail@example.com");
+  expect((detail as any)?.subject?.broker?.name).toBe("Broker Detail");
+  expect((detail as any)?.documentsCount).toBe(1);
+  expect((detail as any)?.decisionHistory).toHaveLength(2);
+});

@@ -4,6 +4,10 @@ import { useMemo, useState } from "react";
 import { Building2, FileUp, Paperclip, Plus, Search, Send, Tag, X } from "lucide-react";
 import type { ChangeEvent, Dispatch, MutableRefObject, SetStateAction } from "react";
 import { AttachmentStageCard } from "@/app/(ws)/ws/_components/attachments/AttachmentStageCard";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { formatWebCopy } from "@/lib/i18n";
+import { formatLocaleNumber } from "@/lib/locale";
+import { cn } from "@/lib/utils";
 import {
   getQuickActionUnavailableMessage,
   resolveComposerLanguage,
@@ -46,36 +50,39 @@ const primaryButtonClass =
 const ghostButtonClass =
   "inline-flex items-center gap-2 rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)] bg-transparent px-3 py-2 text-xs font-bold text-[var(--workspace-muted)] transition hover:bg-[color:color-mix(in_srgb,var(--workspace-panel)_72%,transparent)] hover:text-[var(--workspace-bubble-other-foreground)]";
 
-function formatProjectVisibility(project: ComposerProjectOption) {
-  return project.publicationState === "published" ? "عام" : "خاص";
+function formatProjectVisibility(project: ComposerProjectOption, locale: "ar" | "en" | "fr") {
+  if (project.publicationState === "published") {
+    return locale === "fr" ? "Public" : locale === "en" ? "Public" : "عام";
+  }
+  return locale === "fr" ? "Privé" : locale === "en" ? "Private" : "خاص";
 }
 
-function formatProjectPrice(project: ComposerProjectOption) {
+function formatProjectPrice(project: ComposerProjectOption, locale: "ar" | "en" | "fr") {
   if (!project.price) return null;
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(project.price);
+  return formatLocaleNumber(locale, project.price, { maximumFractionDigits: 0 });
 }
 
-function getInboxShareActionMeta(action: InboxShareAction) {
+function getInboxShareActionMeta(action: InboxShareAction, dictionary: ReturnType<typeof useWebLocale>["dictionary"]) {
   if (action === "file") {
     return {
       icon: FileUp,
-      title: "إرفاق ملف",
-      description: "أرسل ملفًا مع ملاحظة قصيرة.",
+      title: dictionary.inbox.attachTypeFile,
+      description: dictionary.inbox.attachTypeFileDescription,
     };
   }
 
   if (action === "project") {
     return {
       icon: Building2,
-      title: "إرسال عقار أو شقة",
-      description: "اختر أصلًا واحدًا مع تعليق موجز.",
+      title: dictionary.inbox.attachTypeProject,
+      description: dictionary.inbox.attachTypeProjectDescription,
     };
   }
 
   return {
     icon: Tag,
-    title: "إنشاء عرض خاص",
-    description: "أنشئ عرضًا سريعًا ثم أرسله مباشرة من المحادثة.",
+    title: dictionary.inbox.attachTypeOffer,
+    description: dictionary.inbox.attachTypeOfferDescription,
   };
 }
 
@@ -100,13 +107,14 @@ export function InboxQuickShareMenu({
   canShareProjects: boolean;
   onSelectAction: (action: InboxShareAction) => void;
 }) {
+  const { dictionary, isRtl } = useWebLocale();
   const actions: InboxShareAction[] = ["offer", "project", "file"];
   const language = resolveComposerLanguage();
 
   return (
     <div className="grid gap-2 sm:grid-cols-3">
       {actions.map((action) => {
-        const meta = getInboxShareActionMeta(action);
+        const meta = getInboxShareActionMeta(action, dictionary);
         const Icon = meta.icon;
         const isDisabled =
           (action === "offer" && !canCreateOffer) ||
@@ -122,7 +130,7 @@ export function InboxQuickShareMenu({
             type="button"
             onClick={() => onSelectAction(action)}
             disabled={isDisabled}
-            className={`flex min-h-[88px] items-start gap-3 rounded-2xl border px-3 py-3 text-right transition ${
+            className={`flex min-h-[88px] items-start gap-3 rounded-2xl border px-3 py-3 transition ${isRtl ? "text-right" : "flex-row-reverse text-left"} ${
               activeAction === action
                 ? "border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,transparent)] text-[var(--workspace-highlight)]"
                 : "border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)] text-[var(--workspace-bubble-other-foreground)] hover:bg-[var(--workspace-panel)]"
@@ -177,13 +185,14 @@ export function InboxInlineSharePanel({
   shareFileNote: string;
   onOpenProjectPicker: () => void;
 }) {
-  const meta = getInboxShareActionMeta(activeAction);
+  const { dictionary, locale, direction, isRtl } = useWebLocale();
+  const meta = getInboxShareActionMeta(activeAction, dictionary);
   const selectedProject = projectOptions.find((project) => project.id === selectedProjectId) ?? null;
 
   return (
-    <div className="rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)] bg-[var(--workspace-panel)] p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
+    <div className="rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)] bg-[var(--workspace-panel)] p-4" dir={direction}>
+      <div className={cn("flex items-start justify-between gap-3", !isRtl && "flex-row-reverse")}>
+        <div className={isRtl ? "text-right" : "text-left"}>
           <div className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">
             {meta.title}
           </div>
@@ -195,19 +204,19 @@ export function InboxInlineSharePanel({
           type="button"
           onClick={onClose}
           className={ghostButtonClass}
-          aria-label="إغلاق لوحة المشاركة"
+          aria-label={dictionary.inbox.closeSharePanel}
         >
           <X className="h-3.5 w-3.5" />
-          إغلاق
+          {dictionary.nav.close}
         </button>
       </div>
 
       {activeAction === "project" ? (
         <div className="mt-4 grid gap-3">
           <div className="grid gap-1.5">
-            <span className="text-[11px] font-bold text-[var(--workspace-muted)]">العقار أو المشروع</span>
-            <button type="button" onClick={onOpenProjectPicker} className={`${fieldClass} flex min-h-[88px] items-center justify-between text-right`}>
-              <span className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
+            <span className="text-[11px] font-bold text-[var(--workspace-muted)]">{dictionary.inbox.projectOrProperty}</span>
+            <button type="button" onClick={onOpenProjectPicker} className={`${fieldClass} flex min-h-[88px] items-center justify-between ${isRtl ? "text-right" : "text-left"}`}>
+              <span className={cn("flex min-w-0 flex-1 items-center gap-3 overflow-hidden", !isRtl && "flex-row-reverse")}>
                 {selectedProject?.imageUrl ? (
                   <img
                     src={selectedProject.imageUrl}
@@ -219,32 +228,32 @@ export function InboxInlineSharePanel({
                     <Building2 className="h-4 w-4" />
                   </span>
                 )}
-                <span className="min-w-0 flex-1">
+                <span className={cn("min-w-0 flex-1", !isRtl && "text-left")}>
                   <span className="line-clamp-2 block break-words text-sm font-black text-[var(--workspace-bubble-other-foreground)] [overflow-wrap:anywhere]">
-                    {selectedProject?.title ?? "اختر مشروعًا"}
+                    {selectedProject?.title ?? dictionary.inbox.selectProject}
                   </span>
                   <span className="mt-1 line-clamp-2 block break-words text-xs text-[var(--workspace-muted)] [overflow-wrap:anywhere]">
-                    {selectedProject ? `${selectedProject.location} · ${formatProjectVisibility(selectedProject)}` : "افتح المعرض المرئي لاختيار المشروع."}
+                    {selectedProject ? `${selectedProject.location} · ${formatProjectVisibility(selectedProject, locale)}` : dictionary.inbox.openProjectGallery}
                   </span>
                 </span>
               </span>
-              <span className="shrink-0 pr-2 text-xs font-bold text-[var(--workspace-highlight)]">اختيار</span>
+              <span className={cn("shrink-0 text-xs font-bold text-[var(--workspace-highlight)]", isRtl ? "pr-2" : "pl-2")}>{dictionary.inbox.choose}</span>
             </button>
           </div>
           <label className="grid gap-1.5">
-            <span className="text-[11px] font-bold text-[var(--workspace-muted)]">ملاحظة</span>
+            <span className="text-[11px] font-bold text-[var(--workspace-muted)]">{dictionary.inbox.noteLabel}</span>
             <textarea
               rows={3}
               value={projectNote}
               onChange={(event) => setProjectNote(event.target.value)}
-              placeholder="مثال: هذا الخيار أقرب لطلبه"
+              placeholder={dictionary.inbox.fileNotePlaceholder}
               className={`${fieldClass} min-h-[88px] resize-y leading-6`}
             />
           </label>
-          <div className="flex items-end justify-end">
+          <div className={cn("flex items-end", isRtl ? "justify-end" : "justify-start")}>
             <button type="button" onClick={() => void onSubmit()} className={primaryButtonClass}>
               <Send className="h-3.5 w-3.5" />
-              إرسال
+              {dictionary.inbox.send}
             </button>
           </div>
         </div>
@@ -272,23 +281,23 @@ export function InboxInlineSharePanel({
               className={secondaryButtonClass}
             >
               <Paperclip className="h-3.5 w-3.5" />
-              {isUploading ? "جارٍ رفع الملف..." : selectedFile ? "تغيير الملف" : "اختيار ملف"}
+              {isUploading ? dictionary.inbox.uploadingFile : selectedFile ? dictionary.inbox.changeFile : dictionary.inbox.uploadFile}
             </button>
           </div>
           <label className="grid gap-1.5">
-            <span className="text-[11px] font-bold text-[var(--workspace-muted)]">ملاحظة</span>
+            <span className="text-[11px] font-bold text-[var(--workspace-muted)]">{dictionary.inbox.noteLabel}</span>
             <textarea
               rows={3}
               value={shareFileNote}
               onChange={(event) => setShareFileNote(event.target.value)}
-              placeholder={selectedFile ? selectedFile.name : "أضف وصفًا قصيرًا للملف"}
+              placeholder={selectedFile ? selectedFile.name : dictionary.inbox.fileNotePlaceholder}
               className={`${fieldClass} min-h-[88px] resize-y leading-6`}
             />
           </label>
           <div className="flex items-end">
             <button type="button" onClick={() => void onSubmit()} className={primaryButtonClass}>
               <Send className="h-3.5 w-3.5" />
-              إرسال
+              {dictionary.inbox.send}
             </button>
           </div>
           </div>
@@ -311,6 +320,7 @@ export function InboxProjectPickerModal({
   projectOptions: ComposerProjectOption[];
   selectedProjectId: string;
 }) {
+  const { dictionary, locale } = useWebLocale();
   const [query, setQuery] = useState("");
   const filteredProjects = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -339,15 +349,15 @@ export function InboxProjectPickerModal({
       <div className="w-full max-w-4xl rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_68%,transparent)] bg-[var(--workspace-panel)] p-5 shadow-[0_24px_60px_rgba(0,0,0,0.35)]">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-lg font-black text-[var(--workspace-bubble-other-foreground)]">اختر مشروعًا للمشاركة</div>
-            <div className="mt-1 text-sm text-[var(--workspace-muted)]">اختيار بصري أسرع من القائمة النصية.</div>
+            <div className="text-lg font-black text-[var(--workspace-bubble-other-foreground)]">{dictionary.inbox.chooseProjectToShare}</div>
+            <div className="mt-1 text-sm text-[var(--workspace-muted)]">{dictionary.inbox.chooseProjectDescription}</div>
             <div className="mt-1 text-xs font-medium text-[var(--workspace-muted)]">
-              ابحث أو اعرض مشاريع أخرى إذا كان المطور يملك قائمة طويلة.
+              {dictionary.inbox.searchProjectHint}
             </div>
           </div>
           <button type="button" onClick={onClose} className={ghostButtonClass}>
             <X className="h-4 w-4" />
-            إغلاق
+            {dictionary.nav.close}
           </button>
         </div>
 
@@ -356,7 +366,7 @@ export function InboxProjectPickerModal({
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="ابحث بالاسم أو الموقع أو الجهة"
+            placeholder={dictionary.inbox.searchProjectPlaceholder}
             className={`${fieldClass} pr-10`}
           />
           <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--workspace-muted)]" />
@@ -395,15 +405,15 @@ export function InboxProjectPickerModal({
                       <div className="mt-1 text-xs text-[var(--workspace-muted)]">{project.location}</div>
                     </div>
                     <span className="shrink-0 rounded-lg border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] px-2 py-1 text-[10px] font-bold text-[var(--workspace-muted)]">
-                      {formatProjectVisibility(project)}
+                      {formatProjectVisibility(project, locale)}
                     </span>
                   </div>
                   <div className="line-clamp-2 text-xs leading-5 text-[var(--workspace-muted)]">
-                    {project.shortDescription ?? "بدون وصف إضافي"}
+                    {project.shortDescription ?? dictionary.inbox.noExtraDescription}
                   </div>
                   <div className="flex items-center justify-between gap-3 text-[11px] font-semibold text-[var(--workspace-muted)]">
-                    <span className="truncate">{project.organizationName ?? "مساحة العمل الحالية"}</span>
-                    <span>{formatProjectPrice(project) ? `${formatProjectPrice(project)} ر.س` : "بدون سعر"}</span>
+                    <span className="truncate">{project.organizationName ?? dictionary.inbox.currentWorkspace}</span>
+                    <span>{formatProjectPrice(project, locale) ? `${formatProjectPrice(project, locale)} ر.س` : dictionary.inbox.noPrice}</span>
                   </div>
                 </div>
               </button>
@@ -411,7 +421,7 @@ export function InboxProjectPickerModal({
           })}
           {filteredProjects.length === 0 ? (
             <div className="col-span-full rounded-xl border border-dashed border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-elevated)] px-4 py-8 text-center text-sm text-[var(--workspace-muted)]">
-              لا توجد مشاريع مطابقة لهذا البحث.
+              {dictionary.inbox.noMatchingProjects}
             </div>
           ) : null}
         </div>
@@ -447,6 +457,7 @@ export function InboxOfferModal({
   projectOptions: ComposerProjectOption[];
   setOfferForm: Dispatch<SetStateAction<ComposerOfferFormState>>;
 }) {
+  const { dictionary, locale } = useWebLocale();
   const [isProjectPickerOpen, setIsProjectPickerOpen] = useState(false);
   const selectedProject = projectOptions.find((project) => project.id === offerForm.propertyId) ?? null;
 
@@ -460,26 +471,26 @@ export function InboxOfferModal({
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-xl font-black text-[var(--workspace-bubble-other-foreground)]">
-              إنشاء وإرسال عرض سريع
+              {dictionary.inbox.createOfferQuickly}
             </div>
             <div className="mt-1 text-sm font-medium text-[var(--workspace-muted)]">
-              إلى {conversationLabel}
+              {formatWebCopy(dictionary.inbox.toConversation, { name: conversationLabel })}
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
             className={ghostButtonClass}
-            aria-label="إغلاق نافذة إنشاء العرض"
+            aria-label={dictionary.inbox.closeSharePanel}
           >
             <X className="h-4 w-4" />
-            إغلاق
+            {dictionary.nav.close}
           </button>
         </div>
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <span className="text-[11px] font-bold text-[var(--workspace-muted)]">العقار أو المشروع</span>
+            <span className="text-[11px] font-bold text-[var(--workspace-muted)]">{dictionary.inbox.projectOrProperty}</span>
             <button
               type="button"
               onClick={() => setIsProjectPickerOpen(true)}
@@ -495,20 +506,20 @@ export function InboxOfferModal({
                 )}
                 <span className="min-w-0 flex-1">
                   <span className="line-clamp-2 block break-words text-sm font-black text-[var(--workspace-bubble-other-foreground)] [overflow-wrap:anywhere]">
-                    {selectedProject?.title ?? "اختر مشروعًا"}
+                    {selectedProject?.title ?? dictionary.inbox.selectProject}
                   </span>
                   <span className="mt-1 line-clamp-2 block break-words text-xs text-[var(--workspace-muted)] [overflow-wrap:anywhere]">
                     {selectedProject
-                      ? `${selectedProject.location} · ${formatProjectVisibility(selectedProject)}`
-                      : "ابحث أو اختر بصريًا من المشاريع المتاحة."}
+                      ? `${selectedProject.location} · ${formatProjectVisibility(selectedProject, locale)}`
+                      : dictionary.inbox.chooseProjectDescription}
                   </span>
                 </span>
               </span>
-              <span className="shrink-0 pr-2 text-xs font-bold text-[var(--workspace-highlight)]">اختيار</span>
+              <span className="shrink-0 pr-2 text-xs font-bold text-[var(--workspace-highlight)]">{dictionary.inbox.choose}</span>
             </button>
           </div>
           <label className="grid gap-1.5">
-            <span className="text-[11px] font-bold text-[var(--workspace-muted)]">السعر</span>
+            <span className="text-[11px] font-bold text-[var(--workspace-muted)]">{dictionary.inbox.offerPrice}</span>
             <input
               type="text"
               inputMode="numeric"
@@ -519,12 +530,12 @@ export function InboxOfferModal({
                   price: event.target.value,
                 }))
               }
-              placeholder="مثال: 2500000"
+              placeholder="2500000"
               className={fieldClass}
             />
           </label>
           <label className="grid gap-1.5 sm:col-span-2">
-            <span className="text-[11px] font-bold text-[var(--workspace-muted)]">عنوان العرض</span>
+            <span className="text-[11px] font-bold text-[var(--workspace-muted)]">{dictionary.inbox.offerTitle}</span>
             <input
               type="text"
               value={offerForm.title}
@@ -534,12 +545,12 @@ export function InboxOfferModal({
                   title: event.target.value,
                 }))
               }
-              placeholder="مثال: عرض خاص على وحدة جاهزة للتسليم"
+              placeholder={dictionary.inbox.offerTitlePlaceholder}
               className={fieldClass}
             />
           </label>
           <label className="grid gap-1.5 sm:col-span-2">
-            <span className="text-[11px] font-bold text-[var(--workspace-muted)]">ملاحظة</span>
+            <span className="text-[11px] font-bold text-[var(--workspace-muted)]">{dictionary.inbox.noteLabel}</span>
             <textarea
               rows={4}
               value={offerForm.description}
@@ -549,7 +560,7 @@ export function InboxOfferModal({
                   description: event.target.value,
                 }))
               }
-              placeholder="اكتب الرسالة المختصرة التي تصاحب العرض."
+              placeholder={dictionary.inbox.offerNotePlaceholder}
               className={`${fieldClass} min-h-[120px] resize-none`}
             />
           </label>
@@ -572,10 +583,10 @@ export function InboxOfferModal({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">
-                مرفقات العرض
+                {dictionary.inbox.offerAttachments}
               </div>
               <div className="mt-1 text-xs font-medium text-[var(--workspace-muted)]">
-                اسحب الملفات هنا أو اخترها يدويًا.
+                {dictionary.inbox.dragAttachments}
               </div>
             </div>
             <input
@@ -592,7 +603,7 @@ export function InboxOfferModal({
               className={secondaryButtonClass}
             >
               <Plus className="h-3.5 w-3.5" />
-              {isUploading ? "جارٍ رفع المرفقات..." : "إضافة مرفقات"}
+              {isUploading ? dictionary.inbox.uploadingAttachments : dictionary.inbox.uploadAttachments}
             </button>
           </div>
           {offerForm.attachments.length > 0 ? (
@@ -602,7 +613,7 @@ export function InboxOfferModal({
                   <AttachmentStageCard
                     key={`${attachment.key}-${attachment.name}`}
                     attachment={attachment}
-                    helperLabel="لن يتم إرسال هذه المرفقات حتى تضغط زر إنشاء وإرسال."
+                    helperLabel={dictionary.inbox.attachmentSendHint}
                     onRemove={() =>
                       setOfferForm((current) => ({
                         ...current,
@@ -618,11 +629,11 @@ export function InboxOfferModal({
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
           <div className="text-xs font-medium text-[var(--workspace-muted)]">
-            سيتم إنشاء العرض ثم إرساله مباشرة داخل المحادثة.
+            {dictionary.inbox.offerSendHint}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" onClick={onClose} className={ghostButtonClass}>
-              إلغاء
+              {dictionary.inbox.cancel}
             </button>
             <button
               type="button"
@@ -631,7 +642,7 @@ export function InboxOfferModal({
               className={primaryButtonClass}
             >
               <Send className="h-3.5 w-3.5" />
-              {isSending ? "جاري الإرسال..." : "إنشاء وإرسال"}
+              {isSending ? dictionary.inbox.sending : dictionary.inbox.createAndSend}
             </button>
           </div>
         </div>

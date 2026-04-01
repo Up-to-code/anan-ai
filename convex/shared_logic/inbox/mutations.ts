@@ -146,9 +146,11 @@ async function syncConversationReadState(params: {
   await params.ctx.db.patch(params.senderMembershipId, {
     lastReadAt: params.now,
     unreadCount: 0,
+    archivedAt: undefined,
   });
   await params.ctx.db.patch(params.recipientMembershipId, {
     unreadCount: params.recipientUnreadCount + 1,
+    archivedAt: undefined,
   });
 }
 
@@ -292,6 +294,24 @@ export const markConversationRead = mutation({
     await ctx.db.patch(membership._id, {
       unreadCount: 0,
       lastReadAt: Date.now(),
+    });
+  },
+});
+
+export const setConversationArchived = mutation({
+  args: {
+    conversationId: v.id("inboxConversations"),
+    archived: v.boolean(),
+  },
+  handler: async (ctx, { conversationId, archived }) => {
+    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    const membership = await getConversationParticipant(ctx, conversationId, access.authUserId);
+    if (!membership) {
+      throw new ConvexError({ code: "FORBIDDEN", message: "Conversation not found" });
+    }
+
+    await ctx.db.patch(membership._id, {
+      archivedAt: archived ? Date.now() : undefined,
     });
   },
 });

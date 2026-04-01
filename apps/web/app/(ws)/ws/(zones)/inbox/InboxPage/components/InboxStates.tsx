@@ -1,6 +1,8 @@
 "use client";
 
 import { MessageCircleMore } from "lucide-react";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { cn } from "@/lib/utils";
 
 /**
  * WHY:   Inbox users need a calm default state when no thread is currently opened in the thread panel.
@@ -8,13 +10,14 @@ import { MessageCircleMore } from "lucide-react";
  * HOW:   Uses minimal copy and iconography so the empty state supports the workspace rather than dominating it.
  */
 export function InboxThreadEmptyState() {
+  const { dictionary, direction, isRtl } = useWebLocale();
   return (
-    <div className="flex h-full items-center justify-center bg-background/50 px-6">
+    <div className="flex h-full items-center justify-center bg-background/50 px-6" dir={direction}>
       <div className="flex max-w-md flex-col items-center gap-4 rounded-3xl border border-border bg-card px-8 py-12 text-center shadow-sm">
         <MessageCircleMore className="h-10 w-10 text-muted-foreground/40" />
-        <h2 className="text-xl font-black tracking-tight text-foreground">البريد الوارد</h2>
-        <p className="max-w-xs text-[13px] font-medium leading-relaxed text-muted-foreground/80">
-          اختر محادثة من القائمة الجانبية أو ابحث عن مستخدم جديد لبدء نقاش مباشر.
+        <h2 className="text-xl font-black tracking-tight text-foreground">{dictionary.inbox.emptyThreadTitle}</h2>
+        <p className={cn("max-w-xs text-[13px] font-medium leading-relaxed text-muted-foreground/80", isRtl ? "text-right" : "text-left")}>
+          {dictionary.inbox.emptyThreadDescription}
         </p>
       </div>
     </div>
@@ -27,10 +30,11 @@ export function InboxThreadEmptyState() {
  * HOW:   Keeps the message short and visually light while data subscriptions resolve.
  */
 export function InboxThreadLoadingState() {
+  const { dictionary } = useWebLocale();
   return (
     <div className="flex h-full items-center justify-center bg-background/50 px-6">
       <div className="rounded-2xl border border-border bg-card px-6 py-4 text-[13px] font-bold text-muted-foreground shadow-sm animate-pulse">
-        جاري تحميل المحادثة...
+        {dictionary.inbox.loadingThread}
       </div>
     </div>
   );

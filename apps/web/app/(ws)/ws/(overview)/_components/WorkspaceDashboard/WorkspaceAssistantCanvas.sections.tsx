@@ -10,6 +10,7 @@ import MessageRow from "../../../_components/Chat/MessageRow";
 import TypingIndicator from "../../../_components/Chat/TypingIndicator";
 import AgUiTurnRenderer from "../../../_components/Chat/AgUiTurnRenderer";
 import { AIMotionLogo, type AIMotionState } from "../../../_components/AIMotion";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import type { AnanProThread, AnanProInputMode } from "@/server/contracts/ananPro";
 import type { SessionUser } from "@/server/contracts/session";
 import type { WorkspaceAudience } from "@/server/contracts/workspace";
@@ -62,29 +63,6 @@ const DEFAULT_COMPOSER_STACK_HEIGHT = 180;
 const ASSISTANT_COMPOSER_DOCK_INSET = "calc(env(safe-area-inset-bottom) + 2.5rem)";
 const ASSISTANT_SCROLL_BUTTON_GAP = "5px";
 const ASSISTANT_CONTENT_END_GAP = "50px";
-const SUGGESTION_CHIPS = [
-  {
-    label: "أنشئ عرض سعر لعميل مهتم بمشروع سكني",
-    icon: Target,
-    colorClass: "text-amber-500",
-  },
-  {
-    label: "حلّل حركة السوق العقاري في الرياض هذا الأسبوع",
-    icon: BrainCircuit,
-    colorClass: "text-blue-500",
-  },
-  {
-    label: "ما هي المشاريع الجديدة القريبة من منافسينا؟",
-    icon: Wand2,
-    colorClass: "text-emerald-500",
-  },
-  {
-    label: "قارن أداء الوسطاء في فريقي خلال آخر ٣٠ يوم",
-    icon: CheckSquare,
-    colorClass: "text-rose-500",
-  },
-];
-
 function formatVoiceElapsed(ms: number) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
   const minutes = Math.floor(totalSeconds / 60);
@@ -116,22 +94,23 @@ function VoiceRecorderPanel(props: Pick<
   AssistantComposerProps,
   "isVoicePanelOpen" | "isVoiceRecording" | "isVoiceTranscribing" | "voicePermissionState" | "voiceProcessingPhase" | "voiceElapsedMs" | "voiceLevels" | "sendError" | "onStopVoiceRecording" | "onCancelVoiceRecording" | "onRequestVoicePermission"
 >) {
+  const { locale, dictionary } = useWebLocale();
   const phaseLabel =
     props.voiceProcessingPhase === "waiting_for_permission"
-      ? "نجهز الميكروفون الآن"
+      ? dictionary.assistant.preparingMic
       : props.voiceProcessingPhase === "waiting_for_speech"
-        ? "بانتظار بداية الحديث"
+        ? dictionary.assistant.waitingForSpeech
         : props.voiceProcessingPhase === "silence_countdown"
-          ? "سيتم الإرسال بعد لحظة صمت"
+          ? dictionary.assistant.silenceCountdown
           : props.voiceProcessingPhase === "uploading"
-            ? "نرفع التسجيل"
+            ? dictionary.assistant.uploadingRecording
             : props.voiceProcessingPhase === "transcribing"
-              ? "نحلل التسجيل"
+              ? dictionary.assistant.analyzingRecording
               : props.voiceProcessingPhase === "sending"
-                ? "نرسل الرسالة"
+                ? dictionary.assistant.sendingMessage
                 : props.voiceProcessingPhase === "error"
-                  ? "حدثت مشكلة في التسجيل"
-                  : "جاري التسجيل";
+                  ? dictionary.assistant.recordingError
+                  : dictionary.assistant.recordingNow;
   const isProcessing =
     props.voiceProcessingPhase === "uploading" ||
     props.voiceProcessingPhase === "transcribing" ||
@@ -160,7 +139,7 @@ function VoiceRecorderPanel(props: Pick<
                     {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mic className="h-5 w-5" />}
                   </div>
                   <div className="text-right">
-                    <p className="text-[15px] font-black text-[var(--workspace-bubble-other-foreground)]">التسجيل الصوتي</p>
+                    <p className="text-[15px] font-black text-[var(--workspace-bubble-other-foreground)]">{dictionary.assistant.voiceTitle}</p>
                     <p className="mt-1 text-[12px] font-medium text-[var(--workspace-muted)]">{phaseLabel}</p>
                   </div>
                 </div>
@@ -172,7 +151,7 @@ function VoiceRecorderPanel(props: Pick<
                 type="button"
                 onClick={props.onCancelVoiceRecording}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-panel)] text-[var(--workspace-muted)] transition hover:text-[var(--workspace-bubble-other-foreground)]"
-                aria-label="إغلاق لوحة التسجيل"
+                aria-label={dictionary.assistant.closeVoicePanel}
               >
                 <X className="h-4 w-4" />
               </button>
@@ -185,7 +164,7 @@ function VoiceRecorderPanel(props: Pick<
                       {formatVoiceElapsed(props.voiceElapsedMs)}
                     </div>
                     <div className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--workspace-muted)]">
-                      {props.isVoiceRecording ? "Live Input" : isProcessing ? "Processing" : "Ready"}
+                      {props.isVoiceRecording ? dictionary.assistant.liveInput : isProcessing ? dictionary.assistant.processing : dictionary.assistant.ready}
                     </div>
                   </div>
                   <div className="flex h-16 flex-1 items-end justify-end gap-[4px]">
@@ -207,7 +186,7 @@ function VoiceRecorderPanel(props: Pick<
                   onClick={props.onCancelVoiceRecording}
                   className="inline-flex h-10 items-center justify-center rounded-full border border-[color:color-mix(in_srgb,var(--workspace-border)_78%,transparent)] bg-[var(--workspace-panel)] px-4 text-[12px] font-bold text-[var(--workspace-bubble-other-foreground)] transition hover:bg-[var(--workspace-elevated)]"
                 >
-                  إلغاء
+                  {dictionary.assistant.voiceCancel}
                 </button>
                 <div className="flex items-center gap-2">
                   {showPermissionRetry ? (
@@ -216,7 +195,7 @@ function VoiceRecorderPanel(props: Pick<
                       onClick={() => void props.onRequestVoicePermission()}
                       className="inline-flex h-10 items-center justify-center rounded-full bg-[var(--workspace-highlight)] px-4 text-[12px] font-black text-white shadow-md transition hover:brightness-110"
                     >
-                      طلب الإذن مرة أخرى
+                      {dictionary.assistant.requestPermissionAgain}
                     </button>
                   ) : null}
                   <button
@@ -226,7 +205,7 @@ function VoiceRecorderPanel(props: Pick<
                     className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[var(--workspace-highlight)] px-5 text-[12px] font-black text-white shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45"
                   >
                     <Square className="h-4 w-4 fill-current" />
-                    إيقاف
+                    {dictionary.assistant.stopRecording}
                   </button>
                 </div>
               </div>
@@ -416,6 +395,67 @@ export function ThreadView({
 }
 
 export function LandingView(props: LandingViewProps) {
+  const { locale, isRtl } = useWebLocale();
+  const unavailableTitle =
+    locale === "fr"
+      ? "Impossible de trouver la conversation demandée."
+      : locale === "en"
+        ? "Could not find the requested conversation."
+        : "تعذر العثور على المحادثة المطلوبة.";
+  const newConversationLabel =
+    locale === "fr"
+      ? "Démarrer une nouvelle conversation"
+      : locale === "en"
+        ? "Start a new conversation"
+        : "بدء محادثة جديدة";
+  const landingTitle =
+    locale === "fr"
+      ? "Comment puis-je vous aider aujourd'hui ?"
+      : locale === "en"
+        ? "How can I help you today?"
+        : "كيف يمكنني مساعدتك اليوم؟";
+  const suggestionChips = [
+    {
+      label:
+        locale === "fr"
+          ? "Préparez une offre de prix pour un client intéressé par un projet résidentiel"
+          : locale === "en"
+            ? "Prepare a price offer for a client interested in a residential project"
+            : "أنشئ عرض سعر لعميل مهتم بمشروع سكني",
+      icon: Target,
+      colorClass: "text-amber-500",
+    },
+    {
+      label:
+        locale === "fr"
+          ? "Analysez le mouvement du marché immobilier à Riyad cette semaine"
+          : locale === "en"
+            ? "Analyze Riyadh real estate market activity this week"
+            : "حلّل حركة السوق العقاري في الرياض هذا الأسبوع",
+      icon: BrainCircuit,
+      colorClass: "text-blue-500",
+    },
+    {
+      label:
+        locale === "fr"
+          ? "Quels nouveaux projets sont proches de nos concurrents ?"
+          : locale === "en"
+            ? "Which new projects are close to our competitors?"
+            : "ما هي المشاريع الجديدة القريبة من منافسينا؟",
+      icon: Wand2,
+      colorClass: "text-emerald-500",
+    },
+    {
+      label:
+        locale === "fr"
+          ? "Comparez la performance des courtiers de mon équipe sur les 30 derniers jours"
+          : locale === "en"
+            ? "Compare my team's broker performance over the last 30 days"
+            : "قارن أداء الوسطاء في فريقي خلال آخر ٣٠ يوم",
+      icon: CheckSquare,
+      colorClass: "text-rose-500",
+    },
+  ];
   return (
     <LayoutGroup id="workspace-assistant-surface">
       <motion.div
@@ -435,7 +475,7 @@ export function LandingView(props: LandingViewProps) {
                 className="w-full rounded-[32px] border border-amber-100 bg-amber-50/50 px-8 py-6 text-right dark:border-amber-900/20 dark:bg-amber-900/10 shadow-sm"
             >
               <p className="text-[15px] font-black text-amber-900 dark:text-amber-200 uppercase tracking-tight">
-                تعذر العثور على المحادثة المطلوبة.
+                {unavailableTitle}
               </p>
               <div className="mt-6 flex items-center justify-end">
                 <button
@@ -443,7 +483,7 @@ export function LandingView(props: LandingViewProps) {
                   onClick={props.onResetUnavailableThread}
                   className="inline-flex items-center rounded-full bg-amber-900 px-6 py-3 text-[12px] font-black uppercase tracking-widest text-white transition hover:bg-amber-800 shadow-md active:scale-95"
                 >
-                  بدء محادثة جديدة
+                  {newConversationLabel}
                 </button>
               </div>
             </div>
@@ -459,7 +499,7 @@ export function LandingView(props: LandingViewProps) {
               <AIMotionLogo state="idle" size="standard" />
             </motion.div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 uppercase">
-              كيف يمكنني مساعدتك اليوم؟
+              {landingTitle}
             </h1>
           </div>
 
@@ -478,9 +518,9 @@ export function LandingView(props: LandingViewProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.5, ease: "easeOut" }}
-            dir="rtl"
+            dir={isRtl ? "rtl" : "ltr"}
           >
-            {SUGGESTION_CHIPS.map((chip) => {
+            {suggestionChips.map((chip) => {
               const Icon = chip.icon;
               return (
                 <button

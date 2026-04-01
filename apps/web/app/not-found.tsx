@@ -1,14 +1,20 @@
 import { AlertCircle } from "lucide-react";
+import { cookies } from "next/headers";
 import { ButtonLink, Footer, Navbar, Section } from "@/app/(public)/public";
+import { getWebDictionary } from "@/lib/i18n";
+import { isRtlLocale, resolveLocale, WEB_LOCALE_COOKIE } from "@/lib/locale";
 
 /**
  * WHY:   Missing routes must render quickly and consistently without requiring client hydration.
  * WHAT:  Renders the 404 page with primary navigation and simple recovery CTAs.
  * HOW:   Uses server-rendered Navbar/Footer and `ButtonLink` for navigation.
  */
-export default function NotFound() {
+export default async function NotFound() {
+    const cookieStore = await cookies();
+    const locale = resolveLocale(cookieStore.get(WEB_LOCALE_COOKIE)?.value);
+    const dictionary = getWebDictionary(locale);
     return (
-        <main className="flex min-h-screen flex-col bg-white font-sans text-slate-900 selection:bg-blue-600 selection:text-white dark:bg-slate-950 dark:text-slate-100" dir="rtl">
+        <main className="flex min-h-screen flex-col bg-white font-sans text-slate-900 selection:bg-blue-600 selection:text-white dark:bg-slate-950 dark:text-slate-100" dir={isRtlLocale(locale) ? "rtl" : "ltr"}>
             <Navbar />
 
             <Section className="flex-1 flex items-center justify-center py-48">
@@ -21,20 +27,20 @@ export default function NotFound() {
 
                     <div className="space-y-6">
                         <h1 className="text-8xl font-black uppercase tracking-tighter text-slate-900 dark:text-slate-100">٤٠٤</h1>
-                        <h2 className="text-3xl font-black uppercase text-slate-900 dark:text-slate-100">عذراً، الصفحة غير موجودة</h2>
+                        <h2 className="text-3xl font-black uppercase text-slate-900 dark:text-slate-100">{dictionary.errors.notFoundTitle}</h2>
                         <p className="mx-auto max-w-lg text-xl font-bold leading-relaxed text-slate-500 dark:text-slate-300">
-                            يبدو أنك حاولت الوصول إلى مسار غير معرّف في بنية عنان التحتية الرقمية.
+                            {dictionary.errors.notFoundDescription}
                         </p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-8 justify-center pt-6">
-                        <ButtonLink href="/" variant="primary">العودة للرئيسية</ButtonLink>
-                        <ButtonLink href="/about" variant="outline">تواصل مع الدعم</ButtonLink>
+                        <ButtonLink href="/" variant="primary">{dictionary.errors.backHome}</ButtonLink>
+                        <ButtonLink href="/about" variant="outline">{dictionary.errors.contactSupport}</ButtonLink>
                     </div>
                 </div>
             </Section>
 
-            <Footer />
+            <Footer locale={locale} />
         </main>
     );
 }

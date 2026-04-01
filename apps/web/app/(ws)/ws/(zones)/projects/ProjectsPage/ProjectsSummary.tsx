@@ -1,3 +1,4 @@
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import BrandStatStrip from "../../../_components/WorkspaceBrand/BrandStatStrip";
 
 type ProjectsSummaryProps = {
@@ -18,13 +19,14 @@ export default function ProjectsSummary({
   activeClients,
   archivedCount,
 }: ProjectsSummaryProps) {
+  const { locale } = useWebLocale();
   return (
     <BrandStatStrip
       items={[
-        { label: "إجمالي المشاريع", value: total },
-        { label: "وسطاء مرتبطون", value: linkedBrokers, tone: "blue" },
-        { label: "عملاء نشطون", value: activeClients },
-        { label: "مؤرشف", value: archivedCount },
+        { label: locale === "fr" ? "Projets au total" : locale === "en" ? "Total projects" : "إجمالي المشاريع", value: total },
+        { label: locale === "fr" ? "Courtiers lies" : locale === "en" ? "Linked brokers" : "وسطاء مرتبطون", value: linkedBrokers, tone: "blue" },
+        { label: locale === "fr" ? "Clients actifs" : locale === "en" ? "Active clients" : "عملاء نشطون", value: activeClients },
+        { label: locale === "fr" ? "Archives" : locale === "en" ? "Archived" : "مؤرشف", value: archivedCount },
       ]}
     />
   );

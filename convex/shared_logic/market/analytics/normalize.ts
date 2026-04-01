@@ -1,14 +1,17 @@
 import {
   inferPropertyTypeLabel,
   normalizeMarketArea,
+  normalizeSaudiCity,
   normalizeSellingFeature,
   parseSaudiGeography,
 } from "../normalizers";
 import {
   MarketDateRange,
+  NormalizedConversationDemand,
   NormalizedProperty,
   NormalizedResearch,
   NormalizedSearchSignal,
+  RawConversationAnalysis,
   RawProperty,
   RawResearch,
   RawSearchLog,
@@ -92,4 +95,41 @@ export function normalizeSearchSignals(searchLogs: RawSearchLog[], dateRange: Ma
     .filter((log) => !log.stage || log.stage === "completed" || log.stage === "serper" || log.stage === "db")
     .map((log) => ({ ...parseSaudiGeography({ query: log.query! }), query: log.query }))
     .filter((geo) => geo.city || geo.area);
+}
+
+export function normalizeConversationAnalyses(
+  analyses: RawConversationAnalysis[],
+  dateRange: MarketDateRange,
+): NormalizedConversationDemand[] {
+  return analyses
+    .filter((analysis) => analysis.status === "done")
+    .filter(
+      (analysis) =>
+        analysis.lastMessageAt >= dateRange.startMs &&
+        analysis.lastMessageAt <= dateRange.endMs,
+    )
+    .map((analysis) => ({
+      createdAt: analysis.lastMessageAt,
+      cities: analysis.output?.hotCities ?? [],
+      areas: (analysis.output?.hotAreas ?? []).map((area) => ({
+        city: normalizeSaudiCity(area.city),
+        area: normalizeMarketArea(area.area) ?? area.area,
+      })),
+      propertyTypes: analysis.output?.propertyTypes ?? [],
+      budgetBands: analysis.output?.budgetBands ?? [],
+      paymentIntents: (analysis.output?.paymentIntents ?? []).filter(
+        (intent): intent is "cash" | "installments" | "mortgage" | "mixed" =>
+          intent !== "unknown",
+      ),
+      configurations: analysis.output?.configurations ?? [],
+      bedroomCounts: analysis.output?.bedroomCounts ?? [],
+      bathroomCounts: analysis.output?.bathroomCounts ?? [],
+      timelineSignals: analysis.output?.timelineSignals ?? [],
+      mustHaveFeatures: analysis.output?.mustHaveFeatures ?? [],
+      strongConstraints: analysis.output?.strongConstraints ?? [],
+      intent: analysis.output?.intent ?? "unknown",
+      repeatedKeywords: analysis.output?.repeatedKeywords ?? [],
+      repeatedTopics: analysis.output?.repeatedTopics ?? [],
+    }))
+    .filter((analysis) => analysis.cities.length > 0 || analysis.areas.length > 0);
 }

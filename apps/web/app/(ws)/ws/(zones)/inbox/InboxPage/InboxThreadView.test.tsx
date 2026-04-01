@@ -47,13 +47,17 @@ type ConversationOverride = Partial<ThreadProps["conversation"]>;
 const baseProps: Omit<ThreadProps, "conversation"> = {
   canUseBusinessActions: false,
   currentUserId: "auth-a",
+  isArchivingConversation: false,
+  isSidebarCollapsed: false,
   isSending: false,
   onCreatePrivateOfferDraft: async () => null,
   onSend: async () => {},
   onPublishConversationOffer: async () => null,
   onRespondToConversationOffer: async () => null,
+  onSetConversationArchived: async () => {},
   onShareFile: async () => {},
   onShareProject: async () => {},
+  onToggleSidebarCollapsed: () => {},
   projectOptions: [],
 };
 
@@ -225,7 +229,7 @@ it("renders the simplified header identity with organization and participant typ
   expect(html).toContain("Broker A");
   expect(html).toContain("Elite Brokers");
   expect(html).toContain("وسيط");
-  expect(html).toContain("إجراءات");
+  expect(html).toContain("aria-label=\"إجراءات\"");
 });
 
 it("exposes the expected compact header actions when business actions are enabled", () => {
@@ -234,8 +238,9 @@ it("exposes the expected compact header actions when business actions are enable
       canCreateOffer: true,
       canShareProjects: true,
       canUseBusinessActions: true,
+      isArchived: false,
     }),
-  ).toEqual(["إنشاء عرض خاص", "إرسال عقار أو شقة", "إرفاق ملف"]);
+  ).toEqual(["إنشاء عرض خاص", "إرسال عقار أو شقة", "إرفاق ملف", "نقل إلى الأرشيف"]);
 });
 
 it("renders collaboration cards with their deep-link action", () => {

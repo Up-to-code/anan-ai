@@ -1,3 +1,6 @@
+"use client";
+
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import RouteTabBar from "../../_components/Visuals/RouteTabBar";
 
 /**
@@ -6,11 +9,12 @@ import RouteTabBar from "../../_components/Visuals/RouteTabBar";
  * HOW:   Reuses the shared workspace tab bar with CRM-specific destinations.
  */
 export default function CrmRouteTabs() {
+  const { locale } = useWebLocale();
   return (
     <RouteTabBar
       tabs={[
-        { href: "/ws/crm", label: "الصفقات" },
-        { href: "/ws/crm/clients", label: "العملاء" },
+        { href: "/ws/crm", label: locale === "fr" ? "Transactions" : locale === "en" ? "Deals" : "الصفقات" },
+        { href: "/ws/crm/clients", label: locale === "fr" ? "Clients" : locale === "en" ? "Clients" : "العملاء" },
       ]}
     />
   );

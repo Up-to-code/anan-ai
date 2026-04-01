@@ -19,16 +19,22 @@ export const buildDirectConversationKey = query({
 });
 
 export const listConversations = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    archived: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { archived }) => {
     const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
     const memberships = await ctx.db
       .query("inboxConversationParticipants")
       .withIndex("userId", (q) => q.eq("userId", access.authUserId))
       .collect();
+    const shouldShowArchived = archived === true;
+    const filteredMemberships = memberships.filter((membership) =>
+      shouldShowArchived ? Boolean(membership.archivedAt) : !membership.archivedAt,
+    );
 
     const summaries = await Promise.all(
-      memberships.map((membership) => mapConversationSummary(ctx, membership))
+      filteredMemberships.map((membership) => mapConversationSummary(ctx, membership))
     );
 
     return summaries
@@ -84,7 +90,7 @@ export const getInboxUnreadSummary = query({
       .collect();
 
     return {
-      unreadCount: memberships.reduce((sum, item) => sum + item.unreadCount, 0),
+      unreadCount: memberships.reduce((sum, item) => sum + (item.archivedAt ? 0 : item.unreadCount), 0),
     };
   },
 });
@@ -284,7 +290,7 @@ export const searchConversationTargets = query({
     const profiles = await ctx.db
       .query("userProfiles")
       .withIndex("roleStatus", (q) => q.eq("roleStatus", "approved"))
-      .take(200);
+      .collect();
     const owner = resolveWorkspaceOwner(access);
     const tenantOrgId = owner ? await resolveTenantOrgIdForOwner(ctx, owner) : null;
     const invites = tenantOrgId ? await tenants.listInvitations(ctx as never, tenantOrgId) : [];

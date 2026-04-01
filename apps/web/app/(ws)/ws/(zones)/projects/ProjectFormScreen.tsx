@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { AgDeleteConfirmModal, AgPropertyForm, type ProjectFormData } from "@/app/(ws)/ws/public";
 
 type ProjectFormScreenProps = {
@@ -24,14 +25,15 @@ function ProjectDeleteModal({
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const { locale } = useWebLocale();
   return (
     <AgDeleteConfirmModal
       open={open}
       onClose={onClose}
       onConfirm={onConfirm}
-      title="حذف المشروع"
-      description="سيتم حذف المشروع نهائياً مع جميع بياناته المرتبطة."
-      confirmLabel="حذف المشروع"
+      title={locale === "fr" ? "Supprimer le projet" : locale === "en" ? "Delete project" : "حذف المشروع"}
+      description={locale === "fr" ? "Ce projet sera supprimé définitivement avec toutes ses données liées." : locale === "en" ? "This project will be permanently deleted with all of its related data." : "سيتم حذف المشروع نهائياً مع جميع بياناته المرتبطة."}
+      confirmLabel={locale === "fr" ? "Supprimer le projet" : locale === "en" ? "Delete project" : "حذف المشروع"}
     />
   );
 }
@@ -81,6 +83,7 @@ function ProjectFormLayout(args: {
   onDeleteClose: () => void;
   onDeleteConfirm: () => void;
 }) {
+  const { locale } = useWebLocale();
   return (
     <div className="min-h-full bg-background px-4 py-8 sm:px-6 lg:px-10 lg:py-12">
       <AgPropertyForm
@@ -88,7 +91,7 @@ function ProjectFormLayout(args: {
         initialData={args.initialData}
         title={args.title}
         description={args.description}
-        submitLabel={args.pending ? "جارٍ الحفظ..." : args.submitLabel}
+        submitLabel={args.pending ? (locale === "fr" ? "Enregistrement..." : locale === "en" ? "Saving..." : "جارٍ الحفظ...") : args.submitLabel}
         onSave={args.onSave}
         onCancel={args.onCancel}
         onDelete={args.onDelete}

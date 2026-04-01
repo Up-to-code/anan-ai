@@ -1,6 +1,7 @@
 import {
   KeywordCounts,
   MarketSnapshotResult,
+  NormalizedConversationDemand,
   NormalizedResearch,
   NormalizedSearchSignal,
 } from "./types";
@@ -84,6 +85,7 @@ function addHelperQuery(
 export function buildKeywordInsights(args: {
   researchRows: NormalizedResearch[];
   searchSignals: NormalizedSearchSignal[];
+  conversationDemands?: NormalizedConversationDemand[];
   city?: string;
   area?: string;
   queryText: string;
@@ -104,6 +106,36 @@ export function buildKeywordInsights(args: {
   for (const signal of args.searchSignals) {
     if (!matchesScope({ targetCity: args.city, targetArea: args.area, city: signal.city, area: signal.area })) continue;
     addHelperQuery(helperQueries, signal.query, "search_log", excludedPhrases);
+  }
+
+  for (const demand of args.conversationDemands ?? []) {
+    const inScope =
+      !args.city ||
+      demand.cities.includes(args.city) ||
+      demand.areas.some((area) => area.city === args.city);
+    const inArea =
+      !args.area || demand.areas.some((area) => area.area === args.area);
+    if (!inScope || !inArea) continue;
+    for (const keyword of demand.repeatedKeywords) {
+      incrementCount(counts.query, keyword);
+    }
+    for (const feature of demand.mustHaveFeatures) {
+      incrementCount(counts.feature, feature);
+    }
+    for (const topic of [
+      ...demand.repeatedTopics,
+      ...demand.propertyTypes,
+      ...demand.budgetBands,
+      ...demand.paymentIntents,
+      ...demand.timelineSignals,
+      ...demand.configurations,
+      ...demand.bedroomCounts,
+      ...demand.bathroomCounts,
+      demand.intent,
+    ]) {
+      if (topic === "unknown") continue;
+      incrementCount(counts.derived, topic);
+    }
   }
 
   const topKeywords = toSortedItems(

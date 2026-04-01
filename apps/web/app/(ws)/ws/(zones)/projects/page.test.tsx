@@ -1,5 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { WebLocaleProvider } from "@/app/_components/WebLocaleProvider";
+import { getWebDictionary } from "@/lib/i18n";
 
 const { useRouter } = vi.hoisted(() => ({
   useRouter: vi.fn(() => ({
@@ -47,7 +49,11 @@ import WorkspaceProjectsRoute from "./page";
 describe("/ws/projects page", () => {
   it("renders the broker/developer-backed projects workspace", async () => {
     const element = await WorkspaceProjectsRoute();
-    const markup = renderToStaticMarkup(element);
+    const markup = renderToStaticMarkup(
+      <WebLocaleProvider locale="ar" dictionary={getWebDictionary("ar")}>
+        {element}
+      </WebLocaleProvider>,
+    );
 
     expect(markup).toContain("المشاريع");
     expect(markup).toContain("مالقا ريزيدنس");

@@ -11,8 +11,7 @@
  *   3. Gather agents from selected teams
  *   4. Run all agents in parallel (Promise.allSettled)
  *   5. Merge successful outputs, note failures
- *   6. Fire anan_trainer in background (non-blocking)
- *   7. Return merged response with metadata
+ *   6. Return merged response with metadata
  *
  * LIFECYCLE:
  *   User message → assistant.ts → assistantService.ts → orchestrate()
@@ -29,8 +28,6 @@ import { FALLBACK_MESSAGES } from "../shared/errorHandler";
 import { internal } from "../../../_generated/api";
 import type { OrchestrateInput, OrchestrateOutput } from "./types";
 import { getAvailableTeams, getTeamAgents, getTeamDefinitions } from "./teamRegistry";
-import { agentFactory } from "../core";
-import { ananTrainerDefinition } from "../team_trainer/anan_trainer/config";
 import { analyzeIntent } from "./intentAnalyzer";
 import { mergeResults, collectResults } from "./resultMerger";
 import { getAgentLLMConfigSafe } from "../config";
@@ -137,24 +134,6 @@ export async function orchestrate(
         orchestratorId: "anan",
     });
 
-    // 6. Fire trainer in background (non-blocking, errors silently caught)
-    if (role !== "user") {
-        agentFactory
-            .create(ananTrainerDefinition)
-            .run(ctx, {
-                prompt: `Analyze this conversation for learnable facts:\nUser (${role}): ${prompt}\nResponse: ${merged.text}`,
-                context: `Role: ${role}\nUser ID: ${userId}`,
-                userId,
-                orchestratorId: "anan",
-                threadId,
-                channel,
-                role,
-            })
-            .catch((err) =>
-                console.warn("[anan] Trainer failed (non-critical):", err),
-            );
-    }
-
     try {
         await ctx.runMutation(
             internal.ai_zone.agents.shared.orchestrationTrackerActions.trackOrchestrationUsageInternal as any,
@@ -180,7 +159,7 @@ export async function orchestrate(
         console.warn("[anan] Orchestration analytics failed (non-critical):", error);
     }
 
-    // 7. Return final response
+    // 6. Return final response
     return {
         ok: successOutputs.length > 0,
         output: merged.text,

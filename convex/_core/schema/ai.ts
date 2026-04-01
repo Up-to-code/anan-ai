@@ -16,6 +16,71 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 
+const conversationAnalyzerPaymentIntentValidator = v.union(
+    v.literal("cash"),
+    v.literal("installments"),
+    v.literal("mortgage"),
+    v.literal("mixed"),
+    v.literal("unknown"),
+);
+
+const conversationAnalyzerIntentValidator = v.union(
+    v.literal("investment"),
+    v.literal("residential"),
+    v.literal("mixed"),
+    v.literal("unknown"),
+);
+
+const conversationAnalyzerMetricValidator = v.object({
+    label: v.string(),
+    count: v.number(),
+});
+
+const conversationAnalyzerAreaMetricValidator = v.object({
+    city: v.optional(v.string()),
+    area: v.string(),
+    count: v.number(),
+});
+
+const conversationAnalyzerOutputValidator = v.object({
+    summary: v.string(),
+    hotCities: v.array(v.string()),
+    hotAreas: v.array(v.object({
+        city: v.optional(v.string()),
+        area: v.string(),
+    })),
+    propertyTypes: v.array(v.string()),
+    budgetBands: v.array(v.string()),
+    paymentIntents: v.array(conversationAnalyzerPaymentIntentValidator),
+    configurations: v.array(v.string()),
+    bedroomCounts: v.array(v.string()),
+    bathroomCounts: v.array(v.string()),
+    timelineSignals: v.array(v.string()),
+    mustHaveFeatures: v.array(v.string()),
+    strongConstraints: v.array(v.string()),
+    intent: conversationAnalyzerIntentValidator,
+    repeatedKeywords: v.array(v.string()),
+    repeatedTopics: v.array(v.string()),
+});
+
+const conversationAnalyzerDailySummaryValidator = v.object({
+    summaryText: v.string(),
+    topCities: v.array(conversationAnalyzerMetricValidator),
+    topAreas: v.array(conversationAnalyzerAreaMetricValidator),
+    propertyTypes: v.array(conversationAnalyzerMetricValidator),
+    budgetBands: v.array(conversationAnalyzerMetricValidator),
+    paymentIntents: v.array(conversationAnalyzerMetricValidator),
+    configurations: v.array(conversationAnalyzerMetricValidator),
+    bedroomCounts: v.array(conversationAnalyzerMetricValidator),
+    bathroomCounts: v.array(conversationAnalyzerMetricValidator),
+    timelineSignals: v.array(conversationAnalyzerMetricValidator),
+    mustHaveFeatures: v.array(conversationAnalyzerMetricValidator),
+    strongConstraints: v.array(conversationAnalyzerMetricValidator),
+    intents: v.array(conversationAnalyzerMetricValidator),
+    repeatedKeywords: v.array(conversationAnalyzerMetricValidator),
+    repeatedTopics: v.array(conversationAnalyzerMetricValidator),
+});
+
 const aiTables = {
     /**
      * aiTokenUsage — Tracks every LLM call across all agents.
@@ -96,11 +161,11 @@ const aiTables = {
     /**
      * aiRAGEntries — Tracks RAG content in both production and recommendation.
      *
-     * WHY:  anan_trainer suggests new training data. Admin reviews it.
+     * WHY:  Internal and admin workflows can suggest new training data. Admin reviews it.
      *       Approved entries move from "recommendation" to "production".
      *       This table tracks the lifecycle of every RAG entry.
      * WHAT: One row per RAG content piece with status tracking.
-     * HOW:  Written by anan_trainer (status: pending).
+     * HOW:  Written by internal suggestion flows (status: pending).
      *       Updated by admin (status: approved/rejected).
      *       When approved → also added to production RAG namespace.
      */
@@ -126,7 +191,7 @@ const aiTables = {
             v.literal("approved"),
             v.literal("rejected"),
         ),
-        /** Which agent suggested this entry (e.g. "anan_trainer") */
+        /** Which workflow or agent suggested this entry */
         suggestedBy: v.optional(v.string()),
         /** Admin who reviewed this entry */
         reviewedBy: v.optional(v.string()),
@@ -168,6 +233,59 @@ const aiTables = {
     })
         .index("userId", ["userId"])
         .index("userId_key", ["userId", "key"]),
+
+    aiConversationAnalyses: defineTable({
+        threadId: v.id("assistantThreads"),
+        userId: v.string(),
+        assistantKind: v.union(v.literal("default"), v.literal("anan_main_public")),
+        runKey: v.string(),
+        windowStartMs: v.number(),
+        windowEndMs: v.number(),
+        timezone: v.string(),
+        status: v.union(
+            v.literal("draft"),
+            v.literal("processing"),
+            v.literal("done"),
+            v.literal("failed"),
+        ),
+        claimedAt: v.optional(v.number()),
+        processedAt: v.optional(v.number()),
+        failureReason: v.optional(v.string()),
+        attemptCount: v.number(),
+        messageCount: v.number(),
+        firstMessageAt: v.number(),
+        lastMessageAt: v.number(),
+        output: v.optional(conversationAnalyzerOutputValidator),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    })
+        .index("by_threadId_runKey", ["threadId", "runKey"])
+        .index("by_runKey_status", ["runKey", "status"])
+        .index("by_status_lastMessageAt", ["status", "lastMessageAt"]),
+
+    aiConversationAnalysisRuns: defineTable({
+        runKey: v.string(),
+        windowStartMs: v.number(),
+        windowEndMs: v.number(),
+        timezone: v.string(),
+        status: v.union(
+            v.literal("draft"),
+            v.literal("running"),
+            v.literal("done"),
+            v.literal("failed"),
+        ),
+        draftCount: v.number(),
+        processingCount: v.number(),
+        doneCount: v.number(),
+        failedCount: v.number(),
+        analyzedThreadCount: v.number(),
+        summary: v.optional(conversationAnalyzerDailySummaryValidator),
+        startedAt: v.optional(v.number()),
+        completedAt: v.optional(v.number()),
+        failureReason: v.optional(v.string()),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    }).index("by_runKey", ["runKey"]),
 };
 
 export default aiTables;

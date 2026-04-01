@@ -1,7 +1,9 @@
 import DealFormScreen from "../../DealFormScreen";
+import { cookies } from "next/headers";
 import { requireWorkspaceData } from "../../../../_lib/workspaceData";
 import { getWorkspaceCrmZone, getWorkspacePropertyZone } from "@/server/ws/zones";
 import { parsePropertyBody } from "@/server/contracts/properties";
+import { formatLocaleNumber, resolveLocale, WEB_LOCALE_COOKIE } from "@/lib/locale";
 
 /**
  * WHY:   CRM add-client should create a persisted deal/contact record instead of logging mock form data.
@@ -9,6 +11,8 @@ import { parsePropertyBody } from "@/server/contracts/properties";
  * HOW:   Submits directly to the audience-specific CRM server action and redirects to the CRM board on success.
  */
 export default async function AddClientPage() {
+  const cookieStore = await cookies();
+  const locale = resolveLocale(cookieStore.get(WEB_LOCALE_COOKIE)?.value);
   const workspace = await requireWorkspaceData("/ws/crm/clients/add");
   const audience = workspace.audience;
   const ownerContext = workspace.ownerContext ?? null;
@@ -53,9 +57,9 @@ export default async function AddClientPage() {
 
   return (
     <DealFormScreen
-      pageTitle="إضافة عميل جديد"
-      pageDescription="أنشئ صفقة CRM جديدة مرتبطة بعميل وعقار اختياري."
-      submitLabel="حفظ العميل"
+      pageTitle={locale === "fr" ? "Ajouter un nouveau client" : locale === "en" ? "Add a new client" : "إضافة عميل جديد"}
+      pageDescription={locale === "fr" ? "Créez une nouvelle opportunité CRM liée à un client et à un bien optionnel." : locale === "en" ? "Create a new CRM deal linked to a client and an optional property." : "أنشئ صفقة CRM جديدة مرتبطة بعميل وعقار اختياري."}
+      submitLabel={locale === "fr" ? "Enregistrer le client" : locale === "en" ? "Save client" : "حفظ العميل"}
       cancelHref="/ws/crm"
       projects={properties.page.map((property) => ({
         id: property._id,
@@ -64,12 +68,12 @@ export default async function AddClientPage() {
           property.heroImage?.url ??
           property.media?.[0]?.url ??
           "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1200&q=80",
-        location: property.location ?? property.address ?? "غير محدد",
-        priceLabel: `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(property.price)} ر.س`,
+        location: property.location ?? property.address ?? (locale === "fr" ? "Non précisé" : locale === "en" ? "Unspecified" : "غير محدد"),
+        priceLabel: `${formatLocaleNumber(locale, property.price, { maximumFractionDigits: 0 })} ر.س`,
         summary:
           parsePropertyBody(property.body)?.presentation?.descriptionShort ??
           property.description ??
-          "نبذة المشروع غير متاحة بعد.",
+          (locale === "fr" ? "Le résumé du projet n'est pas encore disponible." : locale === "en" ? "The project summary is not available yet." : "نبذة المشروع غير متاحة بعد."),
       }))}
       clients={clients}
       brokers={brokers}

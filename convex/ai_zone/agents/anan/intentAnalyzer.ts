@@ -88,12 +88,11 @@ Team descriptions:
 - team_finance: Mortgage calculations, financing, bank products
 - team_knowledge: Knowledge base retrieval, RAG context
 - team_platform: Platform/backend architecture, Convex best practices, authorization, zones, performance, webhooks, agents/tools
-- team_trainer: (background) Learning from conversations
 
 User message: "${prompt}"
 
 Respond with ONLY a JSON array of team names. Example: ["team_search", "team_finance"]
-Always include "team_knowledge" for context. Never include "team_trainer" (it runs separately).`;
+Always include "team_knowledge" for context.`;
 }
 
 async function runIntentModel(
@@ -137,7 +136,6 @@ function applyPlatformTeamFilter(teams: string[], availableTeams: string[], prom
 function fallbackTeams(availableTeams: string[], prompt: string) {
   const wantsPlatform = shouldIncludePlatformTeam(prompt);
   return availableTeams.filter((team) => {
-    if (team === "team_trainer") return false;
     if (team === "team_platform") return wantsPlatform;
     return true;
   });

@@ -25,6 +25,7 @@ const workspaceTables = {
         joinedAt: v.number(),
         lastReadAt: v.optional(v.number()),
         unreadCount: v.number(),
+        archivedAt: v.optional(v.number()),
     })
         .index("conversationId", ["conversationId"])
         .index("userId", ["userId"])

@@ -3,10 +3,22 @@ import { aggregateCitiesAndAreas } from "./aggregate";
 import { buildChartSeries } from "./charts";
 import { buildKeywordInsights } from "./keywords";
 import { selectLatestUpdate } from "./latestUpdate";
-import { normalizeProperties, normalizeResearchRows, normalizeSearchSignals } from "./normalize";
+import {
+  normalizeConversationAnalyses,
+  normalizeProperties,
+  normalizeResearchRows,
+  normalizeSearchSignals,
+} from "./normalize";
 import { buildMarketOpportunities } from "./opportunities";
 import { buildSellingPoints } from "./sellingPoints";
-import { MarketFiltersInput, MarketSnapshotResult, RawProperty, RawResearch, RawSearchLog } from "./types";
+import {
+  MarketFiltersInput,
+  MarketSnapshotResult,
+  RawConversationAnalysis,
+  RawProperty,
+  RawResearch,
+  RawSearchLog,
+} from "./types";
 import {
   formatAveragePriceLabel,
   matchesScope,
@@ -25,6 +37,7 @@ export function buildMarketSnapshot(args: {
   properties: RawProperty[];
   researchRows: RawResearch[];
   searchLogs: RawSearchLog[];
+  conversationAnalyses?: RawConversationAnalysis[];
   filters?: MarketFiltersInput;
 }): MarketSnapshotResult {
   const normalizedCity = normalizeSaudiCity(args.filters?.city);
@@ -35,10 +48,15 @@ export function buildMarketSnapshot(args: {
   const properties = normalizeProperties(args.properties);
   const researchRows = normalizeResearchRows(args.researchRows, dateRange);
   const searchSignals = normalizeSearchSignals(args.searchLogs, dateRange);
+  const conversationDemands = normalizeConversationAnalyses(
+    args.conversationAnalyses ?? [],
+    dateRange,
+  );
   const { cityAggregates, areaAggregates, availableCities } = aggregateCitiesAndAreas({
     properties,
     researchRows,
     searchSignals,
+    conversationDemands,
   });
 
   const availableAreas = Array.from(areaAggregates.values())
@@ -53,6 +71,20 @@ export function buildMarketSnapshot(args: {
   const scopedSearchSignals = searchSignals.filter((signal) =>
     matchesScope({ targetCity: normalizedCity, targetArea: normalizedArea, city: signal.city, area: signal.area })
   );
+  const scopedConversationDemands = conversationDemands.filter((demand) => {
+    if (normalizedArea) {
+      return demand.areas.some(
+        (area) => area.city === normalizedCity && area.area === normalizedArea,
+      );
+    }
+    if (normalizedCity) {
+      return (
+        demand.cities.includes(normalizedCity) ||
+        demand.areas.some((area) => area.city === normalizedCity)
+      );
+    }
+    return true;
+  });
   const scopedResearchRows = researchRows.filter((row) => {
     if (normalizedCity && normalizedArea) {
       return (
@@ -115,6 +147,7 @@ export function buildMarketSnapshot(args: {
   const keywordInsights = buildKeywordInsights({
     researchRows: scopedResearchRows,
     searchSignals: scopedSearchSignals,
+    conversationDemands: scopedConversationDemands,
     city: normalizedCity,
     area: normalizedArea,
     queryText,
@@ -128,6 +161,7 @@ export function buildMarketSnapshot(args: {
 
   const headlineDemandSignals =
     scopedSearchSignals.length +
+    scopedConversationDemands.length +
     scopedResearchRows.reduce((sum, row) => {
       const matchingFindings = row.findings.filter((finding) =>
         matchesScope({ targetCity: normalizedCity, targetArea: normalizedArea, city: finding.city, area: finding.area })

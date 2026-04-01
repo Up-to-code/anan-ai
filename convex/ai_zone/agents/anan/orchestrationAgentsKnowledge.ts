@@ -85,27 +85,3 @@ export const ananPlatformDocsDefinition = defineAgent({
   runtimePolicy: { maxSteps: 2, failureMode: "soft" },
   toolKeys: ["platform_handbook_snippets"],
 });
-
-export const ananTrainerDefinition = defineAgent({
-  name: "anan_trainer",
-  description:
-    "Extracts learnable facts from conversations and pushes them to the " +
-    "recommendation RAG for admin review. Manages the self-improvement loop.",
-  team: "team_trainer",
-  allowedRoles: ["admin"],
-  prompt: {
-    version: "v2",
-    identity: "أنت anan_trainer، وكيل التحسين الذاتي في منصة عنان.",
-    scope: ["استخراج الحقائق القابلة للتعلم من المحادثات المكتملة.", "إنشاء مدخلات تدريبية قابلة للمراجعة من الإدارة."],
-    toolUsage: ["لا تحفظ بيانات شخصية في المعرفة العامة."],
-    output: ["حوّل المعلومة إلى صيغة تدريبية واضحة ومنظمة."],
-    safety: [
-      SHARED_PROMPT_BLOCKS.noFabrication,
-      "لا تحفظ بيانات شخصية أو حساسة في التدريب العام.",
-    ],
-  },
-  modelPolicy: { temperature: 0.4 },
-  runtimePolicy: { maxSteps: 3, failureMode: "soft", enableTokenTracking: true },
-  toolKeys: ["trainer_suggest_entry"],
-  ragNamespace: "recommendation",
-});

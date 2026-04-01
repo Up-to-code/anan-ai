@@ -1,5 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
+import { WebLocaleProvider } from "@/app/_components/WebLocaleProvider";
+import { getWebDictionary } from "@/lib/i18n";
 import type { IncomingOrganizationInvite } from "@/server/contracts/organizations";
 import type { ConversationSummary } from "@/server/contracts/inbox";
 import InboxSidebar from "./InboxSidebar";
@@ -44,18 +46,30 @@ const invites: IncomingOrganizationInvite[] = [
   },
 ];
 
+function renderInboxSidebar(element: React.ReactNode) {
+  return renderToStaticMarkup(
+    <WebLocaleProvider locale="ar" dictionary={getWebDictionary("ar")}>
+      {element}
+    </WebLocaleProvider>,
+  );
+}
+
 it("renders unread conversation counts", () => {
-  const html = renderToStaticMarkup(
+  const html = renderInboxSidebar(
     <InboxSidebar
       conversations={conversations}
       activeId={null}
+      archivedCount={0}
       invites={[]}
+      isShowingArchived={false}
       onAcceptInvite={() => {}}
       onCancelInvite={() => {}}
       onInviteMessage={() => {}}
       onSearchChange={() => {}}
       onSelect={() => {}}
       onStartConversation={() => {}}
+      onToggleCollapsed={() => {}}
+      onToggleShowArchived={() => {}}
       search=""
       searchResults={[]}
     />,
@@ -67,37 +81,45 @@ it("renders unread conversation counts", () => {
 });
 
 it("renders the empty search state for unmatched queries", () => {
-  const html = renderToStaticMarkup(
+  const html = renderInboxSidebar(
     <InboxSidebar
       conversations={conversations}
       activeId={null}
+      archivedCount={0}
       invites={[]}
+      isShowingArchived={false}
       onAcceptInvite={() => {}}
       onCancelInvite={() => {}}
       onInviteMessage={() => {}}
       onSearchChange={() => {}}
       onSelect={() => {}}
       onStartConversation={() => {}}
+      onToggleCollapsed={() => {}}
+      onToggleShowArchived={() => {}}
       search="zzz"
       searchResults={[]}
     />,
   );
 
-  expect(html).toContain("لا توجد نتائج مطابقة.");
+  expect(html).toContain("لا توجد نتائج مطابقة لبحثك.");
 });
 
 it("renders compact invite actions above the conversation list", () => {
-  const html = renderToStaticMarkup(
+  const html = renderInboxSidebar(
     <InboxSidebar
       conversations={conversations}
       activeId={null}
+      archivedCount={0}
       invites={invites}
+      isShowingArchived={false}
       onAcceptInvite={() => {}}
       onCancelInvite={() => {}}
       onInviteMessage={() => {}}
       onSearchChange={() => {}}
       onSelect={() => {}}
       onStartConversation={() => {}}
+      onToggleCollapsed={() => {}}
+      onToggleShowArchived={() => {}}
       search=""
       searchResults={[]}
     />,
@@ -110,17 +132,21 @@ it("renders compact invite actions above the conversation list", () => {
 });
 
 it("renders organization context in search results", () => {
-  const html = renderToStaticMarkup(
+  const html = renderInboxSidebar(
     <InboxSidebar
       conversations={conversations}
       activeId={null}
+      archivedCount={0}
       invites={[]}
+      isShowingArchived={false}
       onAcceptInvite={() => {}}
       onCancelInvite={() => {}}
       onInviteMessage={() => {}}
       onSearchChange={() => {}}
       onSelect={() => {}}
       onStartConversation={() => {}}
+      onToggleCollapsed={() => {}}
+      onToggleShowArchived={() => {}}
       search="elite"
       searchResults={[
         {
@@ -142,4 +168,29 @@ it("renders organization context in search results", () => {
 
   expect(html).toContain("Palm Hills");
   expect(html).toContain("دعوة معلقة");
+});
+
+it("renders the archived filter box when archived conversations exist", () => {
+  const html = renderInboxSidebar(
+    <InboxSidebar
+      conversations={conversations}
+      activeId={null}
+      archivedCount={2}
+      invites={[]}
+      isShowingArchived={false}
+      onAcceptInvite={() => {}}
+      onCancelInvite={() => {}}
+      onInviteMessage={() => {}}
+      onSearchChange={() => {}}
+      onSelect={() => {}}
+      onStartConversation={() => {}}
+      onToggleCollapsed={() => {}}
+      onToggleShowArchived={() => {}}
+      search=""
+      searchResults={[]}
+    />,
+  );
+
+  expect(html).toContain("المؤرشف");
+  expect(html).toContain(">2<");
 });

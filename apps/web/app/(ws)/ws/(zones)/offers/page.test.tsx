@@ -1,5 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { WebLocaleProvider } from "@/app/_components/WebLocaleProvider";
+import { getWebDictionary } from "@/lib/i18n";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/ws/offers",
@@ -90,7 +92,11 @@ describe("/ws/offers page", () => {
     const element = await WorkspaceOffersRoute({
       searchParams: Promise.resolve({}),
     });
-    const markup = renderToStaticMarkup(element);
+    const markup = renderToStaticMarkup(
+      <WebLocaleProvider locale="ar" dictionary={getWebDictionary("ar")}>
+        {element}
+      </WebLocaleProvider>,
+    );
 
     expect(markup).toContain("العروض كحالات تعاون");
     expect(markup).toContain("عرض مطور مفتوح");

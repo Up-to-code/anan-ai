@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import type { OrganizationApiKeyPermission } from "@/lib/auth/organizationPermissions";
 import type {
   OrganizationApiKeySecretResult,
@@ -18,6 +19,7 @@ export function useApiKeysWorkspace(args: {
   canRevoke: boolean;
   initialKeys: OrganizationApiKeySummary[];
 }) {
+  const { dictionary } = useWebLocale();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [keys, setKeys] = useState(args.initialKeys);
   const [name, setName] = useState("");
@@ -50,16 +52,16 @@ export function useApiKeysWorkspace(args: {
   async function handleCreateKey(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!args.canCreate) {
-      setStatus("إنشاء مفاتيح API متاح لمالك المنظمة فقط.");
+      setStatus(dictionary.settings.apiKeysCreateOwnerStatus);
       return;
     }
     if (selectedPermissions.length === 0) {
-      setStatus("اختر صلاحية واحدة على الأقل قبل إنشاء المفتاح.");
+      setStatus(dictionary.settings.apiKeysChoosePermissionStatus);
       return;
     }
 
     setIsSubmitting(true);
-    setStatus("جارٍ إنشاء المفتاح...");
+    setStatus(dictionary.settings.apiKeysCreatingStatus);
     setRevealedResult(null);
 
     try {
@@ -73,16 +75,16 @@ export function useApiKeysWorkspace(args: {
       });
       const payload = (await response.json()) as OrganizationApiKeySecretResult & { message?: string };
       if (!response.ok) {
-        setStatus(payload.message ?? "تعذر إنشاء المفتاح.");
+        setStatus(payload.message ?? dictionary.settings.apiKeysCreateFailedStatus);
         return;
       }
       setKeys((current) => [payload.key, ...current]);
       setRevealedResult(payload);
       setName("");
       setSelectedPermissionKeys(buildPresetPermissions("write").map(permissionKey));
-      setStatus("تم إنشاء المفتاح. احفظ القيمة السرية الآن لأنها لن تظهر مرة أخرى.");
+      setStatus(dictionary.settings.apiKeysCreatedStatus);
     } catch {
-      setStatus("تعذر إنشاء المفتاح الآن. حاول مرة أخرى بعد لحظة.");
+      setStatus(dictionary.settings.apiKeysCreateFailedStatus);
     } finally {
       setIsSubmitting(false);
     }
@@ -90,24 +92,24 @@ export function useApiKeysWorkspace(args: {
 
   async function handleRevoke(keyId: string) {
     if (!args.canRevoke) {
-      setStatus("إلغاء مفاتيح API متاح فقط للمالك أو المدير.");
+      setStatus(dictionary.settings.apiKeysRevokePermissionStatus);
       return;
     }
     setIsRevoking(keyId);
-    setStatus("جارٍ إلغاء المفتاح...");
+    setStatus(dictionary.settings.apiKeysRevokingStatus);
     try {
       const response = await fetch(`/api/organizations/current/api-keys/${encodeURIComponent(keyId)}`, {
         method: "DELETE",
       });
       const payload = (await response.json()) as { message?: string };
       if (!response.ok) {
-        setStatus(payload.message ?? "تعذر إلغاء المفتاح.");
+        setStatus(payload.message ?? dictionary.settings.apiKeysRevokeFailedStatus);
         return;
       }
       setKeys((current) => current.map((key) => (key.keyId === keyId ? { ...key, status: "revoked", revokedAt: Date.now() } : key)));
-      setStatus("تم إلغاء المفتاح ولن يعمل بعد الآن.");
+      setStatus(dictionary.settings.apiKeysRevokedStatus);
     } catch {
-      setStatus("تعذر إلغاء المفتاح الآن. حاول مرة أخرى بعد لحظة.");
+      setStatus(dictionary.settings.apiKeysRevokeFailedStatus);
     } finally {
       setIsRevoking(null);
     }

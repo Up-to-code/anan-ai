@@ -1,6 +1,7 @@
 "use client";
 
 import type { RefObject } from "react";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import type { ConversationDetail } from "@/server/contracts/inbox";
 import InboxMessageItem from "./InboxMessageItem";
 
@@ -23,17 +24,29 @@ export default function InboxMessageList({
     status: "accepted" | "rejected";
   }) => Promise<{ ok: true } | void | null>;
 }) {
+  const { locale, direction } = useWebLocale();
   const latestOutgoingMessageId =
     [...conversation.messages]
       .reverse()
       .find((message) => message.senderUserId === currentUserId)?.id ?? null;
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto bg-[var(--workspace-canvas)] px-4 py-5 sm:px-6">
+    <div className="min-h-0 flex-1 overflow-y-auto bg-[var(--workspace-canvas)] px-4 py-5 sm:px-6" dir={direction}>
       <div className="mx-auto flex max-w-4xl flex-col gap-4">
         <div className="flex items-center justify-center">
           <div className="rounded-full border border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)] bg-[var(--workspace-panel)] px-3 py-1 text-[11px] font-bold text-[var(--workspace-muted)]">
-            {latestOutgoingMessageId ? "محادثة نشطة" : "بداية المحادثة"} · {conversation.messages.length} رسالة
+            {latestOutgoingMessageId
+              ? locale === "fr"
+                ? "Conversation active"
+                : locale === "en"
+                  ? "Active conversation"
+                  : "محادثة نشطة"
+              : locale === "fr"
+                ? "Debut de la conversation"
+                : locale === "en"
+                  ? "Start of conversation"
+                  : "بداية المحادثة"}{" "}
+            · {conversation.messages.length} {locale === "fr" ? "messages" : locale === "en" ? "messages" : "رسالة"}
           </div>
         </div>
         {conversation.messages.map((message) => (

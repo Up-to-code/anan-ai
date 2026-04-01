@@ -25,7 +25,7 @@ export function getDashboardRangeMs(range: AdminDashboardRange) {
  * WHAT:  Normalizes an arbitrary timestamp to the start of its UTC day.
  * HOW:   Clears the hour, minute, second, and millisecond components on a cloned Date.
  */
-export function startOfDay(timestamp: number) {
+function startOfDay(timestamp: number) {
   const date = new Date(timestamp);
   date.setUTCHours(0, 0, 0, 0);
   return date.getTime();
@@ -36,7 +36,7 @@ export function startOfDay(timestamp: number) {
  * WHAT:  Formats a UTC timestamp into a `MM-DD` label.
  * HOW:   Reuses ISO formatting and slices the month/day section only.
  */
-export function formatDayLabel(timestamp: number) {
+function formatDayLabel(timestamp: number) {
   return new Date(timestamp).toISOString().slice(5, 10);
 }
 

@@ -2,6 +2,7 @@ import type { MutationCtx } from "../../../_generated/server";
 import type { Id } from "../../../_generated/dataModel";
 import type { AssistantKind, AssistantOwner, ThreadScope } from "./types";
 import { isWorkspaceKind } from "./utils";
+import { registerConversationAnalysisDraft } from "../../conversationAnalyzer/registration";
 
 function resolveThreadScope(args: {
   ownerType: "broker" | "RED" | "user";
@@ -102,6 +103,13 @@ export async function saveConversationStep(
   const userMessageId = await insertUserMessageIfEnabled(ctx, threadId, args, now);
   const assistantMessageId = await insertAssistantMessage(ctx, threadId, args, now);
   await updateThreadMetadata(ctx, threadId, args, now);
+  await registerConversationAnalysisDraft(ctx, {
+    threadId,
+    userId: args.userId,
+    ownerType: args.ownerType,
+    assistantKind: args.assistantKind,
+    timestampMs: now,
+  });
   return { threadId, userMessageId, assistantMessageId };
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { Clock3 } from "lucide-react";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { cn } from "@/lib/utils";
 import {
   dealShareMetadataSchema,
@@ -35,6 +36,7 @@ export default function InboxMessageItem({
     status: "accepted" | "rejected";
   }) => Promise<{ ok: true } | void | null>;
 }) {
+  const { locale, isRtl } = useWebLocale();
   const isMe = message.senderUserId === currentUserId;
   const isOptimistic = Boolean(
     message.metadata && "optimistic" in message.metadata && message.metadata.optimistic,
@@ -75,10 +77,13 @@ export default function InboxMessageItem({
 
     return null;
   })();
-  const timeLabel = new Date(message.createdAt).toLocaleTimeString("ar-SA", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  const timeLabel = new Date(message.createdAt).toLocaleTimeString(
+    locale === "fr" ? "fr-FR" : locale === "en" ? "en-US" : "ar-SA",
+    {
+      hour: "numeric",
+      minute: "2-digit",
+    },
+  );
   const isLatestOutgoingMessage = isMe && latestOutgoingMessageId === message.id;
   const isSeenByRecipient = Boolean(
     isLatestOutgoingMessage &&
@@ -86,17 +91,31 @@ export default function InboxMessageItem({
       otherParticipantLastReadAt >= message.createdAt,
   );
   const seenTimeLabel = isSeenByRecipient
-    ? new Date(otherParticipantLastReadAt as number).toLocaleTimeString("ar-SA", {
+    ? new Date(otherParticipantLastReadAt as number).toLocaleTimeString(
+        locale === "fr" ? "fr-FR" : locale === "en" ? "en-US" : "ar-SA",
+        {
         hour: "numeric",
         minute: "2-digit",
       })
     : null;
   const deliveryLabel = isOptimistic
-    ? "جاري الإرسال"
+    ? locale === "fr"
+      ? "Envoi..."
+      : locale === "en"
+        ? "Sending..."
+        : "جاري الإرسال"
     : isSeenByRecipient
-      ? `شوهد ${seenTimeLabel}`
+      ? locale === "fr"
+        ? `Vu ${seenTimeLabel}`
+        : locale === "en"
+          ? `Seen ${seenTimeLabel}`
+          : `شوهد ${seenTimeLabel}`
       : isLatestOutgoingMessage
-        ? "تم الإرسال"
+        ? locale === "fr"
+          ? "Sent"
+          : locale === "en"
+            ? "Sent"
+            : "تم الإرسال"
         : null;
 
   return (
@@ -125,7 +144,7 @@ export default function InboxMessageItem({
         ) : collaborationMetadata ? (
           <InboxCollaborationCard isMe={isMe} metadata={collaborationMetadata} />
         ) : (
-          <div className="whitespace-pre-wrap break-words text-sm font-medium leading-7 [overflow-wrap:anywhere]">
+          <div className={cn("whitespace-pre-wrap break-words text-sm font-medium leading-7 [overflow-wrap:anywhere]", isRtl ? "text-right" : "text-left")}>
             {message.body}
           </div>
         )}

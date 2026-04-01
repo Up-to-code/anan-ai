@@ -2,6 +2,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import WorkspaceNotificationsPage from "./page";
 
+vi.mock("next/headers", () => ({
+  cookies: vi.fn(async () => ({
+    get: () => undefined,
+  })),
+}));
+
 vi.mock("@/server/domains/workspace/notifications/service", () => ({
   listWorkspaceNotifications: vi.fn(async () => ([
     {

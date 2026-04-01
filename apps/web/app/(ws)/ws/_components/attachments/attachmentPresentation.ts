@@ -18,6 +18,7 @@ export function getAttachmentPresentationMeta(file: {
   mime?: string | null;
   name: string;
 }) {
+  const language = resolveComposerLanguage();
   const mime = file.type ?? file.mime ?? "";
   const lowerName = file.name.toLowerCase();
   const kind: AttachmentPresentationKind =
@@ -25,7 +26,14 @@ export function getAttachmentPresentationMeta(file: {
 
   return {
     kind,
-    label: kind === "image" ? "صورة" : "PDF",
+    label:
+      kind === "image"
+        ? language === "fr"
+          ? "Image"
+          : language === "en"
+            ? "Image"
+            : "صورة"
+        : "PDF",
   };
 }
 

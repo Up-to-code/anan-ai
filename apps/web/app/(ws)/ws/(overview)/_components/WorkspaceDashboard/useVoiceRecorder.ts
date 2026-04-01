@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   buildBarsFromFrequencyData,
   DEFAULT_MAX_DURATION_MS,
@@ -104,25 +104,27 @@ function useRecorderRefs(): RecorderRefs {
   const silenceStartedAtRef = useRef<number | null>(null);
   const autoStopRequestedRef = useRef(false);
   const stopInFlightRef = useRef(false);
-  const refs = useRef<RecorderRefs>({
-    streamRef,
-    mediaRecorderRef,
-    recordedChunksRef,
-    recordStartedAtRef,
-    durationIntervalRef,
-    stopTimeoutRef,
-    stopPromiseRef,
-    animationFrameRef,
-    audioContextRef,
-    analyserRef,
-    analyserDataRef,
-    hasDetectedSpeechRef,
-    silenceStartedAtRef,
-    autoStopRequestedRef,
-    stopInFlightRef,
-  });
 
-  return refs.current;
+  return useMemo(
+    () => ({
+      streamRef,
+      mediaRecorderRef,
+      recordedChunksRef,
+      recordStartedAtRef,
+      durationIntervalRef,
+      stopTimeoutRef,
+      stopPromiseRef,
+      animationFrameRef,
+      audioContextRef,
+      analyserRef,
+      analyserDataRef,
+      hasDetectedSpeechRef,
+      silenceStartedAtRef,
+      autoStopRequestedRef,
+      stopInFlightRef,
+    }),
+    [],
+  );
 }
 
 function stopTracks(stream: MediaStream | null) {

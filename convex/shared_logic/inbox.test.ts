@@ -218,6 +218,56 @@ it("markConversationRead clears only the active participant unread count", async
   expect(recipientConversations[0]?.unreadCount).toBe(0);
 });
 
+it("archives conversations per participant and restores them when unarchived", async () => {
+  const t = convexTest(schema, modules);
+  const identityA = makeIdentity({ subject: "auth-a", email: "a@example.com", name: "User A" });
+  const identityB = makeIdentity({ subject: "auth-b", email: "b@example.com", name: "User B" });
+
+  await Promise.all([
+    seedUserProfile(t, { authUserId: "auth-a", email: "a@example.com", name: "User A" }),
+    seedUserProfile(t, { authUserId: "auth-b", email: "b@example.com", name: "User B" }),
+  ]);
+
+  const conversationId = await t.withIdentity(identityA).mutation(
+    api.shared_logic.inbox.resolveDirectConversation as never,
+    { targetUserId: "auth-b" } as never,
+  );
+
+  await t.withIdentity(identityA).mutation(
+    api.shared_logic.inbox.setConversationArchived as never,
+    { conversationId, archived: true } as never,
+  );
+
+  const activeAfterArchive = await t.withIdentity(identityA).query(
+    api.shared_logic.inbox.listConversations as never,
+    {} as never,
+  ) as any[];
+  const archivedAfterArchive = await t.withIdentity(identityA).query(
+    api.shared_logic.inbox.listConversations as never,
+    { archived: true } as never,
+  ) as any[];
+  const recipientStillActive = await t.withIdentity(identityB).query(
+    api.shared_logic.inbox.listConversations as never,
+    {} as never,
+  ) as any[];
+
+  expect(activeAfterArchive).toHaveLength(0);
+  expect(archivedAfterArchive[0]?.id).toBe(conversationId);
+  expect(recipientStillActive[0]?.id).toBe(conversationId);
+
+  await t.withIdentity(identityA).mutation(
+    api.shared_logic.inbox.setConversationArchived as never,
+    { conversationId, archived: false } as never,
+  );
+
+  const activeAfterRestore = await t.withIdentity(identityA).query(
+    api.shared_logic.inbox.listConversations as never,
+    {} as never,
+  ) as any[];
+
+  expect(activeAfterRestore[0]?.id).toBe(conversationId);
+});
+
 it("forbids resolving a direct conversation with yourself", async () => {
   const t = convexTest(schema, modules);
   const identityA = makeIdentity({ subject: "auth-a", email: "a@example.com", name: "User A" });

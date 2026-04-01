@@ -9,11 +9,12 @@ describe("organizationDisplay", () => {
     expect(formatWorkspaceOrganizationName("  ANAN | Alpha --- Dev  ")).toBe("Alpha Dev");
   });
 
-  it("falls back to a safe label when the cleaned name is empty", () => {
+  it("falls back to a safe locale-aware label when the cleaned name is empty", () => {
     expect(formatWorkspaceOrganizationName("___ عنان ___")).toBe("مساحة العمل");
+    expect(formatWorkspaceOrganizationName("___ anan ___", "fr")).toBe("Espace de travail");
   });
 
-  it("builds Arabic-only subtitles for sidebar and navbar chrome", () => {
+  it("builds locale-aware subtitles for sidebar and navbar chrome", () => {
     expect(
       getWorkspaceOrganizationDisplay({
         name: "Anan | Alpha Dev",
@@ -25,6 +26,19 @@ describe("organizationDisplay", () => {
       name: "Alpha Dev",
       sidebarSubtitle: "المشاريع",
       navbarSubtitle: "مطور · نشط",
+    });
+
+    expect(
+      getWorkspaceOrganizationDisplay({
+        name: "Anan | Alpha Dev",
+        type: "red",
+        status: "active",
+        locale: "en",
+      }),
+    ).toEqual({
+      name: "Alpha Dev",
+      sidebarSubtitle: "Developer · Active",
+      navbarSubtitle: "Developer · Active",
     });
   });
 });

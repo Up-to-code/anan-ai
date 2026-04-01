@@ -1,10 +1,11 @@
 "use client";
 
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useUploadThing } from "@/lib/uploadthing";
 import type { UploadedFileReference } from "@/server/contracts/files";
-import type { BrokerPresence } from "../Visuals/BrokerPresenceChip";
-import { createInitialFormState, STEP_DEFINITIONS } from "./shared";
+import type { BrokerPresence } from "../../Visuals/BrokerPresenceChip";
+import { createInitialFormState, getStepDefinitions } from "./shared";
 import type { AgPropertyFormState } from "./shared";
 import type { AgPropertyFormProps, ProjectFormData } from "./types";
 import { getGalleryAspectClass, moveItem, resolveInitialCoverImageKey, resolveLicenseStatusUi, validateUploadSelection } from "./utils";
@@ -20,6 +21,7 @@ export function useAgPropertyForm({
   brokers = [],
   onSave,
 }: Pick<AgPropertyFormProps, "propertyId" | "initialData" | "brokers" | "onSave">) {
+  const { locale } = useWebLocale();
   const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(initialData?.brokerId ?? null);
   const [brokerSearch, setBrokerSearch] = useState("");
   const [showSafetyConfirm, setShowSafetyConfirm] = useState(false);
@@ -43,7 +45,8 @@ export function useAgPropertyForm({
   const [licenseSubmitted, setLicenseSubmitted] = useState(false);
 
   const isEditMode = Boolean(initialData);
-  const adLicenseUi = resolveLicenseStatusUi(adLicenseStatus);
+  const adLicenseUi = resolveLicenseStatusUi(adLicenseStatus, locale);
+  const stepDefinitions = getStepDefinitions(locale);
   const selectedBroker = useMemo(
     () => brokers.find((broker) => broker.id === selectedBrokerId),
     [brokers, selectedBrokerId],
@@ -61,8 +64,8 @@ export function useAgPropertyForm({
     );
   }, [brokerSearch, brokers]);
 
-  const activeStep = STEP_DEFINITIONS[currentStepIndex];
-  const isLastStep = currentStepIndex === STEP_DEFINITIONS.length - 1;
+  const activeStep = stepDefinitions[currentStepIndex];
+  const isLastStep = currentStepIndex === stepDefinitions.length - 1;
   const previewAspectClass = getGalleryAspectClass(formState.galleryAspectRatio);
   const previewObjectClass = formState.galleryDisplayMode === "fit" ? "object-contain" : "object-cover";
 
@@ -102,7 +105,7 @@ export function useAgPropertyForm({
     }
 
     setUploadError(null);
-    const validationError = validateUploadSelection(files, "image-only");
+    const validationError = validateUploadSelection(files, "image-only", locale);
     if (validationError) {
       setUploadError(validationError);
       event.target.value = "";
@@ -121,7 +124,15 @@ export function useAgPropertyForm({
         };
       });
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : "تعذر رفع الصور حالياً.");
+      setUploadError(
+        error instanceof Error
+          ? error.message
+          : locale === "fr"
+            ? "Impossible de televerser les images pour le moment."
+            : locale === "en"
+              ? "Could not upload the images right now."
+              : "تعذر رفع الصور حالياً.",
+      );
     } finally {
       event.target.value = "";
     }
@@ -134,7 +145,7 @@ export function useAgPropertyForm({
     }
     setLicenseError(null);
     setLicenseSubmitted(false);
-    const validationError = validateUploadSelection(files, "image-or-pdf");
+    const validationError = validateUploadSelection(files, "image-or-pdf", locale);
     if (validationError) {
       setLicenseError(validationError);
       event.target.value = "";
@@ -146,7 +157,15 @@ export function useAgPropertyForm({
       const nextDocs = uploaded?.map((file) => file.serverData as UploadedFileReference) ?? [];
       setLicenseDocs((current) => [...current, ...nextDocs]);
     } catch (error) {
-      setLicenseError(error instanceof Error ? error.message : "تعذر رفع مستندات الترخيص.");
+      setLicenseError(
+        error instanceof Error
+          ? error.message
+          : locale === "fr"
+            ? "Impossible de televerser les documents de licence."
+            : locale === "en"
+              ? "Could not upload the license documents."
+              : "تعذر رفع مستندات الترخيص.",
+      );
     } finally {
       event.target.value = "";
     }
@@ -157,7 +176,7 @@ export function useAgPropertyForm({
     if (files.length === 0) {
       return;
     }
-    const validationError = validateUploadSelection(files, "image-or-pdf");
+    const validationError = validateUploadSelection(files, "image-or-pdf", locale);
     if (validationError) {
       setUploadError(validationError);
       event.target.value = "";
@@ -173,7 +192,15 @@ export function useAgPropertyForm({
       }));
       setUploadError(null);
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : "تعذر رفع ملفات التصريح الخاص.");
+      setUploadError(
+        error instanceof Error
+          ? error.message
+          : locale === "fr"
+            ? "Impossible de televerser les fichiers d'autorisation privee."
+            : locale === "en"
+              ? "Could not upload the private permit files."
+              : "تعذر رفع ملفات التصريح الخاص.",
+      );
     } finally {
       event.target.value = "";
     }
@@ -181,15 +208,33 @@ export function useAgPropertyForm({
 
   const handleLicenseSubmit = async () => {
     if (!propertyId) {
-      setLicenseError("الرجاء حفظ المشروع أولاً ثم إرسال طلب الترخيص.");
+      setLicenseError(
+        locale === "fr"
+          ? "Enregistrez d'abord le projet avant d'envoyer la demande de licence."
+          : locale === "en"
+            ? "Save the project first, then submit the license request."
+            : "الرجاء حفظ المشروع أولاً ثم إرسال طلب الترخيص.",
+      );
       return;
     }
     if (!formState.adLicenseNumber.trim()) {
-      setLicenseError("الرجاء إدخال رقم رخصة الإعلان العقاري.");
+      setLicenseError(
+        locale === "fr"
+          ? "Veuillez saisir le numero de licence publicitaire."
+          : locale === "en"
+            ? "Please enter the real estate ad license number."
+            : "الرجاء إدخال رقم رخصة الإعلان العقاري.",
+      );
       return;
     }
     if (licenseDocs.length === 0) {
-      setLicenseError("الرجاء رفع مستند واحد على الأقل لإرسال الطلب.");
+      setLicenseError(
+        locale === "fr"
+          ? "Veuillez televerser au moins un document avant l'envoi."
+          : locale === "en"
+            ? "Please upload at least one document before submitting."
+            : "الرجاء رفع مستند واحد على الأقل لإرسال الطلب.",
+      );
       return;
     }
 
@@ -209,11 +254,26 @@ export function useAgPropertyForm({
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
-        throw new Error(payload?.message ?? "تعذر إرسال الطلب.");
+        throw new Error(
+          payload?.message ??
+            (locale === "fr"
+              ? "Impossible d'envoyer la demande."
+              : locale === "en"
+                ? "Could not submit the request."
+                : "تعذر إرسال الطلب."),
+        );
       }
       setLicenseSubmitted(true);
     } catch (error) {
-      setLicenseError(error instanceof Error ? error.message : "تعذر إرسال الطلب.");
+      setLicenseError(
+        error instanceof Error
+          ? error.message
+          : locale === "fr"
+            ? "Impossible d'envoyer la demande."
+            : locale === "en"
+              ? "Could not submit the request."
+              : "تعذر إرسال الطلب.",
+      );
     } finally {
       setLicenseSubmitting(false);
     }

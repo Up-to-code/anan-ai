@@ -2,12 +2,22 @@
 
 import { useState } from "react";
 import type { OrganizationSummary } from "@/server/contracts/organizations";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { cn } from "@/lib/utils";
 
-/**
- * WHY:   Organization settings need one focused client controller for renaming the current organization.
- * WHAT:  Renders the real current-organization form and posts changes to the gateway mutation endpoint.
- * HOW:   Keeps submission state local while the surrounding settings page stays server rendered.
- */
+function resolveOrganizationStatusLabel(
+  status: OrganizationSummary["status"],
+  locale: "ar" | "en" | "fr",
+) {
+  if (status === "active") {
+    return locale === "fr" ? "Actif" : locale === "en" ? "Active" : "نشط";
+  }
+  if (status === "pending") {
+    return locale === "fr" ? "En attente" : locale === "en" ? "Pending" : "قيد الانتظار";
+  }
+  return locale === "fr" ? "Indisponible" : locale === "en" ? "Unavailable" : "غير متوفر";
+}
+
 export default function OrganizationSettingsWorkspace({
   organization,
   canManage,
@@ -15,6 +25,7 @@ export default function OrganizationSettingsWorkspace({
   organization: OrganizationSummary | null;
   canManage: boolean;
 }) {
+  const { locale, dictionary, direction, isRtl } = useWebLocale();
   const [name, setName] = useState(organization?.name ?? "");
   const [description, setDescription] = useState(organization?.description ?? "");
   const [website, setWebsite] = useState(organization?.website ?? "");
@@ -24,130 +35,155 @@ export default function OrganizationSettingsWorkspace({
 
   if (!organization) {
     return (
-      <section className="rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
-        <h2 className="text-lg font-semibold text-slate-950 dark:text-slate-100">بيانات المنظمة</h2>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">لا توجد منظمة مرتبطة بالحساب الحالي.</p>
+      <section className="rounded-3xl border border-border bg-card p-6 shadow-sm" dir={direction}>
+        <h2 className="text-lg font-bold text-foreground">{dictionary.settings.organizationSettingsTitle}</h2>
+        <p className="mt-2 text-sm text-muted-foreground">{dictionary.settings.organizationNoOrganization}</p>
       </section>
     );
   }
 
+  const summaryItems = [
+    { label: dictionary.settings.organizationSlug, value: organization.slug, valueDir: "ltr" as const },
+    { label: dictionary.settings.organizationStatus, value: resolveOrganizationStatusLabel(organization.status, locale) },
+    {
+      label: dictionary.settings.organizationType,
+      value: organization.type === "red" ? dictionary.settings.organizationTypeDeveloper : dictionary.settings.organizationTypeBroker,
+    },
+    {
+      label: dictionary.settings.organizationVerified,
+      value: organization.isVerified ? dictionary.settings.organizationVerifiedYes : dictionary.settings.organizationVerifiedNo,
+    },
+  ];
+
   return (
-    <section className="max-w-3xl space-y-8 pb-12">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-lg font-bold text-foreground">بيانات المنظمة</h2>
-        <p className="text-[13px] font-medium text-muted-foreground">
-          حدّث اسم المنظمة وبيانات التواصل الأساسية الخاصة بها.
-        </p>
-      </div>
-
-      <dl className="grid gap-4 rounded-xl border border-border bg-card p-4 md:grid-cols-2">
-        <div>
-          <dt className="text-[12px] font-semibold text-muted-foreground">المعرف</dt>
-          <dd className="mt-1 text-sm font-bold text-foreground">{organization.slug}</dd>
-        </div>
-        <div>
-          <dt className="text-[12px] font-semibold text-muted-foreground">الحالة</dt>
-          <dd className="mt-1 text-sm font-bold text-foreground">
-            {organization.status === "active" ? "نشط" : organization.status ?? "غير متوفر"}
-          </dd>
-        </div>
-      </dl>
-      
-      <form
-        className="space-y-6"
-        onSubmit={async (event) => {
-          event.preventDefault();
-          if (!canManage) {
-            setStatus("صلاحية المدير مطلوبة لتعديل بيانات المنظمة.");
-            return;
-          }
-
-          setIsSaving(true);
-          setStatus("جاري حفظ بيانات المنظمة...");
-          const response = await fetch("/api/organizations/current", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name,
-              description: description.trim().length > 0 ? description : undefined,
-              website: website.trim().length > 0 ? website : undefined,
-              contactEmail: contactEmail.trim().length > 0 ? contactEmail : undefined,
-            }),
-          });
-          const payload = (await response.json()) as { message?: string };
-
-          if (!response.ok) {
-            setStatus(payload.message ?? "تعذر حفظ بيانات المنظمة.");
-            setIsSaving(false);
-            return;
-          }
-
-          setStatus("تم تحديث بيانات المنظمة.");
-          setIsSaving(false);
-        }}
-      >
-        <div className="space-y-2">
-          <label className="text-[13px] font-semibold text-foreground">الاسم</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            disabled={!canManage || isSaving}
-            className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-[13px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-[13px] font-semibold text-foreground">نبذة</label>
-          <textarea
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            disabled={!canManage || isSaving}
-            rows={4}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-[13px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          />
-          <p className="text-[12px] font-medium text-muted-foreground">اختياري، ويستخدم للتعريف السريع داخل مساحة العمل.</p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-2">
-            <label className="text-[13px] font-semibold text-foreground">الموقع الإلكتروني</label>
-            <input
-              type="text"
-              value={website}
-              onChange={(event) => setWebsite(event.target.value)}
-              disabled={!canManage || isSaving}
-              placeholder="https://example.com"
-              className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-[13px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-            />
+    <section className="space-y-6 pb-12" dir={direction}>
+      <div className="grid gap-5 xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.2fr)]">
+        <div className="rounded-[28px] border border-border/70 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--workspace-panel)_95%,transparent)_0%,color-mix(in_srgb,var(--workspace-elevated)_98%,transparent)_100%)] p-6 shadow-sm xl:sticky xl:top-6 xl:self-start">
+          <div className={cn("space-y-1.5", isRtl ? "text-right" : "text-left")}>
+            <h2 className="text-lg font-bold text-foreground">{dictionary.settings.organizationIdentityTitle}</h2>
+            <p className="text-sm text-muted-foreground">{dictionary.settings.organizationIdentityDescription}</p>
           </div>
-          <div className="space-y-2">
-            <label className="text-[13px] font-semibold text-foreground">بريد التواصل</label>
-            <input
-              type="email"
-              value={contactEmail}
-              onChange={(event) => setContactEmail(event.target.value)}
-              disabled={!canManage || isSaving}
-              placeholder="contact@example.com"
-              className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-[13px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-            />
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            {summaryItems.map((item) => (
+              <div key={item.label} className="rounded-[22px] border border-border/70 bg-background/80 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">{item.label}</div>
+                <div
+                  className="mt-2 text-sm font-black tracking-tight text-foreground"
+                  dir={item.valueDir ?? direction}
+                >
+                  {item.value}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-border pt-6">
-          <div aria-live="polite" className="text-[13px] font-medium text-muted-foreground">
-            {status}
+        <div className="rounded-[28px] border border-border/70 bg-card p-6 shadow-sm sm:p-7">
+          <div className={cn("space-y-1.5", isRtl ? "text-right" : "text-left")}>
+            <h3 className="text-lg font-bold text-foreground">{dictionary.settings.organizationSettingsTitle}</h3>
+            <p className="text-sm text-muted-foreground">{dictionary.settings.organizationSettingsDescription}</p>
           </div>
-          <button
-            type="submit"
-            disabled={!canManage || isSaving}
-            className="inline-flex items-center justify-center rounded-xl bg-foreground px-5 py-2.5 text-[13px] font-bold text-background transition hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+
+          <form
+            className="mt-6 space-y-6"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              if (!canManage) {
+                setStatus(dictionary.settings.organizationManagerRequired);
+                return;
+              }
+
+              setIsSaving(true);
+              setStatus(dictionary.settings.organizationSaving);
+              const response = await fetch("/api/organizations/current", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  name,
+                  description: description.trim().length > 0 ? description : undefined,
+                  website: website.trim().length > 0 ? website : undefined,
+                  contactEmail: contactEmail.trim().length > 0 ? contactEmail : undefined,
+                }),
+              });
+              const payload = (await response.json()) as { message?: string };
+
+              if (!response.ok) {
+                setStatus(payload.message ?? dictionary.settings.organizationSaveFailed);
+                setIsSaving(false);
+                return;
+              }
+
+              setStatus(dictionary.settings.organizationSaved);
+              setIsSaving(false);
+            }}
           >
-            {isSaving ? "جاري الحفظ..." : "حفظ التعديلات"}
-          </button>
-        </div>
-      </form>
-    </section>
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-[13px] font-semibold text-foreground">{dictionary.settings.organizationNameLabel}</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  disabled={!canManage || isSaving}
+                  className="w-full rounded-[18px] border border-border/70 bg-background/80 px-4 py-3 text-[14px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </div>
 
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-[13px] font-semibold text-foreground">{dictionary.settings.organizationDescriptionLabel}</label>
+                <textarea
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  disabled={!canManage || isSaving}
+                  rows={4}
+                  className="w-full rounded-[18px] border border-border/70 bg-background/80 px-4 py-3 text-[14px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                <p className="text-[12px] font-medium text-muted-foreground">{dictionary.settings.organizationDescriptionHint}</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[13px] font-semibold text-foreground">{dictionary.settings.organizationWebsiteLabel}</label>
+                <input
+                  type="text"
+                  value={website}
+                  onChange={(event) => setWebsite(event.target.value)}
+                  disabled={!canManage || isSaving}
+                  placeholder="https://example.com"
+                  dir="ltr"
+                  className="w-full rounded-[18px] border border-border/70 bg-background/80 px-4 py-3 text-[14px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[13px] font-semibold text-foreground">{dictionary.settings.organizationEmailLabel}</label>
+                <input
+                  type="email"
+                  value={contactEmail}
+                  onChange={(event) => setContactEmail(event.target.value)}
+                  disabled={!canManage || isSaving}
+                  placeholder="contact@example.com"
+                  dir="ltr"
+                  className="w-full rounded-[18px] border border-border/70 bg-background/80 px-4 py-3 text-[14px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border/70 pt-5">
+              <div aria-live="polite" className="min-h-[20px] text-[13px] font-medium text-muted-foreground">
+                {status}
+              </div>
+              <button
+                type="submit"
+                disabled={!canManage || isSaving}
+                className="inline-flex items-center justify-center rounded-[18px] bg-[var(--workspace-highlight)] px-5 py-3 text-[13px] font-bold text-white shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isSaving ? dictionary.settings.organizationSaving : dictionary.settings.organizationSave}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
   );
 }

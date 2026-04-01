@@ -14,6 +14,7 @@ import {
   COMPOSER_ATTACHMENT_ACCEPT,
   validateSupportedAttachmentFiles,
 } from "@/app/(ws)/ws/_components/attachments/attachmentPresentation";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { cn } from "@/lib/utils";
 import { useUploadThing } from "@/lib/uploadthing";
 import type { UploadedFileReference } from "@/server/contracts/files";
@@ -52,13 +53,13 @@ async function executeShareAction(params: {
   onShareProject: (propertyId: string, note?: string) => Promise<void>;
 }): Promise<ShareActionResult> {
   if (params.activeAction === "file") {
-    if (!params.selectedFile) return { error: "اختر ملفًا قبل الإرسال.", didMutate: false };
+    if (!params.selectedFile) return { error: "MISSING_FILE", didMutate: false };
     await params.onShareFile(params.selectedFile, params.shareFileNote.trim() || undefined);
     return { error: null, didMutate: true };
   }
 
   if (params.activeAction === "project") {
-    if (!params.selectedProjectId) return { error: "اختر عقارًا أو مشروعًا للمشاركة.", didMutate: false };
+    if (!params.selectedProjectId) return { error: "MISSING_PROJECT", didMutate: false };
     await params.onShareProject(params.selectedProjectId, params.projectNote.trim() || undefined);
     return { error: null, didMutate: true };
   }
@@ -152,6 +153,7 @@ export default function InboxComposer({
   projectOptions: ComposerProjectOption[];
   sendError?: string | null;
 }) {
+  const { dictionary, isRtl, direction } = useWebLocale();
   const [draft, setDraft] = useState(initialValue);
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -210,7 +212,7 @@ export default function InboxComposer({
       await onSend(message);
       setDraft("");
     } catch {
-      setLocalError("تعذر إرسال الرسالة. يمكنك المحاولة مرة أخرى.");
+      setLocalError(dictionary.inbox.sendMessageFailed);
     }
   };
 
@@ -231,7 +233,7 @@ export default function InboxComposer({
       const uploaded = await startUpload([files[0]]);
       setSelectedFile((uploaded?.[0]?.serverData as UploadedFileReference | undefined) ?? null);
     } catch (error) {
-      setLocalError(error instanceof Error ? error.message : "تعذر رفع الملف.");
+      setLocalError(error instanceof Error ? error.message : dictionary.inbox.fileUploadFailed);
     } finally {
       event.target.value = "";
     }
@@ -258,7 +260,7 @@ export default function InboxComposer({
         attachments: [...current.attachments, ...nextAttachments],
       }));
     } catch (error) {
-      setLocalError(error instanceof Error ? error.message : "تعذر رفع مرفقات العرض.");
+      setLocalError(error instanceof Error ? error.message : dictionary.inbox.offerUploadFailed);
     } finally {
       event.target.value = "";
     }
@@ -290,7 +292,13 @@ export default function InboxComposer({
       });
 
       if (result.error) {
-        setLocalError(result.error);
+        setLocalError(
+          result.error === "MISSING_FILE"
+            ? dictionary.inbox.chooseFileFirst
+            : result.error === "MISSING_PROJECT"
+              ? dictionary.inbox.chooseProjectFirst
+              : result.error,
+        );
         return;
       }
 
@@ -304,7 +312,7 @@ export default function InboxComposer({
 
   const handleSubmitOffer = async () => {
     if (!offerForm.propertyId || !offerForm.price.trim()) {
-      setLocalError("اختر عقارًا وحدد السعر قبل إرسال العرض.");
+      setLocalError(dictionary.inbox.chooseProjectAndPriceFirst);
       return;
     }
 
@@ -367,29 +375,29 @@ export default function InboxComposer({
 
   return (
     <>
-      <div className="border-t border-border/40 bg-background px-4 py-8 transition-all sm:px-6">
+      <div className="border-t border-border/40 bg-background px-4 py-8 transition-all sm:px-6" dir={direction}>
         <div className="mx-auto max-w-4xl">
           {sendError || localError ? (
-            <div className="mb-4 rounded-3xl border border-red-500/10 bg-red-50/50 backdrop-blur-xl px-6 py-4 text-right text-[13px] font-bold text-red-600 dark:bg-red-500/10 dark:text-red-400 shadow-sm transition-all duration-500">
+            <div className={cn("mb-4 rounded-3xl border border-red-500/10 bg-red-50/50 backdrop-blur-xl px-6 py-4 text-[13px] font-bold text-red-600 dark:bg-red-500/10 dark:text-red-400 shadow-sm transition-all duration-500", isRtl ? "text-right" : "text-left")}>
               {sendError || localError}
             </div>
           ) : null}
 
           {canUseBusinessActions ? (
-            <div className="mb-6 flex flex-wrap flex-row-reverse gap-2">
+            <div className={cn("mb-6 flex flex-wrap gap-2", isRtl ? "flex-row-reverse" : "flex-row")}>
               <ShareButton
                 icon={FileText}
-                label="مشاركة ملف"
+                label={dictionary.inbox.shareFile}
                 onClick={() => onShareActionChange("file")}
               />
               <ShareButton
                 icon={ShieldCheck}
-                label="إرسال عرض خاص"
+                label={dictionary.inbox.sharePrivateOffer}
                 onClick={() => onShareActionChange("offer")}
               />
               <ShareButton
                 icon={Building2}
-                label="مشاركة مشروع"
+                label={dictionary.inbox.shareProject}
                 onClick={() => onShareActionChange("project")}
               />
             </div>
@@ -447,7 +455,7 @@ export default function InboxComposer({
             {isDraggingFiles ? (
               <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-blue-500/8 backdrop-blur-[2px]">
                 <div className="rounded-full border border-blue-300 bg-white px-5 py-2 text-[12px] font-black text-blue-700 shadow-sm dark:border-blue-500/30 dark:bg-slate-950 dark:text-blue-200">
-                  أفلت صورة أو PDF هنا لإرفاقه بسرعة
+                  {dictionary.inbox.dropAttachment}
                 </div>
               </div>
             ) : null}
@@ -457,16 +465,17 @@ export default function InboxComposer({
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="اكتب رسالتك لوسيط العقارات..."
+              placeholder={dictionary.inbox.composerPlaceholder}
               disabled={isSending}
-              dir="rtl"
+              dir={isRtl ? "rtl" : "ltr"}
               className={cn(
                 "w-full resize-none bg-transparent px-8 py-6 text-[15px] font-semibold leading-relaxed outline-none ring-0 appearance-none transition-colors",
                 "text-slate-900 placeholder:text-slate-400/50",
-                "dark:text-white dark:[-webkit-text-fill-color:white] dark:placeholder:text-white/20 caret-current"
+                "dark:text-white dark:[-webkit-text-fill-color:white] dark:placeholder:text-white/20 caret-current",
+                isRtl ? "text-right" : "text-left",
               )}
             />
-            <div className="flex flex-wrap flex-row-reverse items-center justify-between gap-3 px-4 pb-4 pt-1">
+            <div className={cn("flex flex-wrap items-center justify-between gap-3 px-4 pb-4 pt-1", isRtl ? "flex-row-reverse" : "flex-row")}>
               <button
                 type="button"
                 onClick={() => void handleSubmit()}
@@ -479,10 +488,10 @@ export default function InboxComposer({
                 )}
               >
                 {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
-                <span>{isSending ? "جاري الإرسال" : "إرسال"}</span>
+                <span>{isSending ? dictionary.inbox.sending : dictionary.inbox.send}</span>
               </button>
 
-              <div className="flex flex-row-reverse items-center gap-1.5 pr-1">
+              <div className={cn("flex items-center gap-1.5", isRtl ? "flex-row-reverse pr-1" : "flex-row pl-1")}>
                 <button
                   type="button"
                   className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition-all duration-500 hover:bg-slate-100/50 hover:text-slate-900 dark:text-white/30 dark:hover:bg-white/5 dark:hover:text-white"
@@ -493,7 +502,7 @@ export default function InboxComposer({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition-all duration-500 hover:bg-slate-100/50 hover:text-slate-900 dark:text-white/30 dark:hover:bg-white/5 dark:hover:text-white"
-                  aria-label="إرفاق ملف"
+                  aria-label={dictionary.inbox.attachFile}
                 >
                   <Paperclip className="h-5 w-5" />
                 </button>

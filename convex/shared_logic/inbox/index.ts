@@ -27,5 +27,6 @@ export {
   bootstrapOfferConversation,
   markConversationRead,
   resolveDirectConversation,
+  setConversationArchived,
   sendConversationMessage,
 } from "./mutations";

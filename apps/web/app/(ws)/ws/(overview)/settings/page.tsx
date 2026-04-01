@@ -1,7 +1,10 @@
+import { cookies } from "next/headers";
 import { getWorkspaceOrganizationTeam } from "../../_lib/organizationTeam";
 import { listCurrentOrganizationApiKeysForCurrentUser } from "@/server/domains/auth/organizationApiKeys/service";
 import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
 import type { OrganizationApiKeySummary } from "@/server/contracts/organizationApiKeys";
+import { getWebDictionary } from "@/lib/i18n";
+import { isRtlLocale, resolveLocale, WEB_LOCALE_COOKIE } from "@/lib/locale";
 import SettingsHeader from "./_components/SettingsHeader";
 import ApiKeysWorkspace from "./_components/ApiKeysWorkspace";
 import OrganizationSettingsWorkspace from "./_components/OrganizationSettingsWorkspace";
@@ -11,18 +14,11 @@ import OrganizationVerificationWorkspace from "./_components/OrganizationVerific
 
 type SettingsTabKey = "org" | "verification" | "members" | "api-keys";
 
-const settingsTabs = [
-  { key: "org", label: "المنظمة" },
-  { key: "verification", label: "التوثيق" },
-  { key: "members", label: "الأعضاء والدعوات" },
-  { key: "api-keys", label: "مفاتيح API" },
-] as const;
-
-function roleLabelForMembership(role: string | null) {
-  if (role === "manager") return "مدير";
-  if (role === "viewer") return "مشاهد";
-  if (role === "member") return "عضو";
-  return "غير متوفر";
+function roleLabelForMembership(role: string | null, locale: ReturnType<typeof getWebDictionary>) {
+  if (role === "manager") return locale.settings.manager;
+  if (role === "viewer") return locale.settings.viewer;
+  if (role === "member") return locale.settings.member;
+  return locale.settings.unavailable;
 }
 
 function OrganizationTabSection({
@@ -46,11 +42,15 @@ function MembersTabSection(args: {
   canManage: boolean;
   hasOrganization: boolean;
   roleLabel: string;
+  summaryLabel: string;
 }) {
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-300">
       <div className="text-sm text-slate-500">
-        {args.members.length} أعضاء، {args.invites.length} دعوات، وصلاحيتك الحالية: {args.roleLabel}
+        {args.summaryLabel
+          .replace("{members}", String(args.members.length))
+          .replace("{invites}", String(args.invites.length))
+          .replace("{roleLabel}", args.roleLabel)}
       </div>
       <div>
         <MembersWorkspace
@@ -71,11 +71,14 @@ function ApiKeysTabSection(args: {
   canRevoke: boolean;
   canView: boolean;
   hasOrganization: boolean;
+  summaryCreate: string;
+  summaryRevoke: string;
+  summaryNoAccess: string;
 }) {
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-300">
       <div className="text-sm text-slate-500">
-        {args.initialKeys.length} مفاتيح محفوظة. {args.canCreate ? "يمكنك إنشاء وإلغاء المفاتيح من هنا." : args.canRevoke ? "يمكنك مراجعة المفاتيح وإلغاؤها من هنا." : "لا تملك صلاحية إدارة هذا القسم."}
+        {args.initialKeys.length}. {args.canCreate ? args.summaryCreate : args.canRevoke ? args.summaryRevoke : args.summaryNoAccess}
       </div>
       <ApiKeysWorkspace
         initialKeys={args.initialKeys}
@@ -119,6 +122,9 @@ function VerificationTabSection(args: {
 export default async function WorkspaceSettingsPage(props: {
   searchParams: Promise<{ tab?: string }>;
 }) {
+  const cookieStore = await cookies();
+  const locale = resolveLocale(cookieStore.get(WEB_LOCALE_COOKIE)?.value);
+  const dictionary = getWebDictionary(locale);
   const searchParams = await props.searchParams;
   const currentTab: SettingsTabKey =
     searchParams.tab === "members" || searchParams.tab === "api-keys" || searchParams.tab === "verification"
@@ -130,7 +136,7 @@ export default async function WorkspaceSettingsPage(props: {
   const canViewApiKeys = currentMembershipRole === "manager";
   const canCreateApiKeys = currentTenantRole === "owner";
   const canRevokeApiKeys = currentMembershipRole === "manager";
-  const roleLabel = roleLabelForMembership(currentMembershipRole);
+  const roleLabel = roleLabelForMembership(currentMembershipRole, dictionary);
   const hasOrganization = Boolean(organization && currentMembershipRole);
   const complianceRuleset = hasOrganization ? await getComplianceRulesetForCurrentOrg() : null;
   const initialApiKeys =
@@ -139,13 +145,21 @@ export default async function WorkspaceSettingsPage(props: {
       : [];
 
   return (
-    <div className="space-y-8 p-6 lg:p-10" dir="rtl">
+    <div className="mx-auto min-h-max w-full max-w-7xl space-y-8 p-6 pb-24 lg:min-h-full lg:p-10 lg:pb-28" dir={isRtlLocale(locale) ? "rtl" : "ltr"}>
       <SettingsHeader
-        title="الإعدادات"
-        description="بيانات المنظمة والأعضاء ومفاتيح الربط."
+        title={dictionary.settings.title}
+        description={dictionary.settings.description}
       />
 
-      <SettingsTabs tabs={settingsTabs} defaultTab="org" />
+      <SettingsTabs
+        tabs={[
+          { key: "org", label: dictionary.settings.organization },
+          { key: "verification", label: dictionary.settings.verification },
+          { key: "members", label: dictionary.settings.membersAndInvites },
+          { key: "api-keys", label: dictionary.settings.apiKeys },
+        ]}
+        defaultTab="org"
+      />
 
       {currentTab === "org" ? (
         <OrganizationTabSection organization={organization} canManage={canManage} />
@@ -165,6 +179,9 @@ export default async function WorkspaceSettingsPage(props: {
           canRevoke={canRevokeApiKeys}
           canView={canViewApiKeys}
           hasOrganization={hasOrganization}
+          summaryCreate={dictionary.settings.apiKeysSummaryCreate}
+          summaryRevoke={dictionary.settings.apiKeysSummaryRevoke}
+          summaryNoAccess={dictionary.settings.apiKeysSummaryNoAccess}
         />
       ) : (
         <MembersTabSection
@@ -174,6 +191,7 @@ export default async function WorkspaceSettingsPage(props: {
           canManage={canManage}
           hasOrganization={hasOrganization}
           roleLabel={roleLabel}
+          summaryLabel={dictionary.settings.membersSummary}
         />
       )}
     </div>

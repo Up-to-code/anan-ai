@@ -9,6 +9,8 @@ import OrganizationMemberCard from "../../../_components/Visuals/OrganizationMem
 import type { OrganizationInviteDisplay, OrganizationMemberDisplay } from "../../../_lib/entities";
 import { getOrganizationMemberRoleLabel } from "../../../_lib/organizationMembers";
 import { cn } from "@/lib/utils";
+import { formatWebCopy } from "@/lib/i18n";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 
 const roles = ["manager", "member", "viewer"] as const;
 
@@ -17,9 +19,10 @@ function queueStatusClear(setStatus: (value: string | null) => void) {
 }
 
 function StatusNotice({ status }: { status: string | null }) {
+  const { direction } = useWebLocale();
   if (!status) return null;
   return (
-    <div className="rounded-xl border border-border bg-muted/50 px-4 py-3 text-[13px] font-bold text-foreground" dir="rtl">
+    <div className="rounded-xl border border-border bg-muted/50 px-4 py-3 text-[13px] font-bold text-foreground" dir={direction}>
       {status}
     </div>
   );
@@ -76,13 +79,16 @@ function InviteRow(args: {
   canManage: boolean;
   onCancelInvite: (invite: OrganizationInviteDisplay) => Promise<void>;
 }) {
+  const { dictionary, direction, isRtl } = useWebLocale();
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3 last:border-0" dir="rtl">
+    <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3 last:border-0" dir={direction}>
       <div className="min-w-0 flex-1">
         <div className="truncate text-[14px] font-bold text-foreground" dir="ltr">
           {args.invite.email}
         </div>
-        <div className="mt-0.5 text-[11px] text-muted-foreground">تنتهي {args.invite.expiresLabel}</div>
+        <div className={cn("mt-0.5 text-[11px] text-muted-foreground", isRtl ? "text-right" : "text-left")}>
+          {formatWebCopy(dictionary.settings.inviteExpires, { date: args.invite.expiresLabel })}
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400">
@@ -94,7 +100,7 @@ function InviteRow(args: {
             onClick={() => args.onCancelInvite(args.invite)}
             className="rounded-lg px-3 py-1.5 text-[11px] font-bold text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
           >
-            إلغاء
+            {dictionary.inbox.cancel}
           </button>
         ) : null}
       </div>
@@ -115,6 +121,7 @@ export default function MembersWorkspace({
   hasOrganization: boolean;
   organizationType: OrganizationSummary["type"] | null | undefined;
 }) {
+  const { dictionary, direction } = useWebLocale();
   const [members, setMembers] = useState(initialMembers);
   const [pendingInvites, setPendingInvites] = useState(invites);
   const [status, setStatus] = useState<string | null>(null);
@@ -122,7 +129,7 @@ export default function MembersWorkspace({
 
   const handleRoleChange = async (member: OrganizationMemberDisplay, role: OrganizationMemberDisplay["role"]) => {
     if (!canManage || member.role === role) return;
-    setStatus("جاري تحديث الدور...");
+    setStatus(dictionary.settings.roleUpdateInProgress);
     const response = await fetch(`/api/workspace/team-members/${member.membershipId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -130,47 +137,54 @@ export default function MembersWorkspace({
     });
     if (!response.ok) {
       const payload = (await response.json()) as { message?: string };
-      setStatus(payload.message ?? "تعذر تحديث الدور.");
+      setStatus(payload.message ?? dictionary.settings.roleUpdateFailed);
       return;
     }
     setMembers((current) => current.map((entry) => (entry.id === member.id ? { ...entry, role } : entry)));
-    setStatus(`تم تغيير دور ${member.name} إلى ${getOrganizationMemberRoleLabel(role)}.`);
+    setStatus(
+      formatWebCopy(dictionary.settings.roleUpdated, {
+        name: member.name,
+        role: getOrganizationMemberRoleLabel(role),
+      }),
+    );
     queueStatusClear(setStatus);
   };
 
   const handleCancelInvite = async (invite: OrganizationInviteDisplay) => {
-    setStatus("جاري إلغاء الدعوة...");
+    setStatus(dictionary.settings.inviteCancelInProgress);
     const response = await fetch(`/api/workspace/team-invites/${invite.id}`, { method: "DELETE" });
     if (!response.ok) {
       const payload = (await response.json()) as { message?: string };
-      setStatus(payload.message ?? "تعذر إلغاء الدعوة.");
+      setStatus(payload.message ?? dictionary.settings.inviteCancelFailed);
       return;
     }
     setPendingInvites((current) => current.filter((entry) => entry.id !== invite.id));
-    setStatus("تم إلغاء الدعوة.");
+    setStatus(dictionary.settings.inviteCanceled);
     queueStatusClear(setStatus);
   };
 
   return (
-    <div className="space-y-6 pb-12" dir="rtl">
+    <div className="space-y-6 pb-12" dir={direction}>
       <StatusNotice status={status} />
 
       {/* Section header + invite button */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-foreground">أعضاء المنظمة ({members.length})</h2>
+          <h2 className="text-base font-bold text-foreground">
+            {formatWebCopy(dictionary.settings.membersTitle, { count: members.length })}
+          </h2>
           {canManage ? (
             <Dialog.Root open={isInviteOpen} onOpenChange={setIsInviteOpen}>
               <Dialog.Trigger className="inline-flex h-9 items-center gap-2 rounded-xl bg-foreground px-4 text-[12px] font-bold text-background transition hover:opacity-90 active:scale-[0.98]">
                 <Plus className="h-3.5 w-3.5" />
-                دعوة عضو
+                {dictionary.settings.inviteMember}
               </Dialog.Trigger>
               <Dialog.Portal>
                 <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-all duration-300 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
                 <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl bg-background shadow-xl transition-all duration-300 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
                   <div className="flex flex-col">
-                    <div className="flex items-center justify-between border-b border-border p-5" dir="rtl">
-                      <Dialog.Title className="text-base font-bold text-foreground">دعوة عضو جديد</Dialog.Title>
+                    <div className="flex items-center justify-between border-b border-border p-5" dir={direction}>
+                      <Dialog.Title className="text-base font-bold text-foreground">{dictionary.settings.inviteMemberTitle}</Dialog.Title>
                       <Dialog.Close className="flex rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground">
                         <X className="h-4 w-4" />
                       </Dialog.Close>
@@ -185,7 +199,7 @@ export default function MembersWorkspace({
           ) : null}
         </div>
         <p className="text-xs font-medium text-muted-foreground">
-          لا يمكن خفض آخر مدير في المنظمة. احتفظ دائماً بمدير واحد على الأقل قبل تعديل الأدوار.
+          {dictionary.settings.managerGuardrail}
         </p>
       </div>
 
@@ -205,7 +219,9 @@ export default function MembersWorkspace({
       {/* Pending invites */}
       {pendingInvites.length > 0 ? (
         <div className="space-y-3 pt-2">
-          <h2 className="text-base font-bold text-foreground">الدعوات المعلقة ({pendingInvites.length})</h2>
+          <h2 className="text-base font-bold text-foreground">
+            {formatWebCopy(dictionary.settings.pendingInvitesTitle, { count: pendingInvites.length })}
+          </h2>
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             {pendingInvites.map((invite) => (
               <InviteRow key={invite.id} invite={invite} canManage={canManage} onCancelInvite={handleCancelInvite} />

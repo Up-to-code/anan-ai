@@ -25,9 +25,12 @@ orchestrate(input)
   → Promise.allSettled(agents)  ← parallel execution
   → collectResults(settled)     ← from resultMerger.ts
   → mergeResults(ctx, outputs)  ← from resultMerger.ts
-  → trainer definition via factory (bg)
   → return OrchestrateOutput
 ```
+
+## Batch Analysis
+Conversation analysis now runs outside this orchestrator through the dedicated
+daily noon analyzer under `convex/ai_zone/conversationAnalyzer*`.
 
 ## How to Edit
 - **Add a team/agent**: Edit `orchestrationConfig.ts`

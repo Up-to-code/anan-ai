@@ -1,9 +1,12 @@
+import { cookies } from "next/headers";
 import OrganizationOnboarding from "../_components/OrganizationOnboarding";
 import WorkspaceDashboard from "./_components/WorkspaceDashboard";
 import { requireWorkspaceData } from "../_lib/workspaceData";
 import { getAnanProThread } from "@/server/domains/workspace/ananPro/service";
 import { listIncomingOrganizationInvitesForCurrentUser } from "@/server/domains/auth/organizations/service";
 import { normalizeDomainError } from "@/server/contracts/errors";
+import { getWebDictionary } from "@/lib/i18n";
+import { resolveLocale, WEB_LOCALE_COOKIE } from "@/lib/locale";
 import type { AssistantInitialRouteState } from "./_components/WorkspaceDashboard/useWorkspaceAssistant";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +25,8 @@ type WorkspacePageProps = {
  * HOW:   Forces dynamic rendering (session/headers), requires auth before loading optional thread state, and avoids noisy unauthorized errors.
  */
 export default async function WorkspacePage({ searchParams }: WorkspacePageProps) {
+  const cookieStore = await cookies();
+  const dictionary = getWebDictionary(resolveLocale(cookieStore.get(WEB_LOCALE_COOKIE)?.value));
   const { orgError, threadId, onboarding } = await searchParams;
   let workspace: Awaited<ReturnType<typeof requireWorkspaceData>>;
   try {
@@ -32,7 +37,7 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
       return (
         <section className="px-4 py-8 sm:px-6 lg:px-8">
           <div className="mx-auto w-full max-w-3xl border border-amber-200 bg-amber-50 p-5 text-right dark:border-amber-500/30 dark:bg-amber-500/10">
-            <h1 className="text-base font-black text-amber-900">تعذر تحميل مساحة العمل الآن</h1>
+            <h1 className="text-base font-black text-amber-900">{dictionary.errors.workspaceUnavailableTitle}</h1>
             <p className="mt-2 text-sm font-semibold text-amber-800 dark:text-amber-200">{domainError.message}</p>
             <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
               <a

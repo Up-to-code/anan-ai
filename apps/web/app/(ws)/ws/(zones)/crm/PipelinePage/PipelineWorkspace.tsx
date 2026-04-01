@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import FilterChipBar from "../../../_components/Visuals/FilterChipBar";
 import ZonePageIntro from "../../../_components/ZoneShell/ZonePageIntro";
 import type { CrmClientRecord, PipelineStage } from "../crmTypes";
@@ -31,14 +32,6 @@ type PipelineState = {
   setDragOverStage: (value: PipelineStage | null) => void;
   setClients: Dispatch<SetStateAction<CrmClientRecord[]>>;
 };
-
-const FILTER_CHIPS: Array<{ key: string; label: string }> = [
-  { key: "all", label: "الكل" },
-  { key: "unlinked", label: "بدون روابط" },
-  { key: "project-only", label: "مشروع فقط" },
-  { key: "fully-linked", label: "مشروع + وسيط" },
-  { key: "vip", label: "VIP" },
-];
 
 function makeInitialFollowUpDrafts(clients: CrmClientRecord[]) {
   return clients.reduce<Record<string, string>>((acc, client) => {
@@ -115,12 +108,16 @@ function PipelineCreateClientActions({
   draftName,
   isPending,
   canCreate,
+  createLabel,
+  createPlaceholder,
   onDraftNameChange,
   onCreateClick,
 }: {
   draftName: string;
   isPending: boolean;
   canCreate: boolean;
+  createLabel: string;
+  createPlaceholder: string;
   onDraftNameChange: (value: string) => void;
   onCreateClick: () => void;
 }) {
@@ -129,7 +126,7 @@ function PipelineCreateClientActions({
       <input
         value={draftName}
         onChange={(event) => onDraftNameChange(event.currentTarget.value)}
-        placeholder="اسم صفقة أو عميل جديد"
+        placeholder={createPlaceholder}
         className="w-64 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-blue-500/20"
       />
       <button
@@ -139,7 +136,7 @@ function PipelineCreateClientActions({
         className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-xs font-black tracking-[0.18em] text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 disabled:opacity-60 dark:focus:ring-offset-slate-950"
       >
         <Plus className="h-4 w-4" />
-        إضافة صفقة
+        {createLabel}
       </button>
     </div>
   );
@@ -155,13 +152,25 @@ type PipelineWorkspaceViewProps = {
 };
 
 function PipelineWorkspaceView({ state, isPending, canCreate, onCreateClick, onDropStage, onSaveFollowUp }: PipelineWorkspaceViewProps) {
+  const { dictionary } = useWebLocale();
+
   return (
     <div className="flex min-h-full flex-col">
       <ZonePageIntro
-        eyebrow="إدارة الصفقات"
-        title="الصفقات"
+        eyebrow={dictionary.crm.eyebrow}
+        title={dictionary.crm.title}
         description=""
-        actions={<PipelineCreateClientActions draftName={state.draftName} isPending={isPending} canCreate={canCreate} onDraftNameChange={state.setDraftName} onCreateClick={onCreateClick} />}
+        actions={(
+          <PipelineCreateClientActions
+            draftName={state.draftName}
+            isPending={isPending}
+            canCreate={canCreate}
+            createLabel={dictionary.crm.create}
+            createPlaceholder={dictionary.crm.createPlaceholder}
+            onDraftNameChange={state.setDraftName}
+            onCreateClick={onCreateClick}
+          />
+        )}
       />
       <PipelineWorkspaceBoard state={state} isPending={isPending} onDropStage={onDropStage} onSaveFollowUp={onSaveFollowUp} />
     </div>
@@ -176,9 +185,21 @@ type PipelineWorkspaceBoardProps = {
 };
 
 function PipelineWorkspaceBoard({ state, isPending, onDropStage, onSaveFollowUp }: PipelineWorkspaceBoardProps) {
+  const { dictionary } = useWebLocale();
+
   return (
     <div className="space-y-6 px-6 py-6 lg:px-8 lg:py-8">
-      <FilterChipBar chips={FILTER_CHIPS} activeKey={state.activeFilter} onChange={state.setActiveFilter} />
+      <FilterChipBar
+        chips={[
+          { key: "all", label: dictionary.crm.all },
+          { key: "unlinked", label: dictionary.crm.unlinked },
+          { key: "project-only", label: dictionary.crm.projectOnly },
+          { key: "fully-linked", label: dictionary.crm.fullyLinked },
+          { key: "vip", label: "VIP" },
+        ]}
+        activeKey={state.activeFilter}
+        onChange={state.setActiveFilter}
+      />
       <PipelineBoard
         clientsByStage={state.clientsByStage}
         dragOverStage={state.dragOverStage}

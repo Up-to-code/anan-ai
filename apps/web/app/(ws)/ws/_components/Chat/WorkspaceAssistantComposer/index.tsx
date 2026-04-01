@@ -21,6 +21,7 @@ import {
   WorkspaceAssistantAttachmentChips,
   type PendingWorkspaceAttachment,
 } from "./WorkspaceAssistantAttachmentChips";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 
 type WorkspaceAssistantComposerProps = {
   audience: WorkspaceAudience;
@@ -35,12 +36,6 @@ type WorkspaceAssistantComposerProps = {
   micLevels?: number[];
   layout?: "landing" | "thread";
 };
-
-function resolvePlaceholder(audience: WorkspaceAudience) {
-  if (audience === "developer") return "حلل السوق، جهز عرض سعر، أو اطلب أفكاراً لمشروعك...";
-  if (audience === "broker") return "اسأل عن تقييم عقار، فرص السوق، أو أداء فريقك...";
-  return "اسأل عنان عن عقار جديد، فرص السوق، أو اسحب صور الوحدة وملفات PDF هنا ليجهزها لك...";
-}
 
 function createPendingAttachment(file: File): PendingWorkspaceAttachment {
   const meta = getAttachmentPresentationMeta(file);
@@ -65,11 +60,17 @@ export default function WorkspaceAssistantComposer({
   micLevels = [],
   layout = "thread",
 }: WorkspaceAssistantComposerProps) {
+  const { dictionary, direction, isRtl } = useWebLocale();
   const [localSendError, setLocalSendError] = useState<string | null>(null);
   const [pendingAttachments, setPendingAttachments] = useState<PendingWorkspaceAttachment[]>([]);
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
   const [isDraggingFiles, setIsDraggingFiles] = useState(false);
-  const resolvedPlaceholder = resolvePlaceholder(audience);
+  const resolvedPlaceholder =
+    audience === "developer"
+      ? dictionary.assistant.placeholderDeveloper
+      : audience === "broker"
+        ? dictionary.assistant.placeholderBroker
+        : dictionary.assistant.placeholderDefault;
   const isBusy = isSending || isMicProcessing || isUploadingAttachments;
   const language = resolveComposerLanguage();
 
@@ -146,7 +147,7 @@ export default function WorkspaceAssistantComposer({
         pendingAttachments.map(async (attachment) => {
           const uploadActionResult = await getAssistantUploadUrl();
           if (!uploadActionResult.ok) {
-            throw new Error(uploadActionResult.error.message || "تعذر تجهيز رفع الملفات.");
+            throw new Error(uploadActionResult.error.message || dictionary.assistant.preparingUpload);
           }
 
           const storageId = await uploadBlobToStorage(uploadActionResult.data.uploadUrl, attachment.file, {
@@ -165,12 +166,12 @@ export default function WorkspaceAssistantComposer({
 
       const finalizedAction = await finalizeAssistantUploads({ files: finalizedUploads });
       if (!finalizedAction.ok) {
-        throw new Error(finalizedAction.error.message || "تعذر حفظ الملفات المرفوعة.");
+            throw new Error(finalizedAction.error.message || dictionary.assistant.savingUploads);
       }
 
       return finalizedAction.data;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "تعذر رفع الملفات حالياً.";
+      const message = error instanceof Error ? error.message : dictionary.assistant.uploadFailed;
       setPendingAttachments((current) =>
         current.map((attachment) => ({ ...attachment, status: "error", error: message })),
       );
@@ -178,7 +179,7 @@ export default function WorkspaceAssistantComposer({
     } finally {
       setIsUploadingAttachments(false);
     }
-  }, [pendingAttachments]);
+  }, [dictionary.assistant.preparingUpload, dictionary.assistant.savingUploads, dictionary.assistant.uploadFailed, pendingAttachments]);
 
   const handleSubmit = useCallback(async () => {
     const trimmedText = value.trim();
@@ -202,9 +203,9 @@ export default function WorkspaceAssistantComposer({
         textareaRef.current.style.height = "auto";
       }
     } catch (error) {
-      setLocalSendError(error instanceof Error ? error.message : "تعذر إرسال الرسالة.");
+      setLocalSendError(error instanceof Error ? error.message : dictionary.assistant.sendFailed);
     }
-  }, [isBusy, onChange, onSend, pendingAttachments, uploadPendingAttachments, value]);
+  }, [dictionary.assistant.sendFailed, isBusy, onChange, onSend, pendingAttachments, uploadPendingAttachments, value]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -251,7 +252,10 @@ export default function WorkspaceAssistantComposer({
             initial={{ opacity: 0, y: 12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.2 } }}
-            className="mb-4 rounded-[24px] border border-red-500/10 bg-red-50/50 backdrop-blur-xl px-6 py-4 text-right text-[13px] font-bold text-red-600 dark:bg-red-500/10 dark:text-red-400 shadow-sm mx-4"
+            className={cn(
+              "mb-4 mx-4 rounded-[24px] border border-red-500/10 bg-red-50/50 px-6 py-4 text-[13px] font-bold text-red-600 shadow-sm backdrop-blur-xl dark:bg-red-500/10 dark:text-red-400",
+              isRtl ? "text-right" : "text-left",
+            )}
           >
             {localSendError}
           </motion.div>
@@ -280,11 +284,12 @@ export default function WorkspaceAssistantComposer({
             event.target.value = "";
           }}
         />
-        <WorkspaceAssistantAttachmentChips
-          attachments={pendingAttachments}
-          disabled={isBusy}
-          onRemove={removePendingAttachment}
-        />
+          <WorkspaceAssistantAttachmentChips
+            attachments={pendingAttachments}
+            disabled={isBusy}
+            onRemove={removePendingAttachment}
+            direction={direction}
+          />
         <AnimatePresence>
           {isDraggingFiles ? (
             <motion.div
@@ -294,7 +299,7 @@ export default function WorkspaceAssistantComposer({
               className="absolute inset-0 z-20 flex items-center justify-center bg-blue-500/8 backdrop-blur-[2px]"
             >
                 <div className="rounded-full border border-blue-300 bg-white px-5 py-2 text-[12px] font-black text-blue-700 shadow-sm dark:border-blue-500/30 dark:bg-slate-950 dark:text-blue-200">
-                أفلت صورة أو PDF هنا لإرفاقه مع الرسالة
+                {dictionary.assistant.attach}
               </div>
             </motion.div>
           ) : null}
@@ -310,18 +315,19 @@ export default function WorkspaceAssistantComposer({
             disabled={isBusy}
             placeholder={resolvedPlaceholder}
             className={cn(
-              "w-full resize-none border-0 bg-transparent px-6 py-4 pt-5 text-right text-[15px] font-medium leading-relaxed outline-none ring-0 appearance-none transition-colors",
+              "w-full resize-none border-0 bg-transparent px-6 py-4 pt-5 text-[15px] font-medium leading-relaxed outline-none ring-0 appearance-none transition-colors",
+              isRtl ? "text-right" : "text-left",
               "text-zinc-900 placeholder:text-zinc-500/80 focus:placeholder:text-zinc-500/60",
               "dark:text-zinc-100 dark:placeholder:text-zinc-400/70 dark:focus:placeholder:text-zinc-400/50"
             )}
             style={{ minHeight: "60px", maxHeight: "200px" }}
-            dir="rtl"
+            dir={direction}
             rows={1}
           />
         </div>
 
-        <div className="px-3 pb-3 pt-1 flex flex-row items-center justify-between" dir="rtl">
-          <div className="flex flex-row items-center gap-2">
+        <div className="px-3 pb-3 pt-1 flex flex-row items-center justify-between" dir={direction}>
+          <div className={cn("flex flex-row items-center gap-2", !isRtl && "order-2")}>
             <div className="flex flex-row items-center gap-2">
               <button
                 type="button"
@@ -333,7 +339,11 @@ export default function WorkspaceAssistantComposer({
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Paperclip className="h-4 w-4 opacity-70" />
-                <span className="pt-[2px]">{pendingAttachments.length > 0 ? `مرفقات (${pendingAttachments.length})` : "إرفاق"}</span>
+                <span className="pt-[2px]">
+                  {pendingAttachments.length > 0
+                    ? `${dictionary.assistant.attach} (${pendingAttachments.length})`
+                    : dictionary.assistant.attach}
+                </span>
               </button>
               {onMicToggle && (
                 <button
@@ -346,24 +356,24 @@ export default function WorkspaceAssistantComposer({
                     (isMicRecording || voiceProcessingPhase === "waiting_for_permission" || isMicProcessing) &&
                       "border-[color:color-mix(in_srgb,var(--workspace-highlight)_38%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,var(--workspace-panel))] text-[var(--workspace-highlight)]"
                   )}
-                  title="تسجيل صوتي"
+                  title={dictionary.assistant.voiceTitle}
                 >
                   {isMicProcessing || voiceProcessingPhase === "waiting_for_permission" ? (
                     <Loader2 className="h-4 w-4 animate-spin opacity-70" />
                   ) : (
                     <Mic className="h-4 w-4 opacity-70" />
                   )}
-                  <span className="pt-[2px]">{isMicRecording ? "جاري التسجيل" : "صوت"}</span>
+                  <span className="pt-[2px]">{isMicRecording ? dictionary.assistant.recordingNow : dictionary.assistant.voiceTitle}</span>
                 </button>
               )}
             </div>
           </div>
 
-          <div className="flex flex-row items-center gap-2" dir="ltr">
+          <div className={cn("flex flex-row items-center gap-2", !isRtl && "order-1")} dir="ltr">
             <button
               onClick={() => void handleSubmit()}
               disabled={isBusy || !isTyping}
-              aria-label="إرسال"
+              aria-label={dictionary.assistant.sendingMessage}
               className={cn(
                 "flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 active:scale-[0.95] disabled:opacity-40",
                 isTyping
@@ -384,7 +394,7 @@ export default function WorkspaceAssistantComposer({
                 animate={{ opacity: 1 }}
                 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-white/40 px-2"
               >
-                Analyzing
+                {dictionary.assistant.processing}
               </motion.div>
             )}
           </div>

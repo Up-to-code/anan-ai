@@ -129,16 +129,22 @@ export const getMarketSnapshot = query({
   },
   returns: marketSnapshotValidator,
   handler: async (ctx, args) => {
-    const [properties, researchRows, searchLogs] = await Promise.all([
+    const [properties, researchRows, searchLogs, conversationAnalyses] = await Promise.all([
       ctx.db.query("properties").order("desc").take(500),
       ctx.db.query("knowledgeResearch").order("desc").take(500),
       ctx.db.query("searchLogs").order("desc").take(500),
+      ctx.db
+        .query("aiConversationAnalyses")
+        .withIndex("by_status_lastMessageAt", (q) => q.eq("status", "done"))
+        .order("desc")
+        .take(500),
     ]);
 
     return buildMarketSnapshot({
       properties,
       researchRows,
       searchLogs,
+      conversationAnalyses,
       filters: args,
     });
   },

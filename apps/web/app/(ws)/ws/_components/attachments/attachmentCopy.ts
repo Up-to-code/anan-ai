@@ -1,4 +1,4 @@
-export type ComposerLanguage = "ar" | "en";
+export type ComposerLanguage = "ar" | "en" | "fr";
 
 export type AttachmentValidationErrorCode =
   | "unsupported_type"
@@ -16,7 +16,10 @@ export function resolveComposerLanguage(): ComposerLanguage {
     return "ar";
   }
 
-  return document.documentElement.lang?.toLowerCase().startsWith("en") ? "en" : "ar";
+  const lang = document.documentElement.lang?.toLowerCase() ?? "ar";
+  if (lang.startsWith("fr")) return "fr";
+  if (lang.startsWith("en")) return "en";
+  return "ar";
 }
 
 /**
@@ -32,18 +35,22 @@ export function getAttachmentValidationMessage(
     unsupported_type: {
       ar: "يسمح فقط بمشاركة صور JPG أو PNG أو WEBP أو ملفات PDF.",
       en: "Only JPG, PNG, WEBP images and PDF files are supported.",
+      fr: "Seules les images JPG, PNG, WEBP et les fichiers PDF sont pris en charge.",
     },
     image_too_large: {
       ar: "الحد الأقصى لحجم الصورة هو 8MB.",
       en: "The maximum image size is 8MB.",
+      fr: "La taille maximale de l'image est de 8 Mo.",
     },
     pdf_too_large: {
       ar: "الحد الأقصى لحجم ملف PDF هو 20MB.",
       en: "The maximum PDF size is 20MB.",
+      fr: "La taille maximale du fichier PDF est de 20 Mo.",
     },
     empty_selection: {
       ar: "اختر صورة أو ملف PDF لإرفاقه.",
       en: "Choose an image or PDF file to attach.",
+      fr: "Choisissez une image ou un fichier PDF à joindre.",
     },
   } satisfies Record<AttachmentValidationErrorCode, Record<ComposerLanguage, string>>;
 
@@ -63,10 +70,12 @@ export function getQuickActionUnavailableMessage(
     offer: {
       ar: "تحتاج إلى مشروع واحد على الأقل حتى تتمكن من إنشاء عرض خاص.",
       en: "You need at least one project before you can create a private offer.",
+      fr: "Vous avez besoin d'au moins un projet avant de pouvoir créer une offre privée.",
     },
     project: {
       ar: "أضف مشروعًا أولًا حتى تتمكن من مشاركته داخل المحادثة.",
       en: "Add a project first so you can share it in chat.",
+      fr: "Ajoutez d'abord un projet pour pouvoir le partager dans la conversation.",
     },
   } satisfies Record<"offer" | "project", Record<ComposerLanguage, string>>;
 

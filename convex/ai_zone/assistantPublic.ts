@@ -601,7 +601,7 @@ async function buildStructuredTurn(args: {
   initialThread: Doc<"assistantThreads"> | null;
   message: string;
   inputMode?: "text" | "voice";
-  locale?: "ar" | "en";
+  locale?: "ar" | "en" | "fr";
   qualification?: {
     monthlySalary?: number;
     downPayment?: number;
@@ -698,7 +698,7 @@ export const sendMessage = action({
     message: v.string(),
     threadId: v.optional(v.id("assistantThreads")),
     inputMode: v.optional(v.union(v.literal("text"), v.literal("voice"))),
-    locale: v.optional(v.union(v.literal("ar"), v.literal("en"))),
+    locale: v.optional(v.union(v.literal("ar"), v.literal("en"), v.literal("fr"))),
     qualification: v.optional(buyerQualificationValidator),
     selectedPropertyId: v.optional(v.id("properties")),
   },
@@ -738,7 +738,7 @@ export const sendAuthenticatedMessage = action({
     message: v.string(),
     threadId: v.optional(v.id("assistantThreads")),
     inputMode: v.optional(v.union(v.literal("text"), v.literal("voice"))),
-    locale: v.optional(v.union(v.literal("ar"), v.literal("en"))),
+    locale: v.optional(v.union(v.literal("ar"), v.literal("en"), v.literal("fr"))),
     qualification: v.optional(buyerQualificationValidator),
     selectedPropertyId: v.optional(v.id("properties")),
   },

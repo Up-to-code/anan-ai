@@ -7,6 +7,8 @@ import {
   Settings2,
   Mail,
 } from "lucide-react";
+import { getWebDictionary } from "@/lib/i18n";
+import type { AppLocale } from "@/lib/locale";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
 
 export type WorkspaceRole = string | null | undefined;
@@ -103,6 +105,51 @@ const zoneDescriptors: ZoneDescriptor[] = [
   },
 ];
 
+function localizeZone(zone: ZoneDescriptor, locale: AppLocale): ZoneDescriptor {
+  const dictionary = getWebDictionary(locale);
+  switch (zone.key) {
+    case "overview":
+      return { ...zone, label: dictionary.nav.overviewTitle };
+    case "market":
+      return {
+        ...zone,
+        label: dictionary.market.title,
+        description: dictionary.market.description,
+      };
+    case "crm":
+      return {
+        ...zone,
+        label: dictionary.crm.eyebrow,
+        description: dictionary.crm.title,
+        localNav: [{ label: dictionary.crm.title, href: "/ws/crm" }],
+      };
+    case "projects":
+      return {
+        ...zone,
+        label: dictionary.projects.title,
+        description: dictionary.projects.description,
+        localNav: [{ label: dictionary.projects.title, href: "/ws/projects" }],
+      };
+    case "offers":
+      return {
+        ...zone,
+        label: dictionary.offers.title,
+        description: dictionary.offers.description,
+        localNav: [{ label: dictionary.offers.title, href: "/ws/offers" }],
+      };
+    case "inbox":
+      return { ...zone, label: dictionary.nav.inbox };
+    case "settings":
+      return {
+        ...zone,
+        label: dictionary.nav.workspaceSettings,
+        description: dictionary.settings.description,
+      };
+    default:
+      return zone;
+  }
+}
+
 function isVisibleToRole(zone: ZoneDescriptor, role: WorkspaceRole) {
   return zone.roles.includes(role);
 }
@@ -112,8 +159,10 @@ function isVisibleToRole(zone: ZoneDescriptor, role: WorkspaceRole) {
  * WHAT:  Returns the workspace zones visible to the supplied session role.
  * HOW:   Filters the static zone descriptor list by the descriptor role visibility rules.
  */
-export function getWorkspaceZones(role: WorkspaceRole) {
-  return zoneDescriptors.filter((zone) => isVisibleToRole(zone, role));
+export function getWorkspaceZones(role: WorkspaceRole, locale: AppLocale = "ar") {
+  return zoneDescriptors
+    .filter((zone) => isVisibleToRole(zone, role))
+    .map((zone) => localizeZone(zone, locale));
 }
 
 /**
@@ -121,9 +170,11 @@ export function getWorkspaceZones(role: WorkspaceRole) {
  * WHAT:  Returns the zone descriptors matching the supplied server-approved zone keys.
  * HOW:   Filters the static descriptor list against a `Set` of allowed keys.
  */
-export function getWorkspaceZonesForKeys(keys: WorkspaceZoneKey[]) {
+export function getWorkspaceZonesForKeys(keys: WorkspaceZoneKey[], locale: AppLocale = "ar") {
   const keySet = new Set(keys);
-  return zoneDescriptors.filter((zone) => keySet.has(zone.key));
+  return zoneDescriptors
+    .filter((zone) => keySet.has(zone.key))
+    .map((zone) => localizeZone(zone, locale));
 }
 
 /**
@@ -134,8 +185,9 @@ export function getWorkspaceZonesForKeys(keys: WorkspaceZoneKey[]) {
 export function getWorkspaceZone(
   role: WorkspaceRole,
   key: ZoneDescriptor["key"],
+  locale: AppLocale = "ar",
 ) {
-  return getWorkspaceZones(role).find((zone) => zone.key === key) ?? null;
+  return getWorkspaceZones(role, locale).find((zone) => zone.key === key) ?? null;
 }
 
 /**

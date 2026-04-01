@@ -7,6 +7,7 @@ import type {
   ConversationSummary,
   MarkConversationReadInput,
   ResolveDirectConversationInput,
+  SetConversationArchivedInput,
   SendConversationMessageInput,
   UserConversationTarget,
 } from "@/server/contracts/inbox";
@@ -20,13 +21,14 @@ type InboxApiRefs = {
   bootstrapOfferConversation: unknown;
   sendConversationMessage: unknown;
   markConversationRead: unknown;
+  setConversationArchived: unknown;
   searchConversationTargets: unknown;
 };
 
 const inboxApi = apiUnsafe["shared_logic/inbox"] as InboxApiRefs;
 
 export type InboxRepository = {
-  list(token: string): Promise<ConversationSummary[]>;
+  list(token: string, archived?: boolean): Promise<ConversationSummary[]>;
   getUnreadSummary(token: string): Promise<{ unreadCount: number }>;
   get(token: string, conversationId: string): Promise<ConversationDetail>;
   hasProjectShareAccess(token: string, propertyId: string): Promise<boolean>;
@@ -34,12 +36,13 @@ export type InboxRepository = {
   bootstrapOffer(token: string, input: BootstrapOfferConversationInput): Promise<BootstrapOfferConversationResult>;
   send(token: string, input: SendConversationMessageInput): Promise<{ conversationId: string; messageId: string }>;
   markRead(token: string, input: MarkConversationReadInput): Promise<void>;
+  setArchived(token: string, input: SetConversationArchivedInput): Promise<void>;
   searchTargets(token: string, query: string): Promise<UserConversationTarget[]>;
 };
 
 export const convexInboxRepository: InboxRepository = {
-  async list(token) {
-    return fetchQuery(inboxApi.listConversations as never, {} as never, { token }) as Promise<ConversationSummary[]>;
+  async list(token, archived = false) {
+    return fetchQuery(inboxApi.listConversations as never, { archived } as never, { token }) as Promise<ConversationSummary[]>;
   },
   async getUnreadSummary(token) {
     return fetchQuery(inboxApi.getInboxUnreadSummary as never, {} as never, { token }) as Promise<{ unreadCount: number }>;
@@ -64,6 +67,9 @@ export const convexInboxRepository: InboxRepository = {
   },
   async markRead(token, input) {
     await fetchMutation(inboxApi.markConversationRead as never, input as never, { token });
+  },
+  async setArchived(token, input) {
+    await fetchMutation(inboxApi.setConversationArchived as never, input as never, { token });
   },
   async searchTargets(token, query) {
     return fetchQuery(inboxApi.searchConversationTargets as never, { query } as never, { token }) as Promise<UserConversationTarget[]>;

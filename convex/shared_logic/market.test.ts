@@ -37,11 +37,57 @@ async function seedRichResearch(ctx: any) {
   });
 }
 
+async function seedConversationAnalysis(ctx: any) {
+  await ctx.db.insert("aiConversationAnalyses", {
+    threadId: await ctx.db.insert("assistantThreads", {
+      userId: "buyer-analytics",
+      scope: "user",
+      ownerType: "user",
+      mode: "qa",
+      assistantKind: "default",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }),
+    userId: "buyer-analytics",
+    assistantKind: "default",
+    runKey: "riyadh-noon-2026-04-01T09:00:00.000Z",
+    windowStartMs: Date.now() - 24 * 60 * 60 * 1000,
+    windowEndMs: Date.now(),
+    timezone: "Asia/Riyadh",
+    status: "done",
+    attemptCount: 1,
+    messageCount: 4,
+    firstMessageAt: Date.now() - 10_000,
+    lastMessageAt: Date.now(),
+    processedAt: Date.now(),
+    output: {
+      summary: "التركيز على الرياض والملقا مع طلب شقق بتمويل ومواقف خاصة",
+      hotCities: ["الرياض"],
+      hotAreas: [{ city: "الرياض", area: "الملقا" }],
+      propertyTypes: ["شقق"],
+      budgetBands: ["1 - 2 مليون"],
+      paymentIntents: ["mortgage"],
+      configurations: ["3 غرف / 3 حمامات"],
+      bedroomCounts: ["3 غرف"],
+      bathroomCounts: ["3 حمامات"],
+      timelineSignals: ["خلال 1-2 شهر"],
+      mustHaveFeatures: ["مواقف خاصة"],
+      strongConstraints: ["الرياض / الملقا"],
+      intent: "residential",
+      repeatedKeywords: ["الملقا", "تمويل"],
+      repeatedTopics: ["شقق", "مواقف خاصة", "mortgage"],
+    },
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+}
+
 async function seedRichMarketScenario(t: ReturnType<typeof convexTest>) {
   await t.run(async (ctx) => {
     await seedRichProperties(ctx);
     await seedRichDemandSignals(ctx);
     await seedRichResearch(ctx);
+    await seedConversationAnalysis(ctx);
   });
 }
 
@@ -95,8 +141,14 @@ function registerRichRankingTest() {
     expect(snapshot.topCities[0]?.city).toBe("الرياض");
     expect(snapshot.topAreas[0]?.area).toBe("الملقا");
     expect(snapshot.headline.inventoryCount).toBe(1);
+    expect(snapshot.headline.demandSignals).toBeGreaterThanOrEqual(3);
     expect(snapshot.sellingPoints[0]?.label).toBe("مواقف خاصة");
     expect(snapshot.keywordInsights.mostResearchedLabel).toBeTruthy();
+    expect(
+      snapshot.keywordInsights.topKeywords.some(
+        (item: { label: string }) => item.label === "تمويل",
+      ),
+    ).toBe(true);
     expect(snapshot.keywordInsights.relatedSearches.length).toBeGreaterThan(0);
     expect(snapshot.opportunities[0]?.area).toBe("الملقا");
     expect(snapshot.chartSeries.cityDemand.length).toBeGreaterThan(0);
