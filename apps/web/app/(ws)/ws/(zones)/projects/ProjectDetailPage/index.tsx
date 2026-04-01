@@ -1,5 +1,18 @@
 import Link from "next/link";
-import { ArrowLeft, Eye, FileText, MapPin, MessageSquareMore, PencilLine, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  Bath,
+  BedDouble,
+  CarFront,
+  Eye,
+  FileText,
+  MapPin,
+  MessageSquareMore,
+  PencilLine,
+  Ruler,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import type { WorkspaceProject } from "../projectTypes";
 import ProjectMediaGallery from "./ProjectMediaGallery";
 
@@ -17,12 +30,11 @@ const publicationTone: Record<WorkspaceProject["publicationState"], string> = {
 
 function buildFactItems(project: WorkspaceProject) {
   return [
-    { label: "الغرف", value: project.specs.rooms },
-    { label: "الحمامات", value: project.specs.baths },
-    { label: "المساحة", value: project.specs.area },
-    { label: "المواقف", value: project.parking.label },
-    { label: "التصريح", value: project.permit.statusLabel },
-    { label: "الحالة", value: project.specs.status },
+    { label: "الغرف", value: project.specs.rooms, icon: BedDouble },
+    { label: "الحمامات", value: project.specs.baths, icon: Bath },
+    { label: "المساحة", value: project.specs.area, icon: Ruler },
+    { label: "المواقف", value: project.parking.label, icon: CarFront },
+    { label: "التصريح", value: project.permit.statusLabel, icon: ShieldCheck },
   ];
 }
 
@@ -36,31 +48,13 @@ function DetailCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="border-t border-border/70 pt-6 first:border-t-0 first:pt-0">
+    <section className="rounded-[28px] border border-border bg-card p-6 shadow-sm">
       <div className="mb-5 text-right">
-        <h2 className="text-xl font-black text-foreground">{title}</h2>
-        {description ? <p className="mt-2 text-[14px] leading-7 text-muted-foreground">{description}</p> : null}
+        <h2 className="text-lg font-black text-foreground">{title}</h2>
+        {description ? <p className="mt-2 text-[13px] leading-6 text-muted-foreground">{description}</p> : null}
       </div>
       {children}
     </section>
-  );
-}
-
-function DetailRows({
-  rows,
-}: {
-  rows: Array<{ label: string; value: string; helper?: string }>;
-}) {
-  return (
-    <div className="grid gap-3">
-      {rows.map((row) => (
-        <div key={row.label} className="border-b border-border/60 pb-3 text-right last:border-b-0 last:pb-0">
-          <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{row.label}</div>
-          <div className="mt-2 text-[14px] font-black text-foreground">{row.value}</div>
-          {row.helper ? <div className="mt-1 text-[13px] leading-6 text-muted-foreground">{row.helper}</div> : null}
-        </div>
-      ))}
-    </div>
   );
 }
 
@@ -79,8 +73,8 @@ export default function ProjectDetailPage({ project }: { project: WorkspaceProje
 
   return (
     <div className="flex min-h-full flex-col pb-32">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-6 lg:px-8 lg:py-8">
-        <section className="border-b border-border/70 pb-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-6 lg:px-8 lg:py-8">
+        <section className="rounded-[32px] border border-border bg-[linear-gradient(135deg,rgba(15,23,42,0.04),rgba(245,158,11,0.08))] p-6 shadow-sm lg:p-8">
           <div className="flex flex-col gap-6 border-b border-border/60 pb-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-4 text-right">
               <div className="flex flex-wrap items-center justify-end gap-2">
@@ -92,7 +86,7 @@ export default function ProjectDetailPage({ project }: { project: WorkspaceProje
                 <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-bold text-sky-800 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300">
                   {visibilityLabel}
                 </span>
-                <span className="inline-flex items-center px-3 py-1 text-[11px] font-bold text-muted-foreground">
+                <span className="inline-flex items-center rounded-full border border-border bg-card/70 px-3 py-1 text-[11px] font-bold text-muted-foreground">
                   {isSharedReadOnly ? "مشاهدة فقط" : "إدارة المشروع"}
                 </span>
               </div>
@@ -137,41 +131,59 @@ export default function ProjectDetailPage({ project }: { project: WorkspaceProje
               ) : null}
             </div>
           </div>
+
+          <div className="mt-6 grid gap-4 lg:grid-cols-3">
+            <div className="rounded-2xl border border-border bg-card/80 p-4 text-right">
+              <div className="inline-flex items-center gap-2 text-sm font-black text-foreground">
+                <MapPin className="h-4 w-4" />
+                الموقع والسعر
+              </div>
+              <p className="mt-3 text-[13px] font-semibold text-muted-foreground">
+                {project.location} · {project.priceLabel}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border bg-card/80 p-4 text-right">
+              <div className="inline-flex items-center gap-2 text-sm font-black text-foreground">
+                <Eye className="h-4 w-4" />
+                مستوى الظهور
+              </div>
+              <p className="mt-3 text-[13px] font-semibold text-muted-foreground">{visibilityLabel}</p>
+            </div>
+            <div className="rounded-2xl border border-border bg-card/80 p-4 text-right">
+              <div className="inline-flex items-center gap-2 text-sm font-black text-foreground">
+                <Users className="h-4 w-4" />
+                الوصول الحالي
+              </div>
+              <p className="mt-3 text-[13px] font-semibold text-muted-foreground">
+                {isSharedReadOnly
+                  ? "تم فتح المشروع لك عبر مشاركة مباشرة."
+                  : project.visibility.clientVisibility === "private"
+                    ? `${project.visibility.viewers.length} جهة لديها صلاحية مشاهدة.`
+                    : "المشروع جاهز للظهور وفق حالة النشر."}
+              </p>
+            </div>
+          </div>
         </section>
 
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_260px]">
-          <div className="space-y-8">
-            <ProjectMediaGallery images={project.galleryImages} title={project.title} />
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(290px,0.85fr)]">
+          <ProjectMediaGallery images={project.galleryImages} title={project.title} />
 
-            <DetailCard title="نظرة سريعة" description="ملخص واضح للمشروع مع أهم المعلومات التي يحتاجها الفريق أثناء القراءة والمتابعة.">
-              <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(260px,0.8fr)]">
-                <div className="text-right">
-                  <p className="text-[15px] leading-8 text-foreground">{summary}</p>
-                </div>
-                <DetailRows
-                  rows={[
-                    { label: "الموقع", value: project.location },
-                    { label: "السعر", value: project.priceLabel },
-                    { label: "نوع الوصول", value: isSharedReadOnly ? "مشاهدة فقط" : "إدارة المشروع" },
-                  ]}
-                />
-              </div>
+          <div className="space-y-6">
+            <DetailCard title="الملخص التنفيذي" description="قراءة سريعة تعطي الفريق أو المستلم صورة واضحة عن المشروع.">
+              <p className="text-[14px] leading-7 text-foreground">{summary}</p>
             </DetailCard>
 
-            <DetailCard title="تفاصيل المشروع" description="العناصر الأساسية للمشروع بشكل مرتب وسهل المسح البصري.">
-              <div className="grid gap-8 lg:grid-cols-2">
-                <DetailRows
-                  rows={factItems.slice(0, 3).map((fact) => ({
-                    label: fact.label,
-                    value: fact.value,
-                  }))}
-                />
-                <DetailRows
-                  rows={factItems.slice(3).map((fact) => ({
-                    label: fact.label,
-                    value: fact.value,
-                  }))}
-                />
+            <DetailCard title="بطاقة الحقائق" description="أهم الأرقام والمعلومات التي يحتاجها الفريق أثناء العرض والمتابعة.">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {factItems.map((fact) => (
+                  <div key={fact.label} className="rounded-2xl border border-border bg-background px-4 py-4 shadow-sm">
+                    <div className="flex items-center gap-2 text-[12px] font-bold text-muted-foreground">
+                      <fact.icon className="h-4 w-4" />
+                      {fact.label}
+                    </div>
+                    <div className="mt-2 text-[14px] font-black text-foreground">{fact.value}</div>
+                  </div>
+                ))}
               </div>
             </DetailCard>
 
@@ -189,9 +201,43 @@ export default function ProjectDetailPage({ project }: { project: WorkspaceProje
                 </div>
               </DetailCard>
             ) : null}
+          </div>
+        </section>
 
-            <DetailCard title="الوصف الكامل" description="الوصف المرجعي الذي يشرح المشروع بتفاصيل أكثر للفريق والمستلمين.">
-              <p className="whitespace-pre-wrap text-[14px] leading-7 text-muted-foreground">{project.summary}</p>
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <DetailCard title="الوصف الكامل" description="الوصف المرجعي الذي يشرح المشروع بتفاصيل أكثر للفريق والمستلمين.">
+            <p className="whitespace-pre-wrap text-[14px] leading-7 text-muted-foreground">{project.summary}</p>
+          </DetailCard>
+
+          <div className="space-y-6">
+            <DetailCard title="الرؤية والوصول" description="تعرف من يمكنه مشاهدة المشروع وكيف يتم التعامل مع الوصول الخاص.">
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-border bg-muted/20 p-4 text-right">
+                  <div className="text-sm font-black text-foreground">نوع الوصول</div>
+                  <p className="mt-2 text-[13px] leading-6 text-muted-foreground">
+                    {project.visibility.clientVisibility === "private"
+                      ? isSharedReadOnly
+                        ? "هذا مشروع خاص وتم فتحه لك من مشاركة مباشرة. يمكنك مشاهدة التفاصيل فقط."
+                        : `هذا المشروع داخلي. عدد الجهات المصرح لها بالمشاهدة حالياً: ${project.visibility.viewers.length}.`
+                      : "هذا المشروع مرئي خارجياً وفق حالة النشر الحالية ويمكن استخدامه في قنوات العميل والـ AI."}
+                  </p>
+                </div>
+
+                {project.permit.canShowPrivatePanel ? (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+                    <div className="text-[13px] font-bold text-emerald-900 dark:text-emerald-200">تصريح خاص بهذه المحادثة</div>
+                    <p className="mt-2 text-[12px] leading-6 text-emerald-900/85 dark:text-emerald-200/85">
+                      {project.permit.privateSummary ?? "تمت مشاركة هذا التصريح بشكل خاص مع طرف هذه المحادثة فقط."}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-border bg-muted/20 p-4 text-[13px] leading-6 text-muted-foreground">
+                    {isSharedReadOnly
+                      ? "تمت مشاركة هذا المشروع للقراءة فقط. أي مستندات خاصة إضافية تظهر فقط عندما تكون مرفقة بالمحادثة المصرح بها."
+                      : "المستندات الخاصة لا تظهر هنا بشكل عام. إذا تمت مشاركتها مع طرف محدد فستظهر له فقط من خلال رابط المشروع القادم من المحادثة."}
+                  </div>
+                )}
+              </div>
             </DetailCard>
 
             <DetailCard title="الملفات المرتبطة" description="الملفات التي يسمح لك هذا السياق بمشاهدتها أو مشاركتها.">
@@ -203,7 +249,7 @@ export default function ProjectDetailPage({ project }: { project: WorkspaceProje
                       href={file.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center justify-between border-b border-border/60 px-1 py-3 text-[13px] font-bold text-foreground transition hover:text-foreground/80 last:border-b-0"
+                      className="flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:border-foreground/30 shadow-sm"
                     >
                       <span className="inline-flex items-center gap-2 truncate">
                         <FileText className="h-4 w-4 shrink-0" />
@@ -219,7 +265,7 @@ export default function ProjectDetailPage({ project }: { project: WorkspaceProje
                       href={asset.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center justify-between border-b border-border/60 px-1 py-3 text-[13px] font-bold text-foreground transition hover:text-foreground/80 last:border-b-0"
+                      className="flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:border-foreground/30"
                     >
                       <span className="inline-flex items-center gap-2 truncate">
                         <FileText className="h-4 w-4 shrink-0" />
@@ -229,85 +275,42 @@ export default function ProjectDetailPage({ project }: { project: WorkspaceProje
                     </a>
                   ))
                 ) : (
-                  <div className="px-4 py-8 text-center text-[13px] font-semibold text-muted-foreground">
+                  <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center text-[13px] font-semibold text-muted-foreground">
                     لا توجد ملفات إضافية متاحة ضمن هذا السياق حالياً.
                   </div>
                 )}
               </div>
             </DetailCard>
-
-            <DetailCard title="الوحدات المرتبطة" description="تفاصيل الوحدات التي يعتمد عليها العرض داخل هذا المشروع.">
-              {project.units.length > 0 ? (
-                <div className="grid gap-3">
-                  {project.units.map((unit) => (
-                    <div key={unit.id} className="border-b border-border/60 pb-4 text-right last:border-b-0 last:pb-0">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-[14px] font-bold text-foreground">{unit.label}</div>
-                        <div className="px-3 py-1 text-[11px] font-bold text-foreground">
-                          {unit.priceLabel}
-                        </div>
-                      </div>
-                      <div className="mt-4 flex flex-wrap justify-end gap-2 text-[12px] font-bold text-muted-foreground">
-                        <span>{unit.bedrooms} نوم</span>
-                        <span>•</span>
-                        <span>{unit.bathrooms} حمام</span>
-                        <span>•</span>
-                        <span>{unit.area}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="px-4 py-10 text-center text-[13px] font-semibold text-muted-foreground">
-                  لا توجد وحدات مفصلة حالياً.
-                </div>
-              )}
-            </DetailCard>
           </div>
+        </section>
 
-          <aside className="space-y-6">
-            <DetailCard title="حالة المشروع" description="ملخص سريع يوضح الرؤية والوصول في هذا السياق.">
-              <div className="space-y-4">
-                <div className="border-b border-border/60 pb-3 text-right">
-                  <div className="inline-flex items-center gap-2 text-[13px] font-black text-foreground">
-                    <Eye className="h-4 w-4" />
-                    مستوى الظهور
+        <DetailCard title="الوحدات المرتبطة" description="تفاصيل الوحدات التي يعتمد عليها العرض داخل هذا المشروع.">
+          {project.units.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {project.units.map((unit) => (
+                <div key={unit.id} className="rounded-[24px] border border-border bg-background p-5 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[14px] font-bold text-foreground">{unit.label}</div>
+                    <div className="rounded-full border border-border bg-muted/20 px-3 py-1 text-[11px] font-bold text-foreground">
+                      {unit.priceLabel}
+                    </div>
                   </div>
-                  <p className="mt-2 text-[13px] leading-6 text-muted-foreground">{visibilityLabel}</p>
+                  <div className="mt-4 flex flex-wrap gap-2 text-[12px] font-bold text-muted-foreground">
+                    <span>{unit.bedrooms} نوم</span>
+                    <span>•</span>
+                    <span>{unit.bathrooms} حمام</span>
+                    <span>•</span>
+                    <span>{unit.area}</span>
+                  </div>
                 </div>
-
-                <div className="border-b border-border/60 pb-3 text-right">
-                  <div className="inline-flex items-center gap-2 text-[13px] font-black text-foreground">
-                    <Users className="h-4 w-4" />
-                    نوع الوصول
-                  </div>
-                  <p className="mt-2 text-[13px] leading-6 text-muted-foreground">
-                    {project.visibility.clientVisibility === "private"
-                      ? isSharedReadOnly
-                        ? "هذا مشروع خاص وتم فتحه لك من مشاركة مباشرة. يمكنك مشاهدة التفاصيل فقط."
-                        : `هذا المشروع داخلي. عدد الجهات المصرح لها بالمشاهدة حالياً: ${project.visibility.viewers.length}.`
-                      : "هذا المشروع مرئي خارجياً وفق حالة النشر الحالية ويمكن استخدامه في قنوات العميل والـ AI."}
-                  </p>
-                </div>
-
-                {project.permit.canShowPrivatePanel ? (
-                  <div className="border-r-2 border-emerald-300 bg-emerald-50/60 p-4 dark:bg-emerald-500/10">
-                    <div className="text-[13px] font-bold text-emerald-900 dark:text-emerald-200">تصريح خاص بهذه المحادثة</div>
-                    <p className="mt-2 text-[12px] leading-6 text-emerald-900/85 dark:text-emerald-200/85">
-                      {project.permit.privateSummary ?? "تمت مشاركة هذا التصريح بشكل خاص مع طرف هذه المحادثة فقط."}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="p-1 text-[13px] leading-6 text-muted-foreground">
-                    {isSharedReadOnly
-                      ? "تمت مشاركة هذا المشروع للقراءة فقط. أي مستندات خاصة إضافية تظهر فقط عندما تكون مرفقة بالمحادثة المصرح بها."
-                      : "المستندات الخاصة لا تظهر هنا بشكل عام. إذا تمت مشاركتها مع طرف محدد فستظهر له فقط من خلال رابط المشروع القادم من المحادثة."}
-                  </div>
-                )}
-              </div>
-            </DetailCard>
-          </aside>
-        </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-dashed border-border/80 bg-muted/20 px-4 py-10 text-center text-[13px] font-semibold text-muted-foreground">
+              لا توجد وحدات مفصلة حالياً.
+            </div>
+          )}
+        </DetailCard>
       </div>
     </div>
   );

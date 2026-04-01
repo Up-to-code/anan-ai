@@ -6,6 +6,7 @@ import { convexProjectAccessRepository } from "@/server/infrastructure/convex/pr
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapWorkspaceProjectToPropertyInput } from "../../projectViewModel";
 import type { ProjectFormData } from "@/app/(ws)/ws/public";
+import { toProjectFormActionFailure, validateProjectFormSubmission } from "../../projectFormSubmission";
 
 type WorkspaceActionArgs = {
   audience: Parameters<typeof getWorkspacePropertyZone>[0];
@@ -14,36 +15,44 @@ type WorkspaceActionArgs = {
 };
 
 export async function saveProjectAction(args: WorkspaceActionArgs, data: ProjectFormData) {
-  const actionZone = getWorkspacePropertyZone(args.audience, args.ownerContext);
-  const session = await requireSessionContext();
-
-  await actionZone.updateProperty({
-    id: args.projectId,
-    patch: mapWorkspaceProjectToPropertyInput(data),
-  });
-
-  const imageKeys = data.images.map((image) => image.key);
-  const permitKeys = data.privatePermitFiles.map((file) => file.key);
-
-  if (imageKeys.length > 0) {
-    await convexOrganizationAssetsRepository.attachOrganizationAssets(session.token, {
-      keys: imageKeys,
-      attachedEntityType: "project",
-      attachedEntityId: args.projectId,
-      visibilityScope: data.clientVisibility === "public" ? "public_project" : "organization",
-    });
+  const validationFeedback = validateProjectFormSubmission(data);
+  if (validationFeedback) {
+    return { ok: false, feedback: validationFeedback } as const;
   }
 
-  if (permitKeys.length > 0) {
-    await convexOrganizationAssetsRepository.attachOrganizationAssets(session.token, {
-      keys: permitKeys,
-      attachedEntityType: "project",
-      attachedEntityId: args.projectId,
-      visibilityScope: "project_private_share",
+  try {
+    const actionZone = getWorkspacePropertyZone(args.audience, args.ownerContext);
+    const session = await requireSessionContext();
+    await actionZone.updateProperty({
+      id: args.projectId,
+      patch: mapWorkspaceProjectToPropertyInput(data),
     });
-  }
 
-  return { redirectTo: `/ws/projects/${args.projectId}` };
+    const imageKeys = data.images.map((image) => image.key);
+    const permitKeys = data.privatePermitFiles.map((file) => file.key);
+
+    if (imageKeys.length > 0) {
+      await convexOrganizationAssetsRepository.attachOrganizationAssets(session.token, {
+        keys: imageKeys,
+        attachedEntityType: "project",
+        attachedEntityId: args.projectId,
+        visibilityScope: data.clientVisibility === "public" ? "public_project" : "organization",
+      });
+    }
+
+    if (permitKeys.length > 0) {
+      await convexOrganizationAssetsRepository.attachOrganizationAssets(session.token, {
+        keys: permitKeys,
+        attachedEntityType: "project",
+        attachedEntityId: args.projectId,
+        visibilityScope: "project_private_share",
+      });
+    }
+
+    return { ok: true, redirectTo: `/ws/projects/${args.projectId}` } as const;
+  } catch (error) {
+    return toProjectFormActionFailure(error);
+  }
 }
 
 export async function deleteProjectAction(args: WorkspaceActionArgs) {

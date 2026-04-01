@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { OrganizationSummary } from "@/server/contracts/organizations";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { cn } from "@/lib/utils";
+import type { OrganizationSummary } from "@/server/contracts/organizations";
 
 function resolveOrganizationStatusLabel(
   status: OrganizationSummary["status"],
@@ -18,12 +18,24 @@ function resolveOrganizationStatusLabel(
   return locale === "fr" ? "Indisponible" : locale === "en" ? "Unavailable" : "غير متوفر";
 }
 
+/**
+ * WHY:   Organization settings need one focused client controller for the current organization profile.
+ * WHAT:  Renders identity metadata plus an editable form for organization details.
+ * HOW:   Keeps localized UI state on the client while delegating persistence to the provided server action.
+ */
 export default function OrganizationSettingsWorkspace({
   organization,
   canManage,
+  onSave,
 }: {
   organization: OrganizationSummary | null;
   canManage: boolean;
+  onSave: (input: {
+    name: string;
+    description?: string;
+    website?: string;
+    contactEmail?: string;
+  }) => Promise<{ ok: true; message: string } | { ok: false; message: string }>;
 }) {
   const { locale, dictionary, direction, isRtl } = useWebLocale();
   const [name, setName] = useState(organization?.name ?? "");
@@ -68,10 +80,7 @@ export default function OrganizationSettingsWorkspace({
             {summaryItems.map((item) => (
               <div key={item.label} className="rounded-[22px] border border-border/70 bg-background/80 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                 <div className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">{item.label}</div>
-                <div
-                  className="mt-2 text-sm font-black tracking-tight text-foreground"
-                  dir={item.valueDir ?? direction}
-                >
+                <div className="mt-2 text-sm font-black tracking-tight text-foreground" dir={item.valueDir ?? direction}>
                   {item.value}
                 </div>
               </div>
@@ -95,26 +104,13 @@ export default function OrganizationSettingsWorkspace({
               }
 
               setIsSaving(true);
-              setStatus(dictionary.settings.organizationSaving);
-              const response = await fetch("/api/organizations/current", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  name,
-                  description: description.trim().length > 0 ? description : undefined,
-                  website: website.trim().length > 0 ? website : undefined,
-                  contactEmail: contactEmail.trim().length > 0 ? contactEmail : undefined,
-                }),
+              const result = await onSave({
+                name,
+                description: description.trim().length > 0 ? description : undefined,
+                website: website.trim().length > 0 ? website : undefined,
+                contactEmail: contactEmail.trim().length > 0 ? contactEmail : undefined,
               });
-              const payload = (await response.json()) as { message?: string };
-
-              if (!response.ok) {
-                setStatus(payload.message ?? dictionary.settings.organizationSaveFailed);
-                setIsSaving(false);
-                return;
-              }
-
-              setStatus(dictionary.settings.organizationSaved);
+              setStatus(result.message);
               setIsSaving(false);
             }}
           >

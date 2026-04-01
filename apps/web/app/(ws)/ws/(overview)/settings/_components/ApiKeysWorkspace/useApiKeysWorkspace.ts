@@ -18,6 +18,13 @@ export function useApiKeysWorkspace(args: {
   canCreate: boolean;
   canRevoke: boolean;
   initialKeys: OrganizationApiKeySummary[];
+  onCreateKey: (
+    input: {
+      name: string;
+      permissions: OrganizationApiKeyPermission[];
+    },
+  ) => Promise<{ ok: true; message: string; result: OrganizationApiKeySecretResult } | { ok: false; message: string }>;
+  onRevokeKey: (keyId: string) => Promise<{ ok: true; message: string } | { ok: false; message: string }>;
 }) {
   const { dictionary } = useWebLocale();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -65,24 +72,19 @@ export function useApiKeysWorkspace(args: {
     setRevealedResult(null);
 
     try {
-      const response = await fetch("/api/organizations/current/api-keys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          permissions: selectedPermissions,
-        }),
+      const result = await args.onCreateKey({
+        name,
+        permissions: selectedPermissions,
       });
-      const payload = (await response.json()) as OrganizationApiKeySecretResult & { message?: string };
-      if (!response.ok) {
-        setStatus(payload.message ?? dictionary.settings.apiKeysCreateFailedStatus);
+      if (!result.ok) {
+        setStatus(result.message);
         return;
       }
-      setKeys((current) => [payload.key, ...current]);
-      setRevealedResult(payload);
+      setKeys((current) => [result.result.key, ...current]);
+      setRevealedResult(result.result);
       setName("");
       setSelectedPermissionKeys(buildPresetPermissions("write").map(permissionKey));
-      setStatus(dictionary.settings.apiKeysCreatedStatus);
+      setStatus(result.message);
     } catch {
       setStatus(dictionary.settings.apiKeysCreateFailedStatus);
     } finally {
@@ -98,16 +100,13 @@ export function useApiKeysWorkspace(args: {
     setIsRevoking(keyId);
     setStatus(dictionary.settings.apiKeysRevokingStatus);
     try {
-      const response = await fetch(`/api/organizations/current/api-keys/${encodeURIComponent(keyId)}`, {
-        method: "DELETE",
-      });
-      const payload = (await response.json()) as { message?: string };
-      if (!response.ok) {
-        setStatus(payload.message ?? dictionary.settings.apiKeysRevokeFailedStatus);
+      const result = await args.onRevokeKey(keyId);
+      if (!result.ok) {
+        setStatus(result.message);
         return;
       }
       setKeys((current) => current.map((key) => (key.keyId === keyId ? { ...key, status: "revoked", revokedAt: Date.now() } : key)));
-      setStatus(dictionary.settings.apiKeysRevokedStatus);
+      setStatus(result.message);
     } catch {
       setStatus(dictionary.settings.apiKeysRevokeFailedStatus);
     } finally {

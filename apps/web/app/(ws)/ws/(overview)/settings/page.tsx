@@ -11,6 +11,15 @@ import OrganizationSettingsWorkspace from "./_components/OrganizationSettingsWor
 import SettingsTabs from "./_components/SettingsTabs";
 import MembersWorkspace from "./_components/MembersWorkspace";
 import OrganizationVerificationWorkspace from "./_components/OrganizationVerificationWorkspace";
+import {
+  cancelOrganizationInviteAction,
+  createOrganizationApiKeyAction,
+  createOrganizationInviteAction,
+  revokeOrganizationApiKeyAction,
+  saveOrganizationSettingsAction,
+  searchOrganizationDirectoryAction,
+  updateOrganizationMemberRoleAction,
+} from "./actions";
 
 type SettingsTabKey = "org" | "verification" | "members" | "api-keys";
 
@@ -30,7 +39,7 @@ function OrganizationTabSection({
 }) {
   return (
     <div className="animate-in fade-in-50 duration-300">
-      <OrganizationSettingsWorkspace organization={organization} canManage={canManage} />
+      <OrganizationSettingsWorkspace organization={organization} canManage={canManage} onSave={saveOrganizationSettingsAction} />
     </div>
   );
 }
@@ -59,6 +68,10 @@ function MembersTabSection(args: {
           canManage={args.canManage}
           hasOrganization={args.hasOrganization}
           organizationType={args.organization?.type}
+          onCreateInvite={createOrganizationInviteAction}
+          onCancelInvite={cancelOrganizationInviteAction}
+          onSearchDirectory={searchOrganizationDirectoryAction}
+          onUpdateRole={updateOrganizationMemberRoleAction}
         />
       </div>
     </div>
@@ -86,6 +99,8 @@ function ApiKeysTabSection(args: {
         canRevoke={args.canRevoke}
         canView={args.canView}
         hasOrganization={args.hasOrganization}
+        onCreateKey={createOrganizationApiKeyAction}
+        onRevokeKey={revokeOrganizationApiKeyAction}
       />
     </div>
   );

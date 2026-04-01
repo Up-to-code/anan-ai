@@ -143,6 +143,10 @@ export function getGalleryAspectOptions(locale: AppLocale): Array<{ value: Galle
   ];
 }
 
+export const STEP_DEFINITIONS = getStepDefinitions("ar");
+export const GALLERY_DISPLAY_OPTIONS = getGalleryDisplayOptions("ar");
+export const GALLERY_ASPECT_OPTIONS = getGalleryAspectOptions("ar");
+
 export const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 export const PDF_MIME_TYPE = "application/pdf";
 export const MAX_IMAGE_SIZE_BYTES = 8 * 1024 * 1024;

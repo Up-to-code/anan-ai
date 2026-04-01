@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { AgDeleteConfirmModal, AgPropertyForm, type ProjectFormData } from "@/app/(ws)/ws/public";
+import type { ProjectFormActionResult, ProjectFormSaveResult } from "./projectFormSubmission";
 
 type ProjectFormScreenProps = {
   projectId?: string;
@@ -11,7 +12,7 @@ type ProjectFormScreenProps = {
   title: string;
   description: string;
   submitLabel: string;
-  onSave: (data: ProjectFormData) => Promise<{ redirectTo: string }>;
+  onSave: (data: ProjectFormData) => Promise<ProjectFormActionResult>;
   onDelete?: () => Promise<{ redirectTo: string }>;
   onRevokeViewer?: (viewerAuthUserId: string) => Promise<void>;
 };
@@ -40,7 +41,7 @@ function ProjectDeleteModal({
 
 function useProjectFormActions(args: {
   projectId?: string;
-  onSave: (data: ProjectFormData) => Promise<{ redirectTo: string }>;
+  onSave: (data: ProjectFormData) => Promise<ProjectFormActionResult>;
   onDelete?: () => Promise<{ redirectTo: string }>;
   onRevokeViewer?: (viewerAuthUserId: string) => Promise<void>;
 }) {
@@ -48,8 +49,14 @@ function useProjectFormActions(args: {
   const [pending, startTransition] = useTransition();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const cancelHref = args.projectId ? `/ws/projects/${args.projectId}` : "/ws/projects";
-  const handleSave = async (data: ProjectFormData) => {
-    startTransition(async () => router.push((await args.onSave(data)).redirectTo));
+  const handleSave = async (data: ProjectFormData): Promise<ProjectFormSaveResult> => {
+    const result = await args.onSave(data);
+    if (!result.ok) {
+      return result;
+    }
+
+    startTransition(() => router.push(result.redirectTo));
+    return { ok: true };
   };
   const handleDeleteConfirm = () => {
     if (!args.onDelete) return;
@@ -75,7 +82,7 @@ function ProjectFormLayout(args: {
   description: string;
   submitLabel: string;
   pending: boolean;
-  onSave: (data: ProjectFormData) => Promise<void>;
+  onSave: (data: ProjectFormData) => Promise<ProjectFormSaveResult>;
   onCancel: () => void;
   onDelete?: () => void;
   onRevokeViewer?: (viewerAuthUserId: string) => Promise<void>;

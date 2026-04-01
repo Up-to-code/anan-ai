@@ -96,10 +96,11 @@ it("renders the owner project detail page", async () => {
   const markup = renderToStaticMarkup(element);
 
   expect(markup).toContain("تعديل بيانات المشروع");
-  expect(markup).toContain("تفاصيل المشروع");
+  expect(markup).toContain("بطاقة الحقائق");
   expect(markup).toContain("المزايا والخدمات");
   expect(markup).toContain("مواقف ضيوف");
   expect(markup).toContain("المستندات الخاصة لا تظهر هنا بشكل عام");
+  expect(markup).toContain("الرؤية والوصول");
 });
 
 it("renders shared projects as read-only", async () => {

@@ -9,17 +9,23 @@ type ProfileWorkspaceProps = {
   initialProfile: ProfileSummary;
   fallbackName: string;
   fallbackEmail: string;
+  onSave: (input: {
+    name: string;
+    username: string;
+    showInOffersDirectory: boolean;
+  }) => Promise<{ ok: true; message: string } | { ok: false; message: string }>;
 };
 
 /**
  * WHY:   The account center needs local form state and optimistic feedback while the page remains server rendered.
  * WHAT:  Renders the editable profile form, Google-auth security summary, and primary account actions.
- * HOW:   Posts profile changes to the gateway profile endpoint and keeps feedback scoped to the form.
+ * HOW:   Calls a server action for profile changes and keeps feedback scoped to the form.
  */
 export default function ProfileWorkspace({
   initialProfile,
   fallbackName,
   fallbackEmail,
+  onSave,
 }: ProfileWorkspaceProps) {
   const [name, setName] = useState(initialProfile.name ?? fallbackName);
   const [username, setUsername] = useState(initialProfile.username ?? "");
@@ -42,20 +48,8 @@ export default function ProfileWorkspace({
             setIsSaving(true);
             setStatus("جاري حفظ التعديلات...");
 
-            const response = await fetch("/api/profile", {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ name, username, showInOffersDirectory }),
-            });
-
-            const payload = (await response.json()) as { message?: string };
-            if (!response.ok) {
-              setStatus(payload.message ?? "تعذر حفظ التعديلات.");
-              setIsSaving(false);
-              return;
-            }
-
-            setStatus("تم حفظ التعديلات بنجاح.");
+            const result = await onSave({ name, username, showInOffersDirectory });
+            setStatus(result.message);
             setIsSaving(false);
           }}
         >

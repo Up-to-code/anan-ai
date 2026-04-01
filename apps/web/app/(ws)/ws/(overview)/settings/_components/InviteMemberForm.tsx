@@ -3,19 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { useMutation } from "convex/react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/convexApi";
+import type { DirectorySearchResult } from "@/server/contracts/organizations";
 
-type DirectoryResult = {
-  id: string;
-  authUserId: string;
-  email: string;
-  name: string;
-  username?: string;
-  membershipState: "not-member" | "pending-invite" | "member";
-  canMessage: boolean;
-  conversationId?: string | null;
-};
-
+type DirectoryResult = DirectorySearchResult;
 function MembershipStateBadge({ state }: { state: DirectoryResult["membershipState"] }) {
   const { dictionary } = useWebLocale();
   const toneClass =
@@ -117,18 +110,30 @@ function InviteResultRow({
     </div>
   );
 }
-
+/**
+ * WHY:   The workspace settings area needs a simple invite flow that stays inside the app boundary.
+ * WHAT:  Renders exact-match directory search plus invite/message actions for the current organization.
+ * HOW:   Searches only by full email or username, uses server actions for team operations, and opens direct conversations through Convex.
+ */
 export default function InviteMemberForm({
   canManage = true,
   showHeader = true,
   hasOrganization = true,
+  onCreateInvite,
+  onSearchDirectory,
 }: {
   canManage?: boolean;
   showHeader?: boolean;
   hasOrganization?: boolean;
+  onCreateInvite: (input: {
+    email: string;
+    role: "manager" | "member" | "viewer";
+  }) => Promise<{ ok: true; message: string; inviteId?: string } | { ok: false; message: string }>;
+  onSearchDirectory: (query: string) => Promise<{ ok: true; results: DirectoryResult[] } | { ok: false; message: string }>;
 }) {
   const { dictionary, direction } = useWebLocale();
   const router = useRouter();
+  const resolveConversation = useMutation(api.shared_logic.inbox.resolveDirectConversation);
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<"manager" | "member" | "viewer">("member");
   const [results, setResults] = useState<DirectoryResult[]>([]);
@@ -144,21 +149,13 @@ export default function InviteMemberForm({
 
     setIsSubmitting(true);
     setStatus(dictionary.settings.inviteSending);
-
-    const response = await fetch("/api/workspace/team-invites", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, role }),
-    });
-    const payload = response.status === 201 ? null : ((await response.json()) as { message?: string });
-
-    if (!response.ok) {
-      setStatus(payload?.message ?? dictionary.settings.inviteFailed);
+    const result = await onCreateInvite({ email, role });
+    if (!result.ok) {
+      setStatus(result.message);
       setIsSubmitting(false);
       return;
     }
-
-    setStatus(dictionary.settings.inviteSent);
+    setStatus(result.message);
     setResults((current) =>
       current.map((result) =>
         result.email === email ? { ...result, membershipState: "pending-invite" } : result,
@@ -173,19 +170,12 @@ export default function InviteMemberForm({
       return;
     }
 
-    const response = await fetch("/api/workspace/inbox", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ intent: "resolve", targetUserId }),
-    });
-
-    if (!response.ok) {
+    try {
+      const conversationId = await resolveConversation({ targetUserId });
+      router.push(`/ws/inbox/${conversationId}`);
+    } catch {
       setStatus(dictionary.settings.openConversationFailed);
-      return;
     }
-
-    const payload = (await response.json()) as { conversationId: string };
-    router.push(`/ws/inbox/${payload.conversationId}`);
   }
 
   return (
@@ -202,20 +192,15 @@ export default function InviteMemberForm({
 
         setIsSearching(true);
         setStatus(dictionary.settings.searchingDirectory);
-        const response = await fetch(`/api/workspace/directory?q=${encodeURIComponent(query.trim())}`, {
-          cache: "no-store",
-        });
-        const payload = (await response.json()) as DirectoryResult[] | { message?: string };
-
-        if (!response.ok) {
+        const result = await onSearchDirectory(query.trim());
+        if (!result.ok) {
           setResults([]);
-          setStatus(("message" in payload ? payload.message : null) ?? dictionary.settings.searchFailed);
+          setStatus(result.message);
           setIsSearching(false);
           return;
         }
-
-        setResults(Array.isArray(payload) ? payload : []);
-        setStatus(Array.isArray(payload) && payload.length === 0 ? dictionary.settings.noMatchingDirectoryResult : null);
+        setResults(result.results);
+        setStatus(result.results.length === 0 ? dictionary.settings.noMatchingDirectoryResult : null);
         setIsSearching(false);
       }}
     >

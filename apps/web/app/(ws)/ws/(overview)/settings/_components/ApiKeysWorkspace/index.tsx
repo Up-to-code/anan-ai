@@ -10,7 +10,7 @@ import type { ApiKeysWorkspaceProps } from "./types";
 /**
  * WHY:   Organization settings need one focused workspace for self-service API key management.
  * WHAT:  Lists org API keys, lets owners create keys, and lets owners/managers revoke keys.
- * HOW:   Keeps permission selection and one-time secret reveal in local state while delegating persistence to gateway routes.
+ * HOW:   Keeps permission selection and one-time secret reveal in local state while delegating persistence to server actions.
  */
 export default function ApiKeysWorkspace({
   initialKeys,
@@ -18,9 +18,11 @@ export default function ApiKeysWorkspace({
   canRevoke,
   canView,
   hasOrganization,
+  onCreateKey,
+  onRevokeKey,
 }: ApiKeysWorkspaceProps) {
   const { dictionary } = useWebLocale();
-  const workspace = useApiKeysWorkspace({ canCreate, canRevoke, initialKeys });
+  const workspace = useApiKeysWorkspace({ canCreate, canRevoke, initialKeys, onCreateKey, onRevokeKey });
 
   if (!hasOrganization) {
     return (

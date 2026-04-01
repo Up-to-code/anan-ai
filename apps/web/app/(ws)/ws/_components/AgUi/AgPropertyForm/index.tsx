@@ -71,14 +71,15 @@ export default function AgPropertyForm({
 
   const renderCurrentStep = () => {
     if (form.activeStep.key === "basic") {
-      return <BasicStep formState={form.formState} setFormState={form.setFormState} />;
+      return <BasicStep formState={form.formState} fieldErrors={form.submissionFeedback?.fieldErrors ?? {}} setFormState={form.setFormState} />;
     }
     if (form.activeStep.key === "content") {
-      return <ContentStep formState={form.formState} setFormState={form.setFormState} />;
+      return <ContentStep formState={form.formState} fieldErrors={form.submissionFeedback?.fieldErrors ?? {}} setFormState={form.setFormState} />;
     }
     if (form.activeStep.key === "gallery") {
       return (
         <GalleryStep
+          fieldErrors={form.submissionFeedback?.fieldErrors ?? {}}
           formState={form.formState}
           handleImageSelection={form.handleImageSelection}
           inputRef={form.inputRef}
@@ -98,6 +99,7 @@ export default function AgPropertyForm({
         <SpecsStep
           adLicenseLabel={form.adLicenseLabel}
           adLicenseTone={form.adLicenseTone}
+          fieldErrors={form.submissionFeedback?.fieldErrors ?? {}}
           formState={form.formState}
           handleLicenseFiles={form.handleLicenseFiles}
           handleLicenseSubmit={form.handleLicenseSubmit}
@@ -117,6 +119,7 @@ export default function AgPropertyForm({
       return (
         <SharingStep
           brokerSearch={form.brokerSearch}
+          fieldErrors={form.submissionFeedback?.fieldErrors ?? {}}
           filteredBrokers={form.filteredBrokers}
           formState={form.formState}
           handlePermitFiles={form.handlePermitFiles}
@@ -141,7 +144,7 @@ export default function AgPropertyForm({
   };
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col pb-12">
+    <div className="flex min-h-full w-full flex-col pb-12">
       {form.showSafetyConfirm ? (
         <AgPropertyFormSafetyOverlay
           savePending={form.savePending}
@@ -157,8 +160,15 @@ export default function AgPropertyForm({
         actions={form.isEditMode ? <AgPropertyFormHeaderActions onCancel={onCancel} onDelete={onDelete} /> : undefined}
       />
 
-      <div className="space-y-6 px-1 py-4 lg:py-6">
+      <div className="space-y-6 py-4 lg:py-6">
+        {form.submissionFeedback ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-right text-sm font-semibold text-rose-700">
+            {form.submissionFeedback.message}
+          </div>
+        ) : null}
+
         <StepNavigation
+          activeStepTitle={form.activeStep.title}
           activeStepSummary={form.activeStep.summary}
           currentStepIndex={form.currentStepIndex}
           isLastStep={form.isLastStep}
