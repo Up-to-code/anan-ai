@@ -2,6 +2,7 @@ import OfferOverviewPage from "./OfferOverviewPage";
 import { requireWorkspaceData } from "../../_lib/workspaceData";
 import { getWorkspaceOffersZone } from "@/server/ws/zones";
 import {
+  buildOfferFilterOptions,
   buildOffersRouteBase,
   filterOffers,
   flattenOffers,
@@ -9,7 +10,6 @@ import {
   paginateItems,
   resolvePage,
   resolveFilters,
-  resolveSearchQuery,
   resolveSort,
   sortOffers,
   type OffersPageSearchParams,
@@ -29,12 +29,13 @@ export default async function WorkspaceOffersRoute({
   const snapshot = await getWorkspaceOffersZone(workspace.audience, workspace.ownerContext).getSnapshot();
   const resolvedSearchParams = await searchParams;
   const page = resolvePage(resolvedSearchParams);
-  const searchQuery = resolveSearchQuery(resolvedSearchParams);
   const sort = resolveSort(resolvedSearchParams);
   const filters = resolveFilters(resolvedSearchParams);
+  const allOffers = flattenOffers(snapshot.queues);
+  const filterOptions = buildOfferFilterOptions(allOffers);
   const items = paginateItems(
     sortOffers(
-      filterOffers(flattenOffers(snapshot.queues), { searchQuery, filters }),
+      filterOffers(allOffers, { searchQuery: "", filters }),
       sort,
     ),
     page,
@@ -45,8 +46,8 @@ export default async function WorkspaceOffersRoute({
     <OfferOverviewPage
       items={items.items}
       pagination={items}
-      routeBase={buildOffersRouteBase({ searchQuery, sort, filters })}
-      searchQuery={searchQuery}
+      routeBase={buildOffersRouteBase({ searchQuery: "", sort, filters })}
+      filterOptions={filterOptions}
       sort={sort}
       filters={filters}
     />

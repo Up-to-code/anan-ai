@@ -1,6 +1,7 @@
 export type AppLocale = "ar" | "en" | "fr";
 
 export const WEB_LOCALE_COOKIE = "anan_web_locale";
+export const WORKSPACE_LOCALE_COOKIE = "anan_workspace_locale";
 export const WEB_SUPPORTED_LOCALES = ["ar", "en", "fr"] as const satisfies readonly AppLocale[];
 
 const localeLabelMap: Record<AppLocale, string> = {

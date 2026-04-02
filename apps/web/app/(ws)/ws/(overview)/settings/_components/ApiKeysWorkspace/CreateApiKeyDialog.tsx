@@ -66,8 +66,8 @@ export function CreateApiKeyDialog({
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-opacity duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
-        <Dialog.Popup className="fixed inset-0 z-50 flex items-center justify-center p-4 outline-none transition-all duration-200 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
-          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-2xl">
+        <Dialog.Popup className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-4 outline-none transition-all duration-200 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+          <div className="pointer-events-auto flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-2xl overscroll-contain">
             <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-5">
               <Dialog.Title className="text-lg font-bold">
                 {revealedResult ? dictionary.settings.apiKeysCreatedTitle : dictionary.settings.apiKeysCreateDialogTitle}
@@ -123,6 +123,8 @@ export function CreateApiKeyDialog({
                     <label className="text-[13px] font-semibold text-foreground">{dictionary.settings.apiKeysNameLabel}</label>
                     <input
                       type="text"
+                      name="apiKeyName"
+                      autoComplete="off"
                       value={name}
                       onChange={(event) => onNameChange(event.target.value)}
                       disabled={isSubmitting}

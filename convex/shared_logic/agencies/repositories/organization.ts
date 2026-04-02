@@ -80,7 +80,7 @@ async function logOrganizationUpdateAudits(params: {
   });
 }
 
-function mapOrganizationSummary(owner: any, organization: any) {
+async function mapOrganizationSummary(ctx: any, owner: any, organization: any) {
   return {
     id: getOwnerId(owner),
     type: owner.ownerType === "broker" ? "broker" : "red",
@@ -88,6 +88,7 @@ function mapOrganizationSummary(owner: any, organization: any) {
     slug: organization.slug,
     status: organization.status ?? null,
     isVerified: organization.isVerified === true,
+    logoUrl: organization.logoId ? await ctx.storage.getUrl(organization.logoId) : null,
     description: organization.description,
     website: organization.website,
     contactEmail: organization.contactEmail,
@@ -165,7 +166,7 @@ async function buildCurrentOrganizationResponse(ctx: any, owner: any, membership
 
   return {
     organization: {
-      ...mapOrganizationSummary(owner, organization),
+      ...(await mapOrganizationSummary(ctx, owner, organization)),
       verificationSummary: buildOrganizationVerificationSummary({
         organization,
         latestRequest: latestVerificationRequest,
@@ -321,7 +322,7 @@ export const updateCurrentOrganization = mutation({
       beforeOwnerRecord,
       organization,
     });
-    return mapOrganizationSummary(owner, organization);
+    return mapOrganizationSummary(ctx, owner, organization);
   },
 });
 

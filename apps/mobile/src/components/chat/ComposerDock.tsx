@@ -1,5 +1,5 @@
-import { ArrowUp, Loader2, Mic, Square } from "lucide-react-native";
-import { Platform, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { ArrowUp, Loader2, Mic } from "lucide-react-native";
+import { Platform, Pressable, StyleSheet, TextInput, View, useColorScheme } from "react-native";
 import { useState } from "react";
 import { useMobileLayout } from "@/lib/mobileLayout";
 import { VoiceRecordingOverlay } from "@/components/chat/VoiceRecordingOverlay";
@@ -14,49 +14,62 @@ type ComposerDockProps = {
 
 /**
  * WHY:   The buyer assistant needs a bottom dock that feels like the main product surface, not a generic mobile chat bar.
- * WHAT:  Renders a ChatGPT-style composer with multiline input, compact action row, and integrated voice recording entry point.
- * HOW:   Uses a layered rounded panel, swaps mic/send by input state, and delegates recording capture to the full-screen voice overlay.
+ * WHAT:  Renders the mobile chat input as a single rounded message card with inline actions and integrated voice recording.
+ * HOW:   Uses a reference-matched shell, adapts text direction for Arabic and Latin prompts, and preserves the existing voice overlay flow.
  */
 export function ComposerDock({ value, onChange, onSend, onSubmitVoiceRecording }: ComposerDockProps) {
   const layout = useMobileLayout();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const isTyping = value.trim().length > 0;
   const canSend = isTyping;
+  const trimmedValue = value.trim();
+  const startsWithLatin = /^[A-Za-z0-9]/.test(trimmedValue);
+  const textAlign = startsWithLatin ? "left" : "right";
+  const writingDirection = startsWithLatin ? "ltr" : "rtl";
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState<
     "idle" | "waiting_for_permission" | "recording" | "uploading" | "transcribing" | "sending" | "error"
   >("idle");
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  const isVoiceBusy = voiceStatus === "uploading" || voiceStatus === "transcribing" || voiceStatus === "sending";
+  const showSendAction = canSend;
+  const panelBorderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(15,23,42,0.08)";
+  const panelBackgroundColor = isDark ? "rgba(24,24,27,0.98)" : "rgba(255,255,255,0.98)";
+  const buttonIconColor = isDark ? "#E2E8F0" : "#475569";
+  const sendBackgroundColor = canSend ? "#E57B4B" : isDark ? "#334155" : "#CBD5E1";
+  const inputMinHeight = layout.isCompact ? 42 : 44;
+  const inputMaxHeight = 126;
 
   return (
     <View className="w-full bg-transparent">
       <View
-        className="overflow-hidden border border-slate-200/90 bg-white/96 dark:border-slate-800 dark:bg-slate-950/96"
+        className="overflow-hidden"
         style={{
-          borderRadius: layout.cardRadius + 10,
-          minHeight: layout.composerHeight + 34,
-          shadowColor: "#0F172A",
-          shadowOffset: { width: 0, height: 16 },
-          shadowOpacity: 0.08,
-          shadowRadius: 32,
-          elevation: 10,
+          borderRadius: 24,
+          borderWidth: 1,
+          borderColor: panelBorderColor,
+          backgroundColor: panelBackgroundColor,
         }}
       >
         {voiceStatus === "error" && voiceError ? (
-          <View className="border-b border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/30 dark:bg-red-950/40">
-            <AppText responsiveRole="chip" className="font-cairo-black text-red-600 dark:text-red-300">
-              {voiceError}
-            </AppText>
+          <View className="px-4 pt-3">
+            <View className="rounded-2xl border border-red-200/80 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/40">
+              <AppText responsiveRole="chip" className="font-cairo-black text-red-600 dark:text-red-300">
+                {voiceError}
+              </AppText>
+            </View>
           </View>
         ) : null}
 
-        {(voiceStatus === "uploading" || voiceStatus === "transcribing" || voiceStatus === "sending") ? (
-          <View className="border-b border-slate-200/80 px-4 py-3 dark:border-slate-800">
-            <View className="flex-row-reverse items-center justify-between">
+        {isVoiceBusy ? (
+          <View className="px-4 pt-3">
+            <View className="flex-row-reverse items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/80">
               <View className="flex-row-reverse items-center gap-2">
-                <View className="h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-900">
+                <View className="h-8 w-8 items-center justify-center rounded-full bg-white dark:bg-slate-950">
                   <Loader2 size={16} color="#2563EB" />
                 </View>
-                <View>
+                <View className="items-end">
                   <AppText responsiveRole="chip" className="font-cairo-black text-slate-900 dark:text-slate-50">
                     {voiceStatus === "uploading"
                       ? "نرفع التسجيل"
@@ -65,12 +78,12 @@ export function ComposerDock({ value, onChange, onSend, onSubmitVoiceRecording }
                         : "نرسل الرسالة"}
                   </AppText>
                   <AppText responsiveRole="meta" className="font-medium text-slate-500 dark:text-slate-400">
-                    سيتم إرسالها كمحادثة عادية حال اكتمال المعالجة.
+                    ستصل كمحادثة عادية بعد اكتمال المعالجة.
                   </AppText>
                 </View>
               </View>
               <View className="flex-row-reverse gap-1">
-                {Array.from({ length: 4 }).map((_, index) => (
+                {Array.from({ length: 3 }).map((_, index) => (
                   <View
                     key={index}
                     className="w-1.5 rounded-full bg-blue-500/80"
@@ -82,82 +95,62 @@ export function ComposerDock({ value, onChange, onSend, onSubmitVoiceRecording }
           </View>
         ) : null}
 
-        <View className="px-4 pt-4">
-          <TextInput
-            value={value}
-            onChangeText={onChange}
-            multiline
-            blurOnSubmit={false}
-            editable={voiceStatus === "idle" || voiceStatus === "error"}
-            className="text-slate-900 dark:text-slate-50"
-            placeholder="اسأل عن عقار، التمويل، المقارنة، أو اطلب مستشاراً"
-            placeholderTextColor="#94A3B8"
-            cursorColor="#2563EB"
-            style={{
-              minHeight: layout.composerHeight + 8,
-              maxHeight: 132,
-              textAlign: "right",
-              fontFamily: "Cairo_600SemiBold",
-              fontSize: layout.typeScale.body.fontSize,
-              lineHeight: layout.typeScale.body.lineHeight,
-              writingDirection: "rtl",
-              paddingTop: Platform.OS === "ios" ? 8 : 4,
-              paddingBottom: Platform.OS === "ios" ? 8 : 4,
-              paddingHorizontal: 0,
-            }}
-          />
-        </View>
-
-        <View className="mt-2 flex-row-reverse items-center justify-between border-t border-slate-200/80 px-4 pb-4 pt-3 dark:border-slate-800">
-          <AppText responsiveRole="meta" className="font-cairo-black uppercase tracking-[2px] text-slate-400">
-            مساعد عنان
-          </AppText>
-          <View className="flex-row-reverse items-center gap-2">
-            <Pressable
-              onPress={() => {
-                setVoiceError(null);
-                setVoiceStatus("recording");
-                setIsVoiceOpen(true);
+        <View className="px-4 pb-3 pt-3">
+          <View style={styles.composerRow}>
+            <TextInput
+              value={value}
+              onChangeText={onChange}
+              multiline
+              blurOnSubmit={false}
+              editable={voiceStatus === "idle" || voiceStatus === "error"}
+              className="text-slate-900 dark:text-slate-50"
+              placeholder="اسأل عن عقار أو اطلب مستشاراً"
+              placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+              cursorColor="#E57B4B"
+              textAlignVertical="top"
+              style={{
+                flex: 1,
+                minHeight: inputMinHeight,
+                maxHeight: inputMaxHeight,
+                textAlign,
+                fontFamily: "Cairo_600SemiBold",
+                fontSize: layout.typeScale.body.fontSize,
+                lineHeight: layout.typeScale.body.lineHeight,
+                writingDirection,
+                paddingTop: Platform.OS === "ios" ? 8 : 6,
+                paddingBottom: 6,
+                paddingHorizontal: 0,
               }}
-              accessibilityRole="button"
-              disabled={voiceStatus === "uploading" || voiceStatus === "transcribing" || voiceStatus === "sending"}
-              style={({ pressed }) => [
-                styles.fab,
-                {
-                  width: 44,
-                  height: 44,
-                  borderRadius: 22,
-                  borderWidth: 1,
-                  borderColor: voiceStatus === "recording" ? "#FCA5A5" : "#E2E8F0",
-                  backgroundColor: voiceStatus === "recording" ? "#FEF2F2" : "#F8FAFC",
-                  transform: [{ scale: pressed ? 0.94 : 1 }],
-                  opacity: voiceStatus === "uploading" || voiceStatus === "transcribing" || voiceStatus === "sending" ? 0.5 : 1,
-                },
-              ]}
-            >
-              {voiceStatus === "recording" ? (
-                <Square size={16} color="#DC2626" fill="#DC2626" />
-              ) : (
-                <Mic size={20} color="#475569" />
-              )}
-            </Pressable>
+            />
+
             <Pressable
-              onPress={onSend}
+              onPress={
+                showSendAction
+                  ? onSend
+                  : () => {
+                      setVoiceError(null);
+                      setVoiceStatus("recording");
+                      setIsVoiceOpen(true);
+                    }
+              }
               accessibilityRole="button"
-              disabled={!canSend || voiceStatus === "uploading" || voiceStatus === "transcribing" || voiceStatus === "sending"}
+              accessibilityLabel={showSendAction ? "إرسال الرسالة" : "تسجيل رسالة صوتية"}
+              disabled={showSendAction ? !canSend || isVoiceBusy : isVoiceBusy}
+              hitSlop={10}
               style={({ pressed }) => [
-                styles.fab,
+                showSendAction ? styles.sendAction : styles.iconAction,
                 {
-                  width: 44,
-                  height: 44,
-                  borderRadius: 22,
-                  backgroundColor: canSend ? "#0F172A" : "#CBD5E1",
+                  backgroundColor: showSendAction ? sendBackgroundColor : "transparent",
+                  opacity: isVoiceBusy ? 0.5 : 1,
                   transform: [{ scale: pressed ? 0.94 : 1 }],
-                  opacity: voiceStatus === "uploading" || voiceStatus === "transcribing" || voiceStatus === "sending" ? 0.5 : 1,
                 },
               ]}
             >
-              <ArrowUp size={18} color="#FFFFFF" strokeWidth={3} />
+              {showSendAction ? (
+                <ArrowUp size={18} color="#FFFFFF" strokeWidth={2.8} />
+              ) : (
+                <Mic size={22} color={buttonIconColor} strokeWidth={2.1} />
+              )}
             </Pressable>
           </View>
         </View>
@@ -196,8 +189,23 @@ export function ComposerDock({ value, onChange, onSend, onSubmitVoiceRecording }
 }
 
 const styles = StyleSheet.create({
-  fab: {
+  composerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  iconAction: {
     alignItems: "center",
     justifyContent: "center",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  sendAction: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 42,
+    height: 42,
+    borderRadius: 21,
   },
 });

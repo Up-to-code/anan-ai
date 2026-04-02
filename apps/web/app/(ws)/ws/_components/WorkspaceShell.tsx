@@ -11,11 +11,13 @@ import { WORKSPACE_SIDEBAR_WIDTH_CLASS } from "../_lib/shell";
 import WorkspaceSidebarDrawer from "./WorkspaceSidebarDrawer";
 import WorkspaceTopNavbar from "./WorkspaceTopNavbar";
 import WorkspaceMessageToasts from "./WorkspaceMessageToasts";
+import WorkspaceComplianceBanner from "./WorkspaceComplianceBanner";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
 import type { AnanProThreadSummary } from "@/server/contracts/ananPro";
 import { cn } from "@/lib/utils";
 import { getWorkspaceZonesForKeys } from "../_lib/zones";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import type { ComplianceBanner } from "../_lib/complianceBanner";
 
 export type WorkspaceShellVariant = "default" | "assistant";
 
@@ -42,12 +44,7 @@ export default function WorkspaceShell({
   recentAssistantThreads?: AnanProThreadSummary[];
   allAssistantThreads?: AnanProThreadSummary[];
   signalCounts?: { notificationCount: number; inboxCount: number };
-  complianceBanner?: {
-    title: string;
-    body: string;
-    ctaLabel?: string;
-    ctaHref?: string;
-  } | null;
+  complianceBanner?: ComplianceBanner | null;
   variant?: WorkspaceShellVariant;
   headerTitle?: string;
   children: React.ReactNode;
@@ -63,14 +60,17 @@ export default function WorkspaceShell({
     <div
       data-slot="workspace-shell"
       data-variant={variant}
+      dir={direction}
       className={cn(
-        "min-h-svh lg:flex lg:h-svh lg:overflow-hidden",
-        "bg-[var(--workspace-shell)]",
+        "app-shell-height bg-[var(--workspace-shell)]",
+        isAssistantHome
+          ? "app-shell-fixed-height flex min-h-0 flex-col overflow-hidden lg:flex-row"
+          : "lg:flex lg:overflow-hidden",
       )}
     >
       <div
         className={cn(
-          "relative hidden shrink-0 lg:flex lg:h-svh motion-safe:transition-[width] motion-safe:duration-300 motion-safe:ease-out",
+          "relative hidden h-full shrink-0 lg:flex motion-safe:transition-[width] motion-safe:duration-300 motion-safe:ease-out",
           sidebarCollapsed ? "w-24" : WORKSPACE_SIDEBAR_WIDTH_CLASS,
         )}
       >
@@ -150,14 +150,14 @@ export default function WorkspaceShell({
         </div>
       </div>
 
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-transparent lg:max-h-svh lg:overflow-hidden">
+      <div className="relative flex min-h-0 min-w-0 flex-1 basis-0 flex-col bg-transparent lg:overflow-hidden">
         <WorkspaceTopNavbar
           user={user}
           organization={organization}
           visibleZoneKeys={visibleZoneKeys}
           initialSignalCounts={signalCounts}
           variant={variant}
-          title={headerTitle}
+          title={headerTitle ?? (!isAssistantVariant ? organization.sidebarSubtitle : undefined)}
           mobileNavigation={
             <WorkspaceSidebarDrawer
               user={user}
@@ -171,43 +171,21 @@ export default function WorkspaceShell({
 
         <main
           className={cn(
-            "min-h-0 min-w-0 flex-1 motion-safe:animate-zone-page-enter",
+            "flex min-h-0 min-w-0 flex-1 basis-0 flex-col motion-safe:animate-zone-page-enter",
             isAssistantHome ? "overflow-hidden" : "overflow-auto",
           )}
         >
-          {complianceBanner ? (
-            <div
-              className={cn(
-                "px-4 pt-4 sm:px-6 lg:px-8",
-                isRtl ? "text-right" : "text-left",
-              )}
-              dir={direction}
-            >
-              <div
-                data-slot="workspace-compliance-banner"
-                className="ms-auto w-full max-w-3xl rounded-[22px] border border-amber-200/80 bg-amber-50/90 px-5 py-4 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10"
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="text-sm font-black text-amber-900 dark:text-amber-100">{complianceBanner.title}</div>
-                    <div className="mt-1 text-xs font-semibold leading-6 text-amber-800 dark:text-amber-200">
-                      {complianceBanner.body}
-                    </div>
-                  </div>
-                  {complianceBanner.ctaLabel ? (
-                    <a
-                      href={complianceBanner.ctaHref ?? "/ws?onboarding=verification"}
-                      className="inline-flex shrink-0 items-center justify-center rounded-full border border-amber-300 bg-white px-4 py-2 text-[11px] font-black tracking-[0.14em] text-amber-900 transition hover:bg-amber-100 dark:border-amber-400/40 dark:bg-slate-950 dark:text-amber-200"
-                    >
-                      {complianceBanner.ctaLabel}
-                    </a>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-          ) : null}
+          {complianceBanner ? <WorkspaceComplianceBanner banner={complianceBanner} /> : null}
 
-          {children}
+          <div
+            data-slot="workspace-content"
+            className={cn(
+              "flex min-h-0 min-w-0 flex-1 basis-0 flex-col",
+              isAssistantVariant ? "pt-3 sm:pt-4" : undefined,
+            )}
+          >
+            {children}
+          </div>
         </main>
 
         <WorkspaceMessageToasts />

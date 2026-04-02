@@ -16,8 +16,6 @@ export type MobileAgUiTurn = BuyerAgUiTurn;
 export type MobileThreadKind = BuyerThreadKind;
 export type MobileThreadSummary = BuyerThreadSummary;
 
-export type MobileTranscriptSeedMessage = Omit<MobileConversationMessage, "id" | "createdAt" | "uiTurn">;
-
 export type MobileGuestSnapshot = {
   draft: string;
   activeThreadId: string | null;
@@ -25,14 +23,4 @@ export type MobileGuestSnapshot = {
   activeProperty: MobileProperty | null;
   messages: MobileConversationMessage[];
   updatedAt: number;
-};
-
-export type MobileAuthBridgePayload = {
-  title?: string;
-  messages: MobileTranscriptSeedMessage[];
-  activeProperty: MobileProperty | null;
-  handoff?: {
-    propertyId: string;
-    message: string;
-  };
 };

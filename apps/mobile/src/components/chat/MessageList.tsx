@@ -110,11 +110,15 @@ function MessageBubble({
   const layout = useMobileLayout();
   const isUser = message.role === "user";
   const suggestedPrompts = message.suggestedPrompts ?? [];
+  const trimmedText = message.text.trim();
+  const startsWithLatin = /^[A-Za-z0-9]/.test(trimmedText);
+  const bubbleTextAlign = startsWithLatin ? "left" : "right";
+  const bubbleWritingDirection = startsWithLatin ? "ltr" : "rtl";
 
   return (
-    <View className={cn("flex-column", isUser ? "items-start" : "items-stretch")}>
+    <View className={cn("flex-column", isUser ? "items-end" : "items-stretch")}>
       {isUser ? (
-        <View className="items-start">
+        <View className="items-end">
           <View
             className="bg-slate-900 px-4 py-3 dark:bg-slate-50"
             style={{
@@ -125,18 +129,20 @@ function MessageBubble({
               borderBottomRightRadius: layout.cardRadius + 2,
             }}
           >
-            <AppText responsiveRole="body" className="text-white dark:text-slate-950 font-cairo-medium">
+            <AppText
+              responsiveRole="body"
+              className="font-cairo-medium text-white dark:text-slate-950"
+              style={{ textAlign: bubbleTextAlign, writingDirection: bubbleWritingDirection }}
+            >
               {message.text}
             </AppText>
           </View>
         </View>
       ) : (
         <View style={{ gap: layout.sectionGap - 2 }}>
-          <View className="flex-row-reverse items-center gap-2">
-            <View className="bg-blue-50 dark:bg-blue-900/30 p-1.5 rounded-full items-center justify-center">
-              <Sparkles size={14} color="#2563EB" />
-            </View>
-            <AppText responsiveRole="chip" className="font-cairo-black text-slate-700 dark:text-slate-200">
+          <View className="flex-row-reverse items-center gap-1.5">
+            <Sparkles size={14} color="#2563EB" />
+            <AppText responsiveRole="chip" className="font-cairo-black text-slate-800 dark:text-slate-100">
               مساعد عنان
             </AppText>
             <View className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
@@ -146,13 +152,6 @@ function MessageBubble({
           </View>
           <View
             className="rounded-[24px] border border-slate-200/80 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900"
-            style={{
-              shadowColor: "#0F172A",
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.05,
-              shadowRadius: 18,
-              elevation: 2,
-            }}
           >
             <AppText responsiveRole="bodyStrong" className="text-slate-900 dark:text-slate-50 font-cairo-bold">
               {message.text}
@@ -205,11 +204,6 @@ function MessageBubble({
                 justifyContent: "center",
                 marginLeft: index === suggestedPrompts.length - 1 ? 0 : 10,
                 maxWidth: layout.width * 0.72,
-                shadowColor: "#0F172A",
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.06,
-                shadowRadius: 16,
-                elevation: 3,
               }}
               onPress={() => onSuggestedPromptPress(prompt)}
             >

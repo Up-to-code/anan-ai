@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_CONVEX_URL:
       process.env.NEXT_PUBLIC_CONVEX_URL ?? process.env.CONVEX_URL ?? "",
+    NEXT_PUBLIC_UPLOADTHING_ENABLED: process.env.UPLOADTHING_TOKEN?.trim() ? "true" : "false",
   },
 };
 

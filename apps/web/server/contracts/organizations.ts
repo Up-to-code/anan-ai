@@ -40,6 +40,7 @@ export type OrganizationSummary = {
   slug: string;
   status: "active" | "pending" | null;
   isVerified: boolean;
+  logoUrl?: string | null;
   description?: string;
   website?: string;
   contactEmail?: string;

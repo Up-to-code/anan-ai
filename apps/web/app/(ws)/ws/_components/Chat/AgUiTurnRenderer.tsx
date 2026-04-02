@@ -13,10 +13,11 @@ export default function AgUiTurnRenderer({ turn }: { turn: AnanProUiTurn }) {
   return (
     <div
       className={cn(
-        "ag-ui-thread space-y-4",
-        "[&_[data-slot='ag-ui-turn']]:space-y-4",
+        "ag-ui-thread w-full space-y-3",
+        "[&_[data-slot='ag-ui-turn']]:space-y-3",
         "[&_section]:max-w-full",
         "[&_section]:text-right",
+        "[&_section]:rounded-[26px]",
         "[&_button]:transition-colors",
       )}
       dir="rtl"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUp, Loader2, Mic, Paperclip } from "lucide-react";
+import { ArrowUp, Loader2, Paperclip } from "lucide-react";
 import type { WorkspaceAudience } from "@/server/contracts/workspace";
 import {
   getAttachmentValidationMessage,
@@ -22,6 +22,7 @@ import {
   type PendingWorkspaceAttachment,
 } from "./WorkspaceAssistantAttachmentChips";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { AIMotionLogo, type AIMotionState } from "../../AIMotion";
 
 type WorkspaceAssistantComposerProps = {
   audience: WorkspaceAudience;
@@ -37,6 +38,38 @@ type WorkspaceAssistantComposerProps = {
   layout?: "landing" | "thread";
 };
 
+function getMicStatusLabel(
+  phase: WorkspaceAssistantComposerProps["voiceProcessingPhase"],
+  isRecording: boolean,
+  isProcessing: boolean,
+  dictionary: ReturnType<typeof useWebLocale>["dictionary"],
+) {
+  if (phase === "waiting_for_permission") return dictionary.assistant.preparingMic;
+  if (phase === "waiting_for_speech") return dictionary.assistant.waitingForSpeech;
+  if (phase === "silence_countdown") return dictionary.assistant.silenceCountdown;
+  if (phase === "uploading") return dictionary.assistant.uploadingRecording;
+  if (phase === "transcribing") return dictionary.assistant.analyzingRecording;
+  if (phase === "sending") return dictionary.assistant.sendingMessage;
+  if (phase === "error") return dictionary.assistant.recordingError;
+  if (phase === "recording" || isRecording) return dictionary.assistant.recordingNow;
+  if (isProcessing) return dictionary.assistant.processing;
+  return dictionary.assistant.voiceTitle;
+}
+
+function getMicMotionState(
+  phase: WorkspaceAssistantComposerProps["voiceProcessingPhase"],
+  isRecording: boolean,
+  isProcessing: boolean,
+): AIMotionState {
+  if (phase === "waiting_for_permission") return "loading";
+  if (phase === "waiting_for_speech") return "focus";
+  if (phase === "recording" || phase === "silence_countdown" || isRecording) return "matching";
+  if (phase === "uploading") return "syncing";
+  if (phase === "transcribing" || phase === "sending" || isProcessing) return "thinking";
+  if (phase === "error") return "glitch";
+  return "idle";
+}
+
 function createPendingAttachment(file: File): PendingWorkspaceAttachment {
   const meta = getAttachmentPresentationMeta(file);
   return {
@@ -45,6 +78,33 @@ function createPendingAttachment(file: File): PendingWorkspaceAttachment {
     previewUrl: meta.kind === "image" ? URL.createObjectURL(file) : null,
     status: "pending",
   };
+}
+
+function InlineMicMeter({
+  levels,
+  active,
+}: {
+  levels: number[];
+  active: boolean;
+}) {
+  const visibleLevels = levels.length > 0 ? levels.slice(-18) : Array.from({ length: 18 }, () => 0.2);
+
+  return (
+    <div className="flex h-7 items-center gap-[3px]" aria-hidden="true">
+      {visibleLevels.map((level, index) => (
+        <motion.span
+          key={index}
+          initial={{ height: 4, opacity: 0.45 }}
+          animate={{
+            height: active ? Math.max(4, Math.round(level * 18)) : 6,
+            opacity: active ? 1 : 0.55,
+          }}
+          transition={{ type: "spring", stiffness: 280, damping: 22, delay: index * 0.008 }}
+          className="w-[3px] rounded-full bg-[linear-gradient(to_top,var(--workspace-highlight),color-mix(in_srgb,var(--workspace-highlight)_42%,white))]"
+        />
+      ))}
+    </div>
+  );
 }
 
 export default function WorkspaceAssistantComposer({
@@ -73,6 +133,22 @@ export default function WorkspaceAssistantComposer({
         : dictionary.assistant.placeholderDefault;
   const isBusy = isSending || isMicProcessing || isUploadingAttachments;
   const language = resolveComposerLanguage();
+  const micMotionState = getMicMotionState(voiceProcessingPhase, isMicRecording, isMicProcessing);
+  const showInlineMicState =
+    isMicRecording ||
+    isMicProcessing ||
+    voiceProcessingPhase === "waiting_for_permission" ||
+    voiceProcessingPhase === "waiting_for_speech" ||
+    voiceProcessingPhase === "silence_countdown" ||
+    voiceProcessingPhase === "uploading" ||
+    voiceProcessingPhase === "transcribing" ||
+    voiceProcessingPhase === "sending";
+  const micStatusLabel = getMicStatusLabel(
+    voiceProcessingPhase,
+    isMicRecording,
+    isMicProcessing,
+    dictionary,
+  );
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -221,7 +297,7 @@ export default function WorkspaceAssistantComposer({
 
   return (
     <div
-      className="w-full"
+      className="w-full pb-1"
       data-slot="chat-input"
       data-layout={layout}
       data-composer-slot="chat-input-nexus"
@@ -256,6 +332,8 @@ export default function WorkspaceAssistantComposer({
               "mb-4 mx-4 rounded-[24px] border border-red-500/10 bg-red-50/50 px-6 py-4 text-[13px] font-bold text-red-600 shadow-sm backdrop-blur-xl dark:bg-red-500/10 dark:text-red-400",
               isRtl ? "text-right" : "text-left",
             )}
+            role="status"
+            aria-live="polite"
           >
             {localSendError}
           </motion.div>
@@ -304,6 +382,33 @@ export default function WorkspaceAssistantComposer({
             </motion.div>
           ) : null}
         </AnimatePresence>
+        <AnimatePresence initial={false}>
+          {showInlineMicState ? (
+            <motion.div
+              key="inline-mic-state"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="mx-4 mt-4 flex items-center gap-3 rounded-[20px] border border-[color:color-mix(in_srgb,var(--workspace-highlight)_16%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,var(--workspace-panel))] px-4 py-3"
+              dir={direction}
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[color:color-mix(in_srgb,var(--workspace-highlight)_14%,transparent)]">
+                <AIMotionLogo state={micMotionState} size="compact" className="scale-[0.38]" />
+              </div>
+              <div className={cn("min-w-0 flex-1", isRtl ? "text-right" : "text-left")}>
+                <div className="text-[12px] font-black text-[var(--workspace-bubble-other-foreground)]">
+                  {micStatusLabel}
+                </div>
+                <div className="mt-2">
+                  <InlineMicMeter
+                    levels={micLevels}
+                    active={isMicRecording || voiceProcessingPhase === "silence_countdown"}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
         <div className="flex flex-1 flex-col justify-center">
           <textarea
             ref={textareaRef}
@@ -320,13 +425,13 @@ export default function WorkspaceAssistantComposer({
               "text-zinc-900 placeholder:text-zinc-500/80 focus:placeholder:text-zinc-500/60",
               "dark:text-zinc-100 dark:placeholder:text-zinc-400/70 dark:focus:placeholder:text-zinc-400/50"
             )}
-            style={{ minHeight: "60px", maxHeight: "200px" }}
+            style={{ minHeight: showInlineMicState ? "52px" : "60px", maxHeight: "200px" }}
             dir={direction}
             rows={1}
           />
         </div>
 
-        <div className="px-3 pb-3 pt-1 flex flex-row items-center justify-between" dir={direction}>
+        <div className="flex flex-row items-center justify-between px-3 pb-4 pt-2" dir={direction}>
           <div className={cn("flex flex-row items-center gap-2", !isRtl && "order-2")}>
             <div className="flex flex-row items-center gap-2">
               <button
@@ -358,11 +463,9 @@ export default function WorkspaceAssistantComposer({
                   )}
                   title={dictionary.assistant.voiceTitle}
                 >
-                  {isMicProcessing || voiceProcessingPhase === "waiting_for_permission" ? (
-                    <Loader2 className="h-4 w-4 animate-spin opacity-70" />
-                  ) : (
-                    <Mic className="h-4 w-4 opacity-70" />
-                  )}
+                  <span className="flex h-4 w-4 items-center justify-center" aria-hidden="true">
+                    <AIMotionLogo state={micMotionState} size="compact" className="scale-[0.3]" />
+                  </span>
                   <span className="pt-[2px]">{isMicRecording ? dictionary.assistant.recordingNow : dictionary.assistant.voiceTitle}</span>
                 </button>
               )}

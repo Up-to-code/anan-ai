@@ -3,6 +3,7 @@ import { getWorkspaceOrganizationDisplay } from "../../_lib/organizationDisplay"
 import { getLayoutSidebarData, requireWorkspaceData } from "../../_lib/workspaceData";
 import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
 import { buildComplianceBanner } from "../../_lib/complianceBanner";
+import { getWorkspaceLocale } from "../../_lib/workspaceLocale";
 
 export default async function OffersZoneLayout({
   children,
@@ -14,6 +15,7 @@ export default async function OffersZoneLayout({
     getLayoutSidebarData("/ws/offers"),
     getComplianceRulesetForCurrentOrg().catch(() => null),
   ]);
+  const locale = await getWorkspaceLocale();
   const primaryOrganization = chrome.organizations?.[0];
 
   if (!primaryOrganization) {
@@ -34,7 +36,9 @@ export default async function OffersZoneLayout({
         name: primaryOrganization?.name,
         type: primaryOrganization?.type,
         status: primaryOrganization?.status,
-        zoneLabel: "العروض",
+        logoUrl: primaryOrganization?.logoUrl,
+        isVerified: primaryOrganization?.isVerified,
+        zoneLabel: locale === "fr" ? "Offres" : locale === "en" ? "Offers" : "العروض",
       })}
     >
       {children}

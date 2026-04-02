@@ -6,6 +6,11 @@ import { mapPropertyToWorkspaceProjectDetail } from "../projectViewModel";
 import { requireSessionContext } from "@/server/auth/session";
 import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizationAssetsRepository";
 import { convexProjectAccessRepository } from "@/server/infrastructure/convex/projectAccessRepository";
+import { normalizeDomainError } from "@/server/contracts/errors";
+import type {
+  ProjectAnalyticsEventType,
+} from "@/server/contracts/properties";
+import type { ProjectMutationActionResult } from "../ProjectsPage/actionTypes";
 
 type WorkspaceProjectDetailRouteProps = {
   params: Promise<{ projectId: string }>;
@@ -41,5 +46,50 @@ export default async function WorkspaceProjectDetailRoute({
     notFound();
   }
 
-  return <ProjectDetailPage project={project} />;
+  async function publishProject(): Promise<ProjectMutationActionResult> {
+    "use server";
+
+    try {
+      await getWorkspacePropertyZone(workspace.audience, workspace.ownerContext).publishProperty({ id: projectId });
+      return { ok: true };
+    } catch (error) {
+      const domainError = normalizeDomainError(error);
+      return { ok: false, code: domainError.code, message: domainError.message };
+    }
+  }
+
+  async function deleteProject(): Promise<ProjectMutationActionResult> {
+    "use server";
+
+    try {
+      await getWorkspacePropertyZone(workspace.audience, workspace.ownerContext).deleteProperty({ id: projectId });
+      return { ok: true };
+    } catch (error) {
+      const domainError = normalizeDomainError(error);
+      return { ok: false, code: domainError.code, message: domainError.message };
+    }
+  }
+
+  async function recordProjectAnalyticsEvent(input: {
+    eventType: ProjectAnalyticsEventType;
+    source: string;
+  }) {
+    "use server";
+
+    await getWorkspacePropertyZone(workspace.audience, workspace.ownerContext).recordProjectAnalyticsEvent({
+      id: projectId,
+      eventType: input.eventType,
+      source: input.source,
+    });
+    return { ok: true as const };
+  }
+
+  return (
+    <ProjectDetailPage
+      project={project}
+      onPublishProject={publishProject}
+      onDeleteProject={deleteProject}
+      onTrackProjectEvent={recordProjectAnalyticsEvent}
+    />
+  );
 }

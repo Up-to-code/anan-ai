@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
+import type { BuyerAssistantMessage } from "@/client_zone/shared/types";
 import { MarkdownContent } from "./markdown-content";
-import { type BuyerAssistantMessage } from "@anan/client-assistant";
 
 interface ChatMessageProps {
   message: BuyerAssistantMessage;
@@ -11,6 +11,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
 
   return (
     <div
+      data-testid={isAssistant ? "client-assistant-message" : "client-user-message"}
       className={cn(
         "flex w-full mb-4 animate-zone-page-enter",
         isAssistant ? "justify-start" : "justify-end"

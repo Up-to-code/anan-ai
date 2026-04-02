@@ -4,6 +4,7 @@ import { getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapPropertyToWorkspaceProject } from "./projectViewModel";
 import { normalizeDomainError } from "@/server/contracts/errors";
 import type { ProjectMutationActionResult } from "./ProjectsPage/actionTypes";
+import type { ProjectAnalyticsEventType } from "@/server/contracts/properties";
 
 /**
  * WHY:   The projects root route should stay SSR-first while keeping broker-vs-developer branching out of the UI.
@@ -43,11 +44,23 @@ export default async function WorkspaceProjectsRoute() {
     }
   }
 
+  async function recordProjectAnalyticsEvent(input: {
+    id: string;
+    eventType: ProjectAnalyticsEventType;
+    source: string;
+  }) {
+    "use server";
+
+    await getWorkspacePropertyZone(audience, ownerContext).recordProjectAnalyticsEvent(input);
+    return { ok: true as const };
+  }
+
   return (
     <ProjectsPage
       projects={properties.page.map(mapPropertyToWorkspaceProject)}
       onDeleteProject={deleteProject}
       onPublishProject={publishProject}
+      onTrackProjectEvent={recordProjectAnalyticsEvent}
     />
   );
 }

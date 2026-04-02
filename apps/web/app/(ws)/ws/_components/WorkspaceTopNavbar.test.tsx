@@ -33,11 +33,13 @@ describe("WorkspaceTopNavbar", () => {
     const html = renderToStaticMarkup(
       <WebLocaleProvider locale="fr" dictionary={getWebDictionary("fr")}>
         <WorkspaceTopNavbar
-          user={{ name: "Ahmed", email: "ahmed@example.com" }}
+          user={{ name: "Ahmed", email: "ahmed@example.com", image: "https://example.com/user.png" }}
           organization={{
             name: "شركة الواحة",
             navbarSubtitle: "Espace promoteur",
-            sidebarSubtitle: "Espace de travail",
+            sidebarSubtitle: "Boîte de réception",
+            logoUrl: "https://example.com/logo.png",
+            isVerified: false,
           }}
           visibleZoneKeys={["inbox", "projects", "settings"]}
           initialSignalCounts={{ notificationCount: 0, inboxCount: 0 }}
@@ -47,9 +49,13 @@ describe("WorkspaceTopNavbar", () => {
 
     expect(html).toContain("شركة الواحة");
     expect(html).toContain("Espace promoteur");
+    expect(html).toContain("Boîte de réception");
+    expect(html).toContain("href=\"/ws/settings?tab=org\"");
     expect(html).toContain("href=\"/ws/settings\"");
     expect(html).toContain("href=\"/ws/notifications\"");
     expect(html).toContain("href=\"/ws/inbox\"");
+    expect(html).toContain("https://example.com/logo.png");
+    expect(html).toContain("https://example.com/user.png");
     expect(html).toContain("Changer de langue");
     expect(html).toContain("data-slot=\"theme-toggle\"");
   });

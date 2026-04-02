@@ -26,6 +26,8 @@ describe("organizationDisplay", () => {
       name: "Alpha Dev",
       sidebarSubtitle: "المشاريع",
       navbarSubtitle: "مطور · نشط",
+      logoUrl: null,
+      isVerified: false,
     });
 
     expect(
@@ -33,12 +35,16 @@ describe("organizationDisplay", () => {
         name: "Anan | Alpha Dev",
         type: "red",
         status: "active",
+        logoUrl: "https://example.com/logo.png",
+        isVerified: true,
         locale: "en",
       }),
     ).toEqual({
       name: "Alpha Dev",
       sidebarSubtitle: "Developer · Active",
       navbarSubtitle: "Developer · Active",
+      logoUrl: "https://example.com/logo.png",
+      isVerified: true,
     });
   });
 });

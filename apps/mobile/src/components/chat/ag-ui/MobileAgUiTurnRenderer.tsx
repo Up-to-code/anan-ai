@@ -91,7 +91,7 @@ function FollowupPromptCard({
   return (
     <View
       className="overflow-hidden border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-      style={{ borderRadius: layout.cardRadius + 4 }}
+      style={{ borderRadius: layout.cardRadius }}
     >
       <View className="gap-2 px-4 py-4">
         <AppText responsiveRole="bodyStrong" className="font-cairo-black text-slate-900 dark:text-slate-50">
@@ -103,7 +103,7 @@ function FollowupPromptCard({
       </View>
       <View className="border-t border-slate-100 px-4 py-4 dark:border-slate-800">
         <Pressable
-          className="items-center justify-center rounded-full bg-slate-900 px-4 py-3 dark:bg-slate-50"
+          className="items-center justify-center rounded-full border border-slate-900 bg-slate-900 px-4 py-3 dark:border-slate-50 dark:bg-slate-50"
           onPress={onPress}
         >
           <AppText responsiveRole="chip" className="font-cairo-black text-white dark:text-slate-950">

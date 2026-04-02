@@ -1,13 +1,11 @@
 import { buildAssistantReply, listCatalogProperties, getPropertyById } from "@/lib/mvp/ananAssistant";
-import { buildBuyerChatSuggestions, buildBuyerThreadTitle } from "@/lib/buyerAssistantShared";
+import { buildBuyerChatSuggestions } from "@/lib/buyerAssistantShared";
 import { buildMobileAgUiTurn } from "@/lib/mobileAgUi";
 import type { CapabilityResultCard, ConversationMessage, PropertyPreview } from "@/types/chat";
 import type {
   MobileAssistantCard,
-  MobileAuthBridgePayload,
   MobileConversationMessage,
   MobileProperty,
-  MobileTranscriptSeedMessage,
 } from "@/types/mobile";
 
 const DEFAULT_SUGGESTED_PROMPTS = buildBuyerChatSuggestions("ar", "default").map((suggestion) => suggestion.prompt);
@@ -78,61 +76,6 @@ export function mapMvpPropertyToMobileProperty(property: PropertyPreview): Mobil
       activeListings: undefined,
     },
     aiSummary: property.summary,
-  };
-}
-
-/**
- * WHY:   Auth-bridge payloads must stay small enough to survive a browser redirect while still being lossless enough for history seeding.
- * WHAT:  Shrinks one property into a compact, durable bridge-safe representation.
- * HOW:   Keeps only the first media asset and omits undefined optional fields.
- */
-export function compactMobileProperty(property: MobileProperty): MobileProperty {
-  return {
-    ...property,
-    media: property.media.slice(0, 1),
-    owner: { ...property.owner },
-  };
-}
-
-/**
- * WHY:   Mobile deep-link sign-in and save-history handoff need one canonical web payload shape.
- * WHAT:  Converts the current transcript into the bridge payload consumed by `client-web`.
- * HOW:   Drops ephemeral ids, compacts property media, and keeps only the most recent turns.
- */
-export function buildMobileAuthBridgePayload(args: {
-  messages: MobileConversationMessage[];
-  activeProperty: MobileProperty | null;
-  includeHandoff?: boolean;
-}): MobileAuthBridgePayload {
-  const trimmedMessages = args.messages.slice(-12).map<MobileTranscriptSeedMessage>((message) => ({
-    role: message.role,
-    text: message.text,
-    properties: message.properties?.slice(0, 1).map(compactMobileProperty),
-    cards: message.cards,
-    suggestedPrompts: message.suggestedPrompts?.slice(0, 4),
-    activePropertyId: message.activePropertyId,
-    requiresAuthForHandoff: message.requiresAuthForHandoff,
-  }));
-
-  return {
-    title: buildBuyerThreadTitle(
-      trimmedMessages.map((message, index) => ({
-        ...message,
-        id: `bridge-${index}`,
-      })),
-    ),
-    messages: trimmedMessages,
-    activeProperty: args.activeProperty ? compactMobileProperty(args.activeProperty) : null,
-    handoff:
-      args.includeHandoff && args.activeProperty
-        ? {
-            propertyId: args.activeProperty.id,
-            message:
-              trimmedMessages
-                .filter((message) => message.role === "user")
-                .at(-1)?.text ?? args.activeProperty.title,
-          }
-        : undefined,
   };
 }
 
@@ -259,38 +202,4 @@ export function buildFallbackAssistantMessage(args: {
  */
 export function getFallbackProperties() {
   return listCatalogProperties().map(mapMvpPropertyToMobileProperty);
-}
-
-/**
- * WHY:   The mobile browser bridge needs a canonical public web origin so sign-in and history links stay stable.
- * WHAT:  Resolves the client-web base URL from mobile-safe env vars.
- * HOW:   Prefers an explicit public app URL and falls back to the same localhost default used by the web surface.
- */
-export function getClientWebBaseUrl() {
-  return (
-    process.env.EXPO_PUBLIC_CLIENT_WEB_URL?.trim() ||
-    process.env.EXPO_PUBLIC_SITE_URL?.trim() ||
-    "http://localhost:3000"
-  );
-}
-
-/**
- * WHY:   History sync and advisor handoff reuse the same browser bridge and differ only by whether a handoff should be created.
- * WHAT:  Builds the signed browser URL that `client-web` uses to authenticate, persist, and redirect back to the app.
- * HOW:   Serializes the compact payload into the `payload` query param and lets the web bridge finish the authenticated work.
- */
-export function buildClientWebBridgeUrl(payload: MobileAuthBridgePayload) {
-  const params = new URLSearchParams({
-    payload: JSON.stringify(payload),
-  });
-  return `${getClientWebBaseUrl().replace(/\/$/, "")}/mobile-auth?${params.toString()}`;
-}
-
-/**
- * WHY:   Mobile account/history actions should use one canonical URL builder instead of hand-crafted strings.
- * WHAT:  Returns the absolute client-web history URL.
- * HOW:   Reuses the same public base URL as the auth bridge.
- */
-export function buildClientWebHistoryUrl() {
-  return `${getClientWebBaseUrl().replace(/\/$/, "")}/app/history`;
 }

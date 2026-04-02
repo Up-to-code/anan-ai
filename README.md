@@ -8,8 +8,9 @@ Anan AI is a **multi-surface real estate platform** built on a **Convex-first ba
 
 ## What This Repo Contains
 
-Four runtime surfaces, one backend:
+Five runtime surfaces, one backend:
 - `apps/web` — public site + broker/developer workspace
+- `apps/client-web` — buyer-facing Next.js assistant and buyer journey shell
 - `apps/admin` — operations console (in-app handbook at `/docs`)
 - `apps/mobile` — buyer-facing Expo app
 - `convex` — schema, auth, access policy, shared logic, AI orchestration, channels, HTTP/OAuth ingress
@@ -71,6 +72,7 @@ pnpm install
 pnpm dev          # Convex dev (backend)
 pnpm dev:all      # backend + web + admin
 pnpm dev:web
+pnpm dev:client-web
 pnpm dev:admin
 pnpm mobile:dev
 ```
@@ -88,9 +90,9 @@ Use the root deep-test commands when you want broader verification than the defa
 - `pnpm test:deep:fast`
   Root deterministic checks: root typecheck + root Vitest + admin/mobile typechecks + private-docs Vitest.
 - `pnpm test:deep:surfaces`
-  App-local non-browser suites not covered by the root Vitest config: `admin` and `mobile`.
+  App-local non-browser suites not covered by the root Vitest config: `admin`, `client-web`, and `mobile`.
 - `pnpm test:deep:e2e`
-  Stable browser suites: workspace web smoke plus the client-web guest buyer journey.
+  Stable browser suites: workspace web smoke.
 - `pnpm test:deep:build`
   Exhaustive build tier: `web`, `client-web`, `admin`, and `private-docs`.
 - `pnpm test:deep`
@@ -102,7 +104,7 @@ Use the root deep-test commands when you want broader verification than the defa
 
 App-specific setup notes:
 - `apps/web/README.md` documents the authenticated Playwright storage-state flow for workspace upload e2e.
-- `apps/client-web/README.md` documents the buyer-journey Playwright setup, including `PLAYWRIGHT_CLIENT_STORAGE_STATE`.
+- `apps/client-web/README.md` documents the buyer journey setup and its Playwright handoff flow.
 
 ---
 

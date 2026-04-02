@@ -66,6 +66,36 @@ const propertiesTables = {
         .index("propertyId", ["propertyId"])
         .index("authUserId", ["authUserId"])
         .index("propertyId_authUserId", ["propertyId", "authUserId"]),
+    projectAnalyticsEvents: defineTable({
+        propertyId: v.id("properties"),
+        eventType: v.union(
+            v.literal("project_detail_view"),
+            v.literal("project_analytics_view"),
+            v.literal("project_analyze_click"),
+            v.literal("project_edit_click"),
+            v.literal("project_create_offer_click"),
+            v.literal("project_open_inbox_click"),
+            v.literal("project_asset_open_click"),
+        ),
+        actorAuthUserId: v.optional(v.string()),
+        actorAudience: v.optional(
+            v.union(
+                v.literal("admin"),
+                v.literal("broker"),
+                v.literal("developer"),
+                v.literal("user"),
+            ),
+        ),
+        source: v.string(),
+        conversationId: v.optional(v.id("inboxConversations")),
+        offerCaseId: v.optional(v.id("offerCases")),
+        dealId: v.optional(v.id("deals")),
+        metadata: v.optional(v.any()),
+        createdAt: v.number(),
+    })
+        .index("propertyId", ["propertyId"])
+        .index("propertyId_createdAt", ["propertyId", "createdAt"])
+        .index("propertyId_eventType", ["propertyId", "eventType"]),
     organizationAssets: defineTable({
         tenantOrgId: v.string(),
         uploaderAuthUserId: v.string(),

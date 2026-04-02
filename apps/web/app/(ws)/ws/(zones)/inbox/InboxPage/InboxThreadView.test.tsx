@@ -185,6 +185,7 @@ it("renders optimistic messages with a sending label", () => {
 
   expect(html).toContain("مرحبا");
   expect(html).toContain("جاري الإرسال");
+  expect(html).toContain("flex h-full min-h-0 flex-1 basis-0 flex-col bg-[var(--workspace-canvas)] text-foreground");
 });
 
 it("shows seen state on the latest outgoing message once the other participant reads it", () => {

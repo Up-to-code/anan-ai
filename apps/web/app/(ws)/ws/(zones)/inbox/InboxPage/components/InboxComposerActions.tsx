@@ -345,8 +345,11 @@ export function InboxProjectPickerModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 px-4 py-6 sm:items-center">
-      <div className="w-full max-w-4xl rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_68%,transparent)] bg-[var(--workspace-panel)] p-5 shadow-[0_24px_60px_rgba(0,0,0,0.35)]">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 px-4 py-6 sm:items-center" onClick={onClose}>
+      <div
+        className="w-full max-w-4xl rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_68%,transparent)] bg-[var(--workspace-panel)] p-5 shadow-[0_24px_60px_rgba(0,0,0,0.35)] overscroll-contain"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-lg font-black text-[var(--workspace-bubble-other-foreground)]">{dictionary.inbox.chooseProjectToShare}</div>
@@ -466,8 +469,11 @@ export function InboxOfferModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 px-4 py-6 backdrop-blur-sm sm:items-center">
-      <div className="w-full max-w-2xl rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_68%,transparent)] bg-[var(--workspace-panel)] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.45)]">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 px-4 py-6 backdrop-blur-sm sm:items-center" onClick={onClose}>
+      <div
+        className="w-full max-w-2xl rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_68%,transparent)] bg-[var(--workspace-panel)] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.45)] overscroll-contain"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-xl font-black text-[var(--workspace-bubble-other-foreground)]">

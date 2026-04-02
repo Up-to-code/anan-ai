@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Check, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,19 +11,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getLocaleLabel, WEB_SUPPORTED_LOCALES } from "@/lib/locale";
+import { cn } from "@/lib/utils";
 import { useWebLocale } from "./WebLocaleProvider";
 
-export default function WebLocaleSwitcher() {
+export default function WebLocaleSwitcher({
+  className,
+}: {
+  className?: string;
+}) {
   const router = useRouter();
+  const pathname = usePathname();
   const { locale, dictionary } = useWebLocale();
   const [isPending, startTransition] = useTransition();
+  const scope = pathname.startsWith("/ws") ? "workspace" : "web";
 
   function handleLocaleChange(nextLocale: (typeof WEB_SUPPORTED_LOCALES)[number]) {
     startTransition(async () => {
       await fetch("/api/locale", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locale: nextLocale }),
+        body: JSON.stringify({ locale: nextLocale, scope }),
       });
       router.refresh();
     });
@@ -37,7 +44,7 @@ export default function WebLocaleSwitcher() {
             type="button"
             variant="outline"
             size="icon"
-            className="h-10 w-10 rounded-[10px]"
+            className={cn("h-10 w-10 rounded-[10px]", className)}
             aria-label={dictionary.nav.switchLanguage}
             title={dictionary.nav.switchLanguage}
             disabled={isPending}

@@ -216,3 +216,69 @@ To prevent "messing up" the architecture, all agents MUST follow these rigorous 
   - `HOW:` Any specific mechanisms, edge cases, or state rules.
 - **`README.md` Manifests:** Every major folder (`pages/SpecificPage/`, `agents/team_name/`) must contain a `README.md` defining its internal structure and responsibilities.
 - **Total Isolation:** In the frontend, if a page has sub-components (like `ConversationTab.tsx`), those files MUST be inside the page's directory (e.g., `UserDetail/tabs/ConversationTab.tsx`), NOT floating in a generic `components/` folder unless they are truly shared across the whole app.
+
+### Architecture Decision Rules (Bad vs Good Decisions)
+Agents must evaluate architecture decisions, not just code style. Every non-trivial change should be judged by whether it strengthens Anan's business architecture now while still fitting the future multi-channel platform.
+
+- **Always explain the architecture choice.** Do not stop at "bad code" vs "good code". State the `bad decision`, the `good decision`, and why the good one better matches Anan's platform model.
+- **Business architecture comes first.** A technically clever solution is still wrong if it breaks the User ↔ Developer ↔ Broker operating model, hides data needed by another audience, or hard-codes one team's workflow into shared infrastructure.
+- **Build for today's product and tomorrow's channels.** Prefer decisions that work for WhatsApp today without trapping the platform away from future app, dashboard, automation, and partner-channel expansion.
+- **Functions must represent business capabilities clearly.** A function should do one coherent job, have a name that reads like a real capability, and be easy for another engineer to reuse without reading five files first.
+- **Functions must be collaborator-friendly.** A teammate should be able to understand a function from its name, signature, JSDoc, and folder placement. If a colleague cannot predict when to use it, the architecture is too muddy.
+- **Thin entrypoints, strong domain services.** Public actions, handlers, hooks, and page shells should orchestrate. The real rules belong in small domain functions/services with explicit inputs and outputs.
+
+#### How to Write Bad Decision vs Good Decision
+
+Use this format in architecture reviews, major code comments, PR summaries, and skill-guided implementation notes:
+
+```md
+Bad decision:
+- What choice would have been made?
+- Why does it hurt zone boundaries, reuse, or the business model?
+
+Good decision:
+- What choice should be made instead?
+- Why does it better support Anan now and in the future?
+```
+
+#### Example: Architecture Decision
+
+```md
+Bad decision:
+- Put broker-specific matching logic directly inside the WhatsApp agent flow.
+- This makes the AI channel the owner of a shared business rule and blocks reuse in dashboards, automations, and future APIs.
+
+Good decision:
+- Move matching logic into a shared domain service and let the WhatsApp agent call it as one channel.
+- This keeps the business rule channel-agnostic and allows the same logic to power the future app, broker tools, and developer analytics.
+```
+
+#### Example: Function Design
+
+```ts
+/**
+ * WHY: Decide which projects are relevant to a qualified lead across channels.
+ * WHAT: Accepts normalized lead criteria and returns ranked project matches.
+ * HOW: Uses shared matching rules and does not depend on WhatsApp-specific payloads.
+ */
+export async function matchProjectsForLead(input: MatchProjectsForLeadInput) {
+  // thin orchestration only
+}
+```
+
+```ts
+// Bad: channel-coupled, unclear business purpose, hard to reuse
+export async function handleWhatsappMessage(data: any) {
+  // qualification + matching + formatting + routing + persistence all mixed together
+}
+```
+
+#### Quick Test for "Good" Functions
+
+Before adding or changing a function, verify all of the following are true:
+
+- The name reflects a business capability, not a UI click or transport event.
+- Inputs are normalized domain inputs, not raw channel-specific payloads unless the function is deliberately an adapter.
+- The function can be reused by another zone, teammate, or future channel with minimal rewriting.
+- Side effects are explicit.
+- The function lives in the zone or shared layer that owns the business rule.

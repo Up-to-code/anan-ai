@@ -5,6 +5,8 @@ type OrganizationDisplayInput = {
   name: string | null | undefined;
   type?: string | null;
   status?: string | null;
+  logoUrl?: string | null;
+  isVerified?: boolean;
   zoneLabel?: string | null;
   locale?: AppLocale;
 };
@@ -13,6 +15,8 @@ export type WorkspaceOrganizationDisplay = {
   name: string;
   sidebarSubtitle: string;
   navbarSubtitle: string;
+  logoUrl: string | null;
+  isVerified: boolean;
 };
 
 const BANNED_NAME_FRAGMENTS = [
@@ -63,6 +67,8 @@ export function getWorkspaceOrganizationDisplay({
   name,
   type,
   status,
+  logoUrl,
+  isVerified,
   zoneLabel,
   locale = "ar",
 }: OrganizationDisplayInput): WorkspaceOrganizationDisplay {
@@ -73,5 +79,7 @@ export function getWorkspaceOrganizationDisplay({
     name: sanitizedName,
     sidebarSubtitle: zoneLabel || navbarSubtitle,
     navbarSubtitle,
+    logoUrl: logoUrl ?? null,
+    isVerified: isVerified === true,
   };
 }

@@ -50,7 +50,7 @@ type ChatMessageAreaProps = ComponentProps<typeof StickToBottom>;
 export function ChatMessageArea({ className, ...props }: ChatMessageAreaProps) {
 	return (
 		<StickToBottom
-			className={cn("flex-1 relative h-full overflow-y-auto", className)}
+			className={cn("relative min-h-0 flex-1 basis-0", className)}
 			resize="smooth"
 			initial="smooth"
 			{...props}
@@ -62,11 +62,13 @@ type ChatMessageAreaContentProps = ComponentProps<typeof StickToBottom.Content>;
 
 export function ChatMessageAreaContent({
 	className,
+	scrollClassName,
 	...props
 }: ChatMessageAreaContentProps) {
 	return (
 		<StickToBottom.Content
-			className={cn("max-w-2xl mx-auto w-full h-full py-2", className)}
+			scrollClassName={cn("h-full min-h-0 overflow-y-auto", scrollClassName)}
+			className={cn("mx-auto flex min-h-full w-full max-w-2xl flex-col justify-end py-2", className)}
 			{...props}
 		/>
 	);

@@ -2,11 +2,10 @@ import type { ReactNode } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Image } from "expo-image";
-import * as Linking from "expo-linking";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, Bath, BedDouble, MapPin, Ruler } from "lucide-react-native";
 import { usePropertyDetail } from "@/hooks/usePropertyDetail";
-import { buildClientWebBridgeUrl, buildMobileAuthBridgePayload, getPropertyHeroImage, getPropertyLocationLabel } from "@/lib/mobileData";
+import { getPropertyHeroImage, getPropertyLocationLabel } from "@/lib/mobileData";
 import { formatCurrency } from "@/lib/formatters";
 import { AppText } from "@/components/ui/AppText";
 import { IconButton } from "@/components/ui/IconButton";
@@ -25,12 +24,17 @@ export default function PropertyDetailScreen() {
 
   async function requestAdvisor() {
     if (!property) return;
-    const payload = buildMobileAuthBridgePayload({
-      messages: [],
-      activeProperty: property,
-      includeHandoff: true,
-    });
-    await Linking.openURL(buildClientWebBridgeUrl(payload));
+    Alert.alert(
+      "طلب المستشار من شاشة العقار غير متاح الآن",
+      "افتح المحادثة أولاً ثم اطلب مستشاراً من داخل نفس السياق حتى نرسل الطلب مع تفاصيل العقار بشكل صحيح.",
+      [
+        { text: "لاحقاً", style: "cancel" },
+        {
+          text: "افتح المحادثة",
+          onPress: () => router.push({ pathname: "/", params: { propertyId: property.id } }),
+        },
+      ],
+    );
   }
 
   if (isLoading) {

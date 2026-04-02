@@ -24,7 +24,6 @@ export default defineConfig({
     include: [
       "convex/**/*.test.{ts,tsx}",
       "frontend/src/**/*.test.{ts,tsx}",
-      "apps/client-web/**/*.test.{ts,tsx}",
       "apps/web/**/*.test.{ts,tsx}",
       "packages/**/*.test.{ts,tsx}",
       "web/**/*.test.{ts,tsx}",

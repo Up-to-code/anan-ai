@@ -46,7 +46,6 @@ function formatThreadDate(timestamp: number, locale: string) {
 }
 
 export default function SidebarContent({
-  organization,
   visibleZoneKeys,
   recentAssistantThreads = [],
   allAssistantThreads = [],
@@ -62,7 +61,6 @@ export default function SidebarContent({
   const allItems = getWorkspaceZonesForKeys(visibleZoneKeys ?? ["overview"], locale);
   const mainItems = allItems.filter((item) => item.href !== "/ws/settings");
   const settingsItems = allItems.filter((item) => item.href === "/ws/settings");
-  const identitySubtitle = organization?.sidebarSubtitle?.trim() || "";
   const { threads: assistantThreads } = useAssistantThreads({
     serverThreads: allAssistantThreads,
     limit: Math.max(allAssistantThreads.length, 12),
@@ -136,33 +134,22 @@ export default function SidebarContent({
         mode === "desktop" ? "h-full" : "w-full",
       )}
     >
-      {/* ── Header spacer + quick action ─────────────────── */}
-      <div className="flex h-[78px] shrink-0 items-center justify-between border-b border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)] px-4">
-        <div
-          aria-hidden="true"
+      {/* ── Header utility row ───────────────────────────── */}
+      <div className="flex h-16 shrink-0 items-center justify-end border-b border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)] px-6">
+        <Link
+          href="/ws"
+          prefetch={false}
+          onClick={(event) => handleAssistantLinkClick(event, "/ws")}
           className={cn(
-            "flex h-11 flex-1 items-center rounded-xl",
-            identitySubtitle ? "justify-start px-2 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--workspace-muted)]" : "",
+            "flex h-9 w-9 items-center justify-center rounded-[8px] border text-[var(--workspace-muted)] transition-all active:scale-95",
+            SIDEBAR_PANEL_CLASS_NAME,
+            "hover:bg-[var(--workspace-elevated)] hover:text-[var(--workspace-bubble-other-foreground)]",
           )}
+          aria-label={dictionary.nav.newChat}
+          title={dictionary.nav.newChat}
         >
-          {identitySubtitle}
-        </div>
-        <div className="ps-2">
-          <Link
-            href="/ws"
-            prefetch={false}
-            onClick={(event) => handleAssistantLinkClick(event, "/ws")}
-            className={cn(
-              "flex h-10 w-10 items-center justify-center rounded-xl border text-[var(--workspace-muted)] transition-all active:scale-95",
-              SIDEBAR_PANEL_CLASS_NAME,
-              "hover:bg-[var(--workspace-elevated)] hover:text-[var(--workspace-bubble-other-foreground)]",
-            )}
-            aria-label={dictionary.nav.newChat}
-            title={dictionary.nav.newChat}
-          >
-            <PenSquare className="h-4 w-4" />
-          </Link>
-        </div>
+          <PenSquare className="h-4 w-4" />
+        </Link>
       </div>
 
       {/* ── Navigation ────────────────────────────────────── */}
@@ -187,7 +174,7 @@ export default function SidebarContent({
                   )}
                 >
                   <Icon className="h-[18px] w-[18px] shrink-0" />
-          <span className={cn("flex-1 truncate", isRtl ? "text-right" : "text-left")}>{item.label}</span>
+                  <span className={cn("flex-1 truncate", isRtl ? "text-right" : "text-left")}>{item.label}</span>
                 </Link>
               </li>
             );
@@ -252,8 +239,8 @@ export default function SidebarContent({
                   </Dialog.Trigger>
                   <Dialog.Portal>
                     <Dialog.Backdrop className="fixed inset-0 z-50 bg-background/60 backdrop-blur-md transition-opacity duration-300 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
-                    <Dialog.Popup className="fixed inset-0 z-50 flex items-center justify-center p-4 outline-none transition-all duration-300 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
-                      <div className="flex h-[min(78vh,720px)] w-full max-w-3xl flex-col overflow-hidden rounded-[28px] border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-sidebar)] text-[var(--workspace-bubble-other-foreground)] shadow-2xl shadow-black/20">
+                    <Dialog.Popup className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-4 outline-none transition-all duration-300 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+                      <div className="pointer-events-auto flex h-[min(78vh,720px)] w-full max-w-3xl flex-col overflow-hidden rounded-[28px] border border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] bg-[var(--workspace-sidebar)] text-[var(--workspace-bubble-other-foreground)] shadow-2xl shadow-black/20 overscroll-contain">
                         <div className="flex items-start justify-between border-b border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] px-6 py-5">
                           <div className="min-w-0">
                             <Dialog.Title className="text-lg font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">

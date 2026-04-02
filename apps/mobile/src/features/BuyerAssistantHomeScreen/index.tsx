@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, View, Platform, useColorScheme } from "react-native";
+import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { FlashListRef } from "@shopify/flash-list";
-import { History, Menu, User } from "lucide-react-native";
+import { Menu, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AnanMark } from "@/components/chat/AnanMark";
 import { ComposerDock } from "@/components/chat/ComposerDock";
@@ -14,42 +14,53 @@ import { usePropertyAssistant } from "@/hooks/usePropertyAssistant";
 import { usePropertyFeed } from "@/hooks/usePropertyFeed";
 import { buildBuyerChatSuggestions } from "@/lib/buyerAssistantShared";
 import { useMobileLayout } from "@/lib/mobileLayout";
-import { useKeyboardDock } from "@/lib/useKeyboardDock";
 import type { MobileConversationMessage, MobileProperty, MobileThreadSummary } from "@/types/mobile";
 
 /**
- * WHY:   The buyer journey should begin in the same chat-first assistant product model as client-web.
- * WHAT:  Renders the mobile buyer assistant shell with welcome state, thread, auth gate, and history access.
- * HOW:   Keeps the layout mobile-native while matching the web buyer conversation hierarchy and action flow.
+ * WHY:   The buyer journey should begin in the same chat-first assistant product model as the shared public assistant.
+ * WHAT:  Renders the mobile buyer assistant shell with welcome state, thread, journey notice, and local history access.
+ * HOW:   Keeps the layout mobile-native while matching the broader buyer conversation hierarchy and action flow.
  */
 export default function BuyerAssistantHomeScreen() {
   const insets = useSafeAreaInsets();
   const layout = useMobileLayout();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
   const assistant = usePropertyAssistant();
   const feed = usePropertyFeed();
   const router = useRouter();
   const params = useLocalSearchParams<{ propertyId?: string; threadId?: string }>();
   const listRef = useRef<FlashListRef<MobileConversationMessage> | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [dockHeight, setDockHeight] = useState(layout.composerHeight + 32);
-  const dock = useKeyboardDock({ bottomInset: insets.bottom, dockHeight });
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const appliedRoutePropertyId = useRef<string | null>(null);
   const appliedThreadId = useRef<string | null>(null);
   const suggestions = useMemo(() => buildBuyerChatSuggestions("ar", "default"), []);
-
+  const headerTopPadding = insets.top + (layout.isCompact ? 2 : 4);
+  const headerBottomPadding = layout.isCompact ? 6 : 8;
+  const composerBottomInset = keyboardVisible ? 10 : Math.max(insets.bottom, 12);
   useEffect(() => {
     const timer = setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
     return () => clearTimeout(timer);
   }, [assistant.messages.length]);
 
   useEffect(() => {
-    if (dock.keyboardVisible) {
+    if (keyboardVisible) {
       const timer = setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 120);
       return () => clearTimeout(timer);
     }
-  }, [dock.keyboardVisible]);
+  }, [keyboardVisible]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (!assistant.isHydrated) return;
@@ -79,92 +90,99 @@ export default function BuyerAssistantHomeScreen() {
   return (
     <View className="flex-1 bg-slate-100 dark:bg-slate-950">
       <View
-        className="bg-slate-100 dark:bg-slate-950 pb-4"
-        style={{ paddingTop: insets.top + 8, paddingHorizontal: layout.contentPadding }}
+        className="bg-slate-100 dark:bg-slate-950"
+        style={{
+          paddingTop: headerTopPadding,
+          paddingBottom: headerBottomPadding,
+          paddingHorizontal: layout.contentPadding,
+        }}
       >
-        <View className="flex-row items-center justify-between relative mt-2">
-          <View className="w-12 h-12 items-start justify-center">
-            <IconButton icon={Menu} onPress={() => setIsHistoryOpen(true)} tone="panel" className="rounded-full" />
+        <View className="relative flex-row items-center justify-between">
+          <View className="h-10 w-10 items-start justify-center">
+            <IconButton
+              icon={Menu}
+              onPress={() => setIsHistoryOpen(true)}
+              tone="ghost"
+              size="sm"
+              accessibilityLabel="سجل المحادثات"
+            />
           </View>
 
-          <View className="absolute left-0 right-0 items-center justify-center pointer-events-none z-0" style={{ height: 52 }}>
-            <View className="flex-row-reverse items-center gap-2 rounded-full border border-slate-200/80 bg-white/90 px-4 py-2 dark:border-slate-800 dark:bg-slate-900/90">
-              <AnanMark size={20} />
-              <View className="items-end">
-                <AppText responsiveRole="chip" className="font-cairo-black tracking-tight text-slate-900 dark:text-slate-50">
-                  عنان
-                </AppText>
-                <AppText responsiveRole="meta" className="font-medium text-slate-500 dark:text-slate-400">
-                  مساعدك العقاري
-                </AppText>
-              </View>
+          <View className="pointer-events-none absolute left-0 right-0 z-0 items-center justify-center">
+            <View className="flex-row-reverse items-center gap-2">
+              <AnanMark size={18} />
+              <AppText responsiveRole="bodyStrong" className="font-cairo-black tracking-tight text-slate-900 dark:text-slate-50">
+                عنان
+              </AppText>
             </View>
           </View>
 
-          <View className="flex-row items-center gap-1.5 z-10">
-            <IconButton icon={History} onPress={() => setIsHistoryOpen(true)} tone="panel" className="rounded-full" />
-            <IconButton icon={User} onPress={() => router.push("/account")} tone="panel" className="rounded-full" />
+          <View className="h-10 w-10 items-end justify-center">
+            <IconButton
+              icon={User}
+              onPress={() => router.push("/account")}
+              tone="ghost"
+              size="sm"
+              accessibilityLabel="الحساب"
+            />
           </View>
         </View>
       </View>
 
-      <View className="flex-1">
-        {assistant.activeThreadKind === "welcome" && !hasMessages ? (
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{
-              minHeight: layout.height * 0.52,
-              justifyContent: "center",
-              paddingHorizontal: layout.contentPadding,
-              paddingBottom: dock.listBottomPadding,
-            }}
-            showsVerticalScrollIndicator={false}
-          >
-            <WelcomeState
-              suggestions={suggestions.map((suggestion) => suggestion.prompt)}
-              onSelect={(prompt) => void assistant.submit(prompt)}
-            />
-          </ScrollView>
-        ) : (
-          <MessageList
-            listRef={listRef}
-            messages={assistant.messages}
-            isTyping={assistant.isSubmitting}
-            onPropertyPress={(property) => void assistant.askAboutProperty(property)}
-            onOpenProperty={openPropertyDetail}
-            contextProperty={assistant.activeProperty}
-            bottomPadding={dock.listBottomPadding}
-            showLatestSuggestedPrompts={!dock.keyboardVisible}
-            onSuggestedPromptPress={(prompt) => {
-              if (prompt.includes("مستشار")) {
-                void assistant.requestAdvisor();
-                return;
-              }
-              void assistant.submit(prompt);
-            }}
-          />
-        )}
-      </View>
-
-      <View
-        className="absolute left-0 right-0"
-        style={{
-          bottom: dock.dockBottomOffset,
-        }}
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={0}
       >
+        <View className="flex-1">
+          {assistant.activeThreadKind === "welcome" && !hasMessages ? (
+            <ScrollView
+              className="flex-1"
+              contentContainerStyle={{
+                minHeight: layout.height * 0.52,
+                justifyContent: "center",
+                paddingHorizontal: layout.contentPadding,
+                paddingBottom: layout.sectionGap + 8,
+              }}
+              showsVerticalScrollIndicator={false}
+            >
+              <WelcomeState
+                suggestions={suggestions.map((suggestion) => suggestion.prompt)}
+                onSelect={(prompt) => void assistant.submit(prompt)}
+              />
+            </ScrollView>
+          ) : (
+            <MessageList
+              listRef={listRef}
+              messages={assistant.messages}
+              isTyping={assistant.isSubmitting}
+              onPropertyPress={(property) => void assistant.askAboutProperty(property)}
+              onOpenProperty={openPropertyDetail}
+              contextProperty={assistant.activeProperty}
+              bottomPadding={layout.sectionGap + 8}
+              showLatestSuggestedPrompts={!keyboardVisible}
+              onSuggestedPromptPress={(prompt) => {
+                if (prompt.includes("مستشار")) {
+                  void assistant.requestAdvisor();
+                  return;
+                }
+                void assistant.submit(prompt);
+              }}
+            />
+          )}
+        </View>
+
         <View
-          onLayout={(event) => {
-            const nextHeight = Math.ceil(event.nativeEvent.layout.height);
-            if (nextHeight !== dockHeight) setDockHeight(nextHeight);
-          }}
+          className="bg-slate-100 dark:bg-slate-950"
           style={{
             paddingHorizontal: layout.contentPadding,
-            paddingBottom: dock.keyboardVisible && Platform.OS === "ios" ? 12 : Math.max(insets.bottom, 12),
+            paddingTop: assistant.showAuthCallout ? 6 : 8,
+            paddingBottom: composerBottomInset,
           }}
         >
           {assistant.showAuthCallout ? (
             <AuthGateNotice
-              onContinue={() => void assistant.syncTranscriptToAccount(false)}
+              onContinue={() => void assistant.syncTranscriptToAccount()}
               onRequestAdvisor={() => void assistant.requestAdvisor()}
             />
           ) : null}
@@ -176,7 +194,7 @@ export default function BuyerAssistantHomeScreen() {
             onSubmitVoiceRecording={(fileUri) => assistant.submitVoiceRecording(fileUri)}
           />
         </View>
-      </View>
+      </KeyboardAvoidingView>
 
       <HistorySheet
         open={isHistoryOpen}
@@ -208,14 +226,14 @@ function WelcomeState({
   return (
     <View className="items-stretch justify-center" style={{ gap: layout.sectionGap + 4 }}>
       <View className="items-center gap-4">
-        <View className="h-20 w-20 items-center justify-center rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <View className="h-20 w-20 items-center justify-center rounded-[28px] border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
           <AnanMark size={40} />
         </View>
         <AppText responsiveRole="title" className="text-center font-cairo-black text-slate-900 dark:text-slate-50">
           كيف أقدر أساعدك اليوم؟
         </AppText>
         <AppText responsiveRole="body" className="text-center font-medium text-slate-500 dark:text-slate-400 px-4 leading-7">
-          اطلب ترشيحات عقارية، راجع التمويل، قارن الخيارات، أو اطلب تحويلك إلى مستشار من نفس المحادثة.
+          اطلب ترشيحات عقارية، راجع التمويل، قارن الخيارات، أو اطلب مستشاراً من نفس المحادثة.
         </AppText>
       </View>
       <PromptSuggestions prompts={suggestions} onSelect={onSelect} />
@@ -249,11 +267,6 @@ function PromptSuggestions({
             justifyContent: "center",
             marginLeft: index === prompts.length - 1 ? 0 : 10,
             maxWidth: layout.width * 0.72,
-            shadowColor: "#0F172A",
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.06,
-            shadowRadius: 16,
-            elevation: 3,
           }}
         >
           <AppText responsiveRole="chip" className="font-cairo-black tracking-tight text-slate-900 dark:text-slate-100">
@@ -280,14 +293,14 @@ function AuthGateNotice({
       style={{ borderRadius: layout.cardRadius }}
     >
       <AppText responsiveRole="bodyStrong" className="font-cairo-black text-slate-900 dark:text-slate-50">
-        سجّل الدخول لحفظ السجل أو إكمال التحويل
+        السجل محلي حالياً وطلب المستشار متاح من هنا
       </AppText>
       <AppText responsiveRole="body" className="mt-2 font-medium text-slate-500 dark:text-slate-400">
-        سنستخدم بوابة الويب الحالية لحفظ المحادثة على حسابك ثم نعيدك إلى التجربة المناسبة.
+        لن نفتح بوابة ويب خارجية بعد الآن. أكمل المحادثة هنا، أو أرسل طلب المستشار مباشرة من نفس السياق.
       </AppText>
       <View className="mt-4 flex-row-reverse gap-3">
         <View style={{ flex: 1 }}>
-          <Button label="حفظ السجل" variant="secondary" size="sm" onPress={onContinue} />
+          <Button label="فهمت" variant="secondary" size="sm" onPress={onContinue} />
         </View>
         <View style={{ flex: 1 }}>
           <Button label="اطلب مستشاراً" size="sm" onPress={onRequestAdvisor} />

@@ -247,12 +247,12 @@ export default function InboxWorkspaceClient({
 
   return (
     <div
-      className="flex h-[calc(100svh-65px)] w-full overflow-hidden bg-[var(--workspace-shell)] lg:h-[calc(100svh-73px)]"
+      className="flex h-full min-h-0 w-full flex-1 basis-0 overflow-hidden bg-[var(--workspace-shell)]"
       dir={direction}
     >
       <div
         className={cn(
-          "min-w-0 bg-[var(--workspace-sidebar)] md:flex md:w-[340px] md:shrink-0 xl:w-[380px]",
+          "min-h-0 min-w-0 bg-[var(--workspace-sidebar)] md:flex md:w-[340px] md:shrink-0 xl:w-[380px]",
           isRtl ? "border-l" : "border-r",
           "border-[color:var(--workspace-border)]",
           isThreadPaneVisible ? "hidden md:flex" : "flex w-full",
@@ -281,7 +281,7 @@ export default function InboxWorkspaceClient({
 
       <div
         className={cn(
-          "relative min-w-0 flex-1 bg-[var(--workspace-canvas)]",
+          "relative min-h-0 min-w-0 flex-1 basis-0 bg-[var(--workspace-canvas)]",
           isThreadPaneVisible ? "flex" : "hidden md:flex",
         )}
       >
@@ -298,7 +298,7 @@ export default function InboxWorkspaceClient({
             {isRtl ? "فتح القائمة" : "Open inbox"}
           </button>
         ) : null}
-        <div className="flex h-full w-full flex-col">
+        <div className="flex h-full w-full min-h-0 flex-col">
           {conversation ? (
             <InboxThreadView
               key={conversation.id}

@@ -1,12 +1,10 @@
-import { cookies } from "next/headers";
 import OrganizationOnboarding from "../_components/OrganizationOnboarding";
 import WorkspaceDashboard from "./_components/WorkspaceDashboard";
 import { requireWorkspaceData } from "../_lib/workspaceData";
 import { getAnanProThread } from "@/server/domains/workspace/ananPro/service";
 import { listIncomingOrganizationInvitesForCurrentUser } from "@/server/domains/auth/organizations/service";
 import { normalizeDomainError } from "@/server/contracts/errors";
-import { getWebDictionary } from "@/lib/i18n";
-import { resolveLocale, WEB_LOCALE_COOKIE } from "@/lib/locale";
+import { getWorkspaceLocaleContext } from "../_lib/workspaceLocale";
 import type { AssistantInitialRouteState } from "./_components/WorkspaceDashboard/useWorkspaceAssistant";
 
 export const dynamic = "force-dynamic";
@@ -25,8 +23,7 @@ type WorkspacePageProps = {
  * HOW:   Forces dynamic rendering (session/headers), requires auth before loading optional thread state, and avoids noisy unauthorized errors.
  */
 export default async function WorkspacePage({ searchParams }: WorkspacePageProps) {
-  const cookieStore = await cookies();
-  const dictionary = getWebDictionary(resolveLocale(cookieStore.get(WEB_LOCALE_COOKIE)?.value));
+  const { dictionary } = await getWorkspaceLocaleContext();
   const { orgError, threadId, onboarding } = await searchParams;
   let workspace: Awaited<ReturnType<typeof requireWorkspaceData>>;
   try {

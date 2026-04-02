@@ -3,8 +3,7 @@ import { getWorkspaceOrganizationDisplay } from "../../_lib/organizationDisplay"
 import { getLayoutSidebarData, requireWorkspaceData } from "../../_lib/workspaceData";
 import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
 import { buildComplianceBanner } from "../../_lib/complianceBanner";
-import { cookies } from "next/headers";
-import { resolveLocale } from "@/lib/locale";
+import { getWorkspaceLocale } from "../../_lib/workspaceLocale";
 
 export default async function InboxZoneLayout({
   children,
@@ -16,7 +15,7 @@ export default async function InboxZoneLayout({
     getLayoutSidebarData("/ws/inbox"),
     getComplianceRulesetForCurrentOrg().catch(() => null),
   ]);
-  const locale = resolveLocale((await cookies()).get("anan_web_locale")?.value);
+  const locale = await getWorkspaceLocale();
   const primaryOrganization = chrome.organizations?.[0];
 
   if (!primaryOrganization) {
@@ -37,6 +36,8 @@ export default async function InboxZoneLayout({
         name: primaryOrganization?.name,
         type: primaryOrganization?.type,
         status: primaryOrganization?.status,
+        logoUrl: primaryOrganization?.logoUrl,
+        isVerified: primaryOrganization?.isVerified,
         zoneLabel: locale === "fr" ? "Boite de reception" : locale === "en" ? "Inbox" : "البريد الوارد",
       })}
     >

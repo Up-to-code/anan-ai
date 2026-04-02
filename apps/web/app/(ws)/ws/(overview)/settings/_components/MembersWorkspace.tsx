@@ -190,8 +190,8 @@ export default function MembersWorkspace({
               </Dialog.Trigger>
               <Dialog.Portal>
                 <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-all duration-300 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
-                <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl bg-background shadow-xl transition-all duration-300 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
-                  <div className="flex flex-col">
+                <Dialog.Popup className="pointer-events-none fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 outline-none transition-all duration-300 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+                  <div className="pointer-events-auto flex flex-col overflow-hidden rounded-2xl bg-background shadow-xl overscroll-contain">
                     <div className="flex items-center justify-between border-b border-border p-5" dir={direction}>
                       <Dialog.Title className="text-base font-bold text-foreground">{dictionary.settings.inviteMemberTitle}</Dialog.Title>
                       <Dialog.Close className="flex rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground">

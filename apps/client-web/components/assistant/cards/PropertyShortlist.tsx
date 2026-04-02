@@ -1,7 +1,10 @@
-import { type BuyerProperty } from "@anan/client-assistant";
+"use client";
+
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLocale } from "@/app/_components/LocaleProvider";
 import { formatLocaleNumber } from "@/lib/locale";
+import type { BuyerProperty } from "@/client_zone/shared/types";
 
 interface PropertyShortlistProps {
   properties: BuyerProperty[];
@@ -11,9 +14,12 @@ export function PropertyShortlist({ properties }: PropertyShortlistProps) {
   const { locale, dictionary } = useLocale();
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
+    <div
+      data-testid="client-ag-ui-card-property_shortlist"
+      className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-4 scrollbar-hide"
+    >
       {properties.map((property) => (
-        <Card key={property.id} className="min-w-[280px] max-w-[280px] shrink-0 border-primary/10 shadow-lg">
+        <Card key={String(property.id)} className="max-w-[280px] min-w-[280px] shrink-0 border-primary/10 shadow-lg">
           <div className="aspect-video relative overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -38,10 +44,17 @@ export function PropertyShortlist({ properties }: PropertyShortlistProps) {
                 <div className="text-[8px] text-muted-foreground uppercase">{dictionary.property.baths}</div>
               </div>
               <div className="bg-muted p-2 rounded-lg text-center">
-                <div className="text-[10px] font-black">{property.area}</div>
+                <div className="text-[10px] font-black">{property.sqft ?? "—"}</div>
                 <div className="text-[8px] text-muted-foreground uppercase">{dictionary.property.sqft}</div>
               </div>
             </div>
+            <Link
+              data-testid="client-property-result-link"
+              href={`/app/property/${property.id}`}
+              className="mt-4 inline-flex rounded-full border border-[var(--workspace-border)] px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[var(--workspace-highlight)] transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--workspace-highlight)_6%,white)]"
+            >
+              {dictionary.property.viewDetails}
+            </Link>
           </CardContent>
         </Card>
       ))}

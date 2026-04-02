@@ -78,7 +78,7 @@ export default function InboxThreadView({
   }, [conversation.id]);
 
   return (
-    <div className="flex h-full flex-col bg-[var(--workspace-canvas)] text-foreground">
+    <div className="flex h-full min-h-0 flex-1 basis-0 flex-col bg-[var(--workspace-canvas)] text-foreground">
       <InboxThreadHeader
         canCreateOffer={canUseBusinessActions && projectOptions.length > 0}
         canShareProjects={projectOptions.length > 0}

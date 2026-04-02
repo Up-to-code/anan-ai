@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 export function InboxThreadEmptyState() {
   const { dictionary, direction, isRtl } = useWebLocale();
   return (
-    <div className="flex h-full items-center justify-center bg-background/50 px-6" dir={direction}>
+    <div className="flex h-full min-h-0 flex-1 items-center justify-center bg-background/50 px-6" dir={direction}>
       <div className="flex max-w-md flex-col items-center gap-4 rounded-3xl border border-border bg-card px-8 py-12 text-center shadow-sm">
         <MessageCircleMore className="h-10 w-10 text-muted-foreground/40" />
         <h2 className="text-xl font-black tracking-tight text-foreground">{dictionary.inbox.emptyThreadTitle}</h2>
@@ -32,7 +32,7 @@ export function InboxThreadEmptyState() {
 export function InboxThreadLoadingState() {
   const { dictionary } = useWebLocale();
   return (
-    <div className="flex h-full items-center justify-center bg-background/50 px-6">
+    <div className="flex h-full min-h-0 flex-1 items-center justify-center bg-background/50 px-6">
       <div className="rounded-2xl border border-border bg-card px-6 py-4 text-[13px] font-bold text-muted-foreground shadow-sm animate-pulse">
         {dictionary.inbox.loadingThread}
       </div>

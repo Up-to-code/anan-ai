@@ -35,6 +35,9 @@ export default function TypingIndicator({
     <div
       className="flex min-w-0 shrink-0 items-start gap-4 bg-transparent px-0 py-2"
       dir={direction}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
     >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-border/40 bg-card shadow-sm dark:bg-slate-900">
         <AIMotionLogo state={state} size="compact" />

@@ -5,7 +5,7 @@ import type { WorkspaceOrganizationDisplay } from "../../_lib/organizationDispla
 
 export type SidebarMode = "desktop" | "drawer";
 
-export type SidebarUser = Pick<SessionUser, "name" | "email">;
+export type SidebarUser = Pick<SessionUser, "name" | "email" | "image">;
 
 export type SidebarProps = {
   user: SidebarUser;

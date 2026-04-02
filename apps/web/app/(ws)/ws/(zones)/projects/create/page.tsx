@@ -1,11 +1,11 @@
 import ProjectFormScreen from "../ProjectFormScreen";
-import { cookies } from "next/headers";
 import { requireWorkspaceData } from "../../../_lib/workspaceData";
+import { getWorkspaceLocale } from "../../../_lib/workspaceLocale";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapWorkspaceProjectToPropertyInput } from "../projectViewModel";
 import { requireSessionContext } from "@/server/auth/session";
 import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizationAssetsRepository";
-import { type AppLocale, resolveLocale, WEB_LOCALE_COOKIE } from "@/lib/locale";
+import { type AppLocale } from "@/lib/locale";
 import { toProjectFormActionFailure, validateProjectFormSubmission } from "../projectFormSubmission";
 
 /**
@@ -14,13 +14,7 @@ import { toProjectFormActionFailure, validateProjectFormSubmission } from "../pr
  * HOW:   Resolves workspace behavior once, then saves through the audience-specific property server functions.
  */
 export default async function CreateProjectPage() {
-  let locale: AppLocale = "ar";
-  try {
-    const cookieStore = await cookies();
-    locale = resolveLocale(cookieStore.get(WEB_LOCALE_COOKIE)?.value);
-  } catch {
-    locale = "ar";
-  }
+  const locale: AppLocale = await getWorkspaceLocale();
   const workspace = await requireWorkspaceData("/ws/projects/create");
   const audience = workspace.audience;
   const ownerContext = workspace.ownerContext ?? null;

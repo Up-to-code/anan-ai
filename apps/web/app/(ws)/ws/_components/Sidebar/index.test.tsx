@@ -58,8 +58,8 @@ beforeEach(() => {
 it("shows the projects navigation entry for developer roles", () => {
   const markup = renderSidebar(
     <Sidebar
-      user={{ name: "Ahmed", email: "ahmed@example.com" }}
-      organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
+      user={{ name: "Ahmed", email: "ahmed@example.com", image: "https://example.com/user.png" }}
+      organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط", logoUrl: "https://example.com/org.png", isVerified: false }}
       visibleZoneKeys={["overview", "market", "projects", "offers", "crm", "inbox", "settings"]}
     />,
   );
@@ -76,13 +76,15 @@ it("shows the projects navigation entry for developer roles", () => {
   expect(markup).not.toContain("أحدث المحادثات");
   expect(markup).not.toContain("ANAN");
   expect(markup).not.toContain("Institutional");
+  expect(markup).not.toContain("https://example.com/user.png");
+  expect(markup).not.toContain("https://example.com/org.png");
 });
 
 it("shows the core zones for broker roles", () => {
   const markup = renderSidebar(
     <Sidebar
       user={{ name: "Ahmed", email: "ahmed@example.com" }}
-      organization={{ name: "Broker Org", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "وسيط · نشط" }}
+      organization={{ name: "Broker Org", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "وسيط · نشط", logoUrl: null, isVerified: true }}
       visibleZoneKeys={["overview", "market", "projects", "offers", "crm", "inbox", "settings"]}
     />,
   );
@@ -97,7 +99,7 @@ it("falls back to overview/settings and AI when the role has no business zones",
   const markup = renderSidebar(
     <Sidebar
       user={{ name: "Ahmed", email: "ahmed@example.com" }}
-      organization={{ name: "Admin Org", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "وسيط · نشط" }}
+      organization={{ name: "Admin Org", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "وسيط · نشط", logoUrl: null, isVerified: true }}
       visibleZoneKeys={["overview", "settings"]}
     />,
   );
@@ -114,7 +116,7 @@ it("renders the drawer variant with the shared navigation content", () => {
   const markup = renderSidebar(
     <Sidebar
       user={{ name: "Ahmed", email: "ahmed@example.com" }}
-      organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
+      organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط", logoUrl: null, isVerified: true }}
       visibleZoneKeys={["overview", "market", "projects", "offers", "crm", "inbox", "settings"]}
       mode="drawer"
       titleId="mobile-sidebar-title"
@@ -130,7 +132,7 @@ it("keeps the new-thread entry as a bare /ws draft action", () => {
   const markup = renderSidebar(
     <Sidebar
       user={{ name: "Ahmed", email: "ahmed@example.com" }}
-      organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
+      organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط", logoUrl: null, isVerified: true }}
       visibleZoneKeys={["overview", "settings"]}
       allAssistantThreads={[
         { id: "thread-1", title: "A", updatedAt: 10 },
@@ -149,7 +151,7 @@ it("renders the last three threads in the sidebar rail when available", () => {
   const markup = renderSidebar(
     <Sidebar
       user={{ name: "Ahmed", email: "ahmed@example.com" }}
-      organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
+      organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط", logoUrl: null, isVerified: true }}
       visibleZoneKeys={["overview", "settings"]}
       recentAssistantThreads={[
         { id: "thread-1", title: "A", updatedAt: 11 },
@@ -168,15 +170,15 @@ it("renders the last three threads in the sidebar rail when available", () => {
   expect(markup).toContain("bg-[var(--workspace-highlight-soft)]");
 });
 
-it("keeps the sidebar subtitle without leaking the organization name", () => {
+it("removes the sidebar identity subtitle and keeps the organization name out of the rail", () => {
   const markup = renderSidebar(
     <Sidebar
       user={{ name: "Ahmed", email: "ahmed@example.com" }}
-      organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط" }}
+      organization={{ name: "Alpha Dev", sidebarSubtitle: "لوحة العمل", navbarSubtitle: "مطور · نشط", logoUrl: null, isVerified: true }}
       visibleZoneKeys={["overview", "settings"]}
     />,
   );
 
-  expect(markup).toContain("لوحة العمل");
+  expect(markup).not.toContain("لوحة العمل");
   expect(markup).not.toContain("Alpha Dev");
 });

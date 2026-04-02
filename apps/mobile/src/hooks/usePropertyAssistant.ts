@@ -1,12 +1,9 @@
-import { useAction, useConvex, useMutation, useQuery } from "convex/react";
-import * as Linking from "expo-linking";
+import { useAction, useMutation } from "convex/react";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/convexApi";
 import { buildBuyerThreadTitle } from "@/lib/buyerAssistantShared";
 import {
-  buildClientWebBridgeUrl,
   buildFallbackAssistantMessage,
-  buildMobileAuthBridgePayload,
   buildSuggestedPrompts,
 } from "@/lib/mobileData";
 import { buildMobileAgUiTurn } from "@/lib/mobileAgUi";
@@ -34,22 +31,18 @@ type ClientAssistantResponse = {
   threadId?: string;
 };
 
-type PublicVoiceSession = {
+type PublicAssistantSession = {
   guestId: string;
   channelSessionToken: string;
   expiresAt: number;
 };
 
-type StoredThreadMessage = {
-  id: string;
-  role: "assistant" | "user";
-  text: string;
-  createdAt: number;
-  properties?: MobileProperty[];
-  cards?: Array<any>;
-  activePropertyId?: string;
-  requiresAuthForHandoff?: boolean;
-  suggestedPrompts?: string[];
+type AskClientAssistantPayload = {
+  message: string;
+  threadId?: string;
+  selectedPropertyId?: string;
+  inputMode?: "text" | "voice";
+  locale: "ar";
 };
 
 function describeFailure(error: unknown) {
@@ -61,7 +54,34 @@ function buildAuthRequiredMessage() {
   return {
     id: `assistant-auth-required-${Date.now()}`,
     role: "assistant" as const,
-    text: "سأحفظ هذه المحادثة وأكمل التحويل إلى مستشار بعد تسجيل الدخول.",
+    text: "يمكنك طلب مستشار من هنا مباشرة، بينما يبقى السجل محفوظاً على هذا الجهاز حالياً.",
+    suggestedPrompts: buildSuggestedPrompts(null),
+  };
+}
+
+function buildLocalHistoryMessage() {
+  return {
+    id: `assistant-local-history-${Date.now()}`,
+    role: "assistant" as const,
+    text: "السجل محفوظ على هذا الجهاز حالياً. أكمّل هنا أو اطلب مستشاراً مباشرة من نفس المحادثة.",
+    suggestedPrompts: buildSuggestedPrompts(null),
+  };
+}
+
+function buildAdvisorSuccessMessage(propertyTitle: string) {
+  return {
+    id: `assistant-handoff-success-${Date.now()}`,
+    role: "assistant" as const,
+    text: `تم رفع طلب المستشار الخاص بـ ${propertyTitle}. سيكمل الفريق المتابعة من نفس سياق المحادثة الحالية.`,
+    suggestedPrompts: buildSuggestedPrompts(null),
+  };
+}
+
+function buildAdvisorFailureMessage(propertyTitle: string) {
+  return {
+    id: `assistant-handoff-failure-${Date.now()}`,
+    role: "assistant" as const,
+    text: `تعذر رفع طلب المستشار لـ ${propertyTitle} حالياً. حاول مرة أخرى بعد قليل وسأحتفظ بالسياق هنا.`,
     suggestedPrompts: buildSuggestedPrompts(null),
   };
 }
@@ -97,43 +117,15 @@ function buildLocalThreadSummary(args: {
   };
 }
 
-function mapStoredMessage(message: StoredThreadMessage): MobileConversationMessage {
-  return {
-    id: String(message.id),
-    role: message.role,
-    text: message.text,
-    createdAt: message.createdAt,
-    properties: message.properties,
-    cards: message.cards,
-    suggestedPrompts: message.suggestedPrompts,
-    activePropertyId: message.activePropertyId,
-    requiresAuthForHandoff: message.requiresAuthForHandoff,
-    uiTurn:
-      message.role === "assistant"
-        ? buildMobileAgUiTurn({
-            assistantText: message.text,
-            properties: message.properties,
-            cards: message.cards,
-          })
-        : undefined,
-  };
-}
-
 /**
- * WHY:   The buyer home screen needs one async source of truth for the same chat-first product model as client-web.
- * WHAT:  Manages the active conversation, guest persistence, local history summary, and auth bridge escalation.
- * HOW:   Reuses the web buyer assistant endpoint in live mode and falls back to the deterministic local assistant when Convex is unavailable.
+ * WHY:   The buyer home screen needs one async source of truth for the same chat-first product model across mobile and public assistant surfaces.
+ * WHAT:  Manages the active conversation, guest persistence, local history summary, and in-app advisor escalation.
+ * HOW:   Reuses the shared public assistant backend in live mode and falls back to the deterministic local assistant when Convex is unavailable.
  */
 function usePropertyAssistantController(args: {
-  askClientAssistant: ((payload: {
-    message: string;
-    threadId?: string;
-    selectedPropertyId?: string;
-    inputMode?: "text" | "voice";
-    locale: "ar";
-  }) => Promise<ClientAssistantResponse>) | null;
+  askClientAssistant: ((payload: AskClientAssistantPayload) => Promise<ClientAssistantResponse>) | null;
   bootstrapPublicSession:
-    | ((payload: { guestId?: string }) => Promise<PublicVoiceSession & { threadId?: string }>)
+    | ((payload: { guestId?: string }) => Promise<PublicAssistantSession & { threadId?: string }>)
     | null;
   generateVoiceUploadUrl:
     | ((payload: { guestId: string; channelSessionToken: string }) => Promise<string>)
@@ -145,16 +137,15 @@ function usePropertyAssistantController(args: {
         storageId: string;
       }) => Promise<{ text: string; languageCode?: string }>)
     | null;
-  loadThreadMessages: ((threadId: string) => Promise<StoredThreadMessage[]>) | null;
   createQualifiedHandoff:
     | ((payload: {
         propertyId: string;
         message: string;
+        externalUserId?: string;
         threadId?: string;
         sourceChannel: "app";
       }) => Promise<{ orderId: string }>)
     | null;
-  persistedThreads: MobileThreadSummary[];
 }) {
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<MobileConversationMessage[]>([]);
@@ -163,10 +154,9 @@ function usePropertyAssistantController(args: {
   const [activeThreadKind, setActiveThreadKind] = useState<"welcome" | "live">("welcome");
   const [isHydrated, setIsHydrated] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [showAuthCallout, setShowAuthCallout] = useState(false);
   const lastUpdatedAt = useRef(Date.now());
-  const voiceSessionRef = useRef<PublicVoiceSession | null>(null);
+  const publicSessionRef = useRef<PublicAssistantSession | null>(null);
 
   useEffect(() => {
     void loadGuestThreadSnapshot().then((snapshot) => {
@@ -209,24 +199,19 @@ function usePropertyAssistantController(args: {
     updatedAt: lastUpdatedAt.current,
   });
 
-  const recentThreads = [
-    ...(localThread ? [localThread] : []),
-    ...args.persistedThreads.filter((thread) => thread.id !== localThread?.id),
-  ];
+  const recentThreads = localThread ? [localThread] : [];
 
-  async function syncTranscriptToAccount(includeHandoff = false) {
-    const payload = buildMobileAuthBridgePayload({
-      messages,
-      activeProperty,
-      includeHandoff,
+  function syncTranscriptToAccount() {
+    setShowAuthCallout(false);
+    setMessages((current) => {
+      if (current.at(-1)?.id.startsWith("assistant-local-history")) return current;
+      const localHistoryMessage = {
+        ...buildLocalHistoryMessage(),
+        createdAt: Date.now(),
+      } satisfies MobileConversationMessage;
+      lastUpdatedAt.current = localHistoryMessage.createdAt ?? Date.now();
+      return [...current, localHistoryMessage];
     });
-
-    setIsSyncing(true);
-    try {
-      await Linking.openURL(buildClientWebBridgeUrl(payload));
-    } finally {
-      setIsSyncing(false);
-    }
   }
 
   async function submit(prompt = draft, inputMode: "text" | "voice" = "text") {
@@ -254,7 +239,7 @@ function usePropertyAssistantController(args: {
       if (args.askClientAssistant) {
         const response = await args.askClientAssistant({
           message: trimmed,
-          threadId: undefined,
+          threadId: activeThreadId ?? undefined,
           selectedPropertyId: activeProperty?.id,
           inputMode,
           locale: "ar",
@@ -284,6 +269,7 @@ function usePropertyAssistantController(args: {
           }),
         };
         setActiveProperty(nextActiveProperty ?? null);
+        setActiveThreadId(response.threadId ?? activeThreadId);
         setShowAuthCallout(response.requiresAuthForHandoff);
       } else {
         assistantMessage = {
@@ -357,8 +343,8 @@ function usePropertyAssistantController(args: {
     await submit(`أريد تفاصيل أكثر عن ${property.title}`);
   }
 
-  async function ensureVoiceSession() {
-    const current = voiceSessionRef.current;
+  async function ensurePublicSession() {
+    const current = publicSessionRef.current;
     if (current?.guestId && current.channelSessionToken && current.expiresAt > Date.now()) {
       return current;
     }
@@ -373,8 +359,8 @@ function usePropertyAssistantController(args: {
       guestId: nextSession.guestId,
       channelSessionToken: nextSession.channelSessionToken,
       expiresAt: nextSession.expiresAt,
-    } satisfies PublicVoiceSession;
-    voiceSessionRef.current = session;
+    } satisfies PublicAssistantSession;
+    publicSessionRef.current = session;
     return session;
   }
 
@@ -383,7 +369,7 @@ function usePropertyAssistantController(args: {
       throw new Error("التسجيل الصوتي يحتاج اتصالاً بالخدمة المباشرة.");
     }
 
-    const session = await ensureVoiceSession();
+    const session = await ensurePublicSession();
     const uploadUrl = await args.generateVoiceUploadUrl({
       guestId: session.guestId,
       channelSessionToken: session.channelSessionToken,
@@ -424,44 +410,58 @@ function usePropertyAssistantController(args: {
   async function requestAdvisor() {
     if (!activeProperty) return;
     setShowAuthCallout(true);
-    if (args.createQualifiedHandoff && activeThreadId) {
-      try {
-        await args.createQualifiedHandoff({
-          propertyId: activeProperty.id,
-          message: messages.at(-1)?.text ?? activeProperty.title,
-          threadId: activeThreadId,
-          sourceChannel: "app",
-        });
-      } catch {
-        // The bridge remains the primary auth-safe path in this phase.
-      }
+    if (!args.createQualifiedHandoff) {
+      setMessages((current) => [...current, { ...buildAdvisorFailureMessage(activeProperty.title), createdAt: Date.now() }]);
+      return;
     }
-    setMessages((current) => {
-      if (current.at(-1)?.id.startsWith("assistant-auth-required")) return current;
-      const authMessage = {
-        ...buildAuthRequiredMessage(),
-        createdAt: Date.now(),
-      };
-      lastUpdatedAt.current = authMessage.createdAt ?? Date.now();
-      return [...current, authMessage];
-    });
-    await syncTranscriptToAccount(true);
+
+    try {
+      const session = args.bootstrapPublicSession ? await ensurePublicSession() : null;
+      await args.createQualifiedHandoff({
+        propertyId: activeProperty.id,
+        message: messages.at(-1)?.text ?? activeProperty.title,
+        externalUserId: session?.guestId,
+        threadId: activeThreadId ?? undefined,
+        sourceChannel: "app",
+      });
+
+      setShowAuthCallout(false);
+      setMessages((current) => {
+        const successMessage = {
+          ...buildAdvisorSuccessMessage(activeProperty.title),
+          createdAt: Date.now(),
+          activePropertyId: activeProperty.id,
+          properties: [activeProperty],
+          uiTurn: buildMobileAgUiTurn({
+            assistantText: `تم رفع طلب المستشار الخاص بـ ${activeProperty.title}.`,
+            properties: [activeProperty],
+          }),
+        } satisfies MobileConversationMessage;
+        lastUpdatedAt.current = successMessage.createdAt ?? Date.now();
+        return [...current, successMessage];
+      });
+    } catch {
+      setMessages((current) => {
+        const failureMessage = {
+          ...buildAdvisorFailureMessage(activeProperty.title),
+          createdAt: Date.now(),
+          activePropertyId: activeProperty.id,
+          properties: [activeProperty],
+          uiTurn: buildMobileAgUiTurn({
+            assistantText: `تعذر رفع طلب المستشار لـ ${activeProperty.title} حالياً.`,
+            properties: [activeProperty],
+          }),
+        } satisfies MobileConversationMessage;
+        lastUpdatedAt.current = failureMessage.createdAt ?? Date.now();
+        return [...current, failureMessage];
+      });
+    }
   }
 
   async function openHistoryThread(threadId: string) {
     if (threadId === localThread?.id) {
       return;
     }
-    if (!args.loadThreadMessages) return;
-
-    const storedMessages = await args.loadThreadMessages(threadId);
-    const nextMessages = storedMessages.map(mapStoredMessage);
-    setMessages(nextMessages);
-    setActiveProperty(readLatestProperty(nextMessages));
-    setActiveThreadId(threadId);
-    setShowAuthCallout(false);
-    setActiveThreadKind(nextMessages.length > 0 ? "live" : "welcome");
-    lastUpdatedAt.current = nextMessages.at(-1)?.createdAt ?? Date.now();
   }
 
   function resetToWelcome() {
@@ -484,7 +484,6 @@ function usePropertyAssistantController(args: {
     recentThreads,
     isHydrated,
     isSubmitting,
-    isSyncing,
     showAuthCallout,
     setDraft,
     setShowAuthCallout,
@@ -499,34 +498,48 @@ function usePropertyAssistantController(args: {
 }
 
 function useLivePropertyAssistant() {
-  const askClientAssistant = useAction(api.user_zone.web.assistant.askClientAssistant);
+  const sendPublicAssistantMessage = useAction(api.ai_zone.assistantPublic.sendMessage);
   const bootstrapPublicSession = useMutation(api.ai_zone.assistantPublic.bootstrapSession);
   const generateVoiceUploadUrl = useMutation(api.ai_zone.assistantPublic.generateVoiceUploadUrl);
   const transcribeVoiceFromStorage = useAction(api.ai_zone.assistantPublic.transcribeVoiceFromStorage);
-  const convex = useConvex();
   const createQualifiedHandoff = useMutation(api.user_zone.mobile.assistant.createQualifiedHandoff);
-  const assistantState =
-    (useQuery(api.user_zone.web.threads.getClientAssistantState, {}) as
-      | { recentThreads: MobileThreadSummary[]; activeMessages: StoredThreadMessage[] }
-      | undefined) ?? null;
-  const persistedThreads = assistantState?.recentThreads ?? [];
+  const sessionRef = useRef<PublicAssistantSession | null>(null);
+
+  async function ensurePublicSession() {
+    const current = sessionRef.current;
+    if (current?.guestId && current.channelSessionToken && current.expiresAt > Date.now()) {
+      return current;
+    }
+
+    const nextSession = await bootstrapPublicSession({
+      guestId: current?.guestId,
+    }) as PublicAssistantSession & { threadId?: string };
+    const session = {
+      guestId: nextSession.guestId,
+      channelSessionToken: nextSession.channelSessionToken,
+      expiresAt: nextSession.expiresAt,
+    } satisfies PublicAssistantSession;
+    sessionRef.current = session;
+    return session;
+  }
 
   return usePropertyAssistantController({
-    askClientAssistant: askClientAssistant as never,
+    askClientAssistant: (async (payload: AskClientAssistantPayload) => {
+      const session = await ensurePublicSession();
+      return sendPublicAssistantMessage({
+        guestId: session.guestId,
+        channelSessionToken: session.channelSessionToken,
+        message: payload.message,
+        threadId: payload.threadId as never,
+        selectedPropertyId: payload.selectedPropertyId as never,
+        inputMode: payload.inputMode,
+        locale: payload.locale,
+      }) as Promise<ClientAssistantResponse>;
+    }) as never,
     bootstrapPublicSession: bootstrapPublicSession as never,
     generateVoiceUploadUrl: generateVoiceUploadUrl as never,
     transcribeVoiceFromStorage: transcribeVoiceFromStorage as never,
-    loadThreadMessages: async (threadId) => {
-      const state = await convex.query(api.user_zone.web.threads.getClientAssistantState, {
-        threadId: threadId as never,
-      }) as {
-        recentThreads: MobileThreadSummary[];
-        activeMessages: StoredThreadMessage[];
-      };
-      return state.activeMessages;
-    },
     createQualifiedHandoff: createQualifiedHandoff as never,
-    persistedThreads,
   });
 }
 
@@ -536,9 +549,7 @@ function useFallbackPropertyAssistant() {
     bootstrapPublicSession: null,
     generateVoiceUploadUrl: null,
     transcribeVoiceFromStorage: null,
-    loadThreadMessages: null,
     createQualifiedHandoff: null,
-    persistedThreads: [],
   });
 }
 

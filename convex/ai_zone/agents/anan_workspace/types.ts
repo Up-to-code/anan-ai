@@ -21,6 +21,12 @@ export type WorkspaceProjectFieldKey =
   | "bathrooms"
   | "description";
 
+export type WorkspaceOfferFieldKey =
+  | "projectRef"
+  | "title"
+  | "price"
+  | "description";
+
 export type WorkspaceOperatorFilter = {
   label: string;
   value: string;
@@ -34,6 +40,7 @@ export type WorkspaceOperatorListItem = {
 };
 
 export type WorkspaceOperatorActionType =
+  | "create_offer"
   | "create_project"
   | "list_clients"
   | "list_projects"
@@ -41,6 +48,13 @@ export type WorkspaceOperatorActionType =
   | "list_offers"
   | "search_offers"
   | "delete_project_confirmation";
+
+export type WorkspaceOfferActionCandidate = {
+  type: "create_offer";
+  fields: Partial<Record<WorkspaceOfferFieldKey | "propertyId", string | number>>;
+  missingFields: WorkspaceOfferFieldKey[];
+  state: "collecting" | "ready" | "completed" | "failed";
+};
 
 export type WorkspaceProjectActionCandidate = {
   type: "create_project";
@@ -77,6 +91,7 @@ export type WorkspaceDeleteProjectConfirmationState = {
 };
 
 export type WorkspaceActionCandidate =
+  | WorkspaceOfferActionCandidate
   | WorkspaceProjectActionCandidate
   | WorkspaceListActionState
   | WorkspaceDeleteProjectConfirmationState;

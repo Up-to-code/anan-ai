@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { WebLocaleProvider } from "@/app/_components/WebLocaleProvider";
 import { getWebDictionary } from "@/lib/i18n";
+import { buildOfferFilterOptions } from "../offersPageData";
 
 vi.mock("next/link", () => ({
   default: ({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) => (
@@ -55,6 +56,7 @@ const item = {
   createdAt: 1,
   updatedAt: 1,
 };
+const filterOptions = buildOfferFilterOptions([item]);
 
 describe("OfferOverviewPage", () => {
   it("renders the flat list layout with organization actions", () => {
@@ -71,7 +73,7 @@ describe("OfferOverviewPage", () => {
             hasNextPage: false,
           }}
           routeBase="/ws/offers"
-          searchQuery=""
+          filterOptions={filterOptions}
           sort="updated_desc"
           filters={{ area: "", location: "" }}
         />
@@ -83,7 +85,11 @@ describe("OfferOverviewPage", () => {
     expect(markup).toContain("شركة ألف للتطوير");
     expect(markup).toContain("offers@example.com");
     expect(markup).toContain("مالقا ريزيدنس");
+    expect(markup).toContain("فلترة سريعة");
     expect(markup).toContain("الأحدث أولاً");
+    expect(markup).toContain("السعودية");
+    expect(markup).toContain("تطبيق الفلاتر");
+    expect(markup).not.toContain("الدولة");
     expect(markup).not.toContain("Open Inventory Offers");
   });
 
@@ -127,7 +133,7 @@ describe("OfferOverviewPage", () => {
             hasNextPage: false,
           }}
           routeBase="/ws/offers"
-          searchQuery="الرياض"
+          filterOptions={filterOptions}
           sort="updated_asc"
           filters={{ area: "", location: "الرياض" }}
         />
@@ -136,8 +142,8 @@ describe("OfferOverviewPage", () => {
 
     expect(markup).toContain("شركة ألف للتطوير");
     expect(markup).toContain("فتح التفاصيل");
-    expect(markup).toContain("نتائج البحث: الرياض");
     expect(markup).toContain("الأقدم أولاً");
+    expect(markup).toContain("فلترة سريعة");
     expect(markup).not.toContain("offers@example.com");
   });
 });

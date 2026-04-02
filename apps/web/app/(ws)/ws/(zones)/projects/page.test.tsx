@@ -57,6 +57,8 @@ describe("/ws/projects page", () => {
 
     expect(markup).toContain("المشاريع");
     expect(markup).toContain("مالقا ريزيدنس");
+    expect(markup).toContain("تحليل");
+    expect(markup).toContain("فتح التفاصيل");
     expect(listProperties).toHaveBeenCalledWith({
       paginationOpts: { cursor: null, numItems: 100 },
     });

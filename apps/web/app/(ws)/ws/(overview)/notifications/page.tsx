@@ -1,9 +1,8 @@
-import { cookies } from "next/headers";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import ZonePageIntro from "../../_components/ZoneShell/ZonePageIntro";
-import { getWebDictionary } from "@/lib/i18n";
-import { getLocaleDateFormat, resolveLocale, WEB_LOCALE_COOKIE } from "@/lib/locale";
+import { getLocaleDateFormat } from "@/lib/locale";
+import { getWorkspaceLocaleContext } from "../../_lib/workspaceLocale";
 import {
   getWorkspaceNotificationSummary,
   listWorkspaceNotifications,
@@ -30,9 +29,7 @@ function formatNotificationTimestamp(timestamp: number, locale: string) {
  * HOW:   Loads notifications on the server and renders a filterable list without extra dashboard chrome.
  */
 export default async function WorkspaceNotificationsPage({ searchParams }: WorkspaceNotificationsPageProps) {
-  const cookieStore = await cookies();
-  const locale = resolveLocale(cookieStore.get(WEB_LOCALE_COOKIE)?.value);
-  const dictionary = getWebDictionary(locale);
+  const { locale, dictionary } = await getWorkspaceLocaleContext();
   const [{ filter }, notifications, summary] = await Promise.all([
     searchParams,
     listWorkspaceNotifications(30),

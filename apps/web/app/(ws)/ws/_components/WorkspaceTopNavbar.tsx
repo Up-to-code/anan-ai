@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, ChevronDown, Mail } from "lucide-react";
+import { Bell, Mail } from "lucide-react";
 import WebLocaleSwitcher from "@/app/_components/WebLocaleSwitcher";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
@@ -12,6 +12,43 @@ import { useWorkspaceSignalCounts } from "../(zones)/inbox/InboxPage/useRealtime
 import type { SidebarUser } from "./Sidebar/types";
 import type { WorkspaceShellVariant } from "./WorkspaceShell";
 import ThemeToggle from "@/app/_components/ThemeToggle";
+
+const HEADER_ACTION_BASE_CLASS_NAME =
+  "inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)] bg-[var(--workspace-panel)] px-3 text-[var(--workspace-bubble-other-foreground)] shadow-sm transition-colors hover:bg-[var(--workspace-elevated)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)]";
+const HEADER_ICON_ACTION_CLASS_NAME = `${HEADER_ACTION_BASE_CLASS_NAME} w-10 justify-center px-0`;
+const HEADER_AVATAR_CLASS_NAME =
+  "relative inline-flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)] bg-[var(--workspace-elevated)] text-[10px] font-black tracking-[0.12em] text-foreground";
+
+function getOrganizationAvatarLabel(name: string) {
+  const tokens = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2);
+
+  return tokens.map((token) => token[0]).join("").toUpperCase() || "O";
+}
+
+function getUserAvatarLabel(name?: string | null, email?: string | null) {
+  const source = name?.trim() || email?.trim() || "U";
+  return source[0]?.toUpperCase() ?? "U";
+}
+
+function HeaderAvatar({
+  image,
+  label,
+  alt,
+}: {
+  image?: string | null;
+  label: string;
+  alt: string;
+}) {
+  if (image) {
+    return <img src={image} alt={alt} className="h-full w-full object-cover" />;
+  }
+
+  return <span>{label}</span>;
+}
 
 /**
  * WHY:   Workspace screens need one shared top navbar for identity, organization context, and incoming signals.
@@ -33,6 +70,7 @@ export default function WorkspaceTopNavbar({
 }
 
 function WorkspaceTopNavbarInner({
+  user,
   organization,
   visibleZoneKeys,
   initialSignalCounts = { notificationCount: 0, inboxCount: 0 },
@@ -56,6 +94,11 @@ function WorkspaceTopNavbarInner({
   const isAssistantVariant = variant === "assistant";
   const resolvedTitle = title ?? (isAssistantVariant ? dictionary.nav.assistantTitle : dictionary.nav.overviewTitle);
   const orgSubtitle = organization.navbarSubtitle?.trim() || organization.sidebarSubtitle?.trim() || dictionary.nav.workspaceFallback;
+  const organizationSettingsHref = "/ws/settings?tab=org";
+  const userSettingsHref = "/ws/settings";
+  const organizationAvatarLabel = getOrganizationAvatarLabel(organization.name);
+  const userAvatarLabel = getUserAvatarLabel(user.name, user.email);
+  const userDisplayName = user.name?.trim() || user.email?.trim() || dictionary.settings.title;
 
   return (
     <header
@@ -63,30 +106,34 @@ function WorkspaceTopNavbarInner({
       data-variant={variant}
       dir={direction}
       className={cn(
-        "flex shrink-0 items-center justify-between border-b transition-colors",
+        "flex shrink-0 items-center justify-between gap-3 border-b transition-colors",
         isAssistantVariant
-          ? "h-14 border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-4 sm:px-5 lg:px-6"
-          : "h-16 border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-6",
+          ? "h-14 border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-3 sm:px-5 lg:px-6"
+          : "h-16 border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-4 sm:px-6",
       )}
     >
-      {/* Start side (right in RTL): Mobile nav + page context */}
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         {mobileNavigation ? <div className="lg:hidden">{mobileNavigation}</div> : null}
         <h1
           className={cn(
-            isAssistantVariant ? "text-base font-semibold text-foreground" : "text-lg font-black text-foreground",
+            "truncate text-foreground",
+            isAssistantVariant ? "text-base font-semibold" : "text-base font-black sm:text-lg",
           )}
         >
           {resolvedTitle}
         </h1>
       </div>
 
-      {/* End side (left in RTL): Signal buttons + unified account */}
-      <div className={cn("flex items-center", isAssistantVariant ? "gap-3" : "gap-4")}>
-        <WebLocaleSwitcher />
-        <ThemeToggle className="h-9 w-9 rounded-[8px]" />
-        {/* Action Group */}
-        <div className={cn("flex items-center gap-1 border-s border-[color:var(--workspace-border)]", isAssistantVariant ? "ps-3" : "ps-4")}>
+      <div
+        className={cn(
+          "flex shrink-0 items-center gap-1 rounded-[18px] border border-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_94%,transparent)] p-1 sm:gap-2 sm:p-1.5 shadow-sm",
+          isAssistantVariant ? "max-w-[calc(100vw-7rem)]" : "max-w-[calc(100vw-6rem)]",
+        )}
+      >
+        <WebLocaleSwitcher className="rounded-xl border-[color:transparent] bg-transparent shadow-none hover:bg-[var(--workspace-elevated)]" />
+        <ThemeToggle className="rounded-xl border-transparent bg-transparent shadow-none hover:bg-[var(--workspace-elevated)]" />
+        <div className="h-6 w-px bg-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)]" aria-hidden="true" />
+        <div className="flex items-center gap-1 sm:gap-2">
           <SignalButton
             label={dictionary.nav.notifications}
             count={signalCounts.notificationCount}
@@ -105,23 +152,44 @@ function WorkspaceTopNavbarInner({
             />
           ) : null}
         </div>
+        <div className="h-6 w-px bg-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)]" aria-hidden="true" />
         <Link
-          href="/ws/settings"
+          href={organizationSettingsHref}
+          aria-label={dictionary.settings.organizationSettingsTitle}
+          title={`${dictionary.settings.organizationSettingsTitle} · ${orgSubtitle}`}
           className={cn(
-            "flex items-center gap-3 rounded-[10px] border px-3 py-2 transition",
-            "border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] hover:bg-[var(--workspace-accent-soft)]",
-            isAssistantVariant ? "min-w-[160px]" : "min-w-[210px]",
+            HEADER_ACTION_BASE_CLASS_NAME,
+            "w-10 justify-center px-0 sm:min-w-0 sm:max-w-[13.5rem] sm:justify-start sm:ps-1.5 sm:pe-3",
+            organization.isVerified
+              ? ""
+              : "border-amber-400/80 ring-2 ring-amber-300/50 hover:bg-amber-50/70 dark:hover:bg-amber-500/10",
           )}
         >
-          <ChevronDown className={cn("h-4 w-4 text-muted-foreground", !isRtl && "order-2")} />
-          <div className="min-w-0 flex-1">
-            <div className={cn("truncate text-xs font-black text-foreground", isRtl ? "text-right" : "text-left")}>
-              {organization.name}
-            </div>
-            <div className={cn("truncate text-[11px] text-muted-foreground", isRtl ? "text-right" : "text-left")}>
-              {orgSubtitle}
-            </div>
-          </div>
+          <span className={HEADER_AVATAR_CLASS_NAME}>
+            <HeaderAvatar image={organization.logoUrl} label={organizationAvatarLabel} alt={organization.name} />
+          </span>
+          <span className={cn("hidden min-w-0 flex-1 truncate text-sm font-bold sm:block", isRtl ? "text-right" : "text-left")}>
+            {organization.name}
+          </span>
+          {!organization.isVerified ? (
+            <span
+              aria-hidden="true"
+              className="absolute end-2 top-2 h-2.5 w-2.5 rounded-full border border-[var(--workspace-panel)] bg-amber-400"
+            />
+          ) : null}
+        </Link>
+        <Link
+          href={userSettingsHref}
+          className={cn(
+            HEADER_ICON_ACTION_CLASS_NAME,
+            "relative overflow-hidden",
+          )}
+          aria-label={userDisplayName}
+          title={userDisplayName}
+        >
+          <span className={HEADER_AVATAR_CLASS_NAME}>
+            <HeaderAvatar image={user.image} label={userAvatarLabel} alt={userDisplayName} />
+          </span>
         </Link>
       </div>
     </header>
@@ -149,19 +217,20 @@ function SignalButton({
     <Link
       href={href}
       className={cn(
-        "relative p-2 transition",
-        "rounded-[8px]",
+        HEADER_ICON_ACTION_CLASS_NAME,
+        "relative",
         isActive
           ? isAssistantVariant
-            ? "bg-muted text-foreground"
-            : "bg-[color:color-mix(in_srgb,var(--workspace-highlight)_14%,transparent)] text-[var(--workspace-highlight)]"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            ? "bg-[var(--workspace-elevated)] text-foreground"
+            : "border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,var(--workspace-panel))] text-[var(--workspace-highlight)]"
+          : "text-[var(--workspace-muted)]",
       )}
       aria-label={`${label}: ${count}`}
+      title={label}
     >
       {icon}
       {count > 0 ? (
-        <span className="absolute end-1 top-1 flex h-2 w-2 items-center justify-center rounded-full bg-red-500 ring-2 ring-background" />
+        <span className="absolute end-2 top-2 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-500 ring-2 ring-[var(--workspace-panel)]" />
       ) : null}
     </Link>
   );

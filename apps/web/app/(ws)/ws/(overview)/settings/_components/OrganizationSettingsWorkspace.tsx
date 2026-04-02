@@ -122,6 +122,8 @@ export default function OrganizationSettingsWorkspace({
                 <label className="text-[13px] font-semibold text-foreground">{dictionary.settings.organizationNameLabel}</label>
                 <input
                   type="text"
+                  name="organizationName"
+                  autoComplete="organization"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   disabled={!canManage || isSaving}
@@ -132,6 +134,7 @@ export default function OrganizationSettingsWorkspace({
               <div className="space-y-2 md:col-span-2">
                 <label className="text-[13px] font-semibold text-foreground">{dictionary.settings.organizationDescriptionLabel}</label>
                 <textarea
+                  name="organizationDescription"
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
                   disabled={!canManage || isSaving}
@@ -144,7 +147,10 @@ export default function OrganizationSettingsWorkspace({
               <div className="space-y-2">
                 <label className="text-[13px] font-semibold text-foreground">{dictionary.settings.organizationWebsiteLabel}</label>
                 <input
-                  type="text"
+                  type="url"
+                  name="organizationWebsite"
+                  autoComplete="url"
+                  spellCheck={false}
                   value={website}
                   onChange={(event) => setWebsite(event.target.value)}
                   disabled={!canManage || isSaving}
@@ -158,6 +164,9 @@ export default function OrganizationSettingsWorkspace({
                 <label className="text-[13px] font-semibold text-foreground">{dictionary.settings.organizationEmailLabel}</label>
                 <input
                   type="email"
+                  name="organizationEmail"
+                  autoComplete="email"
+                  spellCheck={false}
                   value={contactEmail}
                   onChange={(event) => setContactEmail(event.target.value)}
                   disabled={!canManage || isSaving}
@@ -168,9 +177,11 @@ export default function OrganizationSettingsWorkspace({
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <label className="text-[13px] font-semibold text-foreground">رقم واتساب / الهاتف</label>
+                <label className="text-[13px] font-semibold text-foreground">{dictionary.settings.organizationPhoneLabel}</label>
                 <input
-                  type="text"
+                  type="tel"
+                  name="organizationPhone"
+                  autoComplete="tel"
                   value={phone}
                   onChange={(event) => setPhone(event.target.value)}
                   disabled={!canManage || isSaving}

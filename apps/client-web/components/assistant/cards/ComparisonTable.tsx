@@ -9,7 +9,7 @@ interface ComparisonTableProps {
 
 export function ComparisonTable({ title, columns, rows, summary }: ComparisonTableProps) {
   return (
-    <Card className="my-4 border-primary/10 shadow-sm overflow-hidden">
+    <Card data-testid="client-ag-ui-card-comparison_table" className="my-4 overflow-hidden border-primary/10 shadow-sm">
       <CardHeader className="bg-muted/30 pb-4">
         <CardTitle className="text-sm font-black uppercase tracking-widest">{title}</CardTitle>
       </CardHeader>

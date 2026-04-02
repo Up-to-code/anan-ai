@@ -230,7 +230,7 @@ describe("/ws/offers page", () => {
     expect(markup.indexOf("عرض مكرر محدث")).toBeLessThan(markup.indexOf("عرض ثانٍ"));
   });
 
-  it("applies query filtering and oldest-first sorting", async () => {
+  it("ignores the legacy query param and keeps oldest-first sorting", async () => {
     const element = await WorkspaceOffersRoute({
       searchParams: Promise.resolve({ q: "الرياض", sort: "updated_asc" }),
     });
@@ -240,8 +240,9 @@ describe("/ws/offers page", () => {
       </WebLocaleProvider>,
     );
 
-    expect(markup).toContain("نتائج البحث: الرياض");
+    expect(markup).not.toContain("نتائج البحث: الرياض");
     expect(markup).toContain("الأقدم أولاً");
+    expect(markup).toContain("فلترة سريعة");
     expect(markup).toContain("عرض ثانٍ");
     expect(markup).toContain("عرض مكرر محدث");
     expect(markup.indexOf("عرض ثانٍ")).toBeLessThan(markup.indexOf("عرض مكرر محدث"));

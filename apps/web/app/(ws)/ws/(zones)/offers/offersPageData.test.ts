@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildOfferFilterOptions,
   buildOffersRouteBase,
   filterOffers,
   filterOffersByQuery,
@@ -237,5 +238,18 @@ describe("offersPageData", () => {
         },
       }).map((item) => item.id),
     ).toEqual(["offer-1"]);
+  });
+
+  it("builds searchable Saudi-first options from the current offers", () => {
+    const filters = resolveFilters({});
+    const options = buildOfferFilterOptions([
+      buildOffer({ id: "offer-sa", message: "عرض الرياض", updatedAt: 1, propertyLocation: "الرياض", propertyArea: "الملقا" }),
+      buildOffer({ id: "offer-jeddah", message: "عرض جدة", updatedAt: 3, propertyLocation: "جدة", propertyArea: "الشاطئ" }),
+    ]);
+
+    expect(options.locations).toContain("الرياض");
+    expect(options.locations).toContain("جدة");
+    expect(options.areas).toContain("الملقا");
+    expect(filters).toEqual({ area: "", location: "" });
   });
 });

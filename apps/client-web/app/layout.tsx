@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { cookies } from "next/headers";
+import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import "./globals.css";
 import { RootFontFaces, rootFontClassName } from "@/lib/rootFonts";
 import { getDictionary } from "@/lib/i18n";
@@ -11,7 +12,7 @@ import PostHogProvider from "./PostHogProvider";
 import ConvexClientProvider from "./ConvexClientProvider";
 
 export const metadata: Metadata = {
-  title: "Anan - Public Assistant",
+  title: "Anan Buyer",
   description: "Advanced Institutional Real Estate Intelligence",
 };
 
@@ -26,18 +27,20 @@ export default async function RootLayout({
   return (
     <html lang={locale} dir={isRtlLocale(locale) ? "rtl" : "ltr"} suppressHydrationWarning>
       <body className={`${rootFontClassName} bg-background text-foreground antialiased`}>
-        <ConvexClientProvider>
-          <ThemeProvider>
-            <Suspense fallback={null}>
-              <LocaleProvider locale={locale} dictionary={dictionary}>
-                <PostHogProvider>
-                  <RootFontFaces />
-                  {children}
-                </PostHogProvider>
-              </LocaleProvider>
-            </Suspense>
-          </ThemeProvider>
-        </ConvexClientProvider>
+        <ConvexAuthNextjsServerProvider>
+          <ConvexClientProvider>
+            <ThemeProvider>
+              <Suspense fallback={null}>
+                <LocaleProvider locale={locale} dictionary={dictionary}>
+                  <PostHogProvider>
+                    <RootFontFaces />
+                    {children}
+                  </PostHogProvider>
+                </LocaleProvider>
+              </Suspense>
+            </ThemeProvider>
+          </ConvexClientProvider>
+        </ConvexAuthNextjsServerProvider>
       </body>
     </html>
   );

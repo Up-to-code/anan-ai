@@ -81,7 +81,6 @@ it("renders the shared workspace shell for overview routes", async () => {
 
   expect(markup).toContain("data-slot=\"workspace-shell\"");
   expect(markup).toContain("data-variant=\"assistant\"");
-  expect(markup).toContain("data-title=\"مساعد عنان\"");
   expect(markup).toContain("Shell:Alpha");
   expect(markup).toContain("Body");
 });

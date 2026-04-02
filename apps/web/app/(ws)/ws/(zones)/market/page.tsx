@@ -1,9 +1,7 @@
-import { cookies } from "next/headers";
 import MarketPage from "./MarketPage";
 import OverviewTab from "./MarketPage/OverviewTab";
 import { loadMarketPageModel } from "./loadMarketPageModel";
-import { getWebDictionary } from "@/lib/i18n";
-import { resolveLocale, WEB_LOCALE_COOKIE } from "@/lib/locale";
+import { getWorkspaceLocaleContext } from "../../_lib/workspaceLocale";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +22,7 @@ type MarketPageProps = {
  * HOW:   Lets the shared market page apply the temporary under-development overlay across all market routes.
  */
 export default async function WorkspaceMarketRoute({ searchParams }: MarketPageProps) {
-  const cookieStore = await cookies();
-  const dictionary = getWebDictionary(resolveLocale(cookieStore.get(WEB_LOCALE_COOKIE)?.value));
+  const { dictionary } = await getWorkspaceLocaleContext();
   const model = await loadMarketPageModel(searchParams);
 
   return (

@@ -5,6 +5,22 @@ import { uploadedFileReferenceSchema } from "@/server/contracts/files";
 export const propertyStatusSchema = z.enum(["available", "sold", "reserved"]);
 export const publicationStateSchema = z.enum(["draft", "published", "archived"]);
 export const buyerVisibilitySchema = z.enum(["private", "public"]);
+export const projectAnalyticsEventTypeSchema = z.enum([
+  "project_detail_view",
+  "project_analytics_view",
+  "project_analyze_click",
+  "project_edit_click",
+  "project_create_offer_click",
+  "project_open_inbox_click",
+  "project_asset_open_click",
+]);
+export const workspaceProjectAnalyticsBrokerStateSchema = z.enum([
+  "viewer_only",
+  "offer_active",
+  "client_linked",
+  "closed_won",
+  "closed_lost",
+]);
 
 export const paginationOptionsSchema = z.object({
   cursor: z.string().nullable(),
@@ -38,6 +54,16 @@ export const propertyPresentationSchema = z.object({
 
 export const propertyBodySchema = z.object({
   presentation: propertyPresentationSchema.optional(),
+});
+
+export const trackProjectAnalyticsEventInputSchema = z.object({
+  id: z.string().min(1),
+  eventType: projectAnalyticsEventTypeSchema,
+  source: z.string().trim().min(1).max(120),
+  conversationId: z.string().optional(),
+  offerCaseId: z.string().optional(),
+  dealId: z.string().optional(),
+  metadata: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
 });
 
 /**
@@ -76,6 +102,9 @@ export type UpdatePropertyInput = z.infer<typeof updatePropertyInputSchema>;
 export type PropertyPresentation = z.infer<typeof propertyPresentationSchema>;
 export type PropertyBody = z.infer<typeof propertyBodySchema>;
 export type BuyerVisibility = z.infer<typeof buyerVisibilitySchema>;
+export type ProjectAnalyticsEventType = z.infer<typeof projectAnalyticsEventTypeSchema>;
+export type WorkspaceProjectAnalyticsBrokerState = z.infer<typeof workspaceProjectAnalyticsBrokerStateSchema>;
+export type TrackProjectAnalyticsEventInput = z.infer<typeof trackProjectAnalyticsEventInputSchema>;
 
 export type PropertyDetail = {
   _id: string;
@@ -147,6 +176,144 @@ export type PaginatedPropertiesResult = PaginationResult<PropertyListItem>;
 export type PublishPropertyResult = { ok: true };
 export type BrokerOverviewSummary = { properties: number };
 export type DeveloperOverviewSummary = { properties: number };
+
+export type WorkspaceProjectAnalyticsKpis = {
+  connectedBrokers: number;
+  brokerManagedClients: number;
+  totalViews: number;
+  totalClicks: number;
+  activeCases: number;
+  activeDeals: number;
+};
+
+export type WorkspaceProjectAnalyticsBrokerRow = {
+  brokerId: string;
+  brokerName: string;
+  brokerAvatarLabel: string;
+  brokerPhone: string | null;
+  state: WorkspaceProjectAnalyticsBrokerState;
+  stateLabel: string;
+  linkedClientName: string | null;
+  currentStageLabel: string;
+  lastActivityAt: number | null;
+  views: number;
+  clicks: number;
+};
+
+export type WorkspaceProjectAnalyticsStageSummary = {
+  key: string;
+  label: string;
+  count: number;
+  kind: "deal" | "offer_case";
+};
+
+export type WorkspaceProjectAnalyticsActivityItem = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  createdAt: number;
+};
+
+export type WorkspaceProjectAnalyticsVisibilityPoint = {
+  dateKey: string;
+  label: string;
+  views: number;
+  clicks: number;
+};
+
+export type WorkspaceProjectAnalyticsStatePoint = {
+  key: WorkspaceProjectAnalyticsBrokerState;
+  label: string;
+  count: number;
+};
+
+export type WorkspaceProjectAnalyticsInteractionPoint = {
+  eventType: ProjectAnalyticsEventType;
+  label: string;
+  count: number;
+};
+
+export type WorkspaceProjectAnalyticsDeveloperStageKey =
+  | "new"
+  | "contacted"
+  | "negotiation"
+  | "won"
+  | "lost";
+
+export type WorkspaceProjectAnalyticsCustomerRelationType =
+  | "broker_managed"
+  | "internal_client";
+
+export type WorkspaceProjectAnalyticsDeveloperSummary = {
+  totalCustomers: number;
+  trackedCustomers: number;
+  brokerManagedCustomers: number;
+  internalCustomers: number;
+  activeBrokers: number;
+  closedWonCustomers: number;
+  closedLostCustomers: number;
+};
+
+export type WorkspaceProjectAnalyticsDeveloperStageSummary = {
+  key: WorkspaceProjectAnalyticsDeveloperStageKey;
+  label: string;
+  count: number;
+};
+
+export type WorkspaceProjectAnalyticsBrokerTrackingCustomer = {
+  id: string;
+  name: string;
+  relationType: WorkspaceProjectAnalyticsCustomerRelationType;
+  relationTypeLabel: string;
+  isTrackedCustomer: boolean;
+  stageKey: WorkspaceProjectAnalyticsDeveloperStageKey;
+  stageLabel: string;
+  secondaryStateKey: string | null;
+  secondaryStateLabel: string | null;
+  lastActivityAt: number | null;
+};
+
+export type WorkspaceProjectAnalyticsBrokerTimelineItem = {
+  id: string;
+  kind: "deal" | "offer_case" | "linked_customer" | "closed";
+  title: string;
+  subtitle: string | null;
+  createdAt: number;
+};
+
+export type WorkspaceProjectAnalyticsBrokerTrackingEntry = {
+  brokerId: string;
+  brokerName: string;
+  brokerAvatarLabel: string;
+  brokerPhone: string | null;
+  state: WorkspaceProjectAnalyticsBrokerState;
+  stateLabel: string;
+  lastActivityAt: number | null;
+  views: number;
+  clicks: number;
+  totalCustomers: number;
+  trackedCustomers: number;
+  brokerManagedCustomers: number;
+  internalCustomers: number;
+  closedWonCustomers: number;
+  closedLostCustomers: number;
+  customers: WorkspaceProjectAnalyticsBrokerTrackingCustomer[];
+  timeline: WorkspaceProjectAnalyticsBrokerTimelineItem[];
+};
+
+export type WorkspaceProjectAnalytics = {
+  projectId: string;
+  kpis: WorkspaceProjectAnalyticsKpis;
+  brokerRows: WorkspaceProjectAnalyticsBrokerRow[];
+  stageSummary: WorkspaceProjectAnalyticsStageSummary[];
+  recentEvents: WorkspaceProjectAnalyticsActivityItem[];
+  visibilityTrend: WorkspaceProjectAnalyticsVisibilityPoint[];
+  brokerStateSummary: WorkspaceProjectAnalyticsStatePoint[];
+  interactionSummary: WorkspaceProjectAnalyticsInteractionPoint[];
+  developerSummary: WorkspaceProjectAnalyticsDeveloperSummary;
+  developerStageSummary: WorkspaceProjectAnalyticsDeveloperStageSummary[];
+  brokerTracking: WorkspaceProjectAnalyticsBrokerTrackingEntry[];
+};
 
 export function parsePropertyBody(body: unknown): PropertyBody | null {
   const parsed = propertyBodySchema.safeParse(body);

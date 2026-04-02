@@ -120,7 +120,7 @@ export default function MessageRow({
             ))}
           </div>
         ) : null}
-        {children ? <div className="w-full mt-2 md:mt-4">{children}</div> : null}
+        {children ? <div className="mt-1 w-full md:mt-2">{children}</div> : null}
       </div>
     </div>
   );

@@ -12,9 +12,9 @@ type InsightCardProps = {
 };
 
 /**
- * WHY:   The Nexus design requires structured cards to feel like integrated HUD elements.
- * WHAT:  Modernizes the InsightCard with rounded-3xl geometry, Cairo font weights, and high-contrast styling.
- * HOW:   Uses rounded-[32px] for the main shelf and high-contrast MetricRows for clear scanning.
+ * WHY:   Structured assistant outputs should feel like quiet extensions of the conversation, not promotional widgets.
+ * WHAT:  Renders all typed insight cards with a flatter, cleaner visual system for finance, ROI, comparison, and verification outputs.
+ * HOW:   Uses one minimal shell, light dividers, and compact controls while preserving the existing card data and interactions.
  */
 export function InsightCard({ card }: InsightCardProps) {
   if (card.type === "broker_profile") {
@@ -58,9 +58,9 @@ export function InsightCard({ card }: InsightCardProps) {
   if (card.type === "comparison_table") {
     return (
       <CardShell title={card.title} icon={<Scale size={18} color="#2563EB" />}>
-        <View className="overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-800">
+        <View className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
           {card.rows.map((row, idx) => (
-            <View key={row.join("-")} className={`flex-row-reverse border-b border-slate-50 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 ${idx === card.rows.length - 1 ? "border-b-0" : ""}`}>
+            <View key={row.join("-")} className={`flex-row-reverse border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 ${idx === card.rows.length - 1 ? "border-b-0" : ""}`}>
               {row.map((value, index) => (
                 <View key={`${value}-${index}`} className="flex-1">
                   <AppText className={index === 0 ? "text-[12px] font-black uppercase text-slate-400" : "text-[14px] font-cairo-bold text-slate-900 dark:text-slate-100"}>{value}</AppText>
@@ -187,33 +187,33 @@ function InteractiveLoanCalculator({ card }: { card: any }) {
     <CardShell title={card.title} icon={<Wallet size={18} color="#2563EB" />}>
       <MetricRow label="قيمة العقار" value={formatCurrency(card.propertyPrice)} />
       
-      <View className="py-4 border-b border-slate-50 dark:border-slate-800">
+      <View className="border-b border-slate-100 py-4 dark:border-slate-800">
          <View className="flex-row-reverse justify-between items-center mb-4">
             <AppText className="text-[13px] font-black uppercase text-slate-400">الدفعة المقدمة</AppText>
             <AppText className="text-[15px] text-slate-900 dark:text-slate-50 font-cairo-black">{downPaymentPercent}% ({formatCurrency(downPaymentAmount)})</AppText>
          </View>
-         <View className="flex-row-reverse items-center justify-between bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-full p-1">
-            <Pressable onPress={() => setDownPaymentPercent((p: number) => Math.max(10, p - 5))} className="h-10 w-10 items-center justify-center bg-white dark:bg-slate-900 rounded-full border border-slate-100 dark:border-slate-800">
+         <View className="flex-row-reverse items-center justify-between rounded-full border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950">
+            <Pressable onPress={() => setDownPaymentPercent((p: number) => Math.max(10, p - 5))} className="h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
                <ChevronRight size={20} color="#94A3B8" />
             </Pressable>
             <AppText className="text-[15px] font-cairo-black text-slate-900 dark:text-slate-50">{downPaymentPercent}%</AppText>
-            <Pressable onPress={() => setDownPaymentPercent((p: number) => Math.min(90, p + 5))} className="h-10 w-10 items-center justify-center bg-white dark:bg-slate-900 rounded-full border border-slate-100 dark:border-slate-800">
+            <Pressable onPress={() => setDownPaymentPercent((p: number) => Math.min(90, p + 5))} className="h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
                <ChevronLeft size={20} color="#94A3B8" />
             </Pressable>
          </View>
       </View>
 
-      <View className="py-4 border-b border-slate-50 dark:border-slate-800">
+      <View className="border-b border-slate-100 py-4 dark:border-slate-800">
          <View className="flex-row-reverse justify-between items-center mb-4">
             <AppText className="text-[13px] font-black uppercase text-slate-400">مدة التمويل</AppText>
             <AppText className="text-[15px] text-slate-900 dark:text-slate-50 font-cairo-black">{years} سنة</AppText>
          </View>
-         <View className="flex-row-reverse items-center justify-between bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-full p-1">
-            <Pressable onPress={() => setYears((y: number) => Math.max(5, y - 5))} className="h-10 w-10 items-center justify-center bg-white dark:bg-slate-900 rounded-full border border-slate-100 dark:border-slate-800">
+         <View className="flex-row-reverse items-center justify-between rounded-full border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950">
+            <Pressable onPress={() => setYears((y: number) => Math.max(5, y - 5))} className="h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
                <ChevronRight size={20} color="#94A3B8" />
             </Pressable>
             <AppText className="text-[15px] font-cairo-black text-slate-900 dark:text-slate-50">{years} سنين</AppText>
-            <Pressable onPress={() => setYears((y: number) => Math.min(30, y + 5))} className="h-10 w-10 items-center justify-center bg-white dark:bg-slate-900 rounded-full border border-slate-100 dark:border-slate-800">
+            <Pressable onPress={() => setYears((y: number) => Math.min(30, y + 5))} className="h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
                <ChevronLeft size={20} color="#94A3B8" />
             </Pressable>
          </View>
@@ -240,9 +240,9 @@ function InteractiveRoiCalculator({ card }: { card: any }) {
       <MetricRow label="الإيجار السنوي" value={formatCurrency(card.annualRent)} />
       <MetricRow label="عائد الإيجار السنوي" value={formatPercent(card.yieldPercent)} emphasized />
       
-      <View className="py-5 border-b border-slate-50 dark:border-slate-800">
+      <View className="border-b border-slate-100 py-5 dark:border-slate-800">
          <AppText className="text-[13px] font-black uppercase text-slate-400 mb-4 text-right">معدل نمو القيمة (5 سنوات)</AppText>
-         <View className="flex-row-reverse bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-full overflow-hidden p-1 gap-1">
+         <View className="flex-row-reverse gap-1 overflow-hidden rounded-full border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950">
             <Pressable 
               onPress={() => setGrowthScenario("conservative")}
               className={`flex-1 py-1.5 px-1 items-center rounded-full justify-center ${growthScenario === "conservative" ? "bg-slate-900 dark:bg-slate-50" : ""}`}
@@ -289,23 +289,13 @@ function CardShell({
   return (
     <View
       className="w-full gap-4 border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900"
-      style={{ 
-        borderRadius: layout.cardRadius,
-        shadowColor: "#0F172A",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.04,
-        shadowRadius: 12,
-        elevation: 3,
-      }}
+      style={{ borderRadius: layout.cardRadius }}
     >
       <View className="flex-row-reverse items-center justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
         <AppText responsiveRole="bodyStrong" className="flex-1 text-right font-cairo-black text-slate-900 dark:text-slate-100">
           {title}
         </AppText>
-        <View
-          className="items-center justify-center bg-slate-100 dark:bg-slate-800"
-          style={{ width: layout.touchTarget - 4, height: layout.touchTarget - 4, borderRadius: layout.chipRadius }}
-        >
+        <View className="items-center justify-center">
           {icon}
         </View>
       </View>
@@ -326,7 +316,7 @@ function MetricRow({
   const layout = useMobileLayout();
 
   return (
-    <View className="flex-row-reverse items-center justify-between border-b border-slate-50 dark:border-slate-800 py-3 last:border-b-0 w-full">
+    <View className="flex-row-reverse items-center justify-between border-b border-slate-100 py-3 last:border-b-0 w-full dark:border-slate-800">
       <AppText responsiveRole="chip" className="font-bold text-slate-400 dark:text-slate-500 max-w-[50%]">
         {label}
       </AppText>

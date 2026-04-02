@@ -38,8 +38,7 @@ Monorepo layout: this app lives at `apps/client-web`. Convex `_generated` is com
 
 1. Open `/` and confirm the assistant shell loads without console/runtime errors.
 2. Submit a buyer prompt and confirm a live assistant response returns from Convex.
-3. Open `/search` and `/loans` and confirm route-specific suggestions still work.
-4. Open `/app/property/<published-id>` and confirm a published property renders without demo fallback behavior.
-5. Confirm `/signin` returns safely to an internal route only.
-6. Confirm advisor handoff requires auth, then succeeds for an authenticated buyer.
-7. Confirm `/robots.txt`, `/sitemap.xml`, and `/manifest.webmanifest` resolve on the deployed host.
+3. Open `/app/property/<published-id>` and confirm a published property renders without demo fallback behavior.
+4. Confirm `/signin` returns safely to an internal route only.
+5. Confirm advisor handoff requires auth, then succeeds for an authenticated buyer.
+6. Confirm `/robots.txt`, `/sitemap.xml`, and `/manifest.webmanifest` resolve on the deployed host.

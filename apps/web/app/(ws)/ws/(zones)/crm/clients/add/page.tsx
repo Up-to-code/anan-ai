@@ -1,9 +1,9 @@
 import DealFormScreen from "../../DealFormScreen";
-import { cookies } from "next/headers";
 import { requireWorkspaceData } from "../../../../_lib/workspaceData";
+import { getWorkspaceLocale } from "../../../../_lib/workspaceLocale";
 import { getWorkspaceCrmZone, getWorkspacePropertyZone } from "@/server/ws/zones";
 import { parsePropertyBody } from "@/server/contracts/properties";
-import { formatLocaleNumber, resolveLocale, WEB_LOCALE_COOKIE } from "@/lib/locale";
+import { formatLocaleNumber } from "@/lib/locale";
 
 /**
  * WHY:   CRM add-client should create a persisted deal/contact record instead of logging mock form data.
@@ -11,8 +11,7 @@ import { formatLocaleNumber, resolveLocale, WEB_LOCALE_COOKIE } from "@/lib/loca
  * HOW:   Submits directly to the audience-specific CRM server action and redirects to the CRM board on success.
  */
 export default async function AddClientPage() {
-  const cookieStore = await cookies();
-  const locale = resolveLocale(cookieStore.get(WEB_LOCALE_COOKIE)?.value);
+  const locale = await getWorkspaceLocale();
   const workspace = await requireWorkspaceData("/ws/crm/clients/add");
   const audience = workspace.audience;
   const ownerContext = workspace.ownerContext ?? null;

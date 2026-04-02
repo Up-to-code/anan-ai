@@ -1,12 +1,11 @@
 import { Pressable, ScrollView, View } from "react-native";
-import * as Linking from "expo-linking";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect } from "react";
+import { Alert } from "react-native";
 import { ArrowLeft, Bookmark, Globe, HelpCircle, LogOut, MessageSquare, User as UserIcon } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText } from "@/components/ui/AppText";
 import { IconButton } from "@/components/ui/IconButton";
-import { buildClientWebHistoryUrl, getClientWebBaseUrl } from "@/lib/mobileData";
 import { clearGuestThreadSnapshot } from "@/lib/mobilePersistence";
 
 export default function AccountScreen() {
@@ -40,10 +39,10 @@ export default function AccountScreen() {
         {params.threadId || params.orderId ? (
           <View className="mt-4 rounded-[28px] bg-emerald-50 px-5 py-4 dark:bg-emerald-900/20">
             <AppText className="text-[16px] font-cairo-black text-emerald-800 dark:text-emerald-200 text-right">
-              تمت مزامنة المحادثة مع رحلة المساعد
+              تم إرسال الطلب من داخل رحلة المساعد
             </AppText>
             <AppText className="mt-2 text-[14px] font-medium leading-7 text-emerald-700 dark:text-emerald-300 text-right">
-              يمكنك الآن العودة إلى المحادثة أو فتح السجل المحفوظ من الويب بنفس الخلفية والنتائج.
+              يمكنك الآن العودة إلى المحادثة الحالية ومتابعة نفس السياق من داخل التطبيق.
             </AppText>
           </View>
         ) : (
@@ -52,7 +51,7 @@ export default function AccountScreen() {
               حسابك جزء من نفس تجربة المساعد
             </AppText>
             <AppText className="mt-2 text-[14px] font-medium leading-7 text-slate-500 text-right">
-              الموبايل يركز على المحادثة السريعة، بينما حفظ السجل وتأكيد التحويل يكتملان حالياً عبر بوابة الويب المرتبطة بنفس المحادثة.
+              الموبايل يركز الآن على المحادثة والطلبات المباشرة، بينما يبقى السجل محفوظاً على هذا الجهاز في المرحلة الحالية.
             </AppText>
           </View>
         )}
@@ -60,9 +59,27 @@ export default function AccountScreen() {
         {/* Setting Groups */}
         <View className="gap-2 mt-4 pb-12">
            <AccountRow icon={Bookmark} label="العقارات المحفوظة" onPress={() => {}} />
-           <AccountRow icon={MessageSquare} label="السجل المحفوظ" onPress={() => void Linking.openURL(buildClientWebHistoryUrl())} />
+           <AccountRow
+             icon={MessageSquare}
+             label="السجل المحفوظ"
+             onPress={() =>
+               Alert.alert(
+                 "السجل المحلي فقط",
+                 "سجل المحادثات الحالي متاح من شاشة المساعد داخل هذا الجهاز. سنعيد مزامنة الحساب لاحقاً داخل التطبيق.",
+               )
+             }
+           />
            <AccountRow icon={Globe} label="لغة التطبيق - العربية" onPress={() => {}} />
-           <AccountRow icon={HelpCircle} label="مركز المساعدة" onPress={() => void Linking.openURL(`${getClientWebBaseUrl().replace(/\/$/, "")}/about`)} />
+           <AccountRow
+             icon={HelpCircle}
+             label="مركز المساعدة"
+             onPress={() =>
+               Alert.alert(
+                 "مركز المساعدة",
+                 "إذا احتجت دعماً الآن، افتح المحادثة واطلب مستشاراً أو اكتب سؤالك مباشرة داخل نفس الرحلة.",
+               )
+             }
+           />
            
            <View className="mt-8 border-t border-slate-200 dark:border-slate-800 pt-8 gap-2">
              <AccountRow icon={LogOut} label="تسجيل الخروج" onPress={() => router.replace("/welcome")} destructive />

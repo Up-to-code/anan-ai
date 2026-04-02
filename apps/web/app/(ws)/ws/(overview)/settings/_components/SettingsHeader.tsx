@@ -12,7 +12,7 @@ export default function SettingsHeader({
   title: string;
   description: string;
 }) {
-  const { locale } = useWebLocale();
+  const { locale, dictionary } = useWebLocale();
 
   return (
     <header
@@ -21,7 +21,7 @@ export default function SettingsHeader({
     >
       <div className="space-y-2">
         <div className="text-[11px] font-black uppercase tracking-[0.24em] text-[var(--workspace-muted)]">
-          Workspace settings
+          {dictionary.settings.workspaceLabel}
         </div>
         <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-[30px]">{title}</h1>
         <p className="max-w-2xl text-sm font-medium leading-7 text-muted-foreground">{description}</p>

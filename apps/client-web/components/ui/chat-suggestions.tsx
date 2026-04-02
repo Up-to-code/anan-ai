@@ -1,4 +1,4 @@
-import { type BuyerChatSuggestion } from "@anan/client-assistant";
+import type { BuyerChatSuggestion } from "@/client_zone/shared/types";
 import { Button } from "./button";
 
 interface ChatSuggestionsProps {

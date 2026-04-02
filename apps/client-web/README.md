@@ -2,7 +2,7 @@
 
 Standalone Next.js surface for Anan buyers and clients.
 
-- `app/(public)` owns the landing, search, loans, about, and sign-in routes.
+- `app/(public)` owns the landing, about, and sign-in routes.
 - `app/(client)` owns the chat-first assistant, property detail, history, and handoff routes.
 - `client_zone/` owns the client-specific pages, hooks, components, and bilingual copy.
 

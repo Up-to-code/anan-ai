@@ -4,6 +4,7 @@ import { getLayoutSidebarData, requireWorkspaceData } from "../../_lib/workspace
 import MarketRouteTabs from "./MarketRouteTabs";
 import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
 import { buildComplianceBanner } from "../../_lib/complianceBanner";
+import { getWorkspaceLocale } from "../../_lib/workspaceLocale";
 
 export default async function MarketZoneLayout({
   children,
@@ -15,6 +16,7 @@ export default async function MarketZoneLayout({
     getLayoutSidebarData("/ws/market"),
     getComplianceRulesetForCurrentOrg().catch(() => null),
   ]);
+  const locale = await getWorkspaceLocale();
   const primaryOrganization = chrome.organizations?.[0];
 
   if (!primaryOrganization) {
@@ -35,7 +37,9 @@ export default async function MarketZoneLayout({
         name: primaryOrganization.name,
         type: primaryOrganization.type,
         status: primaryOrganization.status,
-        zoneLabel: "ذكاء السوق",
+        logoUrl: primaryOrganization.logoUrl,
+        isVerified: primaryOrganization.isVerified,
+        zoneLabel: locale === "fr" ? "Intelligence marché" : locale === "en" ? "Market intelligence" : "ذكاء السوق",
       })}
     >
       <div data-slot="market-shell" className="flex min-h-full flex-col bg-background text-foreground">

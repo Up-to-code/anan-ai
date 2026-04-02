@@ -5,6 +5,13 @@ export const OFFERS_PAGE_SIZE = 8;
 export const OFFERS_SORT_VALUES = ["updated_desc", "updated_asc"] as const;
 export type OffersSortValue = (typeof OFFERS_SORT_VALUES)[number];
 
+export type OfferFilterOptions = {
+  locations: string[];
+  areas: string[];
+};
+
+const SAUDI_LOCATION_SUGGESTIONS = ["الرياض", "جدة", "الخبر", "الدمام", "مكة", "المدينة", "الظهران", "الجبيل"];
+
 export type OffersPageSearchParams = {
   page?: string | string[];
   q?: string | string[];
@@ -359,4 +366,33 @@ export function buildOffersRouteBase(args: {
   }
   const query = params.toString();
   return query ? `/ws/offers?${query}` : "/ws/offers";
+}
+
+export function buildOfferFilterOptions(items: WorkspaceOfferSummary[]): OfferFilterOptions {
+  const locations = new Set(SAUDI_LOCATION_SUGGESTIONS);
+  const areas = new Set<string>();
+
+  for (const item of items) {
+    const itemLocations = [item.property?.location, item.clientContext?.location];
+    const itemAreas = [item.property?.area, item.clientContext?.area];
+
+    for (const location of itemLocations) {
+      const normalized = location?.trim();
+      if (!normalized) continue;
+      locations.add(normalized);
+    }
+
+    for (const area of itemAreas) {
+      const normalized = area?.trim();
+      if (!normalized) continue;
+      areas.add(normalized);
+    }
+  }
+
+  const sortValues = (values: Set<string>) => [...values].sort((left, right) => left.localeCompare(right, "ar"));
+
+  return {
+    locations: sortValues(locations),
+    areas: sortValues(areas),
+  };
 }

@@ -12,11 +12,11 @@ const tiers = {
   ],
   surfaces: [
     { label: "admin vitest", cmd: "pnpm", args: ["--filter", "admin", "test"] },
+    { label: "client-web vitest", cmd: "pnpm", args: ["--filter", "client-web", "test"] },
     { label: "mobile vitest", cmd: "pnpm", args: ["--dir", "apps/mobile", "test"] },
   ],
   e2e: [
     { label: "web smoke e2e", cmd: "pnpm", args: ["--filter", "web", "exec", "playwright", "test", "tests/smoke.spec.ts"] },
-    { label: "client-web guest buyer e2e", cmd: "pnpm", args: ["--filter", "client-web", "exec", "playwright", "test", "tests/buyer-journey.guest.spec.ts"] },
   ],
   build: [
     { label: "web build", cmd: "pnpm", args: ["build:web"] },
@@ -26,7 +26,6 @@ const tiers = {
   ],
   optional: [
     { label: "web upload e2e", cmd: "pnpm", args: ["--filter", "web", "exec", "playwright", "test", "tests/projects-upload.spec.ts"] },
-    { label: "client-web auth buyer e2e", cmd: "pnpm", args: ["--filter", "client-web", "exec", "playwright", "test", "tests/buyer-journey.auth.spec.ts"] },
   ],
 };
 

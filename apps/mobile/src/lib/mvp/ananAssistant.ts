@@ -67,94 +67,16 @@ export function buildAssistantReply(request: AssistantRequest): AssistantReply {
 /**
  * WHY:   The chat home should open with a useful starting point instead of an empty timeline.
  * WHAT:  Returns the initial assistant message used by the buyer workspace.
- * HOW:   Pairs a clear welcome line with featured properties and a comprehensive dump of all UI components for testing.
+ * HOW:   Starts with a simple concierge-style welcome and a small curated shortlist instead of UI testing payloads.
  */
 export function buildWelcomeMessage(): ConversationMessage {
-  const property = getFeaturedProperties()[0];
+  const properties = getFeaturedProperties();
 
   return {
     id: "welcome-message",
     role: "assistant",
-    text: "أهلاً بك في عنان. هذه معاينة شاملة لجميع الواجهات والمكونات التفاعلية (Mockup Data) لاختبارها مباشرة:",
-    properties: property ? [property] : [],
-    cards: [
-      {
-        type: "broker_handoff",
-        title: "ارتباط المستشار (Handoff)",
-        handoffStatus: "qualified",
-        summary: "بمجرد التأكد من تفاصيلك الأولية، سأقوم بتقديمك مباشرة لمستشار متخصص."
-      },
-      {
-        type: "broker_profile",
-        title: "الملف التعريفي للوسيط",
-        brokerName: "أحمد منصور",
-        brokerAgency: "مكتب عنان للعقارات",
-        rating: 4.8,
-        activeListings: 12,
-        summary: "وسيط معتمد متخصص في شمال الرياض، موثق عبر منصة إيجار وحاصل على تقييمات عالية."
-      },
-      {
-        type: "developer_profile",
-        title: "الملف التعريفي للمطور",
-        developerName: "شركة روشن العقارية",
-        establishedYear: 2020,
-        completedProjects: 8,
-        summary: "مطور وطني مدعوم من صندوق الاستثمارات العامة لبناء مجتمعات سكنية متكاملة."
-      },
-      {
-        type: "market_analysis",
-        title: "تحليل السوق والأسعار",
-        location: "حي الياسمين - الرياض",
-        averagePrice: 6500,
-        priceTrend: "up",
-        trendPercentage: 12.5,
-        summary: "تشهد المنطقة طلباً عالياً مع ارتفاع بنسبة 12.5% في متوسط سعر المتر خلال السنة الماضية."
-      },
-      {
-        type: "mortgage_check",
-        title: "فحص مبدئي للأهلية",
-        estimatedEligibility: "eligible",
-        recommendedBudget: 1500000,
-        monthlyInstallmentEstimate: 7500,
-        summary: "حالتك الائتمانية تؤهلك للحصول على تمويل يناسب المعروض الحالي."
-      },
-      {
-        type: "loan_calculator",
-        title: "حاسبة التمويل التفاعلية",
-        propertyPrice: 1200000,
-        downPayment: 120000,
-        loanAmount: 1080000,
-        interestRate: 4.5,
-        years: 20,
-        monthlyPayment: 6833,
-        summary: "قم بتعديل الدفعة والمدة لمشاهدة تأثيرها على الأقساط الشهرية فوراً."
-      },
-      {
-        type: "roi_projection",
-        title: "أداة دراسة العائد (ROI)",
-        purchasePrice: 1200000,
-        annualRent: 95000,
-        projectedValue5Years: 1380000,
-        yieldPercent: 7.9,
-        summary: "تفاعل مع سيناريوهات النمو الرأسمالي لمشاهدة تأثيرها المستقبلي على استثمارك."
-      },
-      {
-        type: "comparison_table",
-        title: "مقارنة سريعة",
-        columns: ["البند", "فيلا الفل", "دوبلكس"],
-        rows: [
-          ["السعر", "1,200,000", "950,000"],
-          ["العائد", "7.5%", "8.2%"]
-        ],
-        summary: "جدول مبسط يوضح أبرز الفروق المالية والاستثمارية."
-      },
-      {
-        type: "permit_status",
-        title: "رخصة الإعلان",
-        permitStatus: "verified",
-        summary: "رقم رخصة الإعلان: 120002883. تم التحقق من المطابقة مع الهيئة."
-      }
-    ]
+    text: "أهلاً بك في عنان. اكتب المدينة والميزانية ونوع العقار، وسأبدأ لك بأفضل الخيارات المناسبة مباشرة.",
+    properties,
   };
 }
 

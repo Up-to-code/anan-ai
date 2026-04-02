@@ -12,7 +12,7 @@ import {
   type UserProfileRecord,
 } from "./core";
 
-function toOrganizationSummary(base: {
+async function toOrganizationSummary(ctx: AgenciesRepositoryCtx, base: {
   id: string;
   type: "broker" | "red";
   ownerRecord: any;
@@ -27,6 +27,7 @@ function toOrganizationSummary(base: {
     slug: ownerRecord?.slug ?? fallbackSlug,
     status: ownerRecord?.status ?? null,
     isVerified: ownerRecord?.isVerified === true,
+    logoUrl: ownerRecord?.logoId ? await ctx.storage.getUrl(ownerRecord.logoId) : null,
     description: ownerRecord?.description,
     website: ownerRecord?.website,
     contactEmail: ownerRecord?.contactEmail,
@@ -47,7 +48,7 @@ async function listTenantLinkedOrganizations(ctx: AgenciesRepositoryCtx, profile
         link.ownerType === "broker"
           ? await ctx.db.get(link.ownerBrokerId!)
           : await ctx.db.get(link.ownerREDId!);
-      return toOrganizationSummary({
+      return toOrganizationSummary(ctx, {
         id: String(link.ownerType === "broker" ? link.ownerBrokerId : link.ownerREDId),
         type: ownerType,
         ownerRecord,
@@ -68,7 +69,7 @@ async function getProfileOwnerFallbackOrganization(ctx: AgenciesRepositoryCtx, p
   if (!ownerRecord) {
     return [];
   }
-  return [toOrganizationSummary({
+  return [await toOrganizationSummary(ctx, {
     id: String(getOwnerId(owner)),
     type: owner.ownerType === "broker" ? "broker" : "red",
     ownerRecord,

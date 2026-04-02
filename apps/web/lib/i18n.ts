@@ -270,6 +270,7 @@ export type WebDictionary = {
     mockDataBanner: string;
   };
   settings: {
+    workspaceLabel: string;
     title: string;
     description: string;
     organization: string;
@@ -408,6 +409,7 @@ export type WebDictionary = {
     organizationDescriptionHint: string;
     organizationWebsiteLabel: string;
     organizationEmailLabel: string;
+    organizationPhoneLabel: string;
     organizationNoOrganization: string;
     organizationManagerRequired: string;
     organizationSaving: string;
@@ -751,6 +753,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       mockDataBanner: "هذه الصفحة تعرض حالياً بيانات تجريبية حتى تتوفر بيانات سوق حقيقية كافية لهذا النطاق.",
     },
     settings: {
+      workspaceLabel: "إعدادات مساحة العمل",
       title: "الإعدادات",
       description: "بيانات المنظمة والأعضاء ومفاتيح الربط.",
       organization: "المنظمة",
@@ -889,6 +892,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       organizationDescriptionHint: "اختياري، ويظهر كتعريف سريع داخل مساحة العمل.",
       organizationWebsiteLabel: "الموقع الإلكتروني",
       organizationEmailLabel: "بريد التواصل",
+      organizationPhoneLabel: "رقم واتساب / الهاتف",
       organizationNoOrganization: "لا توجد منظمة مرتبطة بالحساب الحالي.",
       organizationManagerRequired: "صلاحية المدير مطلوبة لتعديل بيانات المنظمة.",
       organizationSaving: "جاري حفظ بيانات المنظمة...",
@@ -1230,6 +1234,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       mockDataBanner: "This page is currently showing sample data until enough real market data is available for this scope.",
     },
     settings: {
+      workspaceLabel: "Workspace settings",
       title: "Settings",
       description: "Organization details, members, and integration keys.",
       organization: "Organization",
@@ -1368,6 +1373,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       organizationDescriptionHint: "Optional. Used as a short description inside the workspace.",
       organizationWebsiteLabel: "Website",
       organizationEmailLabel: "Contact email",
+      organizationPhoneLabel: "WhatsApp / phone",
       organizationNoOrganization: "There is no organization linked to the current account.",
       organizationManagerRequired: "Manager permission is required to update organization details.",
       organizationSaving: "Saving organization details...",
@@ -1709,6 +1715,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       mockDataBanner: "Cette page affiche actuellement des données d'exemple jusqu'à ce que suffisamment de données réelles soient disponibles pour ce périmètre.",
     },
     settings: {
+      workspaceLabel: "Paramètres de l'espace",
       title: "Paramètres",
       description: "Données de l'organisation, membres et clés d'intégration.",
       organization: "Organisation",
@@ -1847,6 +1854,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       organizationDescriptionHint: "Optionnel. Utilisé comme courte présentation dans l'espace de travail.",
       organizationWebsiteLabel: "Site web",
       organizationEmailLabel: "E-mail de contact",
+      organizationPhoneLabel: "WhatsApp / téléphone",
       organizationNoOrganization: "Aucune organisation n'est liée au compte actuel.",
       organizationManagerRequired: "Le rôle de gestionnaire est requis pour modifier les informations de l'organisation.",
       organizationSaving: "Enregistrement des informations de l'organisation...",

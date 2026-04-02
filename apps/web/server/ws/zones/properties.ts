@@ -6,10 +6,15 @@ import {
   publishBrokerProperty,
   updateBrokerProperty,
 } from "@/server/domains/workspace/properties/broker";
+import {
+  getWorkspaceProjectAnalytics,
+  recordWorkspaceProjectAnalyticsEvent,
+} from "@/server/domains/workspace/properties/analytics";
 import type { WorkspaceAudience, WorkspaceOwnerContext } from "@/server/contracts/workspace";
 import { convexBrokerZoneRepository } from "@/server/infrastructure/convex/brokerZoneRepository";
 import { convexComplianceRepository } from "@/server/infrastructure/convex/complianceRepository";
 import { convexOrganizationsRepository } from "@/server/infrastructure/convex/organizationsRepository";
+import { convexProjectAnalyticsRepository } from "@/server/infrastructure/convex/projectAnalyticsRepository";
 import { convexRedZoneRepository } from "@/server/infrastructure/convex/redZoneRepository";
 import {
   createRedProperty,
@@ -27,6 +32,7 @@ type WorkspaceRequireSession = ReturnType<typeof buildWorkspaceScopedSessionReso
 const sharedZoneRepositories = {
   complianceRepository: convexComplianceRepository,
   organizationsRepository: convexOrganizationsRepository,
+  projectAnalyticsRepository: convexProjectAnalyticsRepository,
 } as const;
 
 function buildBrokerPropertyZone(requireSession: WorkspaceRequireSession) {
@@ -38,6 +44,16 @@ function buildBrokerPropertyZone(requireSession: WorkspaceRequireSession) {
     updateProperty: (input: Parameters<typeof updateBrokerProperty>[0]) => updateBrokerProperty(input, dependencies),
     deleteProperty: (input: Parameters<typeof deleteBrokerProperty>[0]) => deleteBrokerProperty(input, dependencies),
     publishProperty: (input: Parameters<typeof publishBrokerProperty>[0]) => publishBrokerProperty(input, dependencies),
+    getProjectAnalytics: (input: Parameters<typeof getWorkspaceProjectAnalytics>[0]) =>
+      getWorkspaceProjectAnalytics(input, {
+        requireSession,
+        repository: convexProjectAnalyticsRepository,
+      }),
+    recordProjectAnalyticsEvent: (input: Parameters<typeof recordWorkspaceProjectAnalyticsEvent>[0]) =>
+      recordWorkspaceProjectAnalyticsEvent(input, {
+        requireSession,
+        repository: convexProjectAnalyticsRepository,
+      }),
   };
 }
 
@@ -50,6 +66,16 @@ function buildDeveloperPropertyZone(requireSession: WorkspaceRequireSession) {
     updateProperty: (input: Parameters<typeof updateRedProperty>[0]) => updateRedProperty(input, dependencies),
     deleteProperty: (input: Parameters<typeof deleteRedProperty>[0]) => deleteRedProperty(input, dependencies),
     publishProperty: (input: Parameters<typeof publishRedProperty>[0]) => publishRedProperty(input, dependencies),
+    getProjectAnalytics: (input: Parameters<typeof getWorkspaceProjectAnalytics>[0]) =>
+      getWorkspaceProjectAnalytics(input, {
+        requireSession,
+        repository: convexProjectAnalyticsRepository,
+      }),
+    recordProjectAnalyticsEvent: (input: Parameters<typeof recordWorkspaceProjectAnalyticsEvent>[0]) =>
+      recordWorkspaceProjectAnalyticsEvent(input, {
+        requireSession,
+        repository: convexProjectAnalyticsRepository,
+      }),
   };
 }
 

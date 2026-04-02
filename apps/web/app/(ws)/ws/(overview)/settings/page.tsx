@@ -1,10 +1,10 @@
-import { cookies } from "next/headers";
 import { getWorkspaceOrganizationTeam } from "../../_lib/organizationTeam";
 import { listCurrentOrganizationApiKeysForCurrentUser } from "@/server/domains/auth/organizationApiKeys/service";
 import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
 import type { OrganizationApiKeySummary } from "@/server/contracts/organizationApiKeys";
 import { getWebDictionary } from "@/lib/i18n";
-import { isRtlLocale, resolveLocale, WEB_LOCALE_COOKIE } from "@/lib/locale";
+import { isRtlLocale } from "@/lib/locale";
+import { getWorkspaceLocale } from "../../_lib/workspaceLocale";
 import SettingsHeader from "./_components/SettingsHeader";
 import ApiKeysWorkspace from "./_components/ApiKeysWorkspace";
 import OrganizationSettingsWorkspace from "./_components/OrganizationSettingsWorkspace";
@@ -137,13 +137,7 @@ function VerificationTabSection(args: {
 export default async function WorkspaceSettingsPage(props: {
   searchParams: Promise<{ tab?: string }>;
 }) {
-  let locale = resolveLocale(undefined);
-  try {
-    const cookieStore = await cookies();
-    locale = resolveLocale(cookieStore.get(WEB_LOCALE_COOKIE)?.value);
-  } catch {
-    locale = resolveLocale(undefined);
-  }
+  const locale = await getWorkspaceLocale();
   const dictionary = getWebDictionary(locale);
   const searchParams = await props.searchParams;
   const currentTab: SettingsTabKey =
