@@ -110,31 +110,6 @@ function getRecentWindowTotals(analytics: WorkspaceProjectAnalytics, windowSize 
   return { recentWindow, recentViews, recentClicks };
 }
 
-function InsightCard({
-  icon,
-  label,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-border/50 bg-background/60 p-4 text-right">
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-[11px] font-bold tracking-[0.18em] text-muted-foreground">{label}</div>
-        <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-background/80 text-muted-foreground">
-          {icon}
-        </div>
-      </div>
-      <div className="mt-4 text-lg font-black tracking-tight text-foreground">{title}</div>
-      <div className="mt-2 text-[13px] leading-6 text-muted-foreground">{description}</div>
-    </div>
-  );
-}
-
 function KpiCard({
   label,
   value,
@@ -192,8 +167,8 @@ function AnalyticsPanel({
 }) {
   const panelClassName =
     tone === "highlight"
-      ? "rounded-3xl border border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] bg-card/70 p-5 lg:p-6"
-      : "rounded-3xl border border-border/50 bg-card/70 p-5 lg:p-6";
+      ? "rounded-[28px] border border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] bg-card/80 p-5 shadow-sm lg:p-6"
+      : "rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-sm lg:p-6";
 
   return (
     <section className={panelClassName}>
@@ -216,27 +191,34 @@ function AnalyticsTabs({
   activeTab: AnalyticsTabKey;
   onChange: (tab: AnalyticsTabKey) => void;
 }) {
+  const activeConfig = TAB_LABELS.find((tab) => tab.key === activeTab) ?? TAB_LABELS[0];
+
   return (
-    <div className="grid gap-3 lg:grid-cols-3" aria-label="Project analytics tabs">
-      {TAB_LABELS.map((tab) => {
-        const isActive = activeTab === tab.key;
-        return (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => onChange(tab.key)}
-            className={
-              isActive
-                ? "rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-highlight)_22%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_5%,var(--workspace-panel))] p-4 text-right transition-all"
-                : "rounded-2xl border border-border/50 bg-card/60 p-4 text-right transition-all hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_14%,var(--workspace-border))] hover:bg-muted/10"
-            }
-          >
-            <div className="text-sm font-black text-foreground">{tab.label}</div>
-            <div className="mt-2 text-[13px] leading-6 text-muted-foreground">{tab.description}</div>
-          </button>
-        );
-      })}
-    </div>
+    <section
+      className="rounded-[26px] border border-border/60 bg-card/80 p-3 shadow-sm lg:p-4"
+      aria-label="Project analytics tabs"
+    >
+      <div className="flex flex-wrap justify-end gap-2">
+        {TAB_LABELS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => onChange(tab.key)}
+              className={
+                isActive
+                  ? "inline-flex items-center rounded-full border border-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,var(--workspace-panel))] px-4 py-2.5 text-[13px] font-black text-foreground transition-all"
+                  : "inline-flex items-center rounded-full border border-border/60 bg-background/60 px-4 py-2.5 text-[13px] font-bold text-muted-foreground transition-all hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_14%,var(--workspace-border))] hover:text-foreground"
+              }
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-4 text-right text-[13px] leading-6 text-muted-foreground">{activeConfig.description}</p>
+    </section>
   );
 }
 
@@ -352,54 +334,32 @@ function SimpleChartTooltip({
   );
 }
 
-function AnalyticsHero({
+function ProjectAnalyticsHeader({
   project,
-  analytics,
-  clickRate,
 }: {
   project: WorkspaceProject;
-  analytics: WorkspaceProjectAnalytics;
-  clickRate: number;
 }) {
-  const topBroker = analytics.brokerRows[0];
-  const strongestInteraction = [...analytics.interactionSummary].sort((left, right) => right.count - left.count)[0];
-
   return (
-    <section className="grid gap-4">
-      <div className="rounded-3xl border border-border/50 bg-card/70 p-6 lg:p-8">
-        <div className="space-y-6 text-right">
+    <section className="rounded-[28px] border border-border/60 bg-card/80 p-6 shadow-sm lg:p-8">
+      <div className="space-y-5 text-right">
+        <div className="text-[12px] font-semibold text-muted-foreground">تحليل المشروع</div>
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-foreground">لوحة تحليل المشروع</h1>
-            <p className="mt-3 max-w-3xl text-[14px] leading-7 text-muted-foreground">{project.summary}</p>
+            <h1 className="text-3xl font-black tracking-tight text-foreground">{project.title}</h1>
+            <p className="mt-3 max-w-3xl text-[14px] leading-7 text-muted-foreground">
+              {project.shortDescription || project.summary}
+            </p>
           </div>
-
-          <div className="grid gap-3 md:grid-cols-3">
-            <InsightCard
-              icon={<Eye className="h-4 w-4" />}
-              label="الوصول الآن"
-              title={`${formatNumber(analytics.kpis.totalViews)} مشاهدة`}
-              description={`تم تسجيل ${formatNumber(analytics.kpis.totalClicks)} نقرة بمعدل تفاعل ${formatPercent(clickRate)}.`}
-            />
-            <InsightCard
-              icon={<Users className="h-4 w-4" />}
-              label="الوسيط الأوضح"
-              title={topBroker ? topBroker.brokerName : "لا يوجد بعد"}
-              description={
-                topBroker
-                  ? `${formatNumber(topBroker.views)} مشاهدة و ${formatNumber(topBroker.clicks)} نقرة مع حالة ${topBroker.stateLabel}.`
-                  : "سنظهر هنا الوسيط الأوضح عندما تبدأ الشبكة بإرسال حركة كافية."
-              }
-            />
-            <InsightCard
-              icon={<CheckCircle2 className="h-4 w-4" />}
-              label="الإشارة الأقوى"
-              title={strongestInteraction ? strongestInteraction.label : "لا توجد إشارات"}
-              description={
-                strongestInteraction
-                  ? `هذا النوع سجّل ${formatNumber(strongestInteraction.count)} تفاعل حتى الآن.`
-                  : "لا يوجد نشاط كافٍ بعد لتحديد الإشارة الأقوى."
-              }
-            />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <span className="inline-flex items-center rounded-full border border-border/60 bg-background/65 px-3 py-1.5 text-[12px] font-bold text-foreground">
+              {project.location}
+            </span>
+            <span className="inline-flex items-center rounded-full border border-border/60 bg-background/65 px-3 py-1.5 text-[12px] font-bold text-foreground">
+              {project.priceLabel}
+            </span>
+            <span className="inline-flex items-center rounded-full border border-border/60 bg-background/65 px-3 py-1.5 text-[12px] font-bold text-foreground">
+              {project.specs.area}
+            </span>
           </div>
         </div>
       </div>
@@ -417,11 +377,11 @@ function SignalBoard({
   return (
     <AnalyticsPanel
       title="لوحة الإشارات الأساسية"
-      description="بدلاً من رمي الأرقام في كروت منفصلة، جمعناها هنا بحسب ما تحتاجه أثناء القراءة الفعلية."
+      description="ملخص سريع للحركة الحالية قبل الدخول إلى التفاصيل."
     >
       <div className="space-y-6">
         <div>
-          <div className="text-right text-[12px] font-bold text-muted-foreground">الأولوية الأولى</div>
+          <div className="text-right text-[12px] font-bold text-muted-foreground">مؤشرات الأداء</div>
           <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <KpiCard
               label="المشاهدات"
@@ -503,7 +463,7 @@ function VisibilityTrendChart({
   return (
     <AnalyticsPanel
       title="أداء المشروع عبر الزمن"
-      description="اختر المؤشر من نفس اللوحة بدل تكرار الرسوم. الهدف هنا أن تقرأ الحركة بسرعة ثم تقرر أين تغوص أكثر."
+      description="راقب تطور الوصول والتفاعل عبر الزمن من نفس الرسم."
       actions={<ChartMetricTabs activeMetric={activeMetric} onChange={onMetricChange} />}
     >
       <div className="mb-5 rounded-[24px] border border-border/60 bg-background/70 p-4">
@@ -569,7 +529,7 @@ function BrokerStateChart({ analytics }: { analytics: WorkspaceProjectAnalytics 
   return (
     <AnalyticsPanel
       title="توزيع حالة الوسطاء"
-      description="يوضح أين تقف شبكة الوسطاء الآن: مشاهدة فقط، عرض نشط، عميل مرتبط، أو إغلاق."
+      description="لقطة سريعة لحالة شبكة الوسطاء الآن."
     >
       <ChartSurface
         fallback={
@@ -615,7 +575,7 @@ function TopBrokerChart({ rows }: { rows: WorkspaceProjectAnalyticsBrokerRow[] }
   return (
     <AnalyticsPanel
       title="أعلى الوسطاء تفاعلاً"
-      description="مقارنة مباشرة بين الوسطاء الأكثر مشاهدة وضغطاً على المشروع."
+      description="مقارنة مباشرة بين الوسطاء الأكثر نشاطاً على المشروع."
     >
       <ChartSurface
         fallback={
@@ -657,7 +617,7 @@ function InteractionChart({ analytics }: { analytics: WorkspaceProjectAnalytics 
   return (
     <AnalyticsPanel
       title="أنواع التفاعل"
-      description="ما الذي يفعله الناس فعلياً داخل المشروع: فتح، تحليل، تعديل، ملفات، أو محادثات."
+      description="ما الذي يحدث داخل المشروع فعلياً: فتح، تحليل، تعديل، ملفات، أو محادثات."
     >
       <ChartSurface
         fallback={
@@ -719,7 +679,7 @@ function BrokerTable({ rows }: { rows: WorkspaceProjectAnalyticsBrokerRow[] }) {
   return (
     <AnalyticsPanel
       title="تفاصيل شبكة الوسطاء"
-      description="عرض تحليلي لكل وسيط: الحالة، العميل، المرحلة الحالية، والمشاهدات والنقرات."
+      description="تفاصيل كل وسيط: الحالة، العميل، المرحلة الحالية، والمشاهدات والنقرات."
     >
       {rows.length > 0 ? (
         <>
@@ -867,7 +827,7 @@ function BrokerProjectAnalyticsPage({
 
   return (
     <div className="min-h-full bg-background/60 pb-24">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-6 lg:px-8 lg:py-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-6 lg:px-8 lg:py-8">
         <nav className="flex flex-wrap items-center justify-between gap-4">
           <button
             type="button"
@@ -883,19 +843,20 @@ function BrokerProjectAnalyticsPage({
           </div>
         </nav>
 
-        <AnalyticsHero project={project} analytics={analytics} clickRate={clickRate} />
-
-        <SignalBoard analytics={analytics} clickRate={clickRate} />
+        <ProjectAnalyticsHeader project={project} />
 
         <AnalyticsTabs activeTab={activeTab} onChange={setActiveTab} />
 
         {activeTab === "overview" ? (
-          <VisibilityTrendChart
-            analytics={analytics}
-            activeMetric={activePerformanceMetric}
-            onMetricChange={setActivePerformanceMetric}
-            clickRate={clickRate}
-          />
+          <div className="grid gap-6 xl:grid-cols-[minmax(320px,0.92fr)_minmax(0,1.08fr)]">
+            <SignalBoard analytics={analytics} clickRate={clickRate} />
+            <VisibilityTrendChart
+              analytics={analytics}
+              activeMetric={activePerformanceMetric}
+              onMetricChange={setActivePerformanceMetric}
+              clickRate={clickRate}
+            />
+          </div>
         ) : null}
 
         {activeTab === "network" ? (

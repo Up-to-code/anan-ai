@@ -109,11 +109,14 @@ describe("OfferDetailPage", () => {
     expect(markup).toContain("offers@example.com");
     expect(markup).toContain("واجهة هادئة مع نبذة قصيرة.");
     expect(markup).toContain("مالقا ريزيدنس");
+    expect(markup).toContain("عرض تطويري خاص");
     expect(markup).toContain("تاريخ العمليات");
     expect(markup).toContain("data-slot=\"offer-gallery\"");
     expect(markup).toContain("data-slot=\"offer-detail-sidebar\"");
     expect(markup).toContain("data-slot=\"offer-detail-hero\"");
-    expect(markup).toContain("بطاقة العقار");
+    expect(markup).toContain("Apartment Detail");
+    expect(markup).toContain("معرض الصور");
+    expect(markup).toContain("الوصف الكامل");
     expect(markup).toContain("3 غرف");
     expect(markup).toContain("185 م²");
   });

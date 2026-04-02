@@ -7,6 +7,7 @@ import { requireSessionContext } from "@/server/auth/session";
 import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizationAssetsRepository";
 import { convexProjectAccessRepository } from "@/server/infrastructure/convex/projectAccessRepository";
 import { normalizeDomainError } from "@/server/contracts/errors";
+import { getWorkspacePropertyZone } from "@/server/ws/zones";
 import type {
   ProjectAnalyticsEventType,
 } from "@/server/contracts/properties";

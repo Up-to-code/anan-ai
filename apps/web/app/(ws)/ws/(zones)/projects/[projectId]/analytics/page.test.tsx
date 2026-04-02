@@ -322,7 +322,7 @@ it("renders the broker owner analytics page", async () => {
   const markup = renderToStaticMarkup(element);
 
   expect(markup).toContain("تحليل المشروع");
-  expect(markup).toContain("لوحة تحليل المشروع");
+  expect(markup).toContain("برج الاختبار");
   expect(markup).toContain("الأداء");
   expect(markup).toContain("أداء المشروع عبر الزمن");
   expect(markup).toContain("شبكة الوسطاء");

@@ -106,7 +106,8 @@ it("renders the owner project detail page", async () => {
   expect(markup).toContain("تحليل المشروع");
   expect(markup).toContain("تعديل المشروع");
   expect(markup).toContain("إنشاء عرض");
-  expect(markup).toContain("بطاقة الحقائق");
+  expect(markup).toContain("لوحة المشروع");
+  expect(markup).toContain("بيانات المشروع الأساسية");
   expect(markup).toContain("المزايا والخدمات");
   expect(markup).toContain("مواقف ضيوف");
   expect(markup).toContain("الحالة الحالية");

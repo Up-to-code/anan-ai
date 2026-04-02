@@ -10,10 +10,10 @@ export function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-border bg-card p-6 md:p-8 transition-all">
-      <div className="mb-6 border-b border-border/40 pb-4 text-right">
+    <section className="rounded-[24px] border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-5 md:p-6">
+      <div className="mb-6 text-right">
         <h3 className="text-xl font-black tracking-tight text-foreground">{title}</h3>
-        {description ? <p className="mt-2 text-[14px] font-medium leading-relaxed text-muted-foreground/70">{description}</p> : null}
+        {description ? <p className="mt-2 text-[14px] leading-7 text-[var(--workspace-muted)]">{description}</p> : null}
       </div>
       {children}
     </section>
@@ -21,7 +21,7 @@ export function SectionCard({
 }
 
 export function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <label className="mb-2.5 block text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">{children}</label>;
+  return <label className="mb-2.5 block text-[11px] font-black uppercase tracking-[0.2em] text-[var(--workspace-muted)]">{children}</label>;
 }
 
 export function TextInput({
@@ -51,11 +51,11 @@ export function TextInput({
           placeholder={placeholder}
           disabled={disabled}
           aria-invalid={Boolean(error)}
-          className={`h-14 w-full rounded-2xl border bg-muted/10 px-5 text-[15px] font-bold text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:bg-muted/20 disabled:cursor-not-allowed disabled:opacity-50 ${
-            error ? "border-rose-300 focus:border-rose-400" : "border-border/40 focus:border-foreground/20"
+          className={`h-14 w-full rounded-[18px] border bg-[var(--workspace-panel)] px-5 text-[15px] font-bold text-foreground outline-none transition-all placeholder:text-[color:color-mix(in_srgb,var(--workspace-muted)_76%,transparent)] focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,var(--workspace-border))] focus:bg-[var(--workspace-elevated)] disabled:cursor-not-allowed disabled:opacity-50 ${
+            error ? "border-rose-300 focus:border-rose-400" : "border-[color:var(--workspace-border)]"
           }`}
         />
-        {icon ? <div className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground/30">{icon}</div> : null}
+        {icon ? <div className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-[var(--workspace-muted)]">{icon}</div> : null}
       </div>
       {error ? <p className="text-sm font-semibold text-rose-700">{error}</p> : null}
     </div>
@@ -83,8 +83,8 @@ export function TextArea({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         aria-invalid={Boolean(error)}
-        className={`w-full resize-none rounded-2xl border bg-muted/10 px-5 py-4 text-[15px] font-bold leading-7 text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:bg-muted/20 ${
-          error ? "border-rose-300 focus:border-rose-400" : "border-border/40 focus:border-foreground/20"
+        className={`w-full resize-none rounded-[18px] border bg-[var(--workspace-panel)] px-5 py-4 text-[15px] font-bold leading-7 text-foreground outline-none transition-all placeholder:text-[color:color-mix(in_srgb,var(--workspace-muted)_76%,transparent)] focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,var(--workspace-border))] focus:bg-[var(--workspace-elevated)] ${
+          error ? "border-rose-300 focus:border-rose-400" : "border-[color:var(--workspace-border)]"
         }`}
       />
       {error ? <p className="text-sm font-semibold text-rose-700">{error}</p> : null}
@@ -110,22 +110,22 @@ export function UploadTile({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-dashed border-border/50 bg-muted/10 px-5 py-5 text-right transition hover:border-foreground/20 hover:bg-card disabled:cursor-not-allowed disabled:opacity-60"
+      className="flex w-full items-center justify-between gap-3 rounded-[20px] border border-dashed border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-5 py-5 text-right transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_22%,var(--workspace-border))] hover:bg-[var(--workspace-elevated)] disabled:cursor-not-allowed disabled:opacity-60"
     >
       <div className="text-right">
         <div className="text-sm font-black text-foreground">{title}</div>
-        {subtitle ? <div className="mt-1 text-xs font-semibold text-muted-foreground">{subtitle}</div> : null}
+        {subtitle ? <div className="mt-1 text-xs font-semibold text-[var(--workspace-muted)]">{subtitle}</div> : null}
       </div>
-      <div className="text-muted-foreground/60">{icon}</div>
+      <div className="text-[var(--workspace-muted)]">{icon}</div>
     </button>
   );
 }
 
 export function ReviewRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-border/50 bg-muted/10 px-4 py-3 text-right">
+    <div className="flex items-center justify-between gap-4 rounded-[18px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-4 py-3 text-right">
       <div className="text-sm font-semibold text-foreground">{value}</div>
-      <div className="text-xs font-black uppercase tracking-[0.18em] text-muted-foreground/60">{label}</div>
+      <div className="text-xs font-black uppercase tracking-[0.18em] text-[var(--workspace-muted)]">{label}</div>
     </div>
   );
 }
@@ -138,12 +138,12 @@ export function BrokerAvatar({
   avatarLabel: string;
 }) {
   return (
-    <div className="h-11 w-11 overflow-hidden rounded-2xl border border-border bg-muted/20">
+    <div className="h-11 w-11 overflow-hidden rounded-[16px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)]">
       {avatarImage ? (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img src={avatarImage} alt="" className="h-full w-full object-cover" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center text-sm font-black text-muted-foreground">
+        <div className="flex h-full w-full items-center justify-center text-sm font-black text-[var(--workspace-muted)]">
           {avatarLabel}
         </div>
       )}
@@ -159,11 +159,11 @@ export function FileRow({
   onRemove: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/20 px-4 py-3">
+    <div className="flex items-center justify-between gap-3 rounded-[18px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-4 py-3">
       <button
         type="button"
         onClick={onRemove}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:border-foreground/30 hover:text-foreground"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] text-[var(--workspace-muted)] transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] hover:text-foreground"
       >
         ×
       </button>

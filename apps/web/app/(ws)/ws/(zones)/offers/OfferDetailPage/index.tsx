@@ -9,8 +9,11 @@ import {
   BedDouble,
   Building2,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
   ExternalLink,
   Globe,
+  Images,
   type LucideIcon,
   Mail,
   MapPin,
@@ -31,6 +34,10 @@ import type { WorkspaceOfferDetail } from "../offerTypes";
 import type { OfferActionResult } from "@/server/contracts/offers";
 
 type DetailActionResult = { redirectTo?: string } | { ok: true } | OfferActionResult | void;
+type PropertyTextBlock = {
+  label: string;
+  value: string;
+};
 
 function formatOrganizationTypeLabel(type: "broker" | "developer" | null) {
   if (type === "broker") return "وسيط";
@@ -43,9 +50,80 @@ function organizationInitial(name?: string | null) {
   return trimmed ? Array.from(trimmed)[0] : "؟";
 }
 
+function normalizeDetailText(value?: string | null) {
+  return value?.trim() ?? "";
+}
+
+function getPropertyMediaUrls(offer: WorkspaceOfferDetail) {
+  const urls = [...offer.propertyGallery, offer.propertyImageUrl]
+    .map((value) => normalizeDetailText(value))
+    .filter(Boolean);
+
+  return urls.filter((url, index) => urls.indexOf(url) === index);
+}
+
+function buildPropertyCategories(offer: WorkspaceOfferDetail) {
+  const categories = [
+    formatOfferTypeLabel(offer.type),
+    offer.productStatus,
+    formatOfferStageLabel(offer.stage),
+    offer.permitStatus,
+    offer.property?.area,
+  ]
+    .map((value) => normalizeDetailText(value))
+    .filter(Boolean);
+
+  return categories.filter((value, index) => categories.indexOf(value) === index);
+}
+
+function buildPropertyTextBlocks(offer: WorkspaceOfferDetail): PropertyTextBlock[] {
+  const title = normalizeDetailText(offer.propertyTitle || offer.message);
+  const candidates: PropertyTextBlock[] = [
+    {
+      label: "وصف العقار",
+      value: normalizeDetailText(offer.propertySummary),
+    },
+    {
+      label: "تفاصيل العرض",
+      value: normalizeDetailText(offer.description),
+    },
+    {
+      label: "معلومة إضافية",
+      value: normalizeDetailText(offer.message),
+    },
+  ];
+
+  const seen = new Set<string>();
+
+  return candidates.filter((block) => {
+    if (!block.value || block.value === title || seen.has(block.value)) {
+      return false;
+    }
+    seen.add(block.value);
+    return true;
+  });
+}
+
+function getOfferHeroTitle(offer: WorkspaceOfferDetail) {
+  return normalizeDetailText(offer.message) || normalizeDetailText(offer.propertyTitle) || "تفاصيل العرض";
+}
+
+function getOfferHeroSummary(offer: WorkspaceOfferDetail) {
+  if (offer.clientContext) {
+    return normalizeDetailText(offer.description) || "لا يوجد وصف إضافي لهذه الحالة.";
+  }
+
+  return (
+    normalizeDetailText(offer.propertySummary) ||
+    normalizeDetailText(offer.description) ||
+    normalizeDetailText(offer.message) ||
+    "لا يوجد وصف إضافي لهذه الوحدة حالياً."
+  );
+}
+
 function DetailBadge({ value }: { value: string }) {
   return (
-    <span className="rounded-full border border-border bg-background px-3 py-1 text-[11px] font-bold text-foreground">
+    <span className="rounded-full border border-border bg-background px-3 py-1.5 text-[12px] font-bold text-foreground">
       {value}
     </span>
   );
@@ -83,43 +161,189 @@ function InfoChip({
 }) {
   return (
     <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-bold text-foreground shadow-sm">
-        <Icon className="h-4 w-4" />
+      <Icon className="h-4 w-4" />
       <span>{value}</span>
     </div>
   );
 }
 
-function PropertyGallery({ offer }: { offer: WorkspaceOfferDetail }) {
-  if (offer.propertyGallery.length === 0) {
-    return null;
-  }
+function ApartmentMediaSlider({ offer }: { offer: WorkspaceOfferDetail }) {
+  const mediaUrls = getPropertyMediaUrls(offer);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  if (offer.propertyGallery.length === 1) {
+  if (mediaUrls.length === 0) {
     return (
-      <div data-slot="offer-gallery" className="overflow-hidden rounded-[24px] bg-muted/10">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={offer.propertyGallery[0]}
-          alt={offer.propertyTitle}
-          className="h-72 w-full object-cover"
-        />
-      </div>
+      <section className="rounded-[28px] border border-border/60 bg-card p-5 shadow-sm">
+        <div className="flex h-[320px] items-center justify-center rounded-[24px] bg-muted/20 text-center">
+          <div className="space-y-3 text-right">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-background text-muted-foreground">
+              <Building2 className="h-6 w-6" />
+            </div>
+            <div className="text-lg font-black text-foreground">لا توجد صور مرفقة لهذه الشقة حالياً.</div>
+            <div className="text-[13px] leading-6 text-muted-foreground">يمكنك متابعة تفاصيل الوحدة والموقع من الأقسام التالية.</div>
+          </div>
+        </div>
+      </section>
     );
   }
 
+  const goTo = (index: number) => {
+    const total = mediaUrls.length;
+    setActiveIndex((index + total) % total);
+  };
+
   return (
-    <div data-slot="offer-gallery" className="grid gap-3 sm:grid-cols-2">
-      {offer.propertyGallery.slice(0, 4).map((image, index) => (
-        <div key={image} className={index === 0 ? "sm:col-span-2" : ""}>
+    <section className="space-y-4">
+      <div data-slot="offer-gallery" className="overflow-hidden rounded-[28px] border border-border/60 bg-card shadow-sm">
+        <div className="relative">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={image}
-            alt={`${offer.propertyTitle} ${index + 1}`}
-            className={`w-full rounded-[24px] bg-muted/10 object-cover ${index === 0 ? "h-72" : "h-40"}`}
+            src={mediaUrls[activeIndex]}
+            alt={`${offer.propertyTitle} ${activeIndex + 1}`}
+            className="h-[360px] w-full object-cover sm:h-[420px]"
           />
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent p-5 text-right">
+            <div className="inline-flex items-center gap-2 rounded-full bg-black/55 px-3 py-1.5 text-[12px] font-bold text-white/95">
+              <Images className="h-4 w-4" />
+              {activeIndex + 1} / {mediaUrls.length}
+            </div>
+          </div>
+
+          {mediaUrls.length > 1 ? (
+            <>
+              <button
+                type="button"
+                onClick={() => goTo(activeIndex - 1)}
+                className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/70"
+                aria-label="الصورة السابقة"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => goTo(activeIndex + 1)}
+                className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/70"
+                aria-label="الصورة التالية"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </>
+          ) : null}
         </div>
-      ))}
+      </div>
+
+      {mediaUrls.length > 1 ? (
+        <div className="rounded-[24px] border border-border/60 bg-card p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Gallery</div>
+            <div className="text-[14px] font-black text-foreground">معرض الصور</div>
+          </div>
+          <div className="mt-4 grid gap-3 grid-cols-3 sm:grid-cols-5">
+            {mediaUrls.map((image, index) => (
+              <button
+                key={image}
+                type="button"
+                onClick={() => setActiveIndex(index)}
+                className={`overflow-hidden rounded-[18px] border transition ${
+                  activeIndex === index
+                    ? "border-foreground shadow-sm"
+                    : "border-border/60 opacity-75 hover:opacity-100"
+                }`}
+                aria-label={`عرض الصورة ${index + 1}`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={image}
+                  alt={`${offer.propertyTitle} thumbnail ${index + 1}`}
+                  className="h-20 w-full object-cover"
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function PropertyFactCard({
+  icon: Icon,
+  label,
+  value,
+  helper,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  helper?: string | null;
+}) {
+  return (
+    <div className="rounded-2xl border border-border/60 bg-background/70 p-4 text-right">
+      <div className="flex items-center justify-end gap-2 text-[12px] font-bold text-muted-foreground">
+        <Icon className="h-4 w-4" />
+        {label}
+      </div>
+      <div className="mt-2 text-[16px] font-black text-foreground">{value}</div>
+      {helper ? <div className="mt-1 text-[13px] leading-6 text-muted-foreground">{helper}</div> : null}
     </div>
+  );
+}
+
+function ApartmentCategoryBadge({ value }: { value: string }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-border/60 bg-background px-3 py-1.5 text-[12px] font-bold text-foreground">
+      {value}
+    </span>
+  );
+}
+
+function ApartmentSpecCard({
+  icon: Icon,
+  label,
+  value,
+  helper,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  helper: string;
+}) {
+  return (
+    <div className="rounded-[22px] border border-border/60 bg-card p-4 text-right shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted/30 text-muted-foreground">
+          <Icon className="h-4 w-4" />
+        </div>
+        <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
+      </div>
+      <div className="mt-4 text-[18px] font-black text-foreground">{value}</div>
+      <div className="mt-2 text-[13px] leading-6 text-muted-foreground">{helper}</div>
+    </div>
+  );
+}
+
+function ApartmentLocationPanel({ offer }: { offer: WorkspaceOfferDetail }) {
+  return (
+    <section className="rounded-[24px] border border-border/60 bg-card p-5 shadow-sm">
+      <div className="text-right">
+        <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Location</div>
+        <h3 className="mt-2 text-xl font-black text-foreground">الموقع</h3>
+      </div>
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <PropertyFactCard
+          icon={MapPin}
+          label="عنوان الشقة"
+          value={offer.propertyAddress}
+          helper={offer.propertyTitle || "عنوان الوحدة المعروضة"}
+        />
+        <PropertyFactCard
+          icon={Building2}
+          label="داخل المنطقة"
+          value={offer.property?.area || offer.property?.location || "غير محدد"}
+          helper={offer.property?.location || "بدون مدينة أو نطاق إضافي"}
+        />
+      </div>
+    </section>
   );
 }
 
@@ -149,58 +373,126 @@ function OfferPrimaryData({ offer }: { offer: WorkspaceOfferDetail }) {
     );
   }
 
+  const textBlocks = buildPropertyTextBlocks(offer);
+  const categories = buildPropertyCategories(offer);
+  const apartmentDescription = normalizeDetailText(offer.description) || normalizeDetailText(offer.propertySummary);
+  const apartmentSpecs = [
+    {
+      icon: Tag,
+      label: "السعر",
+      value: formatOfferPrice(offer.price),
+      helper: offer.commissionText ?? "سعر الوحدة المعروض حالياً.",
+    },
+    offer.property?.beds != null
+      ? {
+          icon: BedDouble,
+          label: "الغرف",
+          value: `${offer.property.beds} غرف`,
+          helper: "عدد الغرف الأساسية داخل هذه الشقة.",
+        }
+      : null,
+    offer.property?.baths != null
+      ? {
+          icon: Bath,
+          label: "الحمامات",
+          value: `${offer.property.baths} حمامات`,
+          helper: "عدد الحمامات المتاحة داخل الوحدة.",
+        }
+      : null,
+    offer.property?.sqft != null
+      ? {
+          icon: Ruler,
+          label: "المساحة",
+          value: `${offer.property.sqft} م²`,
+          helper: "المساحة الإجمالية المعروضة لهذه الشقة.",
+        }
+      : null,
+    {
+      icon: ShieldCheck,
+      label: "الحالة",
+      value: offer.permitStatus ?? "غير متوفر",
+      helper: offer.productStatus ?? "حالة المنتج الحالية داخل المنصة.",
+    },
+    {
+      icon: Building2,
+      label: "نوع العرض",
+      value: formatOfferTypeLabel(offer.type),
+      helper: formatOfferStageLabel(offer.stage),
+    },
+  ].filter(Boolean) as Array<{
+    icon: LucideIcon;
+    label: string;
+    value: string;
+    helper: string;
+  }>;
+
   return (
-    <div className="space-y-5 rounded-[24px] border border-border/60 bg-card p-5 shadow-sm">
-      <div className="text-right">
-        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">بطاقة العقار</div>
-        <div className="mt-2 text-xl font-black text-foreground">{offer.propertyTitle}</div>
-        <div className="mt-1 inline-flex items-center gap-2 text-[13px] text-muted-foreground">
-          <MapPin className="h-4 w-4" />
-          {offer.propertyAddress}
-        </div>
-      </div>
+    <div className="space-y-6">
+      <ApartmentMediaSlider offer={offer} />
 
-      <PropertyGallery offer={offer} />
+      <section className="rounded-[24px] border border-border/60 bg-card p-6 shadow-sm">
+        <div className="space-y-5 text-right">
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Apartment Detail</div>
+            <h2 className="mt-2 text-3xl font-black tracking-tight text-foreground">{offer.propertyTitle}</h2>
+            <div className="mt-3 inline-flex items-center gap-2 text-[14px] text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              {offer.propertyAddress}
+            </div>
+          </div>
 
-      <div className="flex flex-wrap justify-end gap-2">
-        <InfoChip icon={Tag} value={formatOfferPrice(offer.price)} />
-        {offer.property?.beds != null ? <InfoChip icon={BedDouble} value={`${offer.property.beds} غرف`} /> : null}
-        {offer.property?.baths != null ? <InfoChip icon={Bath} value={`${offer.property.baths} حمامات`} /> : null}
-        {offer.property?.sqft != null ? <InfoChip icon={Ruler} value={`${offer.property.sqft} م²`} /> : null}
-        {offer.property?.area ? <InfoChip icon={Building2} value={offer.property.area} /> : null}
-        <InfoChip icon={ShieldCheck} value={offer.permitStatus ?? "غير متوفر"} />
-      </div>
+          {apartmentDescription ? (
+            <p className="max-w-4xl text-[15px] leading-8 text-muted-foreground">{apartmentDescription}</p>
+          ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-background/70 p-4 text-right">
-          <div className="text-[11px] font-bold text-muted-foreground">السعر والعمولة</div>
-          <div className="mt-2 text-[15px] font-black text-foreground">{formatOfferPrice(offer.price)}</div>
-          <div className="mt-1 text-[13px] leading-6 text-muted-foreground">
-            {offer.commissionText ?? "بدون عمولة إضافية"}
+          {categories.length ? (
+            <div className="space-y-3">
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Categories</div>
+              <div className="flex flex-wrap justify-end gap-2">
+                {categories.map((category) => (
+                  <ApartmentCategoryBadge key={category} value={category} />
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {apartmentSpecs.map((spec) => (
+              <ApartmentSpecCard
+                key={`${spec.label}-${spec.value}`}
+                icon={spec.icon}
+                label={spec.label}
+                value={spec.value}
+                helper={spec.helper}
+              />
+            ))}
           </div>
         </div>
-        <div className="rounded-2xl border border-border bg-background/70 p-4 text-right">
-          <div className="text-[11px] font-bold text-muted-foreground">الموقع</div>
-          <div className="mt-2 text-[15px] font-black text-foreground">{offer.propertyAddress}</div>
-          <div className="mt-1 text-[13px] leading-6 text-muted-foreground">
-            {offer.property?.location ?? offer.property?.area ?? "بدون منطقة إضافية"}
-          </div>
-        </div>
-        <div className="rounded-2xl border border-border bg-background/70 p-4 text-right">
-          <div className="text-[11px] font-bold text-muted-foreground">التصريح والحالة</div>
-          <div className="mt-2 text-[15px] font-black text-foreground">{offer.permitStatus ?? "غير متوفر"}</div>
-          <div className="mt-1 text-[13px] leading-6 text-muted-foreground">
-            {offer.productStatus ?? "بدون حالة إضافية"}
-          </div>
-        </div>
-      </div>
+      </section>
 
-      <div className="rounded-2xl border border-border bg-background/50 p-4 text-right">
-        <div className="text-[11px] font-bold text-muted-foreground">وصف العقار</div>
-        <div className="mt-2 text-[14px] leading-7 text-foreground">
-          {offer.propertySummary ?? offer.description ?? "لا يوجد وصف إضافي لهذه الوحدة حالياً."}
+      <ApartmentLocationPanel offer={offer} />
+
+      <section className="rounded-[24px] border border-border/60 bg-card p-5 shadow-sm">
+        <div className="text-right">
+          <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Full Description</div>
+          <h3 className="mt-2 text-xl font-black text-foreground">الوصف الكامل</h3>
         </div>
-      </div>
+        <div className="mt-5 space-y-3">
+          {textBlocks.length > 0 ? (
+            textBlocks.map((block) => (
+              <div key={`${block.label}-${block.value}`} className="rounded-[24px] border border-border/60 bg-background/50 p-5 text-right">
+                <div className="text-[11px] font-bold text-muted-foreground">{block.label}</div>
+                <div className="mt-2 text-[14px] leading-8 text-foreground">{block.value}</div>
+              </div>
+            ))
+          ) : (
+            <div className="rounded-[24px] border border-border/60 bg-background/50 p-5 text-right">
+              <div className="text-[11px] font-bold text-muted-foreground">الوصف</div>
+              <div className="mt-2 text-[14px] leading-8 text-foreground">لا يوجد وصف إضافي لهذه الوحدة حالياً.</div>
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
@@ -423,8 +715,8 @@ function OfferBrandPanel({
 
 /**
  * WHY:   Offer details should start with the actual property/client context instead of decorative legacy sections.
- * WHAT:  Renders a two-column detail page with brand/contact on one side and gallery + offer data on the other.
- * HOW:   Uses the shared offer DTO to render property media when present and keep client-driven cases focused on the request card.
+ * WHAT:  Renders a two-column detail page with brand/contact on one side and an apartment-first property layout on the other.
+ * HOW:   Uses the shared offer DTO to render a media slider, apartment specs, location details, and client-driven cases without changing action flows.
  */
 export default function OfferDetailPage({
   offer,
@@ -448,6 +740,8 @@ export default function OfferDetailPage({
   const router = useRouter();
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const heroTitle = getOfferHeroTitle(offer);
+  const heroSummary = getOfferHeroSummary(offer);
 
   async function runAction(actionKey: string, callback: () => Promise<DetailActionResult>) {
     setError(null);
@@ -512,15 +806,14 @@ export default function OfferDetailPage({
                   <div className="text-[12px] font-semibold text-muted-foreground">
                     {formatOfferMarketplaceLabel(offer)}
                   </div>
-                  <h1 className="text-3xl font-black tracking-tight text-foreground">{offer.message}</h1>
-                  <p className="text-[15px] leading-8 text-muted-foreground/90">
-                    {offer.description ?? "لا يوجد وصف إضافي لهذه الحالة."}
-                  </p>
-                  {offer.propertySummary ? (
-                    <div className="text-[13px] leading-6 text-muted-foreground">
-                      {offer.propertySummary}
+                  <h1 className="text-3xl font-black tracking-tight text-foreground">{heroTitle}</h1>
+                  {!offer.clientContext ? (
+                    <div className="inline-flex items-center gap-2 text-[14px] text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      {offer.propertyAddress}
                     </div>
                   ) : null}
+                  <p className="max-w-3xl text-[15px] leading-8 text-muted-foreground/90">{heroSummary}</p>
                 </div>
 
                 <OfferPrimaryData offer={offer} />

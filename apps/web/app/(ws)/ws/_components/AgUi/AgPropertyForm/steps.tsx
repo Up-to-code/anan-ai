@@ -35,17 +35,17 @@ function StepShell({
 }) {
   return (
     <div className="space-y-6">
-      <section className="border-b border-border/60 pb-5 text-right">
-        <div className="inline-flex rounded-full border border-border bg-muted/20 px-3 py-1 text-[11px] font-black text-muted-foreground">
+      <section className="rounded-[24px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-5 text-right lg:p-6">
+        <div className="inline-flex rounded-full border border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,var(--workspace-panel))] px-3 py-1.5 text-[11px] font-black text-foreground">
           {badge}
         </div>
         <h2 className="mt-3 text-2xl font-black tracking-tight text-foreground">{title}</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">{description}</p>
+        <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--workspace-muted)]">{description}</p>
         <div className="mt-4 flex flex-wrap justify-end gap-2">
           {checklist.map((item) => (
             <span
               key={item}
-              className="rounded-full border border-border bg-background px-3 py-1.5 text-[12px] font-semibold text-muted-foreground"
+              className="rounded-full border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-3 py-1.5 text-[12px] font-semibold text-[var(--workspace-muted)]"
             >
               {item}
             </span>
@@ -859,10 +859,10 @@ export function ReviewStep(props: {
         </div>
       </SectionCard>
 
-      <section className="rounded-[28px] border border-border bg-card p-6 text-foreground shadow-[0_16px_44px_rgba(0,0,0,0.28)]">
-        <div className="flex items-start gap-3 rounded-2xl border border-border bg-card/40 p-4 text-right">
+      <section className="rounded-[24px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-6 text-foreground shadow-sm">
+        <div className="flex items-start gap-3 rounded-[18px] border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-4 text-right">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
-          <p className="text-sm leading-6 text-muted-foreground">
+          <p className="text-sm leading-6 text-[var(--workspace-muted)]">
             راجع الحالة ونوع الظهور والتصريح الخاص قبل الحفظ. هذه العناصر تحدد أين يظهر المشروع ومن يستطيع الوصول إليه.
           </p>
         </div>
@@ -876,7 +876,7 @@ export function ReviewStep(props: {
           {props.savePending ? "جارٍ الحفظ..." : props.submitLabel}
         </button>
 
-        <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="mt-4 flex items-center gap-2 text-sm text-[var(--workspace-muted)]">
           <Check className="h-4 w-4" />
           سيتم حفظ المشروع وفق البيانات المعروضة هنا مع الحالة ومستوى الوصول المحددين.
         </div>
@@ -898,23 +898,33 @@ export function StepNavigation({
   isLastStep: boolean;
   setCurrentStepIndex: React.Dispatch<React.SetStateAction<number>>;
 }) {
+  const completionPercent = ((currentStepIndex + 1) / STEP_DEFINITIONS.length) * 100;
+
   return (
     <>
-      <section className="border-b border-border/60 pb-5">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div className="text-right">
-            <div className="text-sm font-black text-foreground">
-              الخطوة {currentStepIndex + 1} من {STEP_DEFINITIONS.length}
+      <section className="rounded-[24px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-4 lg:p-5">
+        <div className="text-right">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-black text-foreground">
+                الخطوة {currentStepIndex + 1} من {STEP_DEFINITIONS.length}
+              </div>
+              <div className="mt-1 text-xl font-black text-foreground">{activeStepTitle}</div>
             </div>
-            <div className="mt-1 text-xl font-black text-foreground">{activeStepTitle}</div>
-            <div className="mt-1 text-sm text-muted-foreground">{activeStepSummary}</div>
+            <div className="rounded-full border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-3 py-1.5 text-[12px] font-bold text-[var(--workspace-muted)]">
+              {Math.round(completionPercent)}%
+            </div>
           </div>
-          <div className="inline-flex h-11 min-w-11 items-center justify-center rounded-full bg-foreground px-3 text-sm font-black text-background">
-            {currentStepIndex + 1}
+          <div className="mt-2 text-sm leading-7 text-[var(--workspace-muted)]">{activeStepSummary}</div>
+          <div className="mt-4 h-2 rounded-full bg-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)]">
+            <div
+              className="h-full rounded-full bg-[var(--workspace-highlight)] transition-all"
+              style={{ width: `${completionPercent}%` }}
+            />
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap justify-end gap-2">
           {STEP_DEFINITIONS.map((step, index) => {
             const isActive = index === currentStepIndex;
             const isCompleted = index < currentStepIndex;
@@ -923,34 +933,41 @@ export function StepNavigation({
                 key={step.key}
                 type="button"
                 onClick={() => setCurrentStepIndex(index)}
-                className={`rounded-full border px-4 py-2 text-right transition ${
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-[12px] font-bold transition ${
                   isActive
-                    ? "border-foreground/30 bg-foreground text-background"
+                    ? "border-[color:color-mix(in_srgb,var(--workspace-highlight)_22%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,var(--workspace-panel))] text-foreground"
                     : isCompleted
                       ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                      : "border-border bg-background text-foreground hover:bg-muted/40"
+                      : "border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] text-[var(--workspace-muted)] hover:text-foreground"
                 }`}
               >
-                <div className="text-xs font-black">{step.title}</div>
+                <span
+                  className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-black ${
+                    isActive ? "bg-foreground text-background" : isCompleted ? "bg-emerald-600 text-white" : "bg-[var(--workspace-panel)] text-[var(--workspace-muted)]"
+                  }`}
+                >
+                  {index + 1}
+                </span>
+                <span>{step.title}</span>
               </button>
             );
           })}
         </div>
       </section>
 
-      <section className="sticky bottom-4 z-10 rounded-2xl border border-border bg-background/95 p-4 backdrop-blur md:p-5">
+      <section className="sticky bottom-4 z-10 rounded-[22px] border border-[color:var(--workspace-border)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_92%,transparent)] p-4 shadow-lg backdrop-blur md:p-5">
         <div className="flex items-center justify-between gap-6">
           <button
             type="button"
             onClick={() => setCurrentStepIndex((current) => Math.max(0, current - 1))}
             disabled={currentStepIndex === 0}
-            className="group inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-6 py-3 text-[13px] font-black text-foreground transition-all hover:bg-muted active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+            className="group inline-flex items-center justify-center gap-2 rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-6 py-3 text-[13px] font-black text-foreground transition-all hover:bg-[var(--workspace-accent-soft)] active:scale-95 disabled:pointer-events-none disabled:opacity-30"
           >
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             رجوع
           </button>
 
-          <div className="hidden text-sm font-semibold text-muted-foreground lg:block">
+          <div className="hidden text-sm font-semibold text-[var(--workspace-muted)] lg:block">
             {isLastStep ? "جاهز للحفظ" : `التالي: ${STEP_DEFINITIONS[currentStepIndex + 1]?.title ?? ""}`}
           </div>
 
@@ -958,7 +975,7 @@ export function StepNavigation({
             type="button"
             onClick={() => setCurrentStepIndex((current) => Math.min(STEP_DEFINITIONS.length - 1, current + 1))}
             disabled={isLastStep}
-            className="group inline-flex items-center justify-center gap-2 rounded-xl bg-foreground px-8 py-3 text-[13px] font-black text-background shadow-lg shadow-black/10 transition-all hover:opacity-90 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+            className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-foreground px-8 py-3 text-[13px] font-black text-background shadow-lg shadow-black/10 transition-all hover:opacity-90 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
           >
             متابعة
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
