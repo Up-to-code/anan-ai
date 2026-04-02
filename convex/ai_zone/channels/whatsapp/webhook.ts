@@ -124,6 +124,10 @@ async function processWebhookEvent(
 
 /** GET /api/whatsapp/webhook – Meta verification */
 export async function handleWhatsAppWebhookGet(_ctx: unknown, request: Request): Promise<Response> {
+  if (!process.env.WHATSAPP_VERIFY_TOKEN) {
+    console.error("ai_zone.whatsapp.missing_verify_token");
+    return new Response("Service Unavailable", { status: 503 });
+  }
   const url = new URL(request.url);
   const mode = url.searchParams.get("hub.mode");
   const token = url.searchParams.get("hub.verify_token");
@@ -153,6 +157,11 @@ export async function handleWhatsAppWebhookPostRequest(
     return new Response("Method Not Allowed", { status: 405 });
   }
 
+  if (!process.env.WHATSAPP_APP_SECRET) {
+    console.error("ai_zone.whatsapp.missing_app_secret");
+    return new Response("Service Unavailable", { status: 503 });
+  }
+
   const body = await readWebhookBody(request);
   if (body === null) {
     return new Response("Bad Request", { status: 400 });
@@ -163,6 +172,9 @@ export async function handleWhatsAppWebhookPostRequest(
     request.headers.get("x-hub-signature-256"),
   );
   if (!isValidSignature) {
+    console.warn("ai_zone.whatsapp.invalid_signature", {
+      channel: "whatsapp",
+    });
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -170,6 +182,9 @@ export async function handleWhatsAppWebhookPostRequest(
   try {
     events = extractWebhookEvents(body);
   } catch {
+    console.warn("ai_zone.whatsapp.parse_error", {
+      channel: "whatsapp",
+    });
     return new Response("Bad Request", { status: 400 });
   }
   if (events.length === 0) {
@@ -205,9 +220,12 @@ export async function handleWhatsAppWebhookPostRequest(
 
     try {
       const result = await processEvent(ctx, waService, event);
+      if (result.sendResults.length === 0) {
+        throw new Error("NO_OUTBOUND_MESSAGES");
+      }
       const failedSend = result.sendResults.find((sendResult) => sendResult.success !== true);
       if (failedSend) {
-        throw new Error(failedSend.error ?? "WHATSAPP_SEND_FAILED");
+        throw new Error(`WHATSAPP_SEND_FAILED:${failedSend.error ?? "unknown"}`);
       }
 
       if (event.messageId) {
@@ -246,24 +264,44 @@ export async function handleWhatsAppWebhookPostRequest(
       });
 
       if (event.messageId) {
-        await ctx.runMutation(
-          (internal as any)["user_zone/whatsapp/state"].failInboundMessageReceipt,
-          {
+        try {
+          await ctx.runMutation(
+            (internal as any)["user_zone/whatsapp/state"].failInboundMessageReceipt,
+            {
+              channel: "whatsapp",
+              messageId: event.messageId,
+              userId: event.from,
+              failureCode: err instanceof Error ? err.message : "unknown_error",
+            },
+          );
+        } catch (failureError) {
+          console.error("ai_zone.whatsapp.receipt_fail_error", {
             channel: "whatsapp",
-            messageId: event.messageId,
             userId: event.from,
-            failureCode: err instanceof Error ? err.message : "unknown_error",
-          },
-        );
+            messageId: event.messageId,
+            messageType: event.messageType,
+            error: failureError instanceof Error ? failureError.message : "unknown_error",
+          });
+        }
       }
 
-      await waService.sendText(
-        event.from,
-        event.messageType === "audio"
-          ? VOICE_FALLBACK_MESSAGE_AR
-          : WHATSAPP_GENERIC_ERROR_MESSAGE_AR,
-        event.messageId,
-      );
+      try {
+        await waService.sendText(
+          event.from,
+          event.messageType === "audio"
+            ? VOICE_FALLBACK_MESSAGE_AR
+            : WHATSAPP_GENERIC_ERROR_MESSAGE_AR,
+          event.messageId,
+        );
+      } catch (sendError) {
+        console.error("ai_zone.whatsapp.fallback_send_error", {
+          channel: "whatsapp",
+          userId: event.from,
+          messageId: event.messageId,
+          messageType: event.messageType,
+          error: sendError instanceof Error ? sendError.message : "unknown_error",
+        });
+      }
     }
   }
 

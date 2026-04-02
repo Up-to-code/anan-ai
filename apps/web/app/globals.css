@@ -163,7 +163,9 @@
   }
 
   body {
-    @apply min-h-dvh bg-background text-foreground;
+    @apply bg-background text-foreground;
+    min-height: 100vh;
+    min-height: 100dvh;
     height: 100%;
   }
 
@@ -205,36 +207,36 @@
   }
 }
 
-@media (hover: none), (pointer: coarse) {
-  @supports (-webkit-touch-callout: none) {
-    html {
-      height: -webkit-fill-available;
-    }
+@supports (height: -webkit-fill-available) and (-webkit-touch-callout: none) {
+  html {
+    height: -webkit-fill-available;
+  }
 
-    body {
-      min-height: -webkit-fill-available;
-      height: -webkit-fill-available;
-    }
+  body {
+    min-height: -webkit-fill-available;
+    height: -webkit-fill-available;
+  }
 
+  .app-shell-height {
+    min-height: -webkit-fill-available;
+  }
+
+  .app-shell-fixed-height {
+    height: -webkit-fill-available;
+  }
+
+  @media (min-width: 1024px) {
     .app-shell-height {
-      min-height: -webkit-fill-available;
+      height: -webkit-fill-available;
     }
 
     .app-shell-fixed-height {
       height: -webkit-fill-available;
     }
-
-    @media (min-width: 1024px) {
-      .app-shell-height {
-        height: -webkit-fill-available;
-      }
-
-      .app-shell-fixed-height {
-        height: -webkit-fill-available;
-      }
-    }
   }
+}
 
+@media (hover: none), (pointer: coarse) {
   .assistant-composer-dock-safe-area {
     --assistant-composer-dock-inset: calc(env(safe-area-inset-bottom) + 1.25rem);
   }

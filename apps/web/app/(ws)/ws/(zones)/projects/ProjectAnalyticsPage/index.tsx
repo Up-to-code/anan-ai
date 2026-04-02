@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   Activity,
   ArrowLeft,
-  BarChart3,
   CheckCircle2,
   Clock3,
   Eye,
@@ -123,10 +122,10 @@ function InsightCard({
   description: string;
 }) {
   return (
-    <div className="rounded-[22px] border border-border/70 bg-background/75 p-4 text-right">
+    <div className="rounded-2xl border border-border/50 bg-background/60 p-4 text-right">
       <div className="flex items-center justify-between gap-3">
         <div className="text-[11px] font-bold tracking-[0.18em] text-muted-foreground">{label}</div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border/70 bg-card text-[var(--workspace-highlight)]">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-background/80 text-muted-foreground">
           {icon}
         </div>
       </div>
@@ -151,8 +150,8 @@ function KpiCard({
 }) {
   const cardClassName =
     tone === "highlight"
-      ? "rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_5%,var(--workspace-panel))] p-5 text-right shadow-sm"
-      : "rounded-[24px] border border-border/60 bg-card p-5 text-right shadow-sm";
+      ? "rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-highlight)_20%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_4%,var(--workspace-panel))] p-4 text-right"
+      : "rounded-2xl border border-border/50 bg-card/70 p-4 text-right";
 
   return (
     <div className={cardClassName}>
@@ -166,8 +165,8 @@ function KpiCard({
         <div
           className={
             tone === "highlight"
-              ? "flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:color-mix(in_srgb,var(--workspace-highlight)_14%,transparent)] text-[var(--workspace-highlight)]"
-              : "flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-background/80 text-muted-foreground"
+              ? "flex h-10 w-10 items-center justify-center rounded-full bg-[color:color-mix(in_srgb,var(--workspace-highlight)_12%,transparent)] text-[var(--workspace-highlight)]"
+              : "flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-background/80 text-muted-foreground"
           }
         >
           {icon}
@@ -193,8 +192,8 @@ function AnalyticsPanel({
 }) {
   const panelClassName =
     tone === "highlight"
-      ? "rounded-[28px] border border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--workspace-highlight)_4%,var(--workspace-panel))_0%,color-mix(in_srgb,var(--workspace-panel)_98%,transparent)_100%)] p-5 shadow-sm lg:p-6"
-      : "rounded-[28px] border border-border/60 bg-card p-5 shadow-sm lg:p-6";
+      ? "rounded-3xl border border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] bg-card/70 p-5 lg:p-6"
+      : "rounded-3xl border border-border/50 bg-card/70 p-5 lg:p-6";
 
   return (
     <section className={panelClassName}>
@@ -228,8 +227,8 @@ function AnalyticsTabs({
             onClick={() => onChange(tab.key)}
             className={
               isActive
-                ? "rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_6%,var(--workspace-panel))] p-5 text-right shadow-sm transition-all"
-                : "rounded-[24px] border border-border/60 bg-card p-5 text-right shadow-sm transition-all hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_16%,var(--workspace-border))] hover:bg-muted/20"
+                ? "rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-highlight)_22%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_5%,var(--workspace-panel))] p-4 text-right transition-all"
+                : "rounded-2xl border border-border/50 bg-card/60 p-4 text-right transition-all hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_14%,var(--workspace-border))] hover:bg-muted/10"
             }
           >
             <div className="text-sm font-black text-foreground">{tab.label}</div>
@@ -259,8 +258,8 @@ function ChartMetricTabs({
             onClick={() => onChange(key as PerformanceMetricKey)}
             className={
               isActive
-                ? "inline-flex items-center rounded-full bg-[var(--workspace-highlight)] px-4 py-2 text-[12px] font-bold text-white shadow-sm transition-all"
-                : "inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-[12px] font-bold text-muted-foreground transition-all hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_20%,var(--workspace-border))] hover:text-foreground"
+                ? "inline-flex items-center rounded-full border border-[color:color-mix(in_srgb,var(--workspace-highlight)_30%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,transparent)] px-4 py-2 text-[12px] font-bold text-foreground transition-all"
+                : "inline-flex items-center rounded-full border border-border/60 bg-transparent px-4 py-2 text-[12px] font-bold text-muted-foreground transition-all hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] hover:text-foreground"
             }
           >
             {config.label}
@@ -279,7 +278,7 @@ function ChartFallbackMetric({
   value: string | number;
 }) {
   return (
-    <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3 text-right">
+    <div className="rounded-xl border border-border/50 bg-background/60 px-4 py-3 text-right">
       <div className="text-[11px] font-bold tracking-[0.14em] text-muted-foreground">{label}</div>
       <div className="mt-2 text-lg font-black text-foreground">{value}</div>
     </div>
@@ -336,7 +335,7 @@ function SimpleChartTooltip({
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-background px-4 py-3 text-right shadow-lg">
+    <div className="rounded-xl border border-border/70 bg-background px-4 py-3 text-right">
       <div className="text-[12px] font-bold text-foreground">{label}</div>
       <div className="mt-2 space-y-1">
         {payload.map((entry) => (
@@ -364,38 +363,14 @@ function AnalyticsHero({
 }) {
   const topBroker = analytics.brokerRows[0];
   const strongestInteraction = [...analytics.interactionSummary].sort((left, right) => right.count - left.count)[0];
-  const latestEvent = analytics.recentEvents[0];
 
   return (
-    <section className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-      <div className="rounded-[32px] border border-border/60 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--workspace-panel)_95%,transparent)_0%,color-mix(in_srgb,var(--workspace-elevated)_98%,transparent)_100%)] p-6 shadow-sm lg:p-8">
+    <section className="grid gap-4">
+      <div className="rounded-3xl border border-border/50 bg-card/70 p-6 lg:p-8">
         <div className="space-y-6 text-right">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,var(--workspace-panel))] px-3 py-1.5 text-[11px] font-bold text-[var(--workspace-highlight)]">
-                <BarChart3 className="h-4 w-4" />
-                تحليل المشروع
-              </div>
-              <div>
-                <h1 className="text-3xl font-black tracking-tight text-foreground">لوحة تحليل المشروع</h1>
-                <p className="mt-3 max-w-3xl text-[14px] leading-7 text-muted-foreground">{project.summary}</p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap justify-end gap-2">
-              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-bold text-foreground">
-                <Users className="h-4 w-4" />
-                {project.location}
-              </div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-bold text-foreground">
-                <MousePointerClick className="h-4 w-4" />
-                {project.priceLabel}
-              </div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-bold text-foreground">
-                <Clock3 className="h-4 w-4" />
-                آخر {analytics.visibilityTrend.length} يوم
-              </div>
-            </div>
+          <div>
+            <h1 className="text-3xl font-black tracking-tight text-foreground">لوحة تحليل المشروع</h1>
+            <p className="mt-3 max-w-3xl text-[14px] leading-7 text-muted-foreground">{project.summary}</p>
           </div>
 
           <div className="grid gap-3 md:grid-cols-3">
@@ -428,49 +403,6 @@ function AnalyticsHero({
           </div>
         </div>
       </div>
-
-      <AnalyticsPanel
-        title="ملخص تنفيذي"
-        description="قراءة سريعة قبل النزول إلى الرسوم والجداول."
-        tone="highlight"
-      >
-        <div className="space-y-4">
-          <div className="rounded-[22px] border border-border/70 bg-background/80 p-4 text-right">
-            <div className="text-[11px] font-bold tracking-[0.18em] text-muted-foreground">أهم ما يجب ملاحظته</div>
-            <div className="mt-3 text-base font-black text-foreground">
-              {analytics.kpis.connectedBrokers > 0
-                ? `هناك ${formatNumber(analytics.kpis.connectedBrokers)} وسيط مرتبط يقودون الحركة على هذا المشروع.`
-                : "لا توجد شبكة وسطاء مرتبطة بالمشروع بعد."}
-            </div>
-            <div className="mt-2 text-[13px] leading-6 text-muted-foreground">
-              رتّب القراءة بهذا الترتيب: الوصول، ثم التفاعل، ثم الشبكة، ثم آخر الأحداث.
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <ChartFallbackMetric
-              label="عملاء مدارون"
-              value={formatNumber(analytics.kpis.brokerManagedClients)}
-            />
-            <ChartFallbackMetric
-              label="صفقات وحالات مفتوحة"
-              value={formatNumber(analytics.kpis.activeCases + analytics.kpis.activeDeals)}
-            />
-          </div>
-
-          <div className="rounded-[22px] border border-border/70 bg-background/80 p-4 text-right">
-            <div className="text-[11px] font-bold tracking-[0.18em] text-muted-foreground">آخر حركة مسجلة</div>
-            <div className="mt-3 text-base font-black text-foreground">
-              {latestEvent ? latestEvent.title : "لا يوجد نشاط حديث"}
-            </div>
-            <div className="mt-2 text-[13px] leading-6 text-muted-foreground">
-              {latestEvent
-                ? `${latestEvent.subtitle ?? "بدون وصف إضافي"} • ${formatDateTime(latestEvent.createdAt)}`
-                : "بمجرد تسجيل حدث جديد سيظهر هنا كأول سطر في الملخص."}
-            </div>
-          </div>
-        </div>
-      </AnalyticsPanel>
     </section>
   );
 }
@@ -628,68 +560,6 @@ function VisibilityTrendChart({
         <ChartFallbackMetric label="المشاهدات القريبة" value={formatNumber(recentViews)} />
         <ChartFallbackMetric label="النقرات القريبة" value={formatNumber(recentClicks)} />
         <ChartFallbackMetric label="معدل التفاعل العام" value={formatPercent(clickRate)} />
-      </div>
-    </AnalyticsPanel>
-  );
-}
-
-function OverviewHighlights({
-  analytics,
-  clickRate,
-}: {
-  analytics: WorkspaceProjectAnalytics;
-  clickRate: number;
-}) {
-  const topBroker = analytics.brokerRows[0];
-  const strongestInteraction = [...analytics.interactionSummary].sort((left, right) => right.count - left.count)[0];
-  const latestEvent = analytics.recentEvents[0];
-  const leadingState = [...analytics.brokerStateSummary].sort((left, right) => right.count - left.count)[0];
-
-  return (
-    <AnalyticsPanel
-      title="ما الذي يستحق الانتباه"
-      description="ملخص سريع يساعدك على التقاط المعنى قبل قراءة التفاصيل."
-      tone="highlight"
-    >
-      <div className="grid gap-4 md:grid-cols-2">
-        <InsightCard
-          icon={<Eye className="h-4 w-4" />}
-          label="الوصول مقابل التفاعل"
-          title={`${formatNumber(analytics.kpis.totalViews)} مشاهدة / ${formatNumber(analytics.kpis.totalClicks)} نقرة`}
-          description={`معدل التفاعل الحالي عبر كامل النافذة هو ${formatPercent(clickRate)}.`}
-        />
-        <InsightCard
-          icon={<Users className="h-4 w-4" />}
-          label="الوسيط الأبرز"
-          title={topBroker ? topBroker.brokerName : "لا يوجد بعد"}
-          description={
-            topBroker
-              ? `${formatNumber(topBroker.views)} مشاهدة و ${formatNumber(topBroker.clicks)} نقرة مع حالة ${topBroker.stateLabel}.`
-              : "سيظهر هنا أكثر وسيط تأثيراً عند توفر بيانات كافية."
-          }
-        />
-        <InsightCard
-          icon={<CheckCircle2 className="h-4 w-4" />}
-          label="أوضح نوع تفاعل"
-          title={strongestInteraction ? strongestInteraction.label : "لا توجد إشارات"}
-          description={
-            strongestInteraction
-              ? `تم تسجيل ${formatNumber(strongestInteraction.count)} تفاعل من هذا النوع.`
-              : "لا توجد حركة كافية بعد لتحديد نوع التفاعل الأوضح."
-          }
-        />
-        <InsightCard
-          icon={<Clock3 className="h-4 w-4" />}
-          label="آخر حركة أو حالة"
-          title={latestEvent ? latestEvent.title : leadingState ? leadingState.label : "لا يوجد نشاط بعد"}
-          description={
-            latestEvent
-              ? `${latestEvent.subtitle ?? "بدون وصف إضافي"} • ${formatDateTime(latestEvent.createdAt)}`
-              : leadingState
-                ? `الحالة الأكثر ظهوراً داخل الشبكة الآن هي ${leadingState.label} بعدد ${formatNumber(leadingState.count)}.`
-                : "لا توجد أحداث أو حالات كافية لعرضها هنا."
-          }
-        />
       </div>
     </AnalyticsPanel>
   );
@@ -1020,15 +890,12 @@ function BrokerProjectAnalyticsPage({
         <AnalyticsTabs activeTab={activeTab} onChange={setActiveTab} />
 
         {activeTab === "overview" ? (
-          <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.82fr)]">
-            <VisibilityTrendChart
-              analytics={analytics}
-              activeMetric={activePerformanceMetric}
-              onMetricChange={setActivePerformanceMetric}
-              clickRate={clickRate}
-            />
-            <OverviewHighlights analytics={analytics} clickRate={clickRate} />
-          </div>
+          <VisibilityTrendChart
+            analytics={analytics}
+            activeMetric={activePerformanceMetric}
+            onMetricChange={setActivePerformanceMetric}
+            clickRate={clickRate}
+          />
         ) : null}
 
         {activeTab === "network" ? (

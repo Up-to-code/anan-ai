@@ -63,14 +63,17 @@ export default function MessageRow({
         {!isUser ? <WorkspaceAssistantBadgeRow badges={assistantBadges} dir={direction} className="mb-1" /> : null}
         {content ? (
           <div
-            className={cn("max-w-[90%] sm:max-w-[85%] md:max-w-[75%]", isStreaming && "transition-all duration-150")}
+            className={cn(
+              isUser ? "max-w-[90%] sm:max-w-[85%] md:max-w-[75%]" : "w-full max-w-[52rem]",
+              isStreaming && "transition-all duration-150",
+            )}
           >
             <div
               className={cn(
-                "w-fit min-w-0 max-w-full break-words text-[15px] md:text-[16px] leading-[1.7] transition-all duration-300",
+                "min-w-0 max-w-full text-[15px] leading-[1.7] transition-all duration-300 md:text-[16px]",
                 isUser
-                  ? "rounded-t-[32px] rounded-br-[32px] rounded-bl-[12px] bg-slate-900 px-5 py-3 md:px-6 md:py-4 text-white dark:bg-slate-800 dark:text-white shadow-sm"
-                  : "bg-transparent px-0 py-2.5 text-slate-800 dark:text-slate-100 font-medium",
+                  ? "w-fit break-words rounded-t-[32px] rounded-br-[32px] rounded-bl-[12px] bg-slate-900 px-5 py-3 text-white shadow-sm dark:bg-slate-800 dark:text-white md:px-6 md:py-4"
+                  : "w-full bg-transparent px-0 py-2.5 font-medium text-slate-800 dark:text-slate-100",
                 !isUser && isInfo && "text-slate-400 italic",
               )}
               dir={isUser ? "rtl" : direction}
@@ -82,7 +85,7 @@ export default function MessageRow({
                 <MarkdownContent
                   content={content}
                   className={cn(
-                    "workspace-assistant-markdown break-words",
+                    "workspace-assistant-markdown max-w-none break-words [overflow-wrap:anywhere]",
                     "[&_h1]:mt-0 [&_h1]:text-2xl [&_h1]:font-black [&_h2]:text-xl [&_h2]:font-black [&_h2]:border-none [&_h2]:pb-0",
                     "[&_h3]:text-lg [&_h3]:font-extrabold [&_p]:mt-0 [&_p]:leading-8 [&_p]:text-[15px] md:[&_p]:text-[16px]",
                     "[&_ul]:my-3 [&_ul]:space-y-2 [&_ul]:marker:text-[var(--workspace-highlight)] [&_ol]:my-3 [&_ol]:space-y-2 [&_ol]:marker:font-black [&_ol]:marker:text-[var(--workspace-highlight)] [&_li]:mt-0",

@@ -84,7 +84,7 @@ it("uses a flex-height shell instead of Safari-sensitive viewport-unit math", ()
   expect(markup).toContain("data-slot=\"inbox-sidebar\"");
   expect(markup).toContain("data-slot=\"inbox-empty-state\"");
   expect(markup).toContain("flex h-full min-h-0 w-full flex-1 basis-0 overflow-hidden bg-[var(--workspace-shell)]");
-  expect(markup).toContain("relative min-h-0 min-w-0 flex-1 basis-0 bg-[var(--workspace-canvas)]");
-  expect(markup).toContain("flex h-full w-full min-h-0 flex-col");
+  expect(markup).toContain("relative h-full min-h-0 min-w-0 flex-1 basis-0 flex-col overflow-hidden bg-[var(--workspace-canvas)]");
+  expect(markup).toContain("flex h-full w-full min-h-0 flex-1 basis-0 flex-col");
   expect(markup).not.toContain("100svh");
 });

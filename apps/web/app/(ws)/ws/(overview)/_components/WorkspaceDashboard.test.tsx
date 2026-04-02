@@ -144,14 +144,14 @@ it("renders the conversation stream inline when messages exist", () => {
   expect(markup).toContain("data-slot=\"ag-ui-turn\"");
   expect(markup).toContain("data-layout=\"thread\"");
   expect(markup).toContain("data-slot=\"assistant-surface\"");
-  expect(markup).toContain("assistant-composer-dock-safe-area relative flex h-full min-h-0 min-w-0 flex-1 basis-0 flex-col overflow-hidden");
-  expect(markup).toContain("relative z-0 h-full min-h-0 flex-1 basis-0 px-4");
+  expect(markup).toContain("assistant-composer-dock-safe-area relative grid min-h-0 min-w-0 flex-1 basis-0 grid-rows-[minmax(0,1fr)_auto] overflow-hidden");
+  expect(markup).toContain("relative z-0 min-h-0 px-4");
   expect(markup).toContain("data-slot=\"thread-composer-dock\"");
   expect(markup).toContain("data-slot=\"thread-composer-shell\"");
   expect(markup).toContain("--assistant-composer-height:128px");
   expect(markup).toContain("--assistant-scroll-button-gap:14px");
   expect(markup).toContain("--assistant-content-end-gap:28px");
-  expect(markup).toContain("pb-[calc(var(--assistant-composer-height)+var(--assistant-composer-dock-inset)+var(--assistant-content-end-gap))]");
+  expect(markup).toContain("pb-6 sm:pb-8");
   expect(markup).not.toContain("opacity:0");
   expect(markup).not.toContain("data-slot=\"assistant-landing-panel\"");
 });

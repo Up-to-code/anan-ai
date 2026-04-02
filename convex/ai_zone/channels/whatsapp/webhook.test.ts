@@ -42,11 +42,35 @@ describe("whatsapp webhook", () => {
     expect(await response.text()).toBe("123");
   });
 
+  it("returns 503 when the verify token is missing", async () => {
+    const original = process.env.WHATSAPP_VERIFY_TOKEN;
+    delete process.env.WHATSAPP_VERIFY_TOKEN;
+    const response = await handleWhatsAppWebhookGet(
+      null,
+      new Request(
+        "https://example.com/api/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=verify-token&hub.challenge=123",
+      ),
+    );
+    expect(response.status).toBe(503);
+    if (original) process.env.WHATSAPP_VERIFY_TOKEN = original;
+  });
+
   it("verifies signed webhook payloads", async () => {
     process.env.WHATSAPP_APP_SECRET = "secret";
     const body = JSON.stringify({ entry: [] });
     const signature = await signBody(body, "secret");
     await expect(verifyWhatsAppSignature(body, signature)).resolves.toBe(true);
+  });
+
+  it("returns 503 when the app secret is missing", async () => {
+    const original = process.env.WHATSAPP_APP_SECRET;
+    delete process.env.WHATSAPP_APP_SECRET;
+    const response = await handleWhatsAppWebhookPostRequest(
+      {},
+      makeWebhookRequest(JSON.stringify({ entry: [] }), "sha256=anything"),
+    );
+    expect(response.status).toBe(503);
+    if (original) process.env.WHATSAPP_APP_SECRET = original;
   });
 
   it("rejects POST requests with an invalid signature", async () => {
@@ -111,6 +135,93 @@ describe("whatsapp webhook", () => {
     expect(response.status).toBe(200);
     expect(processEvent).not.toHaveBeenCalled();
     expect(sendText).not.toHaveBeenCalled();
+  });
+
+  it("falls back when outbound messages are empty", async () => {
+    process.env.WHATSAPP_APP_SECRET = "secret";
+    const body = JSON.stringify({
+      entry: [
+        {
+          changes: [
+            {
+              value: {
+                metadata: { phone_number_id: "123" },
+                contacts: [{ wa_id: "966501234567", profile: { name: "Ahmed" } }],
+                messages: [{ from: "966501234567", id: "wamid-3", text: { body: "hello" } }],
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const signature = await signBody(body, "secret");
+    const sendText = vi.fn().mockResolvedValue({ success: true, messageId: "fallback-2" });
+    const ctx = {
+      runMutation: vi.fn(async (_ref: unknown, args: { messageId?: string; failureCode?: string }) => {
+        if (args.messageId === "wamid-3" && !args.failureCode) {
+          return { proceed: true, status: "processing" };
+        }
+        return null;
+      }),
+    };
+
+    const response = await handleWhatsAppWebhookPostRequest(
+      ctx,
+      makeWebhookRequest(body, signature),
+      {
+        createService: () => ({ sendText } as any),
+        processEvent: vi.fn(async () => ({ threadId: "t1", sendResults: [] })) as any,
+      },
+    );
+
+    expect(response.status).toBe(200);
+    expect(sendText).toHaveBeenCalledTimes(1);
+    expect(ctx.runMutation).toHaveBeenCalled();
+  });
+
+  it("falls back when outbound sending fails", async () => {
+    process.env.WHATSAPP_APP_SECRET = "secret";
+    const body = JSON.stringify({
+      entry: [
+        {
+          changes: [
+            {
+              value: {
+                metadata: { phone_number_id: "123" },
+                contacts: [{ wa_id: "966501234567", profile: { name: "Ahmed" } }],
+                messages: [{ from: "966501234567", id: "wamid-4", text: { body: "hello" } }],
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const signature = await signBody(body, "secret");
+    const sendText = vi.fn().mockResolvedValue({ success: true, messageId: "fallback-3" });
+    const ctx = {
+      runMutation: vi.fn(async (_ref: unknown, args: { messageId?: string; failureCode?: string }) => {
+        if (args.messageId === "wamid-4" && !args.failureCode) {
+          return { proceed: true, status: "processing" };
+        }
+        return null;
+      }),
+    };
+
+    const response = await handleWhatsAppWebhookPostRequest(
+      ctx,
+      makeWebhookRequest(body, signature),
+      {
+        createService: () => ({ sendText } as any),
+        processEvent: vi.fn(async () => ({
+          threadId: "t1",
+          sendResults: [{ success: false, error: "boom" }],
+        })) as any,
+      },
+    );
+
+    expect(response.status).toBe(200);
+    expect(sendText).toHaveBeenCalledTimes(1);
+    expect(ctx.runMutation).toHaveBeenCalled();
   });
 
   it("marks failures and sends a fallback reply", async () => {

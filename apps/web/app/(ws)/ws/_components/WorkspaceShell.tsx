@@ -62,15 +62,13 @@ export default function WorkspaceShell({
       data-variant={variant}
       dir={direction}
       className={cn(
-        "app-shell-height bg-[var(--workspace-shell)]",
-        isAssistantHome
-          ? "app-shell-fixed-height flex min-h-0 flex-col overflow-hidden lg:flex-row"
-          : "lg:flex lg:overflow-hidden",
+        "app-shell-height app-shell-fixed-height flex h-full min-h-0 w-full flex-col overflow-hidden bg-[var(--workspace-shell)] lg:flex-row",
+        !isAssistantHome && "lg:overflow-hidden",
       )}
     >
       <div
         className={cn(
-          "relative hidden h-full shrink-0 lg:flex motion-safe:transition-[width] motion-safe:duration-300 motion-safe:ease-out",
+          "relative hidden h-full min-h-0 shrink-0 lg:flex motion-safe:transition-[width] motion-safe:duration-300 motion-safe:ease-out",
           sidebarCollapsed ? "w-24" : WORKSPACE_SIDEBAR_WIDTH_CLASS,
         )}
       >
@@ -150,7 +148,7 @@ export default function WorkspaceShell({
         </div>
       </div>
 
-      <div className="relative flex min-h-0 min-w-0 flex-1 basis-0 flex-col bg-transparent lg:overflow-hidden">
+      <div className="relative flex h-full min-h-0 min-w-0 flex-1 basis-0 flex-col bg-transparent lg:overflow-hidden">
         <WorkspaceTopNavbar
           user={user}
           organization={organization}
@@ -171,7 +169,7 @@ export default function WorkspaceShell({
 
         <main
           className={cn(
-            "flex min-h-0 min-w-0 flex-1 basis-0 flex-col motion-safe:animate-zone-page-enter",
+            "flex h-full min-h-0 min-w-0 flex-1 basis-0 flex-col motion-safe:animate-zone-page-enter",
             isAssistantHome ? "overflow-hidden" : "overflow-auto",
           )}
         >
@@ -180,7 +178,7 @@ export default function WorkspaceShell({
           <div
             data-slot="workspace-content"
             className={cn(
-              "flex min-h-0 min-w-0 flex-1 basis-0 flex-col",
+              "flex h-full min-h-0 min-w-0 flex-1 basis-0 flex-col",
               isAssistantVariant ? "pt-3 sm:pt-4" : undefined,
             )}
           >

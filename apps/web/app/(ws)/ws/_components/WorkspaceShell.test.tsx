@@ -77,6 +77,7 @@ describe("WorkspaceShell", () => {
 
     expect(markup).toContain("data-slot=\"workspace-shell\"");
     expect(markup).toContain("data-variant=\"default\"");
+    expect(markup).toContain("flex h-full min-h-0 w-full flex-col overflow-hidden");
     expect(markup).toContain("data-slot=\"workspace-sidebar-desktop\"");
     expect(markup).toContain("data-slot=\"workspace-sidebar-trigger\"");
     expect(markup).toContain("data-slot=\"workspace-top-navbar\"");
@@ -86,7 +87,7 @@ describe("WorkspaceShell", () => {
     expect(markup).toContain("/ws/notifications");
     expect(markup).toContain("/ws/inbox");
     expect(markup).toContain("data-slot=\"workspace-content\"");
-    expect(markup).toContain("flex min-h-0 min-w-0 flex-1 basis-0 flex-col");
+    expect(markup).toContain("flex h-full min-h-0 min-w-0 flex-1 basis-0 flex-col");
   });
 
   it("renders assistant-first chrome when the overview variant is requested", () => {

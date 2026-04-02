@@ -172,7 +172,7 @@ const components: Partial<Components> = {
 		</h6>
 	),
 	p: ({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
-		<p className="leading-6 not-first:mt-4 break-all" {...props}>
+		<p className="leading-6 not-first:mt-4 break-words [overflow-wrap:anywhere]" {...props}>
 			{children}
 		</p>
 	),
@@ -193,9 +193,6 @@ const components: Partial<Components> = {
 		const dataType = props["data-type"];
 		const dataId = props["data-id"];
 		const dataLabel = props["data-label"];
-
-		console.log("dataType", className);
-
 		if (className?.includes("mention")) {
 			return (
 				<span
@@ -225,7 +222,7 @@ const components: Partial<Components> = {
 		...props
 	}: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
 		<a
-			className="font-medium underline underline-offset-4 whitespace-pre-wrap break-all"
+			className="font-medium underline underline-offset-4 whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
 			target="_blank"
 			rel="noreferrer"
 			{...props}
@@ -244,7 +241,7 @@ const components: Partial<Components> = {
 		</ul>
 	),
 	li: ({ children, ...props }: React.LiHTMLAttributes<HTMLLIElement>) => (
-		<li className="mt-2 break-all" {...props}>
+		<li className="mt-2 break-words [overflow-wrap:anywhere]" {...props}>
 			{children}
 		</li>
 	),
@@ -312,7 +309,7 @@ const components: Partial<Components> = {
 		return (
 			<code
 				className={cn(
-					"rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm break-all",
+					"rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm break-words [overflow-wrap:anywhere]",
 					className,
 				)}
 				{...props}

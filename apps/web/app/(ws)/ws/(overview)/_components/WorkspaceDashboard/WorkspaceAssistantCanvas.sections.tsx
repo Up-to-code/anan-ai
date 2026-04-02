@@ -153,7 +153,7 @@ function AssistantSurface({
     <LayoutGroup id="workspace-assistant-surface">
       <div
         data-slot="assistant-surface"
-        className="assistant-composer-dock-safe-area relative flex h-full min-h-0 min-w-0 flex-1 basis-0 flex-col overflow-hidden bg-[linear-gradient(180deg,var(--workspace-canvas)_0%,color-mix(in_srgb,var(--workspace-canvas)_88%,var(--workspace-shell))_100%)] text-slate-900 dark:text-slate-100"
+        className="assistant-composer-dock-safe-area relative grid min-h-0 min-w-0 flex-1 basis-0 grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-[linear-gradient(180deg,var(--workspace-canvas)_0%,color-mix(in_srgb,var(--workspace-canvas)_88%,var(--workspace-shell))_100%)] text-slate-900 dark:text-slate-100"
         style={surfaceStyle}
       >
         <div
@@ -162,21 +162,21 @@ function AssistantSurface({
         />
 
         <Conversation
-          className="relative z-0 h-full min-h-0 flex-1 basis-0 px-4 sm:px-8 lg:px-10 xl:px-12"
+          className="relative z-0 min-h-0 px-4 sm:px-8 lg:px-10 xl:px-12"
           contextRef={stickToBottomRef}
         >
-          <ConversationContent className="mx-auto w-full max-w-6xl justify-start gap-6 pt-5 sm:pt-6 lg:pt-6 pb-[calc(var(--assistant-composer-height)+var(--assistant-composer-dock-inset)+var(--assistant-content-end-gap))]">
+          <ConversationContent className="mx-auto w-full max-w-6xl justify-start gap-6 pt-5 sm:pt-6 lg:pt-6 pb-6 sm:pb-8">
             {children}
           </ConversationContent>
           <ConversationScrollButton
             alignment="center"
-            className="bottom-[calc(var(--assistant-composer-height)+var(--assistant-composer-dock-inset)+var(--assistant-scroll-button-gap))] shadow-2xl"
+            className="bottom-[var(--assistant-scroll-button-gap)] shadow-2xl"
           />
         </Conversation>
 
         <div
           data-slot={dockSlot}
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-4 pb-[var(--assistant-composer-dock-inset)] sm:px-8 lg:px-10 xl:px-12"
+          className="pointer-events-none relative z-20 px-4 pb-[var(--assistant-composer-dock-inset)] pt-4 sm:px-8 lg:px-10 xl:px-12"
         >
           <div
             ref={composerStackRef}
