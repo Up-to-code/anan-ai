@@ -58,6 +58,11 @@ it("aggregates project analytics from viewers, deals, offer cases, and tracked e
     email: "broker3@example.com",
     name: "Broker Three",
   });
+  const brokerSixIdentity = makeIdentity({
+    subject: "auth-broker-6",
+    email: "broker6@example.com",
+    name: "Broker Six",
+  });
 
   const {
     ownerBrokerId,
@@ -65,6 +70,7 @@ it("aggregates project analytics from viewers, deals, offer cases, and tracked e
     brokerThreeId,
     brokerFourId,
     brokerFiveId,
+    brokerSixId,
     propertyId,
   } = await t.run(async (ctx) => {
     const ownerBroker = await ctx.db.insert("brokers", { name: "Owner Broker", slug: "owner-broker" } as any);
@@ -72,6 +78,7 @@ it("aggregates project analytics from viewers, deals, offer cases, and tracked e
     const brokerThree = await ctx.db.insert("brokers", { name: "Broker Three", slug: "broker-three", phone: "0500000003" } as any);
     const brokerFour = await ctx.db.insert("brokers", { name: "Broker Four", slug: "broker-four", phone: "0500000004" } as any);
     const brokerFive = await ctx.db.insert("brokers", { name: "Broker Five", slug: "broker-five", phone: "0500000005" } as any);
+    const brokerSix = await ctx.db.insert("brokers", { name: "Broker Six", slug: "broker-six", phone: "0500000006" } as any);
     const trackedClientId = await ctx.db.insert("crmClients", {
       ownerAuthUserId: "auth-owner",
       brokerId: ownerBroker,
@@ -89,6 +96,17 @@ it("aggregates project analytics from viewers, deals, offer cases, and tracked e
       searchText: "Analytics Project Riyadh",
       publicationState: "published",
       brokerId: ownerBroker,
+    } as any);
+    const permitReviewPackageId = await ctx.db.insert("offerPackages", {
+      propertyId: projectId,
+      ownerAuthUserId: "auth-owner",
+      fromBrokerId: ownerBroker,
+      askingPrice: 100,
+      visibility: "open",
+      allowedAudience: "brokers",
+      permitStatus: "Pending review",
+      createdAt: 1_737_000_305_000,
+      updatedAt: 1_737_000_305_000,
     } as any);
 
     await Promise.all([
@@ -127,6 +145,26 @@ it("aggregates project analytics from viewers, deals, offer cases, and tracked e
         propertyId: projectId,
         brokerId: ownerBroker,
         createdAt: 1_737_000_250_000,
+      } as any),
+      ctx.db.insert("deals", {
+        title: "Broker Three Deal",
+        stage: "new",
+        relationType: "broker_managed",
+        relatedBrokerId: brokerThree,
+        contactName: "عميل جديد",
+        propertyId: projectId,
+        brokerId: ownerBroker,
+        createdAt: 1_737_000_260_000,
+      } as any),
+      ctx.db.insert("deals", {
+        title: "Broker Six Deal",
+        stage: "lost",
+        relationType: "broker_managed",
+        relatedBrokerId: brokerSix,
+        contactName: "عميل مفقود",
+        propertyId: projectId,
+        brokerId: ownerBroker,
+        createdAt: 1_737_000_265_000,
       } as any),
     ]);
 
@@ -197,6 +235,21 @@ it("aggregates project analytics from viewers, deals, offer cases, and tracked e
       updatedAt: 1_737_000_345_000,
       lastActivityAt: 1_737_000_345_000,
     } as any);
+    const brokerFourPermitReviewCaseId = await ctx.db.insert("offerCases", {
+      offerPackageId: permitReviewPackageId,
+      type: "open_offer",
+      stage: "engaged",
+      visibility: "private",
+      initiatedByAuthUserId: "auth-owner",
+      headline: "Broker Four Permit Review Case",
+      clientContext: {
+        clientName: "عميل يحتاج مراجعة تصريح",
+        clientNeed: "شراء",
+      },
+      createdAt: 1_737_000_350_000,
+      updatedAt: 1_737_000_355_000,
+      lastActivityAt: 1_737_000_355_000,
+    } as any);
 
     await Promise.all([
       ctx.db.insert("offerCaseParticipants", {
@@ -252,6 +305,24 @@ it("aggregates project analytics from viewers, deals, offer cases, and tracked e
         status: "accepted",
         createdAt: 1_737_000_342_000,
         updatedAt: 1_737_000_342_000,
+      } as any),
+      ctx.db.insert("offerCaseParticipants", {
+        offerCaseId: brokerFourPermitReviewCaseId,
+        authUserId: "auth-owner",
+        brokerId: ownerBroker,
+        role: "inventory_owner",
+        status: "active",
+        createdAt: 1_737_000_350_000,
+        updatedAt: 1_737_000_350_000,
+      } as any),
+      ctx.db.insert("offerCaseParticipants", {
+        offerCaseId: brokerFourPermitReviewCaseId,
+        authUserId: "auth-broker-4",
+        brokerId: brokerFour,
+        role: "execution_partner",
+        status: "accepted",
+        createdAt: 1_737_000_352_000,
+        updatedAt: 1_737_000_352_000,
       } as any),
       ctx.db.insert("offerActivities", {
         offerCaseId: engagedCaseId,
@@ -314,6 +385,13 @@ it("aggregates project analytics from viewers, deals, offer cases, and tracked e
     role: "broker",
     brokerId: brokerFiveId,
   });
+  await seedProfile(t, {
+    authUserId: "auth-broker-6",
+    email: "broker6@example.com",
+    name: "Broker Six",
+    role: "broker",
+    brokerId: brokerSixId,
+  });
 
   await t.withIdentity(brokerTwoIdentity).mutation(
     api.shared_logic.projectAnalytics.recordProjectAnalyticsEvent as never,
@@ -354,12 +432,12 @@ it("aggregates project analytics from viewers, deals, offer cases, and tracked e
   )) as any;
 
   expect(analytics.kpis).toEqual({
-    connectedBrokers: 4,
-    brokerManagedClients: 2,
+    connectedBrokers: 5,
+    brokerManagedClients: 4,
     totalViews: 2,
     totalClicks: 2,
-    activeCases: 3,
-    activeDeals: 2,
+    activeCases: 4,
+    activeDeals: 3,
   });
 
   expect(analytics.brokerRows).toEqual(
@@ -372,7 +450,7 @@ it("aggregates project analytics from viewers, deals, offer cases, and tracked e
       }),
       expect.objectContaining({
         brokerName: "Broker Three",
-        state: "viewer_only",
+        state: "client_linked",
         views: 1,
         clicks: 1,
       }),
@@ -384,33 +462,40 @@ it("aggregates project analytics from viewers, deals, offer cases, and tracked e
         brokerName: "Broker Five",
         state: "closed_won",
       }),
+      expect.objectContaining({
+        brokerName: "Broker Six",
+        state: "closed_lost",
+      }),
     ]),
   );
 
   expect(analytics.stageSummary).toEqual(
     expect.arrayContaining([
-      expect.objectContaining({ key: "deal:new", count: 1 }),
+      expect.objectContaining({ key: "deal:new", count: 2 }),
       expect.objectContaining({ key: "deal:contacted", count: 1 }),
       expect.objectContaining({ key: "deal:won", count: 1 }),
-      expect.objectContaining({ key: "offer_case:engaged", count: 2 }),
+      expect.objectContaining({ key: "deal:lost", count: 1 }),
+      expect.objectContaining({ key: "offer_case:targeted", count: 1 }),
+      expect.objectContaining({ key: "offer_case:engaged", count: 3 }),
     ]),
   );
 
   expect(analytics.developerSummary).toEqual({
-    totalCustomers: 5,
-    trackedCustomers: 3,
-    brokerManagedCustomers: 4,
+    totalCustomers: 8,
+    trackedCustomers: 5,
+    brokerManagedCustomers: 7,
     internalCustomers: 1,
-    activeBrokers: 3,
+    activeBrokers: 5,
     closedWonCustomers: 1,
-    closedLostCustomers: 0,
+    closedLostCustomers: 1,
   });
 
   expect(analytics.developerStageSummary).toEqual(
     expect.arrayContaining([
-      expect.objectContaining({ key: "new", count: 2 }),
-      expect.objectContaining({ key: "contacted", count: 2 }),
+      expect.objectContaining({ key: "new", count: 3 }),
+      expect.objectContaining({ key: "contacted", count: 3 }),
       expect.objectContaining({ key: "won", count: 1 }),
+      expect.objectContaining({ key: "lost", count: 1 }),
     ]),
   );
 
@@ -421,6 +506,8 @@ it("aggregates project analytics from viewers, deals, offer cases, and tracked e
       trackedCustomers: 2,
       brokerManagedCustomers: 2,
       internalCustomers: 1,
+      currentActivityKey: "in_stage",
+      currentActivityLabel: "في مرحلة",
     }),
   );
   expect(brokerTwoTracking.customers).toHaveLength(3);
@@ -430,13 +517,68 @@ it("aggregates project analytics from viewers, deals, offer cases, and tracked e
         name: "Tracked Client",
         relationType: "internal_client",
         isTrackedCustomer: true,
+        activityKey: "new_client",
+        activityLabel: "عميل جديد",
       }),
       expect.objectContaining({
         name: "عميل متابعة جديد",
         relationType: "broker_managed",
         isTrackedCustomer: false,
+        activityKey: "in_stage",
+        activityLabel: "في مرحلة",
+      }),
+      expect.objectContaining({
+        name: "عميل مرتبط",
+        relationType: "broker_managed",
+        isTrackedCustomer: true,
+        activityKey: "in_call",
+        activityLabel: "في مكالمة",
       }),
     ]),
+  );
+
+  const brokerThreeTracking = analytics.brokerTracking.find((entry: any) => entry.brokerName === "Broker Three");
+  expect(brokerThreeTracking).toEqual(
+    expect.objectContaining({
+      currentActivityKey: "new_client",
+      currentActivityLabel: "عميل جديد",
+    }),
+  );
+
+  const brokerFourTracking = analytics.brokerTracking.find((entry: any) => entry.brokerName === "Broker Four");
+  expect(brokerFourTracking).toEqual(
+    expect.objectContaining({
+      currentActivityKey: "permit_review",
+      currentActivityLabel: "مراجعة التصريح",
+    }),
+  );
+  expect(brokerFourTracking.customers).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        activityKey: "in_stage",
+        activityLabel: "في مرحلة",
+      }),
+      expect.objectContaining({
+        activityKey: "permit_review",
+        activityLabel: "مراجعة التصريح",
+      }),
+    ]),
+  );
+
+  const brokerFiveTracking = analytics.brokerTracking.find((entry: any) => entry.brokerName === "Broker Five");
+  expect(brokerFiveTracking).toEqual(
+    expect.objectContaining({
+      currentActivityKey: "closed_won",
+      currentActivityLabel: "إغلاق ناجح",
+    }),
+  );
+
+  const brokerSixTracking = analytics.brokerTracking.find((entry: any) => entry.brokerName === "Broker Six");
+  expect(brokerSixTracking).toEqual(
+    expect.objectContaining({
+      currentActivityKey: "closed_lost",
+      currentActivityLabel: "إغلاق غير مكتمل",
+    }),
   );
   expect(brokerTwoTracking.timeline).toEqual(
     expect.arrayContaining([

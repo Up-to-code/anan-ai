@@ -7,6 +7,7 @@ import { requireOwnedPropertyAccess, requirePropertyReadAccess } from "./propert
 type AnalyticsCtx = QueryCtx | MutationCtx;
 type DealRecord = Doc<"deals">;
 type OfferCaseRecord = Doc<"offerCases">;
+type OfferPackageRecord = Doc<"offerPackages">;
 type OfferActivityRecord = Doc<"offerActivities">;
 type CrmClientRecord = Doc<"crmClients">;
 type ProjectAnalyticsEventType =
@@ -25,6 +26,13 @@ type BrokerAnalyticsState =
   | "closed_lost";
 type DeveloperStageKey = DealRecord["stage"];
 type CustomerRelationType = "broker_managed" | "internal_client";
+type BrokerActivityKey =
+  | "new_client"
+  | "in_call"
+  | "in_stage"
+  | "permit_review"
+  | "closed_won"
+  | "closed_lost";
 
 const VISIBILITY_TREND_DAYS = 14;
 
@@ -120,6 +128,24 @@ function interactionLabel(eventType: ProjectAnalyticsEventType) {
   return "فتح ملف";
 }
 
+function brokerActivityLabel(activityKey: BrokerActivityKey) {
+  if (activityKey === "new_client") return "عميل جديد";
+  if (activityKey === "in_call") return "في مكالمة";
+  if (activityKey === "in_stage") return "في مرحلة";
+  if (activityKey === "permit_review") return "مراجعة التصريح";
+  if (activityKey === "closed_won") return "إغلاق ناجح";
+  return "إغلاق غير مكتمل";
+}
+
+function brokerActivityPriority(activityKey: BrokerActivityKey) {
+  if (activityKey === "closed_won") return 5;
+  if (activityKey === "closed_lost") return 4;
+  if (activityKey === "permit_review") return 3;
+  if (activityKey === "in_stage") return 2;
+  if (activityKey === "in_call") return 1;
+  return 0;
+}
+
 function offerActivityTitle(activity: OfferActivityRecord) {
   if (activity.message?.trim()) return activity.message.trim();
   if (activity.kind === "case_created") return "تم فتح متابعة عميل";
@@ -133,6 +159,52 @@ function offerActivityTitle(activity: OfferActivityRecord) {
   if (activity.kind === "closed_lost") return "تم فقدان العميل";
   if (activity.kind === "archived") return "تمت أرشفة الحالة";
   return "تمت إضافة ملاحظة على الحالة";
+}
+
+function normalizePermitStatus(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : null;
+}
+
+function isPermitReviewStatus(value: string | null | undefined) {
+  const normalized = normalizePermitStatus(value);
+  if (!normalized) return false;
+  const lower = normalized.toLowerCase();
+  return /review|pending|waiting|required|needed|permit|permit review|مراجعة|قيد|بانتظار|مطلوب/.test(lower);
+}
+
+function resolveBrokerActivity(args: {
+  deal?: DealRecord | null;
+  offerCase?: OfferCaseRecord | null;
+  offerPackage?: OfferPackageRecord | null;
+}): BrokerActivityKey {
+  const { deal, offerCase, offerPackage } = args;
+
+  if (deal?.stage === "won" || offerCase?.stage === "closed_won") return "closed_won";
+  if (deal?.stage === "lost" || offerCase?.stage === "closed_lost") return "closed_lost";
+
+  if (isPermitReviewStatus(offerPackage?.permitStatus)) {
+    return "permit_review";
+  }
+
+  if (deal?.stage === "contacted") return "in_call";
+  if (deal?.stage === "negotiation") return "in_stage";
+  if (deal?.stage === "new") return "new_client";
+
+  if (offerCase) {
+    if (["draft", "open", "targeted", "engaged", "agreed"].includes(offerCase.stage)) {
+      return "in_stage";
+    }
+  }
+
+  return "new_client";
+}
+
+function resolveBrokerCurrentActivity(customers: Array<{ activityKey: BrokerActivityKey }>) {
+  return customers.reduce<BrokerActivityKey | null>((best, customer) => {
+    if (!best) return customer.activityKey;
+    return brokerActivityPriority(customer.activityKey) > brokerActivityPriority(best) ? customer.activityKey : best;
+  }, null);
 }
 
 function getUtcDateKey(timestamp: number) {
@@ -250,6 +322,7 @@ async function buildAnalytics(args: {
     listOfferCasesForProperty(ctx, propertyId),
   ]);
 
+  const offerPackages = caseResult.packages;
   const offerCases = caseResult.cases;
   const [participants, offerActivities, viewerProfiles, actorProfiles] = await Promise.all([
     listParticipantsForCases(
@@ -284,6 +357,10 @@ async function buildAnalytics(args: {
     if (crmClient?._id) {
       crmClientsById.set(String(crmClient._id), crmClient);
     }
+  }
+  const offerPackagesById = new Map<string, OfferPackageRecord>();
+  for (const offerPackage of offerPackages) {
+    offerPackagesById.set(String(offerPackage._id), offerPackage);
   }
 
   const activeViewerRows = viewerAccessRows.filter((entry) => entry.status === "active");
@@ -371,12 +448,41 @@ async function buildAnalytics(args: {
           !brokerDeals.some((deal) => String(deal._id) === String(offerCase.linkedDealId)),
       );
 
+      const standaloneCustomerRows = standaloneCases.map((offerCase) => {
+        const relatedPackage = offerPackagesById.get(String(offerCase.offerPackageId)) ?? null;
+        const activityKey = resolveBrokerActivity({
+          offerCase,
+          offerPackage: relatedPackage,
+        });
+
+        return {
+          id: `offer:${String(offerCase._id)}`,
+          name: offerCase.clientContext?.clientName ?? offerCase.headline ?? "عميل من متابعة وسيط",
+          relationType: "broker_managed" as const,
+          relationTypeLabel: relationTypeLabel("broker_managed"),
+          isTrackedCustomer: Boolean(offerCase.clientContext?.crmClientId || offerCase.linkedDealId),
+          activityKey,
+          activityLabel: brokerActivityLabel(activityKey),
+          stageKey: mapOfferCaseStageToDeveloperStage(offerCase.stage),
+          stageLabel: developerStageLabel(mapOfferCaseStageToDeveloperStage(offerCase.stage)),
+          secondaryStateKey: offerCase.stage,
+          secondaryStateLabel: offerCaseStageLabel(offerCase.stage),
+          lastActivityAt: offerCase.lastActivityAt ?? offerCase.updatedAt ?? offerCase.createdAt,
+        };
+      });
+
       const customers = [
         ...brokerDeals.map((deal) => {
           const relationType = normalizeRelationType(deal);
           const relatedCase = deal.offerCaseId
             ? brokerCases.find((offerCase) => String(offerCase._id) === String(deal.offerCaseId))
             : null;
+          const relatedPackage = relatedCase ? offerPackagesById.get(String(relatedCase.offerPackageId)) ?? null : null;
+          const activityKey = resolveBrokerActivity({
+            deal,
+            offerCase: relatedCase,
+            offerPackage: relatedPackage,
+          });
 
           return {
             id: `deal:${String(deal._id)}`,
@@ -387,6 +493,8 @@ async function buildAnalytics(args: {
             relationType,
             relationTypeLabel: relationTypeLabel(relationType),
             isTrackedCustomer: true,
+            activityKey,
+            activityLabel: brokerActivityLabel(activityKey),
             stageKey: deal.stage,
             stageLabel: developerStageLabel(deal.stage),
             secondaryStateKey: relatedCase ? relatedCase.stage : null,
@@ -394,19 +502,10 @@ async function buildAnalytics(args: {
             lastActivityAt: deal.createdAt ?? deal._creationTime ?? null,
           };
         }),
-        ...standaloneCases.map((offerCase) => ({
-          id: `offer:${String(offerCase._id)}`,
-          name: offerCase.clientContext?.clientName ?? offerCase.headline ?? "عميل من متابعة وسيط",
-          relationType: "broker_managed" as const,
-          relationTypeLabel: relationTypeLabel("broker_managed"),
-          isTrackedCustomer: Boolean(offerCase.clientContext?.crmClientId || offerCase.linkedDealId),
-          stageKey: mapOfferCaseStageToDeveloperStage(offerCase.stage),
-          stageLabel: developerStageLabel(mapOfferCaseStageToDeveloperStage(offerCase.stage)),
-          secondaryStateKey: offerCase.stage,
-          secondaryStateLabel: offerCaseStageLabel(offerCase.stage),
-          lastActivityAt: offerCase.lastActivityAt ?? offerCase.updatedAt ?? offerCase.createdAt,
-        })),
+        ...standaloneCustomerRows,
       ].sort((left, right) => (right.lastActivityAt ?? 0) - (left.lastActivityAt ?? 0));
+
+      const currentActivityKey = resolveBrokerCurrentActivity(customers);
 
       const timeline = [
         ...brokerDeals.map((deal) => ({
@@ -469,6 +568,8 @@ async function buildAnalytics(args: {
         brokerPhone: broker?.phone ?? brokerProfiles[0]?.email ?? null,
         state,
         stateLabel: brokerStateLabel(state),
+        currentActivityKey,
+        currentActivityLabel: currentActivityKey ? brokerActivityLabel(currentActivityKey) : null,
         linkedClientName,
         currentStageLabel: latestDeal
           ? dealStageLabel(latestDeal.stage)

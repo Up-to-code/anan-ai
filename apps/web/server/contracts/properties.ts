@@ -233,6 +233,14 @@ export type WorkspaceProjectAnalyticsInteractionPoint = {
   count: number;
 };
 
+export type WorkspaceProjectAnalyticsBrokerActivityKey =
+  | "new_client"
+  | "in_call"
+  | "in_stage"
+  | "permit_review"
+  | "closed_won"
+  | "closed_lost";
+
 export type WorkspaceProjectAnalyticsDeveloperStageKey =
   | "new"
   | "contacted"
@@ -266,6 +274,8 @@ export type WorkspaceProjectAnalyticsBrokerTrackingCustomer = {
   relationType: WorkspaceProjectAnalyticsCustomerRelationType;
   relationTypeLabel: string;
   isTrackedCustomer: boolean;
+  activityKey: WorkspaceProjectAnalyticsBrokerActivityKey;
+  activityLabel: string;
   stageKey: WorkspaceProjectAnalyticsDeveloperStageKey;
   stageLabel: string;
   secondaryStateKey: string | null;
@@ -288,6 +298,8 @@ export type WorkspaceProjectAnalyticsBrokerTrackingEntry = {
   brokerPhone: string | null;
   state: WorkspaceProjectAnalyticsBrokerState;
   stateLabel: string;
+  currentActivityKey: WorkspaceProjectAnalyticsBrokerActivityKey | null;
+  currentActivityLabel: string | null;
   lastActivityAt: number | null;
   views: number;
   clicks: number;

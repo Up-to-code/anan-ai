@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, it, vi } from "vitest";
+import DeveloperProjectAnalyticsPage from "../../ProjectAnalyticsPage/DeveloperProjectAnalyticsPage";
 
 function buildAnalyticsPayload() {
   return {
@@ -20,6 +21,8 @@ function buildAnalyticsPayload() {
         brokerPhone: "0550000000",
         state: "client_linked",
         stateLabel: "عميل مرتبط",
+        currentActivityKey: "in_stage",
+        currentActivityLabel: "في مرحلة",
         linkedClientName: "عميل مهتم",
         currentStageLabel: "تم التواصل",
         lastActivityAt: 1737000000000,
@@ -78,6 +81,8 @@ function buildAnalyticsPayload() {
         lastActivityAt: 1737000000000,
         views: 3,
         clicks: 2,
+        currentActivityKey: "in_stage",
+        currentActivityLabel: "في مرحلة",
         totalCustomers: 2,
         trackedCustomers: 1,
         brokerManagedCustomers: 2,
@@ -91,6 +96,8 @@ function buildAnalyticsPayload() {
             relationType: "broker_managed",
             relationTypeLabel: "عميل عبر وسيط",
             isTrackedCustomer: true,
+            activityKey: "in_call",
+            activityLabel: "في مكالمة",
             stageKey: "contacted",
             stageLabel: "مرحلة الاتصال",
             secondaryStateKey: "engaged",
@@ -103,6 +110,8 @@ function buildAnalyticsPayload() {
             relationType: "broker_managed",
             relationTypeLabel: "عميل عبر وسيط",
             isTrackedCustomer: false,
+            activityKey: "new_client",
+            activityLabel: "عميل جديد",
             stageKey: "new",
             stageLabel: "مرحلة جديدة",
             secondaryStateKey: "targeted",
@@ -121,6 +130,114 @@ function buildAnalyticsPayload() {
         ],
       },
     ],
+  };
+}
+
+function buildExpandedAnalyticsPayload() {
+  const base = buildAnalyticsPayload();
+  return {
+    ...base,
+    brokerTracking: Array.from({ length: 6 }, (_, index) => {
+      const brokerNumber = index + 1;
+      const activityKey =
+        brokerNumber === 1
+          ? "new_client"
+          : brokerNumber === 2
+            ? "in_call"
+            : brokerNumber === 3
+              ? "in_stage"
+              : brokerNumber === 4
+                ? "permit_review"
+                : brokerNumber === 5
+                  ? "closed_won"
+                  : "closed_lost";
+      const activityLabel =
+        brokerNumber === 1
+          ? "عميل جديد"
+          : brokerNumber === 2
+            ? "في مكالمة"
+            : brokerNumber === 3
+              ? "في مرحلة"
+              : brokerNumber === 4
+                ? "مراجعة التصريح"
+                : brokerNumber === 5
+                ? "إغلاق ناجح"
+                  : "إغلاق غير مكتمل";
+      const totalCustomers = 7 - brokerNumber;
+
+      return {
+        brokerId: `broker-${brokerNumber}`,
+        brokerName: `وسيط ${brokerNumber}`,
+        brokerAvatarLabel: String(brokerNumber),
+        brokerPhone: `055000000${brokerNumber}`,
+        state:
+          brokerNumber === 5
+            ? "closed_won"
+            : brokerNumber === 6
+              ? "closed_lost"
+              : brokerNumber === 4
+                ? "offer_active"
+                : "client_linked",
+        stateLabel:
+          brokerNumber === 5
+            ? "إغلاق ناجح"
+            : brokerNumber === 6
+              ? "إغلاق غير مكتمل"
+              : brokerNumber === 4
+                ? "عرض نشط"
+                : "عميل مرتبط",
+        currentActivityKey: activityKey,
+        currentActivityLabel: activityLabel,
+        lastActivityAt: 1737000000000 + brokerNumber * 1000,
+        views: brokerNumber,
+        clicks: brokerNumber - 1,
+        totalCustomers,
+        trackedCustomers: Math.max(0, totalCustomers - 1),
+        brokerManagedCustomers: totalCustomers,
+        internalCustomers: 0,
+        closedWonCustomers: brokerNumber === 5 ? 1 : 0,
+        closedLostCustomers: brokerNumber === 6 ? 1 : 0,
+        customers: [
+          {
+            id: `deal:${brokerNumber}`,
+            name: `عميل ${brokerNumber}`,
+            relationType: "broker_managed",
+            relationTypeLabel: "عميل عبر وسيط",
+            isTrackedCustomer: true,
+            activityKey,
+            activityLabel,
+            stageKey:
+              brokerNumber === 5
+                ? "won"
+                : brokerNumber === 6
+                  ? "lost"
+                  : brokerNumber === 2
+                    ? "contacted"
+                    : "new",
+            stageLabel:
+              brokerNumber === 5
+                ? "إغلاق ناجح"
+                : brokerNumber === 6
+                  ? "إغلاق غير مكتمل"
+                  : brokerNumber === 2
+                    ? "مرحلة الاتصال"
+                    : "مرحلة جديدة",
+            secondaryStateKey: null,
+            secondaryStateLabel: null,
+            lastActivityAt: 1737000000000 + brokerNumber * 1000,
+          },
+        ],
+        timeline: [
+          {
+            id: `timeline:${brokerNumber}`,
+            kind: brokerNumber === 5 || brokerNumber === 6 ? "closed" : "deal",
+            title: `وسيط ${brokerNumber}`,
+            subtitle: `عميل ${brokerNumber}`,
+            createdAt: 1737000000000 + brokerNumber * 1000,
+          },
+        ],
+      };
+    }),
   };
 }
 
@@ -246,6 +363,80 @@ it("renders the developer owner analytics page", async () => {
   expect(markup).toContain("Broker Tracking");
   expect(markup).toContain("Business Overview");
   expect(markup).toContain("إجمالي العملاء");
+  expect(markup).toContain("في مرحلة");
+});
+
+it("collapses and expands the developer broker list in fixed batches", () => {
+  const project = {
+    id: "property-1",
+    title: "برج الاختبار",
+    location: "الرياض",
+    priceLabel: "2,200,000 ريال",
+    summary: "وصف",
+    shortDescription: "وصف",
+    image: "https://images.unsplash.com/photo-1",
+    galleryImages: [],
+    gallery: {
+      coverImageKey: null,
+      displayMode: "cover",
+      aspectRatio: "landscape",
+    },
+    amenities: [],
+    parking: {
+      hasParking: false,
+      spaces: null,
+      label: "لا يوجد",
+    },
+    permit: {
+      statusLabel: "جاهز",
+      privateSummary: null,
+      privateFiles: [],
+      visibility: "hidden",
+      canShowPrivatePanel: false,
+    },
+    specs: {
+      rooms: "4",
+      baths: "4",
+      area: "380",
+      status: "published",
+    },
+    publicationState: "published",
+    accessMode: "owner",
+    canEdit: true,
+    visibility: {
+      clientVisibility: "public",
+      viewers: [],
+    },
+    assets: [],
+    units: [],
+    brokers: [],
+  } as any;
+
+  const collapsedMarkup = renderToStaticMarkup(
+    <DeveloperProjectAnalyticsPage
+      project={project}
+      analytics={buildExpandedAnalyticsPayload()}
+      initialActiveTab="brokers"
+      initialVisibleBrokerCount={5}
+    />,
+  );
+
+  expect(collapsedMarkup).toContain("عرض المزيد");
+  expect(collapsedMarkup).toContain("وسيط 1");
+  expect(collapsedMarkup).toContain("وسيط 5");
+  expect(collapsedMarkup).not.toContain("وسيط 6");
+
+  const expandedMarkup = renderToStaticMarkup(
+    <DeveloperProjectAnalyticsPage
+      project={project}
+      analytics={buildExpandedAnalyticsPayload()}
+      initialActiveTab="brokers"
+      initialVisibleBrokerCount={6}
+    />,
+  );
+
+  expect(expandedMarkup).toContain("عرض أقل");
+  expect(expandedMarkup).toContain("وسيط 6");
 });
 
 it("blocks shared viewers from opening owner analytics", async () => {

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  Activity,
   ArrowLeft,
   BarChart3,
   CheckCircle2,
@@ -27,6 +28,7 @@ import {
 import type {
   ProjectAnalyticsEventType,
   WorkspaceProjectAnalytics,
+  WorkspaceProjectAnalyticsBrokerActivityKey,
   WorkspaceProjectAnalyticsBrokerState,
   WorkspaceProjectAnalyticsBrokerTrackingEntry,
   WorkspaceProjectAnalyticsBrokerTrackingCustomer,
@@ -105,6 +107,15 @@ const BROKER_STATE_STYLES: Record<
   },
 };
 
+const BROKER_ACTIVITY_STYLES: Record<WorkspaceProjectAnalyticsBrokerActivityKey, string> = {
+  new_client: "border-slate-300 bg-slate-100 text-slate-700",
+  in_call: "border-sky-300 bg-sky-100 text-sky-700",
+  in_stage: "border-amber-300 bg-amber-100 text-amber-800",
+  permit_review: "border-orange-300 bg-orange-100 text-orange-800",
+  closed_won: "border-emerald-300 bg-emerald-100 text-emerald-800",
+  closed_lost: "border-rose-300 bg-rose-100 text-rose-800",
+};
+
 const PRIMARY_STAGE_BADGES: Record<WorkspaceProjectAnalyticsDeveloperStageKey, string> = {
   new: "border-slate-300 bg-slate-100 text-slate-700",
   contacted: "border-sky-300 bg-sky-100 text-sky-700",
@@ -174,6 +185,23 @@ function StateBadge({
 }) {
   return (
     <span className={classNames("inline-flex rounded-full border px-3 py-1 text-[11px] font-bold", BROKER_STATE_STYLES[state].badge)}>
+      {label}
+    </span>
+  );
+}
+
+function ActivityBadge({
+  activityKey,
+  label,
+}: {
+  activityKey: WorkspaceProjectAnalyticsBrokerActivityKey | null;
+  label: string | null;
+}) {
+  if (!activityKey || !label) return null;
+
+  return (
+    <span className={classNames("inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-bold", BROKER_ACTIVITY_STYLES[activityKey])}>
+      <Activity className="h-3.5 w-3.5" />
       {label}
     </span>
   );
@@ -427,9 +455,12 @@ function BrokerCard({
         stateStyles.card,
         isSelected && "ring-2 ring-[var(--workspace-highlight)] ring-offset-2 ring-offset-background",
       )}
-    >
+      >
       <div className="flex items-start justify-between gap-4">
-        <StateBadge state={broker.state} label={broker.stateLabel} />
+        <div className="flex flex-col items-start gap-2">
+          <StateBadge state={broker.state} label={broker.stateLabel} />
+          <ActivityBadge activityKey={broker.currentActivityKey} label={broker.currentActivityLabel} />
+        </div>
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-card text-base font-black text-foreground shadow-sm">
             {broker.brokerAvatarLabel}
@@ -476,6 +507,7 @@ function BrokerCustomerRow({
     <div className="rounded-[22px] border border-border/70 bg-background/70 p-4 text-right">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex flex-wrap justify-end gap-2">
+          <ActivityBadge activityKey={customer.activityKey} label={customer.activityLabel} />
           <PrimaryStageBadge stageKey={customer.stageKey} stageLabel={customer.stageLabel} />
           <CustomerSecondaryBadge label={customer.secondaryStateLabel} />
           <span className="inline-flex rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
@@ -595,6 +627,7 @@ function SelectedBrokerPanel({
                     <Clock3 className="h-3.5 w-3.5" />
                     {formatDateTime(broker.lastActivityAt)}
                   </span>
+                  <ActivityBadge activityKey={broker.currentActivityKey} label={broker.currentActivityLabel} />
                 </div>
               </div>
             </div>
@@ -602,8 +635,8 @@ function SelectedBrokerPanel({
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard label="إجمالي العملاء" value={broker.totalCustomers} />
+            <StatCard label="الحركة الحالية" value={broker.currentActivityLabel ?? "بدون نشاط"} tone="highlight" />
             <StatCard label="داخل النظام" value={broker.trackedCustomers} />
-            <StatCard label="عبر وسيط" value={broker.brokerManagedCustomers} />
             <StatCard label="إغلاقات ناجحة" value={broker.closedWonCustomers} tone="highlight" />
           </div>
         </div>
@@ -716,6 +749,8 @@ export default function DeveloperProjectAnalyticsPage({
   project,
   analytics,
   onTrackProjectEvent,
+  initialActiveTab = "overview",
+  initialVisibleBrokerCount,
 }: {
   project: WorkspaceProject;
   analytics: WorkspaceProjectAnalytics;
@@ -723,10 +758,15 @@ export default function DeveloperProjectAnalyticsPage({
     eventType: ProjectAnalyticsEventType;
     source: string;
   }) => Promise<{ ok: true }>;
+  initialActiveTab?: DeveloperTabKey;
+  initialVisibleBrokerCount?: number;
 }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<DeveloperTabKey>("overview");
+  const [activeTab, setActiveTab] = useState<DeveloperTabKey>(initialActiveTab);
   const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(analytics.brokerTracking[0]?.brokerId ?? null);
+  const [visibleBrokerCount, setVisibleBrokerCount] = useState(() =>
+    Math.min(initialVisibleBrokerCount ?? 5, analytics.brokerTracking.length),
+  );
   const [activeMetric, setActiveMetric] = useState<EngagementMetricKey>("views");
 
   useEffect(() => {
@@ -746,6 +786,10 @@ export default function DeveloperProjectAnalyticsPage({
     }
   }, [analytics.brokerTracking, selectedBrokerId]);
 
+  useEffect(() => {
+    setVisibleBrokerCount((current) => Math.min(current, analytics.brokerTracking.length));
+  }, [analytics.brokerTracking.length]);
+
   const selectedBroker = useMemo(
     () => analytics.brokerTracking.find((broker) => broker.brokerId === selectedBrokerId) ?? null,
     [analytics.brokerTracking, selectedBrokerId],
@@ -763,6 +807,10 @@ export default function DeveloperProjectAnalyticsPage({
         .slice(0, 4),
     [analytics.brokerTracking],
   );
+  const visibleBrokers = analytics.brokerTracking.slice(0, visibleBrokerCount);
+  const brokerListLimit = 5;
+  const hasMoreBrokers = analytics.brokerTracking.length > visibleBrokerCount;
+  const canCollapseBrokerList = visibleBrokerCount > brokerListLimit;
 
   return (
     <div className="min-h-full bg-background/60 pb-24">
@@ -793,11 +841,11 @@ export default function DeveloperProjectAnalyticsPage({
               <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
             </div>
             <div className="p-6 lg:p-8">
-              <div className="space-y-6 text-right">
-                <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-                  <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,var(--workspace-panel))] px-3 py-1.5 text-[11px] font-bold text-[var(--workspace-highlight)]">
-                      <BarChart3 className="h-4 w-4" />
+          <div className="space-y-6 text-right">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+              <div className="space-y-4">
+                <div className="inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,var(--workspace-panel))] px-3 py-1.5 text-[11px] font-bold text-[var(--workspace-highlight)]">
+                  <BarChart3 className="h-4 w-4" />
                       تحليل المطور للمشروع
                     </div>
                     <div>
@@ -820,17 +868,10 @@ export default function DeveloperProjectAnalyticsPage({
                       {project.specs.rooms}
                     </span>
                     <span className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-bold text-foreground">
-                      <CheckCircle2 className="h-4 w-4" />
+                    <CheckCircle2 className="h-4 w-4" />
                       {project.specs.area}
                     </span>
                   </div>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  <StatCard label="إجمالي العملاء" value={analytics.developerSummary.totalCustomers} tone="highlight" />
-                  <StatCard label="المضافون للنظام" value={analytics.developerSummary.trackedCustomers} />
-                  <StatCard label="الوسطاء النشطون" value={analytics.developerSummary.activeBrokers} tone="highlight" />
-                  <StatCard label="الإغلاقات الناجحة" value={analytics.developerSummary.closedWonCustomers} />
                 </div>
               </div>
             </div>
@@ -920,7 +961,7 @@ export default function DeveloperProjectAnalyticsPage({
             >
               {analytics.brokerTracking.length ? (
                 <div className="space-y-4">
-                  {analytics.brokerTracking.map((broker) => (
+                  {visibleBrokers.map((broker) => (
                     <BrokerCard
                       key={broker.brokerId}
                       broker={broker}
@@ -928,6 +969,37 @@ export default function DeveloperProjectAnalyticsPage({
                       onSelect={() => setSelectedBrokerId(broker.brokerId)}
                     />
                   ))}
+                  {(hasMoreBrokers || canCollapseBrokerList) ? (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-border/60 bg-muted/10 px-4 py-3 text-right">
+                      <div className="text-[12px] font-bold text-muted-foreground">
+                        يعرض {Math.min(visibleBrokerCount, analytics.brokerTracking.length)} من {analytics.brokerTracking.length}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {hasMoreBrokers ? (
+                          <button
+                          type="button"
+                          onClick={() =>
+                            setVisibleBrokerCount((current) =>
+                              Math.min(current + 5, analytics.brokerTracking.length),
+                            )
+                            }
+                            className="inline-flex items-center rounded-full border border-[color:color-mix(in_srgb,var(--workspace-highlight)_22%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,var(--workspace-panel))] px-4 py-2 text-[12px] font-bold text-foreground transition hover:bg-[color:color-mix(in_srgb,var(--workspace-highlight)_12%,var(--workspace-panel))]"
+                          >
+                            عرض المزيد
+                          </button>
+                        ) : null}
+                        {canCollapseBrokerList ? (
+                          <button
+                            type="button"
+                            onClick={() => setVisibleBrokerCount(brokerListLimit)}
+                            className="inline-flex items-center rounded-full border border-border/60 bg-background px-4 py-2 text-[12px] font-bold text-muted-foreground transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] hover:text-foreground"
+                          >
+                            عرض أقل
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <div className="rounded-[22px] border border-dashed border-border/70 bg-muted/15 px-4 py-12 text-center text-[13px] font-semibold text-muted-foreground">
