@@ -1,5 +1,5 @@
-import BuyerAssistantPage from "@/client_zone/assistant/BuyerAssistantPage";
+import AssistantScreen from "@/client_zone/mobile_web/screens/AssistantScreen";
 
 export default function BuyerAssistantRoute() {
-  return <BuyerAssistantPage />;
+  return <AssistantScreen />;
 }

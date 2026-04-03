@@ -74,8 +74,8 @@ export function useMobileLayout(): MobileLayout {
     const sizeTier = resolveSizeTier(width);
     const effectiveFontScale = Math.min(Math.max(fontScale, 1), 1.22);
     const contentPadding = sizeTier === "compact" ? 16 : sizeTier === "large" ? 22 : 20;
-    const cardRadius = sizeTier === "compact" ? 18 : 20;
-    const chipRadius = sizeTier === "compact" ? 14 : 16;
+    const cardRadius = sizeTier === "compact" ? 16 : 18;
+    const chipRadius = sizeTier === "compact" ? 13 : 14;
     const chipMinHeight = sizeTier === "compact" ? 40 : 44;
     const touchTarget = sizeTier === "compact" ? 44 : 48;
     const propertyCardWidth = Math.min(Math.max(width * (sizeTier === "compact" ? 0.8 : 0.74), 264), 352);
@@ -94,7 +94,7 @@ export function useMobileLayout(): MobileLayout {
       chipRadius,
       chipMinHeight,
       touchTarget,
-      composerHeight: sizeTier === "compact" ? 48 : 52,
+      composerHeight: sizeTier === "compact" ? 44 : 48,
       propertyCardWidth,
       propertyImageHeight,
       bubbleMaxWidth: Math.min(width - contentPadding * 2 - 28, width * 0.88),

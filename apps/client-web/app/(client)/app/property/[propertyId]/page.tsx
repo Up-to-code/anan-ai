@@ -1,4 +1,4 @@
-import BuyerPropertyPage from "@/client_zone/property/BuyerPropertyPage";
+import PropertyDetailScreen from "@/client_zone/mobile_web/screens/PropertyDetailScreen";
 
 export default async function BuyerPropertyRoute({
   params,
@@ -6,5 +6,5 @@ export default async function BuyerPropertyRoute({
   params: Promise<{ propertyId: string }>;
 }) {
   const { propertyId } = await params;
-  return <BuyerPropertyPage propertyId={propertyId} />;
+  return <PropertyDetailScreen propertyId={propertyId} />;
 }

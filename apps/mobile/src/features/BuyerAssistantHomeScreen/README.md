@@ -2,6 +2,8 @@
 
 Chat-first buyer home for the live mobile buyer experience.
 
-- `index.tsx` orchestrates the assistant header, property discovery, message list, and composer.
+- `index.tsx` orchestrates the feature-owned buyer assistant screen, welcome state, history sheet, and routing glue.
+- `ConversationTimeline.tsx` renders the new screen-specific message anatomy, property shelves, search blocks, and insight sections.
+- `ConversationComposer.tsx` owns the new buyer assistant composer and voice entry surface.
 - Conversation behavior lives in `usePropertyAssistant.ts` and `usePropertyFeed.ts`.
-- Shared chat visuals and AG-UI rendering come from `src/components/chat/`.
+- Shared hooks stay in `src/hooks/`; the visible screen layout is owned by this feature folder.

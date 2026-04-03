@@ -1,25 +1,35 @@
 import { useAction, useMutation } from "convex/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/convexApi";
-import { buildBuyerThreadTitle } from "@/lib/buyerAssistantShared";
+import {
+  buildStoredThreadRecord,
+  createLocalThreadId,
+  emptyThreadStore,
+  listThreadSummaries,
+  readStoredThread,
+  upsertStoredThread,
+} from "@/lib/mobileThreadStore";
 import {
   buildFallbackAssistantMessage,
   buildSuggestedPrompts,
 } from "@/lib/mobileData";
 import { buildMobileAgUiTurn } from "@/lib/mobileAgUi";
 import {
-  clearGuestThreadSnapshot,
-  loadGuestThreadSnapshot,
-  saveGuestThreadSnapshot,
+  clearGuestThreadStore,
+  loadGuestThreadStore,
+  saveGuestThreadStore,
 } from "@/lib/mobilePersistence";
 import type {
   MobileConversationMessage,
+  MobileGuestThreadStore,
   MobileProperty,
+  MobileSearchContext,
+  MobileStoredThread,
   MobileThreadSummary,
 } from "@/types/mobile";
 
 const LIVE_BACKEND_ENABLED = Boolean(process.env.EXPO_PUBLIC_CONVEX_URL);
-const LOCAL_THREAD_ID = "guest-current";
+const SEARCH_MORE_PROMPT = "اعرض نتائج مشابهة";
 
 type ClientAssistantResponse = {
   message: string;
@@ -94,32 +104,47 @@ function readLatestProperty(messages: MobileConversationMessage[]) {
   return null;
 }
 
-function buildLocalThreadSummary(args: {
-  messages: MobileConversationMessage[];
-  activeThreadId: string | null;
-  updatedAt: number;
-}): MobileThreadSummary | null {
-  if (args.messages.length === 0) return null;
-  const firstTimestamp = args.messages.find((message) => typeof message.createdAt === "number")?.createdAt ?? args.updatedAt;
-  const preview =
-    args.messages
-      .slice()
-      .reverse()
-      .find((message) => message.role === "assistant" || message.role === "user")?.text
-      ?.slice(0, 120) ?? undefined;
+function readLatestUserMessage(messages: MobileConversationMessage[]) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role === "user" && message.text.trim()) return message.text.trim();
+  }
+  return null;
+}
+
+function mergeSuggestedPrompts(prompts: string[] | undefined, property: MobileProperty | null) {
+  const nextPrompts = [...(prompts ?? buildSuggestedPrompts(property))];
+  if (property && !nextPrompts.includes(SEARCH_MORE_PROMPT)) {
+    nextPrompts.push(SEARCH_MORE_PROMPT);
+  }
+  return Array.from(new Set(nextPrompts));
+}
+
+function toActiveThreadState(thread: MobileStoredThread | null) {
+  if (!thread) {
+    return {
+      draft: "",
+      messages: [] as MobileConversationMessage[],
+      activeProperty: null as MobileProperty | null,
+      activeThreadId: null as string | null,
+      activeThreadKind: "welcome" as const,
+      updatedAt: Date.now(),
+    };
+  }
 
   return {
-    id: args.activeThreadId ?? LOCAL_THREAD_ID,
-    title: buildBuyerThreadTitle(args.messages),
-    createdAt: firstTimestamp,
-    updatedAt: args.updatedAt,
-    preview,
+    draft: thread.draft,
+    messages: thread.messages,
+    activeProperty: thread.activeProperty ?? readLatestProperty(thread.messages),
+    activeThreadId: thread.id,
+    activeThreadKind: thread.activeThreadKind,
+    updatedAt: thread.updatedAt,
   };
 }
 
 /**
  * WHY:   The buyer home screen needs one async source of truth for the same chat-first product model across mobile and public assistant surfaces.
- * WHAT:  Manages the active conversation, guest persistence, local history summary, and in-app advisor escalation.
+ * WHAT:  Manages the active conversation, local thread history, and in-app advisor escalation.
  * HOW:   Reuses the shared public assistant backend in live mode and falls back to the deterministic local assistant when Convex is unavailable.
  */
 function usePropertyAssistantController(args: {
@@ -155,22 +180,21 @@ function usePropertyAssistantController(args: {
   const [isHydrated, setIsHydrated] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAuthCallout, setShowAuthCallout] = useState(false);
+  const [threadStore, setThreadStore] = useState<MobileGuestThreadStore>(emptyThreadStore());
   const lastUpdatedAt = useRef(Date.now());
   const publicSessionRef = useRef<PublicAssistantSession | null>(null);
 
   useEffect(() => {
-    void loadGuestThreadSnapshot().then((snapshot) => {
-      if (!snapshot) {
-        setIsHydrated(true);
-        return;
-      }
-
-      setDraft(snapshot.draft);
-      setActiveThreadId(snapshot.activeThreadId);
-      setActiveThreadKind(snapshot.activeThreadKind);
-      setActiveProperty(snapshot.activeProperty);
-      setMessages(snapshot.messages);
-      lastUpdatedAt.current = snapshot.updatedAt;
+    void loadGuestThreadStore().then((store) => {
+      const activeThread = readStoredThread(store, store.activeThreadId);
+      const nextActiveState = toActiveThreadState(activeThread);
+      setThreadStore(store);
+      setDraft(nextActiveState.draft);
+      setMessages(nextActiveState.messages);
+      setActiveProperty(nextActiveState.activeProperty);
+      setActiveThreadId(nextActiveState.activeThreadId);
+      setActiveThreadKind(nextActiveState.activeThreadKind);
+      lastUpdatedAt.current = nextActiveState.updatedAt;
       setIsHydrated(true);
     });
   }, []);
@@ -178,28 +202,42 @@ function usePropertyAssistantController(args: {
   useEffect(() => {
     if (!isHydrated) return;
 
-    if (messages.length === 0 && activeThreadKind === "welcome" && !activeProperty && !draft.trim()) {
-      void clearGuestThreadSnapshot();
-      return;
-    }
+    setThreadStore((currentStore) => {
+      const currentRecord = readStoredThread(currentStore, activeThreadId);
+      const nextRecord = buildStoredThreadRecord({
+        id: activeThreadId,
+        draft,
+        activeThreadKind,
+        activeProperty,
+        messages,
+        updatedAt: lastUpdatedAt.current,
+        existing: currentRecord,
+      });
 
-    void saveGuestThreadSnapshot({
-      draft,
-      activeThreadId,
-      activeThreadKind,
-      activeProperty,
-      messages,
-      updatedAt: lastUpdatedAt.current,
+      const preservedThreads = activeThreadId
+        ? currentStore.threads.filter((thread) => thread.id !== activeThreadId)
+        : currentStore.threads;
+      const nextThreads = nextRecord ? upsertStoredThread(preservedThreads, nextRecord) : preservedThreads;
+      const nextStore = {
+        version: 2 as const,
+        activeThreadId: nextRecord?.id ?? null,
+        threads: nextThreads,
+      };
+
+      void saveGuestThreadStore(nextStore);
+      return nextStore;
     });
   }, [activeProperty, activeThreadId, activeThreadKind, draft, isHydrated, messages]);
 
-  const localThread = buildLocalThreadSummary({
-    messages,
-    activeThreadId,
-    updatedAt: lastUpdatedAt.current,
-  });
+  const recentThreads = useMemo(() => listThreadSummaries(threadStore), [threadStore]);
+  const latestUserMessage = useMemo(() => readLatestUserMessage(messages), [messages]);
 
-  const recentThreads = localThread ? [localThread] : [];
+  function ensureThreadIdentity() {
+    if (activeThreadId) return activeThreadId;
+    const nextThreadId = createLocalThreadId();
+    setActiveThreadId(nextThreadId);
+    return nextThreadId;
+  }
 
   function syncTranscriptToAccount() {
     setShowAuthCallout(false);
@@ -218,6 +256,7 @@ function usePropertyAssistantController(args: {
     const trimmed = prompt.trim();
     if (!trimmed) return;
 
+    const nextThreadId = ensureThreadIdentity();
     const userMessage: MobileConversationMessage = {
       id: `user-${Date.now()}`,
       role: "user",
@@ -226,8 +265,7 @@ function usePropertyAssistantController(args: {
       activePropertyId: activeProperty?.id,
     };
 
-    const nextMessages = [...messages, userMessage];
-    setMessages(nextMessages);
+    setMessages((current) => [...current, userMessage]);
     setDraft("");
     setIsSubmitting(true);
     setActiveThreadKind("live");
@@ -239,7 +277,7 @@ function usePropertyAssistantController(args: {
       if (args.askClientAssistant) {
         const response = await args.askClientAssistant({
           message: trimmed,
-          threadId: activeThreadId ?? undefined,
+          threadId: nextThreadId ?? undefined,
           selectedPropertyId: activeProperty?.id,
           inputMode,
           locale: "ar",
@@ -256,10 +294,7 @@ function usePropertyAssistantController(args: {
           createdAt: Date.now(),
           properties: response.properties,
           cards: response.cards,
-          suggestedPrompts:
-            response.suggestedPrompts.length > 0
-              ? [...response.suggestedPrompts]
-              : buildSuggestedPrompts(nextActiveProperty),
+          suggestedPrompts: mergeSuggestedPrompts(response.suggestedPrompts, nextActiveProperty ?? null),
           activePropertyId: nextActiveProperty?.id,
           requiresAuthForHandoff: response.requiresAuthForHandoff,
           uiTurn: buildMobileAgUiTurn({
@@ -269,7 +304,7 @@ function usePropertyAssistantController(args: {
           }),
         };
         setActiveProperty(nextActiveProperty ?? null);
-        setActiveThreadId(response.threadId ?? activeThreadId);
+        setActiveThreadId(response.threadId ?? nextThreadId);
         setShowAuthCallout(response.requiresAuthForHandoff);
       } else {
         assistantMessage = {
@@ -282,6 +317,7 @@ function usePropertyAssistantController(args: {
         if (assistantMessage.properties?.[0]) {
           setActiveProperty(assistantMessage.properties[0]);
         }
+        setActiveThreadId(nextThreadId);
       }
 
       lastUpdatedAt.current = assistantMessage.createdAt ?? Date.now();
@@ -297,7 +333,7 @@ function usePropertyAssistantController(args: {
             : "تعذر إكمال الطلب حالياً. حاول مرة أخرى بعد لحظات.",
         createdAt: Date.now(),
         properties: activeProperty ? [activeProperty] : undefined,
-        suggestedPrompts: buildSuggestedPrompts(activeProperty),
+        suggestedPrompts: mergeSuggestedPrompts(undefined, activeProperty),
         activePropertyId: activeProperty?.id,
         uiTurn:
           activeProperty
@@ -318,6 +354,7 @@ function usePropertyAssistantController(args: {
   }
 
   async function askAboutProperty(property: MobileProperty) {
+    ensureThreadIdentity();
     setActiveProperty(property);
     const focusMessage = {
       ...buildAuthRequiredMessage(),
@@ -325,6 +362,7 @@ function usePropertyAssistantController(args: {
       text: property.aiSummary ?? `أراجع الآن ${property.title}. سأجهز لك التمويل والعائد والتحقق والخطوات التالية.`,
       properties: [property],
       activePropertyId: property.id,
+      suggestedPrompts: mergeSuggestedPrompts(undefined, property),
       uiTurn: buildMobileAgUiTurn({
         assistantText: property.aiSummary ?? `أراجع الآن ${property.title}.`,
         properties: [property],
@@ -419,7 +457,7 @@ function usePropertyAssistantController(args: {
       const session = args.bootstrapPublicSession ? await ensurePublicSession() : null;
       await args.createQualifiedHandoff({
         propertyId: activeProperty.id,
-        message: messages.at(-1)?.text ?? activeProperty.title,
+        message: latestUserMessage ?? messages.at(-1)?.text ?? activeProperty.title,
         externalUserId: session?.guestId,
         threadId: activeThreadId ?? undefined,
         sourceChannel: "app",
@@ -432,6 +470,7 @@ function usePropertyAssistantController(args: {
           createdAt: Date.now(),
           activePropertyId: activeProperty.id,
           properties: [activeProperty],
+          suggestedPrompts: mergeSuggestedPrompts(undefined, activeProperty),
           uiTurn: buildMobileAgUiTurn({
             assistantText: `تم رفع طلب المستشار الخاص بـ ${activeProperty.title}.`,
             properties: [activeProperty],
@@ -447,6 +486,7 @@ function usePropertyAssistantController(args: {
           createdAt: Date.now(),
           activePropertyId: activeProperty.id,
           properties: [activeProperty],
+          suggestedPrompts: mergeSuggestedPrompts(undefined, activeProperty),
           uiTurn: buildMobileAgUiTurn({
             assistantText: `تعذر رفع طلب المستشار لـ ${activeProperty.title} حالياً.`,
             properties: [activeProperty],
@@ -459,12 +499,37 @@ function usePropertyAssistantController(args: {
   }
 
   async function openHistoryThread(threadId: string) {
-    if (threadId === localThread?.id) {
-      return;
-    }
+    const nextThread = readStoredThread(threadStore, threadId);
+    if (!nextThread) return;
+
+    setDraft(nextThread.draft);
+    setMessages(nextThread.messages);
+    setActiveProperty(nextThread.activeProperty ?? readLatestProperty(nextThread.messages));
+    setActiveThreadId(nextThread.id);
+    setActiveThreadKind(nextThread.activeThreadKind);
+    setShowAuthCallout(false);
+    lastUpdatedAt.current = nextThread.updatedAt;
   }
 
-  function resetToWelcome() {
+  function showSearchResults(args: {
+    searchContext: MobileSearchContext;
+    results: MobileProperty[];
+  }) {
+    const message: MobileConversationMessage = {
+      id: `assistant-search-${Date.now()}`,
+      role: "assistant",
+      text: args.searchContext.searchSummary,
+      createdAt: Date.now(),
+      searchContext: args.searchContext,
+      searchResults: args.results,
+      suggestedPrompts: [],
+    };
+
+    lastUpdatedAt.current = message.createdAt ?? Date.now();
+    setMessages((current) => [...current, message]);
+  }
+
+  function createNewThread() {
     setDraft("");
     setMessages([]);
     setActiveProperty(null);
@@ -472,7 +537,12 @@ function usePropertyAssistantController(args: {
     setActiveThreadKind("welcome");
     setShowAuthCallout(false);
     lastUpdatedAt.current = Date.now();
-    void clearGuestThreadSnapshot();
+  }
+
+  function resetToWelcome() {
+    createNewThread();
+    void clearGuestThreadStore();
+    setThreadStore(emptyThreadStore());
   }
 
   return {
@@ -485,6 +555,7 @@ function usePropertyAssistantController(args: {
     isHydrated,
     isSubmitting,
     showAuthCallout,
+    latestUserMessage,
     setDraft,
     setShowAuthCallout,
     submit,
@@ -492,6 +563,8 @@ function usePropertyAssistantController(args: {
     askAboutProperty,
     requestAdvisor,
     openHistoryThread,
+    showSearchResults,
+    createNewThread,
     resetToWelcome,
     syncTranscriptToAccount,
   };

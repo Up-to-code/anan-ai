@@ -133,6 +133,7 @@ export function buildSuggestedPrompts(property?: MobileProperty | null) {
     `احسب تمويل ${property.title}`,
     `ما العائد على ${property.title}؟`,
     `تحقق من مطور ${property.title}`,
+    "اعرض نتائج مشابهة",
     "أريد مستشاراً",
   ];
 }

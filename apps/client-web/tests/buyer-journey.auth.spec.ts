@@ -10,18 +10,20 @@ if (storageStatePath) {
 test("authenticated buyer journey creates a qualified advisor handoff and returns to the saved thread", async ({ page }) => {
   test.skip(!storageStatePath, "PLAYWRIGHT_CLIENT_STORAGE_STATE is required for authenticated client-web handoff e2e.");
   test.skip(true, "Advisor order creation is not yet wired into the rebuilt client-web shell.");
+  const chatInput = page.locator('[data-testid="client-chat-input"]:visible');
+  const chatSend = page.locator('[data-testid="client-chat-send"]:visible');
 
   await page.goto("/");
 
-  await page.getByTestId("client-chat-input").fill(BUYER_PROMPT);
-  await page.getByTestId("client-chat-send").click();
+  await chatInput.fill(BUYER_PROMPT);
+  await chatSend.click();
 
   await expect(page.getByTestId("client-ag-ui-card-property_shortlist")).toBeVisible();
   await expect(page.getByTestId("client-request-advisor")).toBeVisible();
 
   await page.getByTestId("client-request-advisor").click();
 
-  await expect(page).toHaveURL(/\/app\/handoff\?orderId=/);
+  await expect(page).toHaveURL(/\/app\/handoff\/[^/]+$/);
   await expect(page.getByTestId("client-handoff-summary")).toBeVisible();
   await expect(page.getByTestId("client-handoff-summary")).toContainText("qualified");
   await expect(page.getByTestId("client-handoff-summary")).toContainText("web");

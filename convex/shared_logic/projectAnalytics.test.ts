@@ -346,6 +346,7 @@ it("aggregates project analytics from viewers, deals, offer cases, and tracked e
       brokerThreeId: brokerThree,
       brokerFourId: brokerFour,
       brokerFiveId: brokerFive,
+      brokerSixId: brokerSix,
       propertyId: projectId,
     };
   });

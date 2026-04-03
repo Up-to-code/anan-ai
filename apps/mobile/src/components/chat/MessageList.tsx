@@ -6,9 +6,11 @@ import { Building2, MapPin, Sparkles } from "lucide-react-native";
 import { MobileAgUiTurnRenderer } from "@/components/chat/ag-ui/MobileAgUiTurnRenderer";
 import { InsightCard } from "@/components/chat/InsightCard";
 import { PropertyRecommendationRow } from "@/components/chat/PropertyRecommendationRow";
+import { SearchResultsPanel } from "@/components/chat/SearchResultsPanel";
 import { AppText } from "@/components/ui/AppText";
 import { useMobileLayout } from "@/lib/mobileLayout";
 import { getPropertyLocationLabel } from "@/lib/mobileData";
+import { mobileTheme } from "@/lib/mobileTheme";
 import type { MobileConversationMessage, MobileProperty } from "@/types/mobile";
 
 function cn(...values: Array<string | false | null | undefined>) {
@@ -141,7 +143,7 @@ function MessageBubble({
       ) : (
         <View style={{ gap: layout.sectionGap - 2 }}>
           <View className="flex-row-reverse items-center gap-1.5">
-            <Sparkles size={14} color="#2563EB" />
+            <Sparkles size={14} color={mobileTheme.colors.primary} />
             <AppText responsiveRole="chip" className="font-cairo-black text-slate-800 dark:text-slate-100">
               مساعد عنان
             </AppText>
@@ -151,7 +153,12 @@ function MessageBubble({
             </AppText>
           </View>
           <View
-            className="rounded-[24px] border border-slate-200/80 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900"
+            className="rounded-[24px] px-4 py-4"
+            style={{
+              borderWidth: 1,
+              borderColor: mobileTheme.colors.border,
+              backgroundColor: mobileTheme.colors.surface,
+            }}
           >
             <AppText responsiveRole="bodyStrong" className="text-slate-900 dark:text-slate-50 font-cairo-bold">
               {message.text}
@@ -179,6 +186,15 @@ function MessageBubble({
         </View>
       ) : null}
 
+      {message.searchContext && message.searchResults?.length ? (
+        <SearchResultsPanel
+          searchContext={message.searchContext}
+          results={message.searchResults}
+          onPropertyPress={onPropertyPress}
+          onOpenProperty={onOpenProperty}
+        />
+      ) : null}
+
       {!message.uiTurn && message.cards?.length ? (
         <View className="mt-5 w-full gap-4">
           {message.cards.map((card, index) => (
@@ -197,13 +213,16 @@ function MessageBubble({
           {suggestedPrompts.map((prompt, index) => (
             <Pressable
               key={prompt}
-              className="border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900"
+              className="px-4"
               style={{
                 minHeight: layout.chipMinHeight + 4,
                 borderRadius: 999,
                 justifyContent: "center",
                 marginLeft: index === suggestedPrompts.length - 1 ? 0 : 10,
                 maxWidth: layout.width * 0.72,
+                borderWidth: 1,
+                borderColor: mobileTheme.colors.border,
+                backgroundColor: mobileTheme.colors.surface,
               }}
               onPress={() => onSuggestedPromptPress(prompt)}
             >
@@ -236,11 +255,17 @@ function SearchingIndicator() {
   return (
     <View className="items-end">
       <View
-        className="flex-row-reverse items-center border border-slate-200 bg-slate-50 px-4 dark:border-slate-800 dark:bg-slate-900"
-        style={{ minHeight: layout.touchTarget, borderRadius: layout.chipRadius }}
+        className="flex-row-reverse items-center px-4"
+        style={{
+          minHeight: layout.touchTarget,
+          borderRadius: layout.chipRadius,
+          borderWidth: 1,
+          borderColor: mobileTheme.colors.border,
+          backgroundColor: mobileTheme.colors.surfaceMuted,
+        }}
       >
         <Animated.View style={{ opacity }} className="flex-row items-center gap-3">
-          <View className="h-1.5 w-1.5 rounded-full bg-primary" />
+          <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: mobileTheme.colors.primary }} />
           <AppText responsiveRole="chip" className="font-cairo-black text-primary">
             تحليل الطلب الآن...
           </AppText>
@@ -262,8 +287,13 @@ function ThreadContextCard({
   return (
     <Pressable
       onPress={onPress}
-      className="mb-3 gap-2 border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900"
-      style={{ borderRadius: layout.cardRadius }}
+      className="mb-3 gap-2 px-4 py-3"
+      style={{
+        borderRadius: layout.cardRadius,
+        borderWidth: 1,
+        borderColor: mobileTheme.colors.border,
+        backgroundColor: mobileTheme.colors.surface,
+      }}
     >
       <View className="flex-row-reverse items-center justify-between">
         <AppText responsiveRole="chip" className="font-medium text-slate-500 dark:text-slate-400 text-right">

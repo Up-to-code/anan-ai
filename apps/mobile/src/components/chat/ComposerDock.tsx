@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMobileLayout } from "@/lib/mobileLayout";
 import { VoiceRecordingOverlay } from "@/components/chat/VoiceRecordingOverlay";
 import { AppText } from "@/components/ui/AppText";
+import { getMobileShadow, mobileTheme } from "@/lib/mobileTheme";
 
 type ComposerDockProps = {
   value: string;
@@ -33,11 +34,10 @@ export function ComposerDock({ value, onChange, onSend, onSubmitVoiceRecording }
   >("idle");
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const isVoiceBusy = voiceStatus === "uploading" || voiceStatus === "transcribing" || voiceStatus === "sending";
-  const showSendAction = canSend;
-  const panelBorderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(15,23,42,0.08)";
-  const panelBackgroundColor = isDark ? "rgba(24,24,27,0.98)" : "rgba(255,255,255,0.98)";
-  const buttonIconColor = isDark ? "#E2E8F0" : "#475569";
-  const sendBackgroundColor = canSend ? "#E57B4B" : isDark ? "#334155" : "#CBD5E1";
+  const panelBorderColor = isDark ? "rgba(255,255,255,0.08)" : mobileTheme.colors.borderStrong;
+  const panelBackgroundColor = isDark ? "rgba(24,24,27,0.98)" : mobileTheme.colors.surface;
+  const buttonIconColor = isDark ? "#E2E8F0" : mobileTheme.colors.inkSoft;
+  const sendBackgroundColor = canSend ? mobileTheme.colors.send : isDark ? "#334155" : "#CBD5E1";
   const inputMinHeight = layout.isCompact ? 42 : 44;
   const inputMaxHeight = 126;
 
@@ -46,10 +46,11 @@ export function ComposerDock({ value, onChange, onSend, onSubmitVoiceRecording }
       <View
         className="overflow-hidden"
         style={{
-          borderRadius: 24,
+          borderRadius: mobileTheme.radii.panel,
           borderWidth: 1,
           borderColor: panelBorderColor,
           backgroundColor: panelBackgroundColor,
+          ...getMobileShadow("float"),
         }}
       >
         {voiceStatus === "error" && voiceError ? (
@@ -123,35 +124,47 @@ export function ComposerDock({ value, onChange, onSend, onSubmitVoiceRecording }
               }}
             />
 
-            <Pressable
-              onPress={
-                showSendAction
-                  ? onSend
-                  : () => {
-                      setVoiceError(null);
-                      setVoiceStatus("recording");
-                      setIsVoiceOpen(true);
-                    }
-              }
-              accessibilityRole="button"
-              accessibilityLabel={showSendAction ? "إرسال الرسالة" : "تسجيل رسالة صوتية"}
-              disabled={showSendAction ? !canSend || isVoiceBusy : isVoiceBusy}
-              hitSlop={10}
-              style={({ pressed }) => [
-                showSendAction ? styles.sendAction : styles.iconAction,
-                {
-                  backgroundColor: showSendAction ? sendBackgroundColor : "transparent",
-                  opacity: isVoiceBusy ? 0.5 : 1,
-                  transform: [{ scale: pressed ? 0.94 : 1 }],
-                },
-              ]}
-            >
-              {showSendAction ? (
-                <ArrowUp size={18} color="#FFFFFF" strokeWidth={2.8} />
-              ) : (
+            <View style={styles.actionsRow}>
+              <Pressable
+                onPress={() => {
+                  setVoiceError(null);
+                  setVoiceStatus("recording");
+                  setIsVoiceOpen(true);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="تسجيل رسالة صوتية"
+                disabled={isVoiceBusy}
+                hitSlop={10}
+                style={({ pressed }) => [
+                  styles.iconAction,
+                  {
+                    backgroundColor: "transparent",
+                    opacity: isVoiceBusy ? 0.5 : 1,
+                    transform: [{ scale: pressed ? 0.94 : 1 }],
+                  },
+                ]}
+              >
                 <Mic size={22} color={buttonIconColor} strokeWidth={2.1} />
-              )}
-            </Pressable>
+              </Pressable>
+
+              <Pressable
+                onPress={onSend}
+                accessibilityRole="button"
+                accessibilityLabel="إرسال الرسالة"
+                disabled={!canSend || isVoiceBusy}
+                hitSlop={10}
+                style={({ pressed }) => [
+                  styles.sendAction,
+                  {
+                    backgroundColor: sendBackgroundColor,
+                    opacity: !canSend || isVoiceBusy ? 0.6 : 1,
+                    transform: [{ scale: pressed ? 0.94 : 1 }],
+                  },
+                ]}
+              >
+                <ArrowUp size={18} color="#FFFFFF" strokeWidth={2.8} />
+              </Pressable>
+            </View>
           </View>
         </View>
       </View>
@@ -193,6 +206,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
   },
   iconAction: {
     alignItems: "center",

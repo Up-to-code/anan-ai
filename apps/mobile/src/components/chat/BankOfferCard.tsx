@@ -4,6 +4,7 @@ import { Pressable, View } from "react-native";
 import { formatCurrency } from "@/lib/formatters";
 import { AppText } from "@/components/ui/AppText";
 import { useMobileLayout } from "@/lib/mobileLayout";
+import { mobileTheme } from "@/lib/mobileTheme";
 
 export type BankOfferProps = {
   title: string;
@@ -24,10 +25,15 @@ export function BankOfferCard({ offer, onPress }: { offer: BankOfferProps; onPre
 
   return (
     <View
-      className="w-full overflow-hidden border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-      style={{ borderRadius: layout.cardRadius }}
+      className="w-full overflow-hidden"
+      style={{
+        borderRadius: layout.cardRadius,
+        borderWidth: 1,
+        borderColor: mobileTheme.colors.border,
+        backgroundColor: mobileTheme.colors.surface,
+      }}
     >
-      <View className="border-b border-slate-100 px-4 py-4 dark:border-slate-800">
+      <View className="px-4 py-4" style={{ borderBottomWidth: 1, borderBottomColor: mobileTheme.colors.border }}>
         <View className="flex-row-reverse items-center justify-between">
           <View className="flex-row-reverse items-center gap-2">
             <Building2 size={18} color="#475569" />
@@ -64,7 +70,12 @@ export function BankOfferCard({ offer, onPress }: { offer: BankOfferProps; onPre
 
       <Pressable
         onPress={onPress}
-        className="mx-4 mb-4 mt-1 h-11 items-center justify-center rounded-full border border-slate-900 bg-slate-900 dark:border-slate-50 dark:bg-slate-50"
+        className="mx-4 mb-4 mt-1 h-11 items-center justify-center rounded-full"
+        style={{
+          borderWidth: 1,
+          borderColor: mobileTheme.colors.dark,
+          backgroundColor: mobileTheme.colors.dark,
+        }}
       >
         <AppText responsiveRole="chip" className="font-cairo-black text-white dark:text-slate-950">
           اطلب التمويل

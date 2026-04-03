@@ -11,6 +11,7 @@ import { I18nManager, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ConvexProvider } from "@/lib/convex";
+import { mobileTheme } from "@/lib/mobileTheme";
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -45,7 +46,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ConvexProvider>
-          <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+          <View style={{ flex: 1, backgroundColor: mobileTheme.colors.canvas }}>
             <StatusBar style="dark" />
             <Stack screenOptions={{ headerShown: false }} />
           </View>

@@ -2,6 +2,7 @@ import { ActivityIndicator, Pressable, PressableProps, View, useColorScheme } fr
 import { AppText } from "@/components/ui/AppText";
 import { cn } from "@/lib/cn";
 import { useMobileLayout } from "@/lib/mobileLayout";
+import { mobileTheme } from "@/lib/mobileTheme";
 
 type ButtonProps = PressableProps & {
   label: string;
@@ -72,14 +73,14 @@ export function Button({
           alignItems: "center" as const,
           justifyContent: "center" as const,
           backgroundColor: isPrimary 
-            ? (isDark ? "#F8FAFC" : "#0F172A") 
+            ? (isDark ? "#F8FAFC" : mobileTheme.colors.dark)
             : isSecondary 
-              ? (isDark ? "#0F172A" : "#FFFFFF") 
+              ? (isDark ? "#0F172A" : mobileTheme.colors.surface)
               : isGhost 
                 ? "transparent" 
-                : "#EF4444",
+                : mobileTheme.colors.danger,
           borderWidth: isSecondary ? 1.5 : 0,
-          borderColor: isSecondary ? (isDark ? "#1E293B" : "#E2E8F0") : "transparent",
+          borderColor: isSecondary ? (isDark ? "#1E293B" : mobileTheme.colors.border) : "transparent",
           opacity: disabled || loading ? 0.4 : 1,
           transform: [{ scale: state.pressed ? 0.96 : 1 }],
         };
@@ -96,8 +97,8 @@ export function Button({
           <ActivityIndicator 
             color={
               isPrimary 
-                ? (isDark ? "#0F172A" : "#FFFFFF")
-                : isDestructive ? "#FFFFFF" : (isDark ? "#94A3B8" : "#64748B")
+                ? (isDark ? "#0F172A" : mobileTheme.colors.white)
+                : isDestructive ? mobileTheme.colors.white : (isDark ? "#94A3B8" : mobileTheme.colors.inkMuted)
             } 
           />
         ) : null}

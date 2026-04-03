@@ -1,15 +1,53 @@
 import { Directory, File, Paths } from "expo-file-system";
-import type { MobileGuestSnapshot } from "@/types/mobile";
+import { Platform } from "react-native";
+import { emptyThreadStore, parseThreadStore } from "@/lib/mobileThreadStore";
+import type { MobileGuestThreadStore, MobileGuestSnapshot } from "@/types/mobile";
 
-const MOBILE_CACHE_DIR = new Directory(Paths.document, "anan-mobile");
-const GUEST_THREAD_FILE = new File(MOBILE_CACHE_DIR, "guest-thread.json");
+const WEB_GUEST_THREAD_KEY = "anan-mobile:guest-thread";
 
-function ensureStorage() {
-  if (!MOBILE_CACHE_DIR.exists) {
-    MOBILE_CACHE_DIR.create();
+function getNativeStorageHandle() {
+  if (Platform.OS === "web") return null;
+
+  const directory = new Directory(Paths.document, "anan-mobile");
+  const file = new File(directory, "guest-thread.json");
+  return { directory, file };
+}
+
+function ensureNativeStorage(handle: NonNullable<ReturnType<typeof getNativeStorageHandle>>) {
+  if (!handle.directory.exists) {
+    handle.directory.create();
   }
-  if (!GUEST_THREAD_FILE.exists) {
-    GUEST_THREAD_FILE.create();
+  if (!handle.file.exists) {
+    handle.file.create();
+  }
+}
+
+function readWebStorageValue() {
+  if (Platform.OS !== "web") return null;
+  try {
+    return globalThis.localStorage?.getItem(WEB_GUEST_THREAD_KEY) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function writeWebStorageValue(value: string) {
+  if (Platform.OS !== "web") return false;
+  try {
+    globalThis.localStorage?.setItem(WEB_GUEST_THREAD_KEY, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function clearWebStorageValue() {
+  if (Platform.OS !== "web") return false;
+  try {
+    globalThis.localStorage?.removeItem(WEB_GUEST_THREAD_KEY);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -20,8 +58,13 @@ function ensureStorage() {
  */
 export async function saveGuestThreadSnapshot(snapshot: MobileGuestSnapshot) {
   try {
-    ensureStorage();
-    GUEST_THREAD_FILE.write(JSON.stringify(snapshot));
+    const serialized = JSON.stringify(snapshot);
+    if (writeWebStorageValue(serialized)) return;
+
+    const handle = getNativeStorageHandle();
+    if (!handle) return;
+    ensureNativeStorage(handle);
+    handle.file.write(serialized);
   } catch (error) {
     console.warn("[mobile guest snapshot] save failed", error);
   }
@@ -34,11 +77,59 @@ export async function saveGuestThreadSnapshot(snapshot: MobileGuestSnapshot) {
  */
 export async function loadGuestThreadSnapshot(): Promise<MobileGuestSnapshot | null> {
   try {
-    if (!GUEST_THREAD_FILE.exists) return null;
-    const value = await GUEST_THREAD_FILE.text();
+    const webValue = readWebStorageValue();
+    if (webValue !== null) {
+      return webValue.trim() ? (JSON.parse(webValue) as MobileGuestSnapshot) : null;
+    }
+
+    const handle = getNativeStorageHandle();
+    if (!handle?.file.exists) return null;
+    const value = await handle.file.text();
     return value.trim() ? (JSON.parse(value) as MobileGuestSnapshot) : null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * WHY:   The buyer app now keeps multiple local threads instead of only one active guest snapshot.
+ * WHAT:  Persists the lightweight on-device thread store used by the assistant home screen.
+ * HOW:   Reuses the same storage file, allowing legacy single-thread snapshots to be migrated transparently on the next read.
+ */
+export async function saveGuestThreadStore(store: MobileGuestThreadStore) {
+  try {
+    const serialized = JSON.stringify(store);
+    if (writeWebStorageValue(serialized)) return;
+
+    const handle = getNativeStorageHandle();
+    if (!handle) return;
+    ensureNativeStorage(handle);
+    handle.file.write(serialized);
+  } catch (error) {
+    console.warn("[mobile guest thread store] save failed", error);
+  }
+}
+
+/**
+ * WHY:   The assistant should restore recent local threads and the active transcript without backend state.
+ * WHAT:  Reads the persisted thread store from local device storage.
+ * HOW:   Parses the JSON payload, supports the legacy snapshot shape, and falls back to an empty store on invalid data.
+ */
+export async function loadGuestThreadStore(): Promise<MobileGuestThreadStore> {
+  try {
+    const webValue = readWebStorageValue();
+    if (webValue !== null) {
+      if (!webValue.trim()) return emptyThreadStore();
+      return parseThreadStore(JSON.parse(webValue)) ?? emptyThreadStore();
+    }
+
+    const handle = getNativeStorageHandle();
+    if (!handle?.file.exists) return emptyThreadStore();
+    const value = await handle.file.text();
+    if (!value.trim()) return emptyThreadStore();
+    return parseThreadStore(JSON.parse(value)) ?? emptyThreadStore();
+  } catch {
+    return emptyThreadStore();
   }
 }
 
@@ -49,10 +140,15 @@ export async function loadGuestThreadSnapshot(): Promise<MobileGuestSnapshot | n
  */
 export async function clearGuestThreadSnapshot() {
   try {
-    if (GUEST_THREAD_FILE.exists) {
-      GUEST_THREAD_FILE.delete();
+    if (clearWebStorageValue()) return;
+
+    const handle = getNativeStorageHandle();
+    if (handle?.file.exists) {
+      handle.file.delete();
     }
   } catch (error) {
     console.warn("[mobile guest snapshot] clear failed", error);
   }
 }
+
+export const clearGuestThreadStore = clearGuestThreadSnapshot;

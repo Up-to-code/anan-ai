@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getPropertyLocationLabel } from "@/lib/mobileData";
+import { filterPropertiesForSearch } from "@/lib/mobileSearch";
 import { usePropertyFeed } from "@/hooks/usePropertyFeed";
-import type { MobileProperty } from "@/types/mobile";
+import type { MobileSearchContext } from "@/types/mobile";
 
 const ALL_FILTER = "الكل";
 
@@ -10,32 +11,40 @@ const ALL_FILTER = "الكل";
  * WHAT:  Exposes query/filter state plus filtered mobile properties ready for list rendering.
  * HOW:   Reuses the shared live feed hook and filters by text, location label, and owner type on the client.
  */
-export function usePropertySearch() {
+export function usePropertySearch(searchContext?: MobileSearchContext | null) {
   const feed = usePropertyFeed();
-  const [query, setQuery] = useState("");
-  const [selectedArea, setSelectedArea] = useState(ALL_FILTER);
-  const [selectedOwnerType, setSelectedOwnerType] = useState(ALL_FILTER);
+  const [query, setQuery] = useState(searchContext?.query ?? "");
+  const [selectedArea, setSelectedArea] = useState(searchContext?.area ?? ALL_FILTER);
+  const [selectedOwnerType, setSelectedOwnerType] = useState(searchContext?.ownerType ?? ALL_FILTER);
 
   const allProperties = feed.properties;
-  const areas = [ALL_FILTER, ...new Set(allProperties.map((property) => getPropertyLocationLabel(property)))];
+  const areas = useMemo(
+    () => [ALL_FILTER, ...new Set(allProperties.map((property) => getPropertyLocationLabel(property)))],
+    [allProperties],
+  );
   const ownerTypes = [ALL_FILTER, "وسيط", "مطور"];
 
-  const results = allProperties.filter((property) => {
-    const matchesText =
-      query.trim().length === 0 ||
-      property.title.includes(query) ||
-      property.address.includes(query) ||
-      getPropertyLocationLabel(property).includes(query) ||
-      property.owner.name.includes(query);
-    const matchesArea = selectedArea === ALL_FILTER || getPropertyLocationLabel(property) === selectedArea;
-    const matchesOwnerType =
-      selectedOwnerType === ALL_FILTER || matchOwnerTypeLabel(property, selectedOwnerType);
+  useEffect(() => {
+    setQuery(searchContext?.query ?? "");
+    setSelectedArea(searchContext?.area ?? ALL_FILTER);
+    setSelectedOwnerType(searchContext?.ownerType ?? ALL_FILTER);
+  }, [searchContext?.area, searchContext?.ownerType, searchContext?.query, searchContext?.searchSummary]);
 
-    return matchesText && matchesArea && matchesOwnerType;
-  });
+  const results = useMemo(
+    () =>
+      filterPropertiesForSearch(allProperties, {
+        query,
+        selectedArea,
+        selectedOwnerType,
+        allFilterLabel: ALL_FILTER,
+      }),
+    [allProperties, query, selectedArea, selectedOwnerType],
+  );
 
   return {
     ...feed,
+    allFilterLabel: ALL_FILTER,
+    searchContext,
     query,
     selectedArea,
     selectedOwnerType,
@@ -46,10 +55,4 @@ export function usePropertySearch() {
     setSelectedArea,
     setSelectedOwnerType,
   };
-}
-
-function matchOwnerTypeLabel(property: MobileProperty, ownerTypeLabel: string) {
-  if (ownerTypeLabel === "وسيط") return property.owner.type === "broker";
-  if (ownerTypeLabel === "مطور") return property.owner.type === "RED";
-  return ownerTypeLabel === ALL_FILTER;
 }

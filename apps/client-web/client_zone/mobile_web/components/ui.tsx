@@ -51,6 +51,10 @@ export function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ");
 }
 
+function buildPropertyDetailHref(propertyId: string | number, activeThreadId?: string | null) {
+  return activeThreadId ? `/app/property/${propertyId}?threadId=${activeThreadId}` : `/app/property/${propertyId}`;
+}
+
 /**
  * WHY:   Every buyer-facing route should sit inside one constrained mobile-like frame instead of the old desktop workspace shell.
  * WHAT:  Wraps screen content in a centered mobile-width layout with the same slate background used by the mobile app.
@@ -349,11 +353,13 @@ export function MessageThread({
   isSending,
   onSelectPrompt,
   onAskAboutProperty,
+  activeThreadId,
 }: {
   messages: BuyerAssistantMessage[];
   isSending?: boolean;
   onSelectPrompt: (prompt: string) => void;
   onAskAboutProperty: (property: BuyerProperty) => void;
+  activeThreadId?: string | null;
 }) {
   const latestPromptMessageId =
     messages
@@ -394,7 +400,7 @@ export function MessageThread({
             {message.role === "assistant" ? (
               <>
                 {message.uiTurn ? (
-                  <AgUiTurnRenderer turn={message.uiTurn} onAskAboutProperty={onAskAboutProperty} />
+                  <AgUiTurnRenderer turn={message.uiTurn} onAskAboutProperty={onAskAboutProperty} activeThreadId={activeThreadId} />
                 ) : null}
                 {!message.uiTurn && message.properties?.length ? (
                   <div className="space-y-3">
@@ -403,7 +409,7 @@ export function MessageThread({
                         key={String(property.id)}
                         property={property}
                         onAskAssistant={onAskAboutProperty}
-                        detailHref={`/app/property/${property.id}`}
+                        detailHref={buildPropertyDetailHref(String(property.id), activeThreadId)}
                         detailTestId="client-property-result-link"
                       />
                     ))}
@@ -449,9 +455,11 @@ export function MessageThread({
 export function AgUiTurnRenderer({
   turn,
   onAskAboutProperty,
+  activeThreadId,
 }: {
   turn: BuyerAgUiTurn;
   onAskAboutProperty: (property: BuyerProperty) => void;
+  activeThreadId?: string | null;
 }) {
   return (
     <div className="space-y-3">
@@ -465,7 +473,7 @@ export function AgUiTurnRenderer({
                   key={String(property.id)}
                   property={property}
                   onAskAssistant={onAskAboutProperty}
-                  detailHref={`/app/property/${property.id}`}
+                  detailHref={buildPropertyDetailHref(String(property.id), activeThreadId)}
                   detailTestId="client-property-result-link"
                 />
               ))}

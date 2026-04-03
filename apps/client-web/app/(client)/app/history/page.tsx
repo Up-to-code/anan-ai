@@ -1,5 +1,5 @@
-import BuyerHistoryPage from "@/client_zone/history/BuyerHistoryPage";
+import HistoryScreen from "@/client_zone/mobile_web/screens/HistoryScreen";
 
 export default function BuyerHistoryRoute() {
-  return <BuyerHistoryPage />;
+  return <HistoryScreen />;
 }

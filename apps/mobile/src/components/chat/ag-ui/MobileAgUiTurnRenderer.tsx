@@ -3,7 +3,8 @@ import { AppText } from "@/components/ui/AppText";
 import { InsightCard } from "@/components/chat/InsightCard";
 import { PropertyRecommendationRow } from "@/components/chat/PropertyRecommendationRow";
 import { BankOfferCard } from "@/components/chat/BankOfferCard";
-import { useMobileLayout } from "@/lib/mobileLayout";
+import { MobilePill, MobileSurface } from "@/components/ui/MobileChrome";
+import { mobileTheme } from "@/lib/mobileTheme";
 import type { MobileAgUiTurn, MobileProperty } from "@/types/mobile";
 
 /**
@@ -22,8 +23,6 @@ export function MobileAgUiTurnRenderer({
   onOpenProperty?: (property: MobileProperty) => void;
   onFollowupPromptPress: (prompt: string) => void;
 }) {
-  const layout = useMobileLayout();
-
   return (
     <View className="mt-6 w-full gap-4">
       {turn.cards.map((card) => {
@@ -49,7 +48,6 @@ export function MobileAgUiTurnRenderer({
             return (
               <FollowupPromptCard
                 key={card.id}
-                layout={layout}
                 title={String(card.props.title ?? "الخطوة التالية")}
                 summary={String(card.props.summary ?? "أكمل من نفس المحادثة وسأتولى الخطوة التالية.")}
                 actionLabel={String(card.props.actionLabel ?? "اطلب مستشاراً")}
@@ -76,41 +74,32 @@ export function MobileAgUiTurnRenderer({
 }
 
 function FollowupPromptCard({
-  layout,
   title,
   summary,
   actionLabel,
   onPress,
 }: {
-  layout: ReturnType<typeof useMobileLayout>;
   title: string;
   summary: string;
   actionLabel: string;
   onPress: () => void;
 }) {
   return (
-    <View
-      className="overflow-hidden border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-      style={{ borderRadius: layout.cardRadius }}
-    >
-      <View className="gap-2 px-4 py-4">
-        <AppText responsiveRole="bodyStrong" className="font-cairo-black text-slate-900 dark:text-slate-50">
+    <MobileSurface tone="muted" radius="card" className="overflow-hidden px-4 py-4">
+      <View
+        className="gap-2 pb-4"
+        style={{ borderBottomWidth: 1, borderBottomColor: mobileTheme.colors.border }}
+      >
+        <AppText responsiveRole="bodyStrong" className="font-cairo-black text-slate-900">
           {title}
         </AppText>
-        <AppText responsiveRole="body" className="font-medium text-slate-500 dark:text-slate-400">
+        <AppText responsiveRole="body" className="font-medium text-slate-500">
           {summary}
         </AppText>
       </View>
-      <View className="border-t border-slate-100 px-4 py-4 dark:border-slate-800">
-        <Pressable
-          className="items-center justify-center rounded-full border border-slate-900 bg-slate-900 px-4 py-3 dark:border-slate-50 dark:bg-slate-50"
-          onPress={onPress}
-        >
-          <AppText responsiveRole="chip" className="font-cairo-black text-white dark:text-slate-950">
-            {actionLabel}
-          </AppText>
-        </Pressable>
+      <View className="pt-4 items-end">
+        <MobilePill label={actionLabel} tone="dark" active onPress={onPress} />
       </View>
-    </View>
+    </MobileSurface>
   );
 }

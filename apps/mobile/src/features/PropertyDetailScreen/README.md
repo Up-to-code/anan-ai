@@ -1,6 +1,6 @@
 # PropertyDetailScreen
 
-Lightweight property detail view for the buyer journey.
+Buyer-facing listing details in a familiar marketplace layout.
 
-- `index.tsx` renders media, highlights, and context details for a selected property.
-- `StickyJourneyBar.tsx` renders the bottom CTA strip for booking and advisor follow-up.
+- `index.tsx` renders the image-first property page, facts, owner card, and route continuity.
+- `StickyJourneyBar.tsx` renders the fixed bottom contact/action strip used by detail-style screens.

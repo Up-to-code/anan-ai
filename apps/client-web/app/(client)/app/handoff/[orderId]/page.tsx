@@ -1,4 +1,4 @@
-import BuyerHandoffPage from "@/client_zone/handoff/BuyerHandoffPage";
+import HandoffScreen from "@/client_zone/mobile_web/screens/HandoffScreen";
 
 export default async function BuyerHandoffRoute({
   params,
@@ -6,5 +6,5 @@ export default async function BuyerHandoffRoute({
   params: Promise<{ orderId: string }>;
 }) {
   const { orderId } = await params;
-  return <BuyerHandoffPage orderId={orderId} />;
+  return <HandoffScreen orderId={orderId} />;
 }

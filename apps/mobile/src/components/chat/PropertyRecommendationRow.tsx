@@ -1,4 +1,4 @@
-import { ScrollView, View } from "react-native";
+import { View } from "react-native";
 import { PropertyResultCard } from "@/components/chat/PropertyResultCard";
 import type { MobileProperty } from "@/types/mobile";
 
@@ -23,7 +23,14 @@ export function PropertyRecommendationRow({
   return (
     <View className="w-full gap-3">
       {properties.map((property) => (
-        <PropertyResultCard key={property.id} property={property} onPress={onPropertyPress} onOpenDetails={onOpenProperty} />
+        <PropertyResultCard
+          key={property.id}
+          property={property}
+          onPress={onPropertyPress}
+          onOpenDetails={onOpenProperty}
+          variant="card"
+          actionLabel="اتخذ إجراء"
+        />
       ))}
     </View>
   );

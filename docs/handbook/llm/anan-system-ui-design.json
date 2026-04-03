@@ -1,0 +1,683 @@
+{
+  "schema_version": "1.0.0",
+  "system_name": "Anan Multi-Surface UI System",
+  "generated_on": "2026-04-03",
+  "purpose": "A machine-readable UI system description extracted from the workspace so another LLM can reproduce the same design language across new apps without collapsing Anan into a generic dashboard theme.",
+  "approach": {
+    "mode": "codebase-derived",
+    "important_note": "Anan is not one flat style. It is one brand DNA expressed through multiple surface families: workspace web, public marketing, public docs, private docs, client assistant, mobile buyer, shared AG-UI cards, and admin.",
+    "reproduction_rule": "Choose the correct surface family first, then apply the shared brand DNA and only that surface's geometry, spacing, and tone rules."
+  },
+  "brand_dna": {
+    "platform_context": "Anan is a multi-party real-estate infrastructure connecting buyers, brokers, developers, operations, and AI assistance.",
+    "visual_character": [
+      "institutional",
+      "precise",
+      "premium but restrained",
+      "operational rather than decorative",
+      "Arabic-first without becoming folkloric",
+      "AI-native without sci-fi excess"
+    ],
+    "emotional_targets": [
+      "clarity",
+      "trust",
+      "control",
+      "signal over noise",
+      "structured collaboration"
+    ],
+    "anti_character": [
+      "playful startup gradients everywhere",
+      "neon AI chrome",
+      "soft consumer wellness aesthetic",
+      "generic SaaS purple",
+      "overly glassy fake futurism",
+      "heavy ornamental illustration clutter"
+    ],
+    "house_look_and_feel": {
+      "summary": "Quiet premium utility. The UI prefers pale structural surfaces, blue signal accents, dark ink text, crisp borders, Cairo-heavy typography, and measured motion. It should feel like a serious workspace, not a theme demo.",
+      "signature_contrasts": [
+        "deep slate ink against nearly white surfaces",
+        "one strong electric/institutional blue used as the focal signal",
+        "large, confident Cairo headlines paired with muted operational labels",
+        "soft neutrals for surfaces with hard, intentional information hierarchy"
+      ]
+    }
+  },
+  "global_tokens": {
+    "color_brand": {
+      "primary_signal": {
+        "hex": "#2563EB",
+        "role": "core Anan highlight across workspace, marketing, client web, docs, mobile, AG-UI, and most admin surfaces",
+        "usage": [
+          "primary CTA backgrounds",
+          "active state highlights",
+          "assistant accents",
+          "eyebrow labels",
+          "link hover focus",
+          "brand signal lines and motion artwork"
+        ]
+      },
+      "primary_signal_dark_admin_variant": {
+        "hex": "#3B82F6",
+        "role": "slightly brighter dark-theme/admin emphasis token"
+      },
+      "ink": {
+        "hex": "#0F172A",
+        "role": "main dark text / icon color family used in public, mobile, and many structured panels"
+      },
+      "workspace_ink": {
+        "hex": "#152236",
+        "role": "workspace bubble-other foreground and richer informational ink"
+      },
+      "neutral_system": {
+        "dominant_families": [
+          "slate",
+          "zinc",
+          "white"
+        ],
+        "most_common_observed_classes": [
+          "text-slate-900",
+          "text-slate-500",
+          "text-slate-400",
+          "bg-white",
+          "border-slate-200",
+          "bg-slate-900",
+          "bg-slate-50",
+          "bg-slate-950"
+        ],
+        "rule": "Most interfaces are built from disciplined slate/zinc neutrals; blue is reserved for emphasis, not background flooding."
+      },
+      "semantic_support": {
+        "success": [
+          "#059669",
+          "#0F766E",
+          "emerald-500/600 family"
+        ],
+        "warning": [
+          "#F59E0B family",
+          "amber-500/700 family"
+        ],
+        "destructive": [
+          "#DC2626",
+          "#EF4444",
+          "red-500/600 family"
+        ]
+      }
+    },
+    "color_tokens_by_surface_root": {
+      "shared_workspace_light": {
+        "background": "#FFFFFF",
+        "foreground": "oklch(0.145 0 0)",
+        "primary": "#2563EB",
+        "border": "#F1F5F9",
+        "muted": "oklch(0.97 0 0)",
+        "workspace_shell": "#F5F5F5",
+        "workspace_canvas": "#FAFAFA",
+        "workspace_panel": "#FFFFFF",
+        "workspace_elevated": "#F4F4F5",
+        "workspace_sidebar": "#FAFAFA",
+        "workspace_sidebar_strong": "#F0F0F1",
+        "workspace_border": "rgba(39, 39, 42, 0.08)",
+        "workspace_muted": "#71717A",
+        "workspace_bubble_self": "#2563EB",
+        "workspace_bubble_self_foreground": "#EFF6FF",
+        "workspace_bubble_self_muted": "#BFDBFE",
+        "workspace_bubble_other": "#F4F4F5",
+        "workspace_bubble_other_foreground": "#152236",
+        "workspace_bubble_other_muted": "#71717A",
+        "workspace_accent_soft": "#F0F0F1",
+        "workspace_highlight": "#2563EB"
+      },
+      "shared_workspace_dark": {
+        "background": "#09090B",
+        "foreground": "#F4F4F5",
+        "card": "#111114",
+        "panel": "#111318",
+        "elevated": "#181B21",
+        "sidebar": "#0E1014",
+        "sidebar_strong": "#090B0F",
+        "border": "rgba(244, 244, 245, 0.08)",
+        "muted": "#A1A1AA",
+        "highlight": "#2563EB"
+      },
+      "docs_public_light": {
+        "background": "#F8FAFC",
+        "foreground": "#0F172A",
+        "primary": "#2563EB",
+        "secondary": "#E2E8F0",
+        "accent": "#E0E7FF",
+        "border": "#E2E8F0"
+      },
+      "docs_private_light": {
+        "background": "#F8FAFC",
+        "foreground": "#0F172A",
+        "primary": "#2563EB",
+        "border": "#E2E8F0",
+        "accent_style": "hard bordered white cards with strong category colors instead of soft glassy tints"
+      },
+      "mobile_native": {
+        "background": "#FFFFFF",
+        "foreground": "#0F172A",
+        "primary": "#2563EB",
+        "primary_soft": "#DBEAFE",
+        "card": "#FFFFFF",
+        "muted": "#F8FAFC",
+        "muted_foreground": "#64748B",
+        "border": "#E2E8F0",
+        "accent": "#F8F5EF",
+        "success": "#0F766E",
+        "special_send_button": "#E57B4B"
+      },
+      "admin_dark_bias_tokens": {
+        "primary_dark": "#3B82F6",
+        "workspace_panel_dark": "#0C0C0E",
+        "workspace_elevated_dark": "#18181B",
+        "chart_blue": "#3B82F6",
+        "chart_teal": "#2DD4BF",
+        "chart_amber": "#FBBF24",
+        "chart_purple": "#A78BFA",
+        "chart_rose": "#FB7185",
+        "chart_cyan": "#22D3EE"
+      }
+    },
+    "radius": {
+      "base_web_token": "8px",
+      "docs_public_base_web_token": "0.85rem",
+      "most_common_observed_shapes": {
+        "rounded_full": 322,
+        "rounded_2xl": 247,
+        "rounded_lg": 181,
+        "rounded_xl": 160,
+        "rounded_md": 93,
+        "rounded_24px": 59,
+        "rounded_28px": 53,
+        "rounded_22px": 37,
+        "rounded_3xl": 34,
+        "rounded_18px": 29,
+        "rounded_32px": 27
+      },
+      "reading": "The system uses compact 8px-ish primitives for general web controls, then large 18px-32px radii for premium cards, assistant bubbles, and mobile surfaces. Full pills are extremely common for chips and primary actions.",
+      "llm_rule": "Do not standardize everything to one radius. Match the surface family: compact web controls use 8-12px; premium panels use 24-32px; chips and primary utility CTAs often use full pill radii."
+    },
+    "typography": {
+      "primary_font_family": "Cairo",
+      "mono_font_family": "Geist Mono",
+      "font_strategy": "Cairo is the default voice across workspace, marketing, docs, client web, mobile, and admin. Geist Mono is reserved for code/technical contexts.",
+      "weight_bias": [
+        "font-medium for body support text",
+        "font-bold for operational labels and strong body",
+        "font-black for headings, eyebrows, badges, CTA labels, and key figures"
+      ],
+      "tracking_bias": {
+        "most_common": [
+          "tracking-widest",
+          "tracking-tight",
+          "tracking-[0.2em]",
+          "tracking-[0.18em]",
+          "tracking-wider",
+          "tracking-[0.22em]"
+        ],
+        "rule": "Eyebrows, badges, small labels, and institutional nav text frequently use uppercase and wide tracking. Headline/value text usually uses tight tracking."
+      },
+      "case_rules": {
+        "arabic_text": "Keep natural Arabic case and prioritize rhythm/weight over forced caps.",
+        "english_microcopy": "Often uppercase in labels, eyebrows, nav, and CTA text.",
+        "mixed_language_ui": "Arabic content may coexist with English uppercase labels; this is acceptable if hierarchy remains clean."
+      },
+      "mobile_text_roles": {
+        "meta": {
+          "font_size": 11,
+          "line_height": 16
+        },
+        "chip": {
+          "font_size": 13,
+          "line_height": 18
+        },
+        "body": {
+          "font_size": 15,
+          "line_height": 24
+        },
+        "bodyStrong": {
+          "font_size": 16,
+          "line_height": 25
+        },
+        "title": {
+          "font_size": 19,
+          "line_height": 28
+        },
+        "headline": {
+          "font_size": 28,
+          "line_height": 36
+        }
+      }
+    },
+    "borders": {
+      "default_rule": "Borders are a major structural device. The system uses low-contrast borders constantly to separate surfaces instead of relying only on shadow.",
+      "common_styles": [
+        "border border-slate-200",
+        "border border-[var(--workspace-border)]",
+        "border-b",
+        "border-dashed for empty/upload states",
+        "2px border for internal docs and certain marketing/public treatments"
+      ]
+    },
+    "shadow": {
+      "philosophy": "Shadows exist, but are restrained and secondary to borders.",
+      "common_pattern": "Soft, low-elevation shadows on premium cards and floating controls; many surfaces remain effectively flat.",
+      "avoid": [
+        "heavy neumorphism",
+        "multi-layer glow stacks",
+        "large soft drop shadows on every card"
+      ]
+    },
+    "motion": {
+      "philosophy": "Motion should clarify state and add polish, never dominate the interface.",
+      "observed_patterns": [
+        "short zone-page-enter fades/translates",
+        "subtle hover translate or border shifts",
+        "assistant avatar/logo CSS-driven state animations",
+        "SVG signal-line loops on marketing visuals",
+        "small press-scale feedback on buttons"
+      ],
+      "timing_bias": [
+        "150ms-300ms for UI state changes",
+        "4s-6.5s for decorative looping motion in marketing",
+        "spring-based short feedback for mic meters and small dynamic indicators"
+      ],
+      "llm_rule": "Use motion only where it communicates hierarchy, activity, or liveliness. Marketing can carry more ambient motion than workspace or docs."
+    }
+  },
+  "universal_rules": [
+    "Preserve the shared blue signal color as the main emphasis token.",
+    "Use Cairo as the default face unless a technical/code context explicitly calls for mono.",
+    "Prefer slate/zinc neutrals and white surfaces over tinted UI backgrounds.",
+    "Build hierarchy with weight, tracking, spacing, and borders before adding decoration.",
+    "Let surfaces breathe with generous padding instead of stuffing density into every container.",
+    "Use RTL-aware alignment for Arabic-first experiences; do not assume LTR.",
+    "Keep illustrations vector-led, diagrammatic, or signal-based rather than stock-photo dependent.",
+    "Assistant UI should feel operational and trustworthy, not like a toy chat app.",
+    "Forms, cards, tables, and tabs should look like part of one system even when their radius differs by surface."
+  ],
+  "surface_families": {
+    "workspace_web": {
+      "role": "Primary authenticated operational workspace at `/ws`",
+      "style_summary": "Quiet premium dashboard shell with neutral zinc/slate surfaces, soft borders, compact top nav, assistant-first panels, and selective blue signal emphasis.",
+      "core_tokens": {
+        "base_radius_token": "8px",
+        "panel_radius": "often 20px-26px",
+        "page_background": "workspace-shell/workspace-canvas neutrals",
+        "main_panel": "workspace-panel",
+        "border": "workspace-border",
+        "highlight": "workspace-highlight (#2563EB)"
+      },
+      "layout_rules": [
+        "Shell uses sidebar + top navbar + content column.",
+        "Sidebar is pale/light in shared workspace mode; zone sidebar may switch to dark mode for deep contextual focus.",
+        "Content areas often use full-height, overflow-aware shells.",
+        "Cards and shells rely on borders and low-elevation shadow."
+      ],
+      "nav_rules": {
+        "top_nav": {
+          "height": "56px assistant variant, 64px default variant",
+          "shape": "compact rounded action group on the trailing side",
+          "actions": "locale, theme, notifications, inbox, org switcher, user avatar",
+          "tone": "panel on panel, not loud chrome"
+        },
+        "sidebar": {
+          "desktop": "persistent, can collapse",
+          "mobile": "drawer",
+          "iconography": "lucide, compact, rounded-xl active pills",
+          "active_state": "blue fill or blue-tinted border depending on context"
+        }
+      },
+      "assistant_rules": {
+        "message_chrome": {
+          "user_bubble": "dark slate or workspace self-blue bubble; compact rounded asymmetry",
+          "assistant_message": "often transparent or pale surface with rich markdown formatting",
+          "badge_row": "pill badges above assistant message showing assistant/team routing"
+        },
+        "badge_tones": [
+          "assistant: filled blue",
+          "team/project/offers/etc: blue-tinted pale pills",
+          "neutral: elevated neutral pills"
+        ],
+        "composer": {
+          "style": "large rounded translucent/glass-like white shell with light blur",
+          "actions": "paperclip, search/deep-search toggles, mic, send",
+          "send_button": "dark filled circle when text exists"
+        }
+      },
+      "brand_subsystem": {
+        "section_frames": "simple white bands with bottom borders and strong headings",
+        "vector_panels": "inline SVG signal artwork with gradient wash and blue/slate/emerald accent variants",
+        "stat_strips": "grid strips with shared frames and strong values"
+      },
+      "component_rules": [
+        "Tabs are usually border-bottom based, not underlined with heavy decoration.",
+        "Filter chips use rounded-xl or pill geometry with high-contrast active state.",
+        "Empty states use dashed borders, large radius, centered icon/initial badge, and muted copy.",
+        "AG-UI cards use 26px radius, workspace-panel background, workspace-border, and soft shadow."
+      ],
+      "do_not": [
+        "Do not turn workspace into a bright blue dashboard.",
+        "Do not add rainbow analytics color unless chart semantics require it.",
+        "Do not use generic chatbot gradients or neon AI glows.",
+        "Do not flatten all cards to 8px radius; premium assistant and workspace cards are noticeably rounder."
+      ]
+    },
+    "marketing_public": {
+      "role": "Public marketing / institutional site",
+      "style_summary": "Editorial institutional landing style with strong Cairo display type, explicit section bands, vector motion artwork, white/slate/dark section alternation, and clean blue CTA accents.",
+      "layout_rules": [
+        "Use large, deliberate vertical rhythm: common section padding is 24-32 units.",
+        "Alternate section backgrounds between white, pale slate, dark slate, blue, and glass/gradient variants.",
+        "Keep a large max width around 1400px for major sections.",
+        "Use centered or split two-column storytelling layouts."
+      ],
+      "hero_rules": [
+        "Hero titles are extremely large and bold, often with one blue-emphasis line/segment.",
+        "Badge rows use tiny uppercase microcopy with wide tracking.",
+        "Descriptions frequently use right border accents in blue.",
+        "Primary CTA is blue fill; secondary CTA is outline or dark."
+      ],
+      "visual_language": [
+        "Vector-led and signal-led, not product screenshot dependent.",
+        "Subtle looping motion via SVG overlays and floating movement.",
+        "Background textures are low-opacity grids or brand vectors, not generic blobs."
+      ],
+      "card_rules": [
+        "Cards often use 2px borders, big padding, uppercase black titles, and minimal icon badges.",
+        "Variant set usually includes default, dark, and accent-blue."
+      ],
+      "tone_rules": [
+        "Public pages can be bolder and more graphic than workspace.",
+        "Still avoid playful trend-driven visual gimmicks."
+      ]
+    },
+    "docs_public": {
+      "role": "External developer docs",
+      "style_summary": "Polished technical-doc style: softened glass top nav, rounded cards, subtle shadows, blue semantic highlights, and clean dark mode.",
+      "tokens": {
+        "base_radius": "0.85rem token plus many rounded-2xl/3xl surfaces",
+        "background": "#F8FAFC",
+        "main_panel": "white / dark #111114",
+        "semantic_callouts": "soft tinted glass panels"
+      },
+      "rules": [
+        "Top nav stays blurred, sticky, and low-noise.",
+        "Docs cards feel polished and slightly premium with mild shadow and rounded edges.",
+        "Endpoint and article navigation cards use rounded-2xl/3xl framing and slight hover lift.",
+        "Use blue for method accents, quickstart, active links, and informational callouts."
+      ]
+    },
+    "docs_private": {
+      "role": "Internal handbook / private docs",
+      "style_summary": "Sharper, stricter, more handbook-like than public docs. More visible borders, less blur, fewer rounded surfaces, more utilitarian editorial structure.",
+      "rules": [
+        "Use harder borders and simpler white backgrounds.",
+        "Rounded-none or very low-radius elements are acceptable here.",
+        "Teal may appear as an internal-handbook action accent.",
+        "Top nav and callouts are more structural and less glossy than public docs."
+      ],
+      "difference_from_public_docs": "Public docs are polished and productized; private docs are intentionally stricter and more operational."
+    },
+    "client_web": {
+      "role": "Buyer-facing assistant web app",
+      "style_summary": "Simplified assistant shell reusing the workspace token base but with lighter, friendlier conversational primitives and fewer enterprise chrome elements.",
+      "rules": [
+        "Assistant bubbles are rounded-2xl, compact, and obvious in role contrast.",
+        "User messages use primary fill or dark fill; assistant messages use muted surfaces.",
+        "Suggestion chips are small outline pills with blue emphasis.",
+        "Structured advisory cards should remain clean and use workspace-border rather than introducing a new visual language."
+      ]
+    },
+    "mobile_buyer": {
+      "role": "Native buyer mobile app",
+      "style_summary": "Arabic-first, Cairo-heavy, tactile, rounded, comfortable, and structurally calm. It is more intimate and pill-based than the web workspace.",
+      "tokens": {
+        "content_padding": "16-22px by screen tier",
+        "card_radius": "18-20px shared token",
+        "chip_radius": "14-16px shared token",
+        "touch_target": "44-48px minimum",
+        "composer_height": "48-52px base",
+        "property_card_width": "264-352px responsive",
+        "bubble_max_width": "about 88 percent of screen max"
+      },
+      "interaction_rules": [
+        "Everything must respect right alignment and RTL by default unless the content clearly starts in Latin script.",
+        "Primary actions often use full pills.",
+        "Conversation panels use rounded 24px-style containers with light borders.",
+        "Text hierarchy leans heavily on Cairo black for titles, chips, and prices."
+      ],
+      "special_mobile_note": "The send button in the composer uses a warm orange (#E57B4B), which is a local interaction accent rather than a global brand replacement.",
+      "do_not": [
+        "Do not port the mobile orange accent back into the general web brand.",
+        "Do not replace Cairo-heavy hierarchy with generic system fonts."
+      ]
+    },
+    "ag_ui_shared": {
+      "role": "Structured assistant UI cards shared across hosts",
+      "style_summary": "A host-aware card language built on workspace CSS variables so cards feel native inside the assistant shell.",
+      "rules": [
+        "Use workspace CSS variables instead of hardcoded surface colors wherever possible.",
+        "Cards are content-dense but visually calm.",
+        "Common shell is rounded-2xl/26px, bordered, and softly elevated.",
+        "Headlines use black weight; support rows use elevated neutral containers."
+      ]
+    },
+    "admin_nexus": {
+      "role": "Admin / operations workspace",
+      "style_summary": "A sharper, more assertive control-plane variant. It still belongs to the same family, but it pushes contrast, larger premium cards, and stronger dark-mode presence.",
+      "existing_local_spec": "apps/admin/system_ui_design.json",
+      "observed_rules": [
+        "Primary buttons are often dark fills rather than blue fills.",
+        "Stat cards favor rounded 32px geometry with large numeric hierarchy.",
+        "Admin pages combine Cairo black typography with refined control-plane contrast.",
+        "Charts use an expanded semantic palette unavailable in most other surfaces."
+      ],
+      "relationship_to_main_system": "Treat admin as a sibling variant, not the default look for all new apps."
+    }
+  },
+  "component_archetypes": {
+    "buttons": {
+      "shared_web_button_system": {
+        "base_shape": "rounded-lg for standard shadcn/base-ui buttons",
+        "sizes": [
+          "xs",
+          "sm",
+          "default",
+          "lg",
+          "icon"
+        ],
+        "variants": [
+          "default",
+          "outline",
+          "secondary",
+          "ghost",
+          "destructive",
+          "link"
+        ]
+      },
+      "institutional_buttons": {
+        "surface": "marketing/public auth flows",
+        "style": "uppercase, high-weight, wide tracking, blue or dark fills, clean geometry"
+      },
+      "mobile_buttons": {
+        "shape": "mostly full-pill",
+        "height": "44px-58px depending on size",
+        "primary": "dark fill in many contexts",
+        "secondary": "white with border",
+        "destructive": "red fill",
+        "feedback": "press scale"
+      }
+    },
+    "cards": {
+      "workspace_card": {
+        "shape": "rounded-2xl to rounded-[26px]",
+        "surface": "workspace-panel",
+        "border": "workspace-border",
+        "shadow": "soft and low"
+      },
+      "marketing_card": {
+        "shape": "rounded-lg",
+        "padding": "large",
+        "title_style": "uppercase black",
+        "border": "often 2px"
+      },
+      "docs_card": {
+        "shape": "rounded-2xl or rounded-3xl",
+        "surface": "white / near-black",
+        "shadow": "soft editorial"
+      },
+      "mobile_card": {
+        "shape": "18px-28px",
+        "surface": "white with slate border",
+        "tone": "comfortable and tactile"
+      }
+    },
+    "badges_and_chips": {
+      "common_shape": "rounded-full dominates",
+      "common_copy": "micro labels often use font-black and wide tracking",
+      "active_pattern": "filled dark or filled blue",
+      "inactive_pattern": "white/slate surface with muted text and clear border"
+    },
+    "tabs": {
+      "workspace_tabs": "border-bottom active state, slim and editorial",
+      "admin_tabs": "pill-like rounded-full options",
+      "mobile_segmented_controls": "full-pill segmented treatments are acceptable"
+    },
+    "empty_states": {
+      "pattern": "dashed border, soft neutral background, centered icon/initial, short strong title, muted support text"
+    },
+    "forms": {
+      "workspace_and_admin": "clean field framing, focus ring in blue, generous spacing, no busy helper chrome",
+      "private_docs": "harder structural inputs acceptable",
+      "mobile": "prioritize touch target, RTL alignment, and concise labels"
+    },
+    "chat": {
+      "assistant_avatar": "compact branded AI mark or sparkles, never generic bot emoji/iconography",
+      "assistant_markdown": "large line height, clean tables/blockquote treatment, blue markers",
+      "user_messages": "clear contrast and compact asymmetrical bubble geometry",
+      "assistant_messages": "more open and typographic, sometimes less boxed than user messages"
+    }
+  },
+  "accessibility_and_i18n": {
+    "rtl": {
+      "status": "first-class",
+      "rule": "Arabic-first surfaces default to right alignment and RTL writing direction; switch only when content clearly starts in Latin script or a technical/code context requires LTR."
+    },
+    "contrast": {
+      "rule": "Default text contrast is high. Muted text is common, but important actions and figures should remain strong against pale surfaces."
+    },
+    "touch_targets": {
+      "mobile_minimum": "44px"
+    },
+    "selection_and_focus": {
+      "focus": "blue ring or ring-tint based on shared primary token",
+      "selection": "blue-tinted selection background in shared globals"
+    }
+  },
+  "llm_transfer_contract": {
+    "step_1_choose_surface": [
+      "If building an authenticated operator dashboard or assistant workspace, use `workspace_web`.",
+      "If building a public landing/product page, use `marketing_public`.",
+      "If building external developer docs, use `docs_public`.",
+      "If building internal handbook/documentation, use `docs_private`.",
+      "If building a buyer-facing assistant chat on web, use `client_web`.",
+      "If building a native mobile buyer/product app, use `mobile_buyer`.",
+      "If building ops/admin controls, use `admin_nexus`."
+    ],
+    "step_2_apply_brand_dna": [
+      "Keep Cairo as the default font.",
+      "Use blue as the main emphasis token.",
+      "Build around slate/white neutrals.",
+      "Make hierarchy feel structured and premium, not playful."
+    ],
+    "step_3_apply_surface_geometry": [
+      "Workspace: restrained shell, soft border, premium large-radius cards where needed.",
+      "Marketing: big type, bold sections, vector motion visuals, 2px structural borders in places.",
+      "Docs public: polished rounded editorial technical UI.",
+      "Docs private: stricter and more angular.",
+      "Mobile: pill-heavy, larger radii, Cairo-black hierarchy, RTL-first."
+    ],
+    "step_4_preserve_behavior": [
+      "Use measured motion only.",
+      "Use borders as structure.",
+      "Prefer vector/system art over stock-photo dependency.",
+      "Keep AI surfaces calm and trustworthy."
+    ],
+    "output_requirements_for_new_apps": [
+      "The generated UI should name and implement semantic tokens, not only raw Tailwind classes.",
+      "The generated UI should state which Anan surface family it belongs to.",
+      "The generated UI should preserve RTL behavior where relevant.",
+      "The generated UI should avoid introducing a new brand accent unless a local interaction reason exists."
+    ]
+  },
+  "do_not_rules": [
+    "Do not reduce the whole ecosystem to one shadcn default theme.",
+    "Do not swap Cairo out for Inter, Roboto, or the system stack as the default face.",
+    "Do not replace the disciplined blue/slate/white palette with purple, neon cyan, or gradient-heavy branding.",
+    "Do not make every interface glassmorphic. Blur is occasional and controlled.",
+    "Do not overuse shadows. Border rhythm is more important.",
+    "Do not make admin, marketing, and workspace look identical; they are siblings, not clones.",
+    "Do not ignore RTL rules on Arabic-first surfaces.",
+    "Do not use whimsical AI mascots, chat gimmicks, or oversaturated sci-fi visuals."
+  ],
+  "source_evidence": {
+    "key_files": [
+      "apps/web/app/globals.css",
+      "apps/marketing/app/globals.css",
+      "apps/client-web/app/globals.css",
+      "apps/docs/app/globals.css",
+      "apps/private-docs/app/globals.css",
+      "apps/mobile/tailwind.config.ts",
+      "apps/web/lib/rootFonts.tsx",
+      "apps/marketing/lib/rootFonts.tsx",
+      "apps/web/app/(ws)/ws/_components/WorkspaceShell.tsx",
+      "apps/web/app/(ws)/ws/_components/WorkspaceTopNavbar.tsx",
+      "apps/web/app/(ws)/ws/_components/WorkspaceBrand/BrandVectorPanel.tsx",
+      "apps/web/app/(ws)/ws/_components/Chat/MessageRow.tsx",
+      "apps/web/app/(ws)/ws/_components/Chat/InstitutionalChatInput.tsx",
+      "apps/web/app/(ws)/ws/_components/Chat/WorkspaceAssistantBadges.tsx",
+      "apps/marketing/app/(public)/LandingPage/index.tsx",
+      "apps/marketing/app/(public)/_components/Navbar.tsx",
+      "apps/marketing/app/(public)/_components/Card.tsx",
+      "apps/docs/components/docs/DocsTopNav.tsx",
+      "apps/docs/components/docs/Callout.tsx",
+      "apps/private-docs/components/docs/DocsTopNav.tsx",
+      "apps/private-docs/components/docs/Callout.tsx",
+      "apps/client-web/components/ui/chat-message.tsx",
+      "apps/client-web/components/assistant/AssistantTurn.tsx",
+      "apps/mobile/src/lib/mobileLayout.ts",
+      "apps/mobile/src/components/ui/AppText.tsx",
+      "apps/mobile/src/components/ui/Button.tsx",
+      "apps/mobile/src/components/chat/MessageList.tsx",
+      "apps/mobile/src/components/chat/ComposerDock.tsx",
+      "packages/ag-ui/src/cards/AgLatestUpdateCard.tsx",
+      "apps/admin/app/globals.css",
+      "apps/admin/components/shared/Button.tsx",
+      "apps/admin/components/shared/StatCard.tsx",
+      "apps/admin/system_ui_design.json"
+    ],
+    "observed_frequency_samples": {
+      "radius_counts": {
+        "rounded-full": 322,
+        "rounded-2xl": 247,
+        "rounded-lg": 181,
+        "rounded-xl": 160,
+        "rounded-[24px]": 59,
+        "rounded-[28px]": 53,
+        "rounded-3xl": 34,
+        "rounded-[32px]": 27
+      },
+      "letter_spacing_counts": {
+        "tracking-widest": 223,
+        "tracking-tight": 96,
+        "tracking-[0.2em]": 73,
+        "tracking-[0.18em]": 50,
+        "tracking-wider": 36,
+        "tracking-[0.22em]": 35
+      }
+    }
+  }
+}
