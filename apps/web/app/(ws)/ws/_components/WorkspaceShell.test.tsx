@@ -25,18 +25,8 @@ vi.mock("next-themes", () => ({
 }));
 
 vi.mock("next/link", () => ({
-  default: ({
-    href,
-    children,
-    className,
-    onClick,
-  }: {
-    href: string;
-    children: React.ReactNode;
-    className?: string;
-    onClick?: (event: unknown) => void;
-  }) => (
-    <a href={href} className={className} onClick={onClick as never}>
+  default: ({ href, children, prefetch: _prefetch, ...props }: React.ComponentProps<"a"> & { href: string }) => (
+    <a href={href} {...props}>
       {children}
     </a>
   ),
@@ -117,7 +107,7 @@ describe("WorkspaceShell", () => {
     expect(markup).toContain("data-slot=\"theme-toggle\"");
   });
 
-  it("renders compliance messaging as a compact in-content card instead of a full-width strip", () => {
+  it("renders verification messaging as a light badge in the navbar instead of an in-page alert", () => {
     const markup = renderToStaticMarkup(
       <WebLocaleProvider locale="ar" dictionary={getWebDictionary("ar")}>
         <WorkspaceShell
@@ -136,14 +126,9 @@ describe("WorkspaceShell", () => {
       </WebLocaleProvider>,
     );
 
-    expect(markup).toMatch(/data-slot="workspace-compliance-banner-rail"[^>]*dir="rtl"/);
-    expect(markup).toContain("data-slot=\"workspace-compliance-banner\"");
-    expect(markup).toContain("mx-auto w-full max-w-6xl");
-    expect(markup).toContain("data-slot=\"workspace-compliance-banner-action\"");
-    expect(markup).toContain("inline-flex w-full shrink-0 items-center justify-center");
-    expect(markup).not.toContain("ms-auto w-full max-w-3xl");
-    expect(markup).toContain("التوثيق مطلوب قبل النشر");
+    expect(markup).toContain("data-slot=\"workspace-compliance-badge\"");
     expect(markup).toContain("إكمال التوثيق");
     expect(markup).toContain("/ws/settings?tab=verification");
+    expect(markup).not.toContain("data-slot=\"workspace-compliance-banner\"");
   });
 });

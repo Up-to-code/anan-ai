@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -144,13 +145,15 @@ function ActionButton({
   icon: Icon,
   variant = "secondary",
   disabled,
+  href,
   onClick,
 }: {
   children: React.ReactNode;
   icon: typeof ArrowLeft;
   variant?: "primary" | "secondary" | "danger";
   disabled?: boolean;
-  onClick: () => void;
+  href?: string;
+  onClick?: () => void;
 }) {
   const className =
     variant === "primary"
@@ -158,6 +161,26 @@ function ActionButton({
       : variant === "danger"
         ? "inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60"
         : "inline-flex items-center justify-center gap-2 rounded-2xl border border-border bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-muted disabled:opacity-60";
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        aria-disabled={disabled ? true : undefined}
+        onClick={(event) => {
+          if (disabled) {
+            event.preventDefault();
+            return;
+          }
+          onClick?.();
+        }}
+        className={`${className} ${disabled ? "pointer-events-none opacity-60" : ""}`}
+      >
+        <Icon className="h-4 w-4" />
+        {children}
+      </Link>
+    );
+  }
 
   return (
     <button type="button" disabled={disabled} onClick={onClick} className={className}>
@@ -354,14 +377,13 @@ export default function ProjectDetailPage({
     <div className="min-h-full bg-background/60 pb-24">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-6 lg:px-8 lg:py-8">
         <nav className="flex flex-wrap items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={() => router.push("/ws/projects")}
+          <Link
+            href="/ws/projects"
             className="inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.2em] text-muted-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             العودة للمشاريع
-          </button>
+          </Link>
 
           <div className="flex flex-wrap items-center justify-end gap-2">
             <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold ${publicationTone[project.publicationState]}`}>
@@ -414,15 +436,13 @@ export default function ProjectDetailPage({
                   icon={Eye}
                   variant="primary"
                   disabled={isPending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      await onTrackProjectEvent?.({
-                        eventType: "project_analyze_click",
-                        source: "project_detail_header",
-                      });
-                      router.push(`/ws/projects/${project.id}/analytics`);
-                    })
-                  }
+                  href={`/ws/projects/${project.id}/analytics`}
+                  onClick={() => {
+                    void onTrackProjectEvent?.({
+                      eventType: "project_analyze_click",
+                      source: "project_detail_header",
+                    });
+                  }}
                 >
                   تحليل المشروع
                 </ActionButton>
@@ -431,15 +451,13 @@ export default function ProjectDetailPage({
                   <ActionButton
                     icon={PencilLine}
                     disabled={isPending}
-                    onClick={() =>
-                      startTransition(async () => {
-                        await onTrackProjectEvent?.({
-                          eventType: "project_edit_click",
-                          source: "project_detail_header",
-                        });
-                        router.push(`/ws/projects/${project.id}/edit`);
-                      })
-                    }
+                    href={`/ws/projects/${project.id}/edit`}
+                    onClick={() => {
+                      void onTrackProjectEvent?.({
+                        eventType: "project_edit_click",
+                        source: "project_detail_header",
+                      });
+                    }}
                   >
                     تعديل المشروع
                   </ActionButton>
@@ -468,15 +486,13 @@ export default function ProjectDetailPage({
                 <ActionButton
                   icon={PlusCircle}
                   disabled={isPending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      await onTrackProjectEvent?.({
-                        eventType: "project_create_offer_click",
-                        source: "project_detail_quick_actions",
-                      });
-                      router.push(`/ws/offers/create?propertyId=${project.id}&mode=open_offer`);
-                    })
-                  }
+                  href={`/ws/offers/create?propertyId=${project.id}&mode=open_offer`}
+                  onClick={() => {
+                    void onTrackProjectEvent?.({
+                      eventType: "project_create_offer_click",
+                      source: "project_detail_quick_actions",
+                    });
+                  }}
                 >
                   إنشاء عرض
                 </ActionButton>
@@ -484,15 +500,13 @@ export default function ProjectDetailPage({
                 <ActionButton
                   icon={MessageSquareMore}
                   disabled={isPending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      await onTrackProjectEvent?.({
-                        eventType: "project_open_inbox_click",
-                        source: "project_detail_quick_actions",
-                      });
-                      router.push("/ws/inbox");
-                    })
-                  }
+                  href="/ws/inbox"
+                  onClick={() => {
+                    void onTrackProjectEvent?.({
+                      eventType: "project_open_inbox_click",
+                      source: "project_detail_quick_actions",
+                    });
+                  }}
                 >
                   فتح المحادثات
                 </ActionButton>

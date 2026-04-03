@@ -30,6 +30,7 @@ export default function AgPropertyForm({
   submitLabel,
   onSave,
   onCancel,
+  cancelHref,
   onDelete,
   onRevokeViewer,
 }: AgPropertyFormProps) {
@@ -84,6 +85,7 @@ export default function AgPropertyForm({
           handleImageSelection={form.handleImageSelection}
           inputRef={form.inputRef}
           isUploading={form.isUploading}
+          mockDataEnabled={form.mockDataEnabled}
           moveImage={form.moveImage}
           previewAspectClass={form.previewAspectClass}
           previewObjectClass={form.previewObjectClass}
@@ -157,7 +159,7 @@ export default function AgPropertyForm({
         eyebrow={eyebrow}
         title={resolvedTitle}
         description={resolvedDescription}
-        actions={form.isEditMode ? <AgPropertyFormHeaderActions onCancel={onCancel} onDelete={onDelete} /> : undefined}
+        actions={form.isEditMode ? <AgPropertyFormHeaderActions onCancel={onCancel} cancelHref={cancelHref} onDelete={onDelete} /> : undefined}
       />
 
       <div className="space-y-6 py-4 lg:py-6">

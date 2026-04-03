@@ -4,17 +4,20 @@ import { useEffect } from "react";
 import {
   ArrowLeft,
   Bookmark,
+  FileText,
   Globe,
   HelpCircle,
   LogOut,
   MessageSquare,
+  ShieldCheck,
+  Trash2,
   User as UserIcon,
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText } from "@/components/ui/AppText";
 import { IconButton } from "@/components/ui/IconButton";
 import { MobileSectionHeading, MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
-import { clearGuestThreadSnapshot } from "@/lib/mobilePersistence";
+import { clearGuestThreadSnapshot, clearGuestThreadStore } from "@/lib/mobilePersistence";
 import { mobileTheme } from "@/lib/mobileTheme";
 
 /**
@@ -92,15 +95,39 @@ export default function AccountScreen() {
           />
           <AccountRow icon={Globe} label="لغة التطبيق - العربية" onPress={() => {}} withBorder />
           <AccountRow
+            icon={ShieldCheck}
+            label="الخصوصية والبيانات"
+            onPress={() => router.push("/legal")}
+            withBorder
+          />
+          <AccountRow icon={FileText} label="الشروط والاستخدام" onPress={() => router.push("/legal")} withBorder />
+          <AccountRow
             icon={HelpCircle}
-            label="مركز المساعدة"
+            label="الدعم ومراجعة المتجر"
+            onPress={() => router.push("/legal")}
+            withBorder
+          />
+          <AccountRow
+            icon={Trash2}
+            label="حذف البيانات المحلية"
             onPress={() =>
               Alert.alert(
-                "مركز المساعدة",
-                "إذا احتجت دعماً الآن، افتح المحادثة واطلب مستشاراً أو اكتب سؤالك مباشرة.",
+                "حذف البيانات المحلية",
+                "سيتم حذف السجل المحلي المحفوظ على هذا الجهاز فقط.",
+                [
+                  { text: "إلغاء", style: "cancel" },
+                  {
+                    text: "حذف",
+                    style: "destructive",
+                    onPress: async () => {
+                      await clearGuestThreadStore();
+                      Alert.alert("تم الحذف", "تم حذف البيانات المحلية من هذا الجهاز.");
+                    },
+                  },
+                ],
               )
             }
-            withBorder
+            destructive
           />
         </View>
 

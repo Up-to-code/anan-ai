@@ -4,11 +4,17 @@
     "slug": "anan-mobile",
     "scheme": "anan-mobile",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "plugins": [
       "expo-router",
       "expo-font"
     ],
+    "ios": {
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "يستخدم عنان الميكروفون لتسجيل الرسائل الصوتية داخل المحادثة وتحويلها إلى نص عندما تختار ذلك.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
     "experiments": {
       "typedRoutes": true
     }

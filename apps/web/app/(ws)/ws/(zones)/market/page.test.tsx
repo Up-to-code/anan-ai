@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MarketSnapshot } from "@/server/contracts/market";
 
 vi.mock("next/headers", () => ({
@@ -49,6 +49,8 @@ vi.mock("./MarketPage/MarketChartPanel", () => ({
 
 import WorkspaceMarketRoute from "./page";
 
+const originalMockFlag = process.env.NEXT_PUBLIC_MOCK_DATA_ENABLED;
+
 function createEmptySnapshot(): MarketSnapshot {
   return {
     filters: { city: "", area: "", query: "", dateFrom: "2026-03-01", dateTo: "2026-03-25" },
@@ -83,7 +85,12 @@ function createSparseSnapshot(): MarketSnapshot {
 
 function registerMarketPageTests() {
   beforeEach(() => {
+    process.env.NEXT_PUBLIC_MOCK_DATA_ENABLED = "false";
     getWorkspaceMarketSnapshot.mockResolvedValue(createDefaultSnapshot());
+  });
+
+  afterEach(() => {
+    process.env.NEXT_PUBLIC_MOCK_DATA_ENABLED = originalMockFlag;
   });
 
   it("renders the rebuilt market overview with filters, results, and helper panels", async () => {
@@ -108,16 +115,18 @@ function registerMarketPageTests() {
     getWorkspaceMarketSnapshot.mockResolvedValueOnce(createEmptySnapshot());
     const element = await WorkspaceMarketRoute({ searchParams: Promise.resolve({}) });
     const markup = renderToStaticMarkup(element);
-    expect(markup).toContain("بيانات تجريبية");
+    expect(markup).toContain("لا توجد إشارات كافية لهذا النطاق");
+    expect(markup).not.toContain("بيانات تجريبية");
     expect(markup).toContain("Market marker");
   });
 
-  it("fills sparse real snapshots with mock analytics sections", async () => {
+  it("keeps sparse real snapshots honest when mock data is disabled", async () => {
     getWorkspaceMarketSnapshot.mockResolvedValueOnce(createSparseSnapshot());
     const element = await WorkspaceMarketRoute({ searchParams: Promise.resolve({}) });
     const markup = renderToStaticMarkup(element);
-    expect(markup).toContain("بيانات تجريبية");
-    expect(markup).toContain("أفضل عقار في الرياض");
+    expect(markup).toContain("لا توجد إشارات كافية لهذا النطاق");
+    expect(markup).not.toContain("بيانات تجريبية");
+    expect(markup).not.toContain("أفضل عقار في الرياض");
     expect(markup).toContain("Market marker");
   });
 }

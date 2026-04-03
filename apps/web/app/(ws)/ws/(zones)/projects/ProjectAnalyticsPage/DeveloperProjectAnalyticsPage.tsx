@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Activity,
   ArrowLeft,
@@ -927,7 +927,6 @@ export default function DeveloperProjectAnalyticsPage({
   initialActiveTab?: DeveloperTabKey;
   initialVisibleBrokerCount?: number;
 }) {
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<DeveloperTabKey>(initialActiveTab);
   const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(analytics.brokerTracking[0]?.brokerId ?? null);
   const [visibleBrokerCount, setVisibleBrokerCount] = useState(() =>
@@ -982,14 +981,13 @@ export default function DeveloperProjectAnalyticsPage({
     <div className="min-h-full bg-background/60 pb-24">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-6 lg:px-8 lg:py-8">
         <nav className="flex flex-wrap items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={() => router.push(`/ws/projects/${project.id}`)}
+          <Link
+            href={`/ws/projects/${project.id}`}
             className="inline-flex items-center gap-2 text-[12px] font-bold tracking-[0.2em] text-muted-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             العودة لتفاصيل المشروع
-          </button>
+          </Link>
           <div className="text-right">
             <div className="text-[11px] font-bold tracking-[0.18em] text-muted-foreground">Developer Project Analytics</div>
             <div className="mt-1 text-[14px] font-bold text-foreground">{project.title}</div>

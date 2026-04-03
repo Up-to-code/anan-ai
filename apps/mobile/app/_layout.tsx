@@ -7,7 +7,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { I18nManager, View } from "react-native";
+import { I18nManager, View, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ConvexProvider } from "@/lib/convex";
@@ -27,6 +27,7 @@ export default function RootLayout() {
     Cairo_700Bold,
     Cairo_900Black,
   });
+  const isDark = useColorScheme() === "dark";
 
   useEffect(() => {
     if (loaded) {
@@ -47,7 +48,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ConvexProvider>
           <View style={{ flex: 1, backgroundColor: mobileTheme.colors.canvas }}>
-            <StatusBar style="dark" />
+            <StatusBar style={isDark ? "light" : "dark"} />
             <Stack screenOptions={{ headerShown: false }} />
           </View>
         </ConvexProvider>

@@ -50,6 +50,38 @@ async function requireTenantContext(ctx: any) {
   };
 }
 
+async function attachOrganizationAssetsForTenant(ctx: any, args: {
+  keys: string[];
+  attachedEntityType: "project" | "conversation" | "offer";
+  attachedEntityId: string;
+  visibilityScope: "organization" | "project_private_share" | "public_project";
+}) {
+  if (args.keys.length === 0) {
+    return;
+  }
+  const { tenantOrgId } = await requireTenantContext(ctx);
+  const now = Date.now();
+  const assets = await ctx.db
+    .query("organizationAssets")
+    .withIndex("tenantOrgId", (q) => q.eq("tenantOrgId", tenantOrgId))
+    .collect();
+
+  const keyed = new Set(args.keys);
+  await Promise.all(
+    assets
+      .filter((asset) => keyed.has(asset.key))
+      .map((asset) =>
+        ctx.db.patch(asset._id, {
+          attachedEntityType: args.attachedEntityType,
+          attachedEntityId: args.attachedEntityId,
+          visibilityScope: args.visibilityScope,
+          lifecycleState: "active",
+          updatedAt: now,
+        }),
+      ),
+  );
+}
+
 /**
  * WHY:   Organization uploads need an app-owned registry for lifecycle, linkage, and future retention workflows.
  * WHAT:  Upserts one asset row scoped to the current tenant organization.
@@ -149,27 +181,7 @@ export const attachOrganizationAssets = mutation({
     visibilityScope: organizationAssetVisibilityScopeValidator,
   },
   handler: async (ctx, args) => {
-    const { tenantOrgId } = await requireTenantContext(ctx);
-    const now = Date.now();
-    const assets = await ctx.db
-      .query("organizationAssets")
-      .withIndex("tenantOrgId", (q) => q.eq("tenantOrgId", tenantOrgId))
-      .collect();
-
-    const keyed = new Set(args.keys);
-    await Promise.all(
-      assets
-        .filter((asset) => keyed.has(asset.key))
-        .map((asset) =>
-          ctx.db.patch(asset._id, {
-            attachedEntityType: args.attachedEntityType,
-            attachedEntityId: args.attachedEntityId,
-            visibilityScope: args.visibilityScope,
-            lifecycleState: "active",
-            updatedAt: now,
-          }),
-        ),
-    );
+    await attachOrganizationAssetsForTenant(ctx, args);
   },
 });
 
@@ -235,3 +247,5 @@ export const listProjectAssetsForViewer = query({
     return propertyAssets.filter((asset) => asset.lifecycleState === "active");
   },
 });
+
+export { attachOrganizationAssetsForTenant };

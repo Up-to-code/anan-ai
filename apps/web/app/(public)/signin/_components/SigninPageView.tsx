@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Gavel, LogIn, ShieldCheck } from "lucide-react";
 import GoogleSignInButton from "./GoogleSignInButton";
 import { PageHero, Section } from "@/app/(public)/public";
@@ -48,9 +49,9 @@ export default function SigninPageView({ redirectTo, locale = "ar" }: SigninPage
                   <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed text-slate-400">
                     {dictionary.signin.agreementPrefix}
                     {" "}
-                    <a href="/terms" className="text-blue-600 hover:underline focus-visible:underline">{dictionary.signin.agreementTerms}</a>
+                    <Link href="/terms" className="text-blue-600 hover:underline focus-visible:underline">{dictionary.signin.agreementTerms}</Link>
                     {" "}{dictionary.signin.agreementAnd}{" "}
-                    <a href="/policy" className="text-blue-600 hover:underline focus-visible:underline">{dictionary.signin.agreementPrivacy}</a>
+                    <Link href="/policy" className="text-blue-600 hover:underline focus-visible:underline">{dictionary.signin.agreementPrivacy}</Link>
                     {" "}{dictionary.signin.agreementSuffix}
                   </p>
                 </div>

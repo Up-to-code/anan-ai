@@ -11,7 +11,6 @@ import { WORKSPACE_SIDEBAR_WIDTH_CLASS } from "../_lib/shell";
 import WorkspaceSidebarDrawer from "./WorkspaceSidebarDrawer";
 import WorkspaceTopNavbar from "./WorkspaceTopNavbar";
 import WorkspaceMessageToasts from "./WorkspaceMessageToasts";
-import WorkspaceComplianceBanner from "./WorkspaceComplianceBanner";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
 import type { AnanProThreadSummary } from "@/server/contracts/ananPro";
 import { cn } from "@/lib/utils";
@@ -154,6 +153,7 @@ export default function WorkspaceShell({
           organization={organization}
           visibleZoneKeys={visibleZoneKeys}
           initialSignalCounts={signalCounts}
+          complianceBanner={complianceBanner}
           variant={variant}
           title={headerTitle ?? (!isAssistantVariant ? organization.sidebarSubtitle : undefined)}
           mobileNavigation={
@@ -173,8 +173,6 @@ export default function WorkspaceShell({
             isAssistantHome ? "overflow-hidden" : "overflow-auto",
           )}
         >
-          {complianceBanner ? <WorkspaceComplianceBanner banner={complianceBanner} /> : null}
-
           <div
             data-slot="workspace-content"
             className={cn(

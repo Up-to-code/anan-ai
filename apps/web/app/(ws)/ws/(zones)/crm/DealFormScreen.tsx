@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
@@ -515,13 +516,12 @@ export default function DealFormScreen({
               >
                 {pending ? (locale === "fr" ? "Enregistrement..." : locale === "en" ? "Saving..." : "جارٍ الحفظ...") : submitLabel}
               </button>
-              <button
-                type="button"
-                onClick={() => router.push(cancelHref)}
+              <Link
+                href={cancelHref}
                 className="flex-1 rounded-2xl border border-border px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-[0.98]"
               >
                 {locale === "fr" ? "Annuler" : locale === "en" ? "Cancel" : "إلغاء"}
-              </button>
+              </Link>
               {onArchive ? (
                 <button
                   type="button"

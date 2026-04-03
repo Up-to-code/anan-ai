@@ -149,6 +149,7 @@ function mergeWithMockModel(realModel: WorkspaceMarketPageModel, mockModel: Work
  * HOW:   Parses the shared market filters once, calls the market service, then maps the snapshot into the UI model.
  */
 export async function loadMarketPageModel(searchParams: Promise<MarketSearchParams>): Promise<WorkspaceMarketPageModel> {
+  const mockDataEnabled = process.env.NEXT_PUBLIC_MOCK_DATA_ENABLED === "true";
   const resolvedSearchParams = await searchParams;
   const dateFrom = parseMarketDate(pickString(resolvedSearchParams.dateFrom));
   const dateTo = parseMarketDate(pickString(resolvedSearchParams.dateTo));
@@ -162,6 +163,10 @@ export async function loadMarketPageModel(searchParams: Promise<MarketSearchPara
   });
 
   const model = mapMarketSnapshotToPageModel(snapshot);
+  if (!mockDataEnabled) {
+    return model;
+  }
+
   const mockModel = mapMarketSnapshotToPageModel(buildMockMarketSnapshot(snapshot.filters));
   if (!model.hasAnyData) {
     return {

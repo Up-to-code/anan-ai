@@ -43,6 +43,12 @@ describe("WorkspaceTopNavbar", () => {
           }}
           visibleZoneKeys={["inbox", "projects", "settings"]}
           initialSignalCounts={{ notificationCount: 0, inboxCount: 0 }}
+          complianceBanner={{
+            title: "Verification required before publishing",
+            body: "Please complete verification to publish.",
+            ctaLabel: "Complete verification",
+            ctaHref: "/ws/settings?tab=verification",
+          }}
         />
       </WebLocaleProvider>,
     );
@@ -50,10 +56,15 @@ describe("WorkspaceTopNavbar", () => {
     expect(html).toContain("شركة الواحة");
     expect(html).toContain("Espace promoteur");
     expect(html).toContain("Boîte de réception");
+    expect(html).toContain("data-slot=\"workspace-organization-settings-trigger\"");
     expect(html).toContain("href=\"/ws/settings?tab=org\"");
+    expect(html).toContain("data-slot=\"workspace-user-settings-trigger\"");
     expect(html).toContain("href=\"/ws/settings\"");
     expect(html).toContain("href=\"/ws/notifications\"");
     expect(html).toContain("href=\"/ws/inbox\"");
+    expect(html).toContain("data-slot=\"workspace-compliance-badge\"");
+    expect(html).toContain("Complete verification");
+    expect(html).toContain("href=\"/ws/settings?tab=verification\"");
     expect(html).toContain("https://example.com/logo.png");
     expect(html).toContain("https://example.com/user.png");
     expect(html).toContain("Changer de langue");

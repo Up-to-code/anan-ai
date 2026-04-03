@@ -167,7 +167,8 @@ export default function InboxComposer({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const offerFileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { startUpload, isUploading } = useUploadThing("offerAttachments");
+  const { startUpload: startFileUpload, isUploading: isFileUploading } = useUploadThing("crmDocuments");
+  const { startUpload: startOfferUpload, isUploading: isOfferUploading } = useUploadThing("offerAttachments");
 
   useEffect(() => {
     if (!textareaRef.current) {
@@ -230,7 +231,7 @@ export default function InboxComposer({
       return;
     }
     try {
-      const uploaded = await startUpload([files[0]]);
+      const uploaded = await startFileUpload([files[0]]);
       setSelectedFile((uploaded?.[0]?.serverData as UploadedFileReference | undefined) ?? null);
     } catch (error) {
       setLocalError(error instanceof Error ? error.message : dictionary.inbox.fileUploadFailed);
@@ -253,7 +254,7 @@ export default function InboxComposer({
       return;
     }
     try {
-      const uploaded = await startUpload(files);
+      const uploaded = await startOfferUpload(files);
       const nextAttachments = uploaded?.map((file) => file.serverData as UploadedFileReference) ?? [];
       setOfferForm((current) => ({
         ...current,
@@ -409,7 +410,7 @@ export default function InboxComposer({
                 activeAction={inlineShareAction}
                 fileInputRef={fileInputRef}
                 handleUploadFile={handleUploadFile}
-                isUploading={isUploading}
+                isUploading={isFileUploading}
                 onClose={resetShareState}
                 onSubmit={handleShareAction}
                 projectNote={projectNote}
@@ -526,7 +527,7 @@ export default function InboxComposer({
         handleSelectOfferProject={handleSelectOfferProject}
         isOpen={activeShareAction === "offer"}
         isSending={isSending}
-        isUploading={isUploading}
+        isUploading={isOfferUploading}
         offerForm={offerForm}
         onClose={() => onShareActionChange(null)}
         onSubmit={handleSubmitOffer}

@@ -1,13 +1,12 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
 import ThemeToggle from "@/app/_components/ThemeToggle";
 import WebLocaleSwitcher from "@/app/_components/WebLocaleSwitcher";
-import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { getWebDictionary } from "@/lib/i18n";
+import type { AppLocale } from "@/lib/locale";
 
-export default function Navbar() {
-    const { dictionary } = useWebLocale();
+export default function Navbar({ locale = "ar" }: { locale?: AppLocale }) {
+    const dictionary = getWebDictionary(locale);
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur-md transition-colors dark:border-slate-800/80 dark:bg-slate-950/90">

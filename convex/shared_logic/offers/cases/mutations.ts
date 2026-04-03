@@ -2,6 +2,7 @@ import { ConvexError } from "convex/values";
 import type { Doc, Id } from "../../../_generated/dataModel";
 import type { MutationCtx } from "../../../_generated/server";
 import { requireSender, requireVerifiedSender } from "../access";
+import { attachOrganizationAssetsForTenant } from "../../organizationAssets";
 import { resolveOfferRecipient } from "../recipients";
 import { insertActivity, listParticipantsForCase, loadPropertySummary, participantMatchesAccess, setCaseStage } from "./repositories";
 import { assert, resolveCaseType, resolveStageForDraft, resolveStageForPublish, resolveVisibility } from "./shared";
@@ -146,6 +147,12 @@ async function createOfferCase(
       actorAuthUserId: access.authUserId,
       message: caseType === "collaboration_case" ? "Collaboration case drafted" : "Private case drafted",
     });
+    await attachOrganizationAssetsForTenant(ctx, {
+      keys: (args.attachments ?? []).map((file) => file.key),
+      attachedEntityType: "offer",
+      attachedEntityId: String(offerCaseId),
+      visibilityScope: "organization",
+    });
     return offerCaseId;
   }
 
@@ -197,6 +204,12 @@ async function createOfferCase(
     kind: "case_created",
     actorAuthUserId: access.authUserId,
     message: "Open offer drafted",
+  });
+  await attachOrganizationAssetsForTenant(ctx, {
+    keys: (args.attachments ?? []).map((file) => file.key),
+    attachedEntityType: "offer",
+    attachedEntityId: String(offerCaseId),
+    visibilityScope: "organization",
   });
   return offerCaseId;
 }
@@ -253,6 +266,12 @@ export async function updateOfferDraftService(ctx: MutationCtx, args: UpdateOffe
     kind: "note_added",
     actorAuthUserId: access.authUserId,
     message: "Draft updated",
+  });
+  await attachOrganizationAssetsForTenant(ctx, {
+    keys: (args.attachments ?? []).map((file) => file.key),
+    attachedEntityType: "offer",
+    attachedEntityId: String(offerCase._id),
+    visibilityScope: "organization",
   });
   return { ok: true } as const;
 }

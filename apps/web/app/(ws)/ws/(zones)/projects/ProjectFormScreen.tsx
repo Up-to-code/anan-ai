@@ -81,6 +81,7 @@ function ProjectFormLayout(args: {
   title: string;
   description: string;
   submitLabel: string;
+  cancelHref: string;
   pending: boolean;
   onSave: (data: ProjectFormData) => Promise<ProjectFormSaveResult>;
   onCancel: () => void;
@@ -104,6 +105,7 @@ function ProjectFormLayout(args: {
             submitLabel={args.pending ? (locale === "fr" ? "Enregistrement..." : locale === "en" ? "Saving..." : "جارٍ الحفظ...") : args.submitLabel}
             onSave={args.onSave}
             onCancel={args.onCancel}
+            cancelHref={args.cancelHref}
             onDelete={args.onDelete}
             onRevokeViewer={args.onRevokeViewer}
           />
@@ -143,6 +145,7 @@ export default function ProjectFormScreen({
       title={title}
       description={description}
       submitLabel={submitLabel}
+      cancelHref={projectId ? `/ws/projects/${projectId}` : "/ws/projects"}
       pending={pending}
       onSave={handleSave}
       onCancel={handleCancel}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -612,14 +613,13 @@ function OfferBrandPanel({
           </button>
 
           {editHref ? (
-            <button
-              type="button"
-              onClick={() => router.push(editHref)}
+            <Link
+              href={editHref}
               className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-muted/70"
             >
               <ExternalLink className="h-4 w-4" />
               تعديل المسودة
-            </button>
+            </Link>
           ) : null}
 
           {offer.canPublish && onPublish ? (
@@ -764,14 +764,13 @@ export default function OfferDetailPage({
     <div className="flex min-h-full flex-col bg-background/50 pb-24">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-8 lg:px-8">
         <nav className="flex flex-wrap items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={() => router.push("/ws/offers")}
+          <Link
+            href="/ws/offers"
             className="inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.2em] text-muted-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             العودة للعروض
-          </button>
+          </Link>
 
           <div className="flex flex-wrap items-center gap-2">
             <DetailBadge value={formatOfferTypeLabel(offer.type)} />

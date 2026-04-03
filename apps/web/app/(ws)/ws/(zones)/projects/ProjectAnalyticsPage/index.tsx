@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Activity,
   ArrowLeft,
@@ -809,7 +809,6 @@ function BrokerProjectAnalyticsPage({
     source: string;
   }) => Promise<{ ok: true }>;
 }) {
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<AnalyticsTabKey>("overview");
   const [activePerformanceMetric, setActivePerformanceMetric] =
     useState<PerformanceMetricKey>("views");
@@ -829,14 +828,13 @@ function BrokerProjectAnalyticsPage({
     <div className="min-h-full bg-background/60 pb-24">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-6 lg:px-8 lg:py-8">
         <nav className="flex flex-wrap items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={() => router.push(`/ws/projects/${project.id}`)}
+          <Link
+            href={`/ws/projects/${project.id}`}
             className="inline-flex items-center gap-2 text-[12px] font-bold tracking-[0.2em] text-muted-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             العودة لتفاصيل المشروع
-          </button>
+          </Link>
           <div className="text-right">
             <div className="text-[11px] font-bold tracking-[0.18em] text-muted-foreground">Project Analytics</div>
             <div className="mt-1 text-[14px] font-bold text-foreground">{project.title}</div>

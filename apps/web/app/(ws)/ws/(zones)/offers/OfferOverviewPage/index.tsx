@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import OfferPaginationNav from "../OfferPaginationNav";
 import OfferListItem from "../OfferListItem";

@@ -1,7 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import Link from "next/link";
 import PropertyCard from "../../../_components/Visuals/PropertyCard";
 import type { WorkspaceProject } from "../projectTypes";
 import type { ProjectAnalyticsEventType } from "@/server/contracts/properties";
@@ -24,9 +23,6 @@ export default function ProjectPortfolioCard({
   project,
   onTrackProjectEvent,
 }: ProjectPortfolioCardProps) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-
   return (
     <PropertyCard
       image={project.image}
@@ -42,31 +38,26 @@ export default function ProjectPortfolioCard({
       density="flexible"
       footer={
         <div className="flex items-center justify-between gap-3">
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={() =>
-              startTransition(async () => {
-                await onTrackProjectEvent?.({
-                  id: project.id,
-                  eventType: "project_analyze_click",
-                  source: "projects_list_card",
-                });
-                router.push(`/ws/projects/${project.id}/analytics`);
-              })
-            }
+          <Link
+            href={`/ws/projects/${project.id}/analytics`}
+            onClick={() => {
+              void onTrackProjectEvent?.({
+                id: project.id,
+                eventType: "project_analyze_click",
+                source: "projects_list_card",
+              });
+            }}
             className="inline-flex items-center justify-center rounded-xl bg-foreground px-4 py-2 text-[12px] font-bold text-background transition hover:bg-foreground/90 disabled:opacity-60"
           >
-            {isPending ? "جارٍ الفتح..." : "تحليل"}
-          </button>
+            تحليل
+          </Link>
 
-          <button
-            type="button"
-            onClick={() => router.push(`/ws/projects/${project.id}`)}
+          <Link
+            href={`/ws/projects/${project.id}`}
             className="inline-flex items-center justify-center rounded-xl border border-border bg-background px-4 py-2 text-[12px] font-bold text-foreground transition hover:bg-muted"
           >
             فتح التفاصيل
-          </button>
+          </Link>
         </div>
       }
     />

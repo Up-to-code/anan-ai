@@ -42,6 +42,7 @@ export type AgPropertyFormProps = {
   submitLabel?: string;
   onSave?: (data: ProjectFormData) => Promise<ProjectFormSaveResult> | ProjectFormSaveResult;
   onCancel?: () => void;
+  cancelHref?: string;
   onDelete?: () => void;
   onRevokeViewer?: (viewerAuthUserId: string) => Promise<void> | void;
 };

@@ -377,14 +377,13 @@ export default function CreateOfferForm({
             <h1 className="text-3xl font-black text-foreground">{copy.pageTitle}</h1>
             <p className="mt-2 max-w-3xl text-[14px] leading-7 text-muted-foreground">{copy.pageDescription}</p>
           </div>
-          <button
-            type="button"
-            onClick={() => router.push(backHref)}
+          <Link
+            href={backHref}
             className="inline-flex items-center gap-2 rounded-2xl border border-border bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-muted"
           >
             <ArrowLeft className="h-4 w-4" />
             {copy.back}
-          </button>
+          </Link>
         </header>
 
         {organization ? (

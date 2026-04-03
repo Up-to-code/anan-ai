@@ -43,7 +43,12 @@ export default async function CrmZoneLayout({
       })}
     >
       <div className="flex min-h-full flex-col">
-        <CrmRouteTabs />
+        <CrmRouteTabs
+          labels={{
+            deals: locale === "fr" ? "Transactions" : locale === "en" ? "Deals" : "الصفقات",
+            clients: locale === "fr" ? "Clients" : locale === "en" ? "Clients" : "العملاء",
+          }}
+        />
         <div className="flex-1">{children}</div>
       </div>
     </WorkspaceShell>
