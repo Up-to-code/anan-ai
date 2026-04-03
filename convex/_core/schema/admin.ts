@@ -86,6 +86,22 @@ const adminTables = {
     .index("subjectREDId", ["subjectREDId"])
     .index("subjectPropertyId", ["subjectPropertyId"])
     .index("submittedAt", ["submittedAt"]),
+
+  adminDataHealthSummaries: defineTable({
+    summaryType: v.string(),
+    tenantOrgId: v.optional(v.string()),
+    status: v.union(v.literal("healthy"), v.literal("warning"), v.literal("critical")),
+    value: v.optional(v.number()),
+    recordCount: v.optional(v.number()),
+    staleAfterMs: v.optional(v.number()),
+    lastAggregatedAt: v.number(),
+    staleSince: v.optional(v.number()),
+    details: v.optional(v.any()),
+    updatedAt: v.number(),
+  })
+    .index("summaryType", ["summaryType"])
+    .index("status", ["status"])
+    .index("tenantOrgId", ["tenantOrgId"]),
 };
 
 export default adminTables;

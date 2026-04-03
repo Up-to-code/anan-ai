@@ -14,6 +14,8 @@ const propertiesTables = {
     properties: defineTable({
         title: v.string(),
         address: v.string(),
+        tenantOrgId: v.optional(v.string()),
+        ownerType: v.optional(v.union(v.literal("broker"), v.literal("RED"))),
         REDId: v.optional(v.id("RED")), // Link to Real Estate Developer
         brokerId: v.optional(v.id("brokers")),
         price: v.number(),
@@ -45,12 +47,27 @@ const propertiesTables = {
         ),
         adLicenseExpiresAt: v.optional(v.number()),
         adLicenseVerificationRequestId: v.optional(v.id("verificationRequests")),
+        ownerCountryCode: v.optional(v.string()),
+        ownerVerified: v.optional(v.boolean()),
+        listingVerified: v.optional(v.boolean()),
+        isPublicSearchable: v.optional(v.boolean()),
+        createdAt: v.optional(v.number()),
+        updatedAt: v.optional(v.number()),
     })
+        .index("tenantOrgId", ["tenantOrgId"])
+        .index("tenantOrgId_updatedAt", ["tenantOrgId", "updatedAt"])
+        .index("tenantOrgId_publicationState_updatedAt", ["tenantOrgId", "publicationState", "updatedAt"])
+        .index("tenantOrgId_status_updatedAt", ["tenantOrgId", "status", "updatedAt"])
         .index("status", ["status"])
         .index("publicationState", ["publicationState"])
+        .index("publicationState_createdAt", ["publicationState", "createdAt"])
         .index("bankId", ["bankId"])
         .index("REDId", ["REDId"])
+        .index("REDId_publicationState_updatedAt", ["REDId", "publicationState", "updatedAt"])
+        .index("REDId_status_updatedAt", ["REDId", "status", "updatedAt"])
         .index("brokerId", ["brokerId"])
+        .index("brokerId_publicationState_updatedAt", ["brokerId", "publicationState", "updatedAt"])
+        .index("brokerId_status_updatedAt", ["brokerId", "status", "updatedAt"])
         .searchIndex("search_body", { searchField: "description" })
         .searchIndex("search_full", { searchField: "searchText" }),
     propertyViewerAccess: defineTable({
@@ -92,10 +109,86 @@ const propertiesTables = {
         dealId: v.optional(v.id("deals")),
         metadata: v.optional(v.any()),
         createdAt: v.number(),
+        tenantOrgId: v.optional(v.string()),
+        ownerType: v.optional(v.union(v.literal("broker"), v.literal("RED"))),
     })
         .index("propertyId", ["propertyId"])
         .index("propertyId_createdAt", ["propertyId", "createdAt"])
-        .index("propertyId_eventType", ["propertyId", "eventType"]),
+        .index("propertyId_eventType", ["propertyId", "eventType"])
+        .index("propertyId_eventType_createdAt", ["propertyId", "eventType", "createdAt"]),
+    propertyEngagementDaily: defineTable({
+        propertyId: v.id("properties"),
+        tenantOrgId: v.string(),
+        dateKey: v.string(),
+        views: v.number(),
+        clicks: v.number(),
+        viewers: v.number(),
+        updatedAt: v.number(),
+        lastEventAt: v.optional(v.number()),
+    })
+        .index("propertyId_dateKey", ["propertyId", "dateKey"])
+        .index("tenantOrgId_dateKey", ["tenantOrgId", "dateKey"]),
+    propertyBrokerAnalytics: defineTable({
+        propertyId: v.id("properties"),
+        tenantOrgId: v.string(),
+        brokerId: v.id("brokers"),
+        views: v.number(),
+        clicks: v.number(),
+        totalTrackedCustomers: v.number(),
+        brokerManagedCustomers: v.number(),
+        internalCustomers: v.number(),
+        closedWonCustomers: v.number(),
+        closedLostCustomers: v.number(),
+        activityCounts: v.object({
+            new_client: v.number(),
+            in_call: v.number(),
+            interested: v.number(),
+            visit_requested: v.number(),
+            visit_scheduled: v.number(),
+            permit_review: v.number(),
+            closed_won: v.number(),
+            closed_lost: v.number(),
+        }),
+        currentActivityKey: v.optional(
+            v.union(
+                v.literal("new_client"),
+                v.literal("in_call"),
+                v.literal("interested"),
+                v.literal("visit_requested"),
+                v.literal("visit_scheduled"),
+                v.literal("permit_review"),
+                v.literal("closed_won"),
+                v.literal("closed_lost"),
+            ),
+        ),
+        state: v.union(
+            v.literal("viewer_only"),
+            v.literal("offer_active"),
+            v.literal("client_linked"),
+            v.literal("closed_won"),
+            v.literal("closed_lost"),
+        ),
+        lastActivityAt: v.optional(v.number()),
+        updatedAt: v.number(),
+    })
+        .index("propertyId_brokerId", ["propertyId", "brokerId"])
+        .index("propertyId_lastActivityAt", ["propertyId", "lastActivityAt"])
+        .index("tenantOrgId_lastActivityAt", ["tenantOrgId", "lastActivityAt"]),
+    organizationProjectSummaries: defineTable({
+        tenantOrgId: v.string(),
+        ownerType: v.union(v.literal("broker"), v.literal("RED")),
+        ownerBrokerId: v.optional(v.id("brokers")),
+        ownerREDId: v.optional(v.id("RED")),
+        propertyCount: v.number(),
+        publishedPropertyCount: v.number(),
+        draftPropertyCount: v.number(),
+        archivedPropertyCount: v.number(),
+        lastPropertyCreatedAt: v.optional(v.number()),
+        updatedAt: v.number(),
+    })
+        .index("tenantOrgId", ["tenantOrgId"])
+        .index("ownerBrokerId", ["ownerBrokerId"])
+        .index("ownerREDId", ["ownerREDId"]),
     organizationAssets: defineTable({
         tenantOrgId: v.string(),
         uploaderAuthUserId: v.string(),

@@ -1,4 +1,4 @@
-import { getOrganizationApiKeyHeader } from "@/app/api/org/_shared";
+import { getOrganizationApiKeyHeader, getOrganizationApiKeyOrigin } from "@/app/api/org/_shared";
 import { toErrorResponse } from "@/server/contracts/errors";
 import { getOrganizationBrokerByApiKey } from "@/server/domains/auth/organizationApiKeys/service";
 
@@ -14,7 +14,7 @@ type OrganizationBrokerRouteProps = {
 export async function GET(request: Request, { params }: OrganizationBrokerRouteProps) {
   try {
     const { brokerId } = await params;
-    return Response.json({ broker: await getOrganizationBrokerByApiKey(getOrganizationApiKeyHeader(request), brokerId) });
+    return Response.json({ broker: await getOrganizationBrokerByApiKey(getOrganizationApiKeyHeader(request), brokerId, getOrganizationApiKeyOrigin(request)) });
   } catch (error) {
     return toErrorResponse(error);
   }

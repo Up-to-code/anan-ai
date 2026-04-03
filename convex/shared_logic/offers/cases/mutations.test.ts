@@ -86,7 +86,7 @@ it("attaches offer attachments to the offer case on create", async () => {
 
   await seedOrganizationAsset(t, "file-1");
 
-  const result = await t.mutation(
+  const result: any = await t.mutation(
     api.shared_logic.offers.createOffer as never,
     {
       propertyId,
@@ -118,7 +118,7 @@ it("attaches offer attachments to the offer case on update", async () => {
   const { brokerId, propertyId } = await seedBrokerProperty(t);
   setBrokerAccess(String(brokerId));
 
-  const created = await t.mutation(
+  const created: any = await t.mutation(
     api.shared_logic.offers.createOffer as never,
     {
       propertyId,

@@ -77,6 +77,6 @@ describe("OfferListItem", () => {
     expect(markup).toContain("3+");
     expect(markup).toContain("الحمامات");
     expect(markup).toContain("المساحة");
-    expect(markup).toContain("180-220 م²");
+    expect(markup).toContain("180-220 m²");
   });
 });

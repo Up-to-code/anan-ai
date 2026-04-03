@@ -3,6 +3,11 @@ import { mutation, query } from "../../../_generated/server";
 import { auditLog } from "../../../auditLog";
 import { findProfileByAuthUserId, type OwnerContext } from "./core";
 import { requireApiKeyAccess } from "./membership";
+import { normalizeBaseUrl } from "../../../_core/security/authRedirects";
+import {
+  applyOrganizationProjectSummaryDelta,
+  buildPropertyProjectionFields,
+} from "../../properties/projections";
 import {
   ORGANIZATION_API_KEY_ACTIONS,
   ORGANIZATION_API_KEY_RESOURCES,
@@ -26,6 +31,16 @@ function permissionKey(permission: OrganizationApiKeyPermission) {
 
 function machineActorId(apiKey: any) {
   return `api_key:${apiKey.keyId}`;
+}
+
+function normalizeTrustedOrigins(origins: string[] | undefined) {
+  return Array.from(
+    new Set(
+      (origins ?? [])
+        .map((origin) => normalizeBaseUrl(origin))
+        .filter((origin): origin is string => Boolean(origin)),
+    ),
+  ).sort();
 }
 
 function normalizePermissions(permissions: OrganizationApiKeyPermission[]): OrganizationApiKeyPermission[] {
@@ -64,6 +79,13 @@ async function mapApiKeySummary(ctx: any, apiKey: any) {
     createdAt: apiKey.createdAt,
     revokedAt: apiKey.revokedAt,
     lastUsedAt: apiKey.lastUsedAt,
+    expiresAt: apiKey.expiresAt,
+    quotaWindowMinutes: apiKey.quotaWindowMinutes,
+    quotaLimit: apiKey.quotaLimit,
+    quotaUsed: apiKey.quotaUsed,
+    quotaWindowStartedAt: apiKey.quotaWindowStartedAt,
+    trustedOrigins: apiKey.trustedOrigins ?? [],
+    lastOrigin: apiKey.lastOrigin,
   } as const;
 }
 
@@ -108,7 +130,13 @@ async function getApiKeyBySecretHashOrThrow(ctx: any, secretHash: string) {
     .query("organizationApiKeys")
     .withIndex("secretHash", (q: any) => q.eq("secretHash", secretHash))
     .unique();
-  if (!apiKey || apiKey.status !== "active" || apiKey.revokedAt) {
+  const now = Date.now();
+  if (
+    !apiKey ||
+    apiKey.status !== "active" ||
+    apiKey.revokedAt ||
+    (apiKey.expiresAt && apiKey.expiresAt <= now)
+  ) {
     throw new ConvexError({ code: "UNAUTHORIZED", message: "Invalid API key" });
   }
   return apiKey;
@@ -146,6 +174,172 @@ function buildOwnerFromApiKey(apiKey: any): OwnerContext {
 
 async function touchApiKey(ctx: any, apiKeyId: any, now: number) {
   await ctx.db.patch(apiKeyId, { lastUsedAt: now });
+}
+
+async function getOrganizationIntegrationPolicy(ctx: any, tenantOrgId: string | undefined) {
+  if (!tenantOrgId) return null;
+  return ctx.db
+    .query("organizationIntegrationPolicies")
+    .withIndex("tenantOrgId", (q: any) => q.eq("tenantOrgId", tenantOrgId))
+    .unique();
+}
+
+function getUsageDateKey(timestamp: number) {
+  return new Date(timestamp).toISOString().slice(0, 10);
+}
+
+async function upsertApiKeyUsageDaily(args: {
+  ctx: any;
+  apiKey: any;
+  now: number;
+  denied?: boolean;
+}) {
+  if (!args.apiKey.tenantOrgId) return;
+  const dateKey = getUsageDateKey(args.now);
+  const existing = await args.ctx.db
+    .query("organizationApiKeyUsageDaily")
+    .withIndex("apiKeyId_dateKey", (q: any) => q.eq("apiKeyId", args.apiKey.keyId).eq("dateKey", dateKey))
+    .unique();
+  if (existing) {
+    await args.ctx.db.patch(existing._id, {
+      requestCount: existing.requestCount + (args.denied ? 0 : 1),
+      deniedCount: existing.deniedCount + (args.denied ? 1 : 0),
+      lastUsedAt: args.denied ? existing.lastUsedAt : args.now,
+      lastDeniedAt: args.denied ? args.now : existing.lastDeniedAt,
+      updatedAt: args.now,
+    });
+    return;
+  }
+  await args.ctx.db.insert("organizationApiKeyUsageDaily", {
+    tenantOrgId: args.apiKey.tenantOrgId,
+    apiKeyId: args.apiKey.keyId,
+    dateKey,
+    requestCount: args.denied ? 0 : 1,
+    deniedCount: args.denied ? 1 : 0,
+    lastUsedAt: args.denied ? undefined : args.now,
+    lastDeniedAt: args.denied ? args.now : undefined,
+    updatedAt: args.now,
+  });
+}
+
+async function denyApiKeyRequest(args: {
+  ctx: any;
+  apiKey: any;
+  now: number;
+  reason: string;
+  origin?: string;
+}) {
+  await args.ctx.db.patch(args.apiKey._id, {
+    lastDeniedAt: args.now,
+    lastDeniedReason: args.reason,
+    lastOrigin: args.origin,
+    anomalyFlags: Array.from(new Set([...(args.apiKey.anomalyFlags ?? []), args.reason])),
+  });
+  await upsertApiKeyUsageDaily({
+    ctx: args.ctx,
+    apiKey: args.apiKey,
+    now: args.now,
+    denied: true,
+  });
+  await auditLog.log(args.ctx, {
+    action: "organization.api_key.denied",
+    actorId: machineActorId(args.apiKey),
+    resourceType: "organizationApiKeys",
+    resourceId: String(args.apiKey._id),
+    severity: "warning",
+    tags: ["organizations", "api-keys", "machine-api"],
+    metadata: {
+      apiKeyId: args.apiKey.keyId,
+      reason: args.reason,
+      origin: args.origin ?? null,
+    },
+  });
+}
+
+async function enforceApiKeyRequestPolicy(args: {
+  ctx: any;
+  apiKey: any;
+  now: number;
+  origin?: string;
+}) {
+  const normalizedOrigin = normalizeBaseUrl(args.origin);
+  const integrationPolicy = await getOrganizationIntegrationPolicy(args.ctx, args.apiKey.tenantOrgId);
+  if (integrationPolicy?.policyStatus === "restricted") {
+    await denyApiKeyRequest({
+      ctx: args.ctx,
+      apiKey: args.apiKey,
+      now: args.now,
+      reason: "policy_restricted",
+      origin: normalizedOrigin ?? undefined,
+    });
+    throw new ConvexError({ code: "FORBIDDEN", message: "Organization integration policy is restricted" });
+  }
+
+  const trustedOrigins = normalizeTrustedOrigins([
+    ...(integrationPolicy?.trustedOrigins ?? []),
+    ...(args.apiKey.trustedOrigins ?? []),
+  ]);
+  if (normalizedOrigin && trustedOrigins.length > 0 && !trustedOrigins.includes(normalizedOrigin)) {
+    await denyApiKeyRequest({
+      ctx: args.ctx,
+      apiKey: args.apiKey,
+      now: args.now,
+      reason: "origin_not_allowed",
+      origin: normalizedOrigin,
+    });
+    throw new ConvexError({ code: "FORBIDDEN", message: "API key origin is not allowed" });
+  }
+
+  const windowMinutes = args.apiKey.quotaWindowMinutes ?? 60;
+  const windowMs = windowMinutes * 60 * 1000;
+  const windowStartedAt = args.apiKey.quotaWindowStartedAt ?? args.now;
+  const inWindow = args.now - windowStartedAt < windowMs;
+  const nextQuotaUsed = (inWindow ? (args.apiKey.quotaUsed ?? 0) : 0) + 1;
+  const quotaLimit = args.apiKey.quotaLimit ?? 1000;
+
+  if (nextQuotaUsed > quotaLimit) {
+    await denyApiKeyRequest({
+      ctx: args.ctx,
+      apiKey: args.apiKey,
+      now: args.now,
+      reason: "quota_exceeded",
+      origin: normalizedOrigin ?? undefined,
+    });
+    throw new ConvexError({ code: "RATE_LIMITED", message: "API key quota exceeded" });
+  }
+
+  await args.ctx.db.patch(args.apiKey._id, {
+    quotaWindowMinutes: windowMinutes,
+    quotaLimit,
+    quotaUsed: nextQuotaUsed,
+    quotaWindowStartedAt: inWindow ? windowStartedAt : args.now,
+    lastOrigin: normalizedOrigin ?? args.apiKey.lastOrigin,
+  });
+  await touchApiKey(args.ctx, args.apiKey._id, args.now);
+  await upsertApiKeyUsageDaily({
+    ctx: args.ctx,
+    apiKey: args.apiKey,
+    now: args.now,
+  });
+}
+
+async function authorizeMachineRequest(args: {
+  ctx: any;
+  secretHash: string;
+  now: number;
+  resource: OrganizationApiKeyResource;
+  action: OrganizationApiKeyAction;
+  origin?: string;
+}) {
+  const apiKey = await getApiKeyBySecretHashOrThrow(args.ctx, args.secretHash);
+  await enforceApiKeyRequestPolicy({
+    ctx: args.ctx,
+    apiKey,
+    now: args.now,
+    origin: args.origin,
+  });
+  requireApiKeyPermission(apiKey, args.resource, args.action);
+  return apiKey;
 }
 
 async function logMachineMutation(args: {
@@ -301,6 +495,14 @@ async function mapDealRecord(ctx: any, deal: any) {
 }
 
 async function listClientsForOwner(ctx: any, owner: OwnerContext) {
+  if (owner.tenantOrgId) {
+    const clients = await ctx.db
+      .query("crmClients")
+      .withIndex("tenantOrgId_updatedAt", (q: any) => q.eq("tenantOrgId", owner.tenantOrgId))
+      .order("desc")
+      .collect();
+    return clients.map(mapClientRecord);
+  }
   if (owner.ownerType === "broker") {
     const clients = await ctx.db
       .query("crmClients")
@@ -336,6 +538,14 @@ function buildPropertySearchText(property: {
 }
 
 async function listPropertiesForOwner(ctx: any, owner: OwnerContext) {
+  if (owner.tenantOrgId) {
+    const properties = await ctx.db
+      .query("properties")
+      .withIndex("tenantOrgId_updatedAt", (q: any) => q.eq("tenantOrgId", owner.tenantOrgId))
+      .order("desc")
+      .collect();
+    return properties.map(mapPropertyRecord);
+  }
   if (owner.ownerType === "broker") {
     const properties = await ctx.db
       .query("properties")
@@ -359,6 +569,18 @@ async function getOwnedPropertyOrThrow(ctx: any, owner: OwnerContext, propertyId
 }
 
 async function listDealsForOwner(ctx: any, owner: OwnerContext) {
+  if (owner.tenantOrgId) {
+    const deals = await ctx.db
+      .query("deals")
+      .withIndex("tenantOrgId", (q: any) => q.eq("tenantOrgId", owner.tenantOrgId))
+      .collect();
+    return Promise.all(
+      deals
+        .filter((deal: any) => !deal.archivedAt)
+        .sort((left: any, right: any) => (right.updatedAt ?? right.createdAt ?? right._creationTime) - (left.updatedAt ?? left.createdAt ?? left._creationTime))
+        .map((deal: any) => mapDealRecord(ctx, deal)),
+    );
+  }
   const deals = owner.ownerType === "broker"
     ? await ctx.db.query("deals").withIndex("brokerId", (q: any) => q.eq("brokerId", owner.ownerBrokerId)).collect()
     : await ctx.db.query("deals").withIndex("REDId", (q: any) => q.eq("REDId", owner.ownerREDId)).collect();
@@ -407,6 +629,7 @@ async function createImplicitClientForDeal(args: {
   if (!args.contactName) return undefined;
   return args.ctx.db.insert("crmClients", {
     ownerAuthUserId: args.apiKey.createdBy,
+    tenantOrgId: args.owner.tenantOrgId,
     brokerId: args.owner.ownerType === "broker" ? args.owner.ownerBrokerId : undefined,
     REDId: args.owner.ownerType === "RED" ? args.owner.ownerREDId : undefined,
     name: args.contactName,
@@ -456,11 +679,15 @@ export const createCurrentOrganizationApiKey = mutation({
     }
 
     const normalizedPermissions = normalizePermissions(args.permissions);
+    const policy = owner.tenantOrgId
+      ? await getOrganizationIntegrationPolicy(ctx, owner.tenantOrgId)
+      : null;
     const apiKeyId = await ctx.db.insert("organizationApiKeys", {
       keyId: args.keyId,
       prefix: args.prefix,
       secretHash: args.secretHash,
       name: args.name,
+      trustedOrigins: normalizeTrustedOrigins(policy?.trustedOrigins),
       permissions: normalizedPermissions,
       status: "active",
       ownerType: owner.ownerType,
@@ -470,6 +697,11 @@ export const createCurrentOrganizationApiKey = mutation({
       createdBy: profile.authUserId,
       createdAt: args.now,
       lastUsedAt: undefined,
+      quotaWindowMinutes: 60,
+      quotaLimit: 1000,
+      quotaUsed: 0,
+      quotaWindowStartedAt: args.now,
+      anomalyFlags: [],
     });
     await auditLog.log(ctx, {
       action: "organization.api_key.created",
@@ -530,11 +762,17 @@ export const listClientsByApiKey = mutation({
   args: {
     secretHash: v.string(),
     now: v.number(),
+    origin: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
-    requireApiKeyPermission(apiKey, "clients", "read");
-    await touchApiKey(ctx, apiKey._id, args.now);
+    const apiKey = await authorizeMachineRequest({
+      ctx,
+      secretHash: args.secretHash,
+      now: args.now,
+      resource: "clients",
+      action: "read",
+      origin: args.origin,
+    });
     return { clients: await listClientsForOwner(ctx, buildOwnerFromApiKey(apiKey)) };
   },
 });
@@ -543,6 +781,7 @@ export const createClientByApiKey = mutation({
   args: {
     secretHash: v.string(),
     now: v.number(),
+    origin: v.optional(v.string()),
     name: v.string(),
     phone: v.optional(v.string()),
     email: v.optional(v.string()),
@@ -552,11 +791,18 @@ export const createClientByApiKey = mutation({
     businessId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
-    requireApiKeyPermission(apiKey, "clients", "create");
+    const apiKey = await authorizeMachineRequest({
+      ctx,
+      secretHash: args.secretHash,
+      now: args.now,
+      resource: "clients",
+      action: "create",
+      origin: args.origin,
+    });
     const owner = buildOwnerFromApiKey(apiKey);
     const clientId = await ctx.db.insert("crmClients", {
       ownerAuthUserId: apiKey.createdBy,
+      tenantOrgId: owner.tenantOrgId,
       brokerId: owner.ownerType === "broker" ? owner.ownerBrokerId : undefined,
       REDId: owner.ownerType === "RED" ? owner.ownerREDId : undefined,
       name: args.name,
@@ -570,7 +816,6 @@ export const createClientByApiKey = mutation({
       createdAt: args.now,
       updatedAt: args.now,
     });
-    await touchApiKey(ctx, apiKey._id, args.now);
     await logMachineMutation({
       ctx,
       apiKey,
@@ -586,6 +831,7 @@ export const updateClientByApiKey = mutation({
   args: {
     secretHash: v.string(),
     now: v.number(),
+    origin: v.optional(v.string()),
     clientId: v.id("crmClients"),
     name: v.optional(v.string()),
     phone: v.optional(v.string()),
@@ -596,8 +842,14 @@ export const updateClientByApiKey = mutation({
     businessId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
-    requireApiKeyPermission(apiKey, "clients", "update");
+    const apiKey = await authorizeMachineRequest({
+      ctx,
+      secretHash: args.secretHash,
+      now: args.now,
+      resource: "clients",
+      action: "update",
+      origin: args.origin,
+    });
     const owner = buildOwnerFromApiKey(apiKey);
     await getOwnedClientOrThrow(ctx, owner, args.clientId);
     await ctx.db.patch(args.clientId, {
@@ -610,7 +862,6 @@ export const updateClientByApiKey = mutation({
       ...(args.businessId !== undefined ? { businessId: args.businessId } : {}),
       updatedAt: args.now,
     });
-    await touchApiKey(ctx, apiKey._id, args.now);
     await logMachineMutation({
       ctx,
       apiKey,
@@ -626,15 +877,21 @@ export const deleteClientByApiKey = mutation({
   args: {
     secretHash: v.string(),
     now: v.number(),
+    origin: v.optional(v.string()),
     clientId: v.id("crmClients"),
   },
   handler: async (ctx, args) => {
-    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
-    requireApiKeyPermission(apiKey, "clients", "delete");
+    const apiKey = await authorizeMachineRequest({
+      ctx,
+      secretHash: args.secretHash,
+      now: args.now,
+      resource: "clients",
+      action: "delete",
+      origin: args.origin,
+    });
     const owner = buildOwnerFromApiKey(apiKey);
     await getOwnedClientOrThrow(ctx, owner, args.clientId);
     await ctx.db.delete(args.clientId);
-    await touchApiKey(ctx, apiKey._id, args.now);
     await logMachineMutation({
       ctx,
       apiKey,
@@ -650,11 +907,17 @@ export const listPropertiesByApiKey = mutation({
   args: {
     secretHash: v.string(),
     now: v.number(),
+    origin: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
-    requireApiKeyPermission(apiKey, "properties", "read");
-    await touchApiKey(ctx, apiKey._id, args.now);
+    const apiKey = await authorizeMachineRequest({
+      ctx,
+      secretHash: args.secretHash,
+      now: args.now,
+      resource: "properties",
+      action: "read",
+      origin: args.origin,
+    });
     return { properties: await listPropertiesForOwner(ctx, buildOwnerFromApiKey(apiKey)) };
   },
 });
@@ -663,6 +926,7 @@ export const createPropertyByApiKey = mutation({
   args: {
     secretHash: v.string(),
     now: v.number(),
+    origin: v.optional(v.string()),
     title: v.string(),
     address: v.string(),
     price: v.number(),
@@ -676,9 +940,20 @@ export const createPropertyByApiKey = mutation({
     businessId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
-    requireApiKeyPermission(apiKey, "properties", "create");
+    const apiKey = await authorizeMachineRequest({
+      ctx,
+      secretHash: args.secretHash,
+      now: args.now,
+      resource: "properties",
+      action: "create",
+      origin: args.origin,
+    });
     const owner = buildOwnerFromApiKey(apiKey);
+    const projections = await buildPropertyProjectionFields(ctx, {
+      ownerField: owner.ownerType === "broker" ? "brokerId" : "REDId",
+      ownerId: owner.ownerType === "broker" ? owner.ownerBrokerId : owner.ownerREDId,
+      publicationState: "draft",
+    } as any);
     const propertyId = await ctx.db.insert("properties", {
       title: args.title,
       address: args.address,
@@ -696,8 +971,17 @@ export const createPropertyByApiKey = mutation({
       publicationState: "draft",
       status: "available",
       searchText: buildPropertySearchText(args),
+      createdAt: args.now,
+      updatedAt: args.now,
+      ...projections,
     });
-    await touchApiKey(ctx, apiKey._id, args.now);
+    await applyOrganizationProjectSummaryDelta(ctx, {
+      ownerField: owner.ownerType === "broker" ? "brokerId" : "REDId",
+      ownerId: owner.ownerType === "broker" ? owner.ownerBrokerId : owner.ownerREDId,
+      nextPublicationState: "draft",
+      createdAt: args.now,
+      delta: 1,
+    } as any);
     await logMachineMutation({
       ctx,
       apiKey,
@@ -713,6 +997,7 @@ export const updatePropertyByApiKey = mutation({
   args: {
     secretHash: v.string(),
     now: v.number(),
+    origin: v.optional(v.string()),
     propertyId: v.id("properties"),
     title: v.optional(v.string()),
     address: v.optional(v.string()),
@@ -727,8 +1012,14 @@ export const updatePropertyByApiKey = mutation({
     businessId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
-    requireApiKeyPermission(apiKey, "properties", "update");
+    const apiKey = await authorizeMachineRequest({
+      ctx,
+      secretHash: args.secretHash,
+      now: args.now,
+      resource: "properties",
+      action: "update",
+      origin: args.origin,
+    });
     const owner = buildOwnerFromApiKey(apiKey);
     const property = await getOwnedPropertyOrThrow(ctx, owner, args.propertyId);
     const nextProperty = {
@@ -741,6 +1032,12 @@ export const updatePropertyByApiKey = mutation({
       area: args.area ?? property.area,
       location: args.location ?? property.location,
     };
+    const projections = await buildPropertyProjectionFields(ctx, {
+      ownerField: owner.ownerType === "broker" ? "brokerId" : "REDId",
+      ownerId: owner.ownerType === "broker" ? owner.ownerBrokerId : owner.ownerREDId,
+      publicationState: property.publicationState,
+      adLicenseStatus: property.adLicenseStatus,
+    } as any);
     await ctx.db.patch(args.propertyId, {
       ...(args.title !== undefined ? { title: args.title } : {}),
       ...(args.address !== undefined ? { address: args.address } : {}),
@@ -754,8 +1051,9 @@ export const updatePropertyByApiKey = mutation({
       ...(args.externalId !== undefined ? { externalId: args.externalId } : {}),
       ...(args.businessId !== undefined ? { businessId: args.businessId } : {}),
       searchText: buildPropertySearchText(nextProperty),
+      ...projections,
+      updatedAt: args.now,
     });
-    await touchApiKey(ctx, apiKey._id, args.now);
     await logMachineMutation({
       ctx,
       apiKey,
@@ -771,15 +1069,27 @@ export const deletePropertyByApiKey = mutation({
   args: {
     secretHash: v.string(),
     now: v.number(),
+    origin: v.optional(v.string()),
     propertyId: v.id("properties"),
   },
   handler: async (ctx, args) => {
-    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
-    requireApiKeyPermission(apiKey, "properties", "delete");
+    const apiKey = await authorizeMachineRequest({
+      ctx,
+      secretHash: args.secretHash,
+      now: args.now,
+      resource: "properties",
+      action: "delete",
+      origin: args.origin,
+    });
     const owner = buildOwnerFromApiKey(apiKey);
-    await getOwnedPropertyOrThrow(ctx, owner, args.propertyId);
+    const property = await getOwnedPropertyOrThrow(ctx, owner, args.propertyId);
     await ctx.db.delete(args.propertyId);
-    await touchApiKey(ctx, apiKey._id, args.now);
+    await applyOrganizationProjectSummaryDelta(ctx, {
+      ownerField: owner.ownerType === "broker" ? "brokerId" : "REDId",
+      ownerId: owner.ownerType === "broker" ? owner.ownerBrokerId : owner.ownerREDId,
+      previousPublicationState: property.publicationState,
+      delta: -1,
+    } as any);
     await logMachineMutation({
       ctx,
       apiKey,
@@ -795,11 +1105,17 @@ export const listDealsByApiKey = mutation({
   args: {
     secretHash: v.string(),
     now: v.number(),
+    origin: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
-    requireApiKeyPermission(apiKey, "deals", "read");
-    await touchApiKey(ctx, apiKey._id, args.now);
+    const apiKey = await authorizeMachineRequest({
+      ctx,
+      secretHash: args.secretHash,
+      now: args.now,
+      resource: "deals",
+      action: "read",
+      origin: args.origin,
+    });
     return { deals: await listDealsForOwner(ctx, buildOwnerFromApiKey(apiKey)) };
   },
 });
@@ -808,6 +1124,7 @@ export const createDealByApiKey = mutation({
   args: {
     secretHash: v.string(),
     now: v.number(),
+    origin: v.optional(v.string()),
     title: v.string(),
     description: v.optional(v.string()),
     value: v.optional(v.number()),
@@ -825,8 +1142,14 @@ export const createDealByApiKey = mutation({
     businessId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
-    requireApiKeyPermission(apiKey, "deals", "create");
+    const apiKey = await authorizeMachineRequest({
+      ctx,
+      secretHash: args.secretHash,
+      now: args.now,
+      resource: "deals",
+      action: "create",
+      origin: args.origin,
+    });
     const owner = buildOwnerFromApiKey(apiKey);
 
     const clientId = args.clientId
@@ -855,6 +1178,8 @@ export const createDealByApiKey = mutation({
 
     const dealId = await ctx.db.insert("deals", {
       createdAt: args.now,
+      updatedAt: args.now,
+      tenantOrgId: owner.tenantOrgId,
       title: args.title,
       description: args.description,
       value: args.value,
@@ -874,7 +1199,6 @@ export const createDealByApiKey = mutation({
       businessId: args.businessId,
       lastUpdatedBy: machineActorId(apiKey),
     });
-    await touchApiKey(ctx, apiKey._id, args.now);
     await logMachineMutation({
       ctx,
       apiKey,
@@ -890,6 +1214,7 @@ export const updateDealByApiKey = mutation({
   args: {
     secretHash: v.string(),
     now: v.number(),
+    origin: v.optional(v.string()),
     dealId: v.id("deals"),
     title: v.optional(v.string()),
     description: v.optional(v.string()),
@@ -908,8 +1233,14 @@ export const updateDealByApiKey = mutation({
     businessId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
-    requireApiKeyPermission(apiKey, "deals", "update");
+    const apiKey = await authorizeMachineRequest({
+      ctx,
+      secretHash: args.secretHash,
+      now: args.now,
+      resource: "deals",
+      action: "update",
+      origin: args.origin,
+    });
     const owner = buildOwnerFromApiKey(apiKey);
     const deal = await getOwnedDealOrThrow(ctx, owner, args.dealId);
 
@@ -955,8 +1286,8 @@ export const updateDealByApiKey = mutation({
       ...(args.externalId !== undefined ? { externalId: args.externalId } : {}),
       ...(args.businessId !== undefined ? { businessId: args.businessId } : {}),
       lastUpdatedBy: machineActorId(apiKey),
+      updatedAt: args.now,
     });
-    await touchApiKey(ctx, apiKey._id, args.now);
     await logMachineMutation({
       ctx,
       apiKey,
@@ -972,19 +1303,26 @@ export const deleteDealByApiKey = mutation({
   args: {
     secretHash: v.string(),
     now: v.number(),
+    origin: v.optional(v.string()),
     dealId: v.id("deals"),
   },
   handler: async (ctx, args) => {
-    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
-    requireApiKeyPermission(apiKey, "deals", "delete");
+    const apiKey = await authorizeMachineRequest({
+      ctx,
+      secretHash: args.secretHash,
+      now: args.now,
+      resource: "deals",
+      action: "delete",
+      origin: args.origin,
+    });
     const owner = buildOwnerFromApiKey(apiKey);
     await getOwnedDealOrThrow(ctx, owner, args.dealId);
     await ctx.db.patch(args.dealId, {
       archivedAt: args.now,
       archivedBy: machineActorId(apiKey),
       lastUpdatedBy: machineActorId(apiKey),
+      updatedAt: args.now,
     });
-    await touchApiKey(ctx, apiKey._id, args.now);
     await logMachineMutation({
       ctx,
       apiKey,
@@ -1000,11 +1338,17 @@ export const listBrokersByApiKey = mutation({
   args: {
     secretHash: v.string(),
     now: v.number(),
+    origin: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
-    requireApiKeyPermission(apiKey, "brokers", "read");
-    await touchApiKey(ctx, apiKey._id, args.now);
+    const apiKey = await authorizeMachineRequest({
+      ctx,
+      secretHash: args.secretHash,
+      now: args.now,
+      resource: "brokers",
+      action: "read",
+      origin: args.origin,
+    });
     return { brokers: await listBrokersDirectory(ctx) };
   },
 });
@@ -1013,13 +1357,19 @@ export const getBrokerByApiKey = mutation({
   args: {
     secretHash: v.string(),
     now: v.number(),
+    origin: v.optional(v.string()),
     brokerId: v.id("brokers"),
   },
   handler: async (ctx, args) => {
-    const apiKey = await getApiKeyBySecretHashOrThrow(ctx, args.secretHash);
-    requireApiKeyPermission(apiKey, "brokers", "read");
+    const apiKey = await authorizeMachineRequest({
+      ctx,
+      secretHash: args.secretHash,
+      now: args.now,
+      resource: "brokers",
+      action: "read",
+      origin: args.origin,
+    });
     const broker = await getBrokerOrThrow(ctx, args.brokerId);
-    await touchApiKey(ctx, apiKey._id, args.now);
     return { broker: mapBrokerRecord(broker) };
   },
 });

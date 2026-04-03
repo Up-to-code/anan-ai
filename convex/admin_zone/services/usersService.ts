@@ -32,7 +32,7 @@ export async function getUserDetailService(ctx: QueryCtx, { userId }: { userId: 
             .collect(),
         ctx.db
             .query("searchLogs")
-            .withIndex("userId", (q) => q.eq("userId", userId))
+            .withIndex("userId_createdAt", (q: any) => q.eq("userId", userId))
             .collect(),
         ctx.db
             .query("agentMemory")
@@ -60,11 +60,10 @@ export async function getUserKnowledgeResearchService(ctx: QueryCtx, { userId, l
 export async function getUserSearchLogsService(ctx: QueryCtx, { userId, limit }: { userId: string, limit: number }) {
     const logs = await ctx.db
         .query("searchLogs")
-        .withIndex("userId", (q) => q.eq("userId", userId))
-        .collect();
-    return logs
-        .sort((a, b) => (b._creationTime ?? 0) - (a._creationTime ?? 0))
-        .slice(0, limit);
+        .withIndex("userId_createdAt", (q: any) => q.eq("userId", userId))
+        .order("desc")
+        .take(limit);
+    return logs;
 }
 
 export async function getUserAgentMemoryService(ctx: QueryCtx, { userId }: { userId: string }) {

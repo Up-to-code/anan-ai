@@ -23,6 +23,8 @@ import {
   ShieldCheck,
   Tag,
 } from "lucide-react";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { formatLocaleDateTime } from "@/lib/locale";
 import {
   buildClientRequirementViewModel,
   buildWhatsAppHref,
@@ -31,6 +33,7 @@ import {
   formatOfferStageLabel,
   formatOfferTypeLabel,
 } from "../offerViewModel";
+import { formatOfferValueLabel, getOfferUiCopy } from "../offerLocalization";
 import type { WorkspaceOfferDetail } from "../offerTypes";
 import type { OfferActionResult } from "@/server/contracts/offers";
 
@@ -40,15 +43,18 @@ type PropertyTextBlock = {
   value: string;
 };
 
-function formatOrganizationTypeLabel(type: "broker" | "developer" | null) {
-  if (type === "broker") return "وسيط";
-  if (type === "developer") return "مطور";
-  return "جهة";
+function formatOrganizationTypeLabel(
+  type: "broker" | "developer" | null,
+  labels: { broker: string; developer: string; organization: string },
+) {
+  if (type === "broker") return labels.broker;
+  if (type === "developer") return labels.developer;
+  return labels.organization;
 }
 
 function organizationInitial(name?: string | null) {
   const trimmed = name?.trim();
-  return trimmed ? Array.from(trimmed)[0] : "؟";
+  return trimmed ? Array.from(trimmed)[0] : "?";
 }
 
 function normalizeDetailText(value?: string | null) {
@@ -63,11 +69,11 @@ function getPropertyMediaUrls(offer: WorkspaceOfferDetail) {
   return urls.filter((url, index) => urls.indexOf(url) === index);
 }
 
-function buildPropertyCategories(offer: WorkspaceOfferDetail) {
+function buildPropertyCategories(offer: WorkspaceOfferDetail, locale: ReturnType<typeof useWebLocale>["locale"]) {
   const categories = [
-    formatOfferTypeLabel(offer.type),
+    formatOfferTypeLabel(offer.type, locale),
     offer.productStatus,
-    formatOfferStageLabel(offer.stage),
+    formatOfferStageLabel(offer.stage, locale),
     offer.permitStatus,
     offer.property?.area,
   ]
@@ -77,19 +83,22 @@ function buildPropertyCategories(offer: WorkspaceOfferDetail) {
   return categories.filter((value, index) => categories.indexOf(value) === index);
 }
 
-function buildPropertyTextBlocks(offer: WorkspaceOfferDetail): PropertyTextBlock[] {
+function buildPropertyTextBlocks(
+  offer: WorkspaceOfferDetail,
+  copy: ReturnType<typeof getOfferUiCopy>,
+): PropertyTextBlock[] {
   const title = normalizeDetailText(offer.propertyTitle || offer.message);
   const candidates: PropertyTextBlock[] = [
     {
-      label: "وصف العقار",
+      label: copy.detail.propertyDescription,
       value: normalizeDetailText(offer.propertySummary),
     },
     {
-      label: "تفاصيل العرض",
+      label: copy.detail.offerDetails,
       value: normalizeDetailText(offer.description),
     },
     {
-      label: "معلومة إضافية",
+      label: copy.detail.additionalInfo,
       value: normalizeDetailText(offer.message),
     },
   ];
@@ -105,20 +114,20 @@ function buildPropertyTextBlocks(offer: WorkspaceOfferDetail): PropertyTextBlock
   });
 }
 
-function getOfferHeroTitle(offer: WorkspaceOfferDetail) {
-  return normalizeDetailText(offer.message) || normalizeDetailText(offer.propertyTitle) || "تفاصيل العرض";
+function getOfferHeroTitle(offer: WorkspaceOfferDetail, copy: ReturnType<typeof getOfferUiCopy>) {
+  return normalizeDetailText(offer.message) || normalizeDetailText(offer.propertyTitle) || copy.detail.detailFallbackTitle;
 }
 
-function getOfferHeroSummary(offer: WorkspaceOfferDetail) {
+function getOfferHeroSummary(offer: WorkspaceOfferDetail, copy: ReturnType<typeof getOfferUiCopy>) {
   if (offer.clientContext) {
-    return normalizeDetailText(offer.description) || "لا يوجد وصف إضافي لهذه الحالة.";
+    return normalizeDetailText(offer.description) || copy.detail.detailFallbackClientSummary;
   }
 
   return (
     normalizeDetailText(offer.propertySummary) ||
     normalizeDetailText(offer.description) ||
     normalizeDetailText(offer.message) ||
-    "لا يوجد وصف إضافي لهذه الوحدة حالياً."
+    copy.detail.detailFallbackPropertySummary
   );
 }
 
@@ -153,22 +162,9 @@ function DetailRow({
   );
 }
 
-function InfoChip({
-  icon: Icon,
-  value,
-}: {
-  icon: LucideIcon;
-  value: string;
-}) {
-  return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-bold text-foreground shadow-sm">
-      <Icon className="h-4 w-4" />
-      <span>{value}</span>
-    </div>
-  );
-}
-
 function ApartmentMediaSlider({ offer }: { offer: WorkspaceOfferDetail }) {
+  const { locale } = useWebLocale();
+  const copy = getOfferUiCopy(locale);
   const mediaUrls = getPropertyMediaUrls(offer);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -180,8 +176,8 @@ function ApartmentMediaSlider({ offer }: { offer: WorkspaceOfferDetail }) {
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-background text-muted-foreground">
               <Building2 className="h-6 w-6" />
             </div>
-            <div className="text-lg font-black text-foreground">لا توجد صور مرفقة لهذه الشقة حالياً.</div>
-            <div className="text-[13px] leading-6 text-muted-foreground">يمكنك متابعة تفاصيل الوحدة والموقع من الأقسام التالية.</div>
+            <div className="text-lg font-black text-foreground">{copy.detail.noPropertyImages}</div>
+            <div className="text-[13px] leading-6 text-muted-foreground">{copy.detail.noPropertyImagesHint}</div>
           </div>
         </div>
       </section>
@@ -216,7 +212,7 @@ function ApartmentMediaSlider({ offer }: { offer: WorkspaceOfferDetail }) {
                 type="button"
                 onClick={() => goTo(activeIndex - 1)}
                 className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/70"
-                aria-label="الصورة السابقة"
+                aria-label={copy.detail.previousImage}
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
@@ -224,7 +220,7 @@ function ApartmentMediaSlider({ offer }: { offer: WorkspaceOfferDetail }) {
                 type="button"
                 onClick={() => goTo(activeIndex + 1)}
                 className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/70"
-                aria-label="الصورة التالية"
+                aria-label={copy.detail.nextImage}
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
@@ -236,8 +232,8 @@ function ApartmentMediaSlider({ offer }: { offer: WorkspaceOfferDetail }) {
       {mediaUrls.length > 1 ? (
         <div className="rounded-[24px] border border-border/60 bg-card p-4 shadow-sm">
           <div className="flex items-center justify-between gap-3">
-            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Gallery</div>
-            <div className="text-[14px] font-black text-foreground">معرض الصور</div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{copy.detail.gallery}</div>
+            <div className="text-[14px] font-black text-foreground">{copy.detail.gallery}</div>
           </div>
           <div className="mt-4 grid gap-3 grid-cols-3 sm:grid-cols-5">
             {mediaUrls.map((image, index) => (
@@ -250,7 +246,7 @@ function ApartmentMediaSlider({ offer }: { offer: WorkspaceOfferDetail }) {
                     ? "border-foreground shadow-sm"
                     : "border-border/60 opacity-75 hover:opacity-100"
                 }`}
-                aria-label={`عرض الصورة ${index + 1}`}
+                aria-label={copy.detail.showImage.replace("{index}", String(index + 1))}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -324,24 +320,27 @@ function ApartmentSpecCard({
 }
 
 function ApartmentLocationPanel({ offer }: { offer: WorkspaceOfferDetail }) {
+  const { locale } = useWebLocale();
+  const copy = getOfferUiCopy(locale);
+
   return (
     <section className="rounded-[24px] border border-border/60 bg-card p-5 shadow-sm">
       <div className="text-right">
-        <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Location</div>
-        <h3 className="mt-2 text-xl font-black text-foreground">الموقع</h3>
+        <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{copy.detail.locationEyebrow}</div>
+        <h3 className="mt-2 text-xl font-black text-foreground">{copy.detail.locationTitle}</h3>
       </div>
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <PropertyFactCard
           icon={MapPin}
-          label="عنوان الشقة"
+          label={copy.detail.apartmentAddress}
           value={offer.propertyAddress}
-          helper={offer.propertyTitle || "عنوان الوحدة المعروضة"}
+          helper={offer.propertyTitle || copy.detail.apartmentAddressHint}
         />
         <PropertyFactCard
           icon={Building2}
-          label="داخل المنطقة"
-          value={offer.property?.area || offer.property?.location || "غير محدد"}
-          helper={offer.property?.location || "بدون مدينة أو نطاق إضافي"}
+          label={copy.detail.insideArea}
+          value={offer.property?.area || offer.property?.location || copy.list.noAddress}
+          helper={offer.property?.location || copy.detail.insideAreaHint}
         />
       </div>
     </section>
@@ -349,76 +348,77 @@ function ApartmentLocationPanel({ offer }: { offer: WorkspaceOfferDetail }) {
 }
 
 function OfferPrimaryData({ offer }: { offer: WorkspaceOfferDetail }) {
+  const { locale } = useWebLocale();
+  const copy = getOfferUiCopy(locale);
+
   if (offer.clientContext) {
-    const requirement = buildClientRequirementViewModel(offer.clientContext);
+    const requirement = buildClientRequirementViewModel(offer.clientContext, locale);
     if (!requirement) return null;
     return (
       <div className="rounded-[24px] bg-muted/10 px-5 py-4">
         <div className="text-right">
-          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">طلب العميل</div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{copy.list.clientRequest}</div>
           <div className="mt-2 text-[14px] leading-7 text-muted-foreground">{requirement.summary}</div>
         </div>
 
         <div className="mt-4 grid gap-x-6 sm:grid-cols-2 xl:grid-cols-3">
-          {requirement.budgetLabel ? <DetailRow icon={Tag} label="الميزانية" value={requirement.budgetLabel} /> : null}
-          {requirement.location ? (
-            <DetailRow icon={MapPin} label="الموقع" value={requirement.location} />
-          ) : null}
-          {requirement.area ? <DetailRow icon={Building2} label="المنطقة" value={requirement.area} /> : null}
-          {requirement.bedsLabel ? <DetailRow icon={Building2} label="الغرف" value={requirement.bedsLabel} /> : null}
-          {requirement.bathsLabel ? <DetailRow icon={Building2} label="الحمامات" value={requirement.bathsLabel} /> : null}
-          {requirement.sqftLabel ? <DetailRow icon={Building2} label="المساحة" value={requirement.sqftLabel} /> : null}
-          {requirement.phone ? <DetailRow icon={Mail} label="الهاتف" value={requirement.phone} /> : null}
+          {requirement.budgetLabel ? <DetailRow icon={Tag} label={copy.detail.budget} value={requirement.budgetLabel} /> : null}
+          {requirement.location ? <DetailRow icon={MapPin} label={copy.detail.location} value={requirement.location} /> : null}
+          {requirement.area ? <DetailRow icon={Building2} label={copy.detail.area} value={requirement.area} /> : null}
+          {requirement.bedsLabel ? <DetailRow icon={Building2} label={copy.detail.rooms} value={requirement.bedsLabel} /> : null}
+          {requirement.bathsLabel ? <DetailRow icon={Building2} label={copy.detail.baths} value={requirement.bathsLabel} /> : null}
+          {requirement.sqftLabel ? <DetailRow icon={Building2} label={copy.detail.space} value={requirement.sqftLabel} /> : null}
+          {requirement.phone ? <DetailRow icon={Mail} label={copy.detail.phone} value={requirement.phone} /> : null}
         </div>
       </div>
     );
   }
 
-  const textBlocks = buildPropertyTextBlocks(offer);
-  const categories = buildPropertyCategories(offer);
+  const textBlocks = buildPropertyTextBlocks(offer, copy);
+  const categories = buildPropertyCategories(offer, locale);
   const apartmentDescription = normalizeDetailText(offer.description) || normalizeDetailText(offer.propertySummary);
   const apartmentSpecs = [
     {
       icon: Tag,
-      label: "السعر",
-      value: formatOfferPrice(offer.price),
-      helper: offer.commissionText ?? "سعر الوحدة المعروض حالياً.",
+      label: copy.detail.price,
+      value: formatOfferPrice(offer.price, locale),
+      helper: offer.commissionText ?? copy.detail.priceHint,
     },
     offer.property?.beds != null
       ? {
           icon: BedDouble,
-          label: "الغرف",
-          value: `${offer.property.beds} غرف`,
-          helper: "عدد الغرف الأساسية داخل هذه الشقة.",
+          label: copy.detail.rooms,
+          value: formatOfferValueLabel(copy.detail.roomsValue, offer.property.beds),
+          helper: copy.detail.roomsHint,
         }
       : null,
     offer.property?.baths != null
       ? {
           icon: Bath,
-          label: "الحمامات",
-          value: `${offer.property.baths} حمامات`,
-          helper: "عدد الحمامات المتاحة داخل الوحدة.",
+          label: copy.detail.baths,
+          value: formatOfferValueLabel(copy.detail.bathsValue, offer.property.baths),
+          helper: copy.detail.bathsHint,
         }
       : null,
     offer.property?.sqft != null
       ? {
           icon: Ruler,
-          label: "المساحة",
-          value: `${offer.property.sqft} م²`,
-          helper: "المساحة الإجمالية المعروضة لهذه الشقة.",
+          label: copy.detail.space,
+          value: formatOfferValueLabel(copy.detail.spaceValue, offer.property.sqft),
+          helper: copy.detail.spaceHint,
         }
       : null,
     {
       icon: ShieldCheck,
-      label: "الحالة",
-      value: offer.permitStatus ?? "غير متوفر",
-      helper: offer.productStatus ?? "حالة المنتج الحالية داخل المنصة.",
+      label: copy.detail.status,
+      value: offer.permitStatus ?? copy.list.unavailable,
+      helper: offer.productStatus ?? copy.detail.statusHint,
     },
     {
       icon: Building2,
-      label: "نوع العرض",
-      value: formatOfferTypeLabel(offer.type),
-      helper: formatOfferStageLabel(offer.stage),
+      label: copy.detail.offerType,
+      value: formatOfferTypeLabel(offer.type, locale),
+      helper: formatOfferStageLabel(offer.stage, locale),
     },
   ].filter(Boolean) as Array<{
     icon: LucideIcon;
@@ -434,7 +434,7 @@ function OfferPrimaryData({ offer }: { offer: WorkspaceOfferDetail }) {
       <section className="rounded-[24px] border border-border/60 bg-card p-6 shadow-sm">
         <div className="space-y-5 text-right">
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Apartment Detail</div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{copy.detail.propertyDetailEyebrow}</div>
             <h2 className="mt-2 text-3xl font-black tracking-tight text-foreground">{offer.propertyTitle}</h2>
             <div className="mt-3 inline-flex items-center gap-2 text-[14px] text-muted-foreground">
               <MapPin className="h-4 w-4" />
@@ -448,7 +448,7 @@ function OfferPrimaryData({ offer }: { offer: WorkspaceOfferDetail }) {
 
           {categories.length ? (
             <div className="space-y-3">
-              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Categories</div>
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{copy.detail.categories}</div>
               <div className="flex flex-wrap justify-end gap-2">
                 {categories.map((category) => (
                   <ApartmentCategoryBadge key={category} value={category} />
@@ -475,8 +475,8 @@ function OfferPrimaryData({ offer }: { offer: WorkspaceOfferDetail }) {
 
       <section className="rounded-[24px] border border-border/60 bg-card p-5 shadow-sm">
         <div className="text-right">
-          <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Full Description</div>
-          <h3 className="mt-2 text-xl font-black text-foreground">الوصف الكامل</h3>
+          <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{copy.detail.fullDescriptionEyebrow}</div>
+          <h3 className="mt-2 text-xl font-black text-foreground">{copy.detail.fullDescriptionTitle}</h3>
         </div>
         <div className="mt-5 space-y-3">
           {textBlocks.length > 0 ? (
@@ -488,8 +488,8 @@ function OfferPrimaryData({ offer }: { offer: WorkspaceOfferDetail }) {
             ))
           ) : (
             <div className="rounded-[24px] border border-border/60 bg-background/50 p-5 text-right">
-              <div className="text-[11px] font-bold text-muted-foreground">الوصف</div>
-              <div className="mt-2 text-[14px] leading-8 text-foreground">لا يوجد وصف إضافي لهذه الوحدة حالياً.</div>
+              <div className="text-[11px] font-bold text-muted-foreground">{copy.detail.description}</div>
+              <div className="mt-2 text-[14px] leading-8 text-foreground">{copy.detail.noExtraDescription}</div>
             </div>
           )}
         </div>
@@ -522,6 +522,8 @@ function OfferBrandPanel({
   onAdvanceStage?: (action: "mark_agreed" | "close_won" | "close_lost") => Promise<DetailActionResult>;
 }) {
   const router = useRouter();
+  const { locale } = useWebLocale();
+  const copy = getOfferUiCopy(locale);
   const organization = offer.primaryOrganization;
   const whatsappHref = buildWhatsAppHref(organization?.phone);
   const hasWorkflowActions =
@@ -536,12 +538,12 @@ function OfferBrandPanel({
       <div className="rounded-[24px] border border-border/60 bg-card p-5 text-right shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">المنظمة الناشرة</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">{copy.detail.publisherOrganization}</div>
             <div className="text-xl font-black text-foreground">
-              {organization?.name ?? offer.senderName ?? "جهة غير محددة"}
+              {organization?.name ?? offer.senderName ?? copy.list.unknownOrganization}
             </div>
             <div className="text-[13px] font-medium text-muted-foreground">
-              {formatOrganizationTypeLabel(organization?.type ?? null)}
+              {formatOrganizationTypeLabel(organization?.type ?? null, copy.list)}
             </div>
             {organization?.phone ? (
               <div className="text-[13px] font-medium text-muted-foreground">{organization.phone}</div>
@@ -570,7 +572,7 @@ function OfferBrandPanel({
               className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-2 text-[12px] font-bold text-foreground transition hover:bg-muted/70"
             >
               <MessageCircle className="h-4 w-4" />
-              واتساب
+              {copy.list.whatsapp}
             </a>
           ) : null}
           {organization?.website ? (
@@ -581,7 +583,7 @@ function OfferBrandPanel({
               className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-2 text-[12px] font-bold text-foreground transition hover:bg-muted/70"
             >
               <Globe className="h-4 w-4" />
-              الموقع
+              {copy.list.website}
             </a>
           ) : null}
           {organization?.contactEmail ? (
@@ -590,7 +592,7 @@ function OfferBrandPanel({
               className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-2 text-[12px] font-bold text-foreground transition hover:bg-muted/70"
             >
               <Mail className="h-4 w-4" />
-              البريد
+              {copy.list.email}
             </a>
           ) : null}
         </div>
@@ -609,7 +611,7 @@ function OfferBrandPanel({
             className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-foreground px-4 py-3 text-[13px] font-bold text-background transition hover:bg-foreground/90"
           >
             <Mail className="h-4 w-4" />
-            فتح المحادثة
+            {copy.detail.openConversation}
           </button>
 
           {editHref ? (
@@ -618,7 +620,7 @@ function OfferBrandPanel({
               className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-muted/70"
             >
               <ExternalLink className="h-4 w-4" />
-              تعديل المسودة
+              {copy.detail.editDraft}
             </Link>
           ) : null}
 
@@ -628,7 +630,7 @@ function OfferBrandPanel({
               onClick={() => void runAction("publish", onPublish)}
               className="w-full rounded-full bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-muted/70"
             >
-              {pendingAction === "publish" ? "جارٍ النشر..." : "نشر الحالة"}
+              {pendingAction === "publish" ? copy.detail.publishing : copy.detail.publishCase}
             </button>
           ) : null}
 
@@ -638,7 +640,7 @@ function OfferBrandPanel({
               onClick={() => void runAction("engage", onEngage)}
               className="w-full rounded-full bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-muted/70"
             >
-              {pendingAction === "engage" ? "جارٍ فتح التعاون..." : "بدء التعاون"}
+              {pendingAction === "engage" ? copy.detail.openingCollaboration : copy.detail.startCollaboration}
             </button>
           ) : null}
 
@@ -649,14 +651,14 @@ function OfferBrandPanel({
                 onClick={() => void runAction("accept", () => onRespond("accepted"))}
                 className="rounded-full bg-emerald-600 px-4 py-3 text-[13px] font-bold text-white transition hover:bg-emerald-700"
               >
-                {pendingAction === "accept" ? "جارٍ القبول..." : "قبول"}
+                {pendingAction === "accept" ? copy.detail.accepting : copy.detail.accept}
               </button>
               <button
                 type="button"
                 onClick={() => void runAction("reject", () => onRespond("rejected"))}
                 className="rounded-full bg-rose-50 px-4 py-3 text-[13px] font-bold text-rose-700 transition hover:bg-rose-100"
               >
-                {pendingAction === "reject" ? "جارٍ الرفض..." : "رفض"}
+                {pendingAction === "reject" ? copy.detail.rejecting : copy.detail.reject}
               </button>
             </div>
           ) : null}
@@ -667,7 +669,7 @@ function OfferBrandPanel({
               onClick={() => void runAction("mark_agreed", () => onAdvanceStage("mark_agreed"))}
               className="w-full rounded-full bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-muted/70"
             >
-              {pendingAction === "mark_agreed" ? "جارٍ الحفظ..." : "اعتماد الاتفاق"}
+              {pendingAction === "mark_agreed" ? copy.detail.saving : copy.detail.approveAgreement}
             </button>
           ) : null}
 
@@ -677,7 +679,7 @@ function OfferBrandPanel({
               onClick={() => void runAction("close_won", () => onAdvanceStage("close_won"))}
               className="w-full rounded-full bg-emerald-600 px-4 py-3 text-[13px] font-bold text-white transition hover:bg-emerald-700"
             >
-              {pendingAction === "close_won" ? "جارٍ الإغلاق..." : "إغلاق ناجح"}
+              {pendingAction === "close_won" ? copy.detail.closingWon : copy.detail.closeWon}
             </button>
           ) : null}
 
@@ -687,7 +689,7 @@ function OfferBrandPanel({
               onClick={() => void runAction("close_lost", () => onAdvanceStage("close_lost"))}
               className="w-full rounded-full bg-rose-50 px-4 py-3 text-[13px] font-bold text-rose-700 transition hover:bg-rose-100"
             >
-              {pendingAction === "close_lost" ? "جارٍ الإغلاق..." : "إغلاق غير مكتمل"}
+              {pendingAction === "close_lost" ? copy.detail.closingLost : copy.detail.closeLost}
             </button>
           ) : null}
 
@@ -698,13 +700,13 @@ function OfferBrandPanel({
               className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-muted/70"
             >
               <Archive className="h-4 w-4" />
-              {pendingAction === "archive" ? "جارٍ الأرشفة..." : "أرشفة"}
+              {pendingAction === "archive" ? copy.detail.archiving : copy.detail.archive}
             </button>
           ) : null}
 
           {!hasWorkflowActions && !offer.canPublish && !offer.canArchive ? (
             <div className="rounded-[18px] bg-background px-4 py-4 text-center text-[13px] font-semibold text-muted-foreground">
-              لا توجد إجراءات متاحة في هذه المرحلة حالياً.
+              {copy.detail.noActionsAvailable}
             </div>
           ) : null}
         </div>
@@ -714,9 +716,9 @@ function OfferBrandPanel({
 }
 
 /**
- * WHY:   Offer details should start with the actual property/client context instead of decorative legacy sections.
- * WHAT:  Renders a two-column detail page with brand/contact on one side and an apartment-first property layout on the other.
- * HOW:   Uses the shared offer DTO to render a media slider, apartment specs, location details, and client-driven cases without changing action flows.
+ * WHY:   Offer details should start with the actual property or client context instead of decorative legacy sections.
+ * WHAT:  Renders a two-column detail page with a localized property/client layout and localized workflow actions.
+ * HOW:   Reuses the shared offer DTO with locale-aware labels, price formatting, and activity timestamps from the workspace locale context.
  */
 export default function OfferDetailPage({
   offer,
@@ -738,10 +740,12 @@ export default function OfferDetailPage({
   editHref?: string | null;
 }) {
   const router = useRouter();
+  const { locale } = useWebLocale();
+  const copy = getOfferUiCopy(locale);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const heroTitle = getOfferHeroTitle(offer);
-  const heroSummary = getOfferHeroSummary(offer);
+  const heroTitle = getOfferHeroTitle(offer, copy);
+  const heroSummary = getOfferHeroSummary(offer, copy);
 
   async function runAction(actionKey: string, callback: () => Promise<DetailActionResult>) {
     setError(null);
@@ -754,7 +758,7 @@ export default function OfferDetailPage({
       }
       router.refresh();
     } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : "تعذر تنفيذ الإجراء.");
+      setError(actionError instanceof Error ? actionError.message : copy.detail.actionFailed);
     } finally {
       setPendingAction(null);
     }
@@ -769,12 +773,12 @@ export default function OfferDetailPage({
             className="inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.2em] text-muted-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            العودة للعروض
+            {copy.detail.backToOffers}
           </Link>
 
           <div className="flex flex-wrap items-center gap-2">
-            <DetailBadge value={formatOfferTypeLabel(offer.type)} />
-            <DetailBadge value={formatOfferStageLabel(offer.stage)} />
+            <DetailBadge value={formatOfferTypeLabel(offer.type, locale)} />
+            <DetailBadge value={formatOfferStageLabel(offer.stage, locale)} />
           </div>
         </nav>
 
@@ -803,7 +807,7 @@ export default function OfferDetailPage({
               <div className="space-y-5 text-right">
                 <div className="space-y-3">
                   <div className="text-[12px] font-semibold text-muted-foreground">
-                    {formatOfferMarketplaceLabel(offer)}
+                    {formatOfferMarketplaceLabel(offer, locale)}
                   </div>
                   <h1 className="text-3xl font-black tracking-tight text-foreground">{heroTitle}</h1>
                   {!offer.clientContext ? (
@@ -822,8 +826,8 @@ export default function OfferDetailPage({
             <section className="rounded-[24px] border border-border/60 bg-card p-6 shadow-sm lg:p-8">
               <div className="space-y-5">
                 <div className="text-right">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Activity Log</div>
-                  <h2 className="mt-2 text-2xl font-black text-foreground">تاريخ العمليات</h2>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">{copy.detail.activityLogEyebrow}</div>
+                  <h2 className="mt-2 text-2xl font-black text-foreground">{copy.detail.activityLogTitle}</h2>
                 </div>
 
                 {offer.activity.length > 0 ? (
@@ -832,10 +836,10 @@ export default function OfferDetailPage({
                       <div key={activity.id} className="border-b border-border/50 py-4 last:border-b-0 last:pb-0 first:pt-0">
                         <div className="flex items-start justify-between gap-4">
                           <div className="text-[12px] font-bold tabular-nums text-muted-foreground">
-                            {new Intl.DateTimeFormat("ar-SA", {
+                            {formatLocaleDateTime(locale, new Date(activity.createdAt), {
                               dateStyle: "medium",
                               timeStyle: "short",
-                            }).format(new Date(activity.createdAt))}
+                            })}
                           </div>
                           <div className="flex-1 text-right">
                             <div className="text-[15px] font-black text-foreground">{activity.message ?? activity.kind}</div>
@@ -852,7 +856,7 @@ export default function OfferDetailPage({
                   </div>
                 ) : (
                   <div className="rounded-[18px] bg-muted/10 px-4 py-6 text-center text-[13px] font-semibold text-muted-foreground">
-                    لا توجد أحداث مسجلة بعد.
+                    {copy.detail.noEvents}
                   </div>
                 )}
               </div>

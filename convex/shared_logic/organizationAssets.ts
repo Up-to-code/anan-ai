@@ -63,14 +63,14 @@ async function attachOrganizationAssetsForTenant(ctx: any, args: {
   const now = Date.now();
   const assets = await ctx.db
     .query("organizationAssets")
-    .withIndex("tenantOrgId", (q) => q.eq("tenantOrgId", tenantOrgId))
+    .withIndex("tenantOrgId", (q: any) => q.eq("tenantOrgId", tenantOrgId))
     .collect();
 
   const keyed = new Set(args.keys);
   await Promise.all(
     assets
-      .filter((asset) => keyed.has(asset.key))
-      .map((asset) =>
+      .filter((asset: any) => keyed.has(asset.key))
+      .map((asset: any) =>
         ctx.db.patch(asset._id, {
           attachedEntityType: args.attachedEntityType,
           attachedEntityId: args.attachedEntityId,

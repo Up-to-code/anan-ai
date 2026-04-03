@@ -146,4 +146,35 @@ describe("OfferOverviewPage", () => {
     expect(markup).toContain("فلترة سريعة");
     expect(markup).not.toContain("offers@example.com");
   });
+
+  it("renders the overview copy in English when the workspace locale changes", () => {
+    const markup = renderToStaticMarkup(
+      <WebLocaleProvider locale="en" dictionary={getWebDictionary("en")}>
+        <OfferOverviewPage
+          items={[item]}
+          pagination={{
+            items: [item],
+            page: 1,
+            pageCount: 1,
+            totalItems: 1,
+            hasPreviousPage: false,
+            hasNextPage: false,
+          }}
+          routeBase="/ws/offers"
+          filterOptions={filterOptions}
+          sort="updated_desc"
+          filters={{ area: "", location: "" }}
+        />
+      </WebLocaleProvider>,
+    );
+
+    expect(markup).toContain("Offers board");
+    expect(markup).toContain("Open offers");
+    expect(markup).toContain("Quick filters");
+    expect(markup).toContain("Create offer");
+    expect(markup).toContain("Apply filters");
+    expect(markup).toContain("Open details");
+    expect(markup).toContain("Saudi Arabia");
+    expect(markup).toContain("Price");
+  });
 });

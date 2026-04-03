@@ -29,12 +29,19 @@ export type OrganizationApiKeySummary = {
   prefix: string;
   name: string;
   permissions: OrganizationApiKeyPermission[];
-  status: "active" | "revoked";
+  status: "active" | "revoked" | "suspended" | "expired";
   createdBy: string;
   createdByName?: string;
   createdAt: number;
   revokedAt?: number;
   lastUsedAt?: number;
+  expiresAt?: number;
+  quotaWindowMinutes?: number;
+  quotaLimit?: number;
+  quotaUsed?: number;
+  quotaWindowStartedAt?: number;
+  trustedOrigins?: string[];
+  lastOrigin?: string;
 };
 
 export type OrganizationApiKeySecretResult = {

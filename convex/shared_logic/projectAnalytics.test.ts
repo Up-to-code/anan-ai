@@ -509,85 +509,77 @@ it("aggregates project analytics from viewers, deals, offer cases, and tracked e
       internalCustomers: 1,
       currentActivityKey: "in_stage",
       currentActivityLabel: "في مرحلة",
+      activityCounts: expect.objectContaining({
+        new_client: 1,
+        in_call: 1,
+        interested: 1,
+        permit_review: 0,
+        closed_won: 0,
+        closed_lost: 0,
+      }),
     }),
   );
-  expect(brokerTwoTracking.customers).toHaveLength(3);
-  expect(brokerTwoTracking.customers).toEqual(
-    expect.arrayContaining([
-      expect.objectContaining({
-        name: "Tracked Client",
-        relationType: "internal_client",
-        isTrackedCustomer: true,
-        activityKey: "new_client",
-        activityLabel: "عميل جديد",
-      }),
-      expect.objectContaining({
-        name: "عميل متابعة جديد",
-        relationType: "broker_managed",
-        isTrackedCustomer: false,
-        activityKey: "in_stage",
-        activityLabel: "في مرحلة",
-      }),
-      expect.objectContaining({
-        name: "عميل مرتبط",
-        relationType: "broker_managed",
-        isTrackedCustomer: true,
-        activityKey: "in_call",
-        activityLabel: "في مكالمة",
-      }),
-    ]),
-  );
+  expect(brokerTwoTracking.customers).toEqual([]);
+  expect(brokerTwoTracking.timeline).toEqual([]);
+  expect(brokerTwoTracking.linkedClientName).toBeNull();
 
   const brokerThreeTracking = analytics.brokerTracking.find((entry: any) => entry.brokerName === "Broker Three");
   expect(brokerThreeTracking).toEqual(
     expect.objectContaining({
+      totalCustomers: 1,
+      trackedCustomers: 1,
+      brokerManagedCustomers: 1,
+      internalCustomers: 0,
       currentActivityKey: "new_client",
       currentActivityLabel: "عميل جديد",
     }),
   );
+  expect(brokerThreeTracking.customers).toEqual([]);
+  expect(brokerThreeTracking.timeline).toEqual([]);
 
   const brokerFourTracking = analytics.brokerTracking.find((entry: any) => entry.brokerName === "Broker Four");
   expect(brokerFourTracking).toEqual(
     expect.objectContaining({
+      totalCustomers: 2,
+      trackedCustomers: 0,
+      brokerManagedCustomers: 2,
+      internalCustomers: 0,
       currentActivityKey: "permit_review",
       currentActivityLabel: "مراجعة التصريح",
+      activityCounts: expect.objectContaining({
+        interested: 1,
+        permit_review: 1,
+      }),
     }),
   );
-  expect(brokerFourTracking.customers).toEqual(
-    expect.arrayContaining([
-      expect.objectContaining({
-        activityKey: "in_stage",
-        activityLabel: "في مرحلة",
-      }),
-      expect.objectContaining({
-        activityKey: "permit_review",
-        activityLabel: "مراجعة التصريح",
-      }),
-    ]),
-  );
+  expect(brokerFourTracking.customers).toEqual([]);
+  expect(brokerFourTracking.timeline).toEqual([]);
 
   const brokerFiveTracking = analytics.brokerTracking.find((entry: any) => entry.brokerName === "Broker Five");
   expect(brokerFiveTracking).toEqual(
     expect.objectContaining({
+      totalCustomers: 1,
+      trackedCustomers: 1,
+      brokerManagedCustomers: 1,
       currentActivityKey: "closed_won",
       currentActivityLabel: "إغلاق ناجح",
     }),
   );
+  expect(brokerFiveTracking.customers).toEqual([]);
+  expect(brokerFiveTracking.timeline).toEqual([]);
 
   const brokerSixTracking = analytics.brokerTracking.find((entry: any) => entry.brokerName === "Broker Six");
   expect(brokerSixTracking).toEqual(
     expect.objectContaining({
+      totalCustomers: 1,
+      trackedCustomers: 1,
+      brokerManagedCustomers: 1,
       currentActivityKey: "closed_lost",
       currentActivityLabel: "إغلاق غير مكتمل",
     }),
   );
-  expect(brokerTwoTracking.timeline).toEqual(
-    expect.arrayContaining([
-      expect.objectContaining({
-        title: expect.stringContaining("Broker Two"),
-      }),
-    ]),
-  );
+  expect(brokerSixTracking.customers).toEqual([]);
+  expect(brokerSixTracking.timeline).toEqual([]);
   expect(analytics.recentEvents[0]).toEqual(
     expect.objectContaining({
       title: expect.any(String),

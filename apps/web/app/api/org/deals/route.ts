@@ -1,5 +1,5 @@
 import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
-import { getOrganizationApiKeyHeader } from "@/app/api/org/_shared";
+import { getOrganizationApiKeyHeader, getOrganizationApiKeyOrigin } from "@/app/api/org/_shared";
 import { toErrorResponse } from "@/server/contracts/errors";
 import {
   createOrganizationDealByApiKey,
@@ -13,7 +13,7 @@ import {
  */
 export async function GET(request: Request) {
   try {
-    return Response.json({ deals: await listOrganizationDealsByApiKey(getOrganizationApiKeyHeader(request)) });
+    return Response.json({ deals: await listOrganizationDealsByApiKey(getOrganizationApiKeyHeader(request), getOrganizationApiKeyOrigin(request)) });
   } catch (error) {
     return toErrorResponse(error);
   }
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     return Response.json(
-      { deal: await createOrganizationDealByApiKey(getOrganizationApiKeyHeader(request), body) },
+      { deal: await createOrganizationDealByApiKey(getOrganizationApiKeyHeader(request), body, getOrganizationApiKeyOrigin(request)) },
       { status: 201 },
     );
   } catch (error) {

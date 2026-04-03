@@ -2,6 +2,10 @@ import { ConvexError } from "convex/values";
 import type { PaginationOptions } from "convex/server";
 import type { MutationCtx, QueryCtx } from "../../../_generated/server";
 import { buildPropertySearchText } from "../searchText";
+import {
+  applyOrganizationProjectSummaryDelta,
+  buildPropertyProjectionFields,
+} from "../projections";
 import type {
   OwnerScopedOwnerField,
   OwnerScopedOwnerId,
@@ -15,9 +19,20 @@ function buildOwnerScopedQuery(
   ownerField: OwnerScopedOwnerField,
   ownerId: OwnerScopedOwnerId,
 ) {
-  return ctx.db
-    .query("properties")
-    .withIndex(ownerField, (q: any) => q.eq(ownerField, ownerId));
+  return ctx.db.query("properties").withIndex(ownerField, (q: any) => q.eq(ownerField, ownerId));
+}
+
+function resolveOwnerState(existing: {
+  brokerId?: OwnerScopedOwnerId;
+  REDId?: OwnerScopedOwnerId;
+}) {
+  if (existing.brokerId) {
+    return { ownerField: "brokerId" as const, ownerId: existing.brokerId };
+  }
+  if (existing.REDId) {
+    return { ownerField: "REDId" as const, ownerId: existing.REDId };
+  }
+  throw new ConvexError({ code: "FORBIDDEN", message: "Property owner required" });
 }
 
 async function requirePropertyRecord(
@@ -47,8 +62,13 @@ export async function listOwnerScopedProperties(
 ) {
   const query = buildOwnerScopedQuery(ctx, args.ownerField, args.ownerId);
   if (args.status) {
-    return query
-      .filter((q) => q.eq(q.field("status"), args.status))
+    const compositeIndex =
+      args.ownerField === "brokerId" ? "brokerId_status_updatedAt" : "REDId_status_updatedAt";
+    return ctx.db
+      .query("properties")
+      .withIndex(compositeIndex, (q: any) =>
+        q.eq(args.ownerField, args.ownerId).eq("status", args.status),
+      )
       .order("desc")
       .paginate(args.paginationOpts);
   }
@@ -82,14 +102,32 @@ export async function createOwnerScopedProperty(
   const { ownerField, ownerId, ...rest } = args;
   const heroImage = rest.media?.[0];
   const searchText = buildPropertySearchText(rest);
+  const now = Date.now();
+  const projections = await buildPropertyProjectionFields(ctx, {
+    ownerField,
+    ownerId,
+    publicationState: rest.publicationState ?? "draft",
+    adLicenseStatus: (rest as any).adLicenseStatus,
+  });
 
-  return ctx.db.insert("properties", {
+  const propertyId = await ctx.db.insert("properties", {
     ...rest,
     heroImage,
     searchText,
+    ...projections,
     [ownerField]: ownerId,
     publicationState: rest.publicationState ?? "draft",
+    createdAt: now,
+    updatedAt: now,
   } as any);
+  await applyOrganizationProjectSummaryDelta(ctx, {
+    ownerField,
+    ownerId,
+    nextPublicationState: (rest.publicationState ?? "draft") as any,
+    createdAt: now,
+    delta: 1,
+  });
+  return propertyId;
 }
 
 /**
@@ -105,12 +143,29 @@ export async function updateOwnerScopedProperty(
   const heroImage = patch.media?.[0] ?? existing.heroImage;
   const merged = { ...existing, ...patch, heroImage };
   const searchText = buildPropertySearchText(merged);
+  const owner = resolveOwnerState(existing as any);
+  const projections = await buildPropertyProjectionFields(ctx, {
+    ownerField: owner.ownerField,
+    ownerId: owner.ownerId,
+    publicationState: (merged.publicationState ?? "draft") as any,
+    adLicenseStatus: merged.adLicenseStatus,
+  });
 
   await ctx.db.patch(id, {
     ...patch,
     heroImage,
     searchText,
+    ...projections,
+    updatedAt: Date.now(),
   });
+  if (existing.publicationState !== merged.publicationState) {
+    await applyOrganizationProjectSummaryDelta(ctx, {
+      ownerField: owner.ownerField,
+      ownerId: owner.ownerId,
+      previousPublicationState: existing.publicationState as any,
+      nextPublicationState: merged.publicationState as any,
+    });
+  }
 }
 
 /**
@@ -122,8 +177,15 @@ export async function deleteOwnerScopedProperty(
   ctx: MutationCtx,
   args: { id: OwnerScopedPropertyUpdateArgs["id"] },
 ) {
-  await requirePropertyRecord(ctx, args.id);
+  const existing = await requirePropertyRecord(ctx, args.id);
+  const owner = resolveOwnerState(existing as any);
   await ctx.db.delete(args.id);
+  await applyOrganizationProjectSummaryDelta(ctx, {
+    ownerField: owner.ownerField,
+    ownerId: owner.ownerId,
+    previousPublicationState: existing.publicationState as any,
+    delta: -1,
+  });
 }
 
 /**
@@ -135,8 +197,25 @@ export async function publishOwnerScopedProperty(
   ctx: MutationCtx,
   args: { id: OwnerScopedPropertyUpdateArgs["id"] },
 ) {
-  await requirePropertyRecord(ctx, args.id);
-  await ctx.db.patch(args.id, { publicationState: "published" });
+  const existing = await requirePropertyRecord(ctx, args.id);
+  const owner = resolveOwnerState(existing as any);
+  const projections = await buildPropertyProjectionFields(ctx, {
+    ownerField: owner.ownerField,
+    ownerId: owner.ownerId,
+    publicationState: "published",
+    adLicenseStatus: existing.adLicenseStatus,
+  });
+  await ctx.db.patch(args.id, {
+    publicationState: "published",
+    ...projections,
+    updatedAt: Date.now(),
+  });
+  await applyOrganizationProjectSummaryDelta(ctx, {
+    ownerField: owner.ownerField,
+    ownerId: owner.ownerId,
+    previousPublicationState: existing.publicationState as any,
+    nextPublicationState: "published",
+  });
   return { ok: true } as const;
 }
 
@@ -152,8 +231,19 @@ export async function countOwnerScopedProperties(
     ownerId: OwnerScopedOwnerId;
   },
 ) {
-  const properties = await buildOwnerScopedQuery(ctx, args.ownerField, args.ownerId).collect();
+  const summaryIndex = args.ownerField === "brokerId" ? "ownerBrokerId" : "ownerREDId";
+  const summary = await ctx.db
+    .query("organizationProjectSummaries")
+    .withIndex(summaryIndex, (q: any) => q.eq(summaryIndex, args.ownerId))
+    .first();
+  if (!summary) {
+    // Allow legacy rows to keep working until the org summary backfill has run.
+    const legacyRows = await buildOwnerScopedQuery(ctx, args.ownerField, args.ownerId).collect();
+    return {
+      properties: legacyRows.length,
+    };
+  }
   return {
-    properties: properties.length,
+    properties: summary?.propertyCount ?? 0,
   };
 }

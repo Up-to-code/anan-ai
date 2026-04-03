@@ -147,10 +147,18 @@ async function syncConversationReadState(params: {
     lastReadAt: params.now,
     unreadCount: 0,
     archivedAt: undefined,
+    conversationUpdatedAt: params.now,
+    lastMessageAt: params.now,
+    lastMessagePreview: params.messagePreview,
+    lastMessageSenderId: params.senderUserId,
   });
   await params.ctx.db.patch(params.recipientMembershipId, {
     unreadCount: params.recipientUnreadCount + 1,
     archivedAt: undefined,
+    conversationUpdatedAt: params.now,
+    lastMessageAt: params.now,
+    lastMessagePreview: params.messagePreview,
+    lastMessageSenderId: params.senderUserId,
   });
 }
 

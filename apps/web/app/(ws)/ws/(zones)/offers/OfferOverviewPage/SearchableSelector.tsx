@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { formatOfferCountLabel, getOfferUiCopy } from "../offerLocalization";
 
 type SearchableOption = {
   label: string;
@@ -29,6 +31,8 @@ export default function SearchableSelector({
   emptyMessage: string;
   onValueChange?: (value: string) => void;
 }) {
+  const { locale } = useWebLocale();
+  const copy = getOfferUiCopy(locale);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedValue, setSelectedValue] = useState(value);
@@ -129,7 +133,9 @@ export default function SearchableSelector({
         <label id={labelId} className="text-[12px] font-bold text-foreground">
           {label}
         </label>
-        <span className="text-[11px] text-muted-foreground">{options.length} خيار</span>
+        <span className="text-[11px] text-muted-foreground">
+          {formatOfferCountLabel(locale, copy.selector.optionCount, options.length)}
+        </span>
       </div>
 
       <input type="hidden" name={name} value={selectedValue} />
@@ -169,8 +175,8 @@ export default function SearchableSelector({
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 onKeyDown={handleSearchKeyDown}
-                placeholder={`ابحث في ${label}`}
-                aria-label={`ابحث في ${label}`}
+                placeholder={copy.selector.searchIn.replace("{label}", label)}
+                aria-label={copy.selector.searchIn.replace("{label}", label)}
                 className="h-10 w-full rounded-[14px] border border-border/70 bg-background px-3 text-right text-[13px] font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-[color:var(--workspace-highlight)] focus:ring-4 focus:ring-[color:var(--workspace-highlight-soft)]"
               />
             </div>
@@ -204,9 +210,9 @@ export default function SearchableSelector({
                         }`}
                       >
                         {isSelected ? (
-                          <span className="text-[11px] font-bold">محدد</span>
+                          <span className="text-[11px] font-bold">{copy.selector.selected}</span>
                         ) : (
-                          <span className="text-[11px] text-muted-foreground">اختر</span>
+                          <span className="text-[11px] text-muted-foreground">{copy.selector.choose}</span>
                         )}
                         <span>{option.label}</span>
                       </button>

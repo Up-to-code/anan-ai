@@ -1,4 +1,4 @@
-import { getOrganizationApiKeyHeader } from "@/app/api/org/_shared";
+import { getOrganizationApiKeyHeader, getOrganizationApiKeyOrigin } from "@/app/api/org/_shared";
 import { toErrorResponse } from "@/server/contracts/errors";
 import { listOrganizationBrokersByApiKey } from "@/server/domains/auth/organizationApiKeys/service";
 
@@ -9,7 +9,7 @@ import { listOrganizationBrokersByApiKey } from "@/server/domains/auth/organizat
  */
 export async function GET(request: Request) {
   try {
-    return Response.json({ brokers: await listOrganizationBrokersByApiKey(getOrganizationApiKeyHeader(request)) });
+    return Response.json({ brokers: await listOrganizationBrokersByApiKey(getOrganizationApiKeyHeader(request), getOrganizationApiKeyOrigin(request)) });
   } catch (error) {
     return toErrorResponse(error);
   }

@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import OfferPaginationNav from "../OfferPaginationNav";
 import OfferListItem from "../OfferListItem";
 import SearchableSelector from "./SearchableSelector";
+import { formatOfferCountLabel, getOfferUiCopy } from "../offerLocalization";
 import type { WorkspaceOfferSummary } from "../offerTypes";
 import {
   type OfferFilterOptions,
@@ -10,8 +14,8 @@ import {
   type PaginatedCollection,
 } from "../offersPageData";
 
-function sortLabel(sort: OffersSortValue) {
-  return sort === "updated_asc" ? "الأقدم أولاً" : "الأحدث أولاً";
+function sortLabel(sort: OffersSortValue, newestFirst: string, oldestFirst: string) {
+  return sort === "updated_asc" ? oldestFirst : newestFirst;
 }
 
 function countActiveFilters(filters: OffersPageFilters, sort: OffersSortValue) {
@@ -53,13 +57,15 @@ export default function OfferOverviewPage({
   sort: OffersSortValue;
   filters: OffersPageFilters;
 }) {
+  const { locale } = useWebLocale();
+  const copy = getOfferUiCopy(locale);
   const activeFilterCount = countActiveFilters(filters, sort);
   const locationSelectorOptions = filterOptions.locations.map((option) => ({ label: option, value: option }));
   const areaSelectorOptions = filterOptions.areas.map((option) => ({ label: option, value: option }));
   const summaryPills = [
-    `${pagination.totalItems} عرض`,
-    "السعودية",
-    sortLabel(sort),
+    formatOfferCountLabel(locale, copy.overview.offersCount, pagination.totalItems),
+    copy.overview.marketScope,
+    sortLabel(sort, copy.overview.newestFirst, copy.overview.oldestFirst),
   ];
 
   return (
@@ -69,13 +75,13 @@ export default function OfferOverviewPage({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-3 text-right">
               <span className="inline-flex items-center rounded-full border border-[color:var(--workspace-highlight-soft)] bg-[color:var(--workspace-highlight-soft)] px-3 py-1 text-[11px] font-bold text-[color:var(--workspace-highlight-strong)]">
-                لوحة العروض
+                {copy.overview.dashboardBadge}
               </span>
               <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-end lg:gap-3">
-                <h1 className="text-[22px] font-black tracking-tight text-foreground">العروض المفتوحة</h1>
+                <h1 className="text-[22px] font-black tracking-tight text-foreground">{copy.overview.openOffersTitle}</h1>
                 {activeFilterCount > 0 ? (
                   <span className="rounded-full border border-[color:var(--workspace-highlight-soft)] bg-[color:var(--workspace-highlight-soft)] px-3 py-1 text-[11px] font-bold text-[color:var(--workspace-highlight-strong)]">
-                    {activeFilterCount} فلتر نشط
+                    {formatOfferCountLabel(locale, copy.overview.activeFilters, activeFilterCount)}
                   </span>
                 ) : null}
               </div>
@@ -97,14 +103,14 @@ export default function OfferOverviewPage({
                   href="/ws/offers"
                   className="inline-flex items-center justify-center rounded-full border border-border/70 bg-background/80 px-4 py-2.5 text-[13px] font-bold text-foreground transition hover:bg-background"
                 >
-                  إعادة الضبط
+                  {copy.overview.reset}
                 </Link>
               ) : null}
               <Link
                 href="/ws/offers/create"
                 className="inline-flex items-center justify-center rounded-full bg-foreground px-5 py-3 text-[13px] font-bold text-background transition hover:bg-foreground/90"
               >
-                إنشاء عرض
+                {copy.overview.createOffer}
               </Link>
             </div>
           </div>
@@ -120,7 +126,7 @@ export default function OfferOverviewPage({
               </div>
             ) : (
               <div className="rounded-[28px] border border-dashed border-border/70 bg-card/80 px-6 py-14 text-center text-[14px] font-medium text-muted-foreground">
-                لا توجد عروض مطابقة حالياً.
+                {copy.overview.noMatchingOffers}
               </div>
             )}
 
@@ -141,46 +147,46 @@ export default function OfferOverviewPage({
               className="space-y-4 rounded-[24px] border border-border/70 bg-card/95 p-4 shadow-sm"
             >
               <div className="space-y-1.5 text-right">
-                <div className="text-[15px] font-black text-foreground">فلترة سريعة</div>
+                <div className="text-[15px] font-black text-foreground">{copy.overview.quickFilters}</div>
                 <p className="text-[12px] leading-6 text-muted-foreground">
-                  القوائم الحالية مخصصة للسوق السعودي فقط.
+                  {copy.overview.quickFiltersDescription}
                 </p>
               </div>
 
               <div className="grid gap-3">
                 <SearchableSelector
-                  label="الموقع"
+                  label={copy.overview.location}
                   name="location"
                   value={filters.location}
-                  placeholder="مثال: الرياض"
+                  placeholder={copy.overview.locationPlaceholder}
                   options={locationSelectorOptions}
-                  emptyMessage="لا توجد مدن أو مواقع مطابقة"
+                  emptyMessage={copy.overview.locationEmpty}
                 />
 
                 <SearchableSelector
-                  label="المنطقة"
+                  label={copy.overview.area}
                   name="area"
                   value={filters.area}
-                  placeholder="ابحث داخل المناطق"
+                  placeholder={copy.overview.areaPlaceholder}
                   options={areaSelectorOptions}
-                  emptyMessage="لا توجد مناطق مطابقة"
+                  emptyMessage={copy.overview.areaEmpty}
                 />
 
                 <label className="space-y-2 text-right">
-                  <span className={labelClassName}>الترتيب</span>
+                  <span className={labelClassName}>{copy.overview.sort}</span>
                   <select
                     name="sort"
                     defaultValue={sort}
                     className={inputClassName}
                   >
-                    <option value="updated_desc">الأحدث أولاً</option>
-                    <option value="updated_asc">الأقدم أولاً</option>
+                    <option value="updated_desc">{copy.overview.newestFirst}</option>
+                    <option value="updated_asc">{copy.overview.oldestFirst}</option>
                   </select>
                 </label>
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="space-y-2 text-right">
-                    <span className={labelClassName}>الميزانية من</span>
+                    <span className={labelClassName}>{copy.overview.budgetFrom}</span>
                     <input
                       type="text"
                       name="budgetMin"
@@ -191,13 +197,13 @@ export default function OfferOverviewPage({
                     />
                   </label>
                   <label className="space-y-2 text-right">
-                    <span className={labelClassName}>الميزانية إلى</span>
+                    <span className={labelClassName}>{copy.overview.budgetTo}</span>
                     <input
                       type="text"
                       name="budgetMax"
                       inputMode="numeric"
                       defaultValue={filters.budgetMax ?? ""}
-                      placeholder="غير محدد"
+                      placeholder={copy.overview.unlimited}
                       className={inputClassName}
                     />
                   </label>
@@ -205,7 +211,7 @@ export default function OfferOverviewPage({
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="space-y-2 text-right">
-                    <span className={labelClassName}>المساحة من</span>
+                    <span className={labelClassName}>{copy.overview.spaceFrom}</span>
                     <input
                       type="text"
                       name="sqftMin"
@@ -216,13 +222,13 @@ export default function OfferOverviewPage({
                     />
                   </label>
                   <label className="space-y-2 text-right">
-                    <span className={labelClassName}>المساحة إلى</span>
+                    <span className={labelClassName}>{copy.overview.spaceTo}</span>
                     <input
                       type="text"
                       name="sqftMax"
                       inputMode="numeric"
                       defaultValue={filters.sqftMax ?? ""}
-                      placeholder="غير محدد"
+                      placeholder={copy.overview.unlimited}
                       className={inputClassName}
                     />
                   </label>
@@ -230,7 +236,7 @@ export default function OfferOverviewPage({
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="space-y-2 text-right">
-                    <span className={labelClassName}>الغرف من</span>
+                    <span className={labelClassName}>{copy.overview.roomsFrom}</span>
                     <input
                       type="text"
                       name="bedsMin"
@@ -241,7 +247,7 @@ export default function OfferOverviewPage({
                     />
                   </label>
                   <label className="space-y-2 text-right">
-                    <span className={labelClassName}>الحمامات من</span>
+                    <span className={labelClassName}>{copy.overview.bathsFrom}</span>
                     <input
                       type="text"
                       name="bathsMin"
@@ -259,13 +265,13 @@ export default function OfferOverviewPage({
                   href="/ws/offers"
                   className="inline-flex min-w-[112px] items-center justify-center rounded-full border border-border/70 bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-muted/40"
                 >
-                  مسح الكل
+                  {copy.overview.clearAll}
                 </Link>
                 <button
                   type="submit"
                   className="inline-flex flex-1 items-center justify-center rounded-full bg-foreground px-5 py-3 text-[13px] font-bold text-background transition hover:bg-foreground/90"
                 >
-                  تطبيق الفلاتر
+                  {copy.overview.applyFilters}
                 </button>
               </div>
             </form>

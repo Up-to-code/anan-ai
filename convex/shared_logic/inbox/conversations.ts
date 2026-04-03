@@ -56,6 +56,10 @@ async function createDirectConversation(ctx: MutationCtx, args: {
       joinedAt: now,
       unreadCount: 0,
       archivedAt: undefined,
+      conversationUpdatedAt: now,
+      lastMessageAt: undefined,
+      lastMessagePreview: undefined,
+      lastMessageSenderId: undefined,
     }),
     ctx.db.insert("inboxConversationParticipants", {
       conversationId,
@@ -64,6 +68,10 @@ async function createDirectConversation(ctx: MutationCtx, args: {
       joinedAt: now,
       unreadCount: 0,
       archivedAt: undefined,
+      conversationUpdatedAt: now,
+      lastMessageAt: undefined,
+      lastMessagePreview: undefined,
+      lastMessageSenderId: undefined,
     }),
   ]);
   return conversationId;
@@ -152,9 +160,17 @@ async function persistConversationEvent(ctx: MutationCtx, args: {
     ctx.db.patch(args.senderMembershipId, {
       lastReadAt: now,
       unreadCount: 0,
+      conversationUpdatedAt: now,
+      lastMessageAt: now,
+      lastMessagePreview: args.event.body.slice(0, 140),
+      lastMessageSenderId: args.event.senderUserId,
     }),
     ctx.db.patch(args.recipientMembershipId, {
       unreadCount: args.recipientUnreadCount + 1,
+      conversationUpdatedAt: now,
+      lastMessageAt: now,
+      lastMessagePreview: args.event.body.slice(0, 140),
+      lastMessageSenderId: args.event.senderUserId,
     }),
   ]);
   return messageId;
@@ -220,7 +236,7 @@ async function loadConversationPreview(
   ]);
   const latestMessage = await ctx.db
     .query("inboxMessages")
-    .withIndex("conversationId", (q) =>
+    .withIndex("conversationId_createdAt", (q) =>
       q.eq("conversationId", participant.conversationId)
     )
     .order("desc")
@@ -267,8 +283,8 @@ export async function mapConversationSummary(
           senderUserId: latestMessage.senderUserId,
         }
       : null,
-    lastMessagePreview: conversation.lastMessagePreview ?? latestMessage?.body ?? "",
-    updatedAt: conversation.updatedAt,
+    lastMessagePreview: participant.lastMessagePreview ?? conversation.lastMessagePreview ?? latestMessage?.body ?? "",
+    updatedAt: participant.conversationUpdatedAt ?? conversation.updatedAt,
     unreadCount: participant.unreadCount,
     archivedAt: participant.archivedAt ?? null,
   };
@@ -281,7 +297,7 @@ export async function findExistingOfferStarterMessage(
 ) {
   const messages = await ctx.db
     .query("inboxMessages")
-    .withIndex("conversationId", (q) => q.eq("conversationId", conversationId))
+    .withIndex("conversationId_createdAt", (q) => q.eq("conversationId", conversationId))
     .collect();
 
   return (

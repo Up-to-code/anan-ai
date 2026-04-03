@@ -114,7 +114,10 @@ export const logSearchEvent = mutation({
   },
   returns: v.id("searchLogs"),
   handler: async (ctx, args) => {
-    return await ctx.db.insert("searchLogs", args);
+    return await ctx.db.insert("searchLogs", {
+      ...args,
+      createdAt: Date.now(),
+    });
   },
 });
 
@@ -130,11 +133,11 @@ export const getRecentSearchCountInternal = internalQuery({
     const normalizedQuery = normalizeQueryForCache(query);
     const rows = await ctx.db
       .query("searchLogs")
-      .withIndex("userId", (q) => q.eq("userId", userId))
+      .withIndex("userId_createdAt", (q) => q.eq("userId", userId).gte("createdAt", since))
       .collect();
     return rows.filter((row) => {
       if (!row.query || row.stage !== "completed") return false;
-      if (row._creationTime < since) return false;
+      if ((row.createdAt ?? row._creationTime) < since) return false;
       return normalizeQueryForCache(row.query) === normalizedQuery;
     }).length;
   },
@@ -152,11 +155,11 @@ export const getRecentSearchCount = query({
     const normalizedQuery = normalizeQueryForCache(args.query);
     const rows = await ctx.db
       .query("searchLogs")
-      .withIndex("userId", (q) => q.eq("userId", args.userId))
+      .withIndex("userId_createdAt", (q) => q.eq("userId", args.userId).gte("createdAt", since))
       .collect();
     return rows.filter((row) => {
       if (!row.query || row.stage !== "completed") return false;
-      if (row._creationTime < since) return false;
+      if ((row.createdAt ?? row._creationTime) < since) return false;
       return normalizeQueryForCache(row.query) === normalizedQuery;
     }).length;
   },

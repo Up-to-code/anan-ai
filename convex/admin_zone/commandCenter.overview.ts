@@ -32,6 +32,9 @@ export const commandCenterOverview = query({
       developers,
       properties,
       memberships,
+      dataHealth,
+      apiKeys,
+      integrationPolicies,
     ] = await Promise.all([
       ctx.db.query("assistantThreads").order("desc").take(500),
       ctx.db.query("assistantMessages").order("desc").take(500),
@@ -47,6 +50,9 @@ export const commandCenterOverview = query({
       ctx.db.query("RED").order("desc").take(500),
       ctx.db.query("properties").order("desc").take(500),
       ctx.db.query("organizationMemberships").order("desc").take(500),
+      ctx.db.query("adminDataHealthSummaries").collect(),
+      ctx.db.query("organizationApiKeys").collect(),
+      ctx.db.query("organizationIntegrationPolicies").collect(),
     ]);
 
     const { currentStart, previousStart } = getWindowBoundaries(range);
@@ -182,6 +188,7 @@ export const commandCenterOverview = query({
         newVerifications: verificationRequests.filter((item) => item.currentStatus === "new").length,
         inReviewVerifications: verificationRequests.filter((item) => item.currentStatus === "in_review").length,
         errorEvents: searchLogs.filter((item) => item.status === "failed" || Boolean(item.errorMessage)).length,
+        apiKeyDenials: apiKeys.filter((item) => Boolean(item.lastDeniedAt)).length,
       },
       partnerHealth: {
         brokers: brokers.length,
@@ -194,6 +201,25 @@ export const commandCenterOverview = query({
         actionModeOrganizations: subscriptions.filter(
           (item) => (item.status === "active" || item.status === "trial") && item.actionModeEnabled === true,
         ).length,
+        restrictedOrganizations: integrationPolicies.filter((item) => item.policyStatus === "restricted").length,
+      },
+      dataHealth: dataHealth
+        .sort((left, right) => right.updatedAt - left.updatedAt)
+        .slice(0, 8)
+        .map((item) => ({
+          summaryType: item.summaryType,
+          status: item.status,
+          value: item.value ?? null,
+          recordCount: item.recordCount ?? null,
+          lastAggregatedAt: item.lastAggregatedAt,
+          staleSince: item.staleSince ?? null,
+        })),
+      apiRisk: {
+        activeKeys: apiKeys.filter((item) => item.status === "active").length,
+        suspendedKeys: apiKeys.filter((item) => item.status === "suspended").length,
+        revokedKeys: apiKeys.filter((item) => item.status === "revoked").length,
+        keysWithOriginRestrictions: apiKeys.filter((item) => (item.trustedOrigins?.length ?? 0) > 0).length,
+        deniedKeys: apiKeys.filter((item) => Boolean(item.lastDeniedAt)).length,
       },
       activityTrend: buildDailySeries({
         days,
@@ -223,4 +249,3 @@ export const commandCenterOverview = query({
     };
   },
 });
-
