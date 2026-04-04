@@ -2,6 +2,11 @@
 
 Standalone Next.js admin console for Anan platform operations.
 
+## Local Development
+
+- Default local URL: `http://localhost:3001`
+- `pnpm dev:admin` starts the admin app on port `3001` so it does not collide with the main web app on `3000`
+
 ## Responsibilities
 
 - Overview and platform health
