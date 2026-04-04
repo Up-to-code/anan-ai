@@ -8,6 +8,8 @@ import type {
   OfferRecord,
   OrganizationRecord,
   OverviewChartPoint,
+  OverviewCountPoint,
+  OverviewDistributionPoint,
   OverviewMetric,
   ProjectRecord,
   PropertyRecord,
@@ -184,6 +186,102 @@ export const teamMembers: TeamMemberRecord[] = [
   { id: "member-2", name: "ريم الشريف", email: "reem@anan.sa", team: "المبيعات", permission: "sales_manager", status: "active" },
   { id: "member-3", name: "طارق الزهراني", email: "tariq@anan.sa", team: "التسويق", permission: "marketing", status: "pending" },
 ];
+
+function buildDistribution<T extends string>(
+  entries: readonly T[],
+  labelMap: Record<T, string>,
+  colorMap: Record<T, string>,
+): OverviewDistributionPoint[] {
+  return Object.entries(
+    entries.reduce<Record<string, number>>((accumulator, entry) => {
+      accumulator[entry] = (accumulator[entry] ?? 0) + 1;
+      return accumulator;
+    }, {}),
+  ).map(([key, value]) => ({
+    label: labelMap[key as T],
+    value,
+    color: colorMap[key as T],
+  }));
+}
+
+function buildCountSeries<T extends string>(
+  entries: readonly T[],
+  labelMap: Record<T, string>,
+  colorMap: Record<T, string>,
+): OverviewCountPoint[] {
+  return Object.entries(
+    entries.reduce<Record<string, number>>((accumulator, entry) => {
+      accumulator[entry] = (accumulator[entry] ?? 0) + 1;
+      return accumulator;
+    }, {}),
+  ).map(([key, count]) => ({
+    label: labelMap[key as T],
+    count,
+    color: colorMap[key as T],
+  }));
+}
+
+export const overviewPartnerMix = buildDistribution(
+  organizations.map((organization) => organization.kind),
+  {
+    broker: "وسطاء",
+    developer: "مطورون",
+  },
+  {
+    broker: "var(--chart-teal)",
+    developer: "var(--chart-blue)",
+  },
+);
+
+export const overviewVerificationPressure = buildCountSeries(
+  organizations.map((organization) => organization.verificationStatus as "approved" | "in_review" | "pending"),
+  {
+    approved: "معتمد",
+    in_review: "قيد المراجعة",
+    pending: "معلّق",
+  },
+  {
+    approved: "var(--chart-teal)",
+    in_review: "var(--chart-amber)",
+    pending: "var(--chart-rose)",
+  },
+);
+
+export const overviewOfferQueueMix = buildDistribution(
+  offers.map((offer) => offer.status as "approved" | "pending" | "rejected"),
+  {
+    approved: "معتمد",
+    pending: "معلّق",
+    rejected: "مرفوض",
+  },
+  {
+    approved: "var(--chart-teal)",
+    pending: "var(--chart-amber)",
+    rejected: "var(--chart-rose)",
+  },
+);
+
+export const overviewUserRoleDistribution = buildCountSeries(
+  users.map((user) => user.role),
+  {
+    admin: "مشرف",
+    broker: "وسيط",
+    developer: "مطور",
+    user: "مستخدم",
+  },
+  {
+    admin: "var(--chart-purple)",
+    broker: "var(--chart-teal)",
+    developer: "var(--chart-blue)",
+    user: "var(--chart-cyan)",
+  },
+);
+
+export const overviewModelConsumption = models.map((model, index) => ({
+  label: model.name,
+  value: model.monthlyTokens,
+  color: ["var(--chart-blue)", "var(--chart-teal)", "var(--chart-amber)", "var(--chart-purple)", "var(--chart-rose)", "var(--chart-cyan)"][index % 6],
+}));
 
 export const profileSettings = {
   name: "سلمان العتيبي",

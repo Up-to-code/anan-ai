@@ -8,7 +8,7 @@ import { convexAdminOverviewRepository } from "@/server/infrastructure/convex/ad
  * HOW:   Requires an admin session once, then loads the overview stats and latest activity in parallel.
  */
 export async function getDashboardOverviewPageData(range: "30d" | "90d" = "90d") {
-  const session = await requireAdminPageSession("/dashboard");
+  const session = await requireAdminPageSession("/overview");
   const token = session.token;
 
   const [stats, recentActivities, commandCenter] = await Promise.all([

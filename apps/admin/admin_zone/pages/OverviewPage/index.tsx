@@ -1,4 +1,14 @@
-import { models, overviewChartByRange, overviewMetricsByRange, queueItems, recentActivities } from "@/admin_zone/mocks/data";
+import {
+  overviewChartByRange,
+  overviewMetricsByRange,
+  overviewModelConsumption,
+  overviewOfferQueueMix,
+  overviewPartnerMix,
+  overviewUserRoleDistribution,
+  overviewVerificationPressure,
+  queueItems,
+  recentActivities,
+} from "@/admin_zone/mocks/data";
 import type { AdminRange } from "@/admin_zone/mocks/types";
 import OverviewPageClient from "./OverviewPageClient";
 
@@ -19,8 +29,11 @@ export default function OverviewPage({ range = "30d" }: OverviewPageProps) {
       chart={overviewChartByRange[range]}
       activities={recentActivities}
       queue={queueItems}
-      models={models}
+      partnerMix={overviewPartnerMix}
+      verificationPressure={overviewVerificationPressure}
+      offerQueueMix={overviewOfferQueueMix}
+      userRoleDistribution={overviewUserRoleDistribution}
+      models={overviewModelConsumption}
     />
   );
 }
-

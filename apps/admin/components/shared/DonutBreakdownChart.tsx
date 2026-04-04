@@ -1,11 +1,12 @@
 "use client";
 
-import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell } from "recharts";
+import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
-import { formatChartNumber } from "@/components/shared/chartTypes";
+import { formatChartNumber, type ChartBreakdownDatum } from "@/components/shared/chartTypes";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 type DonutBreakdownChartProps = {
-  data: Array<{ label: string; value: number; color: string }>;
+  data: ChartBreakdownDatum[];
   className?: string;
   height?: number;
 };
@@ -20,27 +21,26 @@ export default function DonutBreakdownChart({
   className,
   height = 280,
 }: DonutBreakdownChartProps) {
+  const config = data.reduce<Record<string, { label: string; color: string }>>((accumulator, item) => {
+    accumulator[item.label] = { label: item.label, color: item.color };
+    return accumulator;
+  }, {});
+
   return (
     <div className={cn("grid gap-4 lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)]", className)}>
       <div style={{ height }} dir="ltr">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie data={data} dataKey="value" nameKey="label" innerRadius={60} outerRadius={92} paddingAngle={2}>
-              {data.map((item) => (
-                <Cell key={item.label} fill={item.color} />
-              ))}
-            </Pie>
-            <Tooltip
-              contentStyle={{
-                borderRadius: 16,
-                border: "1px solid var(--border)",
-                backgroundColor: "var(--card)",
-                boxShadow: "0 10px 30px -10px rgba(0, 0, 0, 0.1)",
-              }}
-              formatter={(value, name) => [formatChartNumber(value as number | string), String(name ?? "")]}
-            />
-          </PieChart>
-        </ResponsiveContainer>
+        <ChartContainer config={config} className="h-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={data} dataKey="value" nameKey="label" innerRadius={60} outerRadius={92} paddingAngle={2}>
+                {data.map((item) => (
+                  <Cell key={item.label} fill={item.color} />
+                ))}
+              </Pie>
+              <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartContainer>
       </div>
       <div className="space-y-3">
         {data.map((item) => (
