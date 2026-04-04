@@ -16,10 +16,10 @@ export function getOrganizationApiKeyOrigin(request: Request) {
   const origin = request.headers.get("Origin")?.trim();
   if (origin) return origin;
   const referer = request.headers.get("Referer")?.trim();
-  if (!referer) return null;
+  if (!referer) return undefined;
   try {
     return new URL(referer).origin;
   } catch {
-    return null;
+    return undefined;
   }
 }

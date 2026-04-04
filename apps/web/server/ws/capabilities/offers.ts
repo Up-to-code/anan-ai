@@ -12,7 +12,7 @@ import {
   updateBrokerOfferDraft,
 } from "@/server/domains/workspace/offers/broker";
 import type { WorkspaceAudience, WorkspaceOwnerContext } from "@/server/contracts/workspace";
-import { convexOffersRepository } from "@/server/infrastructure/convex/offersRepository";
+import { convexOffersRepository } from "@/server/infrastructure/convex/deals/offers";
 import {
   applyToRedOffer,
   advanceRedOfferCase,

@@ -15,7 +15,7 @@ import {
 import {
   convexOrganizationsRepository,
   type OrganizationsRepository,
-} from "@/server/infrastructure/convex/organizationsRepository";
+} from "@/server/infrastructure/convex/organizations";
 
 export type WorkspaceSnapshot = {
   user: SessionUser;

@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import type { InboxRepository } from "@/server/infrastructure/convex/inboxRepository";
+import type { InboxRepository } from "@/server/infrastructure/convex/messaging/inbox";
 import { shareInboxFileInConversation } from "@/server/domains/workspace/inbox/service";
 
 const { mockAttachOrganizationAssets } = vi.hoisted(() => ({
   mockAttachOrganizationAssets: vi.fn(async () => undefined),
 }));
 
-vi.mock("@/server/infrastructure/convex/organizationAssetsRepository", () => ({
+vi.mock("@/server/infrastructure/convex/organizations/assets", () => ({
   convexOrganizationAssetsRepository: {
     attachOrganizationAssets: mockAttachOrganizationAssets,
   },

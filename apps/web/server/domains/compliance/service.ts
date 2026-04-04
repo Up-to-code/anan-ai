@@ -1,6 +1,6 @@
 import { requireSessionContext, type ResolvedSession } from "@/server/auth/session";
 import type { ComplianceRuleset } from "@/server/contracts/compliance";
-import { convexComplianceRepository, type ComplianceRepository } from "@/server/infrastructure/convex/complianceRepository";
+import { convexComplianceRepository, type ComplianceRepository } from "@/server/infrastructure/convex/compliance";
 
 const DEFAULT_COMPLIANCE_COUNTRY = "SA";
 

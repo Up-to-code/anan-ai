@@ -9,7 +9,7 @@ import {
 import {
   convexVerificationsRepository,
   type VerificationsRepository,
-} from "@/server/infrastructure/convex/verificationsRepository";
+} from "@/server/infrastructure/convex/deals/verifications";
 
 type VerificationsServiceDependencies = {
   requireSession: () => Promise<ResolvedSession>;

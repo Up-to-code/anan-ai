@@ -4,8 +4,8 @@ import { requireWorkspaceData } from "../../../_lib/workspaceData";
 import { resolveWorkspaceProjectDetail } from "@/server/domains/workspace/properties/detail";
 import { mapPropertyToWorkspaceProjectDetail } from "../shared/lib/projectViewModel";
 import { requireSessionContext } from "@/server/auth/session";
-import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizationAssetsRepository";
-import { convexProjectAccessRepository } from "@/server/infrastructure/convex/projectAccessRepository";
+import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizations/assets";
+import { convexProjectAccessRepository } from "@/server/infrastructure/convex/properties/access";
 import { normalizeDomainError } from "@/server/contracts/errors";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
 import type {

@@ -1,5 +1,5 @@
 import type { SubmitPublicFormInput } from "@/server/contracts/forms";
-import { convexFormsRepository, type FormsRepository } from "@/server/infrastructure/convex/formsRepository";
+import { convexFormsRepository, type FormsRepository } from "@/server/infrastructure/convex/public/forms";
 
 type FormsServiceDependencies = {
   repository: FormsRepository;
