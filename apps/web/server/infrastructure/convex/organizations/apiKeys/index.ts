@@ -10,6 +10,7 @@ import {
   unwrapProperties,
   unwrapProperty,
 } from "./mappers";
+import type { OrganizationApiKeySummary } from "@/server/contracts/organizationApiKeys";
 import type { OrganizationApiKeysRepository } from "./types";
 
 export type { OrganizationApiKeysRepository } from "./types";
