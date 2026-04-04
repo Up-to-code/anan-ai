@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import StatCard from "@/components/shared/StatCard";
 import { AdminInput, AdminSelect } from "@/components/shared/AdminFieldControls";
 import DataTable from "@/components/shared/DataTable";
 import PageActions from "@/components/shared/PageActions";
 import SectionScaffold from "@/components/shared/SectionScaffold";
 import StatusBadge from "@/components/shared/StatusBadge";
+import { getAdminPageOperationHref } from "@/lib/adminPages";
 import { offersTabs } from "@/lib/adminSectionTabs";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 import type { OfferRecord } from "@/admin_zone/mocks/types";
@@ -36,14 +38,37 @@ export default function OffersPageClient({ offers }: OffersPageClientProps) {
     [offers, search, status],
   );
 
+  const summary = useMemo(
+    () => ({
+      total: offers.length,
+      pending: offers.filter((offer) => offer.status === "pending").length,
+      approved: offers.filter((offer) => offer.status === "approved").length,
+      pipelineValue: offers.reduce((accumulator, offer) => accumulator + offer.amount, 0),
+    }),
+    [offers],
+  );
+
   return (
     <SectionScaffold
       eyebrow="إدارة العروض"
       title="مراجعة العروض"
       description="قائمة موحدة للعروض مع قرار الاعتماد أو الرفض داخل الإدارة."
       tabs={offersTabs}
-      actions={<PageActions actions={[{ label: "إضافة عرض", href: "/offers/new" }]} />}
+      actions={
+        <PageActions
+          actions={[
+            { label: "إضافة عرض", href: getAdminPageOperationHref("offers", "create") ?? "/offers/new" },
+          ]}
+        />
+      }
     >
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="إجمالي العروض" value={String(summary.total)} hint="كل العروض المفتوحة داخل لوحة المراجعة." />
+        <StatCard label="بانتظار القرار" value={String(summary.pending)} hint="عروض تحتاج اعتمادًا أو رفضًا من الإدارة." />
+        <StatCard label="المعتمدة" value={String(summary.approved)} hint="عروض اجتازت مسار المراجعة الحالي." />
+        <StatCard label="قيمة الخط" value={formatCurrency(summary.pipelineValue)} hint="القيمة الإجمالية للعروض داخل البيانات التجريبية." />
+      </div>
+
       <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
         <AdminInput placeholder="ابحث باسم العرض أو المنظمة" value={search} onChange={(event) => setSearch(event.target.value)} />
         <AdminSelect value={status} onChange={(event) => setStatus(event.target.value)}>
@@ -57,7 +82,10 @@ export default function OffersPageClient({ offers }: OffersPageClientProps) {
         {filteredOffers.map((offer) => (
           <tr key={offer.id} className="group transition-colors hover:bg-muted/5">
             <td className="px-5 py-4">
-              <Link href={`/offers/${offer.id}`} className="block font-black tracking-tight text-foreground hover:text-primary transition-colors">
+              <Link
+                href={getAdminPageOperationHref("offers", "detail", offer.id) ?? `/offers/${offer.id}`}
+                className="block font-black tracking-tight text-foreground transition-colors hover:text-primary"
+              >
                 {offer.title}
               </Link>
             </td>

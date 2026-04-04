@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import StatCard from "@/components/shared/StatCard";
 import { AdminInput, AdminSelect } from "@/components/shared/AdminFieldControls";
 import DataTable from "@/components/shared/DataTable";
 import PageActions from "@/components/shared/PageActions";
 import SectionScaffold from "@/components/shared/SectionScaffold";
 import StatusBadge from "@/components/shared/StatusBadge";
+import { getAdminPageOperationHref } from "@/lib/adminPages";
 import { organizationsTabs } from "@/lib/adminSectionTabs";
 import { formatDateTime } from "@/lib/format";
 import { labelForOwnerType } from "@/lib/adminLabels";
@@ -39,14 +41,37 @@ export default function OrganizationsPageClient({ organizations }: Organizations
     [kind, organizations, search, verificationStatus],
   );
 
+  const summary = useMemo(
+    () => ({
+      total: organizations.length,
+      developers: organizations.filter((organization) => organization.kind === "developer").length,
+      brokers: organizations.filter((organization) => organization.kind === "broker").length,
+      needsReview: organizations.filter((organization) => organization.verificationStatus !== "approved").length,
+    }),
+    [organizations],
+  );
+
   return (
     <SectionScaffold
       eyebrow="المنظمات"
       title="كل المنظمات"
       description="قائمة موحدة للوسطاء والمطورين مع حالة التحقق والوثائق والأنشطة المرتبطة."
       tabs={organizationsTabs}
-      actions={<PageActions actions={[{ label: "إضافة منظمة", href: "/organizations/new" }]} />}
+      actions={
+        <PageActions
+          actions={[
+            { label: "إضافة منظمة", href: getAdminPageOperationHref("organizations", "create") ?? "/organizations/new" },
+          ]}
+        />
+      }
     >
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="إجمالي المنظمات" value={String(summary.total)} hint="كل الشركاء الظاهرين في الدليل الحالي." />
+        <StatCard label="المطورون" value={String(summary.developers)} hint="جهات تملك مشاريع وكتالوجًا مباشرًا." />
+        <StatCard label="الوسطاء" value={String(summary.brokers)} hint="منظمات تعتمد على التوزيع والتعاون." />
+        <StatCard label="تحتاج مراجعة" value={String(summary.needsReview)} hint="منظمات لم تصل لاعتماد كامل بعد." />
+      </div>
+
       <div className="grid gap-3 md:grid-cols-3">
         <AdminInput placeholder="ابحث باسم المنظمة" value={search} onChange={(event) => setSearch(event.target.value)} />
         <AdminSelect value={kind} onChange={(event) => setKind(event.target.value)}>
@@ -66,7 +91,10 @@ export default function OrganizationsPageClient({ organizations }: Organizations
         {filteredOrganizations.map((organization) => (
           <tr key={organization.id} className="group transition-colors hover:bg-muted/5">
             <td className="px-5 py-4">
-              <Link href={`/organizations/${organization.id}`} className="block font-black tracking-tight text-foreground hover:text-primary transition-colors">
+              <Link
+                href={getAdminPageOperationHref("organizations", "detail", organization.id) ?? `/organizations/${organization.id}`}
+                className="block font-black tracking-tight text-foreground transition-colors hover:text-primary"
+              >
                 {organization.name}
               </Link>
               <div className="mt-1 text-[11px] font-bold text-muted-foreground/50">{organization.budgetBand}</div>

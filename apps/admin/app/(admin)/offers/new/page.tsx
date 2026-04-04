@@ -1,5 +1,5 @@
 import EntityEditorPage from "@/admin_zone/pages/EntityEditorPage";
-import { offersTabs } from "@/lib/adminSectionTabs";
+import { newOfferTabs } from "@/lib/adminSectionTabs";
 
 /**
  * WHY:   Offer management needs a route-backed create flow so the CRUD UI feels complete even in mock mode.
@@ -15,7 +15,7 @@ export default function NewOfferPage() {
       entityLabel="العرض"
       mode="create"
       backHref="/offers"
-      tabs={offersTabs}
+      tabs={newOfferTabs}
       fields={[
         { name: "title", label: "عنوان العرض", placeholder: "عنوان واضح للعرض" },
         { name: "organizationName", label: "المنظمة", placeholder: "اسم المنظمة" },

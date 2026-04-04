@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import StatCard from "@/components/shared/StatCard";
 import { AdminInput, AdminSelect } from "@/components/shared/AdminFieldControls";
 import DataTable from "@/components/shared/DataTable";
 import PageActions from "@/components/shared/PageActions";
 import SectionScaffold from "@/components/shared/SectionScaffold";
 import StatusBadge from "@/components/shared/StatusBadge";
+import { getAdminPageOperationHref } from "@/lib/adminPages";
 import { usersTabs } from "@/lib/adminSectionTabs";
 import { formatDateTime } from "@/lib/format";
 import { labelForRole } from "@/lib/adminLabels";
@@ -39,14 +41,37 @@ export default function UsersPageClient({ users }: UsersPageClientProps) {
     [role, search, status, users],
   );
 
+  const summary = useMemo(
+    () => ({
+      total: users.length,
+      admins: users.filter((user) => user.role === "admin").length,
+      partners: users.filter((user) => user.role === "broker" || user.role === "developer").length,
+      needsVerification: users.filter((user) => user.verificationStatus !== "approved").length,
+    }),
+    [users],
+  );
+
   return (
     <SectionScaffold
       eyebrow="المستخدمون"
       title="كل المستخدمين"
       description="قائمة موحدة للمستخدمين مع الدور، المنظمة، حالة التحقق، وآخر نشاط."
       tabs={usersTabs}
-      actions={<PageActions actions={[{ label: "إضافة مستخدم", href: "/users/new" }]} />}
+      actions={
+        <PageActions
+          actions={[
+            { label: "إضافة مستخدم", href: getAdminPageOperationHref("users", "create") ?? "/users/new" },
+          ]}
+        />
+      }
     >
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="إجمالي المستخدمين" value={String(summary.total)} hint="كل الحسابات التي تظهر في الإدارة حاليًا." />
+        <StatCard label="المشرفون" value={String(summary.admins)} hint="حسابات تملك صلاحيات تحكم مباشرة." />
+        <StatCard label="مستخدمو الشركاء" value={String(summary.partners)} hint="وسطاء ومطورون ضمن المسارات التشغيلية." />
+        <StatCard label="تحتاج تحقق" value={String(summary.needsVerification)} hint="حسابات لا تزال بحاجة لاعتماد أو مراجعة." />
+      </div>
+
       <div className="grid gap-3 md:grid-cols-3">
         <AdminInput placeholder="ابحث بالاسم أو البريد" value={search} onChange={(event) => setSearch(event.target.value)} />
         <AdminSelect value={role} onChange={(event) => setRole(event.target.value)}>
@@ -67,7 +92,10 @@ export default function UsersPageClient({ users }: UsersPageClientProps) {
         {filteredUsers.map((user) => (
           <tr key={user.id} className="group transition-colors hover:bg-muted/5">
             <td className="px-5 py-4">
-              <Link href={`/users/${user.id}`} className="block font-black tracking-tight text-foreground hover:text-primary transition-colors">
+              <Link
+                href={getAdminPageOperationHref("users", "detail", user.id) ?? `/users/${user.id}`}
+                className="block font-black tracking-tight text-foreground transition-colors hover:text-primary"
+              >
                 {user.name}
               </Link>
               <div className="mt-1 text-[11px] font-bold text-muted-foreground/50">{user.email}</div>
