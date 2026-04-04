@@ -17,33 +17,6 @@ async function fetchThreadSummary(token: string, threadId: string) {
   })) as RawAssistantThread;
 }
 
-export type AnanProRepository = {
-  getThread(token: string, threadId?: string): Promise<AnanProThread | null>;
-  listThreads(token: string, limit?: number): Promise<AnanProThreadSummary[]>;
-  sendMessage(token: string, input: SendAnanProMessageInput): Promise<AnanProThread>;
-  listStreamEvents(
-    token: string,
-    input: { sessionId: string; afterSeq?: number; limit?: number },
-  ): Promise<AnanProStreamEvent[]>;
-  cancelStreamSession(token: string, sessionId: string): Promise<{ ok: true; sessionId: string }>;
-  getVoiceUploadUrl(token: string): Promise<string>;
-  transcribeVoiceFromStorage(
-    token: string,
-    input: TranscribeVoiceFromStorageInput,
-  ): Promise<TranscribeVoiceFromStorageResult>;
-  finalizeUploadedFiles(
-    token: string,
-    input: {
-      files: Array<{
-        storageId: string;
-        name: string;
-        size?: number;
-        mime?: string;
-      }>;
-    },
-  ): Promise<UploadedFileReference[]>;
-};
-
 export const convexAnanProRepository: AnanProRepository = {
   async getThread(token, threadId) {
     if (threadId) {

@@ -73,7 +73,7 @@ export const convexCrmRepository: CrmRepository = {
   async getById(dealId) {
     const deal = (await fetchQuery(crmApi.getDealById as never, {
       dealId: dealId as never,
-    })) as ReturnType<CrmRepository["getById"]>;
+    })) as Awaited<ReturnType<CrmRepository["getById"]>>;
     return mapDealDetail(deal);
   },
 
