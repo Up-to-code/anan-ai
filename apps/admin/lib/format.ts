@@ -1,4 +1,4 @@
-import { getDateLocale, getNumberLocale, type AdminLocale } from "./locale";
+import { ADMIN_DATE_TIME_ZONE, getDateLocale, getNumberLocale, type AdminLocale } from "./locale";
 
 /**
  * WHY:   Admin pages repeat the same operational value formatting across metrics, tables, and detail panels.
@@ -37,7 +37,7 @@ export function formatPercent(rate: number | null | undefined, locale: AdminLoca
 /**
  * WHY:   Operational feeds and logs should present timestamps in a compact human-readable format.
  * WHAT:  Formats a unix-millisecond timestamp or returns a fallback for missing values.
- * HOW:   Uses a short date-time formatter in the Cairo locale context.
+ * HOW:   Pins the formatter to a Gregorian calendar and one admin timezone so SSR and hydration stay identical.
  */
 export function formatDateTime(value: number | null | undefined, locale: AdminLocale = "ar") {
   if (!value) {
@@ -47,5 +47,6 @@ export function formatDateTime(value: number | null | undefined, locale: AdminLo
   return new Intl.DateTimeFormat(getDateLocale(locale), {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: ADMIN_DATE_TIME_ZONE,
   }).format(new Date(value));
 }
