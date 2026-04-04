@@ -2,7 +2,7 @@ import { requireSessionContext } from "@/server/auth/session";
 import {
   convexAnanProRepository,
   type AnanProRepository,
-} from "@/server/infrastructure/convex/ananProRepository";
+} from "@/server/infrastructure/convex/ai/ananPro";
 import type {
   AnanProStreamEvent,
   SendAnanProMessageInput,

@@ -39,7 +39,7 @@ export const listConversations = query({
 
     return summaries
       .filter((item): item is NonNullable<typeof item> => Boolean(item))
-      .sort((a, b) => b.updatedAt - a.updatedAt);
+      .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
   },
 });
 
@@ -69,7 +69,7 @@ export const getConversation = query({
     );
     const messages = await ctx.db
       .query("inboxMessages")
-      .withIndex("conversationId", (q) => q.eq("conversationId", conversationId))
+      .withIndex("conversationId_createdAt", (q) => q.eq("conversationId", conversationId))
       .collect();
 
     return {

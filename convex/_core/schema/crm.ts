@@ -13,6 +13,7 @@ import { uploadedFileReferenceListValidator } from "./uploadedFiles";
 const crmTables = {
     crmClients: defineTable({
         ownerAuthUserId: v.string(),
+        tenantOrgId: v.optional(v.string()),
         brokerId: v.optional(v.id("brokers")),
         REDId: v.optional(v.id("RED")),
         name: v.string(),
@@ -26,17 +27,21 @@ const crmTables = {
         createdAt: v.number(),
         updatedAt: v.number(),
     })
+        .index("tenantOrgId", ["tenantOrgId"])
+        .index("tenantOrgId_updatedAt", ["tenantOrgId", "updatedAt"])
         .index("ownerAuthUserId", ["ownerAuthUserId"])
         .index("brokerId", ["brokerId"])
         .index("REDId", ["REDId"]),
     deals: defineTable({
         title: v.string(),
+        tenantOrgId: v.optional(v.string()),
         description: v.optional(v.string()),
         value: v.optional(v.number()),
         nextFollowUpAt: v.optional(v.number()),
         // Legacy deployments already contain deal rows created before this field existed.
         // Keep the schema backward-compatible while current write paths continue populating it.
         createdAt: v.optional(v.number()),
+        updatedAt: v.optional(v.number()),
         stage: v.union(
             v.literal("new"),        // فرصة جديدة
             v.literal("contacted"),  // تواصل أولي
@@ -68,11 +73,16 @@ const crmTables = {
         archivedAt: v.optional(v.number()),
         archivedBy: v.optional(v.string()),
     })
+        .index("tenantOrgId", ["tenantOrgId"])
+        .index("tenantOrgId_stage_updatedAt", ["tenantOrgId", "stage", "updatedAt"])
         .index("REDId", ["REDId"])
+        .index("REDId_stage_updatedAt", ["REDId", "stage", "updatedAt"])
         .index("brokerId", ["brokerId"])
+        .index("brokerId_stage_updatedAt", ["brokerId", "stage", "updatedAt"])
         .index("assignedTo", ["assignedTo"])
         .index("stage", ["stage"])
         .index("propertyId", ["propertyId"])
+        .index("propertyId_updatedAt", ["propertyId", "updatedAt"])
         .index("offerId", ["offerId"])
         .index("offerCaseId", ["offerCaseId"])
         .index("crmClientId", ["crmClientId"])

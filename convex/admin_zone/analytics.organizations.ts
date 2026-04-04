@@ -7,11 +7,11 @@ export const brokerAnalytics = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit = 10 }) => {
     await requireRole(ctx, ["admin"]);
-    const [brokers, profiles, tenantLinks, properties] = await Promise.all([
+    const [brokers, profiles, tenantLinks, projectSummaries] = await Promise.all([
       ctx.db.query("brokers").order("desc").take(500),
       ctx.db.query("userProfiles").order("desc").take(500),
       ctx.db.query("tenantOrgLinks").order("desc").take(500),
-      ctx.db.query("properties").order("desc").take(500),
+      ctx.db.query("organizationProjectSummaries").collect(),
     ]);
     const tenantOrgIdByBrokerId = new Map<string, string>();
     for (const link of tenantLinks) {
@@ -19,6 +19,11 @@ export const brokerAnalytics = query({
         tenantOrgIdByBrokerId.set(String(link.ownerBrokerId), link.tenantOrgId);
       }
     }
+    const inventoryByBrokerId = new Map(
+      projectSummaries
+        .filter((summary) => summary.ownerBrokerId)
+        .map((summary) => [String(summary.ownerBrokerId), summary.propertyCount]),
+    );
     const topByInventory = (await Promise.all(
       brokers.map(async (broker) => {
         const tenantOrgId = tenantOrgIdByBrokerId.get(String(broker._id));
@@ -30,7 +35,7 @@ export const brokerAnalytics = query({
           isVerified: broker.isVerified === true,
           linkedProfilesCount: profiles.filter((profile) => profile.brokerId === broker._id).length,
           membersCount: members.filter((member) => (member.status ?? "active") === "active").length,
-          inventoryCount: properties.filter((property) => property.brokerId === broker._id).length,
+          inventoryCount: inventoryByBrokerId.get(String(broker._id)) ?? 0,
         };
       }),
     ))
@@ -51,11 +56,11 @@ export const developerAnalytics = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit = 10 }) => {
     await requireRole(ctx, ["admin"]);
-    const [developers, profiles, tenantLinks, properties] = await Promise.all([
+    const [developers, profiles, tenantLinks, projectSummaries] = await Promise.all([
       ctx.db.query("RED").order("desc").take(500),
       ctx.db.query("userProfiles").order("desc").take(500),
       ctx.db.query("tenantOrgLinks").order("desc").take(500),
-      ctx.db.query("properties").order("desc").take(500),
+      ctx.db.query("organizationProjectSummaries").collect(),
     ]);
     const tenantOrgIdByRedId = new Map<string, string>();
     for (const link of tenantLinks) {
@@ -63,6 +68,11 @@ export const developerAnalytics = query({
         tenantOrgIdByRedId.set(String(link.ownerREDId), link.tenantOrgId);
       }
     }
+    const inventoryByRedId = new Map(
+      projectSummaries
+        .filter((summary) => summary.ownerREDId)
+        .map((summary) => [String(summary.ownerREDId), summary.propertyCount]),
+    );
     const topByInventory = (await Promise.all(
       developers.map(async (developer) => {
         const tenantOrgId = tenantOrgIdByRedId.get(String(developer._id));
@@ -74,7 +84,7 @@ export const developerAnalytics = query({
           isVerified: developer.isVerified === true,
           linkedProfilesCount: profiles.filter((profile) => profile.REDId === developer._id).length,
           membersCount: members.filter((member) => (member.status ?? "active") === "active").length,
-          inventoryCount: properties.filter((property) => property.REDId === developer._id).length,
+          inventoryCount: inventoryByRedId.get(String(developer._id)) ?? 0,
         };
       }),
     ))

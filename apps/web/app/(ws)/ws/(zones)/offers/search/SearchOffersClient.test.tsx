@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import SearchOffersClient, { filterSearchOffers } from "./SearchOffersClient";
-import type { WorkspaceOfferSummary } from "../offerTypes";
+import type { WorkspaceOfferSummary } from "../types/offerTypes";
 
 vi.mock("next/link", () => ({
   default: ({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) => (

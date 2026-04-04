@@ -8,7 +8,7 @@ import {
 import {
   convexProjectAnalyticsRepository,
   type ProjectAnalyticsRepository,
-} from "@/server/infrastructure/convex/projectAnalyticsRepository";
+} from "@/server/infrastructure/convex/properties/analytics";
 
 type WorkspaceProjectAnalyticsDependencies = {
   requireSession: () => Promise<ResolvedSession>;

@@ -211,6 +211,31 @@ function getUtcDateKey(timestamp: number) {
   return new Date(timestamp).toISOString().slice(0, 10);
 }
 
+function emptyBrokerActivityCounts() {
+  return {
+    new_client: 0,
+    in_call: 0,
+    interested: 0,
+    visit_requested: 0,
+    visit_scheduled: 0,
+    permit_review: 0,
+    closed_won: 0,
+    closed_lost: 0,
+  };
+}
+
+function incrementBrokerActivityCount(
+  counts: ReturnType<typeof emptyBrokerActivityCounts>,
+  activityKey: BrokerActivityKey,
+) {
+  if (activityKey === "new_client") counts.new_client += 1;
+  if (activityKey === "in_call") counts.in_call += 1;
+  if (activityKey === "in_stage") counts.interested += 1;
+  if (activityKey === "permit_review") counts.permit_review += 1;
+  if (activityKey === "closed_won") counts.closed_won += 1;
+  if (activityKey === "closed_lost") counts.closed_lost += 1;
+}
+
 function buildTrendWindow(totalDays: number) {
   const days: { dateKey: string; label: string }[] = [];
   const today = new Date();
@@ -239,6 +264,83 @@ function actorAudience(role: string | undefined) {
     return "developer";
   }
   return undefined;
+}
+
+async function upsertPropertyEngagementDaily(args: {
+  ctx: MutationCtx;
+  propertyId: Id<"properties">;
+  tenantOrgId: string;
+  createdAt: number;
+  eventType: ProjectAnalyticsEventType;
+}) {
+  const dateKey = getUtcDateKey(args.createdAt);
+  const existing = await args.ctx.db
+    .query("propertyEngagementDaily")
+    .withIndex("propertyId_dateKey", (q) => q.eq("propertyId", args.propertyId).eq("dateKey", dateKey))
+    .unique();
+  const views = VIEW_EVENT_TYPES.has(args.eventType) ? 1 : 0;
+  const clicks = CLICK_EVENT_TYPES.has(args.eventType) ? 1 : 0;
+  if (existing) {
+    await args.ctx.db.patch(existing._id, {
+      views: existing.views + views,
+      clicks: existing.clicks + clicks,
+      updatedAt: args.createdAt,
+      lastEventAt: args.createdAt,
+    });
+    return;
+  }
+  await args.ctx.db.insert("propertyEngagementDaily", {
+    propertyId: args.propertyId,
+    tenantOrgId: args.tenantOrgId,
+    dateKey,
+    views,
+    clicks,
+    viewers: 0,
+    updatedAt: args.createdAt,
+    lastEventAt: args.createdAt,
+  });
+}
+
+async function upsertPropertyBrokerEngagement(args: {
+  ctx: MutationCtx;
+  propertyId: Id<"properties">;
+  tenantOrgId: string;
+  brokerId: Id<"brokers">;
+  createdAt: number;
+  eventType: ProjectAnalyticsEventType;
+}) {
+  const existing = await args.ctx.db
+    .query("propertyBrokerAnalytics")
+    .withIndex("propertyId_brokerId", (q) => q.eq("propertyId", args.propertyId).eq("brokerId", args.brokerId))
+    .unique();
+  const views = VIEW_EVENT_TYPES.has(args.eventType) ? 1 : 0;
+  const clicks = CLICK_EVENT_TYPES.has(args.eventType) ? 1 : 0;
+  if (existing) {
+    await args.ctx.db.patch(existing._id, {
+      views: existing.views + views,
+      clicks: existing.clicks + clicks,
+      lastActivityAt: Math.max(existing.lastActivityAt ?? 0, args.createdAt),
+      updatedAt: args.createdAt,
+    });
+    return;
+  }
+  await args.ctx.db.insert("propertyBrokerAnalytics", {
+    propertyId: args.propertyId,
+    tenantOrgId: args.tenantOrgId,
+    brokerId: args.brokerId,
+    views,
+    clicks,
+    totalTrackedCustomers: 0,
+    brokerManagedCustomers: 0,
+    internalCustomers: 0,
+    closedWonCustomers: 0,
+    closedLostCustomers: 0,
+    activityCounts: emptyBrokerActivityCounts(),
+    currentActivityKey: undefined,
+    state: "viewer_only",
+    lastActivityAt: args.createdAt,
+    updatedAt: args.createdAt,
+  });
 }
 
 async function getUserProfileByAuthUserId(ctx: AnalyticsCtx, authUserId: string) {
@@ -304,9 +406,10 @@ async function buildAnalytics(args: {
   ctx: QueryCtx;
   propertyId: Id<"properties">;
   ownerBrokerId?: Id<"brokers"> | undefined;
+  tenantOrgId?: string | undefined;
 }) {
   const { ctx, propertyId, ownerBrokerId } = args;
-  const [viewerAccessRows, deals, projectEvents, caseResult] = await Promise.all([
+  const [viewerAccessRows, deals, projectEvents, caseResult, brokerRollups, engagementRollups] = await Promise.all([
     ctx.db
       .query("propertyViewerAccess")
       .withIndex("propertyId", (q) => q.eq("propertyId", propertyId))
@@ -320,6 +423,14 @@ async function buildAnalytics(args: {
       .withIndex("propertyId", (q) => q.eq("propertyId", propertyId))
       .collect(),
     listOfferCasesForProperty(ctx, propertyId),
+    ctx.db
+      .query("propertyBrokerAnalytics")
+      .withIndex("propertyId_lastActivityAt", (q: any) => q.eq("propertyId", propertyId))
+      .collect(),
+    ctx.db
+      .query("propertyEngagementDaily")
+      .withIndex("propertyId_dateKey", (q: any) => q.eq("propertyId", propertyId))
+      .collect(),
   ]);
 
   const offerPackages = caseResult.packages;
@@ -419,6 +530,7 @@ async function buildAnalytics(args: {
 
       const views = brokerEvents.filter((entry) => VIEW_EVENT_TYPES.has(entry.eventType as ProjectAnalyticsEventType)).length;
       const clicks = brokerEvents.filter((entry) => CLICK_EVENT_TYPES.has(entry.eventType as ProjectAnalyticsEventType)).length;
+      const rollup = brokerRollups.find((entry) => String(entry.brokerId) === String(brokerId)) ?? null;
 
       const latestDeal = [...brokerDeals].sort(
         (left, right) => (right.createdAt ?? right._creationTime) - (left.createdAt ?? left._creationTime),
@@ -506,6 +618,10 @@ async function buildAnalytics(args: {
       ].sort((left, right) => (right.lastActivityAt ?? 0) - (left.lastActivityAt ?? 0));
 
       const currentActivityKey = resolveBrokerCurrentActivity(customers);
+      const activityCounts = emptyBrokerActivityCounts();
+      for (const customer of customers) {
+        incrementBrokerActivityCount(activityCounts, customer.activityKey);
+      }
 
       const timeline = [
         ...brokerDeals.map((deal) => ({
@@ -570,7 +686,7 @@ async function buildAnalytics(args: {
         stateLabel: brokerStateLabel(state),
         currentActivityKey,
         currentActivityLabel: currentActivityKey ? brokerActivityLabel(currentActivityKey) : null,
-        linkedClientName,
+        linkedClientName: null,
         currentStageLabel: latestDeal
           ? dealStageLabel(latestDeal.stage)
           : latestCase
@@ -579,14 +695,15 @@ async function buildAnalytics(args: {
               ? "فتح المشروع للمشاهدة"
               : "بدون نشاط",
         lastActivityAt: lastActivityAt > 0 ? lastActivityAt : null,
-        views,
-        clicks,
+        views: rollup?.views ?? views,
+        clicks: rollup?.clicks ?? clicks,
         totalCustomers: customers.length,
         trackedCustomers: customers.filter((entry) => entry.isTrackedCustomer).length,
         brokerManagedCustomers: customers.filter((entry) => entry.relationType === "broker_managed").length,
         internalCustomers: customers.filter((entry) => entry.relationType === "internal_client").length,
         closedWonCustomers: customers.filter((entry) => entry.stageKey === "won").length,
         closedLostCustomers: customers.filter((entry) => entry.stageKey === "lost").length,
+        activityCounts,
         customers,
         timeline,
       };
@@ -601,8 +718,8 @@ async function buildAnalytics(args: {
       brokerPhone: entry.brokerPhone,
       state: entry.state,
       stateLabel: entry.stateLabel,
-      linkedClientName: entry.customers[0]?.name ?? null,
-      currentStageLabel: entry.customers[0]?.stageLabel ?? "بدون نشاط",
+      linkedClientName: null,
+      currentStageLabel: entry.currentStageLabel,
       lastActivityAt: entry.lastActivityAt,
       views: entry.views,
       clicks: entry.clicks,
@@ -656,10 +773,7 @@ async function buildAnalytics(args: {
     ...nonArchivedDeals.map((deal) => ({
       id: `deal:${String(deal._id)}`,
       title: dealStageLabel(deal.stage),
-      subtitle:
-        deal.contactName ??
-        (deal.crmClientId ? crmClientsById.get(String(deal.crmClientId))?.name ?? null : null) ??
-        deal.title,
+      subtitle: "نشاط عميل مرتبط بالمشروع",
       createdAt: deal.createdAt ?? deal._creationTime ?? 0,
     })),
   ]
@@ -687,6 +801,12 @@ async function buildAnalytics(args: {
     if (CLICK_EVENT_TYPES.has(event.eventType as ProjectAnalyticsEventType)) {
       bucket.clicks += 1;
     }
+  }
+  for (const rollup of engagementRollups) {
+    const bucket = visibilityTrendMap.get(rollup.dateKey);
+    if (!bucket) continue;
+    bucket.views = Math.max(bucket.views, rollup.views);
+    bucket.clicks = Math.max(bucket.clicks, rollup.clicks);
   }
 
   const brokerStateSummary = (
@@ -750,7 +870,14 @@ async function buildAnalytics(args: {
       closedLostCustomers: developerCustomers.filter((customer) => customer.stageKey === "lost").length,
     },
     developerStageSummary,
-    brokerTracking: brokerTracking.sort((left, right) => (right.lastActivityAt ?? 0) - (left.lastActivityAt ?? 0)),
+    brokerTracking: brokerTracking
+      .sort((left, right) => (right.lastActivityAt ?? 0) - (left.lastActivityAt ?? 0))
+      .map((entry) => ({
+        ...entry,
+        linkedClientName: null,
+        customers: [],
+        timeline: [],
+      })),
   };
 }
 
@@ -769,6 +896,7 @@ export const getProjectAnalytics = query({
       ctx,
       propertyId: args.propertyId,
       ownerBrokerId: property.brokerId,
+      tenantOrgId: property.tenantOrgId,
     });
   },
 });
@@ -797,10 +925,11 @@ export const recordProjectAnalyticsEvent = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    const { access } = await requirePropertyReadAccess(ctx, {
+    const { access, property } = await requirePropertyReadAccess(ctx, {
       propertyId: args.propertyId,
       allowInboxShare: true,
     });
+    const createdAt = Date.now();
 
     await ctx.db.insert("projectAnalyticsEvents", {
       propertyId: args.propertyId,
@@ -812,8 +941,30 @@ export const recordProjectAnalyticsEvent = mutation({
       offerCaseId: args.offerCaseId,
       dealId: args.dealId,
       metadata: args.metadata,
-      createdAt: Date.now(),
+      createdAt,
+      tenantOrgId: property.tenantOrgId,
+      ownerType: property.ownerType,
     });
+    if (property.tenantOrgId) {
+      await upsertPropertyEngagementDaily({
+        ctx,
+        propertyId: args.propertyId,
+        tenantOrgId: property.tenantOrgId,
+        createdAt,
+        eventType: args.eventType,
+      });
+      const actorProfile = await getUserProfileByAuthUserId(ctx, access.authUserId);
+      if (actorProfile?.brokerId) {
+        await upsertPropertyBrokerEngagement({
+          ctx,
+          propertyId: args.propertyId,
+          tenantOrgId: property.tenantOrgId,
+          brokerId: actorProfile.brokerId,
+          createdAt,
+          eventType: args.eventType,
+        });
+      }
+    }
 
     return { ok: true } as const;
   },

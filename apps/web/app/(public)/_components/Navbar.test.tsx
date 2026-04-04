@@ -9,6 +9,9 @@ const { useTheme } = vi.hoisted(() => ({
 const { useRouter } = vi.hoisted(() => ({
   useRouter: vi.fn(() => ({ refresh: vi.fn() })),
 }));
+const { usePathname } = vi.hoisted(() => ({
+  usePathname: vi.fn(() => "/"),
+}));
 
 vi.mock("next-themes", () => ({
   useTheme,
@@ -16,6 +19,7 @@ vi.mock("next-themes", () => ({
 
 vi.mock("next/navigation", () => ({
   useRouter,
+  usePathname,
 }));
 
 vi.mock("next/link", () => ({
@@ -50,7 +54,7 @@ describe("Navbar", () => {
   it("renders the public navigation links, locale switcher, and theme toggle", () => {
     const html = renderToStaticMarkup(
       <WebLocaleProvider locale="en" dictionary={getWebDictionary("en")}>
-        <Navbar />
+        <Navbar locale="en" />
       </WebLocaleProvider>,
     );
 

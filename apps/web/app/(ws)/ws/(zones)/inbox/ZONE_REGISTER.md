@@ -2,10 +2,10 @@
 
 ## Top-Level Ownership
 - `page.tsx`, `layout.tsx`, `loading.tsx`: route entrypoints
-- `InboxPage/InboxWorkspaceClient.tsx`: main inbox client orchestrator
-- `InboxPage/useRealtimeInbox.ts`: realtime inbox state hook
-- `InboxPage/InboxThreadView.tsx`: thread detail view
-- `InboxPage/components/*`: inbox-local interactive components
+- `pages/InboxPage/InboxWorkspaceClient.tsx`: main inbox client orchestrator
+- `pages/InboxPage/useRealtimeInbox.ts`: realtime inbox state hook
+- `pages/InboxPage/InboxThreadView.tsx`: thread detail view
+- `pages/InboxPage/components/*`: inbox-local interactive components
 - `[conversationId]/page.tsx`: focused thread route wrapper
 
 ## Important Exports
@@ -20,4 +20,4 @@
 
 ## Public Vs Internal
 - Public inside the zone: workspace client, realtime hook, thread view
-- Internal: component-level inbox widgets under `InboxPage/components/`
+- Internal: component-level inbox widgets under `pages/InboxPage/components/`

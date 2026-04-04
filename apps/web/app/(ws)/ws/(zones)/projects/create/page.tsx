@@ -1,12 +1,12 @@
-import ProjectFormScreen from "../ProjectFormScreen";
+import ProjectFormScreen from "../shared/forms/ProjectFormScreen";
 import { requireWorkspaceData } from "../../../_lib/workspaceData";
 import { getWorkspaceLocale } from "../../../_lib/workspaceLocale";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
-import { mapWorkspaceProjectToPropertyInput } from "../projectViewModel";
+import { mapWorkspaceProjectToPropertyInput } from "../shared/lib/projectViewModel";
 import { requireSessionContext } from "@/server/auth/session";
-import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizationAssetsRepository";
+import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizations/assets";
 import { type AppLocale } from "@/lib/locale";
-import { toProjectFormActionFailure, validateProjectFormSubmission } from "../projectFormSubmission";
+import { toProjectFormActionFailure, validateProjectFormSubmission } from "../shared/forms/projectFormSubmission";
 
 /**
  * WHY:   Projects need a direct-mode creation route to complement AI-driven draft creation.

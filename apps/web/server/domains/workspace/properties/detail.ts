@@ -1,15 +1,15 @@
 import { requireSessionContext } from "@/server/auth/session";
 import type { PropertyDetail } from "@/server/contracts/properties";
 import type { WorkspaceAudience, WorkspaceOwnerContext } from "@/server/contracts/workspace";
-import { convexInboxRepository, type InboxRepository } from "@/server/infrastructure/convex/inboxRepository";
+import { convexInboxRepository, type InboxRepository } from "@/server/infrastructure/convex/messaging/inbox";
 import {
   convexProjectAccessRepository,
   type ProjectAccessRepository,
-} from "@/server/infrastructure/convex/projectAccessRepository";
+} from "@/server/infrastructure/convex/properties/access";
 import {
   convexSharedProjectDetailsRepository,
   type SharedProjectDetailsRepository,
-} from "@/server/infrastructure/convex/sharedProjectDetailsRepository";
+} from "@/server/infrastructure/convex/properties/sharedDetails";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
 
 export type WorkspaceProjectDetailAccessMode = "owner" | "shared";

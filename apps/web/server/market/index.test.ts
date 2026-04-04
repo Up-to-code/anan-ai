@@ -5,7 +5,7 @@ vi.mock("@/server/domains/auth/workspaces/service", () => ({
   getWorkspaceBehaviorForCurrentUser: vi.fn(),
 }));
 
-vi.mock("@/server/infrastructure/convex/marketRepository", () => ({
+vi.mock("@/server/infrastructure/convex/market", () => ({
   convexMarketRepository: {
     getSnapshot: vi.fn(),
   },

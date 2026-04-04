@@ -1,6 +1,6 @@
-import MarketPage from "./MarketPage";
-import OverviewTab from "./MarketPage/OverviewTab";
-import { loadMarketPageModel } from "./loadMarketPageModel";
+import MarketPage from "./pages/MarketPage";
+import OverviewTab from "./pages/MarketPage/OverviewTab";
+import { loadMarketPageModel } from "./shared/lib/loadMarketPageModel";
 import { getWorkspaceLocaleContext } from "../../_lib/workspaceLocale";
 
 export const dynamic = "force-dynamic";

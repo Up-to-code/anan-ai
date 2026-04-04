@@ -153,8 +153,6 @@ type PublicSearchResult = {
   status?: string;
 };
 
-type ComplianceOwner = { isVerified?: boolean; countryCode?: string };
-
 async function searchCandidates(ctx: any, normalizedQuery: string, limit: number) {
   let results = await ctx.db
     .query("properties")
@@ -172,16 +170,6 @@ async function searchCandidates(ctx: any, normalizedQuery: string, limit: number
 function applyAvailabilityFilter(results: any[], onlyAvailable: boolean) {
   if (!onlyAvailable) return results;
   return results.filter((property) => !property.status || property.status === "available");
-}
-
-async function resolveComplianceOwner(ctx: any, property: any): Promise<ComplianceOwner | null> {
-  if (property.brokerId) {
-    return (await ctx.db.get(property.brokerId)) as ComplianceOwner | null;
-  }
-  if (property.REDId) {
-    return (await ctx.db.get(property.REDId)) as ComplianceOwner | null;
-  }
-  return null;
 }
 
 function toPublicSearchResult(property: any): PublicSearchResult {
@@ -203,18 +191,20 @@ function toPublicSearchResult(property: any): PublicSearchResult {
 async function mapPublicResult(ctx: any, property: any): Promise<PublicSearchResult | null> {
   const publicationState = property.publicationState as string | undefined;
   if (publicationState === "draft" || publicationState === "archived") return null;
-  const owner = await resolveComplianceOwner(ctx, property);
-  if (!owner) return null;
-  const orgType = property.brokerId ? "broker" : "red";
+  if (property.isPublicSearchable === true) {
+    return toPublicSearchResult(property);
+  }
+  const ownerType = property.ownerType === "broker" ? "broker" : "red";
   const ruleset = await findActiveComplianceRuleset(ctx, {
-    countryCode: owner.countryCode ?? DEFAULT_COMPLIANCE_COUNTRY,
-    orgType,
+    countryCode: property.ownerCountryCode ?? DEFAULT_COMPLIANCE_COUNTRY,
+    orgType: ownerType,
   });
   if (!ruleset) return null;
   if (ruleset.enforcement.hideUnverified) {
-    if (ruleset.enforcement.requireOrgVerification && owner.isVerified !== true) return null;
-    if (ruleset.enforcement.requireListingVerification && property.adLicenseStatus !== "approved") return null;
+    if (ruleset.enforcement.requireOrgVerification && property.ownerVerified !== true) return null;
+    if (ruleset.enforcement.requireListingVerification && property.listingVerified !== true) return null;
   }
+  if (property.isPublicSearchable === false) return null;
   return toPublicSearchResult(property);
 }
 

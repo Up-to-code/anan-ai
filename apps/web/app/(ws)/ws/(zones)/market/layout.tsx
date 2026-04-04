@@ -1,7 +1,7 @@
 import WorkspaceShell from "../../_components/WorkspaceShell";
 import { getWorkspaceOrganizationDisplay } from "../../_lib/organizationDisplay";
 import { getLayoutSidebarData, requireWorkspaceData } from "../../_lib/workspaceData";
-import MarketRouteTabs from "./MarketRouteTabs";
+import MarketRouteTabs from "./shared/navigation/MarketRouteTabs";
 import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
 import { buildComplianceBanner } from "../../_lib/complianceBanner";
 import { getWorkspaceLocale } from "../../_lib/workspaceLocale";

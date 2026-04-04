@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, it, vi } from "vitest";
 import { DomainError } from "@/server/contracts/errors";
-import type { ProjectMutationActionResult } from "./ProjectsPage/actionTypes";
+import type { ProjectMutationActionResult } from "./pages/ProjectsPage/actionTypes";
 
 const {
   listProperties,
@@ -42,7 +42,7 @@ vi.mock("@/server/ws/zones", () => ({
   })),
 }));
 
-vi.mock("./ProjectsPage", () => ({
+vi.mock("./pages/ProjectsPage", () => ({
   default: (props: unknown) => {
     setCapturedProps(props);
     return <div>ProjectsPageMock</div>;

@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Mail } from "lucide-react";
+import { AlertTriangle, Bell, Mail } from "lucide-react";
 import WebLocaleSwitcher from "@/app/_components/WebLocaleSwitcher";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
 import type { WorkspaceOrganizationDisplay } from "../_lib/organizationDisplay";
 import { cn } from "@/lib/utils";
-import { useWorkspaceSignalCounts } from "../(zones)/inbox/InboxPage/useRealtimeInbox";
+import { useWorkspaceSignalCounts } from "../(zones)/inbox/pages/InboxPage/useRealtimeInbox";
 import type { SidebarUser } from "./Sidebar/types";
 import type { WorkspaceShellVariant } from "./WorkspaceShell";
 import ThemeToggle from "@/app/_components/ThemeToggle";
+import type { ComplianceBanner } from "../_lib/complianceBanner";
 
 const HEADER_ACTION_BASE_CLASS_NAME =
   "inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)] bg-[var(--workspace-panel)] px-3 text-[var(--workspace-bubble-other-foreground)] shadow-sm transition-colors hover:bg-[var(--workspace-elevated)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)]";
@@ -62,6 +63,7 @@ export default function WorkspaceTopNavbar({
   organization: WorkspaceOrganizationDisplay;
   visibleZoneKeys?: WorkspaceZoneKey[];
   initialSignalCounts?: { notificationCount: number; inboxCount: number };
+  complianceBanner?: ComplianceBanner | null;
   variant?: WorkspaceShellVariant;
   title?: string;
   mobileNavigation?: React.ReactNode;
@@ -74,6 +76,7 @@ function WorkspaceTopNavbarInner({
   organization,
   visibleZoneKeys,
   initialSignalCounts = { notificationCount: 0, inboxCount: 0 },
+  complianceBanner = null,
   variant = "default",
   title,
   mobileNavigation,
@@ -82,6 +85,7 @@ function WorkspaceTopNavbarInner({
   organization: WorkspaceOrganizationDisplay;
   visibleZoneKeys?: WorkspaceZoneKey[];
   initialSignalCounts?: { notificationCount: number; inboxCount: number };
+  complianceBanner?: ComplianceBanner | null;
   variant?: WorkspaceShellVariant;
   title?: string;
   mobileNavigation?: React.ReactNode;
@@ -96,6 +100,8 @@ function WorkspaceTopNavbarInner({
   const orgSubtitle = organization.navbarSubtitle?.trim() || organization.sidebarSubtitle?.trim() || dictionary.nav.workspaceFallback;
   const organizationSettingsHref = "/ws/settings?tab=org";
   const userSettingsHref = "/ws/settings";
+  const verificationHref = complianceBanner?.ctaHref ?? "/ws/settings?tab=verification";
+  const verificationBadgeLabel = complianceBanner?.ctaLabel ?? complianceBanner?.title ?? null;
   const organizationAvatarLabel = getOrganizationAvatarLabel(organization.name);
   const userAvatarLabel = getUserAvatarLabel(user.name, user.email);
   const userDisplayName = user.name?.trim() || user.email?.trim() || dictionary.settings.title;
@@ -153,33 +159,43 @@ function WorkspaceTopNavbarInner({
           ) : null}
         </div>
         <div className="h-6 w-px bg-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)]" aria-hidden="true" />
-        <Link
-          href={organizationSettingsHref}
-          aria-label={dictionary.settings.organizationSettingsTitle}
-          title={`${dictionary.settings.organizationSettingsTitle} · ${orgSubtitle}`}
-          className={cn(
-            HEADER_ACTION_BASE_CLASS_NAME,
-            "w-10 justify-center px-0 sm:min-w-0 sm:max-w-[13.5rem] sm:justify-start sm:ps-1.5 sm:pe-3",
-            organization.isVerified
-              ? ""
-              : "border-amber-400/80 ring-2 ring-amber-300/50 hover:bg-amber-50/70 dark:hover:bg-amber-500/10",
-          )}
-        >
-          <span className={HEADER_AVATAR_CLASS_NAME}>
-            <HeaderAvatar image={organization.logoUrl} label={organizationAvatarLabel} alt={organization.name} />
-          </span>
-          <span className={cn("hidden min-w-0 flex-1 truncate text-sm font-bold sm:block", isRtl ? "text-right" : "text-left")}>
+        {verificationBadgeLabel ? (
+          <Link
+            href={verificationHref}
+            data-slot="workspace-compliance-badge"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-400/35 bg-amber-400/10 px-2.5 py-1 text-[11px] font-bold text-amber-900 transition hover:border-amber-400/55 hover:bg-amber-400/15 dark:border-amber-400/40 dark:bg-amber-400/12 dark:text-amber-200"
+            title={complianceBanner?.title}
+            aria-label={verificationBadgeLabel}
+          >
+            <AlertTriangle className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{verificationBadgeLabel}</span>
+          </Link>
+        ) : null}
+        <div className="flex min-w-0 shrink-0 items-center gap-2">
+          <Link
+            href={organizationSettingsHref}
+            data-slot="workspace-organization-settings-trigger"
+            aria-label={dictionary.settings.organizationSettingsTitle}
+            title={`${dictionary.settings.organizationSettingsTitle} · ${orgSubtitle}`}
+            className={cn(HEADER_ICON_ACTION_CLASS_NAME, "relative overflow-hidden")}
+          >
+            <span className={HEADER_AVATAR_CLASS_NAME}>
+              <HeaderAvatar image={organization.logoUrl} label={organizationAvatarLabel} alt={organization.name} />
+            </span>
+          </Link>
+          <span
+            className={cn(
+              "hidden max-w-[9rem] truncate text-sm font-bold text-[var(--workspace-bubble-other-foreground)] sm:block",
+              isRtl ? "text-right" : "text-left",
+            )}
+            title={organization.name}
+          >
             {organization.name}
           </span>
-          {!organization.isVerified ? (
-            <span
-              aria-hidden="true"
-              className="absolute end-2 top-2 h-2.5 w-2.5 rounded-full border border-[var(--workspace-panel)] bg-amber-400"
-            />
-          ) : null}
-        </Link>
+        </div>
         <Link
           href={userSettingsHref}
+          data-slot="workspace-user-settings-trigger"
           className={cn(
             HEADER_ICON_ACTION_CLASS_NAME,
             "relative overflow-hidden",

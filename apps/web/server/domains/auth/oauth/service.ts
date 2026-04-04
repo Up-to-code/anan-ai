@@ -9,7 +9,7 @@ import type {
 import {
   convexOAuthRepository,
   type OAuthRepository,
-} from "@/server/infrastructure/convex/oauthRepository";
+} from "@/server/infrastructure/convex/auth/oauth";
 
 type OAuthServiceDependencies = {
   requireSession: () => Promise<ResolvedSession>;

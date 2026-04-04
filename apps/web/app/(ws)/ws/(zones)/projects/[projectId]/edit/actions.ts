@@ -1,12 +1,12 @@
 "use server";
 
 import { requireSessionContext } from "@/server/auth/session";
-import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizationAssetsRepository";
-import { convexProjectAccessRepository } from "@/server/infrastructure/convex/projectAccessRepository";
+import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizations/assets";
+import { convexProjectAccessRepository } from "@/server/infrastructure/convex/properties/access";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
-import { mapWorkspaceProjectToPropertyInput } from "../../projectViewModel";
+import { mapWorkspaceProjectToPropertyInput } from "../../shared/lib/projectViewModel";
 import type { ProjectFormData } from "@/app/(ws)/ws/public";
-import { toProjectFormActionFailure, validateProjectFormSubmission } from "../../projectFormSubmission";
+import { toProjectFormActionFailure, validateProjectFormSubmission } from "../../shared/forms/projectFormSubmission";
 
 type WorkspaceActionArgs = {
   audience: Parameters<typeof getWorkspacePropertyZone>[0];

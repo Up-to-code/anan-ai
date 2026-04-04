@@ -1,94 +1,503 @@
 {
-    "system_name": "Anan Sharp Blue Ultra-Minimalism",
-    "version": "1.0.0",
-    "meta": {
-        "aesthetic": "Institutional, Sharp, Structural, Premium",
-        "philosophies": [
-            "No Shadows",
-            "No Rounded Edges (Strict 0px)",
-            "Maximized Contrast",
-            "Whitespace as a Structural Element",
-            "No AI-specific terminology (Institutional Protocol only)",
-            "Zone-owned First: Build UI inside its owning public/docs/oauth/workspace zone unless it is a true cross-zone primitive."
-        ]
+  "schema_version": "2.0.0",
+  "system_name": "Anan Web Multi-Surface UI System",
+  "generated_on": "2026-04-04",
+  "scope": "apps/web",
+  "purpose": "Machine-readable description of the current web UI so future work matches the real front-end in apps/web instead of the older sharp-minimal snapshot.",
+  "approach": {
+    "mode": "codebase-derived",
+    "rule": "Treat apps/web as one brand system with multiple surface families: public marketing, public docs, public auth, and authenticated workspace.",
+    "important_note": "Do not collapse all apps/web routes into one flat dashboard aesthetic. Shared DNA exists, but each surface family has its own geometry, spacing, and chrome."
+  },
+  "brand_dna": {
+    "platform_context": "Anan web serves both public institutional storytelling and authenticated real-estate operations for brokers, developers, and assistant-led work.",
+    "visual_character": [
+      "institutional",
+      "precise",
+      "premium but restrained",
+      "Arabic-first where relevant",
+      "assistant-aware without sci-fi excess",
+      "operational rather than decorative"
+    ],
+    "emotional_targets": [
+      "clarity",
+      "trust",
+      "control",
+      "signal over noise",
+      "structured collaboration"
+    ],
+    "anti_character": [
+      "zero-radius angular brutality everywhere",
+      "generic shadcn default theming",
+      "playful startup gradients everywhere",
+      "neon AI chrome",
+      "purple-led branding",
+      "heavy shadow stacks on every card"
+    ],
+    "house_rule": "Use Cairo, blue signal emphasis, disciplined slate or zinc neutrals, and structural borders before decorative effects."
+  },
+  "shared_foundations": {
+    "theming": {
+      "provider": "next-themes with class-based dark mode and system fallback",
+      "supported_modes": [
+        "light",
+        "dark",
+        "system"
+      ],
+      "selection_style": "blue-tinted selection background with foreground text preserved"
     },
-    "tokens": {
-        "colors": {
-            "primary": {
-                "hex": "#2563EB",
-                "tailwind": "blue-600",
-                "usage": "Brand markers, focal titles, primary actions, active borders"
-            },
-            "surface": {
-                "background": "#FFFFFF",
-                "tailwind": "white",
-                "usage": "Main body surface"
-            },
-            "text": {
-                "high_contrast": "#0F172A",
-                "tailwind": "slate-900",
-                "usage": "Headers, bold body copy"
-            },
-            "text_muted": {
-                "hex": "#64748B",
-                "tailwind": "slate-500",
-                "usage": "Descriptions, secondary info"
-            },
-            "border": {
-                "hex": "#F1F5F9",
-                "tailwind": "slate-100",
-                "thickness": "2px",
-                "usage": "Section dividers, grid lines"
-            }
-        },
-        "typography": {
-            "primary_font": "Cairo",
-            "weights": {
-                "bold": 700,
-                "black": 900
-            },
-            "casing": "UPPERCASE (Primary Titles and Nav)",
-            "tracking": {
-                "tighter": "-0.05em",
-                "widest": "0.4em (Hero Sublines)"
-            },
-            "heading_scale": {
-                "hero": "clamp(2.5rem, 8vw, 6.5rem)",
-                "section": "2xl - 5xl",
-                "nav": "xs (bold)"
-            }
-        },
-        "geometry": {
-            "radius": "8px (rounded-lg)",
-            "shadows": "None (Flat UI only)",
-            "borders": "Solid, 2px stroke on grids and navbars"
-        }
+    "internationalization": {
+      "rtl": "first-class for Arabic-first public and workspace experiences",
+      "direction_rule": "Resolve direction per route and sometimes per message content; do not assume global LTR."
     },
-    "components": {
-        "navbar": {
-            "height": "16 (h-16)",
-            "border": "bottom-2 border-slate-100",
-            "link_style": "text-xs font-bold text-slate-400, hover:text-blue-600, uppercase tracking-widest"
-        },
-        "button_primary": {
-            "background": "blue-600",
-            "text": "white",
-            "shape": "rounded-lg",
-            "padding": "px-8 py-2.5",
-            "typography": "text-xs font-black uppercase tracking-widest"
-        },
-        "button_outline": {
-            "border": "2px border-blue-600",
-            "text": "blue-600",
-            "shape": "rounded-lg",
-            "padding": "px-12 py-5",
-            "typography": "text-sm font-black uppercase tracking-widest"
-        },
-        "feature_grid": {
-            "layout": "grid-cols-1 md:grid-cols-3",
-            "cell_border": "border-l-2 last:border-l-0 border-slate-100",
-            "cell_padding": "p-12",
-            "id_style": "text-5xl font-black text-slate-100 (Arabic numerals)"
-        }
+    "typography": {
+      "primary_font_family": "Cairo",
+      "mono_font_family": "Geist Mono",
+      "weight_bias": {
+        "body_support": "font-medium",
+        "labels_and_nav": "font-bold",
+        "headlines_and_ctas": "font-black"
+      },
+      "tracking_bias": [
+        "tracking-widest",
+        "tracking-[0.2em]",
+        "tracking-[0.18em]",
+        "tracking-tight"
+      ],
+      "case_rules": {
+        "arabic": "keep natural Arabic rhythm and weight",
+        "english_microcopy": "often uppercase in labels, nav, badges, and CTA copy"
+      }
+    },
+    "colors": {
+      "shared_semantic_tokens_light": {
+        "background": "oklch(1 0 0)",
+        "foreground": "oklch(0.145 0 0)",
+        "primary": "#2563EB",
+        "primary_foreground": "#FFFFFF",
+        "muted": "oklch(0.97 0 0)",
+        "muted_foreground": "oklch(0.556 0 0)",
+        "border": "#F1F5F9",
+        "input": "#F1F5F9",
+        "ring": "#2563EB",
+        "destructive": "oklch(0.58 0.22 27)"
+      },
+      "shared_semantic_tokens_dark": {
+        "background": "#09090B",
+        "foreground": "#F4F4F5",
+        "card": "#111114",
+        "popover": "#101013",
+        "primary": "#2563EB",
+        "muted": "#18181B",
+        "muted_foreground": "#A1A1AA",
+        "border": "rgba(244, 244, 245, 0.08)",
+        "input": "#17181B",
+        "ring": "#2563EB"
+      },
+      "workspace_tokens_light": {
+        "workspace_shell": "#F5F5F5",
+        "workspace_canvas": "#FAFAFA",
+        "workspace_panel": "#FFFFFF",
+        "workspace_elevated": "#F4F4F5",
+        "workspace_sidebar": "#FAFAFA",
+        "workspace_sidebar_strong": "#F0F0F1",
+        "workspace_border": "rgba(39, 39, 42, 0.08)",
+        "workspace_muted": "#71717A",
+        "workspace_bubble_self": "#2563EB",
+        "workspace_bubble_self_foreground": "#EFF6FF",
+        "workspace_bubble_other": "#F4F4F5",
+        "workspace_bubble_other_foreground": "#152236",
+        "workspace_highlight": "#2563EB"
+      },
+      "workspace_tokens_dark": {
+        "workspace_shell": "#09090B",
+        "workspace_canvas": "#0D0D10",
+        "workspace_panel": "#111318",
+        "workspace_elevated": "#181B21",
+        "workspace_sidebar": "#0E1014",
+        "workspace_sidebar_strong": "#090B0F",
+        "workspace_border": "rgba(244, 244, 245, 0.08)",
+        "workspace_muted": "#A1A1AA",
+        "workspace_bubble_self": "#2563EB",
+        "workspace_bubble_other": "#181B21",
+        "workspace_bubble_other_foreground": "#F4F4F5",
+        "workspace_highlight": "#2563EB"
+      },
+      "palette_rules": [
+        "Blue is the primary signal color, not the default background fill for whole pages.",
+        "Slate and zinc neutrals carry most surfaces.",
+        "Success, warning, and destructive accents appear semantically in docs, alerts, and workspace status."
+      ]
+    },
+    "geometry": {
+      "base_radius_token": "8px",
+      "radius_strategy": {
+        "compact_controls": "rounded-lg through rounded-xl",
+        "workspace_nav_and_filters": "rounded-xl and rounded-full",
+        "assistant_and_premium_panels": "rounded-2xl through rounded-[32px]"
+      },
+      "border_strategy": "Borders are primary structure; shadows are restrained and secondary.",
+      "shadow_strategy": "Use soft low-elevation shadows on floating chrome, avatars, premium cards, and composer shells."
+    },
+    "motion": {
+      "philosophy": "Motion should clarify state and add polish without dominating the interface.",
+      "observed_patterns": [
+        "small press-scale feedback on buttons",
+        "subtle hover background and border shifts",
+        "short shell and page enter animations",
+        "looping vector motion on public landing visuals",
+        "assistant mic meter and small framer-motion transitions"
+      ],
+      "timing_bias": [
+        "150ms to 300ms for interface state changes",
+        "longer ambient loops only for public brand visuals"
+      ]
     }
+  },
+  "surface_families": {
+    "public_marketing": {
+      "routes": [
+        "/",
+        "/about",
+        "/broker",
+        "/developer",
+        "/contact",
+        "/pricing",
+        "/team",
+        "/faq",
+        "/policy",
+        "/terms"
+      ],
+      "style_summary": "Editorial institutional marketing with strong Cairo display type, fixed blurred navbar, alternating section bands, vector-led storytelling, and blue CTA emphasis.",
+      "layout_rules": [
+        "Use a fixed top navbar with blurred white or dark glass chrome.",
+        "Use large section padding, commonly 24 to 32 spacing units vertically.",
+        "Use a max content width around 1400px.",
+        "Alternate white, pale slate, dark slate, blue, and occasional glass or gradient surfaces."
+      ],
+      "hero_rules": {
+        "title": "Very large black Cairo headings with a blue emphasis line or segment.",
+        "badge": "Tiny uppercase microcopy with wide tracking and minimal icon markers.",
+        "description": "High-weight body copy, often with a right border accent in blue for Arabic layouts.",
+        "ctas": "Primary is blue fill, secondary is outline or dark fill."
+      },
+      "component_patterns": {
+        "navbar": {
+          "height": "64px",
+          "tone": "white or dark translucent with backdrop blur",
+          "links": "text-xs font-bold uppercase tracking-widest with muted idle state and blue hover",
+          "actions": [
+            "locale switcher",
+            "theme toggle",
+            "workspace sign-in",
+            "primary CTA"
+          ]
+        },
+        "sections": {
+          "background_variants": [
+            "white",
+            "slate",
+            "dark",
+            "primary",
+            "glass",
+            "gradient"
+          ],
+          "dividers": "optional bottom 2px borders on section transitions"
+        },
+        "cards": {
+          "shape": "rounded-lg",
+          "border": "often 2px",
+          "padding": "large, usually around p-12",
+          "title_style": "uppercase black",
+          "variants": [
+            "default",
+            "dark",
+            "accent"
+          ]
+        }
+      },
+      "visual_language": [
+        "Vector-led and signal-led instead of screenshot-first marketing.",
+        "Low-opacity grid textures and branded SVG fields are acceptable.",
+        "Ambient motion should remain subtle and diagrammatic."
+      ],
+      "do_not": [
+        "Do not turn marketing pages into a generic SaaS gradient landing page.",
+        "Do not replace vector storytelling with random stock art.",
+        "Do not make every section blue."
+      ]
+    },
+    "public_docs": {
+      "routes": [
+        "/docs/*"
+      ],
+      "style_summary": "Public developer docs use a polished technical-doc shell with a sticky blurred top nav, white or near-black panels, clearer hard borders than marketing, and dark code surfaces.",
+      "layout_rules": [
+        "Docs are LTR by default even inside the Arabic-first app.",
+        "Use a sidebar plus sticky top nav shell.",
+        "Keep main article width tighter than marketing, around 800px within a 5xl shell."
+      ],
+      "component_patterns": {
+        "top_nav": {
+          "tone": "sticky, blurred, low-noise white or dark chrome",
+          "actions": [
+            "theme toggle",
+            "version badge",
+            "quickstart link",
+            "primary OAuth CTA"
+          ]
+        },
+        "sidebar": {
+          "tone": "white or dark panel with grouped navigation labels",
+          "active_state": "soft slate background instead of full blue fill"
+        },
+        "article_headers": {
+          "eyebrow": "blue outlined badge with uppercase black tracking",
+          "title": "large uppercase black",
+          "summary": "bold muted body copy"
+        },
+        "callouts": {
+          "shape": "rounded-lg",
+          "border": "2px semantic border",
+          "tones": [
+            "info blue",
+            "warning amber",
+            "success emerald"
+          ]
+        },
+        "endpoint_cards": {
+          "shape": "rounded-lg",
+          "border": "2px outer border with hard section dividers",
+          "method_badges": "semantic filled color chips",
+          "path_badge": "hard bordered code chip"
+        },
+        "code_blocks": {
+          "surface": "#0D1117 body with #161B22 top chrome",
+          "border": "dark slate border",
+          "copy_action": "floating small ghost action on hover"
+        }
+      },
+      "do_not": [
+        "Do not style docs like the marketing landing page.",
+        "Do not remove the harder technical contrast from code examples and endpoint cards."
+      ]
+    },
+    "public_auth": {
+      "routes": [
+        "/signin"
+      ],
+      "style_summary": "Sign-in is a focused institutional auth surface: centered single-column cardless composition, blue trust icon, clear legal microcopy, and minimal distraction.",
+      "layout_rules": [
+        "Center the content vertically inside a public section shell.",
+        "Keep width narrow and focused, around a max-md container.",
+        "Use the shared public font and background tokens."
+      ],
+      "component_patterns": {
+        "hero_icon": "rounded-2xl blue square with soft blue glow shadow",
+        "title": "4xl black heading",
+        "primary_action": "full-width Google sign-in CTA",
+        "legal_copy": "tiny uppercase tracked links with blue accents",
+        "trust_strip": "two-column row separated by a top border"
+      }
+    },
+    "workspace_web": {
+      "routes": [
+        "/ws",
+        "/ws/notifications",
+        "/ws/settings",
+        "/ws/inbox",
+        "/ws/crm",
+        "/ws/offers",
+        "/ws/projects",
+        "/ws/market"
+      ],
+      "style_summary": "Quiet premium operational shell built from workspace variables, sidebar plus compact top navbar chrome, assistant-first canvases, rounded panels, and selective blue state emphasis.",
+      "layout_rules": [
+        "Use a responsive shell with persistent desktop sidebar and mobile drawer.",
+        "Top navbar is compact and panel-toned, not loud chrome.",
+        "Workspace pages are height-aware and overflow-managed.",
+        "Content should feel breathable and operational rather than overloaded."
+      ],
+      "navigation": {
+        "sidebar": {
+          "desktop": "persistent and collapsible",
+          "mobile": "drawer",
+          "tone": "workspace-sidebar or workspace-panel surfaces",
+          "items": "rounded-xl rows or icon pills with muted idle state and blue active emphasis"
+        },
+        "top_nav": {
+          "heights": {
+            "assistant_variant": "56px",
+            "default_variant": "64px"
+          },
+          "actions": [
+            "locale switcher",
+            "theme toggle",
+            "notifications",
+            "inbox",
+            "verification badge",
+            "organization avatar",
+            "user avatar"
+          ],
+          "shape": "trailing rounded action cluster over workspace-panel"
+        }
+      },
+      "component_patterns": {
+        "panels": {
+          "default": "workspace-panel with workspace-border and restrained shadow",
+          "premium": "rounded-2xl through rounded-[26px]",
+          "muted": "elevated neutral background",
+          "warn": "amber-tinted bordered panel"
+        },
+        "page_headers": {
+          "eyebrow": "blue uppercase micro label",
+          "title": "tight black or strong foreground heading",
+          "description": "short bold support copy with muted tone"
+        },
+        "filters_and_tabs": {
+          "shape": "rounded-xl or rounded-full",
+          "active_pattern": "blue fill or blue-tinted border depending on context",
+          "tab_rule": "border-led and editorial rather than heavily decorative"
+        },
+        "empty_states": {
+          "shape": "large radius",
+          "border": "dashed border",
+          "tone": "muted neutral surface",
+          "copy": "centered strong title plus muted support text"
+        }
+      },
+      "assistant_subsystem": {
+        "message_rows": {
+          "assistant_avatar": "rounded 20px to 3xl white or dark card with AI motion logo",
+          "assistant_body": "often open typographic markdown instead of a boxed bubble",
+          "user_bubble": "dark rounded asymmetric bubble with strong contrast"
+        },
+        "assistant_badges": {
+          "shape": "rounded-full",
+          "copy": "11px font-black tracked pills",
+          "tones": [
+            "filled blue assistant badge",
+            "blue-tinted team badges",
+            "neutral elevated badge"
+          ]
+        },
+        "composer": {
+          "shell": "large rounded-[32px] translucent shell with blur and subtle white border",
+          "textarea": "open, high-weight input with auto-resize",
+          "utilities": [
+            "attachment",
+            "search",
+            "deep search",
+            "mic",
+            "send"
+          ],
+          "send_button": "filled circular dark button when active, muted when idle"
+        },
+        "attachments": {
+          "shape": "rounded-[24px]",
+          "surface": "white or dark panel with image preview and small metadata footer"
+        }
+      },
+      "brand_subsystem": {
+        "vector_panels": "inline SVG signal geometry with blue, emerald, or slate accent variants",
+        "section_frames": "clean white bands, hard borders, strong headings",
+        "stat_strips": "structured grids with bold values and restrained decoration"
+      },
+      "do_not": [
+        "Do not turn workspace into a bright blue dashboard.",
+        "Do not flatten all workspace surfaces to one 8px radius.",
+        "Do not use generic chatbot gradients or neon AI glow treatments.",
+        "Do not ignore mixed RTL and LTR content rules inside assistant threads."
+      ]
+    }
+  },
+  "component_archetypes": {
+    "buttons": {
+      "shared_app_button": {
+        "shape": "rounded-lg",
+        "variants": [
+          "default",
+          "outline",
+          "secondary",
+          "ghost",
+          "destructive",
+          "link"
+        ],
+        "focus": "blue ring and border emphasis"
+      },
+      "institutional_public_button": {
+        "style": "uppercase, high-weight, wide tracking, blue or dark fill, strong press-scale feedback"
+      },
+      "workspace_icon_actions": {
+        "shape": "rounded-xl or rounded-full depending on location",
+        "tone": "panel on panel with restrained shadow"
+      }
+    },
+    "cards": {
+      "marketing_card": {
+        "shape": "rounded-lg",
+        "border_weight": "often 2px",
+        "padding": "large"
+      },
+      "docs_card": {
+        "shape": "rounded-lg with harder technical framing",
+        "tone": "white or near-black"
+      },
+      "workspace_card": {
+        "shape": "rounded-2xl through rounded-[26px]",
+        "surface": "workspace-panel",
+        "border": "workspace-border",
+        "shadow": "soft and low"
+      }
+    },
+    "badges_and_chips": {
+      "dominant_shape": "rounded-full",
+      "copy_style": "micro labels frequently use font-black and tracking",
+      "active_pattern": "filled blue, filled dark, or blue-tinted surface",
+      "inactive_pattern": "neutral elevated or bordered surface with muted text"
+    },
+    "forms": {
+      "workspace_and_auth": "clean field framing, generous spacing, blue focus ring, no busy helper chrome",
+      "docs": "technical and harder-edged inputs are acceptable inside code and docs tooling contexts"
+    }
+  },
+  "llm_transfer_rules": [
+    "Choose the correct surface family before composing new UI.",
+    "Keep Cairo as the default face and blue as the primary emphasis token.",
+    "Use semantic tokens and workspace variables instead of hardcoding every surface color.",
+    "Preserve dark mode and RTL behavior where the existing routes support them.",
+    "Prefer borders, spacing, and typography hierarchy before adding more decoration.",
+    "Keep assistant UI calm, premium, and trustworthy."
+  ],
+  "source_evidence": {
+    "key_files": [
+      "apps/web/app/globals.css",
+      "apps/web/lib/rootFonts.tsx",
+      "apps/web/app/layout.tsx",
+      "apps/web/app/theme-provider.tsx",
+      "apps/web/app/(public)/layout.tsx",
+      "apps/web/app/(public)/_components/Navbar.tsx",
+      "apps/web/app/(public)/LandingPage/index.tsx",
+      "apps/web/app/(public)/_components/Section.tsx",
+      "apps/web/app/(public)/_components/ButtonLink.tsx",
+      "apps/web/app/(public)/_components/Card.tsx",
+      "apps/web/app/(public)/signin/_components/SigninPageView.tsx",
+      "apps/web/app/(public)/docs/_components/docs/DocsShell.tsx",
+      "apps/web/app/(public)/docs/_components/docs/DocsTopNav.tsx",
+      "apps/web/app/(public)/docs/_components/docs/DocsSidebar.tsx",
+      "apps/web/app/(public)/docs/_components/docs/DocsArticle.tsx",
+      "apps/web/app/(public)/docs/_components/docs/EndpointCard.tsx",
+      "apps/web/app/(public)/docs/_components/docs/CodeSnippetClient.tsx",
+      "apps/web/app/(ws)/ws/_components/WorkspaceShell.tsx",
+      "apps/web/app/(ws)/ws/_components/WorkspaceTopNavbar.tsx",
+      "apps/web/app/(ws)/ws/_components/Sidebar/SidebarContent.tsx",
+      "apps/web/app/(ws)/ws/_components/WorkspacePanel.tsx",
+      "apps/web/app/(ws)/ws/_components/PageHeader.tsx",
+      "apps/web/app/(ws)/ws/_components/Chat/MessageRow.tsx",
+      "apps/web/app/(ws)/ws/_components/Chat/InstitutionalChatInput.tsx",
+      "apps/web/app/(ws)/ws/_components/Chat/WorkspaceAssistantBadges.tsx",
+      "apps/web/app/(ws)/ws/_components/WorkspaceBrand/BrandVectorPanel.tsx"
+    ],
+    "related_reference": "docs/handbook/llm/anan-system-ui-design.json"
+  }
 }

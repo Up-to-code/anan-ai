@@ -52,6 +52,7 @@ import type * as admin_zone_charts from "../admin_zone/charts.js";
 import type * as admin_zone_commandCenter from "../admin_zone/commandCenter.js";
 import type * as admin_zone_compliance from "../admin_zone/compliance.js";
 import type * as admin_zone_compliance_defaults from "../admin_zone/compliance/defaults.js";
+import type * as admin_zone_controlPlane from "../admin_zone/controlPlane.js";
 import type * as admin_zone_developers from "../admin_zone/developers.js";
 import type * as admin_zone_knowledge from "../admin_zone/knowledge.js";
 import type * as admin_zone_notifications from "../admin_zone/notifications.js";
@@ -355,6 +356,7 @@ import type * as shared_logic_projectDetails from "../shared_logic/projectDetail
 import type * as shared_logic_properties_cache from "../shared_logic/properties/cache.js";
 import type * as shared_logic_properties_history from "../shared_logic/properties/history.js";
 import type * as shared_logic_properties_ownerScoped_index from "../shared_logic/properties/ownerScoped/index.js";
+import type * as shared_logic_properties_projections from "../shared_logic/properties/projections.js";
 import type * as shared_logic_properties_search from "../shared_logic/properties/search.js";
 import type * as shared_logic_properties_searchText from "../shared_logic/properties/searchText.js";
 import type * as shared_logic_properties_types_index from "../shared_logic/properties/types/index.js";
@@ -439,6 +441,7 @@ declare const fullApi: ApiFromModules<{
   "admin_zone/commandCenter": typeof admin_zone_commandCenter;
   "admin_zone/compliance": typeof admin_zone_compliance;
   "admin_zone/compliance/defaults": typeof admin_zone_compliance_defaults;
+  "admin_zone/controlPlane": typeof admin_zone_controlPlane;
   "admin_zone/developers": typeof admin_zone_developers;
   "admin_zone/knowledge": typeof admin_zone_knowledge;
   "admin_zone/notifications": typeof admin_zone_notifications;
@@ -742,6 +745,7 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/properties/cache": typeof shared_logic_properties_cache;
   "shared_logic/properties/history": typeof shared_logic_properties_history;
   "shared_logic/properties/ownerScoped/index": typeof shared_logic_properties_ownerScoped_index;
+  "shared_logic/properties/projections": typeof shared_logic_properties_projections;
   "shared_logic/properties/search": typeof shared_logic_properties_search;
   "shared_logic/properties/searchText": typeof shared_logic_properties_searchText;
   "shared_logic/properties/types/index": typeof shared_logic_properties_types_index;

@@ -95,21 +95,21 @@ vi.mock("@/server/auth/session", () => ({
   })),
 }));
 
-vi.mock("@/server/infrastructure/convex/organizationAssetsRepository", () => ({
+vi.mock("@/server/infrastructure/convex/organizations/assets", () => ({
   convexOrganizationAssetsRepository: {
     attachOrganizationAssets,
     markEntityAssetsPendingDelete,
   },
 }));
 
-vi.mock("@/server/infrastructure/convex/projectAccessRepository", () => ({
+vi.mock("@/server/infrastructure/convex/properties/access", () => ({
   convexProjectAccessRepository: {
     listPropertyViewers,
     revokePropertyViewer: vi.fn(async () => ({ ok: true })),
   },
 }));
 
-vi.mock("../../ProjectFormScreen", () => ({
+vi.mock("../../shared/forms/ProjectFormScreen", () => ({
   default: (props: unknown) => {
     setCapturedProps(props);
     return <div>ProjectFormScreenMock</div>;

@@ -37,13 +37,13 @@ vi.mock("@/server/auth/session", () => ({
   })),
 }));
 
-vi.mock("@/server/infrastructure/convex/organizationAssetsRepository", () => ({
+vi.mock("@/server/infrastructure/convex/organizations/assets", () => ({
   convexOrganizationAssetsRepository: {
     attachOrganizationAssets: vi.fn(async () => undefined),
   },
 }));
 
-vi.mock("../ProjectFormScreen", () => ({
+vi.mock("../shared/forms/ProjectFormScreen", () => ({
   default: (props: unknown) => {
     setCapturedProps(props);
     return <div>ProjectFormScreenMock</div>;

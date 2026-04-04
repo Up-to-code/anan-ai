@@ -163,6 +163,8 @@ export default async function WorkspaceSettingsPage(props: {
       <SettingsHeader
         title={dictionary.settings.title}
         description={dictionary.settings.description}
+        workspaceLabel={dictionary.settings.workspaceLabel}
+        dir={isRtlLocale(locale) ? "rtl" : "ltr"}
       />
 
       <SettingsTabs

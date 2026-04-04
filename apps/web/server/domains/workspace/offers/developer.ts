@@ -21,7 +21,7 @@ import {
   updateOfferDraftInputSchema,
 } from "@/server/contracts/offers";
 import { DomainError } from "@/server/contracts/errors";
-import { convexOffersRepository, type OffersRepository } from "@/server/infrastructure/convex/offersRepository";
+import { convexOffersRepository, type OffersRepository } from "@/server/infrastructure/convex/deals/offers";
 
 type RedOffersDependencies = {
   requireDeveloper: () => Promise<ResolvedSession>;

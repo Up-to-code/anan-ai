@@ -1,7 +1,7 @@
-import ClientsPage from "../ClientsPage";
+import ClientsPage from "../pages/ClientsPage";
 import { requireWorkspaceData } from "../../../_lib/workspaceData";
 import { getWorkspaceCrmZone } from "@/server/ws/zones";
-import { mapDealToCrmClientRecord } from "../crmViewModel";
+import { mapDealToCrmClientRecord } from "../shared/lib/crmViewModel";
 
 function paginateDeals<T>(rows: T[], cursor: string | null, numItems: number) {
   const offset = cursor ? Number(cursor) : 0;

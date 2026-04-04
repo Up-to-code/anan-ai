@@ -1,11 +1,12 @@
 # Workspace UI `crm` Register
 
 ## Top-Level Ownership
-- `page.tsx`, `layout.tsx`, `loading.tsx`: route entrypoints
-- `CrmPage/`, `ClientsPage/`, `ClientDetailPage/`, `PipelinePage/`: page modules
-- `crmViewModel.ts`: deal-to-page mapping helpers
-- `crmTypes.ts`: zone types
-- `CrmRouteTabs.tsx`: route navigation
+- route files: `page.tsx`, `layout.tsx`, `loading.tsx`, nested route wrappers
+- `pages/*`: page modules and page-private UI
+- `shared/navigation`: route navigation
+- `shared/forms`: shared CRM form UI
+- `shared/lib`: deal-to-page mapping helpers
+- `types`: zone types
 - `clients/` and `brokers/`: nested route trees
 
 ## Important Exports
@@ -18,5 +19,5 @@
 - page-local tests
 
 ## Public Vs Internal
-- Public inside the zone: page folders and `crmViewModel.ts`
+- Public inside the zone: `pages/`, `shared/`, and `types/`
 - Internal: nested route implementation details and local page-specific subcomponents

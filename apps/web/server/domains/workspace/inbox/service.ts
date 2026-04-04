@@ -16,7 +16,8 @@ import type {
 } from "@/server/contracts/inbox";
 import {
   convexInboxRepository,
-} from "@/server/infrastructure/convex/inboxRepository";
+} from "@/server/infrastructure/convex/messaging/inbox";
+import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizations/assets";
 import { getWorkspaceBehaviorForCurrentUser } from "@/server/domains/auth/workspaces/service";
 import { getWorkspaceCrmZone, getWorkspaceOffersZone, getWorkspacePropertyZone } from "@/server/ws/zones";
 import {
@@ -155,6 +156,13 @@ export async function shareInboxFileInConversation(
 ) {
   const { session, workspace, conversation } = await requireCollaborationContext(input.conversationId, dependencies);
   const summary = input.note?.trim() || `تمت مشاركة الملف ${input.file.name}`;
+
+  await convexOrganizationAssetsRepository.attachOrganizationAssets(session.token, {
+    keys: [input.file.key],
+    attachedEntityType: "conversation",
+    attachedEntityId: conversation.id,
+    visibilityScope: "organization",
+  });
 
   return dependencies.repository.send(session.token, {
     conversationId: input.conversationId,

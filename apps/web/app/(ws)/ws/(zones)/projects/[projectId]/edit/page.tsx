@@ -1,4 +1,4 @@
-import ProjectFormScreen from "../../ProjectFormScreen";
+import ProjectFormScreen from "../../shared/forms/ProjectFormScreen";
 import { deleteProjectAction, revokeProjectViewerAction, saveProjectAction } from "./actions";
 import { loadEditProjectPageState } from "./loaders";
 

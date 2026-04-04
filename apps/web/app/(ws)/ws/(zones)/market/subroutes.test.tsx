@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MarketSnapshot } from "@/server/contracts/market";
 
 const { getWorkspaceMarketSnapshot } = vi.hoisted(() => ({
@@ -7,7 +7,7 @@ const { getWorkspaceMarketSnapshot } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/server/market", () => ({ getWorkspaceMarketSnapshot }));
-vi.mock("./MarketPage/MarketChartPanel", () => ({
+vi.mock("./pages/MarketPage/MarketChartPanel", () => ({
   default: ({ title }: { title: string }) => <div>{title}</div>,
 }));
 
@@ -72,8 +72,15 @@ import MarketOpportunitiesRoute from "./opportunities/page";
 import MarketResearchRoute from "./research/page";
 
 describe("market subroutes", () => {
+  const originalMockFlag = process.env.NEXT_PUBLIC_MOCK_DATA_ENABLED;
+
   beforeEach(() => {
+    process.env.NEXT_PUBLIC_MOCK_DATA_ENABLED = "false";
     getWorkspaceMarketSnapshot.mockResolvedValue(createSnapshot());
+  });
+
+  afterEach(() => {
+    process.env.NEXT_PUBLIC_MOCK_DATA_ENABLED = originalMockFlag;
   });
 
   it("renders the cities route", async () => {
@@ -96,7 +103,7 @@ describe("market subroutes", () => {
     const element = await MarketOpportunitiesRoute({ searchParams: Promise.resolve({}) });
     const markup = renderToStaticMarkup(element);
     expect(markup).toContain("نتائج السوق");
-    expect(markup).toContain("الطلب على الملقا في الرياض أعلى من المخزون المتاح");
+    expect(markup).toContain("الطلب يتجاوز العرض الحالي في الملقا.");
     expect(markup).toContain("Market marker");
   });
 

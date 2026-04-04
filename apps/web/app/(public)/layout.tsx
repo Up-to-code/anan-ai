@@ -16,7 +16,7 @@ export default async function PublicLayout({
                 className="min-h-screen bg-background text-foreground selection:bg-blue-600 selection:text-white transition-colors"
                 dir={isRtlLocale(locale) ? "rtl" : "ltr"}
             >
-                <Navbar />
+                <Navbar locale={locale} />
                 {children}
                 <Footer locale={locale} />
             </div>

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import type { UploadedFileReference } from "@/server/contracts/files";
 import type { BrokerPresence } from "../../Visuals/BrokerPresenceChip";
-import type { ProjectFormFieldErrors } from "../../../(zones)/projects/projectFormSubmission";
+import type { ProjectFormFieldErrors } from "../../../(zones)/projects/shared/forms/projectFormSubmission";
 import { BrokerAvatar, FieldLabel, ReviewRow, SectionCard, TextArea, TextInput, UploadTile } from "./controls";
 import { GALLERY_ASPECT_OPTIONS, GALLERY_DISPLAY_OPTIONS, STEP_DEFINITIONS } from "./shared";
 import type { AgPropertyFormState } from "./shared";
@@ -205,6 +205,7 @@ export function GalleryStep(props: {
   handleImageSelection: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   inputRef: React.MutableRefObject<HTMLInputElement | null>;
   isUploading: boolean;
+  mockDataEnabled: boolean;
   moveImage: (fromIndex: number, offset: -1 | 1) => void;
   previewAspectClass: string;
   previewObjectClass: string;
@@ -362,21 +363,23 @@ export function GalleryStep(props: {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => props.setFormState((prev) => ({ ...prev, video: prev.video ? null : "mock-video.mp4" }))}
-          className="mt-5 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-right transition hover:border-stone-400"
-        >
-          <div className="text-right">
-            <div className="text-sm font-black text-foreground">
-              {props.formState.video ? "الفيديو مفعّل" : "تفعيل فيديو توضيحي"}
+        {props.mockDataEnabled ? (
+          <button
+            type="button"
+            onClick={() => props.setFormState((prev) => ({ ...prev, video: prev.video ? null : "mock-video.mp4" }))}
+            className="mt-5 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-right transition hover:border-stone-400"
+          >
+            <div className="text-right">
+              <div className="text-sm font-black text-foreground">
+                {props.formState.video ? "الفيديو مفعّل" : "تفعيل فيديو توضيحي"}
+              </div>
+              <div className="mt-1 text-xs font-semibold text-muted-foreground">
+                {props.formState.video ? "يمكنك إيقافه أو تركه كإضافة داعمة للعرض." : "خيار إضافي لإرفاق فيديو قصير يدعم العرض البصري."}
+              </div>
             </div>
-            <div className="mt-1 text-xs font-semibold text-muted-foreground">
-              {props.formState.video ? "يمكنك إيقافه أو تركه كإضافة داعمة للعرض." : "خيار إضافي لإرفاق فيديو قصير يدعم العرض البصري."}
-            </div>
-          </div>
-          <Video className={`h-5 w-5 ${props.formState.video ? "text-emerald-300" : "text-muted-foreground"}`} />
-        </button>
+            <Video className={`h-5 w-5 ${props.formState.video ? "text-emerald-300" : "text-muted-foreground"}`} />
+          </button>
+        ) : null}
       </SectionCard>
     </StepShell>
   );

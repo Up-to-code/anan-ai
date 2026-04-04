@@ -26,10 +26,15 @@ const workspaceTables = {
         lastReadAt: v.optional(v.number()),
         unreadCount: v.number(),
         archivedAt: v.optional(v.number()),
+        conversationUpdatedAt: v.optional(v.number()),
+        lastMessageAt: v.optional(v.number()),
+        lastMessagePreview: v.optional(v.string()),
+        lastMessageSenderId: v.optional(v.string()),
     })
         .index("conversationId", ["conversationId"])
         .index("userId", ["userId"])
-        .index("userId_conversationId", ["userId", "conversationId"]),
+        .index("userId_conversationId", ["userId", "conversationId"])
+        .index("userId_archivedAt_conversationUpdatedAt", ["userId", "archivedAt", "conversationUpdatedAt"]),
 
     inboxMessages: defineTable({
         conversationId: v.id("inboxConversations"),
@@ -49,6 +54,7 @@ const workspaceTables = {
         createdAt: v.number(),
     })
         .index("conversationId", ["conversationId"])
+        .index("conversationId_createdAt", ["conversationId", "createdAt"])
         .index("senderUserId", ["senderUserId"])
         .index("recipientUserId", ["recipientUserId"]),
 

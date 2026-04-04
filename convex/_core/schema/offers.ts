@@ -13,6 +13,7 @@ import { uploadedFileReferenceListValidator } from "./uploadedFiles";
 const offersTables = {
         offers: defineTable({
         propertyId: v.id("properties"),
+        tenantOrgId: v.optional(v.string()),
         fromBrokerId: v.optional(v.id("brokers")),
         fromREDId: v.optional(v.id("RED")),
         toBrokerId: v.optional(v.id("brokers")),
@@ -44,6 +45,7 @@ const offersTables = {
         .index("sourceConversationId", ["sourceConversationId"]),
     offerPackages: defineTable({
         propertyId: v.optional(v.id("properties")),
+        tenantOrgId: v.optional(v.string()),
         ownerAuthUserId: v.string(),
         fromBrokerId: v.optional(v.id("brokers")),
         fromREDId: v.optional(v.id("RED")),
@@ -61,12 +63,14 @@ const offersTables = {
         updatedAt: v.number(),
     })
         .index("propertyId", ["propertyId"])
+        .index("tenantOrgId", ["tenantOrgId"])
         .index("ownerAuthUserId", ["ownerAuthUserId"])
         .index("fromBrokerId", ["fromBrokerId"])
         .index("fromREDId", ["fromREDId"])
         .index("visibility", ["visibility"]),
     offerCases: defineTable({
         offerPackageId: v.id("offerPackages"),
+        tenantOrgId: v.optional(v.string()),
         type: v.union(
             v.literal("open_offer"),
             v.literal("private_offer"),
@@ -111,12 +115,15 @@ const offersTables = {
         lastActivityAt: v.number(),
     })
         .index("offerPackageId", ["offerPackageId"])
+        .index("tenantOrgId_stage_lastActivityAt", ["tenantOrgId", "stage", "lastActivityAt"])
+        .index("visibility_stage_lastActivityAt", ["visibility", "stage", "lastActivityAt"])
         .index("stage", ["stage"])
         .index("type", ["type"])
         .index("initiatedByAuthUserId", ["initiatedByAuthUserId"])
         .index("sourceConversationId", ["sourceConversationId"]),
     offerCaseParticipants: defineTable({
         offerCaseId: v.id("offerCases"),
+        tenantOrgId: v.optional(v.string()),
         authUserId: v.optional(v.string()),
         brokerId: v.optional(v.id("brokers")),
         REDId: v.optional(v.id("RED")),
@@ -133,13 +140,18 @@ const offersTables = {
         ),
         createdAt: v.number(),
         updatedAt: v.number(),
+        lastActivityAt: v.optional(v.number()),
     })
         .index("offerCaseId", ["offerCaseId"])
         .index("authUserId", ["authUserId"])
+        .index("authUserId_lastActivityAt", ["authUserId", "lastActivityAt"])
         .index("brokerId", ["brokerId"])
-        .index("REDId", ["REDId"]),
+        .index("brokerId_lastActivityAt", ["brokerId", "lastActivityAt"])
+        .index("REDId", ["REDId"])
+        .index("REDId_lastActivityAt", ["REDId", "lastActivityAt"]),
     offerActivities: defineTable({
         offerCaseId: v.id("offerCases"),
+        tenantOrgId: v.optional(v.string()),
         kind: v.union(
             v.literal("case_created"),
             v.literal("case_published"),
@@ -156,7 +168,9 @@ const offersTables = {
         actorAuthUserId: v.optional(v.string()),
         message: v.optional(v.string()),
         createdAt: v.number(),
-    }).index("offerCaseId", ["offerCaseId"]),
+    })
+        .index("offerCaseId", ["offerCaseId"])
+        .index("offerCaseId_createdAt", ["offerCaseId", "createdAt"]),
 };
 
 export default offersTables;

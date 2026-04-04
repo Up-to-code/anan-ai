@@ -26,7 +26,7 @@ it("lists deals using the api key header", async () => {
 
   const response = await GET(new Request("http://localhost/api/org/deals", { headers: { "X-Anan-Api-Key": "secret-key" } }));
 
-  expect(listOrganizationDealsByApiKey).toHaveBeenCalledWith("secret-key");
+  expect(listOrganizationDealsByApiKey).toHaveBeenCalledWith("secret-key", undefined);
   await expect(response.json()).resolves.toEqual({ deals: [{ id: "deal-1", title: "Deal", stage: "new" }] });
 });
 
@@ -44,7 +44,7 @@ it("creates a deal using the api key header", async () => {
     title: "Deal",
     stage: "new",
     relationType: "internal_client",
-  });
+  }, undefined);
 });
 
 it("serializes deal create failures", async () => {

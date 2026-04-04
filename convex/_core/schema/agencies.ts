@@ -83,13 +83,14 @@ const agenciesTables = {
         prefix: v.string(),
         secretHash: v.string(),
         name: v.string(),
+        trustedOrigins: v.optional(v.array(v.string())),
         permissions: v.array(
             v.object({
                 resource: v.union(v.literal(firstOrganizationApiKeyResource), ...restOrganizationApiKeyResources.map((resource) => v.literal(resource))),
                 action: v.union(v.literal(firstOrganizationApiKeyAction), ...restOrganizationApiKeyActions.map((action) => v.literal(action))),
             }),
         ),
-        status: v.union(v.literal("active"), v.literal("revoked")),
+        status: v.union(v.literal("active"), v.literal("revoked"), v.literal("suspended"), v.literal("expired")),
         ownerType: v.union(v.literal("broker"), v.literal("RED")),
         ownerBrokerId: v.optional(v.id("brokers")),
         ownerREDId: v.optional(v.id("RED")),
@@ -98,12 +99,53 @@ const agenciesTables = {
         createdAt: v.number(),
         revokedAt: v.optional(v.number()),
         lastUsedAt: v.optional(v.number()),
+        expiresAt: v.optional(v.number()),
+        quotaWindowMinutes: v.optional(v.number()),
+        quotaLimit: v.optional(v.number()),
+        quotaUsed: v.optional(v.number()),
+        quotaWindowStartedAt: v.optional(v.number()),
+        lastOrigin: v.optional(v.string()),
+        lastDeniedAt: v.optional(v.number()),
+        lastDeniedReason: v.optional(v.string()),
+        anomalyFlags: v.optional(v.array(v.string())),
     })
         .index("keyId", ["keyId"])
         .index("secretHash", ["secretHash"])
         .index("ownerBrokerId", ["ownerBrokerId"])
         .index("ownerREDId", ["ownerREDId"])
-        .index("status", ["status"]),
+        .index("status", ["status"])
+        .index("tenantOrgId_status", ["tenantOrgId", "status"]),
+    organizationIntegrationPolicies: defineTable({
+        tenantOrgId: v.string(),
+        ownerType: v.union(v.literal("broker"), v.literal("RED")),
+        ownerBrokerId: v.optional(v.id("brokers")),
+        ownerREDId: v.optional(v.id("RED")),
+        trustedOrigins: v.array(v.string()),
+        trustedCallbackBaseUrls: v.array(v.string()),
+        allowedWebhookDomains: v.array(v.string()),
+        enabledModes: v.array(
+            v.union(v.literal("api_keys"), v.literal("oauth"), v.literal("webhooks")),
+        ),
+        policyStatus: v.union(v.literal("active"), v.literal("restricted")),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+        lastReviewedAt: v.optional(v.number()),
+    })
+        .index("tenantOrgId", ["tenantOrgId"])
+        .index("ownerBrokerId", ["ownerBrokerId"])
+        .index("ownerREDId", ["ownerREDId"]),
+    organizationApiKeyUsageDaily: defineTable({
+        tenantOrgId: v.string(),
+        apiKeyId: v.string(),
+        dateKey: v.string(),
+        requestCount: v.number(),
+        deniedCount: v.number(),
+        lastUsedAt: v.optional(v.number()),
+        lastDeniedAt: v.optional(v.number()),
+        updatedAt: v.number(),
+    })
+        .index("apiKeyId_dateKey", ["apiKeyId", "dateKey"])
+        .index("tenantOrgId_dateKey", ["tenantOrgId", "dateKey"]),
 
     /**
      * Legacy org membership system. Deprecated after convex-tenants migration.

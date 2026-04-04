@@ -22,6 +22,6 @@ it("gets a broker by id", async () => {
   });
 
   expect(response.status).toBe(200);
-  expect(getOrganizationBrokerByApiKey).toHaveBeenCalledWith("secret-key", "broker-1");
+  expect(getOrganizationBrokerByApiKey).toHaveBeenCalledWith("secret-key", "broker-1", undefined);
   await expect(response.json()).resolves.toEqual({ broker: { id: "broker-1", name: "Broker One" } });
 });

@@ -1,5 +1,5 @@
 import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
-import { getOrganizationApiKeyHeader } from "@/app/api/org/_shared";
+import { getOrganizationApiKeyHeader, getOrganizationApiKeyOrigin } from "@/app/api/org/_shared";
 import { toErrorResponse } from "@/server/contracts/errors";
 import {
   deleteOrganizationClientByApiKey,
@@ -19,7 +19,7 @@ export async function PATCH(request: Request, { params }: OrganizationClientRout
   try {
     const body = await request.json();
     const { clientId } = await params;
-    return Response.json({ client: await updateOrganizationClientByApiKey(getOrganizationApiKeyHeader(request), clientId, body) });
+    return Response.json({ client: await updateOrganizationClientByApiKey(getOrganizationApiKeyHeader(request), clientId, body, getOrganizationApiKeyOrigin(request)) });
   } catch (error) {
     if (error instanceof SyntaxError) {
       return toInvalidJsonResponse();
@@ -31,7 +31,7 @@ export async function PATCH(request: Request, { params }: OrganizationClientRout
 export async function DELETE(request: Request, { params }: OrganizationClientRouteProps) {
   try {
     const { clientId } = await params;
-    await deleteOrganizationClientByApiKey(getOrganizationApiKeyHeader(request), clientId);
+    await deleteOrganizationClientByApiKey(getOrganizationApiKeyHeader(request), clientId, getOrganizationApiKeyOrigin(request));
     return Response.json({ deleted: true });
   } catch (error) {
     return toErrorResponse(error);

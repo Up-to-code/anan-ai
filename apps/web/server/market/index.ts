@@ -4,7 +4,7 @@ import { getWorkspaceBehaviorForCurrentUser } from "@/server/domains/auth/worksp
 import {
   convexMarketRepository,
   type MarketRepository,
-} from "@/server/infrastructure/convex/marketRepository";
+} from "@/server/infrastructure/convex/market";
 
 type MarketServiceDependencies = {
   getWorkspaceBehavior: () => Promise<{

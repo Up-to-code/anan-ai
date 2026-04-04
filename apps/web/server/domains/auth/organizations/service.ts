@@ -22,7 +22,7 @@ import { resolveSuggestedOrganizationType } from "@/server/contracts/workspace";
 import {
   convexOrganizationsRepository,
   type OrganizationsRepository,
-} from "@/server/infrastructure/convex/organizationsRepository";
+} from "@/server/infrastructure/convex/organizations";
 
 type OrganizationsServiceDependencies = {
   requireSession: () => Promise<ResolvedSession>;

@@ -15,15 +15,15 @@ import {
 import {
   convexRedZoneRepository,
   type RedZoneRepository,
-} from "@/server/infrastructure/convex/redZoneRepository";
+} from "@/server/infrastructure/convex/properties/redZone";
 import {
   convexOrganizationsRepository,
   type OrganizationsRepository,
-} from "@/server/infrastructure/convex/organizationsRepository";
+} from "@/server/infrastructure/convex/organizations";
 import {
   convexComplianceRepository,
   type ComplianceRepository,
-} from "@/server/infrastructure/convex/complianceRepository";
+} from "@/server/infrastructure/convex/compliance";
 
 type RedPropertiesDependencies = {
   requireSession: () => Promise<ResolvedSession>;

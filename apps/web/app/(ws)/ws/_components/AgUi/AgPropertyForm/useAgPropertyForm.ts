@@ -9,7 +9,7 @@ import {
   getFirstProjectFormErrorStep,
   type ProjectFormSubmissionFeedback,
   validateProjectFormSubmission,
-} from "../../../(zones)/projects/projectFormSubmission";
+} from "../../../(zones)/projects/shared/forms/projectFormSubmission";
 import { createInitialFormState, getStepDefinitions } from "./shared";
 import type { AgPropertyFormState } from "./shared";
 import type { AgPropertyFormProps, ProjectFormData } from "./types";
@@ -26,6 +26,7 @@ export function useAgPropertyForm({
   brokers = [],
   onSave,
 }: Pick<AgPropertyFormProps, "propertyId" | "initialData" | "brokers" | "onSave">) {
+  const mockDataEnabled = process.env.NEXT_PUBLIC_MOCK_DATA_ENABLED === "true";
   const { locale } = useWebLocale();
   const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(initialData?.brokerId ?? null);
   const [brokerSearch, setBrokerSearch] = useState("");
@@ -349,6 +350,7 @@ export function useAgPropertyForm({
     licenseSubmitted,
     licenseSubmitting,
     moveImage,
+    mockDataEnabled,
     permitInputRef,
     previewAspectClass,
     previewObjectClass,

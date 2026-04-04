@@ -35,7 +35,7 @@ vi.mock("convex/react", () => ({
   useQuery,
 }));
 
-vi.mock("../inbox/InboxPage/useRealtimeInbox", () => ({
+vi.mock("../inbox/pages/InboxPage/useRealtimeInbox", () => ({
   useWorkspaceSignalCounts,
 }));
 

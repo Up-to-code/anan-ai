@@ -1,7 +1,7 @@
 import WorkspaceShell from "../../_components/WorkspaceShell";
 import { getWorkspaceOrganizationDisplay } from "../../_lib/organizationDisplay";
 import { getLayoutSidebarData, requireWorkspaceData } from "../../_lib/workspaceData";
-import CrmRouteTabs from "./CrmRouteTabs";
+import CrmRouteTabs from "./shared/navigation/CrmRouteTabs";
 import { getComplianceRulesetForCurrentOrg } from "@/server/domains/compliance/service";
 import { buildComplianceBanner } from "../../_lib/complianceBanner";
 import { getWorkspaceLocale } from "../../_lib/workspaceLocale";
@@ -43,7 +43,12 @@ export default async function CrmZoneLayout({
       })}
     >
       <div className="flex min-h-full flex-col">
-        <CrmRouteTabs />
+        <CrmRouteTabs
+          labels={{
+            deals: locale === "fr" ? "Transactions" : locale === "en" ? "Deals" : "الصفقات",
+            clients: locale === "fr" ? "Clients" : locale === "en" ? "Clients" : "العملاء",
+          }}
+        />
         <div className="flex-1">{children}</div>
       </div>
     </WorkspaceShell>

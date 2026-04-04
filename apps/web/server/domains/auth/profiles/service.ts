@@ -2,7 +2,7 @@ import { requireSessionContext, type ResolvedSession } from "@/server/auth/sessi
 import { DomainError } from "@/server/contracts/errors";
 import type { ProfileSummary, UpdateProfileInput } from "@/server/contracts/profiles";
 import { updateProfileInputSchema } from "@/server/contracts/profiles";
-import { convexProfilesRepository, type ProfilesRepository } from "@/server/infrastructure/convex/profilesRepository";
+import { convexProfilesRepository, type ProfilesRepository } from "@/server/infrastructure/convex/auth/profiles";
 
 type ProfilesServiceDependencies = {
   requireSession: () => Promise<ResolvedSession>;

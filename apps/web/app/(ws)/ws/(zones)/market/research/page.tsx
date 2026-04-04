@@ -1,6 +1,6 @@
-import MarketPage from "../MarketPage";
-import ResearchKeywordsTab from "../MarketPage/ResearchKeywordsTab";
-import { loadMarketPageModel } from "../loadMarketPageModel";
+import MarketPage from "../pages/MarketPage";
+import ResearchKeywordsTab from "../pages/MarketPage/ResearchKeywordsTab";
+import { loadMarketPageModel } from "../shared/lib/loadMarketPageModel";
 
 /**
  * WHY:   Research and keyword analysis should be directly addressable so users can return to scoped market-intelligence queries.

@@ -7,8 +7,8 @@ import {
 import { DomainError } from "@/server/contracts/errors";
 import type { ProfileSummary } from "@/server/contracts/profiles";
 import type { SessionContext } from "@/server/contracts/session";
-import { convexProfilesRepository, type ProfilesRepository } from "@/server/infrastructure/convex/profilesRepository";
-import { convexSessionsRepository, type SessionsRepository } from "@/server/infrastructure/convex/sessionRepository";
+import { convexProfilesRepository, type ProfilesRepository } from "@/server/infrastructure/convex/auth/profiles";
+import { convexSessionsRepository, type SessionsRepository } from "@/server/infrastructure/convex/auth/session";
 
 export type ResolvedSession = {
   token: string;

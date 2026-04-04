@@ -8,14 +8,14 @@ Inbox is interaction-heavy and stateful. It needs a dedicated route zone so real
 
 ## Architecture Overview
 - `page.tsx`, `layout.tsx`, `loading.tsx`: route entrypoints
-- `InboxPage/`: main workspace inbox client, thread view, realtime hooks, and local components
+- `pages/InboxPage`: main workspace inbox client, thread view, realtime hooks, and local components
 - `[conversationId]/page.tsx`: focused detail route wrapper
 
 ## Flowchart
 ```mermaid
 flowchart LR
   A["/ws/inbox route"] --> B["inbox route entrypoint"]
-  B --> C["InboxPage workspace client"]
+  B --> C["pages/InboxPage workspace client"]
   C --> D["realtime hook + local components"]
   D --> E["assistant/inbox backend contracts"]
 ```
@@ -23,9 +23,9 @@ flowchart LR
 ## Stable Entrypoints
 - `page.tsx`
 - `layout.tsx`
-- `InboxPage/InboxWorkspaceClient.tsx`
-- `InboxPage/useRealtimeInbox.ts`
-- `InboxPage/InboxThreadView.tsx`
+- `pages/InboxPage/InboxWorkspaceClient.tsx`
+- `pages/InboxPage/useRealtimeInbox.ts`
+- `pages/InboxPage/InboxThreadView.tsx`
 
 ## Outside-In Usage
 Use this zone from workspace inbox routes only. If another zone needs conversation or assistant data, go through the server/backend contract or extract a true shared UI primitive. Do not import the inbox workspace client or composer directly into unrelated zones.
@@ -40,5 +40,5 @@ Use this zone from workspace inbox routes only. If another zone needs conversati
 - Downstream dependencies: inbox workspace client, realtime hooks, local components, assistant/inbox backend contracts
 
 ## Common Extension Tasks
-- Add inbox UI behavior: keep it under `InboxPage/`
+- Add inbox UI behavior: keep it under `pages/InboxPage/`
 - Add derived inbox state: prefer the existing realtime hook or a new local hook over inline route logic

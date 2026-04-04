@@ -90,7 +90,12 @@ export const searchTables = {
         source: v.optional(v.string()),
         resultCount: v.optional(v.number()),
         errorMessage: v.optional(v.string()),
-    }).index("userId", ["userId"]),
+        createdAt: v.optional(v.number()),
+        tenantOrgId: v.optional(v.string()),
+    })
+        .index("userId", ["userId"])
+        .index("userId_createdAt", ["userId", "createdAt"])
+        .index("channel_createdAt", ["channel", "createdAt"]),
 };
 
 export default searchTables;

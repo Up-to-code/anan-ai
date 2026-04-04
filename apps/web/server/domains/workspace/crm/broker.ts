@@ -15,8 +15,8 @@ import {
   updateDealStageInputSchema,
 } from "@/server/contracts/deals";
 import { DomainError } from "@/server/contracts/errors";
-import { convexBrokerZoneRepository, type BrokerZoneRepository } from "@/server/infrastructure/convex/brokerZoneRepository";
-import { convexCrmRepository, type CrmRepository } from "@/server/infrastructure/convex/crmRepository";
+import { convexBrokerZoneRepository, type BrokerZoneRepository } from "@/server/infrastructure/convex/properties/brokerZone";
+import { convexCrmRepository, type CrmRepository } from "@/server/infrastructure/convex/deals/crm";
 
 type BrokerCrmDependencies = {
   requireBroker: () => Promise<ResolvedSession>;

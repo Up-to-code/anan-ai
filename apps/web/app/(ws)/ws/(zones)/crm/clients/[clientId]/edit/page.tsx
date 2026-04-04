@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import DealFormScreen from "../../../DealFormScreen";
+import DealFormScreen from "../../../shared/forms/DealFormScreen";
 import { requireWorkspaceData } from "../../../../../_lib/workspaceData";
 import { getWorkspaceCrmZone, getWorkspacePropertyZone } from "@/server/ws/zones";
 import { parsePropertyBody } from "@/server/contracts/properties";
