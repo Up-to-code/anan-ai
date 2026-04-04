@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { requireWorkspaceData } from "../../../../_lib/workspaceData";
 import { resolveWorkspaceProjectDetail } from "@/server/domains/workspace/properties/detail";
-import { mapPropertyToWorkspaceProjectDetail } from "../../projectViewModel";
+import { mapPropertyToWorkspaceProjectDetail } from "../../shared/lib/projectViewModel";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
-import ProjectAnalyticsPage from "../../ProjectAnalyticsPage";
+import ProjectAnalyticsPage from "../../pages/ProjectAnalyticsPage";
 import { normalizeDomainError } from "@/server/contracts/errors";
 import type { ProjectAnalyticsEventType } from "@/server/contracts/properties";
 

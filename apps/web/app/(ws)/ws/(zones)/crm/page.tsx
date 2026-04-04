@@ -1,7 +1,7 @@
-import CrmPage from "./CrmPage";
+import CrmPage from "./pages/CrmPage";
 import { requireWorkspaceData } from "../../_lib/workspaceData";
 import { getWorkspaceCrmZone } from "@/server/ws/zones";
-import { mapDealToCrmClientRecord } from "./crmViewModel";
+import { mapDealToCrmClientRecord } from "./shared/lib/crmViewModel";
 
 export default async function WorkspaceCrmRoute() {
   const workspace = await requireWorkspaceData("/ws/crm");

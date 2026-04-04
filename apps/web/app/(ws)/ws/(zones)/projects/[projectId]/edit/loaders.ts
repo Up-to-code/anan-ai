@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { requireWorkspaceData } from "../../../../_lib/workspaceData";
 import { requireSessionContext } from "@/server/auth/session";
-import { convexProjectAccessRepository } from "@/server/infrastructure/convex/projectAccessRepository";
+import { convexProjectAccessRepository } from "@/server/infrastructure/convex/properties/access";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
-import { mapPropertyToWorkspaceProject } from "../../projectViewModel";
+import { mapPropertyToWorkspaceProject } from "../../shared/lib/projectViewModel";
 import type { ProjectFormData } from "@/app/(ws)/ws/public";
 import { parsePropertyBody } from "@/server/contracts/properties";
 

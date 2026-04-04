@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
-import CreateOfferForm from "../../CreateOfferForm";
+import CreateOfferForm from "../../shared/forms/CreateOfferForm";
 import { requireWorkspaceData } from "../../../../_lib/workspaceData";
 import { getWorkspaceOrganizationTeam } from "../../../../_lib/organizationTeam";
 import { getWorkspaceOffersZone, getWorkspacePropertyZone } from "@/server/ws/zones";
-import { mapPropertyToOfferOption } from "../../offerViewModel";
+import { mapPropertyToOfferOption } from "../../shared/lib/offerViewModel";
 import type { UploadedFileReference } from "@/server/contracts/files";
 
 type WorkspaceOfferEditRouteProps = {

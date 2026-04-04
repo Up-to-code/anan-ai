@@ -1,12 +1,12 @@
 # Workspace UI `market` Register
 
 ## Top-Level Ownership
-- `page.tsx`, `layout.tsx`: route entrypoints
-- `MarketPage/`: market overview/tabs/tables/charts
-- `loadMarketPageModel.ts`: route data loader
-- `marketViewModel.ts`: snapshot-to-page mapping
-- `marketTypes.ts`: route-facing types
-- `MarketRouteTabs.tsx`: route navigation
+- route files: `page.tsx`, `layout.tsx`, nested route wrappers
+- `pages/MarketPage`: market overview, tabs, tables, and charts
+- `shared/navigation`: route navigation
+- `shared/lib`: route data loader and snapshot-to-page mapping
+- `types`: route-facing types
+- `fixtures`: mock-only market snapshot data
 - `areas/`, `cities/`, `opportunities/`, `research/`: focused route trees
 
 ## Important Exports
@@ -20,5 +20,5 @@
 - nested market route wrappers
 
 ## Public Vs Internal
-- Public inside the zone: `MarketPage`, loader, view model, types
-- Internal: individual page widgets under `MarketPage/`
+- Public inside the zone: `pages/`, `shared/`, `types/`, and `fixtures/`
+- Internal: individual page widgets under `pages/MarketPage/`

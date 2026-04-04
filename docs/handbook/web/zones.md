@@ -26,6 +26,7 @@ This page is the handbook-level map of the web zones. The detailed source of tru
 - `apps/web/server/ws`
   - purpose: audience-aware workspace composition
   - read first: `apps/web/server/ws/README.md`
+  - shape: `zones.ts` public gateway plus internal `capabilities/`, `session/`, and `shared/` buckets
 - `apps/web/server/broker_zone`
   - purpose: broker-facing server orchestration
   - read first: `apps/web/server/broker_zone/README.md`
@@ -56,6 +57,7 @@ This page is the handbook-level map of the web zones. The detailed source of tru
 ## Usage Rules
 
 - Route files stay thin and delegate to page folders or the server layer.
+- Workspace UI zones use the same local structure: `pages/` for page ownership, `shared/` for same-zone reuse, `types/` for route-facing types, and optional `fixtures/` for test/mock data.
 - Workspace routes should prefer `apps/web/server/ws` for audience-aware backend behavior.
 - `broker_zone` and `red_zone` server folders are public server contracts; prefer their root gateways.
 - Supporting folders such as `apps/web/server/domains/*` and `apps/web/server/infrastructure/*` are dependencies, not standalone zones in this documentation system.

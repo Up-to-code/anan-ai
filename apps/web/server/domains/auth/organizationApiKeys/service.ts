@@ -29,7 +29,7 @@ import { DomainError, normalizeDomainError } from "@/server/contracts/errors";
 import {
   convexOrganizationApiKeysRepository,
   type OrganizationApiKeysRepository,
-} from "@/server/infrastructure/convex/organizationApiKeysRepository";
+} from "@/server/infrastructure/convex/organizations/apiKeys";
 
 type OrganizationApiKeysServiceDependencies = {
   requireSession: () => Promise<ResolvedSession>;

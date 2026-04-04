@@ -15,8 +15,8 @@ import {
   updateDealStageInputSchema,
 } from "@/server/contracts/deals";
 import { DomainError } from "@/server/contracts/errors";
-import { convexCrmRepository, type CrmRepository } from "@/server/infrastructure/convex/crmRepository";
-import { convexRedZoneRepository, type RedZoneRepository } from "@/server/infrastructure/convex/redZoneRepository";
+import { convexCrmRepository, type CrmRepository } from "@/server/infrastructure/convex/deals/crm";
+import { convexRedZoneRepository, type RedZoneRepository } from "@/server/infrastructure/convex/properties/redZone";
 
 type RedCrmDependencies = {
   requireDeveloper: () => Promise<ResolvedSession>;

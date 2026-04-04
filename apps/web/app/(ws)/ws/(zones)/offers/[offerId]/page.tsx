@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import OfferDetailPage from "../OfferDetailPage";
+import OfferDetailPage from "../pages/OfferDetailPage";
 import { requireWorkspaceData } from "../../../_lib/workspaceData";
 import { getWorkspaceOffersZone } from "@/server/ws/zones";
 import { bootstrapInboxOfferConversation } from "@/server/domains/workspace/inbox/service";

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Search } from "lucide-react";
-import OfferListItem from "../OfferListItem";
-import type { WorkspaceOfferSummary } from "../offerTypes";
+import OfferListItem from "../shared/components/OfferListItem";
+import type { WorkspaceOfferSummary } from "../types/offerTypes";
 
 export type SearchOfferFilters = {
   searchQuery: string;

@@ -1,16 +1,16 @@
 # Workspace UI `projects` Register
 
 ## Top-Level Ownership
-- `page.tsx`, `layout.tsx`, `loading.tsx`: route entrypoints
-- `ProjectsPage/`: project list workspace
-- `ProjectDetailPage/`: project detail UI
-- `ProjectFormScreen.tsx`: create/edit form UI
-- `projectViewModel.ts`: backend-to-UI mapping helpers
-- `projectTypes.ts`: route-facing project types
+- route files: `page.tsx`, `layout.tsx`, `loading.tsx`, nested route wrappers
+- `pages/*`: page orchestrators and page-private UI
+- `shared/forms`: create/edit form UI and submission helpers
+- `shared/lib`: backend-to-UI mapping helpers
+- `types`: route-facing project types
 - `create/`, `[projectId]/`: focused route trees
 
 ## Important Exports
-- `ProjectsPage`, `ProjectDetailPage`, `ProjectFormScreen`
+- page entrypoints under `pages/*/index.tsx`
+- `ProjectFormScreen`
 - `mapPropertyToWorkspaceProject`, `mapWorkspaceProjectToPropertyInput`
 - `WorkspaceProject` and related project types
 
@@ -19,5 +19,5 @@
 - create/edit/detail route wrappers
 
 ## Public Vs Internal
-- Public inside the zone: page folders, form screen, view-model/types
-- Internal: individual route wrappers under `create/` and `[projectId]/`
+- Public inside the zone: `pages/`, `shared/`, and `types/`
+- Internal: route wrappers under `create/` and `[projectId]/`, plus page-private subcomponents

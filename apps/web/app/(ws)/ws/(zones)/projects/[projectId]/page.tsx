@@ -1,17 +1,17 @@
 import { notFound } from "next/navigation";
-import ProjectDetailPage from "../ProjectDetailPage";
+import ProjectDetailPage from "../pages/ProjectDetailPage";
 import { requireWorkspaceData } from "../../../_lib/workspaceData";
 import { resolveWorkspaceProjectDetail } from "@/server/domains/workspace/properties/detail";
-import { mapPropertyToWorkspaceProjectDetail } from "../projectViewModel";
+import { mapPropertyToWorkspaceProjectDetail } from "../shared/lib/projectViewModel";
 import { requireSessionContext } from "@/server/auth/session";
-import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizationAssetsRepository";
-import { convexProjectAccessRepository } from "@/server/infrastructure/convex/projectAccessRepository";
+import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizations/assets";
+import { convexProjectAccessRepository } from "@/server/infrastructure/convex/properties/access";
 import { normalizeDomainError } from "@/server/contracts/errors";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
 import type {
   ProjectAnalyticsEventType,
 } from "@/server/contracts/properties";
-import type { ProjectMutationActionResult } from "../ProjectsPage/actionTypes";
+import type { ProjectMutationActionResult } from "../pages/ProjectsPage/actionTypes";
 
 type WorkspaceProjectDetailRouteProps = {
   params: Promise<{ projectId: string }>;

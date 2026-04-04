@@ -1,4 +1,4 @@
-import OfferOverviewPage from "./OfferOverviewPage";
+import OfferOverviewPage from "./pages/OfferOverviewPage";
 import { requireWorkspaceData } from "../../_lib/workspaceData";
 import { getWorkspaceOffersZone } from "@/server/ws/zones";
 import {
@@ -13,7 +13,7 @@ import {
   resolveSort,
   sortOffers,
   type OffersPageSearchParams,
-} from "./offersPageData";
+} from "./shared/lib/offersPageData";
 
 /**
  * WHY:   The offers root route should read like one simple searchable timeline rather than multiple queue sections.

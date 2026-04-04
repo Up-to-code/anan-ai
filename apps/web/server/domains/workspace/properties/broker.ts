@@ -15,15 +15,15 @@ import {
 import {
   convexBrokerZoneRepository,
   type BrokerZoneRepository,
-} from "@/server/infrastructure/convex/brokerZoneRepository";
+} from "@/server/infrastructure/convex/properties/brokerZone";
 import {
   convexOrganizationsRepository,
   type OrganizationsRepository,
-} from "@/server/infrastructure/convex/organizationsRepository";
+} from "@/server/infrastructure/convex/organizations";
 import {
   convexComplianceRepository,
   type ComplianceRepository,
-} from "@/server/infrastructure/convex/complianceRepository";
+} from "@/server/infrastructure/convex/compliance";
 
 type BrokerPropertiesDependencies = {
   requireSession: () => Promise<ResolvedSession>;

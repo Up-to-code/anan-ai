@@ -1,5 +1,5 @@
 import type { CreateContactInquiryInput } from "@/server/contracts/contact";
-import { convexContactRepository, type ContactRepository } from "@/server/infrastructure/convex/contactRepository";
+import { convexContactRepository, type ContactRepository } from "@/server/infrastructure/convex/public/contact";
 
 type ContactServiceDependencies = {
   repository: ContactRepository;

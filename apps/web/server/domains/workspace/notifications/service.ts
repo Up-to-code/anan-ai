@@ -1,7 +1,7 @@
 import {
   convexNotificationsRepository,
   type NotificationsRepository,
-} from "@/server/infrastructure/convex/notificationsRepository";
+} from "@/server/infrastructure/convex/messaging/notifications";
 import { requireSessionContext } from "@/server/auth/session";
 import type {
   NotificationPreference,

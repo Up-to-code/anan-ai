@@ -48,7 +48,7 @@ function CenterBrandMark({
       whileHover={reduceMotion ? undefined : { scale: 1.04 }}
     >
       <div className={borderClassName}>
-        <Image src="/brand-mark.svg" alt="Anan" width={size} height={size} style={{ width: size, height: size }} priority />
+        <Image src="/brand-logo.svg" alt="Anan" width={size} height={size} style={{ width: size, height: size }} priority />
       </div>
     </motion.div>
   );

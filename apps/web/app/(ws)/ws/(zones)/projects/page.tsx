@@ -1,9 +1,9 @@
-import ProjectsPage from "./ProjectsPage";
+import ProjectsPage from "./pages/ProjectsPage";
 import { requireWorkspaceData } from "../../_lib/workspaceData";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
-import { mapPropertyToWorkspaceProject } from "./projectViewModel";
+import { mapPropertyToWorkspaceProject } from "./shared/lib/projectViewModel";
 import { normalizeDomainError } from "@/server/contracts/errors";
-import type { ProjectMutationActionResult } from "./ProjectsPage/actionTypes";
+import type { ProjectMutationActionResult } from "./pages/ProjectsPage/actionTypes";
 import type { ProjectAnalyticsEventType } from "@/server/contracts/properties";
 
 /**

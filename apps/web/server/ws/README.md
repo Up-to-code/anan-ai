@@ -8,9 +8,9 @@ Workspace routes should not know the full broker-vs-developer backend tree. This
 
 ## Architecture Overview
 - `zones.ts`: public gateway for workspace zone composition
-- `zones/session.ts`: workspace-scoped session resolver
-- `zones/crm.ts`, `zones/offers.ts`, `zones/properties.ts`: audience-aware dispatchers
-- `zones/errors.ts`: unavailable-zone guardrails
+- `capabilities/`: audience-aware CRM, offers, and property dispatchers
+- `session/`: workspace-scoped session resolver
+- `shared/`: unavailable-zone errors and shared helpers
 
 ## Flowchart
 ```mermaid
@@ -23,7 +23,7 @@ flowchart LR
 
 ## Stable Entrypoints
 - `zones.ts`
-- `zones/session.ts`
+- `session/index.ts`
 
 ## Outside-In Usage
 Use `ws/zones.ts` from workspace routes and server actions that need audience-aware business behavior. Do not import individual broker or developer submodules directly from workspace route code when `ws` already owns the branching.
@@ -38,10 +38,10 @@ Use `ws/zones.ts` from workspace routes and server actions that need audience-aw
 - Downstream dependencies: broker/red server zones, workspace contracts, Convex repositories, auth/session
 
 ## Common Extension Tasks
-- Add a new audience-aware workspace capability: create a focused dispatcher under `zones/` and export it from `zones.ts`
-- Extend owner-context handling: update `zones/session.ts`
+- Add a new audience-aware workspace capability: create a focused dispatcher under `capabilities/` and export it from `zones.ts`
+- Extend owner-context handling: update `session/index.ts`
 
 ## Related Docs
 - `apps/web/server/ws/ZONE_REGISTER.md`
 - `apps/web/server/ws/ZONE_AUDIT.md`
-- `apps/web/server/ws/zones/README.md`
+- `apps/web/server/ws/capabilities/README.md`

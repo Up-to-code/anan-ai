@@ -1,7 +1,7 @@
 import type { UploadedFileReference } from "@/server/contracts/files";
 import type { PropertyViewerSummary } from "@/server/contracts/properties";
 import type { BrokerPresence } from "../../Visuals/BrokerPresenceChip";
-import type { ProjectFormSaveResult } from "../../../(zones)/projects/projectFormSubmission";
+import type { ProjectFormSaveResult } from "../../../(zones)/projects/shared/forms/projectFormSubmission";
 
 export type GalleryDisplayMode = "cover" | "fit";
 export type GalleryAspectRatio = "auto" | "landscape" | "square" | "portrait";

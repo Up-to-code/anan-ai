@@ -8,7 +8,7 @@ import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
 import type { WorkspaceOrganizationDisplay } from "../_lib/organizationDisplay";
 import { cn } from "@/lib/utils";
-import { useWorkspaceSignalCounts } from "../(zones)/inbox/InboxPage/useRealtimeInbox";
+import { useWorkspaceSignalCounts } from "../(zones)/inbox/pages/InboxPage/useRealtimeInbox";
 import type { SidebarUser } from "./Sidebar/types";
 import type { WorkspaceShellVariant } from "./WorkspaceShell";
 import ThemeToggle from "@/app/_components/ThemeToggle";

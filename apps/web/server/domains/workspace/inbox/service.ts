@@ -16,8 +16,8 @@ import type {
 } from "@/server/contracts/inbox";
 import {
   convexInboxRepository,
-} from "@/server/infrastructure/convex/inboxRepository";
-import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizationAssetsRepository";
+} from "@/server/infrastructure/convex/messaging/inbox";
+import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizations/assets";
 import { getWorkspaceBehaviorForCurrentUser } from "@/server/domains/auth/workspaces/service";
 import { getWorkspaceCrmZone, getWorkspaceOffersZone, getWorkspacePropertyZone } from "@/server/ws/zones";
 import {

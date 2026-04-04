@@ -3,7 +3,7 @@ import type { UploadedFileReference } from "@/server/contracts/files";
 import type { WorkspaceBehavior } from "@/server/contracts/workspace";
 import type { requireSessionContext } from "@/server/auth/session";
 import type { getWorkspaceBehaviorForCurrentUser } from "@/server/domains/auth/workspaces/service";
-import type { InboxRepository } from "@/server/infrastructure/convex/inboxRepository";
+import type { InboxRepository } from "@/server/infrastructure/convex/messaging/inbox";
 
 export type InboxServiceDependencies = {
   requireSession: typeof requireSessionContext;

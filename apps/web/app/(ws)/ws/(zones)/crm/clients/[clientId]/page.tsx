@@ -1,8 +1,8 @@
 import { notFound, redirect } from "next/navigation";
-import ClientDetailPage from "../../ClientDetailPage";
+import ClientDetailPage from "../../pages/ClientDetailPage";
 import { requireWorkspaceData } from "../../../../_lib/workspaceData";
 import { getWorkspaceCrmZone } from "@/server/ws/zones";
-import { mapDealToCrmClientRecord } from "../../crmViewModel";
+import { mapDealToCrmClientRecord } from "../../shared/lib/crmViewModel";
 
 type WorkspaceCrmClientDetailRouteProps = {
   params: Promise<{ clientId: string }>;

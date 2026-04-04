@@ -1,6 +1,6 @@
-import MarketPage from "../MarketPage";
-import AreasTab from "../MarketPage/AreasTab";
-import { loadMarketPageModel } from "../loadMarketPageModel";
+import MarketPage from "../pages/MarketPage";
+import AreasTab from "../pages/MarketPage/AreasTab";
+import { loadMarketPageModel } from "../shared/lib/loadMarketPageModel";
 
 /**
  * WHY:   Area analysis should be a route-backed market page so users can deep-link directly into neighborhood comparison.
