@@ -19,10 +19,10 @@ type SectionScaffoldProps = {
  */
 export default function SectionScaffold({ eyebrow, title, description, tabs, actions, children }: SectionScaffoldProps) {
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 max-w-full space-y-4 overflow-x-clip">
       <PageHeader eyebrow={eyebrow} title={title} description={description} actions={actions} />
       {tabs && tabs.length > 0 ? <RouteTabs tabs={tabs} /> : null}
-      <div className="space-y-4">{children}</div>
+      <div className="min-w-0 max-w-full space-y-4">{children}</div>
     </div>
   );
 }

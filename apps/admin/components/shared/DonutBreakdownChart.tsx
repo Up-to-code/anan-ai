@@ -27,7 +27,7 @@ export default function DonutBreakdownChart({
   }, {});
 
   return (
-    <div className={cn("grid gap-4 lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)]", className)}>
+    <div className={cn("grid min-w-0 max-w-full gap-4 lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)]", className)}>
       <div style={{ height }} dir="ltr">
         <ChartContainer config={config} className="h-full">
           <ResponsiveContainer width="100%" height="100%">

@@ -77,7 +77,7 @@ export const ChartContainer = React.forwardRef<
         ref={ref}
         data-chart={chartId}
         className={cn(
-          "flex min-h-[220px] w-full items-stretch justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-[var(--muted-foreground)] [&_.recharts-legend-item-text]:fill-[var(--foreground)]",
+          "flex min-h-[220px] min-w-0 w-full max-w-full items-stretch justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-[var(--muted-foreground)] [&_.recharts-legend-item-text]:fill-[var(--foreground)]",
           className,
         )}
         {...props}

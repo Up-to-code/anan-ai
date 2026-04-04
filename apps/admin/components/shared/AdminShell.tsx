@@ -89,10 +89,10 @@ export default function AdminShell({ children, user }: AdminShellProps) {
       <div className="relative flex h-full min-h-0 min-w-0 flex-1 basis-0 flex-col bg-transparent lg:overflow-hidden">
         <AdminTopNavbar user={user} mobileNavigation={<AdminSidebarDrawer user={user} />} />
 
-        <main className="flex h-full min-h-0 min-w-0 flex-1 basis-0 flex-col overflow-auto motion-safe:animate-zone-page-enter">
+        <main className="flex h-full min-h-0 min-w-0 flex-1 basis-0 flex-col overflow-y-auto overflow-x-clip motion-safe:animate-zone-page-enter">
           <div
             data-slot="admin-content"
-            className="flex h-full min-h-0 min-w-0 flex-1 basis-0 flex-col px-4 py-5 sm:px-6 lg:px-8 lg:py-6"
+            className="flex h-full min-h-0 min-w-0 max-w-full flex-1 basis-0 flex-col overflow-x-clip px-4 py-5 sm:px-6 lg:px-8 lg:py-6"
           >
             {children}
           </div>

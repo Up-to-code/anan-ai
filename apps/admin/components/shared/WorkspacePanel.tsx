@@ -24,7 +24,7 @@ export default function WorkspacePanel({
   tone = "default",
 }: WorkspacePanelProps) {
   return (
-    <section className={cn("p-4 sm:p-5", tones[tone], className)}>
+    <section className={cn("min-w-0 max-w-full p-4 sm:p-5", tones[tone], className)}>
       {children}
     </section>
   );

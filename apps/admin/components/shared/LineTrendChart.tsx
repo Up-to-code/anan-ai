@@ -33,7 +33,7 @@ export default function LineTrendChart({
   const config = buildChartConfig(series);
 
   return (
-    <div className={cn("w-full", className)} dir="ltr">
+    <div className={cn("min-w-0 max-w-full w-full", className)} dir="ltr">
       <div style={{ height }}>
         <ChartContainer config={config} className="h-full">
           <ResponsiveContainer width="100%" height="100%">
