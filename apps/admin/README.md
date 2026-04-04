@@ -2,12 +2,6 @@
 
 Standalone Next.js admin console for Anan platform operations.
 
-## Internal Developer Docs
-
-Use the in-app `/docs` admin section as the canonical internal-developer entrypoint for this app and the wider platform.
-
-The deep canonical handbook lives in markdown under `docs/handbook/**`. The in-app `/docs` routes are a curated mirror with pointers.
-
 ## Responsibilities
 
 - Overview and platform health
@@ -23,7 +17,8 @@ The deep canonical handbook lives in markdown under `docs/handbook/**`. The in-a
 - `admin_zone/api/` contains admin-scoped server APIs.
 - `admin_zone/pages/` contains page orchestrators and page-local structure.
 - `server/infrastructure/convex/` contains repository adapters that call `convex/admin_zone/*`.
-- `components/shared/` contains copied institutional UI primitives adapted from `web/`.
+- `components/shell/` contains the workspace-style admin chrome.
+- `components/shared/` contains reusable admin primitives used by page modules.
 
 ## Deployment
 
