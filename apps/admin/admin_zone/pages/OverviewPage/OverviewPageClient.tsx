@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import AdminRangeControl from "@/components/shared/AdminRangeControl";
+import AdminRenderBoundary from "@/components/shared/AdminRenderBoundary";
 import { AdminInput } from "@/components/shared/AdminFieldControls";
 import DonutBreakdownChart from "@/components/shared/DonutBreakdownChart";
 import LineTrendChart from "@/components/shared/LineTrendChart";
@@ -20,6 +21,36 @@ import type {
   OverviewMetric,
   QueueItem,
 } from "@/admin_zone/mocks/types";
+
+function OverviewSectionFallback({
+  title,
+  description,
+  items,
+}: {
+  title: string;
+  description: string;
+  items: Array<{ label: string; value: string }>;
+}) {
+  return (
+    <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white p-10 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
+      <div className="space-y-3">
+        <h2 className="text-2xl font-black tracking-tighter text-slate-900 dark:text-slate-50">{title}</h2>
+        <p className="text-[13px] font-bold leading-relaxed text-slate-400">{description}</p>
+      </div>
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        {items.map((item) => (
+          <div
+            key={`${title}-${item.label}`}
+            className="rounded-[24px] border border-slate-100 bg-slate-50/70 px-5 py-4 dark:border-slate-800 dark:bg-slate-950/30"
+          >
+            <div className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">{item.label}</div>
+            <div className="mt-3 text-lg font-black tracking-tight text-slate-900 dark:text-slate-50">{item.value}</div>
+          </div>
+        ))}
+      </div>
+    </WorkspacePanel>
+  );
+}
 
 type OverviewPageClientProps = {
   range: "30d" | "90d";
@@ -80,89 +111,144 @@ export default function OverviewPageClient({
       </section>
 
       <section className="mt-8 grid gap-12 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.85fr)]">
-        <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white p-12 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.04)] dark:border-slate-800 dark:bg-slate-900/50">
-          <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-4">
-              <h2 className="text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">اتجاه النشاط</h2>
-              <p className="text-[13px] font-black leading-relaxed text-slate-400 uppercase tracking-[.25em]">
-                Active audience over the last {range}
-              </p>
+        <AdminRenderBoundary
+          fallback={
+            <OverviewSectionFallback
+              title="اتجاه النشاط"
+              description="تعذر تحميل الرسم التفاعلي لهذا القسم، لكن المؤشرات الأساسية ما زالت متاحة."
+              items={[
+                { label: "أعلى قيمة نشاط", value: formatNumber(Math.max(...chart.map((point) => point.activeUsers))) },
+                { label: "الهدف الحالي", value: formatNumber(target) },
+                { label: "المدى الزمني", value: range === "90d" ? "90 يوم" : "30 يوم" },
+                { label: "آخر نقطة", value: formatNumber(chart[chart.length - 1]?.activeUsers ?? 0) },
+              ]}
+            />
+          }
+        >
+          <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white p-12 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.04)] dark:border-slate-800 dark:bg-slate-900/50">
+            <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-4">
+                <h2 className="text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">اتجاه النشاط</h2>
+                <p className="text-[13px] font-black leading-relaxed text-slate-400 uppercase tracking-[.25em]">
+                  Active audience over the last {range}
+                </p>
+              </div>
+              <div className="w-full max-w-[260px] rounded-3xl border border-slate-100 bg-slate-50 p-8 dark:border-slate-800 dark:bg-slate-800/10">
+                <label className="mb-4 block text-[11px] font-black uppercase tracking-[0.25em] text-slate-400">
+                  تعديل الهدف
+                </label>
+                <AdminInput
+                  type="number"
+                  value={target}
+                  onChange={(event) => setTarget(Number(event.target.value) || 0)}
+                  className="h-12 rounded-full border-slate-200 bg-white px-6 font-black dark:bg-slate-900"
+                />
+              </div>
             </div>
-            <div className="w-full max-w-[260px] rounded-3xl border border-slate-100 bg-slate-50 p-8 dark:border-slate-800 dark:bg-slate-800/10">
-              <label className="mb-4 block text-[11px] font-black uppercase tracking-[0.25em] text-slate-400">
-                تعديل الهدف
-              </label>
-              <AdminInput
-                type="number"
-                value={target}
-                onChange={(event) => setTarget(Number(event.target.value) || 0)}
-                className="h-12 rounded-full border-slate-200 bg-white px-6 font-black dark:bg-slate-900"
+            <div className="mt-10 min-h-[400px]">
+              <LineTrendChart
+                data={chartData}
+                series={[
+                  { dataKey: "activeUsers", label: "النشطون", color: "#2563EB" },
+                  { dataKey: "target", label: "المستهدف", color: "#94A3B8" },
+                ]}
+                height={400}
               />
             </div>
-          </div>
-          <div className="mt-10 min-h-[400px]">
-            <LineTrendChart
-              data={chartData}
-              series={[
-                { dataKey: "activeUsers", label: "النشطون", color: "#2563EB" },
-                { dataKey: "target", label: "المستهدف", color: "#94A3B8" },
-              ]}
-              height={400}
-            />
-          </div>
-        </WorkspacePanel>
+          </WorkspacePanel>
+        </AdminRenderBoundary>
 
-        <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white/50 p-12 dark:border-slate-800 dark:bg-slate-900/40">
-          <div className="space-y-4">
-            <h2 className="text-3xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">نوع الشركاء</h2>
-            <p className="text-[13px] font-black leading-relaxed text-slate-400 uppercase tracking-[.25em]">Partner mix</p>
-          </div>
-          <div className="mt-8 flex min-h-[300px] items-center justify-center">
-            <DonutBreakdownChart data={partnerMix} height={300} />
-          </div>
-        </WorkspacePanel>
+        <AdminRenderBoundary
+          fallback={
+            <OverviewSectionFallback
+              title="نوع الشركاء"
+              description="تعذر تحميل رسم التوزيع، لذلك نعرض ملخص الشركاء كقائمة تشغيلية."
+              items={partnerMix.map((item) => ({ label: item.label, value: formatNumber(item.value) }))}
+            />
+          }
+        >
+          <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white/50 p-12 dark:border-slate-800 dark:bg-slate-900/40">
+            <div className="space-y-4">
+              <h2 className="text-3xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">نوع الشركاء</h2>
+              <p className="text-[13px] font-black leading-relaxed text-slate-400 uppercase tracking-[.25em]">Partner mix</p>
+            </div>
+            <div className="mt-8 flex min-h-[300px] items-center justify-center">
+              <DonutBreakdownChart data={partnerMix} height={300} />
+            </div>
+          </WorkspacePanel>
+        </AdminRenderBoundary>
       </section>
 
       <section className="mt-4 grid gap-12 xl:grid-cols-3">
-        <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white p-10 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
-          <div className="space-y-3">
-            <h2 className="text-2xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">ضغط التوثيق</h2>
-            <p className="text-[12px] font-black leading-relaxed text-slate-400 uppercase tracking-[.22em]">Verification pressure</p>
-          </div>
-          <div className="mt-8">
-            <MetricBarChart
-              data={verificationPressure}
-              series={[{ dataKey: "count", label: "الحالات", color: "#2563EB" }]}
-              horizontal
-              height={280}
+        <AdminRenderBoundary
+          fallback={
+            <OverviewSectionFallback
+              title="ضغط التوثيق"
+              description="ملخص بديل لحالة التوثيق حتى يتم تحميل الرسم التفاعلي."
+              items={verificationPressure.map((item) => ({ label: item.label, value: formatNumber(item.count) }))}
             />
-          </div>
-        </WorkspacePanel>
+          }
+        >
+          <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white p-10 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
+            <div className="space-y-3">
+              <h2 className="text-2xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">ضغط التوثيق</h2>
+              <p className="text-[12px] font-black leading-relaxed text-slate-400 uppercase tracking-[.22em]">Verification pressure</p>
+            </div>
+            <div className="mt-8">
+              <MetricBarChart
+                data={verificationPressure}
+                series={[{ dataKey: "count", label: "الحالات", color: "#2563EB" }]}
+                horizontal
+                height={280}
+              />
+            </div>
+          </WorkspacePanel>
+        </AdminRenderBoundary>
 
-        <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white p-10 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
-          <div className="space-y-3">
-            <h2 className="text-2xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">توزيع الأدوار</h2>
-            <p className="text-[12px] font-black leading-relaxed text-slate-400 uppercase tracking-[.22em]">User roles</p>
-          </div>
-          <div className="mt-8">
-            <MetricBarChart
-              data={userRoleDistribution}
-              series={[{ dataKey: "count", label: "المستخدمون", color: "#0F766E" }]}
-              horizontal
-              height={280}
+        <AdminRenderBoundary
+          fallback={
+            <OverviewSectionFallback
+              title="توزيع الأدوار"
+              description="ملخص عددي بديل لتوزيع الأدوار داخل المستخدمين."
+              items={userRoleDistribution.map((item) => ({ label: item.label, value: formatNumber(item.count) }))}
             />
-          </div>
-        </WorkspacePanel>
+          }
+        >
+          <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white p-10 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
+            <div className="space-y-3">
+              <h2 className="text-2xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">توزيع الأدوار</h2>
+              <p className="text-[12px] font-black leading-relaxed text-slate-400 uppercase tracking-[.22em]">User roles</p>
+            </div>
+            <div className="mt-8">
+              <MetricBarChart
+                data={userRoleDistribution}
+                series={[{ dataKey: "count", label: "المستخدمون", color: "#0F766E" }]}
+                horizontal
+                height={280}
+              />
+            </div>
+          </WorkspacePanel>
+        </AdminRenderBoundary>
 
-        <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white p-10 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
-          <div className="space-y-3">
-            <h2 className="text-2xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">حالة العروض</h2>
-            <p className="text-[12px] font-black leading-relaxed text-slate-400 uppercase tracking-[.22em]">Offer review mix</p>
-          </div>
-          <div className="mt-8">
-            <DonutBreakdownChart data={offerQueueMix} height={220} />
-          </div>
-        </WorkspacePanel>
+        <AdminRenderBoundary
+          fallback={
+            <OverviewSectionFallback
+              title="حالة العروض"
+              description="ملخص سريع لحالة العروض بدل الرسم التفاعلي."
+              items={offerQueueMix.map((item) => ({ label: item.label, value: formatNumber(item.value) }))}
+            />
+          }
+        >
+          <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white p-10 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
+            <div className="space-y-3">
+              <h2 className="text-2xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">حالة العروض</h2>
+              <p className="text-[12px] font-black leading-relaxed text-slate-400 uppercase tracking-[.22em]">Offer review mix</p>
+            </div>
+            <div className="mt-8">
+              <DonutBreakdownChart data={offerQueueMix} height={220} />
+            </div>
+          </WorkspacePanel>
+        </AdminRenderBoundary>
       </section>
 
       <section className="mt-4 grid gap-12 lg:grid-cols-2">
@@ -202,14 +288,24 @@ export default function OverviewPageClient({
             <h2 className="text-3xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">المراجعة التشغيلية</h2>
             <p className="text-[13px] font-black leading-relaxed text-slate-400 uppercase tracking-[.25em]">Operational focus queue</p>
           </div>
-          <div className="mt-10 min-h-[300px] rounded-[32px] border border-slate-100 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <MetricBarChart
-              data={queueChartData}
-              series={[{ dataKey: "count", label: "البنود", color: "#2563EB" }]}
-              horizontal
-              height={300}
-            />
-          </div>
+          <AdminRenderBoundary
+            fallback={
+              <OverviewSectionFallback
+                title="المراجعة التشغيلية"
+                description="تعذر تحميل الرسم التفاعلي، لذلك نعرض أولويات الطابور بشكل مباشر."
+                items={queue.map((item) => ({ label: item.label, value: formatNumber(item.count) }))}
+              />
+            }
+          >
+            <div className="mt-10 min-h-[300px] rounded-[32px] border border-slate-100 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <MetricBarChart
+                data={queueChartData}
+                series={[{ dataKey: "count", label: "البنود", color: "#2563EB" }]}
+                horizontal
+                height={300}
+              />
+            </div>
+          </AdminRenderBoundary>
           <div className="mt-8 grid gap-6">
             {queue.map((item) => (
               <div
@@ -233,15 +329,25 @@ export default function OverviewPageClient({
       </section>
 
       <section className="mt-4">
-        <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white/50 p-12 dark:border-slate-800 dark:bg-slate-900/40">
-          <div className="space-y-4">
-            <h2 className="text-3xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">استهلاك النماذج</h2>
-            <p className="text-[13px] font-black leading-relaxed text-slate-400 uppercase tracking-[.25em]">Model consumption</p>
-          </div>
-          <div className="mt-8 flex min-h-[300px] items-center justify-center">
-            <DonutBreakdownChart data={models} height={300} />
-          </div>
-        </WorkspacePanel>
+        <AdminRenderBoundary
+          fallback={
+            <OverviewSectionFallback
+              title="استهلاك النماذج"
+              description="ملخص استهلاك النماذج متاح حتى في حالة تعذر تحميل الرسم."
+              items={models.map((item) => ({ label: item.label, value: formatNumber(item.value) }))}
+            />
+          }
+        >
+          <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white/50 p-12 dark:border-slate-800 dark:bg-slate-900/40">
+            <div className="space-y-4">
+              <h2 className="text-3xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">استهلاك النماذج</h2>
+              <p className="text-[13px] font-black leading-relaxed text-slate-400 uppercase tracking-[.25em]">Model consumption</p>
+            </div>
+            <div className="mt-8 flex min-h-[300px] items-center justify-center">
+              <DonutBreakdownChart data={models} height={300} />
+            </div>
+          </WorkspacePanel>
+        </AdminRenderBoundary>
       </section>
     </SectionScaffold>
   );
