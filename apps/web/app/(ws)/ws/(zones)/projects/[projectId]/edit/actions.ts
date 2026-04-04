@@ -1,8 +1,8 @@
 "use server";
 
 import { requireSessionContext } from "@/server/auth/session";
-import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizations/assets";
-import { convexProjectAccessRepository } from "@/server/infrastructure/convex/properties/access";
+import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizationAssetsRepository";
+import { convexProjectAccessRepository } from "@/server/infrastructure/convex/projectAccessRepository";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapWorkspaceProjectToPropertyInput } from "../../shared/lib/projectViewModel";
 import type { ProjectFormData } from "@/app/(ws)/ws/public";

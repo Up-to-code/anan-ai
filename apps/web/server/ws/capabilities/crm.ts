@@ -12,9 +12,9 @@ import {
   updateBrokerDealStage,
 } from "@/server/domains/workspace/crm/broker";
 import type { WorkspaceAudience, WorkspaceOwnerContext } from "@/server/contracts/workspace";
-import { convexBrokerZoneRepository } from "@/server/infrastructure/convex/properties/brokerZone";
-import { convexCrmRepository } from "@/server/infrastructure/convex/deals/crm";
-import { convexRedZoneRepository } from "@/server/infrastructure/convex/properties/redZone";
+import { convexBrokerZoneRepository } from "@/server/infrastructure/convex/brokerZoneRepository";
+import { convexCrmRepository } from "@/server/infrastructure/convex/crmRepository";
+import { convexRedZoneRepository } from "@/server/infrastructure/convex/redZoneRepository";
 import {
   addRedDealDocument,
   archiveRedDeal,

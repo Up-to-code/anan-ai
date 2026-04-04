@@ -32,7 +32,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-vi.mock("../(zones)/inbox/InboxPage/useRealtimeInbox", () => ({
+vi.mock("../(zones)/inbox/pages/InboxPage/useRealtimeInbox", () => ({
   useWorkspaceSignalCounts: () => ({ notificationCount: 0, inboxCount: 0 }),
 }));
 

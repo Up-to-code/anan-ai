@@ -14,7 +14,7 @@ vi.mock("next/navigation", () => ({
   useRouter,
 }));
 
-vi.mock("../(zones)/inbox/InboxPage/useRealtimeInbox", () => ({
+vi.mock("../(zones)/inbox/pages/InboxPage/useRealtimeInbox", () => ({
   useWorkspaceSignalCounts,
 }));
 

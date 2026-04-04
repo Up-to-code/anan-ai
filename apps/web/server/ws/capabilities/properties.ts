@@ -11,11 +11,11 @@ import {
   recordWorkspaceProjectAnalyticsEvent,
 } from "@/server/domains/workspace/properties/analytics";
 import type { WorkspaceAudience, WorkspaceOwnerContext } from "@/server/contracts/workspace";
-import { convexBrokerZoneRepository } from "@/server/infrastructure/convex/properties/brokerZone";
-import { convexComplianceRepository } from "@/server/infrastructure/convex/compliance";
-import { convexOrganizationsRepository } from "@/server/infrastructure/convex/organizations";
-import { convexProjectAnalyticsRepository } from "@/server/infrastructure/convex/properties/analytics";
-import { convexRedZoneRepository } from "@/server/infrastructure/convex/properties/redZone";
+import { convexBrokerZoneRepository } from "@/server/infrastructure/convex/brokerZoneRepository";
+import { convexComplianceRepository } from "@/server/infrastructure/convex/complianceRepository";
+import { convexOrganizationsRepository } from "@/server/infrastructure/convex/organizationsRepository";
+import { convexProjectAnalyticsRepository } from "@/server/infrastructure/convex/projectAnalyticsRepository";
+import { convexRedZoneRepository } from "@/server/infrastructure/convex/redZoneRepository";
 import {
   createRedProperty,
   deleteRedProperty,

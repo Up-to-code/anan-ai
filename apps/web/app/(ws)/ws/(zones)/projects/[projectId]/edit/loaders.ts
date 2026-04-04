@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireWorkspaceData } from "../../../../_lib/workspaceData";
 import { requireSessionContext } from "@/server/auth/session";
-import { convexProjectAccessRepository } from "@/server/infrastructure/convex/properties/access";
+import { convexProjectAccessRepository } from "@/server/infrastructure/convex/projectAccessRepository";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapPropertyToWorkspaceProject } from "../../shared/lib/projectViewModel";
 import type { ProjectFormData } from "@/app/(ws)/ws/public";

@@ -95,14 +95,14 @@ vi.mock("@/server/auth/session", () => ({
   })),
 }));
 
-vi.mock("@/server/infrastructure/convex/organizations/assets", () => ({
+vi.mock("@/server/infrastructure/convex/organizationAssetsRepository", () => ({
   convexOrganizationAssetsRepository: {
     attachOrganizationAssets,
     markEntityAssetsPendingDelete,
   },
 }));
 
-vi.mock("@/server/infrastructure/convex/properties/access", () => ({
+vi.mock("@/server/infrastructure/convex/projectAccessRepository", () => ({
   convexProjectAccessRepository: {
     listPropertyViewers,
     revokePropertyViewer: vi.fn(async () => ({ ok: true })),

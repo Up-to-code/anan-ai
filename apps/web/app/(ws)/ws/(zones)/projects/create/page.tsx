@@ -4,7 +4,7 @@ import { getWorkspaceLocale } from "../../../_lib/workspaceLocale";
 import { getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapWorkspaceProjectToPropertyInput } from "../shared/lib/projectViewModel";
 import { requireSessionContext } from "@/server/auth/session";
-import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizations/assets";
+import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizationAssetsRepository";
 import { type AppLocale } from "@/lib/locale";
 import { toProjectFormActionFailure, validateProjectFormSubmission } from "../shared/forms/projectFormSubmission";
 

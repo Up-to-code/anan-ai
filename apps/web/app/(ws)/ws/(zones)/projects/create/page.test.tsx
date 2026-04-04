@@ -37,7 +37,7 @@ vi.mock("@/server/auth/session", () => ({
   })),
 }));
 
-vi.mock("@/server/infrastructure/convex/organizations/assets", () => ({
+vi.mock("@/server/infrastructure/convex/organizationAssetsRepository", () => ({
   convexOrganizationAssetsRepository: {
     attachOrganizationAssets: vi.fn(async () => undefined),
   },
