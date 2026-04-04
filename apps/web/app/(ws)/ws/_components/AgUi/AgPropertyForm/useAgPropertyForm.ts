@@ -9,7 +9,7 @@ import {
   getFirstProjectFormErrorStep,
   type ProjectFormSubmissionFeedback,
   validateProjectFormSubmission,
-} from "../../../(zones)/projects/projectFormSubmission";
+} from "../../../(zones)/projects/shared/forms/projectFormSubmission";
 import { createInitialFormState, getStepDefinitions } from "./shared";
 import type { AgPropertyFormState } from "./shared";
 import type { AgPropertyFormProps, ProjectFormData } from "./types";

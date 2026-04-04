@@ -1,48 +1,54 @@
 # Workspace UI Zone: `offers`
 
 ## Ownership And Purpose
-This zone owns the workspace offers experience under `/ws/offers`: overview, profiles, detail, search, and create flows, plus the route-facing offer view-model helpers and local pagination/search utilities.
+This zone owns the workspace offers experience under `/ws/offers`: overview, profiles, detail, search, create, and edit flows.
 
 ## Why This Zone Exists
-Offers have multiple workspace sub-surfaces that share route-level types, tabs, and list/detail UI. This zone keeps that presentation structure local while delegating ownership-sensitive operations to `apps/web/server/ws`.
+Offers has several route variants that share list cards, filters, types, form state, and route-facing mapping logic. This folder keeps those concerns local while delegating ownership-aware behavior to `apps/web/server/ws`.
 
 ## Architecture Overview
-- `page.tsx`, `layout.tsx`, `loading.tsx`: zone entrypoints
-- `OfferOverviewPage/`, `OfferProfilesPage/`, `OfferDetailPage/`, `OfferDirectoryPage/`: page modules
-- `CreateOfferForm.tsx`, `OfferCards.tsx`, `OfferPaginationNav.tsx`, `OffersTabs.tsx`: local UI primitives
-- `offerViewModel.ts`, `offerTypes.ts`, `offersPageData.ts`: route-facing mapping/types/pagination helpers
+- route files stay at the zone root and nested route folders
+- `pages/OfferOverviewPage`, `pages/OfferProfilesPage`, `pages/OfferDetailPage`, `pages/OfferDirectoryPage`: page orchestrators and page-private UI
+- `shared/components`: cross-page cards and pagination controls
+- `shared/forms`: cross-route offer form UI
+- `shared/lib`: route-facing mapping, filtering, sorting, and pagination helpers
+- `shared/copy`: offer-local copy/presentation helpers
+- `types`: route-facing offer types
 - `create/`, `search/`, `[offerId]/`, `brokers/`, `developers/`: focused route trees
 
 ## Flowchart
 ```mermaid
 flowchart LR
   A["/ws/offers route"] --> B["offers route entrypoint"]
-  B --> C["offer page module / local UI helper"]
+  B --> C["pages/* or shared/*"]
   C --> D["web/server/ws offers zone"]
   D --> E["broker_zone or red_zone backend"]
 ```
 
 ## Stable Entrypoints
 - `page.tsx`
-- `OfferOverviewPage/index.tsx`
-- `OfferProfilesPage/index.tsx`
-- `OfferDetailPage/index.tsx`
-- `CreateOfferForm.tsx`
-- `offerViewModel.ts`
-- `offersPageData.ts`
+- `pages/OfferOverviewPage/index.tsx`
+- `pages/OfferProfilesPage/index.tsx`
+- `pages/OfferDetailPage/index.tsx`
+- `shared/forms/CreateOfferForm.tsx`
+- `shared/lib/offerViewModel.ts`
+- `shared/lib/offersPageData.ts`
+- `types/offerTypes.ts`
 
 ## Outside-In Usage
-Use this zone from workspace offer routes only. If another zone needs offer business data, it should go through the server layer. If another zone needs a generic UI primitive, promote it deliberately instead of importing an offer page component directly.
+Use this zone from workspace offer routes only. Route files should compose from `pages/`, `shared/`, `types/`, and `apps/web/server/ws`. Other zones should not import offer page internals directly.
 
 ## Allowed And Forbidden Imports
-- Allowed: shared workspace UI, `apps/web/server/ws`, local page folders, local view models/types/helpers
+- Allowed: shared workspace UI, `apps/web/server/ws`, local `pages/`, local `shared/`, local `types/`
 - Forbidden: route files doing direct backend orchestration
-- Forbidden: other route zones importing offer page internals as shared components by accident
+- Forbidden: `shared/` importing from `pages/`
+- Forbidden: other route zones importing offer page internals as accidental shared components
 
 ## Dependency Map
 - Upstream consumers: `/ws/offers` and all nested offer routes
-- Downstream dependencies: `apps/web/server/ws`, shared workspace UI, local form/list/detail components
+- Downstream dependencies: `apps/web/server/ws`, shared workspace UI, offer-local shared components and helpers
 
 ## Common Extension Tasks
-- Add a new offer projection field: update `offerTypes.ts` and `offerViewModel.ts`
-- Add route-local search/pagination behavior: keep it in `offersPageData.ts` or page-local helpers
+- Add a new offer projection field: update `types/offerTypes.ts` and `shared/lib/offerViewModel.ts`
+- Add cross-page list/filter behavior: keep it in `shared/lib/offersPageData.ts`
+- Add page-private UI: keep it inside the owning `pages/*` folder

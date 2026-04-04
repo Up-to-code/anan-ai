@@ -2,11 +2,11 @@
 
 ## Top-Level Ownership
 - `zones.ts`: stable public gateway
-- `zones/session.ts`: owner-context aware session reconstruction
-- `zones/crm.ts`: workspace CRM dispatcher
-- `zones/offers.ts`: workspace offers dispatcher
-- `zones/properties.ts`: workspace property dispatcher
-- `zones/errors.ts`: unsupported-audience errors
+- `capabilities/crm.ts`: workspace CRM dispatcher
+- `capabilities/offers.ts`: workspace offers dispatcher
+- `capabilities/properties.ts`: workspace property dispatcher
+- `session/index.ts`: owner-context aware session reconstruction
+- `shared/errors.ts`: unsupported-audience errors
 
 ## Important Exports
 - `getWorkspaceCrmZone`

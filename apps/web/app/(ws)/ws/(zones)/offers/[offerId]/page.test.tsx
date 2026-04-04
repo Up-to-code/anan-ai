@@ -113,7 +113,7 @@ vi.mock("@/server/domains/workspace/inbox/service", () => ({
   bootstrapInboxOfferConversation: vi.fn(async () => ({ conversationId: "conversation-1" })),
 }));
 
-vi.mock("../OfferDetailPage", () => ({
+vi.mock("../pages/OfferDetailPage", () => ({
   default: (props: unknown) => {
     setCapturedProps(props);
     return <div>OfferDetailPageMock</div>;

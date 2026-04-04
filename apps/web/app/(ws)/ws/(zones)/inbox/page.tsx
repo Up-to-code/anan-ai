@@ -1,5 +1,5 @@
-import InboxWorkspaceClient from "./InboxPage/InboxWorkspaceClient";
-import { loadInboxWorkspaceClientProps } from "./InboxPage/loaders";
+import InboxWorkspaceClient from "./pages/InboxPage/InboxWorkspaceClient";
+import { loadInboxWorkspaceClientProps } from "./pages/InboxPage/loaders";
 
 type InboxIndexPageProps = {
   searchParams: Promise<{

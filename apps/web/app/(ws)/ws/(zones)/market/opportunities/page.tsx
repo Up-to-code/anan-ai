@@ -1,6 +1,6 @@
-import MarketPage from "../MarketPage";
-import OpportunitiesTab from "../MarketPage/OpportunitiesTab";
-import { loadMarketPageModel } from "../loadMarketPageModel";
+import MarketPage from "../pages/MarketPage";
+import OpportunitiesTab from "../pages/MarketPage/OpportunitiesTab";
+import { loadMarketPageModel } from "../shared/lib/loadMarketPageModel";
 
 /**
  * WHY:   Opportunity ranking should have its own route so the recommendation view can be linked and revisited directly.

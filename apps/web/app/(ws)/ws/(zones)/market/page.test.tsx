@@ -43,7 +43,7 @@ const { getWorkspaceMarketSnapshot } = vi.hoisted(() => ({
   getWorkspaceMarketSnapshot: vi.fn(),
 }));
 vi.mock("@/server/market", () => ({ getWorkspaceMarketSnapshot }));
-vi.mock("./MarketPage/MarketChartPanel", () => ({
+vi.mock("./pages/MarketPage/MarketChartPanel", () => ({
   default: ({ title }: { title: string }) => <div>{title}</div>,
 }));
 

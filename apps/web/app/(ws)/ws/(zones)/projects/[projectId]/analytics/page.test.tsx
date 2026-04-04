@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, it, vi } from "vitest";
-import DeveloperProjectAnalyticsPage from "../../ProjectAnalyticsPage/DeveloperProjectAnalyticsPage";
+import DeveloperProjectAnalyticsPage from "../../pages/ProjectAnalyticsPage/DeveloperProjectAnalyticsPage";
 
 function buildAnalyticsPayload() {
   return {

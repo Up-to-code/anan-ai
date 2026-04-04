@@ -1,6 +1,6 @@
-import MarketPage from "../MarketPage";
-import CitiesTab from "../MarketPage/CitiesTab";
-import { loadMarketPageModel } from "../loadMarketPageModel";
+import MarketPage from "../pages/MarketPage";
+import CitiesTab from "../pages/MarketPage/CitiesTab";
+import { loadMarketPageModel } from "../shared/lib/loadMarketPageModel";
 
 /**
  * WHY:   Cities analysis should be a first-class market page so switching categories updates the URL and preserves workspace navigation behavior.

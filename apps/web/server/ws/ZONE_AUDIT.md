@@ -11,6 +11,7 @@
 ## Cleanup Decisions In This Pass
 - Added `apps/web/server/broker_zone/index.ts` and `apps/web/server/red_zone/index.ts`.
 - Updated `ws` dispatchers and tests to depend on the root gateways instead of multiple internal subpaths.
+- Reorganized the zone into `capabilities/`, `session/`, and `shared/` while keeping `zones.ts` as the stable public gateway.
 
 ## Deferred Follow-Ups
 - If more workspace capabilities appear, consider extracting a shared audience-dispatch helper to reduce repeated branching shape.

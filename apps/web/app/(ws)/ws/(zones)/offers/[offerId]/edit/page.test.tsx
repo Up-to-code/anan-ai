@@ -110,7 +110,7 @@ vi.mock("@/server/ws/zones", () => ({
   })),
 }));
 
-vi.mock("../../CreateOfferForm", () => ({
+vi.mock("../../shared/forms/CreateOfferForm", () => ({
   default: (props: unknown) => {
     setCapturedProps(props);
     return <div>CreateOfferFormMock</div>;

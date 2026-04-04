@@ -81,7 +81,7 @@ vi.mock("@/server/ws/zones", () => ({
   })),
 }));
 
-vi.mock("../../../DealFormScreen", () => ({
+vi.mock("../../../shared/forms/DealFormScreen", () => ({
   default: (props: unknown) => {
     setCapturedProps(props);
     return <div>DealFormScreenMock</div>;

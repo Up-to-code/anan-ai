@@ -1,4 +1,4 @@
-import DealFormScreen from "../../DealFormScreen";
+import DealFormScreen from "../../shared/forms/DealFormScreen";
 import { requireWorkspaceData } from "../../../../_lib/workspaceData";
 import { getWorkspaceLocale } from "../../../../_lib/workspaceLocale";
 import { getWorkspaceCrmZone, getWorkspacePropertyZone } from "@/server/ws/zones";
