@@ -167,8 +167,8 @@ function now() {
 
 async function runWithKey<T>(
   rawApiKey: string | null | undefined,
-  operation: (secretHash: string, issuedAt: number, origin?: string | null) => Promise<T>,
-  origin?: string | null,
+  operation: (secretHash: string, issuedAt: number, origin?: string) => Promise<T>,
+  origin?: string,
 ): Promise<T> {
   try {
     const secretHash = hashOrganizationApiKey(requireApiKeyValue(rawApiKey));
@@ -229,7 +229,7 @@ export async function revokeCurrentOrganizationApiKeyForCurrentUser(
 
 export async function listOrganizationClientsByApiKey(
   rawApiKey: string | null | undefined,
-  origin: string | null | undefined = undefined,
+  origin?: string,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<OrgApiClientRecord[]> {
   return runWithKey(rawApiKey, (secretHash, issuedAt, callerOrigin) => dependencies.repository.listClientsByApiKey(secretHash, issuedAt, callerOrigin), origin);
@@ -238,7 +238,7 @@ export async function listOrganizationClientsByApiKey(
 export async function createOrganizationClientByApiKey(
   rawApiKey: string | null | undefined,
   input: unknown,
-  origin: string | null | undefined = undefined,
+  origin?: string,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<OrgApiClientRecord> {
   const parsedInput = parseClientInput(input);
@@ -249,7 +249,7 @@ export async function updateOrganizationClientByApiKey(
   rawApiKey: string | null | undefined,
   clientId: string,
   input: unknown,
-  origin: string | null | undefined = undefined,
+  origin?: string,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<OrgApiClientRecord> {
   const parsedInput = parseClientUpdateInput(input);
@@ -259,7 +259,7 @@ export async function updateOrganizationClientByApiKey(
 export async function deleteOrganizationClientByApiKey(
   rawApiKey: string | null | undefined,
   clientId: string,
-  origin: string | null | undefined = undefined,
+  origin?: string,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<void> {
   await runWithKey(rawApiKey, (secretHash, issuedAt, callerOrigin) => dependencies.repository.deleteClientByApiKey(secretHash, clientId, issuedAt, callerOrigin), origin);
@@ -267,7 +267,7 @@ export async function deleteOrganizationClientByApiKey(
 
 export async function listOrganizationPropertiesByApiKey(
   rawApiKey: string | null | undefined,
-  origin: string | null | undefined = undefined,
+  origin?: string,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<OrgApiPropertyRecord[]> {
   return runWithKey(rawApiKey, (secretHash, issuedAt, callerOrigin) => dependencies.repository.listPropertiesByApiKey(secretHash, issuedAt, callerOrigin), origin);
@@ -276,7 +276,7 @@ export async function listOrganizationPropertiesByApiKey(
 export async function createOrganizationPropertyByApiKey(
   rawApiKey: string | null | undefined,
   input: unknown,
-  origin: string | null | undefined = undefined,
+  origin?: string,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<OrgApiPropertyRecord> {
   const parsedInput = parsePropertyInput(input);
@@ -287,7 +287,7 @@ export async function updateOrganizationPropertyByApiKey(
   rawApiKey: string | null | undefined,
   propertyId: string,
   input: unknown,
-  origin: string | null | undefined = undefined,
+  origin?: string,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<OrgApiPropertyRecord> {
   const parsedInput = parsePropertyUpdateInput(input);
@@ -297,7 +297,7 @@ export async function updateOrganizationPropertyByApiKey(
 export async function deleteOrganizationPropertyByApiKey(
   rawApiKey: string | null | undefined,
   propertyId: string,
-  origin: string | null | undefined = undefined,
+  origin?: string,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<void> {
   await runWithKey(rawApiKey, (secretHash, issuedAt, callerOrigin) => dependencies.repository.deletePropertyByApiKey(secretHash, propertyId, issuedAt, callerOrigin), origin);
@@ -305,7 +305,7 @@ export async function deleteOrganizationPropertyByApiKey(
 
 export async function listOrganizationDealsByApiKey(
   rawApiKey: string | null | undefined,
-  origin: string | null | undefined = undefined,
+  origin?: string,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<OrgApiDealRecord[]> {
   return runWithKey(rawApiKey, (secretHash, issuedAt, callerOrigin) => dependencies.repository.listDealsByApiKey(secretHash, issuedAt, callerOrigin), origin);
@@ -314,7 +314,7 @@ export async function listOrganizationDealsByApiKey(
 export async function createOrganizationDealByApiKey(
   rawApiKey: string | null | undefined,
   input: unknown,
-  origin: string | null | undefined = undefined,
+  origin?: string,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<OrgApiDealRecord> {
   const parsedInput = parseDealInput(input);
@@ -325,7 +325,7 @@ export async function updateOrganizationDealByApiKey(
   rawApiKey: string | null | undefined,
   dealId: string,
   input: unknown,
-  origin: string | null | undefined = undefined,
+  origin?: string,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<OrgApiDealRecord> {
   const parsedInput = parseDealUpdateInput(input);
@@ -335,7 +335,7 @@ export async function updateOrganizationDealByApiKey(
 export async function deleteOrganizationDealByApiKey(
   rawApiKey: string | null | undefined,
   dealId: string,
-  origin: string | null | undefined = undefined,
+  origin?: string,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<void> {
   await runWithKey(rawApiKey, (secretHash, issuedAt, callerOrigin) => dependencies.repository.deleteDealByApiKey(secretHash, dealId, issuedAt, callerOrigin), origin);
@@ -343,7 +343,7 @@ export async function deleteOrganizationDealByApiKey(
 
 export async function listOrganizationBrokersByApiKey(
   rawApiKey: string | null | undefined,
-  origin: string | null | undefined = undefined,
+  origin?: string,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<OrgApiBrokerRecord[]> {
   return runWithKey(rawApiKey, (secretHash, issuedAt, callerOrigin) => dependencies.repository.listBrokersByApiKey(secretHash, issuedAt, callerOrigin), origin);
@@ -352,7 +352,7 @@ export async function listOrganizationBrokersByApiKey(
 export async function getOrganizationBrokerByApiKey(
   rawApiKey: string | null | undefined,
   brokerId: string,
-  origin: string | null | undefined = undefined,
+  origin?: string,
   dependencies: Pick<OrganizationApiKeysServiceDependencies, "repository"> = defaultDependencies,
 ): Promise<OrgApiBrokerRecord> {
   return runWithKey(rawApiKey, (secretHash, issuedAt, callerOrigin) => dependencies.repository.getBrokerByApiKey(secretHash, brokerId, issuedAt, callerOrigin), origin);

@@ -26,7 +26,7 @@ it("lists clients using the api key header", async () => {
 
   const response = await GET(new Request("http://localhost/api/org/clients", { headers: { "X-Anan-Api-Key": "secret-key" } }));
 
-  expect(listOrganizationClientsByApiKey).toHaveBeenCalledWith("secret-key");
+  expect(listOrganizationClientsByApiKey).toHaveBeenCalledWith("secret-key", undefined);
   await expect(response.json()).resolves.toEqual({ clients: [{ id: "client-1", name: "Client" }] });
 });
 
@@ -40,7 +40,7 @@ it("creates a client using the api key header", async () => {
   }));
 
   expect(response.status).toBe(201);
-  expect(createOrganizationClientByApiKey).toHaveBeenCalledWith("secret-key", { name: "Client" });
+  expect(createOrganizationClientByApiKey).toHaveBeenCalledWith("secret-key", { name: "Client" }, undefined);
 });
 
 it("serializes client create failures", async () => {

@@ -4,6 +4,220 @@ import { requireRole } from "../_core/security/accessPolicy";
 import { buildOwnerContext, resolveTenantOrgIdForOwner } from "../shared_logic/agencies/repositories/core";
 import { buildPropertyProjectionFields } from "../shared_logic/properties/projections";
 
+const BACKFILL_STAGES = [
+  "properties",
+  "crmClients",
+  "deals",
+  "searchLogs",
+  "organizationApiKeys",
+] as const;
+
+type BackfillStage = (typeof BACKFILL_STAGES)[number];
+
+type BackfillCursor = {
+  stage: BackfillStage;
+  dbCursor: string | null;
+};
+
+function encodeBackfillCursor(cursor: BackfillCursor | null) {
+  return cursor ? JSON.stringify(cursor) : null;
+}
+
+function decodeBackfillCursor(cursor?: string): BackfillCursor {
+  if (!cursor) {
+    return { stage: BACKFILL_STAGES[0], dbCursor: null };
+  }
+
+  const parsed = JSON.parse(cursor) as Partial<BackfillCursor>;
+  if (!parsed.stage || !BACKFILL_STAGES.includes(parsed.stage as BackfillStage)) {
+    throw new Error("Invalid backfill cursor stage");
+  }
+
+  return {
+    stage: parsed.stage as BackfillStage,
+    dbCursor: typeof parsed.dbCursor === "string" ? parsed.dbCursor : null,
+  };
+}
+
+function nextBackfillStage(stage: BackfillStage): BackfillStage | null {
+  const currentIndex = BACKFILL_STAGES.indexOf(stage);
+  return BACKFILL_STAGES[currentIndex + 1] ?? null;
+}
+
+function hasPatchFields(patch: Record<string, unknown>) {
+  return Object.keys(patch).length > 0;
+}
+
+async function paginateStage(ctx: any, stage: BackfillStage, limit: number, dbCursor: string | null) {
+  return ctx.db
+    .query(stage)
+    .order("asc")
+    .paginate({ cursor: dbCursor, numItems: limit });
+}
+
+async function processPropertiesPage(ctx: any, rows: any[]) {
+  let patched = 0;
+
+  for (const property of rows) {
+    const ownerField = property.brokerId ? "brokerId" : property.REDId ? "REDId" : null;
+    const ownerId = property.brokerId ?? property.REDId;
+    if (!ownerField || !ownerId) continue;
+
+    const projections = await buildPropertyProjectionFields(ctx, {
+      ownerField,
+      ownerId,
+      publicationState: property.publicationState ?? "draft",
+      adLicenseStatus: property.adLicenseStatus,
+    } as any);
+
+    const patch: Record<string, unknown> = {};
+    if (property.tenantOrgId === undefined && projections.tenantOrgId !== undefined) patch.tenantOrgId = projections.tenantOrgId;
+    if (property.ownerType === undefined && projections.ownerType !== undefined) patch.ownerType = projections.ownerType;
+    if (property.ownerCountryCode === undefined && projections.ownerCountryCode !== undefined) {
+      patch.ownerCountryCode = projections.ownerCountryCode;
+    }
+    if (property.ownerVerified === undefined && projections.ownerVerified !== undefined) patch.ownerVerified = projections.ownerVerified;
+    if (property.listingVerified === undefined && projections.listingVerified !== undefined) patch.listingVerified = projections.listingVerified;
+    if (property.isPublicSearchable === undefined && projections.isPublicSearchable !== undefined) {
+      patch.isPublicSearchable = projections.isPublicSearchable;
+    }
+    if (property.createdAt === undefined) patch.createdAt = property._creationTime;
+    if (property.updatedAt === undefined) patch.updatedAt = property.createdAt ?? property._creationTime;
+
+    if (!hasPatchFields(patch)) continue;
+    await ctx.db.patch(property._id, patch);
+    patched += 1;
+  }
+
+  return patched;
+}
+
+async function processCrmClientsPage(ctx: any, rows: any[]) {
+  let patched = 0;
+
+  for (const client of rows) {
+    const owner = client.brokerId
+      ? buildOwnerContext({ ownerType: "broker", ownerBrokerId: client.brokerId })
+      : client.REDId
+        ? buildOwnerContext({ ownerType: "RED", ownerREDId: client.REDId })
+        : null;
+    if (!owner) continue;
+
+    const patch: Record<string, unknown> = {};
+    if (client.tenantOrgId === undefined) patch.tenantOrgId = await resolveTenantOrgIdForOwner(ctx, owner);
+    if (client.updatedAt === undefined) patch.updatedAt = client.createdAt ?? client._creationTime;
+    if (client.createdAt === undefined) patch.createdAt = client._creationTime;
+
+    if (!hasPatchFields(patch)) continue;
+    await ctx.db.patch(client._id, patch);
+    patched += 1;
+  }
+
+  return patched;
+}
+
+async function processDealsPage(ctx: any, rows: any[]) {
+  let patched = 0;
+
+  for (const deal of rows) {
+    const owner = deal.brokerId
+      ? buildOwnerContext({ ownerType: "broker", ownerBrokerId: deal.brokerId })
+      : deal.REDId
+        ? buildOwnerContext({ ownerType: "RED", ownerREDId: deal.REDId })
+        : null;
+    if (!owner) continue;
+
+    const patch: Record<string, unknown> = {};
+    if (deal.tenantOrgId === undefined) patch.tenantOrgId = await resolveTenantOrgIdForOwner(ctx, owner);
+    if (deal.createdAt === undefined) patch.createdAt = deal._creationTime;
+    if (deal.updatedAt === undefined) patch.updatedAt = deal.createdAt ?? deal._creationTime;
+
+    if (!hasPatchFields(patch)) continue;
+    await ctx.db.patch(deal._id, patch);
+    patched += 1;
+  }
+
+  return patched;
+}
+
+async function processSearchLogsPage(ctx: any, rows: any[]) {
+  let patched = 0;
+
+  for (const row of rows) {
+    if (row.createdAt !== undefined) continue;
+    await ctx.db.patch(row._id, { createdAt: row._creationTime });
+    patched += 1;
+  }
+
+  return patched;
+}
+
+async function processOrganizationApiKeysPage(ctx: any, rows: any[]) {
+  let patched = 0;
+
+  for (const apiKey of rows) {
+    const owner = apiKey.ownerBrokerId
+      ? buildOwnerContext({ ownerType: "broker", ownerBrokerId: apiKey.ownerBrokerId })
+      : apiKey.ownerREDId
+        ? buildOwnerContext({ ownerType: "RED", ownerREDId: apiKey.ownerREDId })
+        : null;
+    if (!owner) continue;
+
+    const tenantOrgId = apiKey.tenantOrgId ?? await resolveTenantOrgIdForOwner(ctx, owner);
+    const patch: Record<string, unknown> = {};
+    if (apiKey.tenantOrgId === undefined) patch.tenantOrgId = tenantOrgId;
+    if (apiKey.trustedOrigins === undefined) patch.trustedOrigins = [];
+    if (apiKey.quotaWindowMinutes === undefined) patch.quotaWindowMinutes = 60;
+    if (apiKey.quotaLimit === undefined) patch.quotaLimit = 1000;
+    if (apiKey.quotaUsed === undefined) patch.quotaUsed = 0;
+    if (apiKey.quotaWindowStartedAt === undefined) patch.quotaWindowStartedAt = apiKey.createdAt;
+    if (apiKey.anomalyFlags === undefined) patch.anomalyFlags = [];
+
+    if (hasPatchFields(patch)) {
+      await ctx.db.patch(apiKey._id, patch);
+      patched += 1;
+    }
+
+    const existingPolicy = await ctx.db
+      .query("organizationIntegrationPolicies")
+      .withIndex("tenantOrgId", (q: any) => q.eq("tenantOrgId", tenantOrgId))
+      .first();
+    if (existingPolicy) continue;
+
+    await ctx.db.insert("organizationIntegrationPolicies", {
+      tenantOrgId,
+      ownerType: owner.ownerType,
+      ownerBrokerId: owner.ownerType === "broker" ? owner.ownerBrokerId : undefined,
+      ownerREDId: owner.ownerType === "RED" ? owner.ownerREDId : undefined,
+      trustedOrigins: [],
+      trustedCallbackBaseUrls: [],
+      allowedWebhookDomains: [],
+      enabledModes: ["api_keys"],
+      policyStatus: "active",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      lastReviewedAt: undefined,
+    });
+  }
+
+  return patched;
+}
+
+async function processBackfillStagePage(ctx: any, stage: BackfillStage, rows: any[]) {
+  switch (stage) {
+    case "properties":
+      return processPropertiesPage(ctx, rows);
+    case "crmClients":
+      return processCrmClientsPage(ctx, rows);
+    case "deals":
+      return processDealsPage(ctx, rows);
+    case "searchLogs":
+      return processSearchLogsPage(ctx, rows);
+    case "organizationApiKeys":
+      return processOrganizationApiKeysPage(ctx, rows);
+  }
+}
+
 async function upsertHealthSummary(args: {
   ctx: any;
   summaryType: string;
@@ -47,116 +261,28 @@ async function upsertHealthSummary(args: {
 export const backfillScaleControlPlane = mutation({
   args: {
     limit: v.optional(v.number()),
+    cursor: v.optional(v.string()),
   },
-  handler: async (ctx, { limit = 200 }) => {
+  handler: async (ctx, { limit = 200, cursor }) => {
     await requireRole(ctx, ["admin"]);
-    let patched = 0;
+    const current = decodeBackfillCursor(cursor);
+    const page = await paginateStage(ctx, current.stage, limit, current.dbCursor);
+    const patched = await processBackfillStagePage(ctx, current.stage, page.page as any[]);
 
-    const properties = (await ctx.db.query("properties").take(limit)) as any[];
-    for (const property of properties) {
-      const ownerField = property.brokerId ? "brokerId" : property.REDId ? "REDId" : null;
-      const ownerId = property.brokerId ?? property.REDId;
-      if (!ownerField || !ownerId) continue;
-      const projections = await buildPropertyProjectionFields(ctx, {
-        ownerField,
-        ownerId,
-        publicationState: property.publicationState ?? "draft",
-        adLicenseStatus: property.adLicenseStatus,
-      } as any);
-      await ctx.db.patch(property._id, {
-        tenantOrgId: property.tenantOrgId ?? projections.tenantOrgId,
-        ownerType: property.ownerType ?? projections.ownerType,
-        ownerCountryCode: property.ownerCountryCode ?? projections.ownerCountryCode,
-        ownerVerified: property.ownerVerified ?? projections.ownerVerified,
-        listingVerified: property.listingVerified ?? projections.listingVerified,
-        isPublicSearchable: property.isPublicSearchable ?? projections.isPublicSearchable,
-        createdAt: property.createdAt ?? property._creationTime,
-        updatedAt: property.updatedAt ?? property.createdAt ?? property._creationTime,
-      });
-      patched += 1;
+    if (!page.isDone && page.continueCursor) {
+      return {
+        patched,
+        cursor: encodeBackfillCursor({ stage: current.stage, dbCursor: page.continueCursor }),
+        isDone: false,
+      };
     }
 
-    const crmClients = (await ctx.db.query("crmClients").take(limit)) as any[];
-    for (const client of crmClients) {
-      const owner = client.brokerId
-        ? buildOwnerContext({ ownerType: "broker", ownerBrokerId: client.brokerId })
-        : client.REDId
-          ? buildOwnerContext({ ownerType: "RED", ownerREDId: client.REDId })
-          : null;
-      if (!owner) continue;
-      await ctx.db.patch(client._id, {
-        tenantOrgId: client.tenantOrgId ?? await resolveTenantOrgIdForOwner(ctx, owner),
-        updatedAt: client.updatedAt ?? client.createdAt ?? client._creationTime,
-        createdAt: client.createdAt ?? client._creationTime,
-      });
-      patched += 1;
-    }
-
-    const deals = (await ctx.db.query("deals").take(limit)) as any[];
-    for (const deal of deals) {
-      const owner = deal.brokerId
-        ? buildOwnerContext({ ownerType: "broker", ownerBrokerId: deal.brokerId })
-        : deal.REDId
-          ? buildOwnerContext({ ownerType: "RED", ownerREDId: deal.REDId })
-          : null;
-      if (!owner) continue;
-      await ctx.db.patch(deal._id, {
-        tenantOrgId: deal.tenantOrgId ?? await resolveTenantOrgIdForOwner(ctx, owner),
-        createdAt: deal.createdAt ?? deal._creationTime,
-        updatedAt: deal.updatedAt ?? deal.createdAt ?? deal._creationTime,
-      });
-      patched += 1;
-    }
-
-    const searchLogs = (await ctx.db.query("searchLogs").take(limit)) as any[];
-    for (const row of searchLogs) {
-      if (row.createdAt) continue;
-      await ctx.db.patch(row._id, { createdAt: row._creationTime });
-      patched += 1;
-    }
-
-    const apiKeys = (await ctx.db.query("organizationApiKeys").take(limit)) as any[];
-    for (const apiKey of apiKeys) {
-      const owner = apiKey.ownerBrokerId
-        ? buildOwnerContext({ ownerType: "broker", ownerBrokerId: apiKey.ownerBrokerId })
-        : apiKey.ownerREDId
-          ? buildOwnerContext({ ownerType: "RED", ownerREDId: apiKey.ownerREDId })
-          : null;
-      if (!owner) continue;
-      const tenantOrgId = apiKey.tenantOrgId ?? await resolveTenantOrgIdForOwner(ctx, owner);
-      await ctx.db.patch(apiKey._id, {
-        tenantOrgId,
-        trustedOrigins: apiKey.trustedOrigins ?? [],
-        quotaWindowMinutes: apiKey.quotaWindowMinutes ?? 60,
-        quotaLimit: apiKey.quotaLimit ?? 1000,
-        quotaUsed: apiKey.quotaUsed ?? 0,
-        quotaWindowStartedAt: apiKey.quotaWindowStartedAt ?? apiKey.createdAt,
-        anomalyFlags: apiKey.anomalyFlags ?? [],
-      });
-      const existingPolicy = await ctx.db
-        .query("organizationIntegrationPolicies")
-        .withIndex("tenantOrgId", (q: any) => q.eq("tenantOrgId", tenantOrgId))
-        .first();
-      if (!existingPolicy) {
-        await ctx.db.insert("organizationIntegrationPolicies", {
-          tenantOrgId,
-          ownerType: owner.ownerType,
-          ownerBrokerId: owner.ownerType === "broker" ? owner.ownerBrokerId : undefined,
-          ownerREDId: owner.ownerType === "RED" ? owner.ownerREDId : undefined,
-          trustedOrigins: [],
-          trustedCallbackBaseUrls: [],
-          allowedWebhookDomains: [],
-          enabledModes: ["api_keys"],
-          policyStatus: "active",
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          lastReviewedAt: undefined,
-        });
-      }
-      patched += 1;
-    }
-
-    return { patched };
+    const nextStage = nextBackfillStage(current.stage);
+    return {
+      patched,
+      cursor: encodeBackfillCursor(nextStage ? { stage: nextStage, dbCursor: null } : null),
+      isDone: nextStage === null,
+    };
   },
 });
 

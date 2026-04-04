@@ -26,7 +26,7 @@ it("lists properties using the api key header", async () => {
   const response = await GET(new Request("http://localhost/api/org/properties", { headers: { "X-Anan-Api-Key": "secret-key" } }));
 
   expect(response.status).toBe(200);
-  expect(listOrganizationPropertiesByApiKey).toHaveBeenCalledWith("secret-key");
+  expect(listOrganizationPropertiesByApiKey).toHaveBeenCalledWith("secret-key", undefined);
 });
 
 it("creates a property using the api key header", async () => {
@@ -39,5 +39,5 @@ it("creates a property using the api key header", async () => {
   }));
 
   expect(response.status).toBe(201);
-  expect(createOrganizationPropertyByApiKey).toHaveBeenCalledWith("secret-key", { title: "Property" });
+  expect(createOrganizationPropertyByApiKey).toHaveBeenCalledWith("secret-key", { title: "Property" }, undefined);
 });

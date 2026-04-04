@@ -30,7 +30,7 @@ it("updates a property by id", async () => {
   }), { params: Promise.resolve({ propertyId: "property-1" }) });
 
   expect(response.status).toBe(200);
-  expect(updateOrganizationPropertyByApiKey).toHaveBeenCalledWith("secret-key", "property-1", { title: "Updated" });
+  expect(updateOrganizationPropertyByApiKey).toHaveBeenCalledWith("secret-key", "property-1", { title: "Updated" }, undefined);
 });
 
 it("deletes a property by id", async () => {
@@ -39,5 +39,5 @@ it("deletes a property by id", async () => {
   });
 
   expect(response.status).toBe(200);
-  expect(deleteOrganizationPropertyByApiKey).toHaveBeenCalledWith("secret-key", "property-1");
+  expect(deleteOrganizationPropertyByApiKey).toHaveBeenCalledWith("secret-key", "property-1", undefined);
 });
