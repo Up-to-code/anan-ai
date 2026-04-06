@@ -4,13 +4,13 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { type ChartDatum, type ChartSeries, formatChartNumber } from "@/components/shared/chartTypes";
+import ResponsiveChartFrame from "@/components/shared/ResponsiveChartFrame";
 
 type AreaTrendChartProps = {
   data: ChartDatum[];
@@ -32,9 +32,9 @@ export default function AreaTrendChart({
 }: AreaTrendChartProps) {
   return (
     <div className={cn("w-full", className)} dir="ltr">
-      <div style={{ height }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
+      <ResponsiveChartFrame height={height}>
+        {({ width, height: chartHeight }) => (
+          <AreaChart width={width} height={chartHeight} data={data} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
             <CartesianGrid stroke="var(--border)" vertical={false} />
             <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontWeight: "bold" }} />
             <YAxis tickLine={false} axisLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontWeight: "bold" }} width={40} />
@@ -60,8 +60,8 @@ export default function AreaTrendChart({
               />
             ))}
           </AreaChart>
-        </ResponsiveContainer>
-      </div>
+        )}
+      </ResponsiveChartFrame>
     </div>
   );
 }

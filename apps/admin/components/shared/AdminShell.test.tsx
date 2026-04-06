@@ -9,6 +9,14 @@ vi.mock("next/navigation", () => ({
   usePathname,
 }));
 
+vi.mock("next-themes", () => ({
+  useTheme: () => ({
+    theme: "system",
+    resolvedTheme: "light",
+    setTheme: vi.fn(),
+  }),
+}));
+
 vi.mock("@/components/auth/LogoutButton", () => ({
   default: ({ children }: { children?: React.ReactNode }) => <div data-testid="logout-button">{children ?? "logout"}</div>,
 }));
@@ -31,6 +39,8 @@ describe("AdminShell", () => {
     expect(html).toContain("العقارات");
     expect(html).toContain("مراجعة العروض");
     expect(html).not.toContain("Docs");
+    expect(html).toContain("href=\"#admin-main-content\"");
+    expect(html).toContain("id=\"admin-main-content\"");
   });
 
   it("renders the sidebar toggle controls", () => {
@@ -43,5 +53,6 @@ describe("AdminShell", () => {
     expect(html).toContain("طي الشريط الجانبي");
     expect(html).toContain("aria-label=\"Admin navigation\"");
     expect(html).toContain("data-slot=\"admin-top-navbar\"");
+    expect(html).toContain("w-80");
   });
 });

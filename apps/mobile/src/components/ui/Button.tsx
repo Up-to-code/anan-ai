@@ -1,12 +1,12 @@
-import { ActivityIndicator, Pressable, PressableProps, View, useColorScheme } from "react-native";
+import { ActivityIndicator, Pressable, PressableProps, View } from "react-native";
 import { AppText } from "@/components/ui/AppText";
 import { cn } from "@/lib/cn";
 import { useMobileLayout } from "@/lib/mobileLayout";
-import { mobileTheme } from "@/lib/mobileTheme";
+import { useAppTheme } from "@/lib/mobileTheme";
 
 type ButtonProps = PressableProps & {
   label: string;
-  variant?: "primary" | "secondary" | "ghost" | "destructive";
+  variant?: "primary" | "secondary" | "ghost" | "destructive" | "accent";
   loading?: boolean;
   size?: "default" | "sm" | "lg";
   textClassName?: string;
@@ -14,25 +14,24 @@ type ButtonProps = PressableProps & {
 };
 
 /**
- * WHY:   The app needs one consistent action primitive for chat, search, and journey CTAs.
- * WHAT:  Renders a compact, modern button with primary, secondary, ghost, or destructive treatment.
- * HOW:   Uses mobile-safe touch targets, responsive padding, and calm bordered styling so buttons stay usable on smaller phones.
+ * WHY:   The new Unified Rounded system dictates pill containers and delicate 1px bounds.
+ * WHAT:  Modern pill-shaped button with soft zinc borders for outlines.
  */
-export function Button({ 
-  label, 
-  variant = "primary", 
-  loading, 
+export function Button({
+  label,
+  variant = "primary",
+  loading,
   size = "default",
-  className, 
+  className,
   textClassName,
   style,
-  disabled, 
-  ...props 
+  disabled,
+  ...props
 }: ButtonProps) {
   const layout = useMobileLayout();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const isPrimary = variant === "primary";
+  const theme = useAppTheme();
+  
+  const isPrimary = variant === "primary" || variant === "accent";
   const isSecondary = variant === "secondary";
   const isGhost = variant === "ghost";
   const isDestructive = variant === "destructive";
@@ -40,21 +39,21 @@ export function Button({
   const sizeStyle = {
     sm: {
       minHeight: layout.touchTarget,
-      paddingHorizontal: layout.isCompact ? 16 : 20,
+      paddingHorizontal: 20,
       paddingVertical: 8,
-      borderRadius: 999,
+      borderRadius: theme.radii.pill, // 9999px Pill
     },
     default: {
       minHeight: layout.touchTarget + 4,
-      paddingHorizontal: layout.isCompact ? 20 : 24,
+      paddingHorizontal: 24,
       paddingVertical: 10,
-      borderRadius: 999,
+      borderRadius: theme.radii.pill, // 9999px Pill
     },
     lg: {
       minHeight: layout.touchTarget + 10,
-      paddingHorizontal: layout.isCompact ? 24 : 28,
-      paddingVertical: 12,
-      borderRadius: 999,
+      paddingHorizontal: 32,
+      paddingVertical: 16,
+      borderRadius: theme.radii.pill, // 9999px Pill
     },
   };
 
@@ -62,6 +61,27 @@ export function Button({
     typeof style === "function"
       ? (state: Parameters<NonNullable<typeof style>>[0]) => [sizeStyle[size], style(state)]
       : [sizeStyle[size], style];
+
+  function getBackgroundColor() {
+    if (isPrimary) return theme.colors.primary;
+    if (isSecondary) return "transparent"; 
+    if (isGhost) return "transparent";
+    if (isDestructive) return theme.colors.danger;
+    return theme.colors.primary;
+  }
+
+  function getTextColor() {
+    if (isPrimary) return "#FFFFFF";
+    if (isSecondary) return theme.colors.primary;
+    if (isGhost) return theme.colors.inkSoft;
+    if (isDestructive) return "#FFFFFF";
+    return "#FFFFFF";
+  }
+
+  function getSpinnerColor() {
+    if (isPrimary || isDestructive) return "#FFFFFF";
+    return theme.colors.primary;
+  }
 
   return (
     <Pressable
@@ -72,17 +92,11 @@ export function Button({
         const baseStyle = {
           alignItems: "center" as const,
           justifyContent: "center" as const,
-          backgroundColor: isPrimary 
-            ? (isDark ? "#F8FAFC" : mobileTheme.colors.dark)
-            : isSecondary 
-              ? (isDark ? "#0F172A" : mobileTheme.colors.surface)
-              : isGhost 
-                ? "transparent" 
-                : mobileTheme.colors.danger,
-          borderWidth: isSecondary ? 1.5 : 0,
-          borderColor: isSecondary ? (isDark ? "#1E293B" : mobileTheme.colors.border) : "transparent",
+          backgroundColor: getBackgroundColor(),
+          borderWidth: isSecondary ? 1 : 0, // Delicate 1px borders
+          borderColor: isSecondary ? theme.colors.borderStrong : "transparent",
           opacity: disabled || loading ? 0.4 : 1,
-          transform: [{ scale: state.pressed ? 0.96 : 1 }],
+          transform: [{ scale: state.pressed ? 0.96 : 1 }], // Softer feel
         };
 
         if (typeof resolvedStyle === "function") {
@@ -93,25 +107,14 @@ export function Button({
       }}
     >
       <View className="flex-row items-center gap-2">
-        {loading ? (
-          <ActivityIndicator 
-            color={
-              isPrimary 
-                ? (isDark ? "#0F172A" : mobileTheme.colors.white)
-                : isDestructive ? mobileTheme.colors.white : (isDark ? "#94A3B8" : mobileTheme.colors.inkMuted)
-            } 
-          />
-        ) : null}
+        {loading ? <ActivityIndicator color={getSpinnerColor()} size="small" /> : null}
         <AppText
-          responsiveRole={size === "sm" ? "chip" : size === "lg" ? "title" : "bodyStrong"}
           className={cn(
-            "font-cairo-black tracking-tight",
-            isPrimary ? "text-white dark:text-slate-900" : "",
-            isSecondary ? "text-slate-900 dark:text-slate-100" : "",
-            isGhost ? "text-slate-600 dark:text-slate-400" : "",
-            isDestructive ? "text-white" : "",
-            textClassName,
+            "font-cairo-bold", // Approachable bold instead of extreme black Tracking
+            size === "lg" ? "text-sm" : "text-xs",
+            textClassName
           )}
+          style={{ color: getTextColor() }}
         >
           {label}
         </AppText>

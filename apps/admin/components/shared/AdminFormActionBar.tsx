@@ -21,7 +21,7 @@ export default function AdminFormActionBar({
   onSaveDraft,
 }: AdminFormActionBarProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-[8px] border border-border bg-white p-4">
+    <div className="flex flex-wrap items-center gap-2 rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] p-4 shadow-sm">
       <Button onClick={onSubmit}>{submitLabel}</Button>
       {showDraftAction ? (
         <Button variant="outline" onClick={onSaveDraft}>

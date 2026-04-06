@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Archive, ArrowRight, Building2, FileUp, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Tag } from "lucide-react";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { resolveAvatarImageUrl } from "@/lib/avatarImage";
 import { cn } from "@/lib/utils";
 import type { ConversationDetail } from "@/server/contracts/inbox";
 import type { InboxShareAction } from "./InboxComposerActions";
@@ -35,11 +36,13 @@ export function getInboxThreadMenuActionLabels(args: {
 }
 
 function ThreadAvatar({ image, name }: { image?: string | null; name: string }) {
-  if (image) {
+  const resolvedImage = resolveAvatarImageUrl(image);
+
+  if (resolvedImage) {
     return (
       /* eslint-disable-next-line @next/next/no-img-element */
       <img
-        src={image}
+        src={resolvedImage}
         alt={name}
         className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-border/40"
       />

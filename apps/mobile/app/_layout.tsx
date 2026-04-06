@@ -7,19 +7,15 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { I18nManager, View, useColorScheme } from "react-native";
+import { Appearance, I18nManager, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ConvexProvider } from "@/lib/convex";
-import { mobileTheme } from "@/lib/mobileTheme";
+import { useAppTheme } from "@/lib/mobileTheme";
+import { getThemePreference } from "@/lib/themeStore";
 
 void SplashScreen.preventAutoHideAsync();
 
-/**
- * WHY:   The mobile app needs one root that configures RTL-safe providers, fonts, gestures, and future data wiring.
- * WHAT:  Wraps the Expo Router stack with gesture, safe-area, bottom-sheet, and optional Convex providers.
- * HOW:   Loads Cairo fonts, keeps headers hidden, and exposes a light-status-bar shell for the buyer app.
- */
 export default function RootLayout() {
   const [loaded] = useFonts({
     Cairo_400Regular,
@@ -27,9 +23,16 @@ export default function RootLayout() {
     Cairo_700Bold,
     Cairo_900Black,
   });
-  const isDark = useColorScheme() === "dark";
+  const theme = useAppTheme();
 
   useEffect(() => {
+    // Mount custom appearance override
+    getThemePreference().then((mode) => {
+      if (mode !== "system") {
+        Appearance.setColorScheme(mode);
+      }
+    });
+
     if (loaded) {
       void SplashScreen.hideAsync();
     }
@@ -47,8 +50,8 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ConvexProvider>
-          <View style={{ flex: 1, backgroundColor: mobileTheme.colors.canvas }}>
-            <StatusBar style={isDark ? "light" : "dark"} />
+          <View style={{ flex: 1, backgroundColor: theme.colors.canvas }}>
+            <StatusBar style={theme.isDark ? "light" : "dark"} />
             <Stack screenOptions={{ headerShown: false }} />
           </View>
         </ConvexProvider>

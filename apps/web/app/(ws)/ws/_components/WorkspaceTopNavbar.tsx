@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { AlertTriangle, Bell, Mail } from "lucide-react";
 import WebLocaleSwitcher from "@/app/_components/WebLocaleSwitcher";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { resolveAvatarImageUrl } from "@/lib/avatarImage";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
 import type { WorkspaceOrganizationDisplay } from "../_lib/organizationDisplay";
 import { cn } from "@/lib/utils";
@@ -44,8 +45,10 @@ function HeaderAvatar({
   label: string;
   alt: string;
 }) {
-  if (image) {
-    return <img src={image} alt={alt} className="h-full w-full object-cover" />;
+  const resolvedImage = resolveAvatarImageUrl(image);
+
+  if (resolvedImage) {
+    return <img src={resolvedImage} alt={alt} className="h-full w-full object-cover" />;
   }
 
   return <span>{label}</span>;

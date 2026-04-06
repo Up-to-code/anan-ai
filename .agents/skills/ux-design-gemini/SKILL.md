@@ -66,3 +66,14 @@ memex-cli run --backend "gemini" --prompt "设计一个产品详情页的响应�
 - 复杂设计任务拆分为多个步骤，利用resume连续迭代 (Split complex design tasks into multiple steps and use resume for continuous iteration)
 - 使用jsonl格式保存完整设计过程，便于回溯 (Use jsonl format to save the full design process for easy backtracking)
 - 在prompt中明确指定输出格式要求（如Markdown表格、列表等） (Explicitly specify output format requirements in the prompt, such as Markdown tables or lists)
+
+#### **Anan Mobile AI Composer Rules**
+- Use OpenAI’s UX principles as behavior guidance, not as a visual clone: keep the mobile AI input focused, conversational, and lightweight.
+- Prefer one calm multiline prompt surface with a dynamic trailing action instead of multiple permanent action buttons.
+- Keep idle action density low: mobile AI composers should expose at most two visible idle actions, typically `Send` and `Mic`.
+- Voice capture should stay inline in the same row whenever possible; avoid full-screen recording UI for the primary mobile chat composers.
+- Respect Arabic-first direction rules: default to right alignment and RTL, and switch to LTR only when the draft clearly starts with Latin or numeric content.
+- Short drafts should feel vertically centered in the field; multiline growth is allowed, but the resting state must feel calm and balanced.
+- Processing, permission, and error states should remain compact and inline; avoid stacking large helper cards above the composer unless absolutely necessary.
+- Keep AI surfaces trustworthy and low-noise: remove decorative chrome that does not advance the task, and prefer one clear primary action over multiple competing controls.
+- If the user needs a mode change such as privacy or a larger workspace, surface that state explicitly instead of hiding it inside placeholder text.

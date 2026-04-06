@@ -11,9 +11,9 @@ type StatCardProps = {
 };
 
 /**
- * WHY:   The Nexus StatCard must feel premium, using rounded-3xl geometry and Cairo weights.
- * WHAT:  Modernizes the metric tile with cleaner shadows, better contrast, and generous spacing.
- * HOW:   Adopts rounded-[32px] for the card and rounded-2xl for icons to match the platform-wide HUD.
+ * WHY:   Command-center metrics need one expressive card style so KPI scans feel fast and consistent across the admin workspace.
+ * WHAT:  Renders a compact metric card with value, delta, hint, and an optional icon.
+ * HOW:   Uses workspace tokens for both themes and reserves stronger contrast for the value while keeping the supporting copy subdued.
  */
 export default function StatCard({ label, value, hint, icon: Icon, delta, className }: StatCardProps) {
   const numericDelta = typeof delta === "number" ? delta : null;
@@ -26,23 +26,27 @@ export default function StatCard({ label, value, hint, icon: Icon, delta, classN
       : null;
 
   return (
-    <div className={cn(
-      "rounded-[32px] border border-border/10 bg-white dark:bg-slate-900 p-8 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-border/40", 
-      className
-    )}>
+    <div
+      className={cn(
+        "rounded-[32px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_97%,transparent)] p-7 shadow-[0_16px_42px_-30px_rgba(15,23,42,0.22)] transition-all duration-200 hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_20%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--workspace-panel)_100%,transparent)]",
+        className,
+      )}
+    >
       <div className="flex items-start justify-between gap-6">
         <div className="space-y-2 text-right">
-          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 leading-none">{label}</div>
-          <div className="text-4xl font-black tracking-tight text-slate-900 dark:text-slate-50">{value}</div>
+          <div className="text-[11px] font-black uppercase leading-none tracking-[0.2em] text-[var(--workspace-muted)]">
+            {label}
+          </div>
+          <div className="text-4xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">{value}</div>
         </div>
         {Icon ? (
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[20px] bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-border/10">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[20px] border border-[color:color-mix(in_srgb,var(--workspace-border)_78%,transparent)] bg-[var(--workspace-elevated)] text-[var(--workspace-highlight)]">
             <Icon className="h-6 w-6" />
           </div>
         ) : null}
       </div>
       
-      <div className="mt-6 flex items-center justify-between border-t border-slate-50 dark:border-slate-800 pt-5">
+      <div className="mt-6 flex items-center justify-between border-t border-[color:color-mix(in_srgb,var(--workspace-border)_68%,transparent)] pt-5">
         {deltaLabel ? (
           <div className={cn(
             "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-black tracking-wide", 
@@ -55,7 +59,7 @@ export default function StatCard({ label, value, hint, icon: Icon, delta, classN
         ) : <div />}
         
         {hint ? (
-          <p className="text-[12px] font-bold text-slate-400 dark:text-slate-500 text-left">
+          <p className="text-left text-[12px] font-bold text-[var(--workspace-muted)]">
             {hint}
           </p>
         ) : null}

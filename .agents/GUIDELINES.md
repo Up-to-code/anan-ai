@@ -11,6 +11,9 @@
 | `CONVEX_RULES.md` | Before any Convex backend change |
 | `.agents/skills/anan-platform-knowledge/SKILL.md` | Before any design, architecture, or feature decision |
 | `.agents/skills/convex-docs/SKILL.md` | Before writing Convex queries, mutations, or actions |
+| `.agents/skills/mobile-native-ui-ux/SKILL.md` | Before changing buyer mobile cards, React Native interaction patterns, or mobile AI conversation UI |
+| `.agents/skills/ux-design-gemini/SKILL.md` | Before mobile UX, composer, or interaction-pattern changes |
+| `apps/mobile/README.md` | Before changing mobile buyer UI behavior or shared mobile interaction rules |
 | Zone's `ZONE_README.md` | Before touching any zone folder |
 
 ---

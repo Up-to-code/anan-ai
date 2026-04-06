@@ -9,6 +9,14 @@ vi.mock("next/navigation", () => ({
   usePathname,
 }));
 
+vi.mock("next-themes", () => ({
+  useTheme: () => ({
+    theme: "system",
+    resolvedTheme: "light",
+    setTheme: vi.fn(),
+  }),
+}));
+
 vi.mock("@/components/auth/LogoutButton", () => ({
   default: ({ children }: { children: React.ReactNode }) => <div data-testid="logout-button">{children}</div>,
 }));
@@ -28,5 +36,7 @@ describe("AdminTopNavbar", () => {
     expect(html).toContain("كل المنظمات");
     expect(html).toContain("Nada Admin");
     expect(html).toContain("Admin");
+    expect(html).toContain("مبدل المظهر");
+    expect(html).not.toContain("<h1");
   });
 });

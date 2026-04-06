@@ -4,13 +4,13 @@ import {
   CartesianGrid,
   Line,
   LineChart,
-  ResponsiveContainer,
   XAxis,
   YAxis,
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { type ChartDatum, type ChartSeries, buildChartConfig } from "@/components/shared/chartTypes";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import ResponsiveChartFrame from "@/components/shared/ResponsiveChartFrame";
 
 type LineTrendChartProps = {
   data: ChartDatum[];
@@ -34,10 +34,10 @@ export default function LineTrendChart({
 
   return (
     <div className={cn("min-w-0 max-w-full w-full", className)} dir="ltr">
-      <div style={{ height }}>
-        <ChartContainer config={config} className="h-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
+      <ResponsiveChartFrame height={height}>
+        {({ width, height: chartHeight }) => (
+          <ChartContainer config={config} className="h-full">
+            <LineChart width={width} height={chartHeight} data={data} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
               <CartesianGrid stroke="var(--border)" vertical={false} />
               <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontWeight: "bold" }} />
               <YAxis tickLine={false} axisLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontWeight: "bold" }} width={40} />
@@ -56,9 +56,9 @@ export default function LineTrendChart({
                 />
               ))}
             </LineChart>
-          </ResponsiveContainer>
-        </ChartContainer>
-      </div>
+          </ChartContainer>
+        )}
+      </ResponsiveChartFrame>
     </div>
   );
 }

@@ -22,7 +22,7 @@ export function AdminInput({ className, ...props }: FieldProps) {
     <input
       {...props}
       className={cn(
-        "h-11 w-full rounded-xl border border-border/40 bg-muted/5 px-4 text-sm font-bold text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-4 focus:ring-primary/5 focus:bg-card",
+        "h-11 w-full rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_78%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] px-4 text-sm font-bold text-[var(--workspace-bubble-other-foreground)] outline-none transition-all placeholder:text-[color:color-mix(in_srgb,var(--workspace-muted)_80%,transparent)] focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_35%,transparent)] focus:ring-4 focus:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,transparent)] focus:bg-[var(--workspace-panel)]",
         className,
       )}
     />
@@ -39,7 +39,7 @@ export function AdminSelect({ className, children, ...props }: SelectProps) {
     <select
       {...props}
       className={cn(
-        "h-11 w-full rounded-xl border border-border/40 bg-muted/5 px-4 text-sm font-bold text-foreground outline-none transition-all focus:border-primary/50 focus:ring-4 focus:ring-primary/5 focus:bg-card appearance-none",
+        "h-11 w-full appearance-none rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-border)_78%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] px-4 text-sm font-bold text-[var(--workspace-bubble-other-foreground)] outline-none transition-all focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_35%,transparent)] focus:ring-4 focus:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,transparent)] focus:bg-[var(--workspace-panel)]",
         className,
       )}
     >
@@ -58,7 +58,7 @@ export function AdminTextarea({ className, ...props }: TextareaProps) {
     <textarea
       {...props}
       className={cn(
-        "min-h-28 w-full rounded-xl border border-border/40 bg-muted/5 px-4 py-3 text-sm font-bold text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-4 focus:ring-primary/5 focus:bg-card",
+        "min-h-28 w-full rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-border)_78%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] px-4 py-3 text-sm font-bold text-[var(--workspace-bubble-other-foreground)] outline-none transition-all placeholder:text-[color:color-mix(in_srgb,var(--workspace-muted)_80%,transparent)] focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_35%,transparent)] focus:ring-4 focus:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,transparent)] focus:bg-[var(--workspace-panel)]",
         className,
       )}
     />

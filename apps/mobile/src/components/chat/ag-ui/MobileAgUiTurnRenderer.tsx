@@ -4,7 +4,7 @@ import { InsightCard } from "@/components/chat/InsightCard";
 import { PropertyRecommendationRow } from "@/components/chat/PropertyRecommendationRow";
 import { BankOfferCard } from "@/components/chat/BankOfferCard";
 import { MobilePill, MobileSurface } from "@/components/ui/MobileChrome";
-import { mobileTheme } from "@/lib/mobileTheme";
+import { useAppTheme } from "@/lib/mobileTheme";
 import type { MobileAgUiTurn, MobileProperty } from "@/types/mobile";
 
 /**
@@ -16,12 +16,16 @@ export function MobileAgUiTurnRenderer({
   turn,
   onPropertyPress,
   onOpenProperty,
+  onOpenGallery,
   onFollowupPromptPress,
+  ambientBackgroundColor,
 }: {
   turn: MobileAgUiTurn;
   onPropertyPress: (property: MobileProperty) => void;
   onOpenProperty?: (property: MobileProperty) => void;
+  onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
   onFollowupPromptPress: (prompt: string) => void;
+  ambientBackgroundColor?: string;
 }) {
   return (
     <View className="mt-6 w-full gap-4">
@@ -34,6 +38,10 @@ export function MobileAgUiTurnRenderer({
                 properties={(card.props.properties as MobileProperty[]) ?? []}
                 onPropertyPress={onPropertyPress}
                 onOpenProperty={onOpenProperty}
+                onOpenGallery={onOpenGallery}
+                onShowMore={() => onFollowupPromptPress("اعرض نتائج مشابهة")}
+                ambientBackgroundColor={ambientBackgroundColor}
+                cardVariant="generated"
               />
             );
           case "bank_offer":
@@ -58,6 +66,8 @@ export function MobileAgUiTurnRenderer({
           case "mortgage_check":
           case "loan_calculator":
           case "roi_projection":
+          case "roi_summary":
+          case "payment_plan":
           case "market_analysis":
           case "insight_brief":
           case "accent_note":
@@ -84,21 +94,23 @@ function FollowupPromptCard({
   actionLabel: string;
   onPress: () => void;
 }) {
+  const theme = useAppTheme();
+
   return (
-    <MobileSurface tone="muted" radius="card" className="overflow-hidden px-4 py-4">
+    <MobileSurface tone="muted" radius="card" className="overflow-hidden px-5 py-5">
       <View
-        className="gap-2 pb-4"
-        style={{ borderBottomWidth: 1, borderBottomColor: mobileTheme.colors.border }}
+        className="gap-2 pb-5"
+        style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
       >
-        <AppText responsiveRole="bodyStrong" className="font-cairo-black text-slate-900">
+        <AppText responsiveRole="title" className="font-cairo-bold text-right" style={{ color: theme.colors.ink }}>
           {title}
         </AppText>
-        <AppText responsiveRole="body" className="font-medium text-slate-500">
+        <AppText responsiveRole="body" className="font-medium text-right" style={{ color: theme.colors.inkMuted }}>
           {summary}
         </AppText>
       </View>
-      <View className="pt-4 items-end">
-        <MobilePill label={actionLabel} tone="dark" active onPress={onPress} />
+      <View className="pt-5 flex-row-reverse">
+        <MobilePill label={actionLabel} tone="primary" active onPress={onPress} />
       </View>
     </MobileSurface>
   );

@@ -6,6 +6,6 @@ Shared UI building blocks for the buyer assistant experience.
 - `CapabilityRail.tsx` renders the quick-launch capability chips.
 - `MessageList.tsx` renders the virtualized conversation timeline.
 - `ComposerDock.tsx` renders the keyboard-safe composer.
-- `PropertyResultCard.tsx` renders inline property previews.
+- `PropertyRecommendationRow.tsx` renders inline property preview lists using the shared mobile property card primitive.
 - `InsightCard.tsx` renders typed finance, ROI, comparison, and handoff cards.
 - `AnanMark.tsx` renders the compact brand mark used inside the assistant shell.

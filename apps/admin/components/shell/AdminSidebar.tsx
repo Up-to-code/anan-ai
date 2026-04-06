@@ -26,7 +26,7 @@ const SIDEBAR_SHELL_CLASS_NAME =
 const SIDEBAR_PANEL_CLASS_NAME =
   "border border-[color:color-mix(in_srgb,var(--workspace-border)_78%,transparent)] bg-[var(--workspace-panel)]";
 const NAV_ITEM_BASE_CLASS_NAME =
-  "group flex items-center gap-3 rounded-xl border text-[13px] font-bold transition-all";
+  "group flex min-w-0 items-center gap-3 rounded-xl border text-[13px] font-bold transition-[background-color,border-color,color,box-shadow,transform]";
 const NAV_ITEM_ACTIVE_CLASS_NAME =
   "border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] bg-[var(--workspace-highlight)] text-white shadow-sm";
 const NAV_ITEM_IDLE_CLASS_NAME =
@@ -112,7 +112,12 @@ export default function AdminSidebar({
     <div
       aria-labelledby={titleId}
       data-slot={mode === "desktop" ? "admin-sidebar-desktop" : "admin-sidebar-drawer"}
-      className={cn("flex min-h-0 flex-col", SIDEBAR_SHELL_CLASS_NAME, mode === "desktop" ? "h-full" : "h-full w-full", className)}
+      className={cn(
+        "flex min-h-0 flex-col",
+        SIDEBAR_SHELL_CLASS_NAME,
+        mode === "desktop" ? "h-full" : "h-full w-full",
+        className,
+      )}
     >
       {titleId ? (
         <h2 id={titleId} className="sr-only">
@@ -130,8 +135,8 @@ export default function AdminSidebar({
           href="/overview"
           onClick={onNavigate}
           className={cn(
-            "transition-all active:scale-[0.98]",
-            isCompact ? "flex h-11 w-11 items-center justify-center rounded-xl border" : "min-w-0",
+            "transition-[background-color,border-color,color,transform] active:scale-[0.98]",
+            isCompact ? "flex h-10 w-10 items-center justify-center rounded-xl border" : "min-w-0",
             SIDEBAR_PANEL_CLASS_NAME,
           )}
           aria-label="عنان أدمن"
@@ -152,7 +157,7 @@ export default function AdminSidebar({
 
       <nav
         aria-label="Admin navigation"
-        className={cn("flex-1 overflow-y-auto px-3 pb-4 pt-4", isCompact && "px-2")}
+        className={cn("flex-1 overflow-y-auto overflow-x-hidden px-3 pb-4 pt-4", isCompact && "px-1.5 pb-3 pt-3")}
       >
         <div className={cn("space-y-5", isCompact && "space-y-4")}>
           {adminNavGroups.map((group) => (
@@ -163,7 +168,7 @@ export default function AdminSidebar({
                   onClick={() => toggleGroup(group.id)}
                   aria-expanded={resolvedGroupState[group.id]}
                   aria-controls={`admin-sidebar-group-${group.id}`}
-                  className="flex w-full items-center justify-between rounded-xl px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-[var(--workspace-muted)] transition hover:bg-[var(--workspace-panel)] hover:text-[var(--workspace-bubble-other-foreground)]"
+                  className="flex w-full items-center justify-between rounded-xl px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-[var(--workspace-muted)] transition-[background-color,color] hover:bg-[var(--workspace-panel)] hover:text-[var(--workspace-bubble-other-foreground)]"
                 >
                   <span>{group.label}</span>
                   <ChevronDown
@@ -187,7 +192,7 @@ export default function AdminSidebar({
                       onClick={onNavigate}
                       className={cn(
                         NAV_ITEM_BASE_CLASS_NAME,
-                        isCompact ? "h-11 justify-center px-0" : "px-3 py-2.5",
+                        isCompact ? "h-10 justify-center rounded-[14px] px-0" : "px-3 py-2.5",
                         active ? NAV_ITEM_ACTIVE_CLASS_NAME : NAV_ITEM_IDLE_CLASS_NAME,
                       )}
                       title={label}
@@ -223,14 +228,14 @@ export default function AdminSidebar({
           <div className="flex flex-col items-center gap-3">
             <div
               className={cn(
-                "flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl text-[11px] font-black tracking-[0.18em] text-[var(--workspace-bubble-other-foreground)]",
+                "flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl text-[11px] font-black tracking-[0.18em] text-[var(--workspace-bubble-other-foreground)]",
                 SIDEBAR_PANEL_CLASS_NAME,
               )}
               title={user.name ?? user.email ?? "مشرف المنصة"}
             >
               <UserAvatar image={user.image} label={avatarLabel} alt={user.name ?? user.email ?? "مشرف المنصة"} />
             </div>
-            <LogoutButton className="h-11 w-11 rounded-xl border border-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)] bg-[var(--workspace-panel)] px-0 text-[var(--workspace-muted)] shadow-sm hover:bg-[var(--workspace-elevated)] hover:text-red-500">
+            <LogoutButton className="h-10 w-10 rounded-xl border border-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)] bg-[var(--workspace-panel)] px-0 text-[var(--workspace-muted)] shadow-sm hover:bg-[var(--workspace-elevated)] hover:text-red-500">
               <LogOut className="h-4 w-4" />
               <span className="sr-only">إنهاء الجلسة</span>
             </LogoutButton>

@@ -10,8 +10,8 @@ import { SearchResultsPanel } from "@/components/chat/SearchResultsPanel";
 import { AppText } from "@/components/ui/AppText";
 import { useMobileLayout } from "@/lib/mobileLayout";
 import { getPropertyLocationLabel } from "@/lib/mobileData";
-import { mobileTheme } from "@/lib/mobileTheme";
-import type { MobileConversationMessage, MobileProperty } from "@/types/mobile";
+import { useAppTheme } from "@/lib/mobileTheme";
+import type { MobileConversationMessage, MobileProperty, MobileSearchContext } from "@/types/mobile";
 
 function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ");
@@ -23,6 +23,7 @@ type MessageListProps = {
   isTyping?: boolean;
   onPropertyPress: (property: MobileProperty) => void;
   onOpenProperty?: (property: MobileProperty) => void;
+  onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
   onSuggestedPromptPress: (prompt: string) => void;
   bottomPadding?: number;
   contextProperty?: MobileProperty | null;
@@ -30,9 +31,7 @@ type MessageListProps = {
 };
 
 /**
- * WHY:   The assistant timeline should stay readable on narrow phones without looking like a property feed or a branded landing page.
- * WHAT:  Renders the virtualized conversation, compact recommendation rows, and follow-up chips with responsive spacing.
- * HOW:   Uses FlashList for performance and shared mobile layout tokens for message width, type, and chip sizing.
+ * WHAT:  Timeline logic adopting soft bubbles and delicate frames.
  */
 export function MessageList({
   listRef,
@@ -40,6 +39,7 @@ export function MessageList({
   isTyping,
   onPropertyPress,
   onOpenProperty,
+  onOpenGallery,
   onSuggestedPromptPress,
   bottomPadding,
   contextProperty,
@@ -86,6 +86,7 @@ export function MessageList({
               message={item}
               onPropertyPress={onPropertyPress}
               onOpenProperty={onOpenProperty}
+              onOpenGallery={onOpenGallery}
               onSuggestedPromptPress={onSuggestedPromptPress}
               showSuggestedPrompts={showLatestSuggestedPrompts && item.id === latestSuggestedPromptMessageId}
             />
@@ -100,16 +101,21 @@ function MessageBubble({
   message,
   onPropertyPress,
   onOpenProperty,
+  onOpenGallery,
   onSuggestedPromptPress,
+  onShowMoreSearchResults,
   showSuggestedPrompts,
 }: {
   message: MobileConversationMessage;
   onPropertyPress: (property: MobileProperty) => void;
   onOpenProperty?: (property: MobileProperty) => void;
+  onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
   onSuggestedPromptPress: (prompt: string) => void;
+  onShowMoreSearchResults?: (context: MobileSearchContext) => void;
   showSuggestedPrompts: boolean;
 }) {
   const layout = useMobileLayout();
+  const theme = useAppTheme();
   const isUser = message.role === "user";
   const suggestedPrompts = message.suggestedPrompts ?? [];
   const trimmedText = message.text.trim();
@@ -122,66 +128,75 @@ function MessageBubble({
       {isUser ? (
         <View className="items-end">
           <View
-            className="bg-slate-900 px-4 py-3 dark:bg-slate-50"
             style={{
               maxWidth: layout.bubbleMaxWidth,
-              borderTopLeftRadius: layout.cardRadius + 2,
-              borderTopRightRadius: layout.cardRadius + 2,
-              borderBottomLeftRadius: 14,
-              borderBottomRightRadius: layout.cardRadius + 2,
+              borderRadius: theme.radii.bubble,
+              backgroundColor: theme.colors.userBubble,
+              paddingHorizontal: 16,
+              paddingVertical: 10,
             }}
           >
             <AppText
               responsiveRole="body"
-              className="font-cairo-medium text-white dark:text-slate-950"
-              style={{ textAlign: bubbleTextAlign, writingDirection: bubbleWritingDirection }}
+              className="font-cairo-medium leading-relaxed"
+              style={{
+                fontSize: 15,
+                textAlign: bubbleTextAlign,
+                writingDirection: bubbleWritingDirection,
+                color: theme.colors.userBubbleText,
+              }}
             >
               {message.text}
             </AppText>
           </View>
         </View>
       ) : (
-        <View style={{ gap: layout.sectionGap - 2 }}>
-          <View className="flex-row-reverse items-center gap-1.5">
-            <Sparkles size={14} color={mobileTheme.colors.primary} />
-            <AppText responsiveRole="chip" className="font-cairo-black text-slate-800 dark:text-slate-100">
-              مساعد عنان
-            </AppText>
-            <View className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
-            <AppText responsiveRole="chip" className="font-medium text-slate-500 dark:text-slate-400">
-              ذكاء اصطناعي
-            </AppText>
-          </View>
-          <View
-            className="rounded-[24px] px-4 py-4"
-            style={{
-              borderWidth: 1,
-              borderColor: mobileTheme.colors.border,
-              backgroundColor: mobileTheme.colors.surface,
-            }}
-          >
-            <AppText responsiveRole="bodyStrong" className="text-slate-900 dark:text-slate-50 font-cairo-bold">
-              {message.text}
-            </AppText>
+        <View style={{ gap: 8 }}>
+          <View className="flex-row-reverse items-start gap-3">
+             <View 
+                className="h-8 w-8 items-center justify-center rounded-full mt-0.5" 
+                style={{ backgroundColor: theme.colors.primarySoft, borderWidth: 1, borderColor: theme.colors.primaryMuted }}
+             >
+                <Sparkles size={16} color={theme.colors.primary} />
+             </View>
+             <View className="flex-1">
+                <View
+                  className="px-1 py-1"
+                  style={{
+                    backgroundColor: "transparent",
+                  }}
+                >
+                  <AppText responsiveRole="bodyStrong" className="font-cairo-semibold leading-relaxed" style={{ fontSize: 16, color: theme.colors.ink }}>
+                    {message.text}
+                  </AppText>
+                </View>
+             </View>
           </View>
         </View>
       )}
 
       {message.uiTurn ? (
-        <MobileAgUiTurnRenderer
-          turn={message.uiTurn}
-          onPropertyPress={onPropertyPress}
-          onOpenProperty={onOpenProperty}
-          onFollowupPromptPress={onSuggestedPromptPress}
-        />
+        <View className="mt-2">
+          <MobileAgUiTurnRenderer
+            turn={message.uiTurn}
+            onPropertyPress={onPropertyPress}
+            onOpenProperty={onOpenProperty}
+            onOpenGallery={onOpenGallery}
+            onFollowupPromptPress={onSuggestedPromptPress}
+            ambientBackgroundColor={theme.colors.canvas}
+          />
+        </View>
       ) : null}
 
       {!message.uiTurn && message.properties?.length ? (
-        <View className="mt-5 w-full">
+        <View className="mt-4 w-full">
           <PropertyRecommendationRow
             properties={message.properties}
             onPropertyPress={onPropertyPress}
             onOpenProperty={onOpenProperty}
+            onOpenGallery={onOpenGallery}
+            onShowMore={() => onSuggestedPromptPress("اعرض نتائج مشابهة")}
+            ambientBackgroundColor={theme.colors.canvas}
           />
         </View>
       ) : null}
@@ -192,11 +207,13 @@ function MessageBubble({
           results={message.searchResults}
           onPropertyPress={onPropertyPress}
           onOpenProperty={onOpenProperty}
+          onOpenGallery={onOpenGallery}
+          ambientBackgroundColor={theme.colors.canvas}
         />
       ) : null}
 
       {!message.uiTurn && message.cards?.length ? (
-        <View className="mt-5 w-full gap-4">
+        <View className="mt-4 w-full gap-4">
           {message.cards.map((card, index) => (
             <InsightCard key={`${card.type}-${index}`} card={card} />
           ))}
@@ -206,27 +223,27 @@ function MessageBubble({
       {showSuggestedPrompts && suggestedPrompts.length ? (
         <ScrollView
           horizontal
-          className="mt-5"
+          className="mt-4"
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ flexDirection: "row-reverse", paddingHorizontal: 2 }}
         >
           {suggestedPrompts.map((prompt, index) => (
             <Pressable
               key={prompt}
-              className="px-4"
-              style={{
-                minHeight: layout.chipMinHeight + 4,
-                borderRadius: 999,
+              className="px-4 py-2"
+              style={({ pressed }) => ({
+                borderRadius: theme.radii.pill,
                 justifyContent: "center",
-                marginLeft: index === suggestedPrompts.length - 1 ? 0 : 10,
+                marginLeft: index === suggestedPrompts.length - 1 ? 0 : 8,
                 maxWidth: layout.width * 0.72,
                 borderWidth: 1,
-                borderColor: mobileTheme.colors.border,
-                backgroundColor: mobileTheme.colors.surface,
-              }}
+                borderColor: theme.colors.border,
+                backgroundColor: theme.colors.surface,
+                transform: [{ scale: pressed ? 0.98 : 1 }],
+              })}
               onPress={() => onSuggestedPromptPress(prompt)}
             >
-              <AppText responsiveRole="chip" className="font-cairo-black tracking-tight text-slate-900 dark:text-slate-100">
+              <AppText className="text-[13px] font-cairo-bold" style={{ color: theme.colors.ink }}>
                 {prompt}
               </AppText>
             </Pressable>
@@ -238,14 +255,14 @@ function MessageBubble({
 }
 
 function SearchingIndicator() {
-  const layout = useMobileLayout();
+  const theme = useAppTheme();
   const opacity = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(opacity, { toValue: 1, duration: 800, useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 0.4, duration: 800, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.4, duration: 600, useNativeDriver: true }),
       ])
     );
     loop.start();
@@ -253,27 +270,22 @@ function SearchingIndicator() {
   }, [opacity]);
 
   return (
-    <View className="items-end">
-      <View
-        className="flex-row-reverse items-center px-4"
-        style={{
-          minHeight: layout.touchTarget,
-          borderRadius: layout.chipRadius,
-          borderWidth: 1,
-          borderColor: mobileTheme.colors.border,
-          backgroundColor: mobileTheme.colors.surfaceMuted,
-        }}
+    <View className="flex-row-reverse items-center gap-3">
+      <View 
+        className="h-8 w-8 items-center justify-center rounded-full" 
+        style={{ backgroundColor: theme.colors.surfaceMuted, borderWidth: 1, borderColor: theme.colors.border }}
       >
-        <Animated.View style={{ opacity }} className="flex-row items-center gap-3">
-          <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: mobileTheme.colors.primary }} />
-          <AppText responsiveRole="chip" className="font-cairo-black text-primary">
-            تحليل الطلب الآن...
-          </AppText>
-        </Animated.View>
+        <Sparkles size={16} color={theme.colors.inkMuted} />
       </View>
+      <Animated.View style={{ opacity }} className="flex-row items-center gap-1.5">
+        <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: theme.colors.primary }} />
+        <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: theme.colors.primary, opacity: 0.7 }} />
+        <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: theme.colors.primary, opacity: 0.4 }} />
+      </Animated.View>
     </View>
   );
 }
+
 
 function ThreadContextCard({
   property,
@@ -283,32 +295,33 @@ function ThreadContextCard({
   onPress: () => void;
 }) {
   const layout = useMobileLayout();
+  const theme = useAppTheme();
 
   return (
     <Pressable
       onPress={onPress}
-      className="mb-3 gap-2 px-4 py-3"
+      className="mb-3 gap-2 px-5 py-4"
       style={{
-        borderRadius: layout.cardRadius,
+        borderRadius: theme.radii.card, // Card 16px geometry
         borderWidth: 1,
-        borderColor: mobileTheme.colors.border,
-        backgroundColor: mobileTheme.colors.surface,
+        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.surfaceMuted,
       }}
     >
       <View className="flex-row-reverse items-center justify-between">
-        <AppText responsiveRole="chip" className="font-medium text-slate-500 dark:text-slate-400 text-right">
+        <AppText className="text-[11px] font-cairo-bold text-right" style={{ color: theme.colors.inkMuted }}>
           العقار الجاري
         </AppText>
-        <Building2 size={16} color="#64748B" />
+        <Building2 size={16} color={theme.colors.inkMuted} />
       </View>
-      
+
       <View>
-        <AppText responsiveRole="bodyStrong" className="font-cairo-black text-slate-900 dark:text-slate-50 text-right" numberOfLines={1}>
+        <AppText responsiveRole="bodyStrong" className="font-cairo-bold text-right" numberOfLines={1} style={{ color: theme.colors.ink }}>
           {property.title}
         </AppText>
         <View className="flex-row-reverse items-center gap-1.5 mt-1">
-          <MapPin size={14} color="#94A3B8" />
-          <AppText responsiveRole="body" className="font-medium text-slate-500 dark:text-slate-400 text-right" numberOfLines={1}>
+          <MapPin size={14} color={theme.colors.inkMuted} />
+          <AppText responsiveRole="body" className="font-medium text-right" numberOfLines={1} style={{ color: theme.colors.inkMuted }}>
             {getPropertyLocationLabel(property)}
           </AppText>
         </View>

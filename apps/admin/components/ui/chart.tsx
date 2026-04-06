@@ -77,7 +77,7 @@ export const ChartContainer = React.forwardRef<
         ref={ref}
         data-chart={chartId}
         className={cn(
-          "flex min-h-[220px] min-w-0 w-full max-w-full items-stretch justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-[var(--muted-foreground)] [&_.recharts-legend-item-text]:fill-[var(--foreground)]",
+          "flex min-h-[220px] min-w-0 w-full max-w-full items-stretch justify-center text-xs [&_.recharts-cartesian-grid_line]:stroke-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] [&_.recharts-cartesian-axis-line]:stroke-transparent [&_.recharts-cartesian-axis-tick_line]:stroke-transparent [&_.recharts-cartesian-axis-tick_text]:fill-[var(--workspace-muted)] [&_.recharts-legend-item-text]:fill-[var(--workspace-bubble-other-foreground)]",
           className,
         )}
         {...props}
@@ -127,9 +127,9 @@ export function ChartTooltipContent({
   }
 
   return (
-    <div className="grid min-w-[12rem] gap-2 rounded-2xl border border-border/50 bg-card px-3 py-2.5 shadow-xl">
+    <div className="grid min-w-[12rem] gap-2 rounded-[20px] border border-[color:color-mix(in_srgb,var(--workspace-border)_78%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] px-3 py-2.5 shadow-[0_16px_40px_-26px_rgba(15,23,42,0.3)] backdrop-blur-sm">
       {!hideLabel && label ? (
-        <div className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground/60">
+        <div className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--workspace-muted)]">
           {String(label)}
         </div>
       ) : null}
@@ -141,7 +141,7 @@ export function ChartTooltipContent({
 
           return (
             <div key={key} className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 text-[12px] font-bold text-foreground">
+              <div className="flex items-center gap-2 text-[12px] font-bold text-[var(--workspace-bubble-other-foreground)]">
                 {indicator === "line" ? (
                   <span className="h-0.5 w-4 rounded-full" style={{ backgroundColor: color }} />
                 ) : (
@@ -149,7 +149,7 @@ export function ChartTooltipContent({
                 )}
                 <span>{itemConfig?.label ?? item.name ?? key}</span>
               </div>
-              <span className="text-[12px] font-black tabular-nums text-foreground">
+              <span className="text-[12px] font-black tabular-nums text-[var(--workspace-bubble-other-foreground)]">
                 {typeof item.value === "number" ? item.value.toLocaleString("ar-SA") : String(item.value ?? "")}
               </span>
             </div>
@@ -191,7 +191,7 @@ export function ChartLegendContent({ payload, className }: ChartLegendContentPro
         const color = item.color ?? itemConfig?.color ?? `var(--color-${key})`;
 
         return (
-          <div key={key} className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] text-muted-foreground">
+          <div key={key} className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] text-[var(--workspace-muted)]">
             <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
             <span>{itemConfig?.label ?? item.value ?? key}</span>
           </div>

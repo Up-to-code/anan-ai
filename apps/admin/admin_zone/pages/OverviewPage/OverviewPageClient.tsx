@@ -1,354 +1,350 @@
-"use client";
-
-import { useMemo, useState } from "react";
 import AdminRangeControl from "@/components/shared/AdminRangeControl";
-import AdminRenderBoundary from "@/components/shared/AdminRenderBoundary";
-import { AdminInput } from "@/components/shared/AdminFieldControls";
+import { AdminMetricGrid, AdminSectionStack } from "@/components/shared/AdminPageLayout";
+import CommandCenterNetworkChart from "@/components/shared/CommandCenterNetworkChart";
 import DonutBreakdownChart from "@/components/shared/DonutBreakdownChart";
 import LineTrendChart from "@/components/shared/LineTrendChart";
-import MetricBarChart from "@/components/shared/MetricBarChart";
 import SectionScaffold from "@/components/shared/SectionScaffold";
 import StatCard from "@/components/shared/StatCard";
 import StatusBadge from "@/components/shared/StatusBadge";
 import WorkspacePanel from "@/components/shared/WorkspacePanel";
-import { overviewTabs } from "@/lib/adminSectionTabs";
-import { formatDateTime, formatNumber } from "@/lib/format";
-import type {
-  ActivityFeedItem,
-  OverviewChartPoint,
-  OverviewCountPoint,
-  OverviewDistributionPoint,
-  OverviewMetric,
-  QueueItem,
-} from "@/admin_zone/mocks/types";
-
-function OverviewSectionFallback({
-  title,
-  description,
-  items,
-}: {
-  title: string;
-  description: string;
-  items: Array<{ label: string; value: string }>;
-}) {
-  return (
-    <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white p-10 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
-      <div className="space-y-3">
-        <h2 className="text-2xl font-black tracking-tighter text-slate-900 dark:text-slate-50">{title}</h2>
-        <p className="text-[13px] font-bold leading-relaxed text-slate-400">{description}</p>
-      </div>
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
-        {items.map((item) => (
-          <div
-            key={`${title}-${item.label}`}
-            className="rounded-[24px] border border-slate-100 bg-slate-50/70 px-5 py-4 dark:border-slate-800 dark:bg-slate-950/30"
-          >
-            <div className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">{item.label}</div>
-            <div className="mt-3 text-lg font-black tracking-tight text-slate-900 dark:text-slate-50">{item.value}</div>
-          </div>
-        ))}
-      </div>
-    </WorkspacePanel>
-  );
-}
+import { analyticsTabs } from "@/lib/adminSectionTabs";
+import type { CommandCenterOverviewViewModel } from "@/admin_zone/viewModels/commandCenter";
 
 type OverviewPageClientProps = {
-  range: "30d" | "90d";
-  metrics: OverviewMetric[];
-  chart: OverviewChartPoint[];
-  activities: ActivityFeedItem[];
-  queue: QueueItem[];
-  partnerMix: OverviewDistributionPoint[];
-  verificationPressure: OverviewCountPoint[];
-  offerQueueMix: OverviewDistributionPoint[];
-  userRoleDistribution: OverviewCountPoint[];
-  models: OverviewDistributionPoint[];
+  viewModel: CommandCenterOverviewViewModel;
 };
 
 /**
- * WHY:   The admin overview should immediately explain platform health and partner pressure before operators drill into entity-specific workflows.
- * WHAT:  Renders the command-center dashboard using shared summary cards plus standardized chart surfaces.
- * HOW:   Composes mock partner-ops datasets into the admin-local chart foundation and keeps the layout route-focused.
+ * WHY:   Leadership and operations teams need one command-center surface that explains system flow, commercial throughput, and blockers at a glance.
+ * WHAT:  Renders the live overview using KPI cards, a network chart, insight rails, trends, alerts, and partner/queue supporting panels.
+ * HOW:   Uses the shared grid-first scaffold so the hero canvas scrolls independently from the fixed rail and large datasets stay bounded inside their own panels.
  */
-export default function OverviewPageClient({
-  range,
-  metrics,
-  chart,
-  activities,
-  queue,
-  partnerMix,
-  verificationPressure,
-  offerQueueMix,
-  userRoleDistribution,
-  models,
-}: OverviewPageClientProps) {
-  const [target, setTarget] = useState(220);
-
-  const chartData = useMemo(() => chart.map((point) => ({ ...point, target })), [chart, target]);
-  const queueChartData = useMemo(() => queue.map((item) => ({ label: item.label, count: item.count })), [queue]);
-
+export default function OverviewPageClient({ viewModel }: OverviewPageClientProps) {
   return (
     <SectionScaffold
       eyebrow="مركز القيادة"
       title="لوحة التحكم"
-      description="لوحة تشغيل موحدة تركز على الشركاء، التوثيق، العروض، واستهلاك الذكاء الاصطناعي عبر بيانات تجريبية منظمة."
-      tabs={overviewTabs}
-    >
-      <div className="flex items-center justify-end pb-4 font-black">
-        <AdminRangeControl />
-      </div>
+      description="قراءة قيادية حية تربط الطلب، القنوات، سعة الشركاء، الخط التجاري، والمخاطر التشغيلية داخل منصة أنان."
+      tabs={analyticsTabs}
+      actions={<AdminRangeControl />}
+      layout="dashboard"
+      rail={
+        <AdminSectionStack className="min-h-0">
+          <WorkspacePanel
+            tone="dark"
+            fullHeight
+            header={
+              <div className="space-y-2">
+                <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/60">Operator Focus</div>
+                <h2 className="text-2xl font-black tracking-tight text-white">ما الذي يجب فعله الآن؟</h2>
+              </div>
+            }
+            bodyClassName="grid gap-4"
+            scrollBody
+            maxBodyHeightClassName="max-h-[360px]"
+          >
+            {viewModel.insights.map((insight) => (
+              <div key={insight.id} className="rounded-[24px] border border-white/10 bg-white/6 p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-base font-black text-white">{insight.title}</div>
+                  <StatusBadge
+                    value={
+                      insight.tone === "warn"
+                        ? "warning"
+                        : insight.tone === "positive"
+                          ? "success"
+                          : "info"
+                    }
+                  />
+                </div>
+                <p className="mt-3 text-sm leading-7 text-white/72">{insight.body}</p>
+              </div>
+            ))}
+          </WorkspacePanel>
 
-      <section className="grid gap-10 md:grid-cols-2 xl:grid-cols-3">
-        {metrics.map((metric) => (
+          <WorkspacePanel
+            fullHeight
+            header={
+              <div className="space-y-2">
+                <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--workspace-muted)]">
+                  API Risk
+                </div>
+                <h2 className="text-xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
+                  نبض التكامل
+                </h2>
+              </div>
+            }
+            bodyClassName="grid gap-3"
+          >
+            {viewModel.apiRisk.map((item) => (
+              <div
+                key={item.id}
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[20px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_52%,transparent)] px-4 py-3"
+              >
+                <span className="text-sm font-bold text-[var(--workspace-muted)]">{item.label}</span>
+                <span className="text-lg font-black text-[var(--workspace-bubble-other-foreground)]">{item.value}</span>
+              </div>
+            ))}
+          </WorkspacePanel>
+
+          <WorkspacePanel
+            fullHeight
+            header={
+              <div className="space-y-2">
+                <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
+                  أقوى الجهات
+                </h2>
+                <p className="text-sm font-medium text-[var(--workspace-muted)]">
+                  الجهات الأكثر قدرة على استقبال الطلب وتحويله.
+                </p>
+              </div>
+            }
+            bodyClassName="grid gap-3"
+            scrollBody
+            maxBodyHeightClassName="max-h-[420px]"
+          >
+            {viewModel.topOrganizations.map((organization) => (
+              <div
+                key={organization.id}
+                className="rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] p-4"
+              >
+                <div className="grid gap-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-base font-black text-[var(--workspace-bubble-other-foreground)]">
+                        {organization.name}
+                      </div>
+                      <div className="mt-1 text-[11px] font-black uppercase tracking-[0.16em] text-[var(--workspace-muted)]">
+                        {organization.ownerTypeLabel}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      {organization.isVerified ? <StatusBadge value="approved" /> : <StatusBadge value="pending" />}
+                      {organization.actionModeEnabled ? <StatusBadge value="active" /> : null}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 text-center">
+                    <div className="rounded-[18px] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_58%,transparent)] px-2 py-3">
+                      <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--workspace-muted)]">Score</div>
+                      <div className="mt-1 text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{organization.score}</div>
+                    </div>
+                    <div className="rounded-[18px] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_58%,transparent)] px-2 py-3">
+                      <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--workspace-muted)]">Inventory</div>
+                      <div className="mt-1 text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{organization.inventory}</div>
+                    </div>
+                    <div className="rounded-[18px] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_58%,transparent)] px-2 py-3">
+                      <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--workspace-muted)]">Offers</div>
+                      <div className="mt-1 text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{organization.offers}</div>
+                    </div>
+                    <div className="rounded-[18px] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_58%,transparent)] px-2 py-3">
+                      <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--workspace-muted)]">Members</div>
+                      <div className="mt-1 text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{organization.members}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </WorkspacePanel>
+
+          <WorkspacePanel
+            fullHeight
+            header={
+              <div className="space-y-2">
+                <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
+                  صحة البيانات
+                </h2>
+                <p className="text-sm font-medium text-[var(--workspace-muted)]">
+                  آخر حالة لتجميعات البيانات ومؤشرات الثبات.
+                </p>
+              </div>
+            }
+            bodyClassName="grid gap-3"
+          >
+            {viewModel.dataHealth.map((item) => (
+              <div
+                key={item.id}
+                className="rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_52%,transparent)] p-4"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-base font-black text-[var(--workspace-bubble-other-foreground)]">{item.label}</div>
+                  <StatusBadge value={item.status} />
+                </div>
+                <div className="mt-3 text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
+                  {item.value}
+                </div>
+                <p className="mt-2 text-sm leading-6 text-[var(--workspace-muted)]">{item.note}</p>
+              </div>
+            ))}
+          </WorkspacePanel>
+        </AdminSectionStack>
+      }
+    >
+      <AdminMetricGrid minItemWidth={220}>
+        {viewModel.metrics.map((metric) => (
           <StatCard
             key={metric.key}
             label={metric.label}
-            value={formatNumber(metric.value)}
+            value={metric.value}
             delta={metric.delta}
             hint={metric.hint}
           />
         ))}
-      </section>
+      </AdminMetricGrid>
 
-      <section className="mt-8 grid gap-12 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.85fr)]">
-        <AdminRenderBoundary
-          fallback={
-            <OverviewSectionFallback
-              title="اتجاه النشاط"
-              description="تعذر تحميل الرسم التفاعلي لهذا القسم، لكن المؤشرات الأساسية ما زالت متاحة."
-              items={[
-                { label: "أعلى قيمة نشاط", value: formatNumber(Math.max(...chart.map((point) => point.activeUsers))) },
-                { label: "الهدف الحالي", value: formatNumber(target) },
-                { label: "المدى الزمني", value: range === "90d" ? "90 يوم" : "30 يوم" },
-                { label: "آخر نقطة", value: formatNumber(chart[chart.length - 1]?.activeUsers ?? 0) },
-              ]}
-            />
-          }
-        >
-          <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white p-12 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.04)] dark:border-slate-800 dark:bg-slate-900/50">
-            <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
-              <div className="space-y-4">
-                <h2 className="text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">اتجاه النشاط</h2>
-                <p className="text-[13px] font-black leading-relaxed text-slate-400 uppercase tracking-[.25em]">
-                  Active audience over the last {range}
-                </p>
-              </div>
-              <div className="w-full max-w-[260px] rounded-3xl border border-slate-100 bg-slate-50 p-8 dark:border-slate-800 dark:bg-slate-800/10">
-                <label className="mb-4 block text-[11px] font-black uppercase tracking-[0.25em] text-slate-400">
-                  تعديل الهدف
-                </label>
-                <AdminInput
-                  type="number"
-                  value={target}
-                  onChange={(event) => setTarget(Number(event.target.value) || 0)}
-                  className="h-12 rounded-full border-slate-200 bg-white px-6 font-black dark:bg-slate-900"
-                />
-              </div>
+      <WorkspacePanel
+        fullHeight
+        header={
+          <div className="space-y-2">
+            <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--workspace-muted)]">
+              Network Flow
             </div>
-            <div className="mt-10 min-h-[400px]">
-              <LineTrendChart
-                data={chartData}
-                series={[
-                  { dataKey: "activeUsers", label: "النشطون", color: "#2563EB" },
-                  { dataKey: "target", label: "المستهدف", color: "#94A3B8" },
-                ]}
-                height={400}
-              />
-            </div>
-          </WorkspacePanel>
-        </AdminRenderBoundary>
-
-        <AdminRenderBoundary
-          fallback={
-            <OverviewSectionFallback
-              title="نوع الشركاء"
-              description="تعذر تحميل رسم التوزيع، لذلك نعرض ملخص الشركاء كقائمة تشغيلية."
-              items={partnerMix.map((item) => ({ label: item.label, value: formatNumber(item.value) }))}
-            />
-          }
-        >
-          <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white/50 p-12 dark:border-slate-800 dark:bg-slate-900/40">
-            <div className="space-y-4">
-              <h2 className="text-3xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">نوع الشركاء</h2>
-              <p className="text-[13px] font-black leading-relaxed text-slate-400 uppercase tracking-[.25em]">Partner mix</p>
-            </div>
-            <div className="mt-8 flex min-h-[300px] items-center justify-center">
-              <DonutBreakdownChart data={partnerMix} height={300} />
-            </div>
-          </WorkspacePanel>
-        </AdminRenderBoundary>
-      </section>
-
-      <section className="mt-4 grid gap-12 xl:grid-cols-3">
-        <AdminRenderBoundary
-          fallback={
-            <OverviewSectionFallback
-              title="ضغط التوثيق"
-              description="ملخص بديل لحالة التوثيق حتى يتم تحميل الرسم التفاعلي."
-              items={verificationPressure.map((item) => ({ label: item.label, value: formatNumber(item.count) }))}
-            />
-          }
-        >
-          <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white p-10 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
-            <div className="space-y-3">
-              <h2 className="text-2xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">ضغط التوثيق</h2>
-              <p className="text-[12px] font-black leading-relaxed text-slate-400 uppercase tracking-[.22em]">Verification pressure</p>
-            </div>
-            <div className="mt-8">
-              <MetricBarChart
-                data={verificationPressure}
-                series={[{ dataKey: "count", label: "الحالات", color: "#2563EB" }]}
-                horizontal
-                height={280}
-              />
-            </div>
-          </WorkspacePanel>
-        </AdminRenderBoundary>
-
-        <AdminRenderBoundary
-          fallback={
-            <OverviewSectionFallback
-              title="توزيع الأدوار"
-              description="ملخص عددي بديل لتوزيع الأدوار داخل المستخدمين."
-              items={userRoleDistribution.map((item) => ({ label: item.label, value: formatNumber(item.count) }))}
-            />
-          }
-        >
-          <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white p-10 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
-            <div className="space-y-3">
-              <h2 className="text-2xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">توزيع الأدوار</h2>
-              <p className="text-[12px] font-black leading-relaxed text-slate-400 uppercase tracking-[.22em]">User roles</p>
-            </div>
-            <div className="mt-8">
-              <MetricBarChart
-                data={userRoleDistribution}
-                series={[{ dataKey: "count", label: "المستخدمون", color: "#0F766E" }]}
-                horizontal
-                height={280}
-              />
-            </div>
-          </WorkspacePanel>
-        </AdminRenderBoundary>
-
-        <AdminRenderBoundary
-          fallback={
-            <OverviewSectionFallback
-              title="حالة العروض"
-              description="ملخص سريع لحالة العروض بدل الرسم التفاعلي."
-              items={offerQueueMix.map((item) => ({ label: item.label, value: formatNumber(item.value) }))}
-            />
-          }
-        >
-          <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white p-10 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
-            <div className="space-y-3">
-              <h2 className="text-2xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">حالة العروض</h2>
-              <p className="text-[12px] font-black leading-relaxed text-slate-400 uppercase tracking-[.22em]">Offer review mix</p>
-            </div>
-            <div className="mt-8">
-              <DonutBreakdownChart data={offerQueueMix} height={220} />
-            </div>
-          </WorkspacePanel>
-        </AdminRenderBoundary>
-      </section>
-
-      <section className="mt-4 grid gap-12 lg:grid-cols-2">
-        <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white p-12 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
-          <div className="flex items-center justify-between gap-4">
-            <div className="space-y-3">
-              <h2 className="text-3xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">آخر الأنشطة</h2>
-              <p className="text-[13px] font-black leading-relaxed text-slate-400 uppercase tracking-[.25em]">Live platform feed</p>
-            </div>
-            <div className="h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)] animate-pulse" />
+            <h2 className="text-3xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
+              شبكة القيادة التشغيلية
+            </h2>
+            <p className="max-w-3xl text-sm font-medium leading-7 text-[var(--workspace-muted)]">
+              هذا الرسم يوضح كيف يدخل الطلب إلى النظام، كيف يمر عبر القنوات والشركاء، وأين يتعطل قبل أن يتحول إلى صفقات رابحة.
+            </p>
           </div>
-          <div className="mt-10 grid gap-6">
-            {activities.map((item) => (
-              <div
-                key={item.id}
-                className="group relative overflow-hidden rounded-[32px] border border-slate-100 bg-slate-50/50 p-8 transition-all hover:border-blue-100 hover:bg-white hover:shadow-xl dark:border-slate-800 dark:bg-transparent dark:hover:bg-slate-800/10"
-              >
-                <div className="flex items-start justify-between gap-6">
-                  <div className="min-w-0 flex-1 space-y-3">
-                    <div className="truncate text-[17px] font-black tracking-tight text-slate-900 transition-colors group-hover:text-blue-600 dark:text-slate-50">
-                      {item.title}
-                    </div>
-                    <div className="line-clamp-1 text-[13px] font-bold text-slate-400">{item.subtitle}</div>
-                    <div className="mt-4 inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                      {formatDateTime(item.createdAt)}
-                    </div>
-                  </div>
-                  <StatusBadge value={item.status} />
-                </div>
-              </div>
-            ))}
-          </div>
+        }
+      >
+        <CommandCenterNetworkChart groups={viewModel.network.groups} links={viewModel.network.links} />
+      </WorkspacePanel>
+
+      <section className="grid gap-6 2xl:grid-cols-2">
+        <WorkspacePanel
+          fullHeight
+          header={
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
+                اتجاه الإشارات
+              </h2>
+              <p className="text-sm font-medium text-[var(--workspace-muted)]">
+                الرسائل والبحث والمعرفة كمؤشر على سخونة الطلب.
+              </p>
+            </div>
+          }
+        >
+          <LineTrendChart
+            data={viewModel.activityTrend}
+            series={[
+              { dataKey: "messages", label: "رسائل", color: "var(--chart-blue)" },
+              { dataKey: "searches", label: "بحث", color: "var(--chart-cyan)" },
+              { dataKey: "research", label: "معرفة", color: "var(--chart-teal)" },
+            ]}
+            height={300}
+          />
         </WorkspacePanel>
 
-        <WorkspacePanel className="rounded-[40px] border-slate-100 bg-slate-50/30 p-12 dark:border-slate-800 dark:bg-slate-950/20">
-          <div className="space-y-3">
-            <h2 className="text-3xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">المراجعة التشغيلية</h2>
-            <p className="text-[13px] font-black leading-relaxed text-slate-400 uppercase tracking-[.25em]">Operational focus queue</p>
+        <WorkspacePanel
+          fullHeight
+          header={
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
+                اتجاه التحويل التجاري
+              </h2>
+              <p className="text-sm font-medium text-[var(--workspace-muted)]">
+                كيف تتحول الحركة إلى عروض، طلبات، وصفقات.
+              </p>
+            </div>
+          }
+        >
+          <LineTrendChart
+            data={viewModel.commercialTrend}
+            series={[
+              { dataKey: "offers", label: "عروض", color: "var(--chart-amber)" },
+              { dataKey: "orders", label: "طلبات", color: "var(--chart-purple)" },
+              { dataKey: "deals", label: "صفقات", color: "var(--chart-rose)" },
+            ]}
+            height={300}
+          />
+        </WorkspacePanel>
+      </section>
+
+      <section className="grid gap-6 2xl:grid-cols-[minmax(280px,0.92fr)_minmax(280px,1.08fr)]">
+        <WorkspacePanel
+          fullHeight
+          header={
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
+                توزيع القنوات
+              </h2>
+              <p className="text-sm font-medium text-[var(--workspace-muted)]">
+                أين يمر الطلب التجاري قبل دخوله إلى الشركاء.
+              </p>
+            </div>
+          }
+        >
+          <DonutBreakdownChart data={viewModel.orderChannels} height={260} />
+        </WorkspacePanel>
+
+        <WorkspacePanel
+          fullHeight
+          header={
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
+                أولويات الطابور
+              </h2>
+              <p className="text-sm font-medium text-[var(--workspace-muted)]">
+                البنود التي تستهلك وقت الفريق قبل التحويل التجاري.
+              </p>
+            </div>
+          }
+          bodyClassName="grid gap-3"
+          scrollBody
+          maxBodyHeightClassName="max-h-[420px]"
+        >
+          {viewModel.queueFocus.map((item) => (
+            <div
+              key={item.id}
+              className="rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_52%,transparent)] p-4"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{item.label}</div>
+                <StatusBadge value={item.status} />
+              </div>
+              <div className="mt-3 text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
+                {item.value}
+              </div>
+              <p className="mt-2 text-sm leading-6 text-[var(--workspace-muted)]">{item.note}</p>
+            </div>
+          ))}
+        </WorkspacePanel>
+      </section>
+
+      <WorkspacePanel
+        fullHeight
+        header={
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
+              التنبيهات العاجلة
+            </h2>
+            <p className="text-sm font-medium text-[var(--workspace-muted)]">
+              العناصر التي يجب أن تظهر مباشرة في رادار العمليات.
+            </p>
           </div>
-          <AdminRenderBoundary
-            fallback={
-              <OverviewSectionFallback
-                title="المراجعة التشغيلية"
-                description="تعذر تحميل الرسم التفاعلي، لذلك نعرض أولويات الطابور بشكل مباشر."
-                items={queue.map((item) => ({ label: item.label, value: formatNumber(item.count) }))}
-              />
-            }
+        }
+        bodyClassName="grid gap-3"
+        scrollBody
+        maxBodyHeightClassName="max-h-[420px]"
+      >
+        {viewModel.alerts.map((alert) => (
+          <div
+            key={alert.id}
+            className="rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] p-4"
           >
-            <div className="mt-10 min-h-[300px] rounded-[32px] border border-slate-100 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <MetricBarChart
-                data={queueChartData}
-                series={[{ dataKey: "count", label: "البنود", color: "#2563EB" }]}
-                horizontal
-                height={300}
-              />
-            </div>
-          </AdminRenderBoundary>
-          <div className="mt-8 grid gap-6">
-            {queue.map((item) => (
-              <div
-                key={item.id}
-                className="group rounded-[32px] border border-slate-100 bg-white p-8 transition-all hover:shadow-lg dark:border-slate-800 dark:bg-slate-900"
-              >
-                <div className="flex items-center justify-between gap-6 text-right">
-                  <div className="flex-1 space-y-2">
-                    <div className="text-[16px] font-black tracking-tight text-slate-900 dark:text-slate-50">{item.label}</div>
-                    <div className="text-[12px] font-bold italic text-slate-400 opacity-60">{item.note}</div>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <span className="text-2xl font-black tabular-nums text-slate-900 dark:text-slate-50">{item.count}</span>
-                    <StatusBadge value={item.status} />
-                  </div>
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2">
+                <div className="text-base font-black text-[var(--workspace-bubble-other-foreground)]">{alert.title}</div>
+                <div className="text-sm font-medium text-[var(--workspace-muted)]">{alert.subtitle}</div>
+                <div className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--workspace-muted)]">
+                  {alert.kindLabel} • {alert.createdAtLabel}
                 </div>
               </div>
-            ))}
+              <StatusBadge value={alert.status} />
+            </div>
           </div>
-        </WorkspacePanel>
-      </section>
-
-      <section className="mt-4">
-        <AdminRenderBoundary
-          fallback={
-            <OverviewSectionFallback
-              title="استهلاك النماذج"
-              description="ملخص استهلاك النماذج متاح حتى في حالة تعذر تحميل الرسم."
-              items={models.map((item) => ({ label: item.label, value: formatNumber(item.value) }))}
-            />
-          }
-        >
-          <WorkspacePanel className="rounded-[40px] border-slate-100 bg-white/50 p-12 dark:border-slate-800 dark:bg-slate-900/40">
-            <div className="space-y-4">
-              <h2 className="text-3xl font-black tracking-tighter text-slate-900 dark:text-slate-50 uppercase">استهلاك النماذج</h2>
-              <p className="text-[13px] font-black leading-relaxed text-slate-400 uppercase tracking-[.25em]">Model consumption</p>
-            </div>
-            <div className="mt-8 flex min-h-[300px] items-center justify-center">
-              <DonutBreakdownChart data={models} height={300} />
-            </div>
-          </WorkspacePanel>
-        </AdminRenderBoundary>
-      </section>
+        ))}
+      </WorkspacePanel>
     </SectionScaffold>
   );
 }

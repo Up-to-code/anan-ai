@@ -29,3 +29,4 @@ pnpm --dir apps/mobile test
 
 - Mobile handbook: `docs/handbook/mobile/README.md`
 - Mobile architecture: `docs/handbook/mobile/architecture.md`
+- Mobile AI UX principles: `docs/handbook/mobile/ai-ux-principles.md`

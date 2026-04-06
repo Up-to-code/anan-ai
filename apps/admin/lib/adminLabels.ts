@@ -27,6 +27,8 @@ const statusLabels: Record<string, string> = {
   member: "عضو",
   not_member: "غير عضو",
   success: "ناجح",
+  info: "معلومة",
+  warning: "تحذير",
   failed: "فشل",
   complete: "مكتمل",
   missing_document: "مستند ناقص",

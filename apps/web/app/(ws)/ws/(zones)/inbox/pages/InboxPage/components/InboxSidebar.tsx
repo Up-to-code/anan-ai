@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Archive, Briefcase, Building2, PanelLeftClose, Search, ShieldCheck, User, Users } from "lucide-react";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { resolveAvatarImageUrl } from "@/lib/avatarImage";
 import type { AppLocale } from "@/lib/locale";
 import { formatLocaleDateTime } from "@/lib/locale";
 import { cn } from "@/lib/utils";
@@ -62,12 +63,13 @@ function UserAvatar({
 }) {
   const initials = name.slice(0, 1) || "؟";
   const sizeClass = size === "sm" ? "h-8 w-8 text-xs" : "h-11 w-11 text-sm";
+  const resolvedImage = resolveAvatarImageUrl(image);
 
-  if (image) {
+  if (resolvedImage) {
     return (
       /* eslint-disable-next-line @next/next/no-img-element */
       <img
-        src={image}
+        src={resolvedImage}
         alt={name}
         className={cn(
           "shrink-0 rounded-full object-cover ring-2 transition-all",

@@ -52,5 +52,8 @@ describe("buildMobileAgUiTurn", () => {
       "bank_offer",
       "followup_prompt",
     ]);
+    expect(turn?.cards[0]?.props).toEqual({
+      properties: [sampleProperty],
+    });
   });
 });
