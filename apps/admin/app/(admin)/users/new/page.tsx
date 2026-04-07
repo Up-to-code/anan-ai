@@ -1,5 +1,5 @@
 import EntityEditorPage from "@/admin_zone/pages/EntityEditorPage";
-import { usersTabs } from "@/lib/adminSectionTabs";
+import { newUserTabs } from "@/lib/adminSectionTabs";
 
 /**
  * WHY:   Platform operators need a create route for adding new users into the mocked admin workspace.
@@ -15,7 +15,7 @@ export default function NewUserPage() {
       entityLabel="المستخدم"
       mode="create"
       backHref="/users"
-      tabs={usersTabs}
+      tabs={newUserTabs}
       fields={[
         { name: "name", label: "الاسم", placeholder: "اسم المستخدم" },
         { name: "email", label: "البريد الإلكتروني", type: "email", placeholder: "user@example.com" },

@@ -36,4 +36,4 @@ Mobile lives in `apps/mobile` and uses:
 - Features: `apps/mobile/src/features/**`
 - Hooks: `apps/mobile/src/hooks/**`
 - Convex endpoints: `convex/user_zone/mobile/**`
-
+- AI UX principles: `docs/handbook/mobile/ai-ux-principles.md`

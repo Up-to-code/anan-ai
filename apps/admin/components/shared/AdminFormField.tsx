@@ -16,9 +16,9 @@ type AdminFormFieldProps = {
 export default function AdminFormField({ label, helpText, className, children }: AdminFormFieldProps) {
   return (
     <label className={cn("grid gap-2", className)}>
-      <span className="text-sm font-medium text-slate-700">{label}</span>
+      <span className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{label}</span>
       {children}
-      {helpText ? <span className="text-xs leading-5 text-slate-500">{helpText}</span> : null}
+      {helpText ? <span className="text-xs leading-5 text-[var(--workspace-muted)]">{helpText}</span> : null}
     </label>
   );
 }

@@ -1,0 +1,122 @@
+{
+    "system_name": "Anan Unified Rounded (Zinc/Blue)",
+    "version": "2.1.0",
+    "meta": {
+        "aesthetic": "Modern, Sleek, Accessible, Approachable",
+        "philosophies": [
+            "Delicate Boundaries: Use 1px borders, never rigid thick strokes.",
+            "Generous Geometry: Pill shapes for interactive controls, large 16-24px radii for structural containers.",
+            "Zinc Scale: Use strict monochrome Zinc scales rather than standard gray/slate for a premium modern feel.",
+            "Subtle Contrast: Soft backgrounds for layering, avoiding stark contrast jumps unless highlighting primary actions.",
+            "Natural Typography: Let the Cairo font breathe naturally without forced capitalization or extreme letter spacing."
+        ],
+        "ai_ux_principles": [
+            "Low-noise assistant UI with one clear next step per card.",
+            "Visible control and privacy states when session behavior matters.",
+            "Graceful failure and inline recovery before escalation.",
+            "RTL-first React Native layout and writing direction defaults.",
+            "Cursor-card wrappers should fade from the ambient background into transparency in both light and dark mode."
+        ]
+    },
+    "tokens": {
+        "colors": {
+            "primary": {
+                "hex": "#2563EB",
+                "tailwind": "blue-600",
+                "usage": "Active states, floating prompt actions, primary buttons"
+            },
+            "surface_light": {
+                "background": "#FFFFFF",
+                "elevated": "#F4F4F5",
+                "border": "#E5E7EB",
+                "usage": "Light mode containers"
+            },
+            "surface_dark": {
+                "background": "#09090B",
+                "elevated": "#18181B",
+                "border": "#27272A",
+                "usage": "Dark mode containers"
+            },
+            "text_light": {
+                "main": "#09090B",
+                "muted": "#71717A",
+                "usage": "Light mode typography"
+            },
+            "text_dark": {
+                "main": "#FAFAFA",
+                "muted": "#A1A1AA",
+                "usage": "Dark mode typography"
+            }
+        },
+        "cursor_card": {
+            "frame_behavior": "Ambient edge fade from parent background to transparent",
+            "frame_thickness": "2px visible wrapper inset",
+            "outer_radius": "24px rounded shell",
+            "inner_radius": "20px bordered surface",
+            "surface_light": "#FFFFFF",
+            "surface_dark": "#18181B",
+            "border_light": "#E4E4E7",
+            "border_dark": "#3F3F46",
+            "action_tone": "Primary-soft by default for shortlist and search actions",
+            "interaction_rule": "Decorative frame must never intercept taps"
+        },
+        "typography": {
+            "primary_font": "Cairo",
+            "weights": {
+                "medium": 500,
+                "bold": 700
+            },
+            "casing": "Natural (Sentence Case)",
+            "tracking": "Normal (No forced wide tracking)"
+        },
+        "geometry": {
+            "radius_interactive": "9999px (rounded-full)",
+            "radius_container": "16px (rounded-2xl) to 24px (rounded-3xl)",
+            "borders": "Solid, 1px stroke for container boundaries",
+            "shadows": "None or extremely subtle floating shadows for active composer states"
+        }
+    },
+    "components": {
+        "navbar": {
+            "border": "bottom-1 border-zinc-200/zinc-800",
+            "link_style": "text-sm font-medium"
+        },
+        "button_primary": {
+            "background": "blue-600",
+            "text": "white",
+            "shape": "rounded-full (pill)",
+            "padding": "px-6 py-2"
+        },
+        "structural_card": {
+            "background": "zinc-100 (light) / zinc-900 (dark)",
+            "border": "1px border-zinc-200 / border-zinc-800",
+            "radius": "rounded-2xl"
+        },
+        "chat_composer": {
+            "background": "zinc-100 (light) / zinc-900 (dark)",
+            "shape": "rounded-full (pill) or highly rounded for multi-line",
+            "border": "none or subtle 1px border"
+        },
+        "cursor_property_card": {
+            "wrapper": "Ambient fade frame using system light/dark background context",
+            "content": "Swipeable media viewer when multiple images exist, then title, price, location, key facts, one clear CTA",
+            "flow": "Vertical list, no carousel or stacked deck",
+            "cta": "Dedicated footer action with RTL-first alignment",
+            "media_behavior": "Inline swipe inside the card, tap image to open the fullscreen property gallery, and keep image interaction separate from the body press"
+        },
+        "assistant_conversation": {
+            "tone": "Calm, structured, Arabic-first, and task-focused",
+            "rules": [
+                "Assistant text remains more open and typographic than user bubbles.",
+                "Structured cards should feel native to the conversation rather than pasted on top of it.",
+                "Follow-up prompts should move the user forward, not add decorative choice overload."
+            ]
+        },
+        "chat_input": {
+            "shape": "One calm multiline prompt surface with generous radius",
+            "idle_actions": "At most two visible idle actions, typically mic and send as one dynamic trailing action",
+            "voice_states": "Permission, recording, upload, and transcription states stay inline and explicit",
+            "behavior": "Keep the input visually centered at rest and let it grow only when content requires it"
+        }
+    }
+}

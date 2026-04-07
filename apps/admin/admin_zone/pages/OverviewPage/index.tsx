@@ -1,26 +1,33 @@
-import { models, overviewChartByRange, overviewMetricsByRange, queueItems, recentActivities } from "@/admin_zone/mocks/data";
-import type { AdminRange } from "@/admin_zone/mocks/types";
+import { buildOverviewCommandCenterViewModel } from "@/admin_zone/viewModels/commandCenter";
+import { requireAdminPageSession } from "@/lib/serverSession";
+import {
+  type AdminCommandCenterRange,
+  convexAdminCommandCenterRepository,
+} from "@/server/infrastructure/convex/adminCommandCenterRepository";
 import OverviewPageClient from "./OverviewPageClient";
 
 type OverviewPageProps = {
-  range?: AdminRange;
+  range?: AdminCommandCenterRange;
 };
 
 /**
- * WHY:   The admin overview route should stay thin while still exposing all mocked dashboard data in one place.
- * WHAT:  Loads the mocked overview payload and delegates rendering to the client page module.
- * HOW:   Selects the active time range and passes the matching metrics and chart points into the client surface.
+ * WHY:   The admin overview route should expose one live command-center model instead of composing backend DTOs directly inside JSX.
+ * WHAT:  Loads the overview, commercial, and queue-health read models for the selected time range.
+ * HOW:   Resolves the authenticated session once, fetches the live command-center queries in parallel, and maps them into a page-ready view model.
  */
-export default function OverviewPage({ range = "30d" }: OverviewPageProps) {
-  return (
-    <OverviewPageClient
-      range={range}
-      metrics={overviewMetricsByRange[range]}
-      chart={overviewChartByRange[range]}
-      activities={recentActivities}
-      queue={queueItems}
-      models={models}
-    />
-  );
-}
+export default async function OverviewPage({ range = "30d" }: OverviewPageProps) {
+  const session = await requireAdminPageSession("/overview");
+  const [overview, commercial, queue] = await Promise.all([
+    convexAdminCommandCenterRepository.getOverview(session.token, range),
+    convexAdminCommandCenterRepository.getCommercialAnalytics(session.token, range),
+    convexAdminCommandCenterRepository.getQueueHealthAnalytics(session.token, range),
+  ]);
+  const viewModel = buildOverviewCommandCenterViewModel({
+    range,
+    overview,
+    commercial,
+    queue,
+  });
 
+  return <OverviewPageClient viewModel={viewModel} />;
+}

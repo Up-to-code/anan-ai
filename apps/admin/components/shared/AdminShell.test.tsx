@@ -1,18 +1,24 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-const { usePathname, useSearchParams } = vi.hoisted(() => ({
+const { usePathname } = vi.hoisted(() => ({
   usePathname: vi.fn(() => "/overview"),
-  useSearchParams: vi.fn(() => new URLSearchParams("range=30d")),
 }));
 
 vi.mock("next/navigation", () => ({
   usePathname,
-  useSearchParams,
+}));
+
+vi.mock("next-themes", () => ({
+  useTheme: () => ({
+    theme: "system",
+    resolvedTheme: "light",
+    setTheme: vi.fn(),
+  }),
 }));
 
 vi.mock("@/components/auth/LogoutButton", () => ({
-  default: () => <div data-testid="logout-button">logout</div>,
+  default: ({ children }: { children?: React.ReactNode }) => <div data-testid="logout-button">{children ?? "logout"}</div>,
 }));
 
 import AdminShell from "./AdminShell";
@@ -25,13 +31,16 @@ describe("AdminShell", () => {
       </AdminShell>,
     );
 
-    expect(html).toContain("إدارة عنان");
+    expect(html).toContain("عنان أدمن");
+    expect(html).toContain("التحكم الإداري");
     expect(html).toContain("لوحة التحكم");
     expect(html).toContain("المشاريع");
     expect(html).toContain("البنوك");
     expect(html).toContain("العقارات");
     expect(html).toContain("مراجعة العروض");
     expect(html).not.toContain("Docs");
+    expect(html).toContain("href=\"#admin-main-content\"");
+    expect(html).toContain("id=\"admin-main-content\"");
   });
 
   it("renders the sidebar toggle controls", () => {
@@ -43,5 +52,7 @@ describe("AdminShell", () => {
 
     expect(html).toContain("طي الشريط الجانبي");
     expect(html).toContain("aria-label=\"Admin navigation\"");
+    expect(html).toContain("data-slot=\"admin-top-navbar\"");
+    expect(html).toContain("w-80");
   });
 });

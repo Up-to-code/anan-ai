@@ -13,9 +13,14 @@ type EmptyStateProps = {
  */
 export default function EmptyState({ title, description, className }: EmptyStateProps) {
   return (
-    <div className={cn("rounded-[8px] border border-dashed border-border bg-slate-50 p-8 text-center", className)}>
-      <div className="text-base font-medium text-slate-900">{title}</div>
-      <p className="mt-2 text-sm leading-7 text-slate-600">{description}</p>
+    <div
+      className={cn(
+        "rounded-[28px] border border-dashed border-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_52%,transparent)] p-8 text-center",
+        className,
+      )}
+    >
+      <div className="text-base font-black text-[var(--workspace-bubble-other-foreground)]">{title}</div>
+      <p className="mt-2 text-sm leading-7 text-[var(--workspace-muted)]">{description}</p>
     </div>
   );
 }

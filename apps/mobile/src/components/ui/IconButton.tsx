@@ -1,6 +1,6 @@
 import { LucideIcon } from "lucide-react-native";
-import { Pressable, PressableProps, StyleSheet, useColorScheme } from "react-native";
-import { mobileTheme } from "@/lib/mobileTheme";
+import { Pressable, PressableProps, StyleSheet } from "react-native";
+import { useAppTheme } from "@/lib/mobileTheme";
 
 type IconButtonProps = PressableProps & {
   icon: LucideIcon;
@@ -10,25 +10,51 @@ type IconButtonProps = PressableProps & {
 };
 
 /**
- * WHY:   Compact icon actions appear in headers, search bars, and property surfaces.
- * WHAT:  Renders a perfectly circular icon button with elegant dark mode and press states.
- * HOW:   Uses rounded-full geometry with subtle borders and precise sizing.
+ * WHY:   Icon buttons in the unified system leverage pill/circular hit zones.
+ * WHAT:  Icon button rendering utilizing 9999px radii and 1px frame strokes.
  */
 export function IconButton({ icon: Icon, active, tone = "light", size = "default", className, ...props }: IconButtonProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  
+  const theme = useAppTheme();
+
   const buttonSizes = {
     sm: 36,
     default: 44,
-    lg: 56,
+    lg: 54,
   };
 
   const iconSizes = {
-    sm: 16,
+    sm: 18,
     default: 20,
     lg: 24,
   };
+
+  function getBackgroundColor() {
+    if (tone === "inversePanel") {
+      return active ? theme.colors.primarySoft : "rgba(255,255,255,0.04)";
+    }
+    if (tone === "panel") {
+      if (active) return theme.colors.primarySoft;
+      return theme.colors.surface;
+    }
+    return "transparent";
+  }
+
+  function getBorderColor() {
+    if (tone === "inversePanel") {
+      return active ? theme.colors.primary : "rgba(255,255,255,0.10)";
+    }
+    if (active) return theme.colors.primary;
+    return theme.colors.border; // Delicate 1px frame
+  }
+
+  function getIconColor() {
+    if (tone === "inversePanel") {
+      return active ? theme.colors.primary : "#F8FAFC";
+    }
+    if (active) return theme.colors.primary;
+    if (tone === "light") return theme.colors.inkMuted;
+    return theme.colors.inkSoft;
+  }
 
   return (
     <Pressable
@@ -38,39 +64,19 @@ export function IconButton({ icon: Icon, active, tone = "light", size = "default
         {
           width: buttonSizes[size],
           height: buttonSizes[size],
-          borderRadius: buttonSizes[size] / 2,
-          borderWidth: tone === "panel" || tone === "inversePanel" || active ? 1 : 0,
-          borderColor:
-            tone === "inversePanel"
-              ? "rgba(255,255,255,0.10)"
-              : active
-                ? (isDark ? "#3B82F6" : mobileTheme.colors.primary)
-                : (isDark ? "#1E293B" : mobileTheme.colors.border),
-          backgroundColor:
-            tone === "inversePanel"
-              ? "rgba(255,255,255,0.04)"
-              : tone === "panel"
-              ? active
-                ? (isDark ? "#172554" : mobileTheme.colors.primarySoft)
-                : (isDark ? "#0F172A" : mobileTheme.colors.surface)
-              : "transparent",
-          transform: [{ scale: pressed ? 0.94 : 1 }],
+          borderRadius: theme.radii.pill, // 9999px pill interaction
+          borderWidth: tone === "panel" || tone === "inversePanel" || active ? 1 : 0, // 1px
+          borderColor: getBorderColor(),
+          backgroundColor: getBackgroundColor(),
+          transform: [{ scale: pressed ? 0.95 : 1 }],
           opacity: props.disabled ? 0.5 : 1,
         },
       ]}
     >
-      <Icon 
-        color={
-          tone === "inversePanel"
-            ? "#F8FAFC"
-            : active
-              ? (isDark ? "#60A5FA" : mobileTheme.colors.primary)
-              : tone === "light"
-                ? (isDark ? "#94A3B8" : mobileTheme.colors.inkMuted)
-                : (isDark ? "#CBD5E1" : mobileTheme.colors.inkSoft)
-        } 
-        size={iconSizes[size]} 
-        strokeWidth={active ? 2.5 : 2} 
+      <Icon
+        color={getIconColor()}
+        size={iconSizes[size]}
+        strokeWidth={active ? 2.5 : 2}
       />
     </Pressable>
   );

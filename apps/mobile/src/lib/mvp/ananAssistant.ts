@@ -152,14 +152,14 @@ function buildConciergeReply(): AssistantReply {
 }
 
 function buildSearchReply(request: AssistantRequest, normalized: string): AssistantReply {
-  const matches = findProperties(normalized).slice(0, 4);
+  const matches = findProperties(normalized);
   const budget = extractAmount(normalized);
-  const shortlist = matches.length > 0 ? matches : getFeaturedProperties();
+  const shortlist = matches.length > 0 ? matches.slice(0, 5) : getFeaturedProperties();
 
   return {
     text: matches.length > 0
-      ? `حضرت لك ${matches.length} خيارات مناسبة${budget ? ` ضمن حدود ${formatCurrency(budget)}` : ""}. اختر أي وحدة لنكمل التمويل أو الزيارة مباشرة.`
-      : "لم أجد تطابقاً حرفياً، لذلك جهزت أقرب وحدات مناسبة لتبدأ منها.",
+      ? `بحثت لك عن أفضل الخيارات المتاحة${budget ? ` ضمن ميزانية ${formatCurrency(budget)}` : ""}. إليك ${matches.length} نتائج مطابقة لطلبك:`
+      : "لم أجد نتائج مطابقة تماماً، ولكن إليك أفضل البدائل المتاحة حالياً لتبدأ منها:",
     properties: shortlist,
     actions: shortlist[0]
       ? [

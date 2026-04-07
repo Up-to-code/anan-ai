@@ -164,6 +164,11 @@
         "muted": "#F8FAFC",
         "muted_foreground": "#64748B",
         "border": "#E2E8F0",
+        "cursor_card_surface_light": "#FFFFFF",
+        "cursor_card_surface_dark": "#18181B",
+        "cursor_card_border_light": "#E4E4E7",
+        "cursor_card_border_dark": "#3F3F46",
+        "cursor_card_frame_behavior": "ambient background edge fade to transparent",
         "accent": "#F8F5EF",
         "success": "#0F766E",
         "special_send_button": "#E57B4B"
@@ -447,12 +452,29 @@
         "Everything must respect right alignment and RTL by default unless the content clearly starts in Latin script.",
         "Primary actions often use full pills.",
         "Conversation panels use rounded 24px-style containers with light borders.",
-        "Text hierarchy leans heavily on Cairo black for titles, chips, and prices."
+        "Text hierarchy leans heavily on Cairo black for titles, chips, and prices.",
+        "Cursor-style property cards use an ambient edge fade so they feel embedded in the conversation surface.",
+        "Property cards should expose one explicit CTA and avoid action overload.",
+        "Privacy, session, or control states should be visible when they affect user expectations.",
+        "The mobile composer should stay calm at rest with one main prompt surface and a dynamic mic/send action."
       ],
       "special_mobile_note": "The send button in the composer uses a warm orange (#E57B4B), which is a local interaction accent rather than a global brand replacement.",
       "do_not": [
         "Do not port the mobile orange accent back into the general web brand.",
-        "Do not replace Cairo-heavy hierarchy with generic system fonts."
+        "Do not replace Cairo-heavy hierarchy with generic system fonts.",
+        "Do not turn mobile property shortlists into novelty carousels or stacked decks without an explicit product decision."
+      ]
+    },
+    "mobile_ai_conversation": {
+      "role": "Buyer-facing AI conversation rules for native mobile",
+      "style_summary": "Low-noise, trustworthy conversational UI with structured property cards, explicit control states, and calm React Native-native behavior.",
+      "rules": [
+        "Assistant text should remain more open and typographic than user bubbles.",
+        "Structured cards should feel native to the current background through ambient adaptive fades.",
+        "Follow-up prompts should help the user move forward, not simulate personality.",
+        "Graceful failure and inline recovery are preferred over dramatic blocking states.",
+        "Avoid over-anthropomorphizing the assistant; escalation paths should feel supportive and task-focused.",
+        "When the user is still in normal chat flow, voice, send, and processing states should remain inline with the composer."
       ]
     },
     "ag_ui_shared": {
@@ -558,7 +580,9 @@
       "assistant_avatar": "compact branded AI mark or sparkles, never generic bot emoji/iconography",
       "assistant_markdown": "large line height, clean tables/blockquote treatment, blue markers",
       "user_messages": "clear contrast and compact asymmetrical bubble geometry",
-      "assistant_messages": "more open and typographic, sometimes less boxed than user messages"
+      "assistant_messages": "more open and typographic, sometimes less boxed than user messages",
+      "mobile_ai_cards": "prefer one calm cursor-card shell with ambient adaptive fades, explicit CTA hierarchy, and visible control states when relevant",
+      "mobile_ai_composer": "prefer one calm multiline prompt surface, a dynamic mic/send action, and compact inline state banners"
     }
   },
   "accessibility_and_i18n": {
@@ -604,7 +628,8 @@
       "Use measured motion only.",
       "Use borders as structure.",
       "Prefer vector/system art over stock-photo dependency.",
-      "Keep AI surfaces calm and trustworthy."
+      "Keep AI surfaces calm and trustworthy.",
+      "On mobile AI surfaces, keep property cards vertical, ambient-aware, and action-focused."
     ],
     "output_requirements_for_new_apps": [
       "The generated UI should name and implement semantic tokens, not only raw Tailwind classes.",

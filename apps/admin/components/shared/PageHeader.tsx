@@ -9,9 +9,9 @@ type PageHeaderProps = {
 };
 
 /**
- * WHY:   The Nexus PageHeader needs high-contrast typography and minimalist spacing.
- * WHAT:  Modernizes the title section with Cairo font weights and premium tracking.
- * HOW:   Uses font-black for titles and tracking-widest for eyebrows to match the Nexus HUD.
+ * WHY:   Admin pages need one consistent hero treatment so command-center and CRUD surfaces feel like the same workspace.
+ * WHAT:  Renders the page eyebrow, title, description, and optional actions with workspace-aware typography.
+ * HOW:   Uses token-based colors and spacing so headers stay readable in both light and dark themes.
  */
 export default function PageHeader({
   eyebrow,
@@ -21,16 +21,18 @@ export default function PageHeader({
   actions,
 }: PageHeaderProps) {
   return (
-    <header className={cn("flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between pb-8", className)}>
-      <div className="space-y-2 text-right">
+    <header className={cn("flex flex-col gap-6 pb-8 lg:flex-row lg:items-end lg:justify-between", className)}>
+      <div className="space-y-3 text-right">
         {eyebrow && eyebrow !== title ? (
-          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 leading-none">
+          <div className="text-[11px] font-black uppercase leading-none tracking-[0.24em] text-[var(--workspace-muted)]">
             {eyebrow}
           </div>
         ) : null}
-        <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-slate-50">{title}</h1>
+        <h1 className="text-4xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)] sm:text-5xl">
+          {title}
+        </h1>
         {description ? (
-          <div className="max-w-3xl text-[14px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
+          <div className="max-w-3xl text-[14px] font-medium leading-relaxed text-[var(--workspace-muted)] sm:text-[15px]">
             {description}
           </div>
         ) : null}

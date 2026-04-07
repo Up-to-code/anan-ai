@@ -13,6 +13,18 @@ export type OverviewChartPoint = {
   activeUsers: number;
 };
 
+export type OverviewDistributionPoint = {
+  label: string;
+  value: number;
+  color: string;
+};
+
+export type OverviewCountPoint = {
+  label: string;
+  count: number;
+  color: string;
+};
+
 export type ActivityFeedItem = {
   id: string;
   title: string;

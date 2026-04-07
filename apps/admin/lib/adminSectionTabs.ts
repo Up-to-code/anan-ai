@@ -1,55 +1,47 @@
+import {
+  adminDomainTabs,
+  getAdminCreateRouteTabs,
+  getAdminEntityRouteTabs,
+  getAdminPageOperationHref,
+  getAdminPageTabs,
+} from "@/lib/adminPages";
 import type { RouteTab } from "@/lib/adminNavigation";
 
-export const overviewTabs: RouteTab[] = [];
+export const overviewTabs: RouteTab[] = getAdminPageTabs(adminDomainTabs.commandCenter);
 
 export const docsTabs: RouteTab[] = [];
-export const analyticsTabs: RouteTab[] = [];
+export const analyticsTabs: RouteTab[] = getAdminPageTabs(adminDomainTabs.commandCenter);
 export const propertiesTabs: RouteTab[] = [];
-export const activityTabs: RouteTab[] = [];
+export const activityTabs: RouteTab[] = getAdminPageTabs(adminDomainTabs.commandCenter);
+export const diagnosticsTabs: RouteTab[] = getAdminPageTabs(adminDomainTabs.commandCenter);
 export const verificationTabs: RouteTab[] = [
-  { href: "/verifications", label: "كل الطلبات", exact: true },
+  ...getAdminPageTabs(adminDomainTabs.partnerOps),
 ];
 export const verificationDetailTabs = (requestId: string): RouteTab[] => [
-  { href: `/verifications/${requestId}`, label: "تفاصيل الطلب", exact: true },
+  { href: getAdminPageOperationHref("verifications", "detail", requestId) ?? `/verifications/${requestId}`, label: "تفاصيل الطلب", exact: true },
 ];
 
-export const salesTabs: RouteTab[] = [
-  { href: "/sales/projects", label: "المشاريع", exact: false },
-  { href: "/sales/properties", label: "العقارات", exact: false },
-];
+export const salesTabs: RouteTab[] = getAdminPageTabs(adminDomainTabs.catalogFinance);
 
-export const usersTabs: RouteTab[] = [
-  { href: "/users", label: "كل المستخدمين", exact: true },
-];
+export const usersTabs: RouteTab[] = getAdminPageTabs(adminDomainTabs.partnerOps);
 
-export const userDetailTabs = (userId: string): RouteTab[] => [
-  { href: `/users/${userId}`, label: "الملف", exact: true },
-];
+export const newUserTabs: RouteTab[] = getAdminCreateRouteTabs("users");
 
-export const organizationsTabs: RouteTab[] = [
-  { href: "/organizations", label: "كل المنظمات", exact: true },
-];
+export const userDetailTabs = (userId: string): RouteTab[] => getAdminEntityRouteTabs("users", userId);
 
-export const organizationDetailTabs = (organizationId: string): RouteTab[] => [
-  { href: `/organizations/${organizationId}`, label: "الملخص", exact: true },
-];
+export const organizationsTabs: RouteTab[] = getAdminPageTabs(adminDomainTabs.partnerOps);
 
-export const offersTabs: RouteTab[] = [
-  { href: "/offers", label: "كل العروض", exact: true },
-];
+export const newOrganizationTabs: RouteTab[] = getAdminCreateRouteTabs("organizations");
 
-export const offerDetailTabs = (offerId: string): RouteTab[] => [
-  { href: `/offers/${offerId}`, label: "تفاصيل العرض", exact: true },
-];
+export const organizationDetailTabs = (organizationId: string): RouteTab[] =>
+  getAdminEntityRouteTabs("organizations", organizationId);
 
-export const aiSettingsTabs: RouteTab[] = [
-  { href: "/ai-settings/knowledge", label: "قاعدة المعرفة" },
-  { href: "/ai-settings/models", label: "النماذج" },
-  { href: "/ai-settings/agents", label: "فرق الوكلاء" },
-];
+export const offersTabs: RouteTab[] = getAdminPageTabs(adminDomainTabs.partnerOps);
 
-export const settingsTabs: RouteTab[] = [
-  { href: "/settings/general", label: "عام" },
-  { href: "/settings/team", label: "الفريق والصلاحيات" },
-  { href: "/settings/profile", label: "الملف الشخصي" },
-];
+export const newOfferTabs: RouteTab[] = getAdminCreateRouteTabs("offers");
+
+export const offerDetailTabs = (offerId: string): RouteTab[] => getAdminEntityRouteTabs("offers", offerId);
+
+export const aiSettingsTabs: RouteTab[] = getAdminPageTabs(adminDomainTabs.aiOps);
+
+export const settingsTabs: RouteTab[] = getAdminPageTabs(adminDomainTabs.settings);

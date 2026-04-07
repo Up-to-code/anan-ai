@@ -8,7 +8,7 @@ type StatusBadgeProps = {
 
 const toneByValue: Record<string, string> = {
   available: "bg-emerald-100/50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-500/10",
-  sold: "bg-slate-100/50 text-slate-500 border-slate-200/50",
+  sold: "bg-[var(--workspace-elevated)] text-[var(--workspace-muted)] border-[color:color-mix(in_srgb,var(--workspace-border)_74%,transparent)]",
   reserved: "bg-amber-100/50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-500/10",
   new_lead: "bg-blue-100/50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-500/10",
   contacted: "bg-cyan-100/50 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-400 border-cyan-500/10",
@@ -20,19 +20,21 @@ const toneByValue: Record<string, string> = {
   failed: "bg-rose-100/50 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400 border-rose-500/10",
   success: "bg-emerald-100/50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-500/10",
   active: "bg-emerald-100/50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-500/10",
-  inactive: "bg-slate-100/50 text-slate-500 border-slate-200/50",
+  inactive: "bg-[var(--workspace-elevated)] text-[var(--workspace-muted)] border-[color:color-mix(in_srgb,var(--workspace-border)_74%,transparent)]",
   approved: "bg-emerald-100/50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-500/10",
   accepted: "bg-emerald-100/50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-500/10",
   rejected: "bg-rose-100/50 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400 border-rose-500/10",
-  closed: "bg-slate-100/50 text-slate-500 border-slate-200/50 dark:bg-slate-800/60 dark:text-slate-300 dark:border-slate-700",
-  pending: "bg-slate-100/50 text-slate-500 border-slate-200/50",
-  draft: "bg-slate-100/50 text-slate-500 border-slate-200/50",
+  closed: "bg-[var(--workspace-elevated)] text-[var(--workspace-muted)] border-[color:color-mix(in_srgb,var(--workspace-border)_74%,transparent)]",
+  pending: "bg-[var(--workspace-elevated)] text-[var(--workspace-muted)] border-[color:color-mix(in_srgb,var(--workspace-border)_74%,transparent)]",
+  draft: "bg-[var(--workspace-elevated)] text-[var(--workspace-muted)] border-[color:color-mix(in_srgb,var(--workspace-border)_74%,transparent)]",
   published: "bg-blue-100/50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-500/10",
   complete: "bg-emerald-100/50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-500/10",
   missing_document: "bg-rose-100/50 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400 border-rose-500/10",
   pending_review: "bg-amber-100/50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-500/10",
   in_review: "bg-amber-100/50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-500/10",
   new: "bg-blue-100/50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-500/10",
+  info: "bg-cyan-100/50 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300 border-cyan-500/10",
+  warning: "bg-amber-100/50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300 border-amber-500/10",
 };
 
 /**
@@ -47,7 +49,8 @@ export default function StatusBadge({ value, className }: StatusBadgeProps) {
     <span
       className={cn(
         "inline-flex items-center rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest transition-all",
-        toneByValue[normalized] ?? "bg-slate-100/50 text-slate-500 border-slate-200/50",
+        toneByValue[normalized] ??
+          "bg-[var(--workspace-elevated)] text-[var(--workspace-muted)] border-[color:color-mix(in_srgb,var(--workspace-border)_74%,transparent)]",
         className,
       )}
     >

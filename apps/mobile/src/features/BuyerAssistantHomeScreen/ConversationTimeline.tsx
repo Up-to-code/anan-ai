@@ -1,5 +1,4 @@
-import type { RefObject } from "react";
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef, type RefObject } from "react";
 import { Animated, Pressable, ScrollView, View } from "react-native";
 import { FlashList, type FlashListRef } from "@shopify/flash-list";
 import {
@@ -18,12 +17,13 @@ import {
   Wallet,
 } from "lucide-react-native";
 import { Image } from "expo-image";
-import { MobilePropertyListItem } from "@/components/property/MobilePropertyListItem";
+import { CursorCardShell } from "@/components/property/CursorCardShell";
+import { MobilePropertyCard, type MobilePropertyCardVariant } from "@/components/property/MobilePropertyCard";
 import { AppText } from "@/components/ui/AppText";
 import { MobilePill, MobileSectionHeading } from "@/components/ui/MobileChrome";
 import { formatCurrency, formatPercent } from "@/lib/formatters";
 import { getPropertyHeroImage, getPropertyLocationLabel } from "@/lib/mobileData";
-import { mobileTheme } from "@/lib/mobileTheme";
+import { useAppTheme, type AppTheme } from "@/lib/mobileTheme";
 import type { MobileConversationMessage, MobileProperty, MobileSearchContext } from "@/types/mobile";
 
 type ConversationTimelineProps = {
@@ -32,17 +32,17 @@ type ConversationTimelineProps = {
   isTyping?: boolean;
   onPropertyPress: (property: MobileProperty) => void;
   onOpenProperty?: (property: MobileProperty) => void;
+  onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
   onSuggestedPromptPress: (prompt: string) => void;
   bottomPadding?: number;
   contextProperty?: MobileProperty | null;
   showLatestSuggestedPrompts?: boolean;
   onShowMoreSearchResults?: (searchContext: MobileSearchContext) => void;
+  ambientBackgroundColor?: string;
 };
 
 /**
- * WHY:   The buyer home screen needs a screen-owned conversation layout instead of rendering through the old shared chat widgets.
- * WHAT:  Renders the mobile assistant timeline with bespoke message sections, property shelves, search summaries, and structured insight blocks.
- * HOW:   Reuses only the message data contract while composing feature-local surfaces for each visible conversation outcome.
+ * WHAT:  Timeline showing messages using the Unified Rounded layout rules.
  */
 export function ConversationTimeline({
   listRef,
@@ -50,11 +50,13 @@ export function ConversationTimeline({
   isTyping,
   onPropertyPress,
   onOpenProperty,
+  onOpenGallery,
   onSuggestedPromptPress,
   bottomPadding = 40,
   contextProperty,
   showLatestSuggestedPrompts = true,
   onShowMoreSearchResults,
+  ambientBackgroundColor,
 }: ConversationTimelineProps) {
   const data = [...messages];
   const latestSuggestedPromptMessageId =
@@ -79,6 +81,7 @@ export function ConversationTimeline({
           <ContextPropertyPanel
             property={contextProperty}
             onPress={() => (onOpenProperty ? onOpenProperty(contextProperty) : onPropertyPress(contextProperty))}
+            ambientBackgroundColor={ambientBackgroundColor}
           />
         ) : null
       }
@@ -92,9 +95,11 @@ export function ConversationTimeline({
               message={item}
               onPropertyPress={onPropertyPress}
               onOpenProperty={onOpenProperty}
+              onOpenGallery={onOpenGallery}
               onSuggestedPromptPress={onSuggestedPromptPress}
               showSuggestedPrompts={showLatestSuggestedPrompts && item.id === latestSuggestedPromptMessageId}
               onShowMoreSearchResults={onShowMoreSearchResults}
+              ambientBackgroundColor={ambientBackgroundColor}
             />
           )}
         </View>
@@ -107,22 +112,26 @@ function ConversationEntry({
   message,
   onPropertyPress,
   onOpenProperty,
+  onOpenGallery,
   onSuggestedPromptPress,
   showSuggestedPrompts,
   onShowMoreSearchResults,
+  ambientBackgroundColor,
 }: {
   message: MobileConversationMessage;
   onPropertyPress: (property: MobileProperty) => void;
   onOpenProperty?: (property: MobileProperty) => void;
+  onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
   onSuggestedPromptPress: (prompt: string) => void;
   showSuggestedPrompts: boolean;
   onShowMoreSearchResults?: (searchContext: MobileSearchContext) => void;
+  ambientBackgroundColor?: string;
 }) {
   const isUser = message.role === "user";
   const structuredCards = message.uiTurn?.cards ?? [];
 
   return (
-    <View className={isUser ? "items-start" : "items-stretch"} style={{ gap: 14 }}>
+    <View className={isUser ? "items-start" : "items-stretch"} style={{ gap: 16 }}>
       {isUser ? <UserPromptPanel text={message.text} /> : <AssistantNarrativePanel text={message.text} />}
 
       {structuredCards.length > 0 ? (
@@ -133,7 +142,9 @@ function ConversationEntry({
               card={card}
               onPropertyPress={onPropertyPress}
               onOpenProperty={onOpenProperty}
+              onOpenGallery={onOpenGallery}
               onSuggestedPromptPress={onSuggestedPromptPress}
+              ambientBackgroundColor={ambientBackgroundColor}
             />
           ))}
         </View>
@@ -141,11 +152,13 @@ function ConversationEntry({
 
       {!message.uiTurn && (message.properties?.length ?? 0) > 0 ? (
         <PropertyShelf
-          title="ترشيحات من نفس المحادثة"
-          description="هذه الوحدات قريبة من الطلب الحالي ويمكنك فتح أي واحدة أو متابعة الخطوة التالية منها."
+          title="ترشيحات مقترحة"
+          description="وحدات متعلقة بالطلب يمكنك اتخاذ إجراء عليها."
           properties={message.properties ?? []}
           onPropertyPress={onPropertyPress}
           onOpenProperty={onOpenProperty}
+          onOpenGallery={onOpenGallery}
+          ambientBackgroundColor={ambientBackgroundColor}
         />
       ) : null}
 
@@ -156,7 +169,9 @@ function ConversationEntry({
           properties={message.searchResults ?? []}
           onPropertyPress={onPropertyPress}
           onOpenProperty={onOpenProperty}
+          onOpenGallery={onOpenGallery}
           onShowMoreSearchResults={onShowMoreSearchResults}
+          ambientBackgroundColor={ambientBackgroundColor}
         />
       ) : null}
 
@@ -176,22 +191,24 @@ function ConversationEntry({
 }
 
 function UserPromptPanel({ text }: { text: string }) {
+  const theme = useAppTheme();
   const startsWithLatin = /^[A-Za-z0-9]/.test(text.trim());
   return (
     <View
-      className="px-5 py-4"
+      className="px-5 py-3"
       style={{
         maxWidth: "84%",
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
-        borderBottomLeftRadius: 28,
-        borderBottomRightRadius: 18,
-        backgroundColor: mobileTheme.colors.dark,
+        borderRadius: theme.radii.bubble, // Soft unified bubble
+        backgroundColor: theme.colors.userBubble,
       }}
     >
       <AppText
-        className="text-[15px] font-cairo-medium text-white"
-        style={{ textAlign: startsWithLatin ? "left" : "right", writingDirection: startsWithLatin ? "ltr" : "rtl" }}
+        className="text-[15px] font-cairo-medium leading-relaxed"
+        style={{
+          textAlign: startsWithLatin ? "left" : "right",
+          writingDirection: startsWithLatin ? "ltr" : "rtl",
+          color: theme.colors.userBubbleText,
+        }}
       >
         {text}
       </AppText>
@@ -200,20 +217,14 @@ function UserPromptPanel({ text }: { text: string }) {
 }
 
 function AssistantNarrativePanel({ text }: { text: string }) {
+  const theme = useAppTheme();
   return (
-    <View className="gap-3">
+    <View className="gap-2">
       <View className="flex-row-reverse items-center gap-2">
-        <MobilePill label="وكيل عنان" tone="primary" active className="min-h-0 px-3 py-1.5" />
-        <View
-          className="items-center justify-center rounded-full"
-          style={{ width: 28, height: 28, borderWidth: 1, borderColor: "#D4E2FF", backgroundColor: "#FFFFFF" }}
-        >
-          <Sparkles size={14} color={mobileTheme.colors.primary} />
-        </View>
+        <AppText className="text-[12px] font-cairo-bold" style={{ color: theme.colors.primary }}>مساعد عنان</AppText>
       </View>
-
       <View className="px-1">
-        <AppText className="text-[15px] leading-8 font-cairo-bold text-slate-900">{text}</AppText>
+        <AppText className="text-[15px] leading-8 font-cairo-medium" style={{ color: theme.colors.ink }}>{text}</AppText>
       </View>
     </View>
   );
@@ -222,36 +233,41 @@ function AssistantNarrativePanel({ text }: { text: string }) {
 function ContextPropertyPanel({
   property,
   onPress,
+  ambientBackgroundColor,
 }: {
   property: MobileProperty;
   onPress: () => void;
+  ambientBackgroundColor?: string;
 }) {
+  const theme = useAppTheme();
   return (
     <Pressable onPress={onPress} className="mb-4 active:opacity-95">
-      <View
-        className="rounded-[24px] px-4 py-4"
-        style={{
-          borderWidth: 1,
-          borderColor: "#E5E7EB",
-          backgroundColor: "#F3F4F6",
-        }}
-      >
-        <View className="flex-row-reverse items-center justify-between">
-          <View className="flex-1">
-            <AppText className="text-[12px] font-cairo-black text-slate-500">العقار الجاري داخل المحادثة</AppText>
-            <AppText className="mt-1 text-[18px] font-cairo-black text-slate-900" numberOfLines={1}>
-              {property.title}
-            </AppText>
-            <View className="mt-2 flex-row-reverse items-center gap-2">
-              <MapPin size={14} color={mobileTheme.colors.primary} />
-              <AppText className="flex-1 text-[13px] font-bold text-slate-500" numberOfLines={1}>
-                {getPropertyLocationLabel(property)}
+      <CursorCardShell ambientBackgroundColor={ambientBackgroundColor}>
+        <View
+          className="px-5 py-4"
+          style={{
+            backgroundColor: theme.colors.surfaceMuted,
+          }}
+        >
+          <View className="flex-row-reverse items-center justify-between">
+            <View className="flex-1">
+              <AppText className="text-[11px] font-cairo-bold text-right" style={{ color: theme.colors.inkMuted }}>
+                العقار الجاري
               </AppText>
+              <AppText className="mt-1 text-[16px] font-cairo-bold text-right" numberOfLines={1} style={{ color: theme.colors.ink }}>
+                {property.title}
+              </AppText>
+              <View className="mt-2 flex-row-reverse items-center gap-2">
+                <MapPin size={14} color={theme.colors.primary} />
+                <AppText className="flex-1 text-[13px] font-medium tracking-tight text-right" numberOfLines={1} style={{ color: theme.colors.inkMuted }}>
+                  {getPropertyLocationLabel(property)}
+                </AppText>
+              </View>
             </View>
+            <MobilePill label="فتح التفاصيل" tone="default" />
           </View>
-          <MobilePill label="فتح" tone="primary" active />
         </View>
-      </View>
+      </CursorCardShell>
     </Pressable>
   );
 }
@@ -262,16 +278,22 @@ function PropertyShelf({
   properties,
   onPropertyPress,
   onOpenProperty,
+  onOpenGallery,
+  ambientBackgroundColor,
+  cardVariant = "compact",
 }: {
   title: string;
   description: string;
   properties: MobileProperty[];
   onPropertyPress: (property: MobileProperty) => void;
   onOpenProperty?: (property: MobileProperty) => void;
+  onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
+  ambientBackgroundColor?: string;
+  cardVariant?: MobilePropertyCardVariant;
 }) {
   return (
     <View className="gap-4">
-      <MobileSectionHeading title={title} description={description} eyebrow="SHORTLIST" />
+      <MobileSectionHeading title={title} description={description} eyebrow="مقترحات" />
       <View className="gap-4">
         {properties.map((property) => (
           <ConversationPropertyCard
@@ -279,6 +301,9 @@ function PropertyShelf({
             property={property}
             onPrimaryAction={onPropertyPress}
             onSecondaryAction={onOpenProperty}
+            onOpenGallery={onOpenGallery}
+            ambientBackgroundColor={ambientBackgroundColor}
+            variant={cardVariant}
           />
         ))}
       </View>
@@ -292,59 +317,69 @@ function SearchResultSection({
   properties,
   onPropertyPress,
   onOpenProperty,
+  onOpenGallery,
   onShowMoreSearchResults,
+  ambientBackgroundColor,
 }: {
   searchContext: MobileSearchContext;
   summary: string;
   properties: MobileProperty[];
   onPropertyPress: (property: MobileProperty) => void;
   onOpenProperty?: (property: MobileProperty) => void;
+  onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
   onShowMoreSearchResults?: (searchContext: MobileSearchContext) => void;
+  ambientBackgroundColor?: string;
 }) {
+  const theme = useAppTheme();
   const previewResults = properties.slice(0, 3);
   const hasMore = properties.length > 3;
 
   return (
     <View className="gap-4">
-      <View className="flex-row-reverse items-start gap-3">
+      <View className="flex-row-reverse items-start gap-4">
         <View
-          className="items-center justify-center rounded-full"
-          style={{ width: 40, height: 40, borderWidth: 1, borderColor: "#D4E2FF", backgroundColor: "#FFFFFF" }}
+          className="items-center justify-center"
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: theme.radii.pill, // circular search icon
+            backgroundColor: theme.colors.primarySoft,
+          }}
         >
-          <Search size={18} color={mobileTheme.colors.primary} />
+          <Search size={20} color={theme.colors.primary} />
         </View>
-        <View className="flex-1">
-          <AppText className="text-[17px] font-cairo-black text-slate-900">نتائج بحث مرتبطة بالمحادثة</AppText>
-          <AppText className="mt-2 text-[14px] leading-7 text-slate-600">{summary}</AppText>
+        <View className="flex-1 mt-1">
+          <AppText className="text-[18px] font-cairo-bold text-right" style={{ color: theme.colors.ink }}>نتائج البحث المقترحة</AppText>
+          <AppText className="mt-1-5 text-[14px] leading-7 text-right" style={{ color: theme.colors.inkMuted }}>{summary}</AppText>
         </View>
       </View>
 
-      <View className="gap-4">
+      <View className="gap-4 mt-2">
         {previewResults.map((property) => (
           <ConversationPropertyCard
             key={property.id}
             property={property}
             onPrimaryAction={onPropertyPress}
             onSecondaryAction={onOpenProperty}
+            onOpenGallery={onOpenGallery}
+            ambientBackgroundColor={ambientBackgroundColor}
           />
         ))}
 
         {hasMore && onShowMoreSearchResults ? (
           <Pressable
             onPress={() => onShowMoreSearchResults(searchContext)}
-            className="flex-row-reverse items-center justify-between rounded-[22px] px-4 py-4 active:opacity-90"
+            className="flex-row-reverse items-center justify-between px-5 py-4 active:opacity-90 mt-1"
             style={{
+              borderRadius: theme.radii.pill, // Use pill boundary for actions per system design
               borderWidth: 1,
-              borderColor: mobileTheme.colors.border,
-              backgroundColor: mobileTheme.colors.surfaceMuted,
+              borderColor: theme.colors.borderStrong,
+              backgroundColor: theme.colors.surface,
             }}
           >
-            <ChevronLeft size={16} color={mobileTheme.colors.primary} />
-            <View className="flex-1 items-end">
-              <AppText className="text-right text-[15px] font-cairo-black text-slate-900">عرض المزيد</AppText>
-              <AppText className="mt-1 text-right text-[12px] font-bold text-slate-500">
-                افتح كل النتائج المرتبطة بنفس الطلب
-              </AppText>
+            <ChevronLeft size={16} color={theme.colors.inkSoft} />
+            <View className="flex-1">
+              <AppText className="text-right text-[15px] font-cairo-bold" style={{ color: theme.colors.ink }}>كافة النتائج المرتبطة</AppText>
             </View>
           </Pressable>
         ) : null}
@@ -357,18 +392,26 @@ function ConversationPropertyCard({
   property,
   onPrimaryAction,
   onSecondaryAction,
+  onOpenGallery,
+  ambientBackgroundColor,
+  variant = "compact",
 }: {
   property: MobileProperty;
   onPrimaryAction: (property: MobileProperty) => void;
   onSecondaryAction?: (property: MobileProperty) => void;
+  onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
+  ambientBackgroundColor?: string;
+  variant?: MobilePropertyCardVariant;
 }) {
   return (
-    <MobilePropertyListItem
+    <MobilePropertyCard
+      variant={variant}
       property={property}
       onPress={(nextProperty) => (onSecondaryAction ? onSecondaryAction(nextProperty) : onPrimaryAction(nextProperty))}
       onActionPress={onPrimaryAction}
-      actionLabel="تابع من هنا"
-      compact
+      onOpenGallery={onOpenGallery}
+      actionLabel="متابعة"
+      ambientBackgroundColor={ambientBackgroundColor}
     />
   );
 }
@@ -377,12 +420,16 @@ function StructuredCardPanel({
   card,
   onPropertyPress,
   onOpenProperty,
+  onOpenGallery,
   onSuggestedPromptPress,
+  ambientBackgroundColor,
 }: {
   card: any;
   onPropertyPress: (property: MobileProperty) => void;
   onOpenProperty?: (property: MobileProperty) => void;
+  onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
   onSuggestedPromptPress: (prompt: string) => void;
+  ambientBackgroundColor?: string;
 }) {
   switch (card.componentId) {
     case "property_shortlist":
@@ -393,6 +440,9 @@ function StructuredCardPanel({
           properties={(card.props.properties as MobileProperty[]) ?? []}
           onPropertyPress={onPropertyPress}
           onOpenProperty={onOpenProperty}
+          onOpenGallery={onOpenGallery}
+          ambientBackgroundColor={ambientBackgroundColor}
+          cardVariant="generated"
         />
       );
     case "bank_offer":
@@ -418,35 +468,37 @@ function BankOfferPanel({
   offer: any;
   onSuggestedPromptPress: (prompt: string) => void;
 }) {
+  const theme = useAppTheme();
   return (
     <View
-      className="rounded-[24px] px-4 py-4"
+      className="px-5 py-5"
       style={{
+        borderRadius: theme.radii.card,
         borderWidth: 1,
-        borderColor: mobileTheme.colors.border,
-        backgroundColor: "#F3F4F6",
+        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.surfaceMuted,
       }}
     >
       <View className="flex-row-reverse items-center justify-between">
-        <View className="flex-row-reverse items-center gap-2">
+        <View className="flex-row-reverse items-center gap-3">
           <View
-            className="items-center justify-center rounded-full"
-            style={{ width: 36, height: 36, backgroundColor: mobileTheme.colors.primarySoft }}
+            className="items-center justify-center"
+            style={{ width: 44, height: 44, borderRadius: theme.radii.pill, backgroundColor: theme.colors.primarySoft }}
           >
-            <Wallet size={18} color={mobileTheme.colors.primary} />
+            <Wallet size={20} color={theme.colors.primary} />
           </View>
-          <AppText className="text-[18px] font-cairo-black text-slate-900">{String(offer.bankName ?? "عرض بنكي")}</AppText>
+          <AppText className="text-[18px] font-cairo-bold" style={{ color: theme.colors.ink }}>{String(offer.bankName ?? "عرض بنكي")}</AppText>
         </View>
         <MobilePill label={String(offer.rateLabel ?? "تمويل")} tone="primary" active />
       </View>
 
-      <View className="mt-4 gap-3">
+      <View className="mt-5 gap-4">
         <InsightRow label="القسط الشهري" value={formatCurrency(Number(offer.monthlyEstimate ?? 0))} emphasized />
         <InsightRow label="الدفعة الأولى" value={`${String(offer.downPaymentPercent ?? 0)}%`} />
         <InsightRow label="البرنامج" value={String(offer.rateLabel ?? "تمويل عقاري")} last />
       </View>
 
-      <View className="mt-4 items-end">
+      <View className="mt-6 border-t pt-4" style={{ borderTopColor: theme.colors.borderStrong }}>
         <MobilePill
           label={`اطلب تمويل من ${String(offer.bankName ?? "البنك")}`}
           tone="dark"
@@ -469,66 +521,79 @@ function NextStepPanel({
   actionLabel: string;
   onPress: () => void;
 }) {
+  const theme = useAppTheme();
   return (
     <View
-      className="rounded-[24px] px-4 py-4"
+      className="px-5 py-5"
       style={{
+        borderRadius: theme.radii.card,
         borderWidth: 1,
-        borderColor: "#D4E2FF",
-        backgroundColor: "#F8FAFF",
+        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.surface,
       }}
     >
-      <MobileSectionHeading eyebrow="NEXT STEP" title={title} description={summary} />
-      <View className="mt-4 items-end">
-        <MobilePill label={actionLabel} tone="dark" active onPress={onPress} />
+      <MobileSectionHeading eyebrow="طُرح لك" title={title} description={summary} />
+      <View className="mt-5 border-t py-1 flex-row-reverse" style={{ borderTopColor: theme.colors.borderStrong }}>
+        <MobilePill label={actionLabel} tone="primary" active onPress={onPress} />
       </View>
     </View>
   );
 }
 
 function InsightSummaryPanel({ card }: { card: any }) {
-  const icon = resolveInsightIcon(card);
+  const theme = useAppTheme();
+  const icon = resolveInsightIcon(card, theme);
   const rows = extractInsightRows(card);
+  const insightTone = resolveInsightTone(card);
+
+  function getInsightColors() {
+    switch (insightTone) {
+      case "highlight":
+        return { bg: theme.colors.primarySoft, border: theme.colors.primaryMuted };
+      case "success":
+        return { bg: theme.colors.successSoft, border: theme.colors.successSoft };
+      case "danger":
+        return { bg: theme.colors.dangerSoft, border: theme.colors.dangerSoft };
+      default:
+        return { bg: theme.colors.surface, border: theme.colors.border };
+    }
+  }
+
+  const colors = getInsightColors();
 
   return (
     <View
-      className="rounded-[24px] px-4 py-4"
+      className="px-5 py-5"
       style={{
-        borderWidth: 1,
-        borderColor: resolveInsightTone(card) === "highlight" ? "#D4E2FF" : mobileTheme.colors.border,
-        backgroundColor:
-          resolveInsightTone(card) === "highlight"
-            ? "#F8FAFF"
-            : resolveInsightTone(card) === "success"
-              ? mobileTheme.colors.successSoft
-              : resolveInsightTone(card) === "danger"
-                ? mobileTheme.colors.dangerSoft
-                : "#FFFFFF",
+        borderRadius: theme.radii.card, // Generous geometry 16px
+        borderWidth: 1, // Delicate 1px stroke boundaries
+        borderColor: colors.border,
+        backgroundColor: colors.bg,
       }}
     >
-      <View className="flex-row-reverse items-center justify-between gap-3">
+      <View className="flex-row-reverse items-center justify-between gap-3 pb-4 mb-2" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
         <View className="flex-1">
-          <AppText className="text-[18px] font-cairo-black text-slate-900">{String(card.title ?? "ملخص")}</AppText>
+          <AppText className="text-[18px] font-cairo-bold text-right" style={{ color: theme.colors.ink }}>{String(card.title ?? "ملخص")}</AppText>
           {card.summary ? (
-            <AppText className="mt-2 text-[14px] leading-7 text-slate-600">{String(card.summary)}</AppText>
+            <AppText className="mt-1 text-[14px] leading-6 text-right" style={{ color: theme.colors.inkMuted }}>{String(card.summary)}</AppText>
           ) : null}
         </View>
         <View
-          className="items-center justify-center rounded-full"
-          style={{ width: 40, height: 40, backgroundColor: mobileTheme.colors.surface }}
+          className="items-center justify-center"
+          style={{ width: 44, height: 44, borderRadius: theme.radii.pill, backgroundColor: theme.colors.surfaceMuted }}
         >
           {icon}
         </View>
       </View>
 
       {card.body ? (
-        <AppText className="mt-4 text-[14px] leading-7 text-slate-700">{String(card.body)}</AppText>
+        <AppText className="mt-2 text-[15px] leading-7" style={{ color: theme.colors.inkSoft }}>{String(card.body)}</AppText>
       ) : null}
 
       {card.rows ? (
         <ComparisonTable rows={card.rows} />
       ) : rows.length > 0 ? (
-        <View className="mt-4 gap-3">
+        <View className="gap-2">
           {rows.map((row, index) => (
             <InsightRow
               key={`${row.label}-${index}`}
@@ -545,14 +610,15 @@ function InsightSummaryPanel({ card }: { card: any }) {
 }
 
 function ComparisonTable({ rows }: { rows: Array<Array<string>> }) {
+  const theme = useAppTheme();
   return (
     <View
       className="mt-4 overflow-hidden"
       style={{
-        borderRadius: 20,
+        borderRadius: theme.radii.card,
         borderWidth: 1,
-        borderColor: mobileTheme.colors.border,
-        backgroundColor: mobileTheme.colors.surface,
+        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.surface,
       }}
     >
       {rows.map((row, rowIndex) => (
@@ -561,13 +627,16 @@ function ComparisonTable({ rows }: { rows: Array<Array<string>> }) {
           className="flex-row-reverse px-4 py-3"
           style={{
             borderBottomWidth: rowIndex === rows.length - 1 ? 0 : 1,
-            borderBottomColor: mobileTheme.colors.border,
-            backgroundColor: rowIndex === 0 ? mobileTheme.colors.surfaceMuted : mobileTheme.colors.surface,
+            borderBottomColor: theme.colors.border,
+            backgroundColor: rowIndex === 0 ? theme.colors.surfaceMuted : theme.colors.surface,
           }}
         >
           {row.map((cell, cellIndex) => (
             <View key={`${cell}-${cellIndex}`} className="flex-1">
-              <AppText className={rowIndex === 0 ? "text-[12px] font-cairo-black text-slate-500" : "text-[13px] font-cairo-bold text-slate-900"}>
+              <AppText
+                className={rowIndex === 0 ? "text-[12px] font-cairo-bold" : "text-[14px] font-cairo-medium"}
+                style={{ color: rowIndex === 0 ? theme.colors.inkMuted : theme.colors.ink }}
+              >
                 {cell}
               </AppText>
             </View>
@@ -589,13 +658,20 @@ function InsightRow({
   emphasized?: boolean;
   last?: boolean;
 }) {
+  const theme = useAppTheme();
   return (
     <View
-      className="flex-row-reverse items-center justify-between py-3"
-      style={{ borderBottomWidth: last ? 0 : 1, borderBottomColor: mobileTheme.colors.border }}
+      className="flex-row-reverse items-center justify-between py-2"
+      style={{ borderBottomWidth: last ? 0 : 1, borderBottomColor: theme.colors.border }}
     >
-      <AppText className="max-w-[46%] text-[13px] font-cairo-black text-slate-500">{label}</AppText>
-      <AppText className={emphasized ? "max-w-[48%] text-left text-[15px] font-cairo-black text-blue-700" : "max-w-[48%] text-left text-[15px] font-cairo-bold text-slate-900"}>
+      <AppText className="max-w-[46%] text-[13px] font-cairo-medium text-right" style={{ color: theme.colors.inkMuted }}>{label}</AppText>
+      <AppText
+        className="max-w-[48%] text-left text-[14px]"
+        style={{
+          fontFamily: emphasized ? "Cairo_700Bold" : "Cairo_500Medium",
+          color: emphasized ? theme.colors.primary : theme.colors.ink,
+        }}
+      >
         {value}
       </AppText>
     </View>
@@ -609,20 +685,23 @@ function PromptTray({
   prompts: string[];
   onPress: (prompt: string) => void;
 }) {
+  const theme = useAppTheme();
   return (
-    <View className="gap-3">
+    <View className="gap-3 mt-2">
       {prompts.map((prompt) => (
         <Pressable
           key={prompt}
           onPress={() => onPress(prompt)}
-          className="rounded-full px-4 py-4"
-          style={{
+          className="px-5 py-3.5"
+          style={({ pressed }) => ({
+            borderRadius: theme.radii.pill, // Unified system suggestions are pill shape
             borderWidth: 1,
-            borderColor: "rgba(15,23,42,0.08)",
-            backgroundColor: "#16181E",
-          }}
+            borderColor: theme.colors.border,
+            backgroundColor: theme.colors.surface,
+            transform: [{ scale: pressed ? 0.98 : 1 }],
+          })}
         >
-          <AppText className="text-[13px] font-cairo-black text-white">{prompt}</AppText>
+          <AppText className="text-[14px] font-cairo-bold text-center" style={{ color: theme.colors.inkSoft }}>{prompt}</AppText>
         </Pressable>
       ))}
     </View>
@@ -630,6 +709,7 @@ function PromptTray({
 }
 
 function TypingPanel() {
+  const theme = useAppTheme();
   const opacity = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
@@ -645,16 +725,17 @@ function TypingPanel() {
 
   return (
     <View
-      className="self-end rounded-full px-4 py-3"
+      className="self-end px-5 py-3"
       style={{
+        borderRadius: theme.radii.pill,
         borderWidth: 1,
-        borderColor: "#D4E2FF",
-        backgroundColor: "#F8FAFF",
+        borderColor: theme.colors.borderStrong,
+        backgroundColor: theme.colors.surfaceMuted,
       }}
     >
       <Animated.View style={{ opacity }} className="flex-row-reverse items-center gap-3">
-        <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: mobileTheme.colors.primary }} />
-        <AppText className="text-[13px] font-cairo-black text-blue-700">تحليل الطلب الآن...</AppText>
+        <View className="h-2 w-2 rounded-full" style={{ backgroundColor: theme.colors.primary }} />
+        <AppText className="text-[12px] font-cairo-medium" style={{ color: theme.colors.ink }}>يكتب الآن...</AppText>
       </Animated.View>
     </View>
   );
@@ -667,26 +748,27 @@ function resolveInsightTone(card: any): "default" | "muted" | "highlight" | "suc
   return "muted";
 }
 
-function resolveInsightIcon(card: any) {
+function resolveInsightIcon(card: any, theme: AppTheme) {
+  const color = theme.colors.primary;
   switch (card.type) {
     case "broker_profile":
-      return <User size={18} color={mobileTheme.colors.primary} />;
+      return <User size={20} color={color} />;
     case "developer_profile":
-      return <Building2 size={18} color={mobileTheme.colors.primary} />;
+      return <Building2 size={20} color={color} />;
     case "market_analysis":
-      return <TrendingUp size={18} color={mobileTheme.colors.primary} />;
+      return <TrendingUp size={20} color={color} />;
     case "roi_summary":
     case "roi_projection":
-      return <Percent size={18} color={mobileTheme.colors.primary} />;
+      return <Percent size={20} color={color} />;
     case "loan_calculator":
     case "payment_plan":
     case "mortgage_check":
     case "bank_offer":
-      return <Wallet size={18} color={mobileTheme.colors.primary} />;
+      return <Wallet size={20} color={color} />;
     case "permit_status":
-      return <ShieldCheck size={18} color={mobileTheme.colors.success} />;
+      return <ShieldCheck size={20} color={theme.colors.success} />;
     default:
-      return <Sparkles size={18} color={mobileTheme.colors.primary} />;
+      return <Sparkles size={20} color={theme.colors.primary} />;
   }
 }
 

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import AdminPageLayout from "@/components/shared/AdminPageLayout";
 import { cn } from "@/lib/utils";
 
 type AdminFormPageLayoutProps = {
@@ -14,9 +15,11 @@ type AdminFormPageLayoutProps = {
  */
 export default function AdminFormPageLayout({ children, sidebar, className }: AdminFormPageLayoutProps) {
   return (
-    <div className={cn("grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(300px,0.75fr)]", className)}>
-      <div className="space-y-4">{children}</div>
-      {sidebar ? <aside className="space-y-4">{sidebar}</aside> : null}
-    </div>
+    <AdminPageLayout
+      main={<div className="grid min-w-0 max-w-full content-start gap-4 xl:gap-5">{children}</div>}
+      rail={sidebar}
+      variant="form"
+      className={cn("min-w-0 max-w-full", className)}
+    />
   );
 }

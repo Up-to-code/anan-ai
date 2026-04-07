@@ -13,13 +13,13 @@ type AdminFormSummaryCardProps = {
  */
 export default function AdminFormSummaryCard({ title, values }: AdminFormSummaryCardProps) {
   return (
-    <section className="rounded-[8px] border border-border bg-white p-4">
-      <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+    <section className="rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] p-4 shadow-sm">
+      <h2 className="text-base font-black text-[var(--workspace-bubble-other-foreground)]">{title}</h2>
       <div className="mt-4 space-y-3">
         {values.map((item) => (
-          <div key={item.label} className="flex items-center justify-between gap-3 rounded-[8px] border border-border bg-slate-50 px-3 py-2.5">
-            <span className="text-sm text-slate-600">{item.label}</span>
-            <span className="text-sm font-medium text-slate-900">
+          <div key={item.label} className="flex items-center justify-between gap-3 rounded-[18px] border border-[color:color-mix(in_srgb,var(--workspace-border)_74%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_58%,transparent)] px-3 py-2.5">
+            <span className="text-sm text-[var(--workspace-muted)]">{item.label}</span>
+            <span className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">
               {item.tone === "status" && typeof item.value === "string" ? <StatusBadge value={item.value} /> : item.value}
             </span>
           </div>

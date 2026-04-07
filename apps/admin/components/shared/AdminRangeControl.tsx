@@ -25,7 +25,13 @@ export default function AdminRangeControl({ className }: AdminRangeControlProps)
   };
 
   return (
-    <nav className={cn("flex items-center gap-1 rounded-[8px] border border-border bg-white p-1", className)} aria-label="time range">
+    <nav
+      className={cn(
+        "flex items-center gap-1 rounded-[18px] border border-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_94%,transparent)] p-1 shadow-sm",
+        className,
+      )}
+      aria-label="time range"
+    >
       {[
         { value: "30d" as const, label: "30 يوم" },
         { value: "90d" as const, label: "90 يوم" },
@@ -34,8 +40,10 @@ export default function AdminRangeControl({ className }: AdminRangeControlProps)
           key={item.value}
           href={buildHref(item.value)}
           className={cn(
-            "rounded-[8px] px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors",
-            currentRange === item.value ? "bg-slate-900 text-white" : "hover:bg-stone-100 hover:text-slate-900",
+            "rounded-[14px] px-3 py-1.5 text-sm font-black tracking-[0.08em] transition-colors",
+            currentRange === item.value
+              ? "bg-[var(--workspace-highlight)] text-white"
+              : "text-[var(--workspace-muted)] hover:bg-[var(--workspace-elevated)] hover:text-[var(--workspace-bubble-other-foreground)]",
           )}
         >
           {item.label}

@@ -1,5 +1,5 @@
 import EntityEditorPage from "@/admin_zone/pages/EntityEditorPage";
-import { organizationsTabs } from "@/lib/adminSectionTabs";
+import { newOrganizationTabs } from "@/lib/adminSectionTabs";
 
 /**
  * WHY:   Admin operators need a route-backed create form for onboarding organizations in the mocked console.
@@ -15,7 +15,7 @@ export default function NewOrganizationPage() {
       entityLabel="المنظمة"
       mode="create"
       backHref="/organizations"
-      tabs={organizationsTabs}
+      tabs={newOrganizationTabs}
       fields={[
         { name: "name", label: "اسم المنظمة", placeholder: "اسم المنظمة" },
         { name: "kind", label: "النوع", type: "select", defaultValue: "developer", options: [{ label: "مطور", value: "developer" }, { label: "وسيط", value: "broker" }] },

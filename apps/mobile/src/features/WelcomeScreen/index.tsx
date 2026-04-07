@@ -1,30 +1,28 @@
 import type { ReactNode } from "react";
-import { View, useColorScheme } from "react-native";
+import { View } from "react-native";
 import { useRouter } from "expo-router";
 import { Compass, MessageSquareMore, ShieldCheck } from "lucide-react-native";
 import { AppText } from "@/components/ui/AppText";
 import { Button } from "@/components/ui/Button";
 import { MobilePill, MobileSectionHeading, MobileSurface } from "@/components/ui/MobileChrome";
 import { AnanMark } from "@/components/chat/AnanMark";
-import { mobileTheme } from "@/lib/mobileTheme";
+import { useAppTheme } from "@/lib/mobileTheme";
 
-/**
- * WHY:   The optional welcome route should feel like a normal polished start page, not a concept screen.
- * WHAT:  Renders a simple branded welcome screen with concise benefits and clear entry actions.
- * HOW:   Uses one centered hero card, a quiet benefits row, and direct actions into assistant or search.
- */
 export default function WelcomeScreen() {
   const router = useRouter();
-  const isDark = useColorScheme() === "dark";
-  const screenBackground = isDark ? "#0B0C10" : mobileTheme.colors.canvas;
-  const sectionBackground = isDark ? "#151821" : "#F3F4F6";
+  const theme = useAppTheme();
 
   return (
-    <View className="flex-1 px-6" style={{ backgroundColor: screenBackground }}>
+    <View className="flex-1 px-6" style={{ backgroundColor: theme.colors.canvas }}>
       <View className="flex-1 justify-center">
         <View
-          className="rounded-[34px] px-6 py-8"
-          style={{ borderWidth: 1, borderColor: isDark ? "rgba(255,255,255,0.08)" : mobileTheme.colors.border, backgroundColor: sectionBackground }}
+          className="px-6 py-8"
+          style={{
+            borderRadius: theme.radii.hero, // Soft hero 24px bounding
+            borderWidth: 1, 
+            borderColor: theme.colors.borderStrong, 
+            backgroundColor: theme.colors.surfaceMuted 
+          }}
         >
           <View className="items-center">
             <View
@@ -32,8 +30,10 @@ export default function WelcomeScreen() {
               style={{
                 width: 96,
                 height: 96,
-                borderRadius: mobileTheme.radii.panel,
-                backgroundColor: mobileTheme.colors.dark,
+                borderRadius: theme.radii.panel,
+                backgroundColor: theme.colors.surfaceStrong,
+                borderWidth: 1,
+                borderColor: theme.colors.border,
               }}
             >
               <AnanMark size={40} />
@@ -49,9 +49,9 @@ export default function WelcomeScreen() {
           </View>
 
           <View className="mt-8 gap-3">
-            <FeatureRow icon={<MessageSquareMore size={18} color={mobileTheme.colors.primary} />} label="محادثة واحدة من البداية للنهاية" />
-            <FeatureRow icon={<ShieldCheck size={18} color={mobileTheme.colors.teal} />} label="عروض ونتائج موثقة" />
-            <FeatureRow icon={<Compass size={18} color={mobileTheme.colors.primary} />} label="بحث سريع وواضح" />
+            <FeatureRow icon={<MessageSquareMore size={18} color={theme.colors.primary} />} label="محادثة واحدة من البداية للنهاية" />
+            <FeatureRow icon={<ShieldCheck size={18} color={theme.colors.teal} />} label="عروض ونتائج موثقة" />
+            <FeatureRow icon={<Compass size={18} color={theme.colors.primary} />} label="بحث سريع وواضح" />
           </View>
         </View>
 
@@ -73,13 +73,8 @@ export default function WelcomeScreen() {
   );
 }
 
-function FeatureRow({
-  icon,
-  label,
-}: {
-  icon: ReactNode;
-  label: string;
-}) {
+function FeatureRow({ icon, label }: { icon: ReactNode; label: string }) {
+  const theme = useAppTheme();
   return (
     <MobileSurface
       radius="card"
@@ -88,16 +83,17 @@ function FeatureRow({
       className="flex-row-reverse items-center gap-3 px-4 py-4"
     >
       <View
-        className="items-center justify-center rounded-full"
+        className="items-center justify-center"
         style={{
           width: 40,
           height: 40,
-          backgroundColor: mobileTheme.colors.surfaceMuted,
+          borderRadius: theme.radii.pill,
+          backgroundColor: theme.colors.surfaceMuted,
         }}
       >
         {icon}
       </View>
-      <AppText className="flex-1 text-right text-[15px] font-cairo-black text-slate-900">
+      <AppText className="flex-1 text-right text-[15px] font-cairo-bold" style={{ color: theme.colors.ink }}>
         {label}
       </AppText>
     </MobileSurface>

@@ -161,10 +161,10 @@ Check each app README for the exact env contract.
 ```bash
 pnpm dev                # Convex
 pnpm dev:all            # Convex + web + client-web + marketing + admin
-pnpm dev:web
+pnpm dev:web            # web app on http://localhost:3000
 pnpm dev:client-web
 pnpm dev:marketing
-pnpm dev:admin
+pnpm dev:admin          # admin app on http://localhost:3001
 pnpm dev:docs
 pnpm dev:private-docs
 pnpm mobile:dev

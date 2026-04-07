@@ -29,6 +29,53 @@ function toNumberValue(value: unknown) {
   return typeof value === "number" ? value : null;
 }
 
+function renderTeamRail(items: Array<Record<string, unknown>>) {
+  return (
+    <WorkspacePanel
+      fullHeight
+      header={<h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground/40">الفريق</h2>}
+      bodyClassName="grid gap-3"
+      scrollBody
+      maxBodyHeightClassName="max-h-[520px]"
+    >
+      {items.length > 0 ? (
+        items.map((record) => (
+          <div key={toStringValue(record.id)} className="rounded-xl border border-border/30 bg-card p-4 shadow-sm">
+            <div className="text-[13px] font-black text-foreground">{toStringValue(record.profileName ?? record.name)}</div>
+            <div className="mt-1 text-[11px] font-bold text-muted-foreground/60">{toStringValue(record.profileEmail ?? record.email)}</div>
+            <div className="mt-3">
+              <StatusBadge value={typeof (record.role ?? record.status) === "string" ? String(record.role ?? record.status) : null} />
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="rounded-xl border border-dashed border-border/40 bg-muted/5 p-8 text-center text-xs font-bold text-muted-foreground/40">
+          لا توجد عضويات مرتبطة.
+        </div>
+      )}
+    </WorkspacePanel>
+  );
+}
+
+function renderDocumentsRail(documentStates: Array<{ label: string; status: string | null | undefined }>) {
+  return (
+    <WorkspacePanel className="p-8 space-y-6">
+      <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground/40">الوثائق</h2>
+      <div className="space-y-3">
+        {documentStates.map((doc) => (
+          <div
+            key={doc.label}
+            className="flex items-center justify-between rounded-xl border border-border/30 bg-card p-4 shadow-sm transition-colors hover:border-border"
+          >
+            <span className="text-[13px] font-bold text-muted-foreground/70">{doc.label}</span>
+            <StatusBadge value={doc.status} />
+          </div>
+        ))}
+      </div>
+    </WorkspacePanel>
+  );
+}
+
 async function renderLiveOrganizationDetail(organizationKey: string) {
   const session = await requireAdminPageSession(`/organizations/${encodeURIComponent(organizationKey)}`);
   const detail = await convexAdminOrganizationsRepository.getDetail(session.token, organizationKey);
@@ -39,7 +86,7 @@ async function renderLiveOrganizationDetail(organizationKey: string) {
 
   const organization = (detail.organization ?? {}) as Record<string, unknown>;
   const metrics = (detail.metrics ?? {}) as Record<string, unknown>;
-  const memberships = Array.isArray(detail.memberships) ? detail.memberships : [];
+  const memberships = (Array.isArray(detail.memberships) ? detail.memberships : []) as Array<Record<string, unknown>>;
   const verificationRequests = Array.isArray(detail.verificationRequests) ? detail.verificationRequests : [];
   const properties = Array.isArray(detail.properties) ? detail.properties : [];
 
@@ -49,107 +96,82 @@ async function renderLiveOrganizationDetail(organizationKey: string) {
       title={toStringValue(organization.name)}
       description="عرض تفصيلي حي لحالة المنظمة، التوثيق، الفريق، والعقارات المرتبطة."
       tabs={organizationDetailTabs(organizationKey)}
+      layout="detail"
+      rail={renderTeamRail(memberships)}
     >
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1.35fr)_340px]">
-        <div className="space-y-8">
-          <WorkspacePanel className="space-y-6 p-8">
-            <div className="flex flex-wrap items-center gap-3 border-b border-border/20 pb-6">
-              <StatusBadge value={typeof organization.status === "string" ? organization.status : null} />
-              <StatusBadge value={organization.isVerified === true ? "approved" : "pending"} />
-            </div>
-            <KeyValueGrid
-              items={[
-                { label: "نوع المنظمة", value: organization.ownerType === "broker" ? "وسيط" : "مطور" },
-                { label: "المعرف", value: toStringValue(organization.slug) },
-                { label: "بريد التواصل", value: toStringValue(organization.contactEmail) },
-                { label: "عدد الأعضاء", value: toNumberValue(metrics.membersCount) ?? 0 },
-                { label: "الدعوات المعلقة", value: toNumberValue(metrics.invitesCount) ?? 0 },
-                { label: "طلبات التوثيق", value: toNumberValue(metrics.verificationCount) ?? 0 },
-              ]}
-              columns={3}
-            />
-          </WorkspacePanel>
-
-          <WorkspacePanel className="space-y-6 p-8">
-            <h2 className="text-xl font-black tracking-tight text-foreground">طلبات التوثيق</h2>
-            <div className="space-y-3">
-              {verificationRequests.length > 0 ? (
-                verificationRequests.map((request) => {
-                  const record = request as Record<string, unknown>;
-                  return (
-                    <Link
-                      key={toStringValue(record.id)}
-                      href={`/verifications/${toStringValue(record.id)}`}
-                      className="block rounded-2xl border border-border/30 bg-muted/5 p-5 transition hover:border-primary/30 hover:bg-muted/10"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <div className="text-sm font-black text-foreground">{toStringValue(record.title, "طلب توثيق")}</div>
-                          <div className="mt-1 text-xs font-bold text-muted-foreground/60">
-                            {formatDateTime(toNumberValue(record.submittedAt))}
-                          </div>
-                        </div>
-                        <StatusBadge value={typeof record.currentStatus === "string" ? record.currentStatus : null} />
-                      </div>
-                    </Link>
-                  );
-                })
-              ) : (
-                <div className="rounded-2xl border border-dashed border-border/40 bg-muted/5 p-10 text-center text-sm font-bold text-muted-foreground/40">
-                  لا توجد طلبات توثيق مرتبطة بهذه المنظمة.
-                </div>
-              )}
-            </div>
-          </WorkspacePanel>
-
-          <WorkspacePanel className="space-y-6 p-8">
-            <h2 className="text-xl font-black tracking-tight text-foreground">العقارات المرتبطة</h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {properties.length > 0 ? (
-                properties.map((property) => {
-                  const record = property as Record<string, unknown>;
-                  return (
-                    <div key={toStringValue(record.id)} className="rounded-2xl border border-border/30 bg-muted/5 p-5">
-                      <div className="text-sm font-black text-foreground">{toStringValue(record.title)}</div>
-                      <div className="mt-1 text-xs font-bold text-muted-foreground/60">{toStringValue(record.address)}</div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="rounded-2xl border border-dashed border-border/40 bg-muted/5 p-10 text-center text-sm font-bold text-muted-foreground/40 md:col-span-2">
-                  لا توجد عقارات مرتبطة.
-                </div>
-              )}
-            </div>
-          </WorkspacePanel>
+      <WorkspacePanel className="space-y-6 p-8">
+        <div className="flex flex-wrap items-center gap-3 border-b border-border/20 pb-6">
+          <StatusBadge value={typeof organization.status === "string" ? organization.status : null} />
+          <StatusBadge value={organization.isVerified === true ? "approved" : "pending"} />
         </div>
+        <KeyValueGrid
+          items={[
+            { label: "نوع المنظمة", value: organization.ownerType === "broker" ? "وسيط" : "مطور" },
+            { label: "المعرف", value: toStringValue(organization.slug) },
+            { label: "بريد التواصل", value: toStringValue(organization.contactEmail) },
+            { label: "عدد الأعضاء", value: toNumberValue(metrics.membersCount) ?? 0 },
+            { label: "الدعوات المعلقة", value: toNumberValue(metrics.invitesCount) ?? 0 },
+            { label: "طلبات التوثيق", value: toNumberValue(metrics.verificationCount) ?? 0 },
+          ]}
+          columns={3}
+        />
+      </WorkspacePanel>
 
-        <div className="space-y-8">
-          <WorkspacePanel className="space-y-6 p-8">
-            <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground/40">الفريق</h2>
-            <div className="space-y-3">
-              {memberships.length > 0 ? (
-                memberships.map((membership) => {
-                  const record = membership as Record<string, unknown>;
-                  return (
-                    <div key={toStringValue(record.id)} className="rounded-xl border border-border/30 bg-card p-4 shadow-sm">
-                      <div className="text-[13px] font-black text-foreground">{toStringValue(record.profileName)}</div>
-                      <div className="mt-1 text-[11px] font-bold text-muted-foreground/60">{toStringValue(record.profileEmail)}</div>
-                      <div className="mt-3">
-                        <StatusBadge value={typeof record.role === "string" ? record.role : null} />
-                      </div>
+      <WorkspacePanel
+        fullHeight
+        header={<h2 className="text-xl font-black tracking-tight text-foreground">طلبات التوثيق</h2>}
+        bodyClassName="grid gap-3"
+        scrollBody
+        maxBodyHeightClassName="max-h-[460px]"
+      >
+        {verificationRequests.length > 0 ? (
+          verificationRequests.map((request) => {
+            const record = request as Record<string, unknown>;
+            return (
+              <Link
+                key={toStringValue(record.id)}
+                href={`/verifications/${toStringValue(record.id)}`}
+                className="block rounded-2xl border border-border/30 bg-muted/5 p-5 transition hover:border-primary/30 hover:bg-muted/10"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-black text-foreground">{toStringValue(record.title, "طلب توثيق")}</div>
+                    <div className="mt-1 text-xs font-bold text-muted-foreground/60">
+                      {formatDateTime(toNumberValue(record.submittedAt))}
                     </div>
-                  );
-                })
-              ) : (
-                <div className="rounded-xl border border-dashed border-border/40 bg-muted/5 p-8 text-center text-xs font-bold text-muted-foreground/40">
-                  لا توجد عضويات مرتبطة.
+                  </div>
+                  <StatusBadge value={typeof record.currentStatus === "string" ? record.currentStatus : null} />
                 </div>
-              )}
+              </Link>
+            );
+          })
+        ) : (
+          <div className="rounded-2xl border border-dashed border-border/40 bg-muted/5 p-10 text-center text-sm font-bold text-muted-foreground/40">
+            لا توجد طلبات توثيق مرتبطة بهذه المنظمة.
+          </div>
+        )}
+      </WorkspacePanel>
+
+      <WorkspacePanel className="space-y-6 p-8">
+        <h2 className="text-xl font-black tracking-tight text-foreground">العقارات المرتبطة</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          {properties.length > 0 ? (
+            properties.map((property) => {
+              const record = property as Record<string, unknown>;
+              return (
+                <div key={toStringValue(record.id)} className="rounded-2xl border border-border/30 bg-muted/5 p-5">
+                  <div className="text-sm font-black text-foreground">{toStringValue(record.title)}</div>
+                  <div className="mt-1 text-xs font-bold text-muted-foreground/60">{toStringValue(record.address)}</div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="rounded-2xl border border-dashed border-border/40 bg-muted/5 p-10 text-center text-sm font-bold text-muted-foreground/40 md:col-span-2">
+              لا توجد عقارات مرتبطة.
             </div>
-          </WorkspacePanel>
+          )}
         </div>
-      </div>
+      </WorkspacePanel>
     </SectionScaffold>
   );
 }
@@ -178,80 +200,67 @@ function renderMockOrganizationDetail(organizationId: string) {
           ]}
         />
       }
+      layout="detail"
+      rail={
+        <>
+          {renderDocumentsRail([
+            { label: "السجل التجاري", status: organization.documentationStatus === "complete" ? "approved" : "pending" },
+            { label: "هوية الممثل", status: organization.verificationStatus },
+            { label: "تفويض الاستخدام", status: organization.documentationStatus === "missing_document" ? "rejected" : "approved" },
+          ])}
+          {renderTeamRail(
+            organizationUsers.map((user) => ({
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              role: user.role,
+            })),
+          )}
+        </>
+      }
     >
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1.35fr)_340px]">
-        <div className="space-y-8">
-          <WorkspacePanel className="p-8 space-y-6">
-            <div className="flex flex-wrap items-center gap-3 pb-6 border-b border-border/20">
-              <StatusBadge value={organization.verificationStatus} />
-              <StatusBadge value={organization.documentationStatus} />
-            </div>
-            <KeyValueGrid
-              items={[
-                { label: "نوع المنظمة", value: organization.kind === "broker" ? "وسيط" : "مطور" },
-                { label: "النطاق المالي", value: organization.budgetBand },
-                { label: "عدد المشاريع", value: organization.projectsCount },
-                { label: "عدد الأعضاء", value: organization.membersCount },
-                { label: "عدد العروض", value: organization.offersCount },
-                { label: "آخر نشاط", value: formatDateTime(organization.lastActiveAt) },
-              ]}
-              columns={3}
-            />
-          </WorkspacePanel>
-
-          <WorkspacePanel className="p-8 space-y-6">
-            <h2 className="text-xl font-black tracking-tight text-foreground underline decoration-primary/20 decoration-4 underline-offset-8">المشاريع التابعة</h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {organizationProjects.map((project) => (
-                <Link key={project.id} href={`/sales/projects/${project.id}`} className="group block rounded-2xl border border-border/30 bg-muted/5 p-6 transition-all hover:bg-muted/10 hover:border-primary/30">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-2">
-                      <div className="text-lg font-black tracking-tight text-foreground group-hover:text-primary transition-colors">{project.name}</div>
-                      <div className="text-[13px] font-bold text-muted-foreground/60 line-clamp-2">{project.summary}</div>
-                    </div>
-                    <StatusBadge value={project.stage} />
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </WorkspacePanel>
+      <WorkspacePanel className="p-8 space-y-6">
+        <div className="flex flex-wrap items-center gap-3 border-b border-border/20 pb-6">
+          <StatusBadge value={organization.verificationStatus} />
+          <StatusBadge value={organization.documentationStatus} />
         </div>
+        <KeyValueGrid
+          items={[
+            { label: "نوع المنظمة", value: organization.kind === "broker" ? "وسيط" : "مطور" },
+            { label: "النطاق المالي", value: organization.budgetBand },
+            { label: "عدد المشاريع", value: organization.projectsCount },
+            { label: "عدد الأعضاء", value: organization.membersCount },
+            { label: "عدد العروض", value: organization.offersCount },
+            { label: "آخر نشاط", value: formatDateTime(organization.lastActiveAt) },
+          ]}
+          columns={3}
+        />
+      </WorkspacePanel>
 
-        <div className="space-y-8">
-          <WorkspacePanel className="p-8 space-y-6">
-            <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground/40">الوثائق</h2>
-            <div className="space-y-3">
-              {[
-                { label: "السجل التجاري", status: organization.documentationStatus === "complete" ? "approved" : "pending" },
-                { label: "هوية الممثل", status: organization.verificationStatus },
-                { label: "تفويض الاستخدام", status: organization.documentationStatus === "missing_document" ? "rejected" : "approved" },
-              ].map((doc) => (
-                <div key={doc.label} className="flex items-center justify-between rounded-xl border border-border/30 bg-card p-4 shadow-sm group hover:border-border transition-colors">
-                  <span className="text-[13px] font-bold text-muted-foreground/70">{doc.label}</span>
-                  <StatusBadge value={doc.status} />
+      <WorkspacePanel className="p-8 space-y-6">
+        <h2 className="text-xl font-black tracking-tight text-foreground underline decoration-primary/20 decoration-4 underline-offset-8">
+          المشاريع التابعة
+        </h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          {organizationProjects.map((project) => (
+            <Link
+              key={project.id}
+              href={`/sales/projects/${project.id}`}
+              className="group block rounded-2xl border border-border/30 bg-muted/5 p-6 transition-all hover:border-primary/30 hover:bg-muted/10"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-2">
+                  <div className="text-lg font-black tracking-tight text-foreground transition-colors group-hover:text-primary">
+                    {project.name}
+                  </div>
+                  <div className="line-clamp-2 text-[13px] font-bold text-muted-foreground/60">{project.summary}</div>
                 </div>
-              ))}
-            </div>
-          </WorkspacePanel>
-
-          <WorkspacePanel className="p-8 space-y-6">
-            <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground/40">الأعضاء</h2>
-            <div className="space-y-3">
-              {organizationUsers.map((user) => (
-                <Link key={user.id} href={`/users/${user.id}`} className="group flex items-center justify-between rounded-xl border border-border/30 bg-muted/5 p-4 transition-all hover:bg-muted/10 hover:border-primary/30">
-                  <div className="space-y-1">
-                    <div className="text-[13px] font-black text-foreground group-hover:text-primary transition-colors">{user.name}</div>
-                    <div className="text-[11px] font-bold text-muted-foreground/50">{user.email}</div>
-                  </div>
-                </Link>
-              ))}
-              {organizationUsers.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border/40 bg-muted/5 p-8 text-center text-xs font-bold text-muted-foreground/40">لا توجد عضويات مرتبطة.</div>
-              ) : null}
-            </div>
-          </WorkspacePanel>
+                <StatusBadge value={project.stage} />
+              </div>
+            </Link>
+          ))}
         </div>
-      </div>
+      </WorkspacePanel>
     </SectionScaffold>
   );
 }

@@ -1,6 +1,6 @@
-import { Pressable, ScrollView, View, Alert, useColorScheme } from "react-native";
+import { Pressable, ScrollView, View, Alert, Appearance } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Bookmark,
@@ -9,56 +9,84 @@ import {
   HelpCircle,
   LogOut,
   MessageSquare,
+  Moon,
+  Monitor,
   ShieldCheck,
+  Sun,
   Trash2,
   User as UserIcon,
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText } from "@/components/ui/AppText";
 import { IconButton } from "@/components/ui/IconButton";
-import { MobileSectionHeading, MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
+import { MobileSectionHeading, MobileTopBar } from "@/components/ui/MobileChrome";
 import { clearGuestThreadSnapshot, clearGuestThreadStore } from "@/lib/mobilePersistence";
-import { mobileTheme } from "@/lib/mobileTheme";
+import { useAppTheme } from "@/lib/mobileTheme";
+import { getThemePreference, setThemePreference, type ThemeOverrideMode } from "@/lib/themeStore";
 
-/**
- * WHY:   Account should be a simple support screen around the buyer journey, not a separate product mode.
- * WHAT:  Renders a straightforward profile/settings page with clear sections and lightweight status messaging.
- * HOW:   Uses stacked white panels and plain menu rows while preserving the current local-history messaging.
- */
 export default function AccountScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ threadId?: string; orderId?: string }>();
   const insets = useSafeAreaInsets();
-  const isDark = useColorScheme() === "dark";
-  const screenBackground = isDark ? "#0B0C10" : mobileTheme.colors.canvas;
-  const sectionBackground = isDark ? "#151821" : "#FFFFFF";
-  const mutedSectionBackground = isDark ? "#111318" : "#F3F4F6";
+  const theme = useAppTheme();
+
+  const [themeMode, setThemeMode] = useState<ThemeOverrideMode>("system");
 
   useEffect(() => {
     if (!params.threadId && !params.orderId) return;
     void clearGuestThreadSnapshot();
   }, [params.orderId, params.threadId]);
 
+  useEffect(() => {
+    getThemePreference().then(setThemeMode);
+  }, []);
+
+  const handleThemeChange = async (mode: ThemeOverrideMode) => {
+    setThemeMode(mode);
+    await setThemePreference(mode);
+    Appearance.setColorScheme(mode === "system" ? null : mode);
+  };
+
   return (
-    <View className="flex-1" style={{ backgroundColor: screenBackground }}>
+    <View className="flex-1" style={{ backgroundColor: theme.colors.canvas }}>
       <MobileTopBar
         insetTop={insets.top}
-        backgroundColor={screenBackground}
-        borderColor={isDark ? "rgba(255,255,255,0.08)" : mobileTheme.colors.borderStrong}
+        backgroundColor={theme.colors.canvas}
+        borderColor={theme.colors.border}
         title="حسابي"
-        subtitle="إعدادات الرحلة الحالية"
-        leading={<IconButton icon={ArrowLeft} onPress={() => router.back()} tone={isDark ? "inversePanel" : "panel"} />}
+        subtitle="الإعدادات والسجل"
+        leading={<IconButton icon={ArrowLeft} onPress={() => router.back()} tone="panel" />}
         trailing={<View style={{ width: 44, height: 44 }} />}
       />
 
-      <ScrollView className="flex-1 px-5 pt-5" showsVerticalScrollIndicator={false}>
-        <View className="rounded-[34px] px-5 py-6" style={{ borderWidth: 1, borderColor: isDark ? "rgba(255,255,255,0.08)" : mobileTheme.colors.border, backgroundColor: mutedSectionBackground }}>
+      <ScrollView 
+        className="flex-1 px-5 pt-8" 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 40) + 40 }}
+      >
+        {/* Profile Card */}
+        <View
+          className="px-5 py-6"
+          style={{
+            borderRadius: theme.radii.card, 
+            borderWidth: 1, 
+            borderColor: theme.colors.border,
+            backgroundColor: theme.colors.surfaceMuted,
+          }}
+        >
           <View className="items-center">
             <View
-              className="mb-4 items-center justify-center rounded-full"
-              style={{ width: 96, height: 96, backgroundColor: sectionBackground }}
+              className="mb-4 items-center justify-center"
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: theme.radii.card,
+                backgroundColor: theme.colors.surface,
+                borderWidth: 1,
+                borderColor: theme.colors.primary,
+              }}
             >
-              <UserIcon size={40} color="#94A3B8" />
+              <UserIcon size={32} color={theme.colors.primary} />
             </View>
             <MobileSectionHeading
               align="center"
@@ -68,27 +96,80 @@ export default function AccountScreen() {
           </View>
         </View>
 
-        <View className="mt-5 rounded-[28px] px-5 py-5" style={{ borderWidth: 1, borderColor: isDark ? "rgba(255,255,255,0.08)" : mobileTheme.colors.border, backgroundColor: sectionBackground }}>
+        {/* Theme Preferences */}
+        <View className="mt-6 gap-3">
+          <AppText className="text-[14px] font-cairo-bold text-right mx-1" style={{ color: theme.colors.inkMuted }}>
+            مظهر التطبيق
+          </AppText>
+          <View
+            className="flex-row-reverse p-1"
+            style={{
+              borderRadius: theme.radii.card,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+              backgroundColor: theme.colors.surfaceMuted,
+            }}
+          >
+            <ThemeToggleButton
+              active={themeMode === "system"}
+              icon={Monitor}
+              label="تلقائي"
+              onPress={() => handleThemeChange("system")}
+            />
+            <ThemeToggleButton
+              active={themeMode === "dark"}
+              icon={Moon}
+              label="داكن"
+              onPress={() => handleThemeChange("dark")}
+            />
+            <ThemeToggleButton
+              active={themeMode === "light"}
+              icon={Sun}
+              label="فاتح"
+              onPress={() => handleThemeChange("light")}
+            />
+          </View>
+        </View>
+
+        {/* Thread Status */}
+        <View
+          className="mt-6 px-5 py-5"
+          style={{
+            borderRadius: theme.radii.card,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+            backgroundColor: theme.colors.surface,
+          }}
+        >
           <MobileSectionHeading
-            eyebrow="THREAD STATUS"
-            title={params.threadId || params.orderId ? "تم التنفيذ من داخل نفس الرحلة" : "الحساب مرتبط بالمحادثة الحالية"}
+            eyebrow="حالة المحادثة"
+            title={params.threadId || params.orderId ? "تم التنفيذ من داخل الرحلة" : "الحساب مرتبط بجهازك"}
             description={
               params.threadId || params.orderId
                 ? "يمكنك العودة الآن إلى نفس المحادثة ومتابعة الخطوات بدون فقدان السياق."
-                : "السجل محفوظ محلياً على هذا الجهاز حالياً، ويمكنك دائماً الرجوع إلى شاشة المساعد لمتابعة نفس الخيط."
+                : "السجل محفوظ محلياً على هذا الجهاز حالياً، ويمكنك دائماً الرجوع إلى شاشة المساعد."
             }
           />
         </View>
 
-        <View className="mt-5 overflow-hidden rounded-[28px]" style={{ borderWidth: 1, borderColor: isDark ? "rgba(255,255,255,0.08)" : mobileTheme.colors.border, backgroundColor: sectionBackground }}>
-          <AccountRow icon={Bookmark} label="العقارات المحفوظة" onPress={() => {}} />
+        {/* Menu Items */}
+        <View
+          className="mt-6 overflow-hidden"
+          style={{
+            borderRadius: theme.radii.card,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+            backgroundColor: theme.colors.surface,
+          }}
+        >
+          <AccountRow icon={Bookmark} label="العقارات المحفوظة" onPress={() => {}} withBorder />
           <AccountRow
             icon={MessageSquare}
             label="السجل المحفوظ"
             onPress={() =>
               Alert.alert(
                 "السجل المحلي فقط",
-                "سجل المحادثات الحالي متاح من شاشة المساعد داخل هذا الجهاز. سنضيف مزامنة الحساب لاحقاً.",
+                "سجل المحادثات الحالي متاح من شاشة المساعد داخل هذا الجهاز.",
               )
             }
             withBorder
@@ -121,7 +202,7 @@ export default function AccountScreen() {
                     style: "destructive",
                     onPress: async () => {
                       await clearGuestThreadStore();
-                      Alert.alert("تم الحذف", "تم حذف البيانات المحلية من هذا الجهاز.");
+                      Alert.alert("تم الحذف", "تم حذف البيانات المحلية.");
                     },
                   },
                 ],
@@ -131,7 +212,16 @@ export default function AccountScreen() {
           />
         </View>
 
-        <View className="mb-12 mt-5 overflow-hidden rounded-[28px]" style={{ borderWidth: 1, borderColor: isDark ? "rgba(255,255,255,0.08)" : mobileTheme.colors.border, backgroundColor: sectionBackground }}>
+        {/* Logout */}
+        <View
+          className="mt-6 overflow-hidden"
+          style={{
+            borderRadius: theme.radii.card,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+            backgroundColor: theme.colors.surface,
+          }}
+        >
           <AccountRow
             icon={LogOut}
             label="تسجيل الخروج"
@@ -141,6 +231,50 @@ export default function AccountScreen() {
         </View>
       </ScrollView>
     </View>
+  );
+}
+
+function ThemeToggleButton({
+  active,
+  icon: Icon,
+  label,
+  onPress,
+}: {
+  active: boolean;
+  icon: typeof Monitor;
+  label: string;
+  onPress: () => void;
+}) {
+  const theme = useAppTheme();
+  
+  return (
+    <Pressable
+      onPress={onPress}
+      className="flex-1 flex-row-reverse items-center justify-center gap-2 py-3"
+      style={{
+        borderRadius: theme.radii.card - 4, // Inner pill 
+        backgroundColor: active ? theme.colors.surface : "transparent",
+        ...(active
+          ? {
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 4,
+              elevation: 2,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+            }
+          : {}),
+      }}
+    >
+      <Icon size={16} color={active ? theme.colors.primary : theme.colors.inkMuted} />
+      <AppText
+        className={`text-[14px] ${active ? "font-cairo-bold" : "font-cairo-medium"}`}
+        style={{ color: active ? theme.colors.primary : theme.colors.inkMuted }}
+      >
+        {label}
+      </AppText>
+    </Pressable>
   );
 }
 
@@ -157,23 +291,29 @@ function AccountRow({
   destructive?: boolean;
   withBorder?: boolean;
 }) {
+  const theme = useAppTheme();
+
   return (
     <Pressable
       onPress={onPress}
-      className={`flex-row-reverse items-center gap-4 px-5 py-4 active:opacity-60 ${withBorder ? "border-b" : ""}`}
-      style={withBorder ? { borderBottomColor: mobileTheme.colors.border } : undefined}
+      className="flex-row-reverse items-center gap-4 px-5 py-4 active:opacity-60"
+      style={withBorder ? { borderBottomWidth: 1, borderBottomColor: theme.colors.border } : undefined}
     >
       <View
-        className="items-center justify-center rounded-full"
+        className="items-center justify-center"
         style={{
-          width: 44,
-          height: 44,
-          backgroundColor: destructive ? mobileTheme.colors.dangerSoft : mobileTheme.colors.surfaceMuted,
+          width: 40,
+          height: 40,
+          borderRadius: theme.radii.card,
+          backgroundColor: destructive ? theme.colors.dangerSoft : theme.colors.surfaceMuted,
         }}
       >
-        <Icon size={20} color={destructive ? mobileTheme.colors.danger : mobileTheme.colors.inkMuted} />
+        <Icon size={20} color={destructive ? theme.colors.danger : theme.colors.inkMuted} />
       </View>
-      <AppText className={`flex-1 text-right text-[16px] font-cairo-black ${destructive ? "text-red-500" : "text-slate-900"}`}>
+      <AppText
+        className="flex-1 text-right text-[15px] font-cairo-bold"
+        style={{ color: destructive ? theme.colors.danger : theme.colors.ink }}
+      >
         {label}
       </AppText>
     </Pressable>

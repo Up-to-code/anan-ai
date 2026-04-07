@@ -33,6 +33,7 @@ export const convexAdminCommandCenterRepository = {
         newVerifications: number;
         inReviewVerifications: number;
         errorEvents: number;
+        apiKeyDenials: number;
       };
       partnerHealth: {
         brokers: number;
@@ -41,6 +42,22 @@ export const convexAdminCommandCenterRepository = {
         activeSubscriptions: number;
         trialSubscriptions: number;
         actionModeOrganizations: number;
+        restrictedOrganizations: number;
+      };
+      dataHealth: Array<{
+        summaryType: string;
+        status: string;
+        value: number | null;
+        recordCount: number | null;
+        lastAggregatedAt: number;
+        staleSince: number | null;
+      }>;
+      apiRisk: {
+        activeKeys: number;
+        suspendedKeys: number;
+        revokedKeys: number;
+        keysWithOriginRestrictions: number;
+        deniedKeys: number;
       };
       activityTrend: Array<{ label: string; messages: number; searches: number; research: number }>;
       commercialTrend: Array<{ label: string; offers: number; orders: number; deals: number }>;
@@ -148,4 +165,3 @@ export const convexAdminCommandCenterRepository = {
     }>;
   },
 };
-

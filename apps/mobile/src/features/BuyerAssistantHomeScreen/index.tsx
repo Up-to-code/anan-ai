@@ -1,32 +1,29 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { FlashListRef } from "@shopify/flash-list";
-import { Menu, User } from "lucide-react-native";
+import { Menu, Plus, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AnanMark } from "@/components/chat/AnanMark";
 import { Button } from "@/components/ui/Button";
 import { AppText } from "@/components/ui/AppText";
 import { IconButton } from "@/components/ui/IconButton";
-import { MobilePill, MobileSectionHeading, MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
+import { MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
 import { ConversationComposer } from "@/features/BuyerAssistantHomeScreen/ConversationComposer";
 import { ConversationTimeline } from "@/features/BuyerAssistantHomeScreen/ConversationTimeline";
+import { applyActivePropertyPromptToDraft } from "@/features/BuyerAssistantHomeScreen/propertyPrompt";
 import { usePropertyAssistant } from "@/hooks/usePropertyAssistant";
 import { usePropertyFeed } from "@/hooks/usePropertyFeed";
-import { buildBuyerChatSuggestions } from "@/lib/buyerAssistantShared";
+import { buildBuyerChatSuggestions, type BuyerChatSuggestion } from "@/lib/buyerAssistantShared";
 import { useMobileLayout } from "@/lib/mobileLayout";
 import { buildAssistantSearchContext, buildSearchRouteParams, filterPropertiesForSearch } from "@/lib/mobileSearch";
-import { mobileTheme } from "@/lib/mobileTheme";
+import { useAppTheme, getMobileShadow } from "@/lib/mobileTheme";
 import type { MobileConversationMessage, MobileProperty, MobileSearchContext, MobileThreadSummary } from "@/types/mobile";
 
-/**
- * WHY:   The buyer journey should begin in the same chat-first assistant product model as the shared public assistant.
- * WHAT:  Renders the mobile buyer assistant shell with welcome state, thread, journey notice, and local history access.
- * HOW:   Keeps the layout mobile-native while matching the broader buyer conversation hierarchy and action flow.
- */
 export default function BuyerAssistantHomeScreen() {
   const insets = useSafeAreaInsets();
   const layout = useMobileLayout();
+  const theme = useAppTheme();
   const assistant = usePropertyAssistant();
   const feed = usePropertyFeed();
   const router = useRouter();
@@ -47,6 +44,7 @@ export default function BuyerAssistantHomeScreen() {
     [assistant.activeProperty, assistant.activeThreadId, assistant.latestUserMessage],
   );
   const composerBottomInset = keyboardVisible ? 10 : Math.max(insets.bottom, 12);
+  
   useEffect(() => {
     const timer = setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
     return () => clearTimeout(timer);
@@ -101,6 +99,17 @@ export default function BuyerAssistantHomeScreen() {
     });
   }
 
+  function openPropertyGallery(property: MobileProperty, initialIndex: number) {
+    router.push({
+      pathname: "/gallery",
+      params: {
+        propertyId: property.id,
+        initialIndex: String(initialIndex),
+        ...(assistant.activeThreadId ? { threadId: assistant.activeThreadId } : {}),
+      },
+    });
+  }
+
   function openAssistantSearchInChat() {
     if (!assistantSearchContext) return;
     const filtered = filterPropertiesForSearch(feed.properties, {
@@ -134,21 +143,25 @@ export default function BuyerAssistantHomeScreen() {
     });
   }
 
+  function applyActivePropertyPrompt(property: MobileProperty) {
+    assistant.setDraft((currentDraft) => applyActivePropertyPromptToDraft(currentDraft, property));
+  }
+
   const hasMessages = assistant.messages.length > 0;
   const isLandingMode = assistant.activeThreadKind === "welcome" && !hasMessages;
-  const shellBackgroundColor = isLandingMode ? mobileTheme.colors.dark : mobileTheme.colors.canvasElevated;
+  const shellBackgroundColor = isLandingMode ? theme.colors.canvas : theme.colors.canvasElevated;
 
   return (
     <View className="flex-1" style={{ backgroundColor: shellBackgroundColor }}>
       <MobileTopBar
         insetTop={insets.top}
         backgroundColor={shellBackgroundColor}
-        borderColor={isLandingMode ? "rgba(255,255,255,0.08)" : mobileTheme.colors.borderStrong}
+        borderColor={theme.colors.border}
         leading={
           <IconButton
             icon={Menu}
             onPress={() => setIsHistoryOpen(true)}
-            tone={isLandingMode ? "inversePanel" : "panel"}
+            tone="panel"
             size="sm"
             accessibilityLabel="سجل المحادثات"
           />
@@ -157,27 +170,22 @@ export default function BuyerAssistantHomeScreen() {
           <IconButton
             icon={User}
             onPress={() => router.push("/account")}
-            tone={isLandingMode ? "inversePanel" : "panel"}
+            tone="panel"
             size="sm"
             accessibilityLabel="الحساب"
           />
         }
         centerSlot={
           <View
-            className="flex-row-reverse items-center gap-2 rounded-full px-4 py-2"
-            style={{
-              borderWidth: 1,
-              borderColor: isLandingMode ? "rgba(255,255,255,0.08)" : mobileTheme.colors.border,
-              backgroundColor: isLandingMode ? "#16181E" : mobileTheme.colors.surface,
-            }}
+            className="flex-row-reverse items-center gap-2"
           >
             <AnanMark size={16} />
             <AppText
               responsiveRole="bodyStrong"
-              className="font-cairo-black tracking-tight"
-              style={{ color: isLandingMode ? "#F8FAFC" : mobileTheme.colors.ink }}
+              className="font-cairo-bold"
+              style={{ color: theme.colors.ink, fontSize: 16 }}
             >
-              عنان
+              مساعد عنان
             </AppText>
           </View>
         }
@@ -193,15 +201,14 @@ export default function BuyerAssistantHomeScreen() {
             <ScrollView
               className="flex-1"
               contentContainerStyle={{
-                minHeight: layout.height * 0.5,
-                justifyContent: "center",
+                flexGrow: 1,
                 paddingHorizontal: layout.contentPadding,
                 paddingBottom: layout.sectionGap + 8,
               }}
               showsVerticalScrollIndicator={false}
             >
               <WelcomeState
-                suggestions={suggestions.map((suggestion) => suggestion.prompt)}
+                suggestions={suggestions}
                 onSelect={(prompt) => void assistant.submit(prompt)}
               />
             </ScrollView>
@@ -212,10 +219,11 @@ export default function BuyerAssistantHomeScreen() {
               isTyping={assistant.isSubmitting}
               onPropertyPress={(property) => void assistant.askAboutProperty(property)}
               onOpenProperty={openPropertyDetail}
-              contextProperty={assistant.activeProperty}
+              onOpenGallery={openPropertyGallery}
               bottomPadding={layout.sectionGap + 8}
               showLatestSuggestedPrompts={!keyboardVisible}
               onShowMoreSearchResults={openSearchResultsScreen}
+              ambientBackgroundColor={shellBackgroundColor}
               onSuggestedPromptPress={(prompt) => {
                 if (prompt.includes("مستشار")) {
                   void assistant.requestAdvisor();
@@ -236,8 +244,8 @@ export default function BuyerAssistantHomeScreen() {
             paddingHorizontal: layout.contentPadding,
             paddingTop: assistant.showAuthCallout ? 6 : 6,
             paddingBottom: composerBottomInset,
-            borderTopWidth: isLandingMode ? 0 : StyleSheet.hairlineWidth,
-            borderTopColor: mobileTheme.colors.borderStrong,
+            borderTopWidth: isLandingMode ? 0 : 1, // 1px delicate border
+            borderTopColor: theme.colors.border,
             backgroundColor: shellBackgroundColor,
           }}
         >
@@ -253,6 +261,9 @@ export default function BuyerAssistantHomeScreen() {
             onChange={assistant.setDraft}
             onSend={() => void assistant.submit()}
             onSubmitVoiceRecording={(fileUri) => assistant.submitVoiceRecording(fileUri)}
+            activeProperty={assistant.activeProperty}
+            onApplyActivePropertyPrompt={applyActivePropertyPrompt}
+            ambientBackgroundColor={shellBackgroundColor}
             variant={isLandingMode ? "landing" : "thread"}
           />
         </View>
@@ -280,26 +291,41 @@ function WelcomeState({
   suggestions,
   onSelect,
 }: {
-  suggestions: string[];
+  suggestions: BuyerChatSuggestion[];
   onSelect: (prompt: string) => void;
 }) {
   const layout = useMobileLayout();
+  const theme = useAppTheme();
 
   return (
-    <View className="items-stretch justify-center" style={{ gap: layout.sectionGap + 4 }}>
-      <View className="items-center gap-5 px-5 py-10">
-        <AnanMark size={42} />
-        <AppText
-          className="text-center font-cairo-black text-white"
+    <View
+      className="flex-1 items-stretch"
+      style={{
+        minHeight: Math.max(layout.height * 0.62, 440),
+        justifyContent: "space-between",
+        paddingTop: Math.max(layout.height * 0.16, 72),
+        paddingBottom: 12,
+      }}
+    >
+      <View className="items-center justify-center">
+        <View
+          className="items-center justify-center"
           style={{
-            fontSize: layout.isCompact ? 26 : layout.typeScale.headline.fontSize,
-            lineHeight: layout.isCompact ? 38 : layout.typeScale.headline.lineHeight + 4,
+            width: 56,
+            height: 56,
+            borderRadius: 999,
+            backgroundColor: theme.colors.surface,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
           }}
         >
-          كيف يمكنني مساعدتك اليوم؟
-        </AppText>
+          <AnanMark size={24} />
+        </View>
       </View>
-      <PromptSuggestions prompts={suggestions} onSelect={onSelect} />
+
+      <View>
+        <PromptSuggestions prompts={suggestions} onSelect={onSelect} />
+      </View>
     </View>
   );
 }
@@ -308,37 +334,59 @@ function PromptSuggestions({
   prompts,
   onSelect,
 }: {
-  prompts: string[];
+  prompts: BuyerChatSuggestion[];
   onSelect: (prompt: string) => void;
 }) {
   const layout = useMobileLayout();
+  const theme = useAppTheme();
+  const cardWidth = Math.min(Math.max(layout.width * 0.5, 164), 188);
 
   return (
-    <View className="gap-3">
-      {prompts.map((prompt) => (
-        <Pressable
-          key={prompt}
-          onPress={() => onSelect(prompt)}
-          className="flex-row-reverse items-center justify-between rounded-full px-5 py-4"
-          style={{
-            minHeight: layout.chipMinHeight + 8,
-            borderRadius: 999,
-            backgroundColor: "#16181E",
-            borderWidth: 1,
-            borderColor: "rgba(255,255,255,0.08)",
-          }}
-        >
-          <AppText responsiveRole="chip" className="max-w-[84%] font-cairo-black tracking-tight text-white">
-            {prompt}
-          </AppText>
-          <View className="h-5 w-5 rounded-full" style={{ backgroundColor: "rgba(245,158,11,0.16)", alignItems: "center", justifyContent: "center" }}>
-            <View className="h-2 w-2 rounded-full" style={{ backgroundColor: "#F59E0B" }} />
-          </View>
-        </Pressable>
-      ))}
-    </View>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingHorizontal: 2 }}
+    >
+      <View className="flex-row-reverse gap-3">
+        {prompts.map((prompt) => (
+          <Pressable
+            key={prompt.id}
+            onPress={() => onSelect(prompt.prompt)}
+            className="justify-center px-3.5 py-3"
+            style={({ pressed }) => ({
+              width: cardWidth,
+              minHeight: 68,
+              borderRadius: 14,
+              backgroundColor: theme.colors.promptStarterSurface,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+              ...getMobileShadow("card"),
+              transform: [{ scale: pressed ? 0.97 : 1 }],
+            })}
+          >
+            <AppText
+              className="text-right font-cairo-bold text-[11.5px] leading-snug"
+              style={{ color: theme.colors.ink }}
+              numberOfLines={2}
+            >
+              {prompt.prompt}
+            </AppText>
+            {prompt.label ? (
+              <AppText
+                className="mt-0.5 text-right text-[10px] leading-snug"
+                style={{ color: theme.colors.inkMuted }}
+                numberOfLines={2}
+              >
+                {prompt.label}
+              </AppText>
+            ) : null}
+          </Pressable>
+        ))}
+      </View>
+    </ScrollView>
   );
 }
+
 
 function AuthGateNotice({
   onContinue,
@@ -348,27 +396,27 @@ function AuthGateNotice({
   onRequestAdvisor: () => void;
 }) {
   const layout = useMobileLayout();
+  const theme = useAppTheme();
 
   return (
     <MobileSurface
       tone="highlight"
-      radius="panel"
+      radius="card"
       shadow="none"
       className="mb-3 px-4 py-4"
-      style={{ borderRadius: layout.cardRadius + 2 }}
     >
-      <AppText responsiveRole="bodyStrong" className="font-cairo-black text-slate-900">
-        السجل محلي حالياً وطلب المستشار متاح من هنا
+      <AppText responsiveRole="bodyStrong" className="font-cairo-bold" style={{ color: theme.colors.ink }}>
+        يحفظ السجل محلياً
       </AppText>
-      <AppText responsiveRole="body" className="mt-2 font-medium text-slate-500">
-        لن نفتح بوابة ويب خارجية بعد الآن. أكمل المحادثة هنا، أو أرسل طلب المستشار مباشرة من نفس السياق.
+      <AppText responsiveRole="body" className="mt-2 font-medium" style={{ color: theme.colors.inkSoft }}>
+        أكمل المحادثة داخل التطبيق مباشرة، أو اطلب تدخل المستشار إذا احتجت.
       </AppText>
-      <View className="mt-4 flex-row-reverse gap-3">
+      <View className="mt-5 flex-row-reverse gap-3">
         <View style={{ flex: 1 }}>
           <Button label="فهمت" variant="secondary" size="sm" onPress={onContinue} />
         </View>
         <View style={{ flex: 1 }}>
-          <Button label="اطلب مستشاراً" size="sm" onPress={onRequestAdvisor} />
+          <Button label="اطلب مستشاراً" variant="accent" size="sm" onPress={onRequestAdvisor} />
         </View>
       </View>
     </MobileSurface>
@@ -391,36 +439,37 @@ function HistorySheet({
   onSelectThread: (thread: MobileThreadSummary) => void;
 }) {
   const layout = useMobileLayout();
+  const theme = useAppTheme();
 
   return (
     <Modal visible={open} animationType="slide" transparent onRequestClose={onClose}>
-      <View className="flex-1" style={{ backgroundColor: mobileTheme.colors.overlay }}>
+      <View className="flex-1" style={{ backgroundColor: theme.colors.overlay }}>
         <Pressable className="flex-1" onPress={onClose} />
         <View
           className="max-h-[78%] pb-8 pt-6"
           style={{
-            borderTopLeftRadius: layout.cardRadius + 8,
-            borderTopRightRadius: layout.cardRadius + 8,
+            borderTopLeftRadius: theme.radii.panel, // Soft panel corner logic
+            borderTopRightRadius: theme.radii.panel,
             paddingHorizontal: layout.contentPadding,
-            backgroundColor: mobileTheme.colors.canvasElevated,
+            backgroundColor: theme.colors.canvasElevated,
           }}
         >
           <View className="mb-5 items-center">
-            <View className="h-1.5 w-16 rounded-full" style={{ backgroundColor: mobileTheme.colors.borderStrong }} />
+            <View className="h-1.5 w-16 rounded-full" style={{ backgroundColor: theme.colors.borderStrong }} />
           </View>
           <View className="mb-5 gap-3">
             <View className="flex-row-reverse items-center justify-between gap-3">
-              <AppText responsiveRole="title" className="font-cairo-black text-slate-900">
-                سجل المحادثات
+              <AppText responsiveRole="title" className="font-cairo-bold" style={{ color: theme.colors.ink }}>
+                السجل السابق
               </AppText>
               <Button label="إغلاق" variant="ghost" size="sm" onPress={onClose} />
             </View>
-            <AppText responsiveRole="body" className="font-medium text-slate-500">
+            <AppText responsiveRole="body" className="font-medium" style={{ color: theme.colors.inkMuted }}>
               افتح محادثة سابقة أو ابدأ محادثة جديدة.
             </AppText>
             <Button
               label="محادثة جديدة"
-              variant="secondary"
+              variant="accent"
               size="sm"
               onPress={onReset}
               textClassName="text-right"
@@ -430,47 +479,50 @@ function HistorySheet({
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {recentThreads.length === 0 ? (
-              <MobileSurface tone="muted" radius="panel" shadow="none" className="px-5 py-5">
-                <AppText responsiveRole="body" className="font-medium text-slate-500">
-                  لا يوجد سجل محفوظ بعد. ابدأ محادثة جديدة وسيظهر أحدث السياق هنا.
+              <MobileSurface tone="muted" radius="card" shadow="none" className="px-5 py-5">
+                <AppText responsiveRole="body" className="font-bold text-center" style={{ color: theme.colors.inkMuted }}>
+                  لا يوجد سجل محفوظ.
                 </AppText>
               </MobileSurface>
             ) : (
               <View className="gap-3">
-                {recentThreads.map((thread) => (
-                  <Pressable
-                    key={thread.id}
-                    onPress={() => onSelectThread(thread)}
-                    className="px-5 py-4"
-                    style={{
-                      borderRadius: layout.cardRadius,
-                      borderWidth: 1,
-                      borderColor: thread.id === activeThreadId ? mobileTheme.colors.dark : mobileTheme.colors.border,
-                      backgroundColor:
-                        thread.id === activeThreadId ? mobileTheme.colors.dark : mobileTheme.colors.surface,
-                    }}
-                  >
-                    <AppText
-                      responsiveRole="bodyStrong"
-                      className={`font-cairo-black ${
-                        thread.id === activeThreadId ? "text-white" : "text-slate-900"
-                      }`}
+                {recentThreads.map((thread) => {
+                  const isActive = thread.id === activeThreadId;
+                  return (
+                    <Pressable
+                      key={thread.id}
+                      onPress={() => onSelectThread(thread)}
+                      className="px-5 py-4"
+                      style={({ pressed }) => ({
+                        borderRadius: theme.radii.card, // Gentle 16px radius
+                        borderWidth: 1,
+                        borderColor: isActive ? theme.colors.primary : theme.colors.border,
+                        backgroundColor: isActive
+                          ? theme.colors.primarySoft
+                          : theme.colors.surface,
+                        transform: [{ scale: pressed ? 0.98 : 1 }],
+                      })}
                     >
-                      {thread.title}
-                    </AppText>
-                    {thread.preview ? (
                       <AppText
-                        responsiveRole="body"
-                        className={`mt-2 font-medium ${
-                          thread.id === activeThreadId ? "text-slate-100" : "text-slate-500"
-                        }`}
-                        numberOfLines={2}
+                        responsiveRole="bodyStrong"
+                        className="font-cairo-bold"
+                        style={{ color: isActive ? theme.colors.primary : theme.colors.ink }}
                       >
-                        {thread.preview}
+                        {thread.title}
                       </AppText>
-                    ) : null}
-                  </Pressable>
-                ))}
+                      {thread.preview ? (
+                        <AppText
+                          responsiveRole="body"
+                          className="mt-2 font-medium"
+                          numberOfLines={2}
+                          style={{ color: theme.colors.inkMuted }}
+                        >
+                          {thread.preview}
+                        </AppText>
+                      ) : null}
+                    </Pressable>
+                  );
+                })}
               </View>
             )}
           </ScrollView>
