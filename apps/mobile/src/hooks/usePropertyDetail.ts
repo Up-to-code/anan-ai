@@ -7,7 +7,7 @@ const LIVE_BACKEND_ENABLED = Boolean(process.env.EXPO_PUBLIC_CONVEX_URL);
 function useLivePropertyDetail(propertyId?: string) {
   const liveProperty = useQuery(api.user_zone.mobile.feed.getPropertyDetail, propertyId ? ({ propertyId: propertyId as never } as never) : "skip") as any;
 
-  if (!liveProperty) {
+  if (liveProperty === undefined) {
     return {
       property: null,
       isLoading: true,
@@ -15,15 +15,17 @@ function useLivePropertyDetail(propertyId?: string) {
   }
 
   return {
-    property: toMobileProperty({
-      ...liveProperty,
-      id: String(liveProperty.id),
-      bankId: liveProperty.bankId ? String(liveProperty.bankId) : undefined,
-      owner: {
-        ...liveProperty.owner,
-        id: String(liveProperty.owner.id),
-      },
-    }),
+    property: liveProperty
+      ? toMobileProperty({
+          ...liveProperty,
+          id: String(liveProperty.id),
+          bankId: liveProperty.bankId ? String(liveProperty.bankId) : undefined,
+          owner: {
+            ...liveProperty.owner,
+            id: String(liveProperty.owner.id),
+          },
+        })
+      : null,
     isLoading: false,
   };
 }

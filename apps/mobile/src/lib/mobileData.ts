@@ -30,6 +30,9 @@ export function toMobileProperty(value: {
   media: string[];
   owner: MobileProperty["owner"];
   aiSummary?: string;
+  finance?: MobileProperty["finance"];
+  contact?: MobileProperty["contact"];
+  compliance?: MobileProperty["compliance"];
 }): MobileProperty {
   return {
     id: value.id,
@@ -46,6 +49,9 @@ export function toMobileProperty(value: {
     media: [...value.media],
     owner: { ...value.owner },
     aiSummary: value.aiSummary,
+    finance: value.finance ? { ...value.finance } : undefined,
+    contact: value.contact ? { ...value.contact } : undefined,
+    compliance: value.compliance ? { ...value.compliance } : undefined,
   };
 }
 
@@ -55,6 +61,16 @@ export function toMobileProperty(value: {
  * HOW:   Reuses the first gallery image as media and projects the old owner fields into the new nested owner object.
  */
 export function mapMvpPropertyToMobileProperty(property: PropertyPreview): MobileProperty {
+  const defaultDownPayment = Math.round(property.price * (property.downPaymentRate ?? 0.1));
+  const defaultAnnualRate = 4.75;
+  const defaultYears = 20;
+  const loanAmount = Math.max(0, property.price - defaultDownPayment);
+  const monthlyRate = defaultAnnualRate / 100 / 12;
+  const installments = defaultYears * 12;
+  const factor = Math.pow(1 + monthlyRate, installments);
+  const estimatedMonthlyPayment =
+    monthlyRate > 0 ? Math.round((loanAmount * monthlyRate * factor) / (factor - 1)) : Math.round(loanAmount / installments);
+
   return {
     id: property.id,
     title: property.title,
@@ -76,6 +92,30 @@ export function mapMvpPropertyToMobileProperty(property: PropertyPreview): Mobil
       activeListings: undefined,
     },
     aiSummary: property.summary,
+    finance: {
+      defaultDownPayment,
+      defaultYears,
+      defaultAnnualRate,
+      estimatedLoanAmount: loanAmount,
+      estimatedMonthlyPayment,
+      bankOfferCount: 0,
+    },
+    contact: {
+      hasPhone: false,
+      hasEmail: false,
+      hasWhatsApp: false,
+      mapQuery: property.address,
+    },
+    compliance: {
+      permitStatus:
+        property.permitStatus === "verified"
+          ? "verified"
+          : property.permitStatus === "pending_review"
+            ? "pending_review"
+            : "not_available",
+      ownerVerified: property.isVerified,
+      listingVerified: property.permitStatus === "verified",
+    },
   };
 }
 

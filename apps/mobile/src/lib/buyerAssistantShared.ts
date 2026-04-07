@@ -8,7 +8,37 @@ export type BuyerPropertyOwner = {
   name: string;
   slug: string;
   isVerified: boolean;
+  description?: string;
+  phone?: string;
+  contactEmail?: string;
+  agencyLabel?: string;
+  rating?: number;
   activeListings?: number;
+  establishedYear?: number;
+  completedProjects?: number;
+};
+
+export type BuyerPropertyFinance = {
+  defaultDownPayment: number;
+  defaultYears: number;
+  defaultAnnualRate: number;
+  estimatedLoanAmount: number;
+  estimatedMonthlyPayment: number;
+  bankOfferCount: number;
+};
+
+export type BuyerPropertyContact = {
+  hasPhone: boolean;
+  hasEmail: boolean;
+  hasWhatsApp: boolean;
+  mapQuery: string;
+};
+
+export type BuyerPropertyCompliance = {
+  adLicenseStatus?: "pending" | "approved" | "rejected";
+  permitStatus: "verified" | "pending_review" | "not_available";
+  ownerVerified: boolean;
+  listingVerified: boolean;
 };
 
 export type BuyerProperty = {
@@ -26,6 +56,9 @@ export type BuyerProperty = {
   media: string[];
   owner: BuyerPropertyOwner;
   aiSummary?: string;
+  finance?: BuyerPropertyFinance;
+  contact?: BuyerPropertyContact;
+  compliance?: BuyerPropertyCompliance;
 };
 
 export type BuyerChatSuggestion = {

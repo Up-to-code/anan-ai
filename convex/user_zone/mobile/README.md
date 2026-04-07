@@ -5,5 +5,8 @@ Thin mobile-facing endpoints for the Anan buyer feed.
 - `contracts.ts` defines shared validators and typed result-card shapes for the mobile app.
 - `feed.ts` exposes the swipe-feed query surface and property context reads.
 - `assistant.ts` handles typed mobile AI results and qualified handoff creation.
+- `viewer.ts` exposes the signed-in buyer identity summary used by the account surface.
+- `finance.ts` returns property-aware finance estimates and bank comparison rows.
+- `analytics.ts` aggregates buyer-facing market intelligence for the analytics route.
 
 Keep mobile discovery logic in this folder and delegate reusable domain work to `shared_logic/`.

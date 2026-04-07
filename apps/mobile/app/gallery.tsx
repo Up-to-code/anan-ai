@@ -1,2 +1,2 @@
-import GalleryScreen from "@/features/GalleryScreen";
+import GalleryScreen from "@/features/GalleryScreen/index";
 export default function GalleryRoute() { return <GalleryScreen />; }

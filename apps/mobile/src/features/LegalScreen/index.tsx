@@ -1,113 +1,142 @@
-import { Alert, Pressable, ScrollView, View, useColorScheme } from "react-native";
+import type { ReactNode } from "react";
+import { Alert, Pressable, ScrollView, View } from "react-native";
+import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { ArrowLeft, FileText, HelpCircle, Mic, ShieldCheck, Trash2 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText } from "@/components/ui/AppText";
+import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
-import { MobileTopBar } from "@/components/ui/MobileChrome";
-import { clearGuestThreadStore } from "@/lib/mobilePersistence";
-import { mobileTheme } from "@/lib/mobileTheme";
+import { MobilePill, MobileTopBar } from "@/components/ui/MobileChrome";
+import { useBuyerAccount } from "@/hooks/useBuyerAccount";
+import { useAppTheme } from "@/lib/mobileTheme";
 
 /**
- * WHY:   App Review and end users need one clear place to understand privacy, local data behavior, and permission usage inside the buyer app.
- * WHAT:  Renders the in-app legal and policy surface covering privacy, microphone usage, support, and local data deletion.
- * HOW:   Uses static buyer-facing copy plus one explicit local-data reset action so the screen remains reviewable without backend state.
+ * WHY:   Privacy and review-readiness copy must map to real buyer-app actions rather than static legal placeholders.
+ * WHAT:  Renders the buyer privacy surface with consent markers, support routing, and device-data reset controls.
+ * HOW:   Keeps the sections review-friendly while writing acknowledgements into the buyer account contract and using the same local reset path as the account screen.
  */
 export default function LegalScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const isDark = useColorScheme() === "dark";
-  const screenBackground = isDark ? "#090A0C" : mobileTheme.colors.canvas;
-  const sectionBackground = isDark ? "#151821" : mobileTheme.colors.surface;
-  const dividerColor = isDark ? "rgba(255,255,255,0.08)" : mobileTheme.colors.border;
-  const textSecondary = isDark ? "#CBD5E1" : "#64748B";
+  const theme = useAppTheme();
+  const account = useBuyerAccount();
 
   function confirmDeleteLocalData() {
     Alert.alert(
       "حذف البيانات المحلية",
-      "سيتم حذف سجل المحادثات المحلي المحفوظ على هذا الجهاز فقط.",
+      "سيتم حذف سجل المحادثات، العقارات المحفوظة، وتفضيلات هذا الجهاز فقط.",
       [
         { text: "إلغاء", style: "cancel" },
         {
           text: "حذف",
           style: "destructive",
           onPress: async () => {
-            await clearGuestThreadStore();
-            Alert.alert("تم الحذف", "تم حذف البيانات المحلية من هذا الجهاز.");
+            await account.resetLocalBuyerState();
+            Alert.alert("تم الحذف", "تم حذف بيانات هذا الجهاز.");
           },
         },
       ],
     );
   }
 
+  async function openSupport() {
+    await account.setConsent("supportAcceptedAt");
+    const mailUrl = "mailto:support@anan.sa?subject=Anan%20Mobile%20Support";
+    const canOpen = await Linking.canOpenURL(mailUrl);
+    if (canOpen) {
+      await Linking.openURL(mailUrl);
+      return;
+    }
+    Alert.alert("الدعم", "support@anan.sa");
+  }
+
   return (
-    <View className="flex-1" style={{ backgroundColor: screenBackground }}>
+    <View className="flex-1" style={{ backgroundColor: theme.colors.canvas }}>
       <MobileTopBar
         insetTop={insets.top}
-        backgroundColor={screenBackground}
-        borderColor={dividerColor}
+        backgroundColor={theme.colors.canvas}
+        borderColor={theme.colors.border}
         title="الخصوصية والبيانات"
-        subtitle="إرشادات التطبيق وبيانات المراجعة"
-        leading={<IconButton icon={ArrowLeft} onPress={() => router.back()} tone={isDark ? "inversePanel" : "panel"} />}
+        subtitle="إرشادات دقيقة داخل التطبيق"
+        leading={<IconButton icon={ArrowLeft} onPress={() => router.back()} tone="panel" />}
         trailing={<View style={{ width: 44, height: 44 }} />}
       />
 
-      <ScrollView className="flex-1 px-5 pt-5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView className="flex-1 px-5 pt-5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 40) + 20 }}>
         <LegalSection
           icon={ShieldCheck}
           title="الخصوصية"
-          body="يستخدم عنان بيانات المحادثة الحالية فقط لتقديم التوصيات العقارية، مقارنة الخيارات، ومتابعة نفس الرحلة داخل التطبيق. السجل الحالي يُحفظ محلياً على هذا الجهاز في وضع الضيف."
-          isDark={isDark}
-          sectionBackground={sectionBackground}
-          textSecondary={textSecondary}
-        />
+          body="يستخدم عنان بيانات المحادثة الحالية لتقديم التوصيات العقارية، المقارنة، ومتابعة نفس الرحلة. عند العمل كضيف، يبقى السجل محفوظاً محلياً على هذا الجهاز."
+          status={account.viewer.consents.privacyAcceptedAt ? "تمت المراجعة" : "بانتظار المراجعة"}
+          statusTone={account.viewer.consents.privacyAcceptedAt ? "primary" : "default"}
+        >
+          <Button
+            label="أؤكد فهم سياسة الخصوصية"
+            variant="secondary"
+            onPress={() => void account.setConsent("privacyAcceptedAt")}
+          />
+        </LegalSection>
 
         <LegalSection
           icon={Mic}
           title="استخدام الميكروفون"
-          body="يطلب التطبيق إذن الميكروفون فقط عندما تختار تسجيل رسالة صوتية. التسجيل يُستخدم لتحويل صوتك إلى نص داخل نفس المحادثة، ولا يتم طلب الإذن قبل تفعيل التسجيل منك."
-          isDark={isDark}
-          sectionBackground={sectionBackground}
-          textSecondary={textSecondary}
-        />
+          body="لن يطلب التطبيق إذن الميكروفون إلا عندما تبدأ تسجيل رسالة صوتية بنفسك. يستخدم الصوت لتحويله إلى نص داخل نفس المحادثة."
+          status={account.viewer.consents.microphoneAcceptedAt ? "تمت المراجعة" : "اختياري"}
+          statusTone={account.viewer.consents.microphoneAcceptedAt ? "primary" : "default"}
+        >
+          <Button
+            label="فهمت استخدام الميكروفون"
+            variant="secondary"
+            onPress={() => void account.setConsent("microphoneAcceptedAt")}
+          />
+        </LegalSection>
 
         <LegalSection
           icon={FileText}
           title="الشروط والاستخدام"
-          body="هذا التطبيق مخصص لتصفح العقارات، فهم التوصيات، وطلب المتابعة العقارية داخل تجربة عنان. لا توجد مدفوعات داخل التطبيق حالياً، ولا يتم إنشاء حساب إلزامي لاستخدام التجربة الأساسية."
-          isDark={isDark}
-          sectionBackground={sectionBackground}
-          textSecondary={textSecondary}
-        />
+          body="التجربة الحالية مخصصة لتصفح العقارات، المقارنة، فهم التمويل، وطلب المتابعة. لا توجد مدفوعات داخل التطبيق في هذه النسخة."
+          status={account.viewer.consents.termsAcceptedAt ? "تمت المراجعة" : "بانتظار المراجعة"}
+          statusTone={account.viewer.consents.termsAcceptedAt ? "primary" : "default"}
+        >
+          <Button
+            label="أؤكد فهم شروط الاستخدام"
+            variant="secondary"
+            onPress={() => void account.setConsent("termsAcceptedAt")}
+          />
+        </LegalSection>
 
         <LegalSection
           icon={HelpCircle}
           title="الدعم"
-          body="للحصول على دعم داخل التطبيق، افتح المحادثة واطلب مستشاراً. وللاستفسارات التشغيلية أو مراجعة المتجر، استخدم جهة الدعم الرسمية الخاصة بعنان عند إعداد بيانات App Store Connect."
-          isDark={isDark}
-          sectionBackground={sectionBackground}
-          textSecondary={textSecondary}
-        />
+          body="يمكنك طلب الدعم من داخل التطبيق عبر المساعد أو مراسلة فريق التشغيل مباشرة. هذا يضمن أن أسئلة المراجعة أو الخصوصية تصل إلى نفس الجهة المسؤولة."
+          status={account.viewer.consents.supportAcceptedAt ? "تم فتح قناة الدعم" : "متاح دائماً"}
+          statusTone={account.viewer.consents.supportAcceptedAt ? "primary" : "default"}
+        >
+          <Button label="تواصل مع الدعم" onPress={() => void openSupport()} />
+        </LegalSection>
 
         <Pressable
           onPress={confirmDeleteLocalData}
           className="mt-5 flex-row-reverse items-center gap-4 rounded-[24px] px-5 py-5 active:opacity-80"
           style={{
             borderWidth: 1,
-            borderColor: "#F6CFCF",
-            backgroundColor: isDark ? "#221416" : mobileTheme.colors.dangerSoft,
+            borderColor: theme.colors.danger,
+            backgroundColor: theme.colors.dangerSoft,
           }}
         >
           <View
             className="items-center justify-center rounded-full"
-            style={{ width: 44, height: 44, backgroundColor: isDark ? "#3A1D22" : "#FFFFFF" }}
+            style={{ width: 44, height: 44, backgroundColor: theme.colors.surface }}
           >
-            <Trash2 size={18} color={mobileTheme.colors.danger} />
+            <Trash2 size={18} color={theme.colors.danger} />
           </View>
           <View className="flex-1">
-            <AppText className="text-right text-[16px] font-cairo-black text-red-600">حذف البيانات المحلية</AppText>
-            <AppText className="mt-1 text-right text-[13px] font-medium" style={{ color: textSecondary }}>
-              يمسح سجل المحادثات المحلي المحفوظ على هذا الجهاز فقط.
+            <AppText className="text-right text-[16px] font-cairo-black" style={{ color: theme.colors.danger }}>
+              حذف البيانات المحلية
+            </AppText>
+            <AppText className="mt-1 text-right text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
+              يمسح السجل المحلي والعقارات المحفوظة وتفضيلات هذا الجهاز فقط.
             </AppText>
           </View>
         </Pressable>
@@ -120,38 +149,48 @@ function LegalSection({
   icon: Icon,
   title,
   body,
-  isDark,
-  sectionBackground,
-  textSecondary,
+  status,
+  statusTone,
+  children,
 }: {
   icon: typeof ShieldCheck;
   title: string;
   body: string;
-  isDark: boolean;
-  sectionBackground: string;
-  textSecondary: string;
+  status: string;
+  statusTone: "default" | "primary";
+  children: ReactNode;
 }) {
+  const theme = useAppTheme();
   return (
     <View
       className="mt-5 rounded-[24px] px-5 py-5"
       style={{
         borderWidth: 1,
-        borderColor: isDark ? "rgba(255,255,255,0.08)" : mobileTheme.colors.border,
-        backgroundColor: sectionBackground,
+        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.surface,
       }}
     >
       <View className="flex-row-reverse items-center gap-3">
         <View
           className="items-center justify-center rounded-full"
-          style={{ width: 42, height: 42, backgroundColor: mobileTheme.colors.primarySoft }}
+          style={{ width: 42, height: 42, backgroundColor: theme.colors.primarySoft }}
         >
-          <Icon size={18} color={mobileTheme.colors.primary} />
+          <Icon size={18} color={theme.colors.primary} />
         </View>
-        <AppText className="flex-1 text-right text-[18px] font-cairo-black text-slate-900">{title}</AppText>
+        <AppText className="flex-1 text-right text-[18px] font-cairo-black" style={{ color: theme.colors.ink }}>
+          {title}
+        </AppText>
       </View>
-      <AppText className="mt-4 text-right text-[15px] leading-8" style={{ color: textSecondary }}>
+
+      <View className="mt-4 flex-row-reverse">
+        <MobilePill label={status} tone={statusTone === "primary" ? "primary" : "default"} active={statusTone === "primary"} />
+      </View>
+
+      <AppText className="mt-4 text-right text-[15px] leading-8" style={{ color: theme.colors.inkMuted }}>
         {body}
       </AppText>
+
+      <View className="mt-4">{children}</View>
     </View>
   );
 }

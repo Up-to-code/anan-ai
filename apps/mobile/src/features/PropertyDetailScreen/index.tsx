@@ -10,6 +10,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
 import { GalleryViewport } from "@/features/GalleryScreen/GalleryViewport";
 import { StickyJourneyBar } from "@/features/PropertyDetailScreen/StickyJourneyBar";
+import { useBuyerAccount } from "@/hooks/useBuyerAccount";
 import { usePropertyDetail } from "@/hooks/usePropertyDetail";
 import { formatCurrency } from "@/lib/formatters";
 import { getPropertyHeroImage, getPropertyLocationLabel } from "@/lib/mobileData";
@@ -26,6 +27,7 @@ export default function PropertyDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
+  const account = useBuyerAccount();
   const params = useLocalSearchParams<{
     id?: string;
     threadId?: string;
@@ -181,6 +183,7 @@ export default function PropertyDetailScreen() {
     contactEmail?: string;
     agencyLabel?: string;
   };
+  const isSaved = account.isPropertySaved(property.id);
 
   return (
     <View className="flex-1" style={{ backgroundColor: theme.colors.canvas }}>
@@ -252,6 +255,41 @@ export default function PropertyDetailScreen() {
               <AppText className="text-right text-[28px] font-cairo-bold" style={{ color: theme.colors.primary }}>
                 {formatCurrency(property.price)}
               </AppText>
+              <View className="flex-row-reverse flex-wrap" style={{ gap: 10 }}>
+                <Pressable
+                  onPress={() => void account.toggleSavedProperty(property.id)}
+                  className="px-4 py-2.5"
+                  style={{
+                    borderRadius: theme.radii.pill,
+                    borderWidth: 1,
+                    borderColor: isSaved ? theme.colors.primaryMuted : theme.colors.border,
+                    backgroundColor: isSaved ? theme.colors.primarySoft : theme.colors.surfaceMuted,
+                  }}
+                >
+                  <AppText className="text-[13px] font-cairo-bold" style={{ color: isSaved ? theme.colors.primary : theme.colors.inkSoft }}>
+                    {isSaved ? "تم الحفظ" : "احفظ العقار"}
+                  </AppText>
+                </Pressable>
+                <Pressable
+                  onPress={() =>
+                    router.push({
+                      pathname: "/finance",
+                      params: { propertyId: property.id },
+                    })
+                  }
+                  className="px-4 py-2.5"
+                  style={{
+                    borderRadius: theme.radii.pill,
+                    borderWidth: 1,
+                    borderColor: theme.colors.border,
+                    backgroundColor: theme.colors.surfaceMuted,
+                  }}
+                >
+                  <AppText className="text-[13px] font-cairo-bold" style={{ color: theme.colors.inkSoft }}>
+                    افتح التمويل
+                  </AppText>
+                </Pressable>
+              </View>
             </View>
 
             <View className="flex-row-reverse flex-wrap gap-x-5 gap-y-3">
@@ -272,6 +310,32 @@ export default function PropertyDetailScreen() {
                 value={property.owner.name}
                 detail={anyOwner.agencyLabel ?? (owner.type === "broker" ? "وسيط موثق" : "مطور موثق")}
                 onPress={openBrokerProfile}
+              />
+              <InfoTableRow
+                label="حالة التحقق"
+                value={
+                  property.compliance?.permitStatus === "verified"
+                    ? "موثق"
+                    : property.compliance?.permitStatus === "pending_review"
+                      ? "قيد المراجعة"
+                      : "بحاجة إلى مراجعة"
+                }
+                detail={
+                  property.compliance?.adLicenseStatus
+                    ? `الرخصة: ${property.compliance.adLicenseStatus === "approved" ? "موافق عليها" : property.compliance.adLicenseStatus === "pending" ? "قيد المراجعة" : "مرفوضة"}`
+                    : undefined
+                }
+              />
+              <InfoTableRow
+                label="تمويل مبدئي"
+                value={property.finance ? formatCurrency(property.finance.estimatedMonthlyPayment) : "افتح التمويل"}
+                detail={property.finance ? `فائدة ${property.finance.defaultAnnualRate}% لمدة ${property.finance.defaultYears} سنة` : undefined}
+                onPress={() =>
+                  router.push({
+                    pathname: "/finance",
+                    params: { propertyId: property.id },
+                  })
+                }
               />
             </View>
 

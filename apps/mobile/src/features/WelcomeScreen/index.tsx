@@ -6,11 +6,18 @@ import { AppText } from "@/components/ui/AppText";
 import { Button } from "@/components/ui/Button";
 import { MobilePill, MobileSectionHeading, MobileSurface } from "@/components/ui/MobileChrome";
 import { AnanMark } from "@/components/chat/AnanMark";
+import { useBuyerAccount } from "@/hooks/useBuyerAccount";
 import { useAppTheme } from "@/lib/mobileTheme";
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const theme = useAppTheme();
+  const account = useBuyerAccount();
+
+  async function startJourney(nextRoute: "/" | "/search") {
+    await account.markOnboardingCompleted();
+    router.replace(nextRoute);
+  }
 
   return (
     <View className="flex-1 px-6" style={{ backgroundColor: theme.colors.canvas }}>
@@ -58,13 +65,13 @@ export default function WelcomeScreen() {
         <View className="mt-6 gap-3">
           <Button
             label="ابدأ مع المساعد"
-            onPress={() => router.replace("/")}
+            onPress={() => void startJourney("/")}
             className="h-[60px]"
           />
           <Button
             label="تصفح البحث"
             variant="secondary"
-            onPress={() => router.push("/search")}
+            onPress={() => void startJourney("/search")}
             className="h-[58px]"
           />
         </View>

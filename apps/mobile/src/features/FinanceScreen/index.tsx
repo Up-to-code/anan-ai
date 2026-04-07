@@ -1,138 +1,364 @@
-import { ActivityIndicator, Pressable, ScrollView, View, useColorScheme } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Calculator } from "lucide-react-native";
+import { ArrowLeft, Calculator, Landmark, Percent, Wallet } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText } from "@/components/ui/AppText";
+import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { MobileSectionHeading, MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
-import { formatCurrency } from "@/lib/formatters";
+import { useBuyerAccount } from "@/hooks/useBuyerAccount";
+import { useBuyerFinance } from "@/hooks/useBuyerFinance";
 import { usePropertyDetail } from "@/hooks/usePropertyDetail";
+import { formatCurrency } from "@/lib/formatters";
 import { getPropertyLocationLabel } from "@/lib/mobileData";
-import { mobileTheme } from "@/lib/mobileTheme";
+import { useAppTheme } from "@/lib/mobileTheme";
+
+function parseNumberInput(value: string) {
+  const normalized = value.replace(/[^\d.]/g, "");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
 /**
- * WHY:   Finance should read like a normal quick calculator screen tied to the current listing.
- * WHAT:  Renders a plain financing estimate page with a linked property summary and a clean repayment breakdown.
- * HOW:   Calculates one simple monthly installment scenario and presents it in rows instead of a custom feature layout.
+ * WHY:   Buyers need a real property-linked financing workspace instead of a single fixed estimate.
+ * WHAT:  Renders editable finance assumptions, a live estimate summary, and bank-option previews for the active property.
+ * HOW:   Seeds the form from buyer account defaults and property metadata, then resolves the scenario through the shared finance hook.
  */
 export default function FinanceScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const isDark = useColorScheme() === "dark";
+  const theme = useAppTheme();
+  const account = useBuyerAccount();
   const { propertyId } = useLocalSearchParams<{ propertyId?: string }>();
-  const { property, isLoading } = usePropertyDetail(propertyId);
-  const screenBackground = isDark ? "#0B0C10" : mobileTheme.colors.canvas;
-  const sectionBackground = isDark ? "#151821" : "#FFFFFF";
-  const mutedSectionBackground = isDark ? "#111318" : "#F3F4F6";
+  const { property, isLoading: isPropertyLoading } = usePropertyDetail(propertyId);
 
-  const propertyValue = property?.price ?? 1200000;
-  const downPayment = Math.round(propertyValue * 0.2);
-  const rate = 0.045;
-  const years = 20;
+  const propertyPrice = property?.price ?? 1_200_000;
+  const initialDownPayment = useMemo(
+    () =>
+      property?.finance?.defaultDownPayment ??
+      Math.round(propertyPrice * (account.viewer.preferences.financeDefaults.downPaymentPercent / 100)),
+    [account.viewer.preferences.financeDefaults.downPaymentPercent, property?.finance?.defaultDownPayment, propertyPrice],
+  );
 
-  const principal = propertyValue - downPayment;
-  const monthlyRate = rate / 12;
-  const payments = years * 12;
-  const monthlyPayment = (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -payments));
+  const [downPaymentInput, setDownPaymentInput] = useState(String(initialDownPayment));
+  const [yearsInput, setYearsInput] = useState(String(property?.finance?.defaultYears ?? account.viewer.preferences.financeDefaults.preferredYears));
+  const [rateInput, setRateInput] = useState(String(property?.finance?.defaultAnnualRate ?? account.viewer.preferences.financeDefaults.annualRate));
+  const [salaryInput, setSalaryInput] = useState("");
 
-  if (isLoading) {
+  useEffect(() => {
+    setDownPaymentInput(String(initialDownPayment));
+  }, [initialDownPayment]);
+
+  useEffect(() => {
+    setYearsInput(String(property?.finance?.defaultYears ?? account.viewer.preferences.financeDefaults.preferredYears));
+    setRateInput(String(property?.finance?.defaultAnnualRate ?? account.viewer.preferences.financeDefaults.annualRate));
+  }, [
+    account.viewer.preferences.financeDefaults.annualRate,
+    account.viewer.preferences.financeDefaults.preferredYears,
+    property?.finance?.defaultAnnualRate,
+    property?.finance?.defaultYears,
+  ]);
+
+  const downPayment = parseNumberInput(downPaymentInput);
+  const years = Math.max(1, parseNumberInput(yearsInput));
+  const annualRate = Math.max(0, parseNumberInput(rateInput));
+  const monthlySalary = parseNumberInput(salaryInput);
+
+  const finance = useBuyerFinance({
+    propertyId: property?.id,
+    propertyTitle: property?.title,
+    propertyPrice,
+    downPayment,
+    annualRate,
+    years,
+    monthlySalary: monthlySalary > 0 ? monthlySalary : undefined,
+  });
+
+  async function persistCurrentDefaults() {
+    await account.updateFinanceDefaults({
+      downPaymentPercent: propertyPrice > 0 ? Math.round((downPayment / propertyPrice) * 100) : account.viewer.preferences.financeDefaults.downPaymentPercent,
+      preferredYears: years,
+      annualRate,
+    });
+  }
+
+  if (isPropertyLoading) {
     return (
-      <View className="flex-1 items-center justify-center" style={{ backgroundColor: screenBackground }}>
-        <ActivityIndicator size="large" color={mobileTheme.colors.primary} />
+      <View className="flex-1 items-center justify-center" style={{ backgroundColor: theme.colors.canvas }}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
 
-  const rows = [
-    { label: "سعر العقار", value: formatCurrency(propertyValue) },
-    { label: "الدفعة الأولى", value: formatCurrency(downPayment) },
-    { label: "قيمة التمويل", value: formatCurrency(principal) },
-    { label: "نسبة الفائدة", value: "4.5%" },
-    { label: "مدة السداد", value: `${years} سنة` },
-  ];
-
   return (
-    <View className="flex-1" style={{ backgroundColor: screenBackground }}>
+    <View className="flex-1" style={{ backgroundColor: theme.colors.canvas }}>
       <MobileTopBar
         insetTop={insets.top}
         title="التمويل"
-        subtitle="تقدير سريع داخل نفس الرحلة"
+        subtitle="سيناريو حي داخل نفس الرحلة"
         leading={<IconButton icon={ArrowLeft} onPress={() => router.back()} tone="panel" />}
         trailing={
           <View
             className="items-center justify-center rounded-full"
-            style={{ width: 44, height: 44, backgroundColor: sectionBackground }}
+            style={{ width: 44, height: 44, backgroundColor: theme.colors.surfaceMuted }}
           >
-            <Calculator size={18} color={mobileTheme.colors.inkMuted} />
+            <Calculator size={18} color={theme.colors.inkMuted} />
           </View>
         }
       />
 
-      <ScrollView className="flex-1 px-5 pt-5" showsVerticalScrollIndicator={false}>
-        <View className="gap-5 pb-12">
-          {property ? (
-            <View className="rounded-[28px] px-5 py-5" style={{ borderWidth: 1, borderColor: isDark ? "rgba(255,255,255,0.08)" : mobileTheme.colors.border, backgroundColor: mutedSectionBackground }}>
-              <MobileSectionHeading
-                eyebrow="REFERENCE PROPERTY"
-                title={property.title}
-                description={getPropertyLocationLabel(property)}
+      <ScrollView className="flex-1 px-5 pt-5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 32) + 32 }}>
+        <View className="gap-5">
+          <MobileSurface tone="muted" radius="hero" className="gap-4">
+            <MobileSectionHeading
+              eyebrow="العقار المرجعي"
+              title={property?.title ?? "سيناريو تمويل عام"}
+              description={property ? getPropertyLocationLabel(property) : "يمكنك استخدام هذا السيناريو حتى قبل اختيار عقار محدد."}
+            />
+
+            <View className="flex-row-reverse" style={{ gap: 12 }}>
+              <MetricCard icon={Wallet} label="سعر العقار" value={formatCurrency(propertyPrice)} />
+              <MetricCard
+                icon={Landmark}
+                label="عدد عروض البنك"
+                value={String(property?.finance?.bankOfferCount ?? finance.estimate.bankOffers.length)}
               />
             </View>
-          ) : null}
+          </MobileSurface>
 
-          <View className="rounded-[28px] px-5 py-5" style={{ borderWidth: 1, borderColor: isDark ? "rgba(255,255,255,0.08)" : mobileTheme.colors.border, backgroundColor: sectionBackground }}>
-            <AppText className="text-right text-[15px] font-cairo-black text-slate-900">
-              القسط الشهري التقديري
-            </AppText>
-            <AppText className="mt-3 text-right text-[34px] font-cairo-black text-slate-900">
-              {formatCurrency(monthlyPayment)}
-            </AppText>
-            <AppText className="mt-2 text-right text-[14px] leading-7 text-slate-500">
-              تقدير سريع للمقارنة فقط، وليس عرض تمويل نهائياً من بنك أو جهة تمويل.
-            </AppText>
-          </View>
+          <MobileSurface radius="hero" className="gap-4">
+            <MobileSectionHeading
+              eyebrow="افتراضات المشتري"
+              title="عدّل السيناريو"
+              description="كل تغيير ينعكس مباشرة على التقدير الحالي ويمكن حفظه كافتراض افتراضي لاحقاً."
+            />
 
-          <View className="overflow-hidden rounded-[28px]" style={{ borderWidth: 1, borderColor: isDark ? "rgba(255,255,255,0.08)" : mobileTheme.colors.border, backgroundColor: sectionBackground }}>
-            {rows.map((row, index) => (
-              <FinanceRow
-                key={row.label}
-                label={row.label}
-                value={row.value}
-                withBorder={index < rows.length - 1}
-                isDark={isDark}
+            <FinanceInput
+              label="الدفعة الأولى"
+              value={downPaymentInput}
+              onChangeText={setDownPaymentInput}
+              placeholder={String(initialDownPayment)}
+            />
+            <FinanceInput
+              label="مدة السداد (سنة)"
+              value={yearsInput}
+              onChangeText={setYearsInput}
+              placeholder="20"
+            />
+            <FinanceInput
+              label="نسبة الفائدة السنوية"
+              value={rateInput}
+              onChangeText={setRateInput}
+              placeholder="4.75"
+            />
+            <FinanceInput
+              label="الراتب الشهري"
+              value={salaryInput}
+              onChangeText={setSalaryInput}
+              placeholder="اختياري لتحليل القدرة"
+            />
+
+            <Button label="احفظ هذه الافتراضات" variant="secondary" onPress={() => void persistCurrentDefaults()} />
+          </MobileSurface>
+
+          <MobileSurface radius="hero" className="gap-4">
+            <MobileSectionHeading
+              eyebrow="التقدير الحالي"
+              title={formatCurrency(finance.estimate.monthlyPayment)}
+              description={finance.estimate.summary}
+            />
+
+            <View className="flex-row-reverse flex-wrap" style={{ gap: 12 }}>
+              <MetricPill label="قيمة التمويل" value={formatCurrency(finance.estimate.loanAmount)} />
+              <MetricPill label="إجمالي الفائدة" value={formatCurrency(finance.estimate.totalInterest)} />
+              <MetricPill label="إجمالي المدفوع" value={formatCurrency(finance.estimate.totalPaid)} />
+            </View>
+
+            <View
+              className="rounded-[20px] px-4 py-4"
+              style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceMuted }}
+            >
+              <View className="flex-row-reverse items-center gap-2">
+                <Percent size={16} color={theme.colors.primary} />
+                <AppText className="text-right text-[14px] font-cairo-bold" style={{ color: theme.colors.ink }}>
+                  حالة القدرة
+                </AppText>
+              </View>
+              <AppText className="mt-2 text-right text-[15px] font-cairo-black" style={{ color: theme.colors.primary }}>
+                {finance.estimate.affordabilityStatus === "comfortable"
+                  ? "مريح"
+                  : finance.estimate.affordabilityStatus === "review"
+                    ? "يحتاج مراجعة"
+                    : "مرهق"}
+              </AppText>
+              {finance.estimate.recommendedBudget ? (
+                <AppText className="mt-1 text-right text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
+                  الميزانية التقديرية المناسبة: {formatCurrency(finance.estimate.recommendedBudget)}
+                </AppText>
+              ) : (
+                <AppText className="mt-1 text-right text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
+                  أضف الراتب الشهري لتحصل على قراءة أوضح للقدرة.
+                </AppText>
+              )}
+            </View>
+          </MobileSurface>
+
+          <MobileSurface radius="hero" className="gap-4">
+            <MobileSectionHeading
+              eyebrow="عروض بنكية"
+              title={finance.estimate.bankOffers.length > 0 ? "مقارنة أولية" : "لا توجد عروض بنكية حالياً"}
+              description={
+                finance.estimate.bankOffers.length > 0
+                  ? "تم ربط التقدير بأقرب المنتجات البنكية المتاحة لهذا العقار."
+                  : "سيظل التقدير العام متاحاً حتى لو لم يكن للعقار بنك مرتبط بعد."
+              }
+            />
+
+            {finance.isLoading ? (
+              <View className="py-6 items-center justify-center">
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              </View>
+            ) : (
+              finance.estimate.bankOffers.map((offer) => (
+                <View
+                  key={`${offer.bankName}-${offer.rateLabel}`}
+                  className="rounded-[20px] px-4 py-4"
+                  style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceMuted }}
+                >
+                  <View className="flex-row-reverse items-start justify-between gap-3">
+                    <View className="items-end">
+                      <AppText className="text-right text-[16px] font-cairo-black" style={{ color: theme.colors.ink }}>
+                        {offer.bankName}
+                      </AppText>
+                      <AppText className="mt-1 text-right text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
+                        {offer.summary}
+                      </AppText>
+                    </View>
+                    <MobileSurface padded={false} radius="pill" className="px-3 py-2" tone="highlight">
+                      <AppText className="text-[12px] font-cairo-bold" style={{ color: theme.colors.primary }}>
+                        {offer.rateLabel}
+                      </AppText>
+                    </MobileSurface>
+                  </View>
+
+                  <View className="mt-3 flex-row-reverse" style={{ gap: 12 }}>
+                    <MetricPill label="دفعة أولى" value={`${offer.downPaymentPercent}%`} />
+                    <MetricPill label="قسط تقديري" value={formatCurrency(offer.monthlyEstimate)} />
+                  </View>
+                </View>
+              ))
+            )}
+          </MobileSurface>
+
+          <View className="gap-3 pb-4">
+            <Button
+              label="العودة إلى المساعد"
+              onPress={() =>
+                router.replace({
+                  pathname: "/",
+                  params: property ? { propertyId: property.id } : undefined,
+                })
+              }
+            />
+            {property ? (
+              <Button
+                label="افتح تفاصيل العقار"
+                variant="secondary"
+                onPress={() =>
+                  router.push({
+                    pathname: "/property/[id]",
+                    params: { id: property.id },
+                  })
+                }
               />
-            ))}
+            ) : null}
           </View>
-
-          <Pressable
-            onPress={() => router.replace({ pathname: "/", params: property ? { propertyId: property.id } : undefined })}
-            className="items-center justify-center rounded-[18px] bg-slate-900 px-5 py-4 active:opacity-90"
-          >
-            <AppText className="text-[15px] font-cairo-black text-white">
-              ارجع إلى المساعد
-            </AppText>
-          </Pressable>
         </View>
       </ScrollView>
     </View>
   );
 }
 
-function FinanceRow({
+function FinanceInput({
   label,
   value,
-  withBorder,
-  isDark,
+  onChangeText,
+  placeholder,
 }: {
   label: string;
   value: string;
-  withBorder?: boolean;
-  isDark?: boolean;
+  onChangeText: (value: string) => void;
+  placeholder: string;
 }) {
+  const theme = useAppTheme();
   return (
-    <View className="flex-row-reverse items-center justify-between px-5 py-4" style={withBorder ? { borderBottomWidth: 1, borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "#E5E7EB" } : undefined}>
-      <AppText className="text-right text-[15px] font-bold" style={{ color: isDark ? "#94A3B8" : "#64748B" }}>{label}</AppText>
-      <AppText className="text-right text-[18px] font-cairo-black" style={{ color: isDark ? "#F8FAFC" : mobileTheme.colors.ink }}>{value}</AppText>
+    <View>
+      <AppText className="mb-2 text-right text-[13px] font-cairo-bold" style={{ color: theme.colors.inkMuted }}>
+        {label}
+      </AppText>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        keyboardType="numeric"
+        placeholder={placeholder}
+        placeholderTextColor={theme.colors.inkMuted}
+        cursorColor={theme.colors.primary}
+        className="h-12 px-4 text-right font-cairo-bold"
+        style={{
+          borderRadius: theme.radii.card,
+          borderWidth: 1,
+          borderColor: theme.colors.border,
+          backgroundColor: theme.colors.surfaceMuted,
+          color: theme.colors.ink,
+        }}
+      />
     </View>
   );
 }
+
+function MetricCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Wallet;
+  label: string;
+  value: string;
+}) {
+  const theme = useAppTheme();
+  return (
+    <View
+      className="flex-1 rounded-[20px] px-4 py-4"
+      style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surface }}
+    >
+      <View className="flex-row-reverse items-center gap-2">
+        <Icon size={16} color={theme.colors.primary} />
+        <AppText className="text-right text-[12px] font-cairo-bold" style={{ color: theme.colors.inkMuted }}>
+          {label}
+        </AppText>
+      </View>
+      <AppText className="mt-2 text-right text-[17px] font-cairo-black" style={{ color: theme.colors.ink }}>
+        {value}
+      </AppText>
+    </View>
+  );
+}
+
+function MetricPill({ label, value }: { label: string; value: string }) {
+  const theme = useAppTheme();
+  return (
+    <View
+      className="flex-1 rounded-[18px] px-3 py-3"
+      style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surface }}
+    >
+      <AppText className="text-right text-[11px] font-cairo-bold" style={{ color: theme.colors.inkMuted }}>
+        {label}
+      </AppText>
+      <AppText className="mt-1 text-right text-[15px] font-cairo-black" style={{ color: theme.colors.ink }}>
+        {value}
+      </AppText>
+    </View>
+  );
+}
+

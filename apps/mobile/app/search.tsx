@@ -1,4 +1,4 @@
-import SearchScreen from "@/features/SearchScreen";
+import SearchScreen from "@/features/SearchScreen/index";
 
 /**
  * WHY:   Buyers still need a direct discovery route outside the main conversation timeline.

@@ -173,6 +173,13 @@ vi.mock("@/hooks/usePropertyDetail", () => ({
   usePropertyDetail: () => mockState.propertyDetailState,
 }));
 
+vi.mock("@/hooks/useBuyerAccount", () => ({
+  useBuyerAccount: () => ({
+    isPropertySaved: () => false,
+    toggleSavedProperty: vi.fn(),
+  }),
+}));
+
 vi.mock("@/lib/mobileSearch", () => ({
   buildSearchRouteParams: (nextContext: any) => nextContext,
   parseSearchRouteParams: () => mockState.searchContext,

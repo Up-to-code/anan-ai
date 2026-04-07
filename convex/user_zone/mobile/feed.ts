@@ -38,6 +38,27 @@ type PropertyOwner = {
 const FALLBACK_FEED_IMAGE =
   "https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1200&q=80";
 
+function calculateMortgagePreview(args: {
+  price: number;
+  downPayment: number;
+  annualRate: number;
+  years: number;
+}) {
+  const loanAmount = Math.max(0, args.price - args.downPayment);
+  const monthlyRate = args.annualRate / 100 / 12;
+  const installments = Math.max(args.years * 12, 1);
+  const factor = Math.pow(1 + monthlyRate, installments);
+  const monthlyPayment =
+    monthlyRate > 0
+      ? Math.round((loanAmount * monthlyRate * factor) / Math.max(factor - 1, 1))
+      : Math.round(loanAmount / installments);
+
+  return {
+    loanAmount,
+    monthlyPayment,
+  };
+}
+
 async function resolvePropertyOwner(ctx: any, property: PropertyDoc) {
   if (property.brokerId) {
     const owner = (await ctx.db.get(property.brokerId)) as PropertyOwner | null;
@@ -110,6 +131,57 @@ function toOwnerPreview(owner: PropertyOwner, ownerType: "broker" | "RED") {
     rating: notesMetadata?.rating,
     establishedYear: notesMetadata?.establishedYear,
     completedProjects: notesMetadata?.completedProjects,
+  };
+}
+
+async function buildFinancePreview(ctx: any, property: PropertyDoc) {
+  const defaultDownPayment = Math.round(property.price * 0.1);
+  const defaultYears = 20;
+  const defaultAnnualRate = 4.75;
+  const mortgagePreview = calculateMortgagePreview({
+    price: property.price,
+    downPayment: defaultDownPayment,
+    annualRate: defaultAnnualRate,
+    years: defaultYears,
+  });
+  const bank = property.bankId ? await ctx.db.get(property.bankId) : null;
+
+  return {
+    defaultDownPayment,
+    defaultYears,
+    defaultAnnualRate,
+    estimatedLoanAmount: mortgagePreview.loanAmount,
+    estimatedMonthlyPayment: mortgagePreview.monthlyPayment,
+    bankOfferCount: bank?.products?.length ?? 0,
+  };
+}
+
+function buildContactPreview(property: PropertyDoc, owner: PropertyOwner) {
+  const phone = owner.phone?.trim();
+  const email = owner.contactEmail?.trim();
+  return {
+    hasPhone: Boolean(phone),
+    hasEmail: Boolean(email),
+    hasWhatsApp: Boolean(phone),
+    mapQuery: property.address,
+  };
+}
+
+function buildCompliancePreview(args: {
+  owner: PropertyOwner;
+  adLicenseStatus?: string;
+  listingVerified?: boolean;
+}) {
+  const ownerVerified = args.owner.isVerified === true;
+  const listingVerified = args.listingVerified === true || args.adLicenseStatus === "approved";
+  return {
+    adLicenseStatus:
+      args.adLicenseStatus === "pending" || args.adLicenseStatus === "approved" || args.adLicenseStatus === "rejected"
+        ? args.adLicenseStatus
+        : undefined,
+    permitStatus: ownerVerified && listingVerified ? ("verified" as const) : ownerVerified ? ("pending_review" as const) : ("not_available" as const),
+    ownerVerified,
+    listingVerified,
   };
 }
 
@@ -187,6 +259,7 @@ export async function buildMobilePropertyFeedItem(
   property: PropertyDoc,
 ) {
   const adLicenseStatus = (property as { adLicenseStatus?: string }).adLicenseStatus;
+  const listingVerified = (property as { listingVerified?: boolean }).listingVerified;
   const ownerContext = await resolvePropertyOwner(ctx, property);
   if (!ownerContext) return null;
   const { owner, ownerType, orgType } = ownerContext;
@@ -202,6 +275,11 @@ export async function buildMobilePropertyFeedItem(
   const media = resolveFeedMedia(property);
   const activeListings = await countActiveListingsForOwner(ctx, property);
   const ownerPreview = toOwnerPreview(owner, ownerType);
+  const [finance, contact] = await Promise.all([
+    buildFinancePreview(ctx, property),
+    Promise.resolve(buildContactPreview(property, owner)),
+  ]);
+  const compliance = buildCompliancePreview({ owner, adLicenseStatus, listingVerified });
 
   return {
     id: property._id,
@@ -221,6 +299,9 @@ export async function buildMobilePropertyFeedItem(
       activeListings,
     },
     aiSummary: buildAiSummary(property),
+    finance,
+    contact,
+    compliance,
   };
 }
 
