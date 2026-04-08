@@ -101,14 +101,12 @@ vi.mock("./_components/OrganizationVerificationWorkspace", () => ({
     organization,
     canManage,
     membersCount,
-    invitesCount,
   }: {
     organization: { verificationSummary?: { currentRequestStatus?: string } } | null;
     canManage: boolean;
     membersCount: number;
-    invitesCount: number;
   }) => (
-    <div>{`VERIFICATION-WORKSPACE:${organization?.verificationSummary?.currentRequestStatus ?? "none"}:${canManage}:${membersCount}:${invitesCount}`}</div>
+    <div>{`VERIFICATION-WORKSPACE:${organization?.verificationSummary?.currentRequestStatus ?? "none"}:${canManage}:${membersCount}`}</div>
   ),
 }));
 
@@ -254,7 +252,7 @@ it("renders verification tab content when tab is verification", async () => {
   const element = await WorkspaceSettingsPage({ searchParams: Promise.resolve({ tab: "verification" }) });
   const markup = renderToStaticMarkup(element);
 
-  expect(markup).toContain("VERIFICATION-WORKSPACE:in_review:true:1:1");
+  expect(markup).toContain("VERIFICATION-WORKSPACE:in_review:true:1");
   expect(markup).not.toContain("ORG-WORKSPACE");
   expect(markup).not.toContain("MEMBERS-WORKSPACE");
   expect(getComplianceRulesetForCurrentOrg).toHaveBeenCalled();

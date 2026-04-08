@@ -386,6 +386,7 @@ export type WebDictionary = {
     publishingAllowed: string;
     lastSubmission: string;
     filesCount: string;
+    membersCountLabel: string;
     teamSummary: string;
     reviewNotes: string;
     verificationTimeline: string;
@@ -888,6 +889,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       publishingAllowed: "لا يوجد حظر نشر من توثيق المنظمة",
       lastSubmission: "آخر إرسال",
       filesCount: "عدد الملفات",
+      membersCountLabel: "عدد الأعضاء",
       teamSummary: "{members} أعضاء، {invites} دعوات، وصلاحيتك الحالية: {roleLabel}",
       reviewNotes: "ملاحظات المراجعة",
       verificationTimeline: "الخط الزمني",
@@ -1388,6 +1390,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       publishingAllowed: "There is no publishing block from organization verification",
       lastSubmission: "Last submission",
       filesCount: "Files count",
+      membersCountLabel: "Members count",
       teamSummary: "{members} members, {invites} invites, and your current role is: {roleLabel}",
       reviewNotes: "Review notes",
       verificationTimeline: "Timeline",
@@ -1888,6 +1891,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       publishingAllowed: "Aucun blocage de publication lié à la vérification de l'organisation",
       lastSubmission: "Dernier envoi",
       filesCount: "Nombre de fichiers",
+      membersCountLabel: "Nombre de membres",
       teamSummary: "{members} membres, {invites} invitations, et votre rôle actuel est : {roleLabel}",
       reviewNotes: "Notes de révision",
       verificationTimeline: "Chronologie",

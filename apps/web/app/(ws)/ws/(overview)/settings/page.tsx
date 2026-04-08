@@ -138,10 +138,8 @@ function AppsTabSection(args: {
 
 function VerificationTabSection(args: {
   organization: Awaited<ReturnType<typeof getWorkspaceOrganizationTeam>>["organization"];
-  membersCount: number;
-  invitesCount: number;
   canManage: boolean;
-  roleLabel: string;
+  membersCount: number;
   ruleset: Awaited<ReturnType<typeof getComplianceRulesetForCurrentOrg>>;
 }) {
   return (
@@ -152,8 +150,6 @@ function VerificationTabSection(args: {
         ruleset={args.ruleset}
         canManage={args.canManage}
         membersCount={args.membersCount}
-        invitesCount={args.invitesCount}
-        roleLabel={args.roleLabel}
       />
     </div>
   );
@@ -217,10 +213,8 @@ export default async function WorkspaceSettingsPage(props: {
           ) : currentTab === "verification" ? (
             <VerificationTabSection
               organization={organization}
-              membersCount={members.length}
-              invitesCount={invites.length}
               canManage={canManage}
-              roleLabel={roleLabel}
+              membersCount={members.length}
               ruleset={complianceRuleset}
             />
           ) : currentTab === "api-keys" ? (

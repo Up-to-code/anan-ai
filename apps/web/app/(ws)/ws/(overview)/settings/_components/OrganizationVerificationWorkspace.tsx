@@ -23,6 +23,7 @@ type OrganizationVerificationWorkspaceProps = {
   verificationSummary?: OrganizationVerificationSummary;
   ruleset: ComplianceRuleset | null;
   canManage: boolean;
+  membersCount: number;
 };
 
 const emptyVerificationSummary: OrganizationVerificationSummary = {
@@ -172,6 +173,7 @@ export default function OrganizationVerificationWorkspace({
   verificationSummary = emptyVerificationSummary,
   ruleset,
   canManage,
+  membersCount,
 }: OrganizationVerificationWorkspaceProps) {
   const { locale, dictionary, direction } = useWebLocale();
   const [summary, setSummary] = useState(verificationSummary);
@@ -245,6 +247,10 @@ export default function OrganizationVerificationWorkspace({
           <SummaryCard
             label={dictionary.settings.filesCount}
             value={summary.documentsCount}
+          />
+          <SummaryCard
+            label={dictionary.settings.membersCountLabel}
+            value={membersCount}
           />
         </div>
 
