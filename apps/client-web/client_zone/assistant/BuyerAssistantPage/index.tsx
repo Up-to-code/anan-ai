@@ -99,7 +99,7 @@ export default function BuyerAssistantPage() {
 
           <div className="flex min-h-0 flex-1 flex-col">
             <ChatMessageArea className="min-h-0 flex-1 px-4 sm:px-6">
-              <ChatMessageAreaContent data-testid="client-assistant-thread" className="mx-auto flex w-full max-w-4xl flex-col gap-5 px-1 py-8">
+              <ChatMessageAreaContent data-testid="client-assistant-thread" className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-1 py-8">
                 {assistant.messages.map((message) => (
                   <div key={message.id}>
                     {message.role === "assistant" ? (
@@ -109,13 +109,6 @@ export default function BuyerAssistantPage() {
                     )}
                   </div>
                 ))}
-
-                <div className="pt-2">
-                  <ChatSuggestions
-                    suggestions={latestSuggestions}
-                    onSelect={(suggestion) => void assistant.sendMessage(suggestion.prompt)}
-                  />
-                </div>
               </ChatMessageAreaContent>
               <ChatMessageAreaScrollButton />
             </ChatMessageArea>
@@ -127,6 +120,10 @@ export default function BuyerAssistantPage() {
                 </div>
               ) : null}
               <div className="mx-auto w-full max-w-3xl">
+                <ChatSuggestions
+                  suggestions={latestSuggestions}
+                  onSelect={(suggestion) => void assistant.sendMessage(suggestion.prompt)}
+                />
                 <BuyerAssistantComposer
                   value={assistant.draft}
                   isSending={assistant.isSending}

@@ -46,10 +46,11 @@ export default async function AnalyticsPage({ range = "30d" }: AnalyticsPageProp
       tabs={analyticsTabs}
       actions={<AdminRangeControl />}
       layout="analytics"
+      headerVariant="compact"
       rail={
         <AdminSectionStack className="min-h-0">
           <WorkspacePanel
-            fullHeight
+            density="compact"
             header={
               <div className="space-y-2">
                 <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--workspace-muted)]">
@@ -68,7 +69,7 @@ export default async function AnalyticsPage({ range = "30d" }: AnalyticsPageProp
             {viewModel.queue.recentItems.map((item) => (
               <div
                 key={item.id}
-                className="rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] p-4"
+                className="rounded-[22px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -85,7 +86,7 @@ export default async function AnalyticsPage({ range = "30d" }: AnalyticsPageProp
           </WorkspacePanel>
 
           <WorkspacePanel
-            fullHeight
+            density="compact"
             header={
               <div className="space-y-2">
                 <h2 className="text-xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
@@ -116,7 +117,7 @@ export default async function AnalyticsPage({ range = "30d" }: AnalyticsPageProp
         </AdminSectionStack>
       }
     >
-      <AdminMetricGrid minItemWidth={220}>
+      <AdminMetricGrid minItemWidth={205}>
         {viewModel.summaryMetrics.map((metric) => (
           <StatCard
             key={metric.key}
@@ -124,6 +125,7 @@ export default async function AnalyticsPage({ range = "30d" }: AnalyticsPageProp
             value={metric.value}
             delta={metric.delta}
             hint={metric.hint}
+            className="rounded-[26px] p-5"
           />
         ))}
       </AdminMetricGrid>
@@ -132,7 +134,7 @@ export default async function AnalyticsPage({ range = "30d" }: AnalyticsPageProp
         <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--workspace-muted)]">Commercial</div>
         <div className="grid gap-6 2xl:grid-cols-2">
           <WorkspacePanel
-            fullHeight
+            density="default"
             header={
               <div className="space-y-2">
                 <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">اتجاه العروض</h2>
@@ -152,7 +154,7 @@ export default async function AnalyticsPage({ range = "30d" }: AnalyticsPageProp
           </WorkspacePanel>
 
           <WorkspacePanel
-            fullHeight
+            density="default"
             header={
               <div className="space-y-2">
                 <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">قمع الطلبات</h2>
@@ -171,7 +173,7 @@ export default async function AnalyticsPage({ range = "30d" }: AnalyticsPageProp
 
         <div className="grid gap-6 2xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
           <WorkspacePanel
-            fullHeight
+            density="default"
             header={
               <div className="space-y-2">
                 <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">قنوات المصدر</h2>
@@ -183,7 +185,7 @@ export default async function AnalyticsPage({ range = "30d" }: AnalyticsPageProp
           </WorkspacePanel>
 
           <WorkspacePanel
-            fullHeight
+            density="compact"
             header={
               <div className="space-y-2">
                 <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">أقوى مرسلي العروض</h2>
@@ -228,7 +230,7 @@ export default async function AnalyticsPage({ range = "30d" }: AnalyticsPageProp
         <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--workspace-muted)]">Partner Health</div>
         <div className="grid gap-6 2xl:grid-cols-2">
           <WorkspacePanel
-            fullHeight
+            density="default"
             header={
               <div className="space-y-2">
                 <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">نمو الشركاء</h2>
@@ -247,7 +249,7 @@ export default async function AnalyticsPage({ range = "30d" }: AnalyticsPageProp
           </WorkspacePanel>
 
           <WorkspacePanel
-            fullHeight
+            density="default"
             header={
               <div className="space-y-2">
                 <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">مزيج التوثيق</h2>
@@ -271,7 +273,7 @@ export default async function AnalyticsPage({ range = "30d" }: AnalyticsPageProp
 
         <div className="grid gap-6 2xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
           <WorkspacePanel
-            fullHeight
+            density="default"
             header={
               <div className="space-y-2">
                 <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">حالة الاشتراكات</h2>
@@ -290,7 +292,7 @@ export default async function AnalyticsPage({ range = "30d" }: AnalyticsPageProp
           </WorkspacePanel>
 
           <WorkspacePanel
-            fullHeight
+            density="compact"
             header={
               <div className="space-y-2">
                 <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">ترتيب الجهات</h2>
@@ -344,7 +346,7 @@ export default async function AnalyticsPage({ range = "30d" }: AnalyticsPageProp
         <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--workspace-muted)]">Queue Diagnostics</div>
         <div className="grid gap-6 2xl:grid-cols-2">
           <WorkspacePanel
-            fullHeight
+            density="default"
             header={
               <div className="space-y-2">
                 <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">التشخيص حسب الحالة</h2>
@@ -361,7 +363,7 @@ export default async function AnalyticsPage({ range = "30d" }: AnalyticsPageProp
           </WorkspacePanel>
 
           <WorkspacePanel
-            fullHeight
+            density="default"
             header={
               <div className="space-y-2">
                 <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">التشخيص حسب المرحلة</h2>

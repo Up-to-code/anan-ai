@@ -1,6 +1,12 @@
 "use client";
 
+import type { ComponentProps, PropsWithChildren } from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
+
+type NextThemesProviderWithChildrenProps = PropsWithChildren<ComponentProps<typeof NextThemesProvider>>;
+
+const StableNextThemesProvider =
+  NextThemesProvider as React.ComponentType<NextThemesProviderWithChildrenProps>;
 
 /**
  * WHY:   The web app needs one shared theme controller so public, docs, and workspace shells stay in sync.
@@ -13,13 +19,13 @@ export default function ThemeProvider({
   children: React.ReactNode;
 }) {
   return (
-    <NextThemesProvider
+    <StableNextThemesProvider
       attribute="class"
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
     >
       {children}
-    </NextThemesProvider>
+    </StableNextThemesProvider>
   );
 }

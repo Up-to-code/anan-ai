@@ -44,14 +44,44 @@ export default function UserDetailPage({ userId, userKey }: UserDetailPageProps)
           ]}
         />
       }
-    >
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1.35fr)_340px]">
-        <div className="space-y-8">
-          <WorkspacePanel className="p-8 space-y-6">
-            <div className="flex flex-wrap items-center gap-3 pb-6 border-b border-border/20">
+      layout="detail"
+      contentWidth="contained"
+      rail={
+        <div className="space-y-5">
+          <WorkspacePanel
+            density="compact"
+            header={
+              <div className="space-y-2">
+                <h2 className="text-lg font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">الحالة والوصول</h2>
+                <p className="text-sm font-medium text-[var(--workspace-muted)]">الحالة الحالية وصلاحيات التشغيل الأساسية.</p>
+              </div>
+            }
+            bodyClassName="grid gap-3"
+          >
+            <div className="flex flex-wrap items-center gap-2">
               <StatusBadge value={user.status} />
               <StatusBadge value={user.verificationStatus} />
             </div>
+            {[
+              { label: "وصول لوحة الإدارة", status: user.role === "admin" ? "approved" : "pending" },
+              { label: "إدارة العروض", status: user.role === "broker" || user.role === "admin" ? "approved" : "pending" },
+              { label: "التحقق اليدوي", status: user.role === "admin" ? "approved" : "rejected" },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center justify-between rounded-xl border border-border/30 bg-card p-4 shadow-sm">
+                <span className="text-[13px] font-bold text-muted-foreground/70">{item.label}</span>
+                <StatusBadge value={item.status} />
+              </div>
+            ))}
+          </WorkspacePanel>
+
+          <WorkspacePanel
+            density="compact"
+            header={
+              <div className="space-y-2">
+                <h2 className="text-lg font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">ملخص الحساب</h2>
+              </div>
+            }
+          >
             <KeyValueGrid
               items={[
                 { label: "الدور", value: labelForRole(user.role) },
@@ -61,44 +91,33 @@ export default function UserDetailPage({ userId, userKey }: UserDetailPageProps)
               ]}
             />
           </WorkspacePanel>
-
-          <WorkspacePanel className="p-8 space-y-6">
-            <h2 className="text-xl font-black tracking-tight text-foreground underline decoration-primary/20 decoration-4 underline-offset-8">العروض المرتبطة</h2>
-            {relatedOffers.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                {relatedOffers.map((offer) => (
-                  <Link key={offer.id} href={`/offers/${offer.id}`} className="group block rounded-2xl border border-border/30 bg-muted/5 p-6 transition-all hover:bg-muted/10 hover:border-primary/30">
-                    <div className="space-y-2">
-                      <div className="text-lg font-black tracking-tight text-foreground group-hover:text-primary transition-colors">{offer.title}</div>
-                      <div className="text-[13px] font-bold text-muted-foreground/60">{offer.projectName}</div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-border/40 bg-muted/5 p-12 text-center text-sm font-bold text-muted-foreground/40">لا توجد عروض مرتبطة بهذا المستخدم في بيانات mock.</div>
-            )}
-          </WorkspacePanel>
         </div>
-
-        <div className="space-y-8">
-          <WorkspacePanel className="p-8 space-y-6">
-            <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground/40">الصلاحيات</h2>
-            <div className="space-y-3">
-              {[
-                { label: "وصول لوحة الإدارة", status: user.role === "admin" ? "approved" : "pending" },
-                { label: "إدارة العروض", status: user.role === "broker" || user.role === "admin" ? "approved" : "pending" },
-                { label: "التحقق اليدوي", status: user.role === "admin" ? "approved" : "rejected" },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between rounded-xl border border-border/30 bg-card p-4 shadow-sm group hover:border-border transition-colors">
-                  <span className="text-[13px] font-bold text-muted-foreground/70">{item.label}</span>
-                  <StatusBadge value={item.status} />
+      }
+    >
+      <WorkspacePanel
+        density="default"
+        header={
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black tracking-tight text-foreground">العروض المرتبطة</h2>
+            <p className="text-sm font-medium text-muted-foreground/70">العروض التي ترتبط بهذا المستخدم داخل بيانات mock الحالية.</p>
+          </div>
+        }
+      >
+        {relatedOffers.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            {relatedOffers.map((offer) => (
+              <Link key={offer.id} href={`/offers/${offer.id}`} className="group block rounded-2xl border border-border/30 bg-muted/5 p-6 transition-all hover:bg-muted/10 hover:border-primary/30">
+                <div className="space-y-2">
+                  <div className="text-lg font-black tracking-tight text-foreground transition-colors group-hover:text-primary">{offer.title}</div>
+                  <div className="text-[13px] font-bold text-muted-foreground/60">{offer.projectName}</div>
                 </div>
-              ))}
-            </div>
-          </WorkspacePanel>
-        </div>
-      </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-border/40 bg-muted/5 p-12 text-center text-sm font-bold text-muted-foreground/40">لا توجد عروض مرتبطة بهذا المستخدم في بيانات mock.</div>
+        )}
+      </WorkspacePanel>
     </SectionScaffold>
   );
 }

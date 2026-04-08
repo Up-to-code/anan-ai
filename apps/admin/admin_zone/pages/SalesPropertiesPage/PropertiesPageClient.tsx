@@ -7,6 +7,7 @@ import DataTable from "@/components/shared/DataTable";
 import PageActions from "@/components/shared/PageActions";
 import SectionScaffold from "@/components/shared/SectionScaffold";
 import StatusBadge from "@/components/shared/StatusBadge";
+import WorkspacePanel from "@/components/shared/WorkspacePanel";
 import { salesTabs } from "@/lib/adminSectionTabs";
 import { formatCurrency } from "@/lib/format";
 import type { PropertyRecord } from "@/admin_zone/mocks/types";
@@ -47,23 +48,28 @@ export default function PropertiesPageClient({ properties }: PropertiesPageClien
       description="قائمة موحدة للعقارات المرتبطة بالمشاريع مع حالة النشر والمخزون."
       tabs={salesTabs}
       actions={<PageActions actions={[{ label: "إضافة عقار", href: "/sales/properties/new" }]} />}
+      layout="list"
+      contentWidth="contained"
     >
-      <div className="grid gap-3 md:grid-cols-3">
-        <AdminInput placeholder="ابحث باسم العقار أو المشروع" value={search} onChange={(event) => setSearch(event.target.value)} />
-        <AdminSelect value={type} onChange={(event) => setType(event.target.value)}>
-          <option value="all">كل الأنواع</option>
-          {types.map((item) => (
-            <option key={item} value={item}>{item}</option>
-          ))}
-        </AdminSelect>
-        <AdminSelect value={publicationStatus} onChange={(event) => setPublicationStatus(event.target.value)}>
-          <option value="all">كل حالات النشر</option>
-          <option value="published">منشور</option>
-          <option value="draft">مسودة</option>
-        </AdminSelect>
-      </div>
+      <WorkspacePanel density="compact">
+        <div className="grid gap-3 md:grid-cols-3">
+          <AdminInput placeholder="ابحث باسم العقار أو المشروع" value={search} onChange={(event) => setSearch(event.target.value)} />
+          <AdminSelect value={type} onChange={(event) => setType(event.target.value)}>
+            <option value="all">كل الأنواع</option>
+            {types.map((item) => (
+              <option key={item} value={item}>{item}</option>
+            ))}
+          </AdminSelect>
+          <AdminSelect value={publicationStatus} onChange={(event) => setPublicationStatus(event.target.value)}>
+            <option value="all">كل حالات النشر</option>
+            <option value="published">منشور</option>
+            <option value="draft">مسودة</option>
+          </AdminSelect>
+        </div>
+      </WorkspacePanel>
 
-      <DataTable headers={["العقار", "المشروع", "المنظمة", "النوع", "النشر", "الحالة", "السعر"]}>
+      <WorkspacePanel density="default" bodyClassName="!px-0 !py-0">
+      <DataTable headers={["العقار", "المشروع", "المنظمة", "النوع", "النشر", "الحالة", "السعر"]} className="rounded-none border-0 bg-transparent shadow-none">
         {filteredProperties.map((property) => (
           <tr key={property.id} className="group transition-colors hover:bg-muted/5">
             <td className="px-5 py-4">
@@ -80,6 +86,7 @@ export default function PropertiesPageClient({ properties }: PropertiesPageClien
           </tr>
         ))}
       </DataTable>
+      </WorkspacePanel>
     </SectionScaffold>
   );
 }

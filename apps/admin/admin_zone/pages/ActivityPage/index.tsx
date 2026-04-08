@@ -17,13 +17,18 @@ export default function ActivityPage() {
       title="سجل النشاط"
       description="تغذية تشغيلية مخصصة للأنشطة الأخيرة وما يجب متابعته داخل طوابير العمل الحالية."
       tabs={activityTabs}
+      layout="dashboard"
     >
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
-        <WorkspacePanel className="rounded-[32px] p-8">
-          <div className="mb-6 space-y-2">
-            <h2 className="text-2xl font-black tracking-tight text-foreground">الأنشطة الأخيرة</h2>
-            <p className="text-sm font-bold text-muted-foreground/70">آخر الإشارات التي تحتاج انتباهًا من فريق الإدارة.</p>
-          </div>
+        <WorkspacePanel
+          density="hero"
+          header={
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black tracking-tight text-foreground">الأنشطة الأخيرة</h2>
+              <p className="text-sm font-bold text-muted-foreground/70">آخر الإشارات التي تحتاج انتباهًا من فريق الإدارة.</p>
+            </div>
+          }
+        >
           <div className="grid gap-4">
             {recentActivities.map((item) => (
               <div key={item.id} className="rounded-[24px] border border-border/30 bg-muted/5 p-5">
@@ -42,11 +47,15 @@ export default function ActivityPage() {
           </div>
         </WorkspacePanel>
 
-        <WorkspacePanel className="rounded-[32px] p-8">
-          <div className="mb-6 space-y-2">
-            <h2 className="text-2xl font-black tracking-tight text-foreground">الطوابير المفتوحة</h2>
-            <p className="text-sm font-bold text-muted-foreground/70">البنود التي تحتاج متابعة سريعة داخل عمليات الشركاء.</p>
-          </div>
+        <WorkspacePanel
+          density="compact"
+          header={
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black tracking-tight text-foreground">الطوابير المفتوحة</h2>
+              <p className="text-sm font-bold text-muted-foreground/70">البنود التي تحتاج متابعة سريعة داخل عمليات الشركاء.</p>
+            </div>
+          }
+        >
           <div className="grid gap-4">
             {queueItems.map((item) => (
               <div key={item.id} className="rounded-[24px] border border-border/30 bg-card p-5 shadow-sm">

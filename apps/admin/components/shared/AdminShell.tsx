@@ -58,7 +58,7 @@ export default function AdminShell({ children, user }: AdminShellProps) {
 
       <div
         data-slot="admin-shell"
-        className="app-shell-height app-shell-fixed-height grid h-full min-h-0 w-full grid-rows-[1fr] overflow-hidden bg-[var(--workspace-shell)] font-cairo text-foreground lg:grid-cols-[auto_minmax(0,1fr)]"
+        className="workspace-root-chrome app-shell-height app-shell-fixed-height grid h-full min-h-0 w-full grid-rows-[1fr] overflow-hidden bg-[var(--workspace-shell)] font-cairo text-foreground lg:grid-cols-[auto_minmax(0,1fr)]"
       >
         <div
           className={cn(

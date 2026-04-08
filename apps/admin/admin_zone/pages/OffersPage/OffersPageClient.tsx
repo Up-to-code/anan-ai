@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { AdminMetricGrid } from "@/components/shared/AdminPageLayout";
 import StatCard from "@/components/shared/StatCard";
 import { AdminInput, AdminSelect } from "@/components/shared/AdminFieldControls";
 import DataTable from "@/components/shared/DataTable";
 import PageActions from "@/components/shared/PageActions";
 import SectionScaffold from "@/components/shared/SectionScaffold";
 import StatusBadge from "@/components/shared/StatusBadge";
+import WorkspacePanel from "@/components/shared/WorkspacePanel";
 import { getAdminPageOperationHref } from "@/lib/adminPages";
 import { offersTabs } from "@/lib/adminSectionTabs";
 import { formatCurrency, formatDateTime } from "@/lib/format";
@@ -61,43 +63,49 @@ export default function OffersPageClient({ offers }: OffersPageClientProps) {
           ]}
         />
       }
+      layout="list"
+      contentWidth="contained"
     >
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="إجمالي العروض" value={String(summary.total)} hint="كل العروض المفتوحة داخل لوحة المراجعة." />
-        <StatCard label="بانتظار القرار" value={String(summary.pending)} hint="عروض تحتاج اعتمادًا أو رفضًا من الإدارة." />
-        <StatCard label="المعتمدة" value={String(summary.approved)} hint="عروض اجتازت مسار المراجعة الحالي." />
-        <StatCard label="قيمة الخط" value={formatCurrency(summary.pipelineValue)} hint="القيمة الإجمالية للعروض داخل البيانات التجريبية." />
-      </div>
+      <AdminMetricGrid minItemWidth={205}>
+        <StatCard label="إجمالي العروض" value={String(summary.total)} hint="كل العروض المفتوحة داخل لوحة المراجعة." className="rounded-[24px] p-5" />
+        <StatCard label="بانتظار القرار" value={String(summary.pending)} hint="عروض تحتاج اعتمادًا أو رفضًا من الإدارة." className="rounded-[24px] p-5" />
+        <StatCard label="المعتمدة" value={String(summary.approved)} hint="عروض اجتازت مسار المراجعة الحالي." className="rounded-[24px] p-5" />
+        <StatCard label="قيمة الخط" value={formatCurrency(summary.pipelineValue)} hint="القيمة الإجمالية للعروض داخل البيانات التجريبية." className="rounded-[24px] p-5" />
+      </AdminMetricGrid>
 
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
-        <AdminInput placeholder="ابحث باسم العرض أو المنظمة" value={search} onChange={(event) => setSearch(event.target.value)} />
-        <AdminSelect value={status} onChange={(event) => setStatus(event.target.value)}>
-          <option value="all">كل الحالات</option>
-          <option value="pending">معلّق</option>
-          <option value="approved">معتمد</option>
-          <option value="rejected">مرفوض</option>
-        </AdminSelect>
-      </div>
-      <DataTable headers={["العرض", "المنظمة", "المرسل", "المشروع", "الحالة", "القيمة", "التاريخ"]}>
-        {filteredOffers.map((offer) => (
-          <tr key={offer.id} className="group transition-colors hover:bg-muted/5">
-            <td className="px-5 py-4">
-              <Link
-                href={getAdminPageOperationHref("offers", "detail", offer.id) ?? `/offers/${offer.id}`}
-                className="block font-black tracking-tight text-foreground transition-colors hover:text-primary"
-              >
-                {offer.title}
-              </Link>
-            </td>
-            <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">{offer.organizationName}</td>
-            <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">{offer.submittedBy}</td>
-            <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">{offer.projectName}</td>
-            <td className="px-5 py-4"><StatusBadge value={offer.status} /></td>
-            <td className="px-5 py-4 text-[13px] font-black tracking-tight text-foreground">{formatCurrency(offer.amount)}</td>
-            <td className="px-5 py-4 text-[11px] font-black uppercase tracking-widest text-muted-foreground/40">{formatDateTime(offer.createdAt)}</td>
-          </tr>
-        ))}
-      </DataTable>
+      <WorkspacePanel density="compact">
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+          <AdminInput placeholder="ابحث باسم العرض أو المنظمة" value={search} onChange={(event) => setSearch(event.target.value)} />
+          <AdminSelect value={status} onChange={(event) => setStatus(event.target.value)}>
+            <option value="all">كل الحالات</option>
+            <option value="pending">معلّق</option>
+            <option value="approved">معتمد</option>
+            <option value="rejected">مرفوض</option>
+          </AdminSelect>
+        </div>
+      </WorkspacePanel>
+      <WorkspacePanel density="default" bodyClassName="!px-0 !py-0">
+        <DataTable headers={["العرض", "المنظمة", "المرسل", "المشروع", "الحالة", "القيمة", "التاريخ"]} className="rounded-none border-0 bg-transparent shadow-none">
+          {filteredOffers.map((offer) => (
+            <tr key={offer.id} className="group transition-colors hover:bg-muted/5">
+              <td className="px-5 py-4">
+                <Link
+                  href={getAdminPageOperationHref("offers", "detail", offer.id) ?? `/offers/${offer.id}`}
+                  className="block font-black tracking-tight text-foreground transition-colors hover:text-primary"
+                >
+                  {offer.title}
+                </Link>
+              </td>
+              <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">{offer.organizationName}</td>
+              <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">{offer.submittedBy}</td>
+              <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">{offer.projectName}</td>
+              <td className="px-5 py-4"><StatusBadge value={offer.status} /></td>
+              <td className="px-5 py-4 text-[13px] font-black tracking-tight text-foreground">{formatCurrency(offer.amount)}</td>
+              <td className="px-5 py-4 text-[11px] font-black uppercase tracking-widest text-muted-foreground/40">{formatDateTime(offer.createdAt)}</td>
+            </tr>
+          ))}
+        </DataTable>
+      </WorkspacePanel>
     </SectionScaffold>
   );
 }

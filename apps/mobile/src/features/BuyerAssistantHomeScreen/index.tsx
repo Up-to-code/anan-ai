@@ -184,6 +184,14 @@ export default function BuyerAssistantHomeScreen() {
   const hasMessages = assistant.messages.length > 0;
   const isLandingMode = assistant.activeThreadKind === "welcome" && !hasMessages;
   const shellBackgroundColor = isLandingMode ? theme.colors.canvas : theme.colors.canvasElevated;
+  const latestSuggestions =
+    assistant.messages
+      .at(-1)
+      ?.suggestedPrompts?.map((prompt, index) => ({
+        id: `${index}-${prompt}`,
+        prompt,
+        label: undefined,
+      })) ?? suggestions;
 
   return (
     <View className="flex-1" style={{ backgroundColor: shellBackgroundColor }}>
@@ -237,14 +245,11 @@ export default function BuyerAssistantHomeScreen() {
               contentContainerStyle={{
                 flexGrow: 1,
                 paddingHorizontal: layout.contentPadding,
-                paddingBottom: layout.sectionGap + 8,
+                paddingBottom: layout.sectionGap,
               }}
               showsVerticalScrollIndicator={false}
             >
-              <WelcomeState
-                suggestions={suggestions}
-                onSelect={(prompt) => void assistant.submit(prompt)}
-              />
+              <WelcomeState />
             </ScrollView>
           ) : (
             <ConversationTimeline
@@ -255,8 +260,8 @@ export default function BuyerAssistantHomeScreen() {
               onAddPropertyToSelection={addPropertyToSelection}
               onOpenProperty={openPropertyDetail}
               onOpenGallery={openPropertyGallery}
-              bottomPadding={layout.sectionGap + 8}
-              showLatestSuggestedPrompts={!keyboardVisible}
+              bottomPadding={layout.sectionGap}
+              showLatestSuggestedPrompts={false}
               onShowMoreSearchResults={openSearchResultsScreen}
               ambientBackgroundColor={shellBackgroundColor}
               selectedPropertyIds={assistant.selectedProperties.map((property) => property.id)}
@@ -294,6 +299,11 @@ export default function BuyerAssistantHomeScreen() {
             />
           ) : null}
 
+          <ExamplePromptFeed
+            prompts={latestSuggestions}
+            onSelect={(prompt) => void assistant.submit(prompt)}
+          />
+
           <ConversationComposer
             value={assistant.draft}
             onChange={assistant.setDraft}
@@ -330,12 +340,7 @@ export default function BuyerAssistantHomeScreen() {
 }
 
 function WelcomeState({
-  suggestions,
-  onSelect,
-}: {
-  suggestions: BuyerChatSuggestion[];
-  onSelect: (prompt: string) => void;
-}) {
+}: {}) {
   const layout = useMobileLayout();
   const theme = useAppTheme();
 
@@ -343,52 +348,67 @@ function WelcomeState({
     <View
       className="flex-1 items-stretch"
       style={{
-        minHeight: Math.max(layout.height * 0.62, 440),
+        minHeight: Math.max(layout.height * 0.64, 460),
         justifyContent: "space-between",
-        paddingTop: Math.max(layout.height * 0.16, 72),
-        paddingBottom: 12,
+        paddingTop: Math.max(layout.height * 0.18, 92),
+        paddingBottom: 8,
       }}
     >
-      <View className="items-center justify-center">
-        <View
-          className="items-center justify-center"
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: 999,
-            backgroundColor: theme.colors.surface,
-            borderWidth: 1,
-            borderColor: theme.colors.border,
-          }}
+      <View className="items-center justify-center gap-4">
+        <AnanMark size={28} />
+        <AppText
+          className="text-center font-cairo-bold text-[22px]"
+          style={{ color: theme.colors.ink }}
         >
-          <AnanMark size={24} />
-        </View>
+          كيف أقدر أساعدك اليوم؟
+        </AppText>
       </View>
 
+      <View className="px-6">
+      </View>
+    </View>
+  );
+}
+
+function ExamplePromptFeed({
+  prompts,
+  onSelect,
+}: {
+  prompts: BuyerChatSuggestion[];
+  onSelect: (prompt: string) => void;
+}) {
+  const layout = useMobileLayout();
+  const theme = useAppTheme();
+
+  if (prompts.length === 0) return null;
+
+  return (
+    <View
+      className="mb-3"
+    >
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 2 }}
       >
-        <View className="flex-row-reverse gap-3">
-          {suggestions.map((prompt) => (
+        <View className="flex-row-reverse gap-2.5">
+          {prompts.map((prompt) => (
             <Pressable
               key={prompt.id}
               onPress={() => onSelect(prompt.prompt)}
-              className="justify-center px-3.5 py-3"
+              className="justify-center px-4 py-3.5"
               style={({ pressed }) => ({
-                width: Math.min(Math.max(layout.width * 0.5, 164), 188),
-                minHeight: 68,
-                borderRadius: 14,
-                backgroundColor: theme.colors.promptStarterSurface,
+                width: Math.min(Math.max(layout.width * 0.5, 168), 208),
+                minHeight: 70,
+                borderRadius: 18,
+                backgroundColor: theme.colors.surface,
                 borderWidth: 1,
                 borderColor: theme.colors.border,
-                ...getMobileShadow("card"),
                 transform: [{ scale: pressed ? 0.97 : 1 }],
               })}
             >
               <AppText
-                className="text-right font-cairo-bold text-[11.5px] leading-snug"
+                className="text-right font-cairo-bold text-[13px] leading-6"
                 style={{ color: theme.colors.ink }}
                 numberOfLines={2}
               >
@@ -396,7 +416,7 @@ function WelcomeState({
               </AppText>
               {prompt.label ? (
                 <AppText
-                  className="mt-0.5 text-right text-[10px] leading-snug"
+                  className="mt-1 text-right text-[10.5px] leading-5"
                   style={{ color: theme.colors.inkMuted }}
                   numberOfLines={2}
                 >

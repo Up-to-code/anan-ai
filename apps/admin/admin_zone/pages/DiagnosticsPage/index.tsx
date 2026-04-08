@@ -17,21 +17,30 @@ export default function DiagnosticsPage() {
       title="التشخيص"
       description="مؤشرات تشخيصية تجريبية عن استهلاك النماذج وضغط الطوابير التشغيلية داخل لوحة الأدمن."
       tabs={diagnosticsTabs}
+      layout="dashboard"
     >
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.85fr)]">
-        <WorkspacePanel className="rounded-[32px] p-8">
-          <div className="mb-6 space-y-2">
-            <h2 className="text-2xl font-black tracking-tight text-foreground">استهلاك النماذج</h2>
-            <p className="text-sm font-bold text-muted-foreground/70">حجم استخدام النماذج داخل العمليات الذكية الحالية.</p>
-          </div>
+        <WorkspacePanel
+          density="hero"
+          header={
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black tracking-tight text-foreground">استهلاك النماذج</h2>
+              <p className="text-sm font-bold text-muted-foreground/70">حجم استخدام النماذج داخل العمليات الذكية الحالية.</p>
+            </div>
+          }
+        >
           <DonutBreakdownChart data={overviewModelConsumption} height={280} />
         </WorkspacePanel>
 
-        <WorkspacePanel className="rounded-[32px] p-8">
-          <div className="mb-6 space-y-2">
-            <h2 className="text-2xl font-black tracking-tight text-foreground">نبض الطوابير</h2>
-            <p className="text-sm font-bold text-muted-foreground/70">قراءة سريعة لأكثر النقاط التشغيلية ضغطًا.</p>
-          </div>
+        <WorkspacePanel
+          density="compact"
+          header={
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black tracking-tight text-foreground">نبض الطوابير</h2>
+              <p className="text-sm font-bold text-muted-foreground/70">قراءة سريعة لأكثر النقاط التشغيلية ضغطًا.</p>
+            </div>
+          }
+        >
           <div className="grid gap-4">
             {queueItems.map((item) => (
               <div key={item.id} className="rounded-[24px] border border-border/30 bg-muted/5 p-5">

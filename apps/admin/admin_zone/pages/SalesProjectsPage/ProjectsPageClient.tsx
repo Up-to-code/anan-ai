@@ -7,6 +7,7 @@ import DataTable from "@/components/shared/DataTable";
 import PageActions from "@/components/shared/PageActions";
 import SectionScaffold from "@/components/shared/SectionScaffold";
 import StatusBadge from "@/components/shared/StatusBadge";
+import WorkspacePanel from "@/components/shared/WorkspacePanel";
 import { salesTabs } from "@/lib/adminSectionTabs";
 import { formatDateTime, formatNumber } from "@/lib/format";
 import type { ProjectRecord } from "@/admin_zone/mocks/types";
@@ -47,23 +48,28 @@ export default function ProjectsPageClient({ projects }: ProjectsPageClientProps
       description="مساحة مراجعة للمشاريع وحالتها قبل إتاحتها للمساعد أو عرضها داخل النظام."
       tabs={salesTabs}
       actions={<PageActions actions={[{ label: "إنشاء مشروع", href: "/sales/projects/new" }]} />}
+      layout="list"
+      contentWidth="contained"
     >
-      <div className="grid gap-3 md:grid-cols-3">
-        <AdminInput placeholder="ابحث باسم المشروع أو المدينة" value={search} onChange={(event) => setSearch(event.target.value)} />
-        <AdminSelect value={stage} onChange={(event) => setStage(event.target.value)}>
-          <option value="all">كل المراحل</option>
-          <option value="draft">مسودة</option>
-          <option value="active">نشط</option>
-        </AdminSelect>
-        <AdminSelect value={organization} onChange={(event) => setOrganization(event.target.value)}>
-          <option value="all">كل المنظمات</option>
-          {organizations.map((item) => (
-            <option key={item} value={item}>{item}</option>
-          ))}
-        </AdminSelect>
-      </div>
+      <WorkspacePanel density="compact">
+        <div className="grid gap-3 md:grid-cols-3">
+          <AdminInput placeholder="ابحث باسم المشروع أو المدينة" value={search} onChange={(event) => setSearch(event.target.value)} />
+          <AdminSelect value={stage} onChange={(event) => setStage(event.target.value)}>
+            <option value="all">كل المراحل</option>
+            <option value="draft">مسودة</option>
+            <option value="active">نشط</option>
+          </AdminSelect>
+          <AdminSelect value={organization} onChange={(event) => setOrganization(event.target.value)}>
+            <option value="all">كل المنظمات</option>
+            {organizations.map((item) => (
+              <option key={item} value={item}>{item}</option>
+            ))}
+          </AdminSelect>
+        </div>
+      </WorkspacePanel>
 
-      <DataTable headers={["المشروع", "المنظمة", "المرحلة", "الوصول للمساعد", "العقارات", "آخر تحديث"]}>
+      <WorkspacePanel density="default" bodyClassName="!px-0 !py-0">
+      <DataTable headers={["المشروع", "المنظمة", "المرحلة", "الوصول للمساعد", "العقارات", "آخر تحديث"]} className="rounded-none border-0 bg-transparent shadow-none">
         {filteredProjects.map((project) => (
           <tr key={project.id} className="group transition-colors hover:bg-muted/5">
             <td className="px-5 py-4">
@@ -80,6 +86,7 @@ export default function ProjectsPageClient({ projects }: ProjectsPageClientProps
           </tr>
         ))}
       </DataTable>
+      </WorkspacePanel>
     </SectionScaffold>
   );
 }

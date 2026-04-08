@@ -4,6 +4,7 @@ type WorkspacePanelProps = {
   children?: React.ReactNode;
   className?: string;
   tone?: "default" | "dark" | "muted" | "warn";
+  density?: "hero" | "default" | "compact";
   header?: React.ReactNode;
   footer?: React.ReactNode;
   headerClassName?: string;
@@ -26,6 +27,27 @@ const tones = {
     "rounded-[32px] border border-amber-400/20 bg-[color:color-mix(in_srgb,#f59e0b_12%,var(--workspace-panel))] text-[var(--workspace-bubble-other-foreground)] shadow-[0_12px_42px_-30px_rgba(245,158,11,0.35)]",
 };
 
+const densityStyles = {
+  hero: {
+    simple: "p-5 sm:p-7",
+    header: "px-5 py-5 sm:px-6 sm:py-6",
+    body: "px-5 py-5 sm:px-6 sm:py-6",
+    footer: "px-5 py-4 sm:px-6",
+  },
+  default: {
+    simple: "p-4 sm:p-5",
+    header: "px-5 py-5 sm:px-6",
+    body: "px-5 py-5 sm:px-6",
+    footer: "px-5 py-4 sm:px-6",
+  },
+  compact: {
+    simple: "p-4",
+    header: "px-4 py-4 sm:px-5",
+    body: "px-4 py-4 sm:px-5",
+    footer: "px-4 py-3 sm:px-5",
+  },
+};
+
 /**
  * WHY:   Rebuilt admin pages need one shared container surface for charts, tables, and dense operational panels.
  * WHAT:  Wraps content in a consistent bordered panel with optional tonal variants and structured header/body/footer slots.
@@ -35,6 +57,7 @@ export default function WorkspacePanel({
   children,
   className,
   tone = "default",
+  density = "default",
   header,
   footer,
   headerClassName,
@@ -48,10 +71,11 @@ export default function WorkspacePanel({
   const isStructured = Boolean(
     header || footer || bodyClassName || fullHeight || scrollBody || maxBodyHeightClassName || minBodyHeightClassName,
   );
+  const densityStyle = densityStyles[density];
 
   if (!isStructured) {
     return (
-      <section className={cn("min-w-0 max-w-full p-4 sm:p-5", tones[tone], className)}>
+      <section className={cn("min-w-0 max-w-full", densityStyle.simple, tones[tone], className)}>
         {children}
       </section>
     );
@@ -69,7 +93,8 @@ export default function WorkspacePanel({
       {header ? (
         <div
           className={cn(
-            "border-b border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)] px-5 py-5 sm:px-6",
+            "border-b border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)]",
+            densityStyle.header,
             headerClassName,
           )}
         >
@@ -78,7 +103,8 @@ export default function WorkspacePanel({
       ) : null}
       <div
         className={cn(
-          "min-w-0 px-5 py-5 sm:px-6",
+          "min-w-0",
+          densityStyle.body,
           fullHeight && "flex-1 min-h-0",
           scrollBody && "overflow-y-auto overscroll-contain",
           maxBodyHeightClassName,
@@ -91,7 +117,8 @@ export default function WorkspacePanel({
       {footer ? (
         <div
           className={cn(
-            "border-t border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)] px-5 py-4 sm:px-6",
+            "border-t border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)]",
+            densityStyle.footer,
             footerClassName,
           )}
         >

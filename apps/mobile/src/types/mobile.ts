@@ -166,6 +166,32 @@ export type MobileGuestThreadStore = {
 
 export type MobileSearchOwnerType = "وسيط" | "مطور";
 
+export type MobileBrokerBadgeTone = "plum" | "sky" | "ink";
+
+export type MobileBrokerBadge = {
+  id: string;
+  label: string;
+  tone: MobileBrokerBadgeTone;
+};
+
+export type MobileBroker = {
+  id: string;
+  slug: string;
+  name: string;
+  avatar: string;
+  company: string;
+  badges: MobileBrokerBadge[];
+  languages: string[];
+  phone: string;
+  whatsapp: string;
+  isVerified: boolean;
+  location: string;
+  bio: string;
+  listingCount: number;
+  rating: number;
+  relatedPropertyIds: string[];
+};
+
 export type MobileSearchContext = {
   threadId?: string;
   sourcePropertyId?: string;

@@ -81,7 +81,6 @@ export function ConversationComposer({
   const writingDirection = startsWithLatin ? "ltr" : "rtl";
 
   const isExpanded = value.includes("\n") || trimmedValue.length > 48;
-  const showLandingHint = variant === "landing" && trimmedValue.length === 0 && !isRecording && !isVoiceBusy;
 
   const actionButtonSize = layout.isCompact ? 40 : 44;
   const sendIconSize = layout.isCompact ? 17 : 18;
@@ -91,11 +90,11 @@ export function ConversationComposer({
   const inputPlaceholder =
     variant === "landing" ? "اسأل عن عقار، قارن، أو اطلب تمويلاً..." : "اكتب متابعتك هنا...";
 
-  const actionButtonColor = canSend ? theme.colors.send : theme.colors.surface;
-  const actionIconColor = canSend ? theme.colors.sendIcon : theme.colors.inkSoft;
-  const actionButtonBorderWidth = canSend ? 0 : 1;
-  const actionButtonBorderColor = canSend ? "transparent" : theme.colors.borderStrong;
-  const inputPillHeight = layout.isCompact ? 42 : 44;
+  const actionButtonColor = canSend ? theme.colors.send : theme.colors.composerActionSurface;
+  const actionIconColor = canSend ? theme.colors.sendIcon : theme.colors.composerActionIcon;
+  const actionButtonBorderWidth = canSend ? 0 : theme.isDark ? 1.5 : 0;
+  const actionButtonBorderColor = canSend ? "transparent" : theme.colors.composerActionRing;
+  const inputPillHeight = layout.isCompact ? 44 : 46;
   const actionHolderSize = inputPillHeight;
   const showPropertyPromptRail =
     variant === "thread" &&
@@ -137,11 +136,11 @@ export function ConversationComposer({
       ) : null}
 
       <MobilePromptInputShell
-        active={isRecordingSession || canSend}
+        active={isRecordingSession || canSend || trimmedValue.length > 0}
         expanded={isExpanded}
-        hint={showLandingHint ? "اكتب طلبك مباشرة." : null}
+        hint={null}
       >
-        <View className="flex-row items-center gap-2">
+        <View className="flex-row items-center gap-2.5">
           {isRecordingSession ? (
             <MobilePromptInputRecordingRow
               durationSeconds={durationSeconds}
@@ -159,11 +158,11 @@ export function ConversationComposer({
                 className="flex-1 justify-center"
                 style={{
                   minHeight: inputPillHeight,
-                  borderRadius: 20,
+                  borderRadius: 22,
                   borderWidth: 1,
                   borderColor: theme.colors.border,
                   backgroundColor: theme.colors.surface,
-                  paddingHorizontal: 14,
+                  paddingHorizontal: 16,
                 }}
               >
                 <TextInput
@@ -177,14 +176,14 @@ export function ConversationComposer({
                   cursorColor={theme.colors.primary}
                   textAlignVertical="center"
                   style={{
-                    minHeight: layout.isCompact ? 34 : 36,
+                    minHeight: layout.isCompact ? 36 : 38,
                     maxHeight: inputMaxHeight,
                     textAlign,
                     writingDirection,
                     fontFamily: trimmedValue.length === 0 ? "Cairo_500Medium" : "Cairo_600SemiBold",
                     fontSize: inputFontSize,
                     color: theme.colors.ink,
-                    paddingVertical: Platform.OS === "ios" ? 5 : 4,
+                    paddingVertical: Platform.OS === "ios" ? 6 : 5,
                     includeFontPadding: false,
                     backgroundColor: "transparent",
                   }}
@@ -196,7 +195,7 @@ export function ConversationComposer({
                 style={{
                   width: actionHolderSize,
                   height: actionHolderSize,
-                  backgroundColor: "transparent",
+                  backgroundColor: theme.colors.composerActionBackdrop,
                 }}
               >
                 <Pressable

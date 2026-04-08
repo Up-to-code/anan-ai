@@ -66,11 +66,12 @@ export default function UsersPageClient({ users }: UsersPageClientProps) {
           ]}
         />
       }
-      layout="detail"
+      layout="list"
+      contentWidth="contained"
       rail={
         <>
           <WorkspacePanel
-            fullHeight
+            density="compact"
             header={
               <div className="space-y-2">
                 <h2 className="text-xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
@@ -99,7 +100,7 @@ export default function UsersPageClient({ users }: UsersPageClientProps) {
           </WorkspacePanel>
 
           <WorkspacePanel
-            fullHeight
+            density="compact"
             header={
               <div className="space-y-2">
                 <h2 className="text-xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
@@ -131,14 +132,14 @@ export default function UsersPageClient({ users }: UsersPageClientProps) {
       }
     >
       <AdminMetricGrid minItemWidth={200}>
-        <StatCard label="إجمالي المستخدمين" value={String(summary.total)} hint="كل الحسابات التي تظهر في الإدارة حاليًا." />
-        <StatCard label="المشرفون" value={String(summary.admins)} hint="حسابات تملك صلاحيات تحكم مباشرة." />
-        <StatCard label="مستخدمو الشركاء" value={String(summary.partners)} hint="وسطاء ومطورون ضمن المسارات التشغيلية." />
-        <StatCard label="تحتاج تحقق" value={String(summary.needsVerification)} hint="حسابات لا تزال بحاجة لاعتماد أو مراجعة." />
+        <StatCard label="إجمالي المستخدمين" value={String(summary.total)} hint="كل الحسابات التي تظهر في الإدارة حاليًا." className="rounded-[24px] p-5" />
+        <StatCard label="المشرفون" value={String(summary.admins)} hint="حسابات تملك صلاحيات تحكم مباشرة." className="rounded-[24px] p-5" />
+        <StatCard label="مستخدمو الشركاء" value={String(summary.partners)} hint="وسطاء ومطورون ضمن المسارات التشغيلية." className="rounded-[24px] p-5" />
+        <StatCard label="تحتاج تحقق" value={String(summary.needsVerification)} hint="حسابات لا تزال بحاجة لاعتماد أو مراجعة." className="rounded-[24px] p-5" />
       </AdminMetricGrid>
 
       <WorkspacePanel
-        fullHeight
+        density="default"
         header={
           <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <div className="space-y-2">

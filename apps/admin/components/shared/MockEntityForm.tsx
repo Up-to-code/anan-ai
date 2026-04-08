@@ -306,7 +306,7 @@ export default function MockEntityForm({ entityLabel, mode, fields, backHref }: 
   return (
     <AdminFormPageLayout
       sidebar={
-        <div className="space-y-8">
+        <div className="space-y-5">
           <AdminFormSummaryCard
             title="ملخص مباشر"
             values={[
@@ -320,10 +320,10 @@ export default function MockEntityForm({ entityLabel, mode, fields, backHref }: 
         </div>
       }
     >
-      <section className="rounded-3xl border border-border/30 bg-card p-10 shadow-sm">
+      <section className="rounded-3xl border border-border/30 bg-card p-6 shadow-sm sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2">
-            <h2 className="text-3xl font-black tracking-tight text-foreground">{panelTitle}</h2>
+            <h2 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">{panelTitle}</h2>
             <p className="text-[13px] font-bold text-muted-foreground/50">هذه صفحة تجريبية منظمة لمحاكاة التشغيل الفعلي للإدارة.</p>
           </div>
           <div className="mt-4 lg:mt-0">

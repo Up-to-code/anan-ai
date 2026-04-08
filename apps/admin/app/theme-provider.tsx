@@ -1,6 +1,12 @@
 "use client";
 
+import type { ComponentProps, PropsWithChildren } from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
+
+type NextThemesProviderWithChildrenProps = PropsWithChildren<ComponentProps<typeof NextThemesProvider>>;
+
+const StableNextThemesProvider =
+  NextThemesProvider as React.ComponentType<NextThemesProviderWithChildrenProps>;
 
 /**
  * WHY:   The admin workspace needs one shared theme controller so shell chrome, charts, and CRUD surfaces stay in sync.
@@ -13,7 +19,7 @@ export default function ThemeProvider({
   children: React.ReactNode;
 }) {
   return (
-    <NextThemesProvider
+    <StableNextThemesProvider
       attribute="class"
       defaultTheme="system"
       enableSystem
@@ -21,6 +27,6 @@ export default function ThemeProvider({
       storageKey="anan-admin-theme"
     >
       {children}
-    </NextThemesProvider>
+    </StableNextThemesProvider>
   );
 }

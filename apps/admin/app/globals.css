@@ -83,13 +83,19 @@
   --workspace-shell: #f5f5f5;
   --workspace-canvas: #fafafa;
   --workspace-panel: #ffffff;
+  --workspace-chrome-header-bg: var(--workspace-panel);
+  --workspace-chrome-sidebar-bg: var(--workspace-sidebar);
   --workspace-elevated: #f4f4f5;
   --workspace-sidebar: #fafafa;
   --workspace-sidebar-strong: #f0f0f1;
   --workspace-border: rgba(39, 39, 42, 0.08);
   --workspace-muted: #71717a;
+  --workspace-bubble-self: #2563eb;
+  --workspace-bubble-self-foreground: #eff6ff;
+  --workspace-bubble-self-muted: #bfdbfe;
   --workspace-bubble-other: #f4f4f5;
   --workspace-bubble-other-foreground: #152236;
+  --workspace-bubble-other-muted: #71717a;
   --workspace-accent-soft: #f0f0f1;
   --workspace-highlight: #2563eb;
   --workspace-highlight-soft: color-mix(in srgb, #2563eb 10%, white);
@@ -136,18 +142,24 @@
   --sidebar-border: rgba(255, 255, 255, 0.05);
   --sidebar-ring: #3b82f6;
   --workspace-shell: #09090b;
-  --workspace-canvas: #09090b;
-  --workspace-panel: #0c0c0e;
-  --workspace-elevated: #18181b;
-  --workspace-sidebar: #09090b;
-  --workspace-sidebar-strong: #040405;
+  --workspace-canvas: #0d0d10;
+  --workspace-panel: #111318;
+  --workspace-chrome-header-bg: var(--workspace-panel);
+  --workspace-chrome-sidebar-bg: var(--workspace-sidebar);
+  --workspace-elevated: #181b21;
+  --workspace-sidebar: #0e1014;
+  --workspace-sidebar-strong: #090b0f;
   --workspace-border: rgba(255, 255, 255, 0.08);
-  --workspace-muted: #71717a;
+  --workspace-muted: #a1a1aa;
+  --workspace-bubble-self: #2563eb;
+  --workspace-bubble-self-foreground: #eff6ff;
+  --workspace-bubble-self-muted: #bfdbfe;
   --workspace-bubble-other: #18181b;
   --workspace-bubble-other-foreground: #f4f4f5;
+  --workspace-bubble-other-muted: #a1a1aa;
   --workspace-accent-soft: #141820;
   --workspace-highlight: #3b82f6;
-  --workspace-highlight-soft: color-mix(in srgb, #3b82f6 14%, #0c0c0e);
+  --workspace-highlight-soft: color-mix(in srgb, #3b82f6 14%, #111318);
   --workspace-highlight-strong: color-mix(in srgb, #3b82f6 82%, black);
 
   --chart-blue: #3b82f6;
@@ -165,10 +177,14 @@
 
   html {
     @apply font-sans;
+    height: 100%;
   }
 
   body {
-    @apply bg-background text-foreground antialiased selection:bg-primary/20;
+    @apply bg-background text-foreground selection:bg-primary/20;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: 100%;
   }
 
   html:not(.dark) {
@@ -177,6 +193,11 @@
 
   html.dark {
     color-scheme: dark;
+  }
+
+  html:not(.dark) .workspace-root-chrome {
+    --workspace-chrome-header-bg: color-mix(in srgb, var(--workspace-sidebar) 44%, var(--workspace-sidebar-strong));
+    --workspace-chrome-sidebar-bg: color-mix(in srgb, var(--workspace-sidebar) 42%, var(--workspace-sidebar-strong));
   }
 }
 

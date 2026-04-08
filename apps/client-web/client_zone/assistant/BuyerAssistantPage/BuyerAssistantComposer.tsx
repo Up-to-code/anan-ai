@@ -25,7 +25,7 @@ export default function BuyerAssistantComposer({
 
   return (
     <div className="w-full">
-      <div className="relative w-full overflow-hidden rounded-[24px] border border-zinc-300/80 bg-zinc-200 shadow-[0_2px_15px_rgba(0,0,0,0.02)] transition-all duration-300 focus-within:border-slate-300 focus-within:shadow-xl focus-within:shadow-black/[0.03] dark:border-zinc-700 dark:bg-zinc-800 dark:shadow-[0_20px_48px_rgba(0,0,0,0.28)] dark:focus-within:border-slate-500">
+      <div className="relative w-full overflow-hidden rounded-[26px] border border-zinc-300/80 bg-zinc-100 shadow-[0_2px_15px_rgba(0,0,0,0.02)] transition-all duration-300 focus-within:border-slate-300 focus-within:shadow-xl focus-within:shadow-black/[0.03] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-[0_20px_48px_rgba(0,0,0,0.28)] dark:focus-within:border-slate-500">
         <div className="flex flex-col justify-center">
           <textarea
             data-testid="client-chat-input"
@@ -39,21 +39,21 @@ export default function BuyerAssistantComposer({
             }}
             disabled={isSending}
             placeholder={placeholder}
-            className="min-h-[112px] w-full resize-none border-0 bg-transparent px-6 py-5 text-right text-[15px] font-medium leading-relaxed text-zinc-900 outline-none placeholder:text-zinc-500/80 dark:text-zinc-100 dark:placeholder:text-zinc-400/80"
+            className="min-h-[96px] w-full resize-none border-0 bg-transparent px-6 py-5 text-right text-[15px] font-medium leading-relaxed text-zinc-900 outline-none placeholder:text-zinc-500/80 dark:text-zinc-100 dark:placeholder:text-zinc-400/80"
           />
         </div>
         <div className="flex items-center justify-between border-t border-black/5 px-4 py-3 dark:border-white/5">
-          <p className="text-[11px] font-bold text-[var(--workspace-muted)]">Buyer assistant composer</p>
+          <p className="text-[11px] font-bold text-[var(--workspace-muted)]">اكتب رسالة واضحة ومباشرة</p>
           <button
             type="button"
             data-testid="client-chat-send"
             onClick={onSend}
             disabled={!isReady}
             className={cn(
-              "inline-flex h-11 w-11 items-center justify-center rounded-2xl transition",
+              "inline-flex h-11 w-11 items-center justify-center rounded-full transition",
               isReady
                 ? "bg-[var(--workspace-highlight)] text-white shadow-[0_10px_30px_rgba(37,99,235,0.28)] hover:brightness-110"
-                : "bg-white/80 text-zinc-400 dark:bg-zinc-900 dark:text-zinc-500",
+                : "bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950",
             )}
             aria-label="Send message"
           >

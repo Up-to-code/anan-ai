@@ -10,6 +10,8 @@ import { AppText } from "@/components/ui/AppText";
 import { IconButton } from "@/components/ui/IconButton";
 import { MobilePill, MobileSectionHeading, MobileTopBar, MobileSurface } from "@/components/ui/MobileChrome";
 import { usePropertyDetail } from "@/hooks/usePropertyDetail";
+import { getMockBrokerById } from "@/lib/mockBrokers";
+import { getFallbackProperties } from "@/lib/mobileData";
 import { buildSearchRouteParams, parseSearchRouteParams } from "@/lib/mobileSearch";
 import { useAppTheme, getMobileShadow } from "@/lib/mobileTheme";
 import { StickyJourneyBar } from "@/features/PropertyDetailScreen/StickyJourneyBar";
@@ -36,20 +38,32 @@ export default function BrokerProfileScreen() {
   const threadId = params.threadId;
   const searchContext = parseSearchRouteParams(params);
   const { property } = usePropertyDetail(propertyId);
+  const mockBroker = getMockBrokerById(params.id);
+  const relatedProperties = mockBroker
+    ? getFallbackProperties().filter((item) => mockBroker.relatedPropertyIds.includes(item.id))
+    : property
+      ? [property]
+      : [];
   
   // Defensive access to owner properties to avoid TS errors
   const owner = property?.owner;
-  const partnerName = owner?.name ?? "الشريك العقاري";
+  const partnerName = mockBroker?.name ?? owner?.name ?? "الشريك العقاري";
   
   // Safe extraction of non-standard properties from owner (which might be typed differently in some hooks)
   const anyOwner = owner as any;
-  const agencyLabel = anyOwner?.agencyLabel ?? (owner?.type === "broker" ? "وسيط موثق" : "مطور موثق");
-  const rating = anyOwner?.rating ?? 4.8;
-  const activeListings = anyOwner?.activeListings ?? 1;
-  const serviceArea = property?.location ?? "الرياض";
-  const ownerPhone = anyOwner?.phone;
+  const agencyLabel =
+    mockBroker?.company ??
+    anyOwner?.agencyLabel ??
+    (owner?.type === "broker" ? "وسيط موثق" : "مطور موثق");
+  const rating = mockBroker?.rating ?? anyOwner?.rating ?? 4.8;
+  const activeListings = mockBroker?.listingCount ?? anyOwner?.activeListings ?? 1;
+  const serviceArea = mockBroker?.location ?? property?.location ?? "الرياض";
+  const ownerPhone = mockBroker?.phone ?? anyOwner?.phone;
   const ownerEmail = anyOwner?.contactEmail;
-  const description = anyOwner?.description ?? `${partnerName} متخصص في تقديم أفضل الحلول العقارية السكنية والتجارية، مع التركيز على جودة الخدمة ورضا العملاء في ${serviceArea}.`;
+  const description =
+    mockBroker?.bio ??
+    anyOwner?.description ??
+    `${partnerName} متخصص في تقديم أفضل الحلول العقارية السكنية والتجارية، مع التركيز على جودة الخدمة ورضا العملاء في ${serviceArea}.`;
 
   function continueToAssistant() {
     router.push({
@@ -113,11 +127,14 @@ export default function BrokerProfileScreen() {
           <MobileSurface tone="muted" radius="hero" className="items-center gap-5" shadow="none">
             <View style={{ position: "relative" }}>
               <Image
-                source="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=600&auto=format&fit=crop"
+                source={
+                  mockBroker?.avatar ??
+                  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=600&auto=format&fit=crop"
+                }
                 style={{ width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: theme.colors.surface }}
                 contentFit="cover"
               />
-              {owner?.isVerified ? (
+              {mockBroker?.isVerified || owner?.isVerified ? (
                 <View
                   className="absolute bottom-0 right-0 h-7 w-7 items-center justify-center rounded-full"
                   style={{ backgroundColor: theme.colors.teal, borderWidth: 2, borderColor: theme.colors.surface }}
@@ -185,12 +202,12 @@ export default function BrokerProfileScreen() {
                 </View>
               </View>
 
-              {property ? (
+              {relatedProperties[0] ? (
                 <View className="gap-4">
                   <AppText className="text-right text-[18px] font-cairo-bold px-1" style={{ color: theme.colors.ink }}>العقار الحالي</AppText>
                    <MobilePropertyCard 
                       variant="featured"
-                      property={property}
+                      property={relatedProperties[0]}
                       onPress={(nextProperty) =>
                         router.push({
                           pathname: "/property/[id]",
@@ -207,20 +224,25 @@ export default function BrokerProfileScreen() {
           ) : (
             <View className="gap-5">
               <AppText className="text-right text-[20px] font-cairo-bold px-1" style={{ color: theme.colors.ink }}>العقارات المتاحة</AppText>
-              {property ? (
-                <MobilePropertyCard 
-                  variant="featured"
-                  property={property}
-                  onPress={(nextProperty) =>
-                    router.push({
-                      pathname: "/property/[id]",
-                      params: { id: nextProperty.id, ...(threadId ? { threadId } : {}), ...buildSearchRouteParams(searchContext) },
-                    })
-                  }
-                  onActionPress={continueToAssistant}
-                  actionLabel="تابع في المحادثة"
-                  ambientBackgroundColor={theme.colors.canvas}
-                />
+              {relatedProperties.length > 0 ? (
+                <View className="gap-4">
+                  {relatedProperties.map((relatedProperty) => (
+                    <MobilePropertyCard 
+                      key={relatedProperty.id}
+                      variant="featured"
+                      property={relatedProperty}
+                      onPress={(nextProperty) =>
+                        router.push({
+                          pathname: "/property/[id]",
+                          params: { id: nextProperty.id, ...(threadId ? { threadId } : {}), ...buildSearchRouteParams(searchContext) },
+                        })
+                      }
+                      onActionPress={continueToAssistant}
+                      actionLabel="تابع في المحادثة"
+                      ambientBackgroundColor={theme.colors.canvas}
+                    />
+                  ))}
+                </View>
               ) : (
                 <MobileSurface radius="hero" className="items-center gap-2 py-10" shadow="none">
                   <Star size={20} color={theme.colors.inkMuted} />

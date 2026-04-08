@@ -6,7 +6,7 @@ it("renders the mocked user detail summary and permissions", () => {
   const html = renderToStaticMarkup(<UserDetailPage userId="user-1" />);
 
   expect(html).toContain("أحمد حمدي");
-  expect(html).toContain("الصلاحيات");
+  expect(html).toContain("الحالة والوصول");
   expect(html).toContain("إدارة العروض");
 });
 
@@ -15,4 +15,3 @@ it("renders an empty state for unknown users", () => {
 
   expect(html).toContain("المستخدم غير موجود");
 });
-

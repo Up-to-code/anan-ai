@@ -84,7 +84,7 @@ export function ConversationTimeline({
       data={data}
       keyExtractor={(item) => item.id}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: bottomPadding }}
+      contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 12, paddingBottom: bottomPadding }}
       ListHeaderComponent={
         contextProperty ? (
           <ContextPropertyPanel
@@ -96,7 +96,7 @@ export function ConversationTimeline({
       }
       maintainVisibleContentPosition={{ autoscrollToBottomThreshold: 0.2 }}
       renderItem={({ item }) => (
-        <View className="mb-7">
+        <View className="mb-5">
           {item.text === "TYPING_INDICATOR" ? (
             <TypingPanel />
           ) : (
@@ -152,7 +152,7 @@ function ConversationEntry({
   const structuredCards = message.uiTurn?.cards ?? [];
 
   return (
-    <View className={isUser ? "items-start" : "items-stretch"} style={{ gap: 16 }}>
+    <View className={isUser ? "items-start" : "items-stretch"} style={{ gap: 12 }}>
       {isUser ? <UserPromptPanel text={message.text} /> : <AssistantNarrativePanel text={message.text} />}
 
       {structuredCards.length > 0 ? (
