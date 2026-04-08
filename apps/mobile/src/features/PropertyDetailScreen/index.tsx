@@ -274,7 +274,11 @@ export default function PropertyDetailScreen() {
                   onPress={() =>
                     router.push({
                       pathname: "/finance",
-                      params: { propertyId: property.id },
+                      params: {
+                        propertyId: property.id,
+                        ...(threadId ? { threadId } : {}),
+                        ...buildSearchRouteParams(searchContext),
+                      },
                     })
                   }
                   className="px-4 py-2.5"
@@ -333,7 +337,11 @@ export default function PropertyDetailScreen() {
                 onPress={() =>
                   router.push({
                     pathname: "/finance",
-                    params: { propertyId: property.id },
+                    params: {
+                      propertyId: property.id,
+                      ...(threadId ? { threadId } : {}),
+                      ...buildSearchRouteParams(searchContext),
+                    },
                   })
                 }
               />

@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { applyActivePropertyPromptToDraft, buildActivePropertyPrompt } from "@/features/BuyerAssistantHomeScreen/propertyPrompt";
+import {
+  applyPropertySelectionPromptToDraft,
+  buildPropertySelectionTopicPrompt,
+  buildPropertySelectionPrompt,
+} from "@/features/BuyerAssistantHomeScreen/propertyPrompt";
 import type { MobileProperty } from "@/types/mobile";
 
-function createProperty(): MobileProperty {
+function createProperty(id = "property-1", title = "Palm Residence"): MobileProperty {
   return {
-    id: "property-1",
-    title: "Palm Residence",
+    id,
+    title,
     address: "Riyadh Front",
     location: "الرياض",
     area: "الياسمين",
@@ -25,24 +29,39 @@ function createProperty(): MobileProperty {
 }
 
 describe("propertyPrompt", () => {
-  it("builds the default active-property prompt", () => {
-    expect(buildActivePropertyPrompt(createProperty())).toBe("أريد تفاصيل أكثر عن Palm Residence");
+  it("builds the default comparison prompt for multiple selected properties", () => {
+    expect(buildPropertySelectionPrompt([createProperty("property-1", "Palm Residence"), createProperty("property-2", "Garden Villa")])).toBe(
+      "أريد مقارنة بين Palm Residence وGarden Villa من حيث السعر والمساحة والموقع وخيارات التمويل",
+    );
   });
 
-  it("uses the full property prompt when the draft is empty", () => {
-    expect(applyActivePropertyPromptToDraft("", createProperty())).toBe("أريد تفاصيل أكثر عن Palm Residence");
-  });
-
-  it("prefixes an existing draft once with the active property context", () => {
-    expect(applyActivePropertyPromptToDraft("احسب التمويل", createProperty())).toBe("عن Palm Residence: احسب التمويل");
-  });
-
-  it("does not duplicate the same property context on repeated taps", () => {
-    expect(applyActivePropertyPromptToDraft("عن Palm Residence: احسب التمويل", createProperty())).toBe(
+  it("applies single-property context onto the draft once", () => {
+    expect(applyPropertySelectionPromptToDraft("", [createProperty()])).toBe("أريد تفاصيل أكثر عن Palm Residence");
+    expect(applyPropertySelectionPromptToDraft("احسب التمويل", [createProperty()])).toBe("عن Palm Residence: احسب التمويل");
+    expect(applyPropertySelectionPromptToDraft("عن Palm Residence: احسب التمويل", [createProperty()])).toBe(
       "عن Palm Residence: احسب التمويل",
     );
-    expect(applyActivePropertyPromptToDraft("أريد تفاصيل أكثر عن Palm Residence", createProperty())).toBe(
+    expect(applyPropertySelectionPromptToDraft("أريد تفاصيل أكثر عن Palm Residence", [createProperty()])).toBe(
       "أريد تفاصيل أكثر عن Palm Residence",
     );
+  });
+
+  it("prefixes comparison context once when several properties are selected", () => {
+    expect(
+      applyPropertySelectionPromptToDraft(
+        "ما الأفضل للاستثمار؟",
+        [createProperty("property-1", "Palm Residence"), createProperty("property-2", "Garden Villa")],
+      ),
+    ).toBe("بالنسبة إلى مقارنة بين Palm Residence وGarden Villa: ما الأفضل للاستثمار؟");
+  });
+
+  it("builds topic prompts for fixed-card content shortcuts", () => {
+    expect(buildPropertySelectionTopicPrompt([createProperty()], "finance")).toBe("احسب تمويل Palm Residence");
+    expect(
+      buildPropertySelectionTopicPrompt(
+        [createProperty("property-1", "Palm Residence"), createProperty("property-2", "Garden Villa")],
+        "comparison",
+      ),
+    ).toBe("أريد مقارنة بين Palm Residence وGarden Villa من حيث السعر والمساحة والموقع وخيارات التمويل");
   });
 });

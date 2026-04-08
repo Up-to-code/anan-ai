@@ -1,5 +1,7 @@
 import { ConvexError } from "convex/values";
 import type { Id } from "../../../_generated/dataModel";
+import type { OwnerContext } from "../../agencies/repositories/core";
+import { getOrganizationRecord } from "../../agencies/repositories/core";
 
 export async function getSubjectMapping(ctx: any, userId: Id<"users">, clientId: string) {
   return ctx.db
@@ -8,14 +10,25 @@ export async function getSubjectMapping(ctx: any, userId: Id<"users">, clientId:
     .first();
 }
 
-export async function loadUserBundle(ctx: any, userId: Id<"users">, clientId: string) {
-  const [user, profile, subjectMapping] = await Promise.all([
-    ctx.db.get(userId),
-    ctx.db.query("userProfiles").withIndex("authUserId", (q: any) => q.eq("authUserId", String(userId))).first(),
-    getSubjectMapping(ctx, userId, clientId),
+export async function getOrganizationSubjectMapping(ctx: any, owner: OwnerContext, clientId: string) {
+  return owner.ownerType === "broker"
+    ? ctx.db
+        .query("oauthSubjectMappings")
+        .withIndex("ownerBrokerId_clientId", (q: any) => q.eq("ownerBrokerId", owner.ownerBrokerId).eq("clientId", clientId))
+        .first()
+    : ctx.db
+        .query("oauthSubjectMappings")
+        .withIndex("ownerREDId_clientId", (q: any) => q.eq("ownerREDId", owner.ownerREDId).eq("clientId", clientId))
+        .first();
+}
+
+export async function loadOrganizationBundle(ctx: any, owner: OwnerContext, clientId: string) {
+  const [organization, subjectMapping] = await Promise.all([
+    getOrganizationRecord(ctx, owner),
+    getOrganizationSubjectMapping(ctx, owner, clientId),
   ]);
-  if (!user || !subjectMapping) {
+  if (!organization || !subjectMapping) {
     throw new ConvexError({ code: "INVALID_GRANT", message: "Authorization subject is not available" });
   }
-  return { user, profile, subjectMapping };
+  return { organization, subjectMapping };
 }

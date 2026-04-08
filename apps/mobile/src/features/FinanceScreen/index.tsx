@@ -12,6 +12,7 @@ import { useBuyerFinance } from "@/hooks/useBuyerFinance";
 import { usePropertyDetail } from "@/hooks/usePropertyDetail";
 import { formatCurrency } from "@/lib/formatters";
 import { getPropertyLocationLabel } from "@/lib/mobileData";
+import { buildSearchRouteParams, parseSearchRouteParams } from "@/lib/mobileSearch";
 import { useAppTheme } from "@/lib/mobileTheme";
 
 function parseNumberInput(value: string) {
@@ -30,7 +31,17 @@ export default function FinanceScreen() {
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
   const account = useBuyerAccount();
-  const { propertyId } = useLocalSearchParams<{ propertyId?: string }>();
+  const params = useLocalSearchParams<{
+    propertyId?: string;
+    threadId?: string;
+    sourcePropertyId?: string;
+    searchSummary?: string;
+    searchQuery?: string;
+    searchArea?: string;
+    searchOwnerType?: string;
+  }>();
+  const { propertyId } = params;
+  const searchContext = parseSearchRouteParams(params);
   const { property, isLoading: isPropertyLoading } = usePropertyDetail(propertyId);
 
   const propertyPrice = property?.price ?? 1_200_000;
@@ -257,7 +268,14 @@ export default function FinanceScreen() {
               onPress={() =>
                 router.replace({
                   pathname: "/",
-                  params: property ? { propertyId: property.id } : undefined,
+                  params: property
+                    ? {
+                        propertyId: property.id,
+                        ...(params.threadId ? { threadId: params.threadId } : {}),
+                      }
+                    : params.threadId
+                      ? { threadId: params.threadId }
+                      : undefined,
                 })
               }
             />
@@ -268,7 +286,11 @@ export default function FinanceScreen() {
                 onPress={() =>
                   router.push({
                     pathname: "/property/[id]",
-                    params: { id: property.id },
+                    params: {
+                      id: property.id,
+                      ...(params.threadId ? { threadId: params.threadId } : {}),
+                      ...buildSearchRouteParams(searchContext),
+                    },
                   })
                 }
               />
@@ -361,4 +383,3 @@ function MetricPill({ label, value }: { label: string; value: string }) {
     </View>
   );
 }
-

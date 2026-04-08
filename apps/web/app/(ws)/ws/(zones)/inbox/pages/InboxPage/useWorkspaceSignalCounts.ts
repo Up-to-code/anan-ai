@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/lib/convexApi";
 
 /**
@@ -14,13 +14,15 @@ export function useWorkspaceSignalCounts(initialCounts: {
   notificationCount: number;
   inboxCount: number;
 }) {
+  const { isAuthenticated, isLoading } = useConvexAuth();
+  const queryArgs = !isLoading && isAuthenticated ? {} : "skip";
   const liveNotifications = useQuery(
     api.shared_logic.notifications.getWorkspaceNotificationSummary,
-    {},
+    queryArgs,
   );
   const liveInboxSummary = useQuery(
     api.shared_logic.inbox.getInboxUnreadSummary,
-    {},
+    queryArgs,
   );
 
   return {

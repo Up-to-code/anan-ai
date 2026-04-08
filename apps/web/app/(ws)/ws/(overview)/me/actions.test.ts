@@ -4,15 +4,23 @@ import { DomainError } from "@/server/contracts/errors";
 const { updateCurrentProfileForCurrentUser } = vi.hoisted(() => ({
   updateCurrentProfileForCurrentUser: vi.fn(),
 }));
+const { getWorkspaceLocale } = vi.hoisted(() => ({
+  getWorkspaceLocale: vi.fn(),
+}));
 
 vi.mock("@/server/domains/auth/profiles/service", () => ({
   updateCurrentProfileForCurrentUser,
+}));
+vi.mock("../../_lib/workspaceLocale", () => ({
+  getWorkspaceLocale,
 }));
 
 import { saveProfileAction } from "./actions";
 
 beforeEach(() => {
   updateCurrentProfileForCurrentUser.mockReset();
+  getWorkspaceLocale.mockReset();
+  getWorkspaceLocale.mockResolvedValue("ar");
 });
 
 it("returns a success message after saving the profile", async () => {
@@ -25,6 +33,20 @@ it("returns a success message after saving the profile", async () => {
   ).resolves.toEqual({
     ok: true,
     message: "تم حفظ التعديلات بنجاح.",
+  });
+});
+
+it("returns a localized success message in english", async () => {
+  getWorkspaceLocale.mockResolvedValue("en");
+  updateCurrentProfileForCurrentUser.mockResolvedValue({
+    name: "Ahmed",
+  });
+
+  await expect(
+    saveProfileAction({ name: "Ahmed", username: "ahmed", showInOffersDirectory: true }),
+  ).resolves.toEqual({
+    ok: true,
+    message: "Changes saved successfully.",
   });
 });
 

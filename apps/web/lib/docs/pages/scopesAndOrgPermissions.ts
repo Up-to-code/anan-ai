@@ -7,7 +7,7 @@ export const scopesAndOrgPermissionsPage: DocsPageDefinition = {
     title: "Scopes and Organization Permissions",
     description: "How scopes and ownership context affect delegated API access.",
     summary:
-      "Access decisions are scope-driven and ownership-aware. Delegated resource handlers resolve caller context from token and user profile, including broker/RED links for organization-scoped resources.",
+      "Access decisions are scope-driven and ownership-aware. Delegated resource handlers resolve caller context from the organization-bound token and the linked broker or developer owner record.",
     sections: [
       {
         id: "scope-basics",
@@ -21,18 +21,18 @@ export const scopesAndOrgPermissionsPage: DocsPageDefinition = {
         id: "ownership-context",
         title: "Organization Ownership Context",
         bullets: [
-          "Delegated handlers resolve token context and user profile before resource access.",
-          "For property access, ownership links (`brokerId`, `REDId`) are used to scope delegated resources.",
-          "For client access, owner auth user id is used to list user-owned clients.",
+          "Delegated handlers resolve token context from the organization grant before any resource access.",
+          "Property and client access both stay inside the connected `tenantOrgId` boundary.",
+          "Broker or developer owner links are still written on records for compatibility with existing Anan workspace flows.",
         ],
       },
       {
         id: "recommended-scope-profiles",
         title: "Recommended Scope Profiles",
         bullets: [
-          "Read-only CRM sync: `openid profile clients:read_own properties:read_own`",
-          "Client creation workflow: `openid profile clients:read_own clients:create`",
-          "Property publishing assistant: `openid profile properties:read_own properties:create_own properties:update_own`",
+          "Read-only CRM sync: `clients:read_own properties:read_own`",
+          "Client creation workflow: `clients:read_own clients:create`",
+          "Property publishing assistant: `properties:read_own properties:create_own properties:update_own`",
         ],
       },
       {

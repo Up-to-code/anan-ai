@@ -34,6 +34,8 @@ describe("workspace group layout", () => {
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain("data-slot=\"workspace-locale-provider\"");
+    expect(markup).toContain("data-slot=\"workspace-group-layout\"");
+    expect(markup).toContain("min-h-dvh");
     expect(markup).toContain("data-locale=\"ar\"");
     expect(markup).toContain("Body");
   });

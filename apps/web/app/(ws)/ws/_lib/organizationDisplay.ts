@@ -17,6 +17,8 @@ export type WorkspaceOrganizationDisplay = {
   navbarSubtitle: string;
   logoUrl: string | null;
   isVerified: boolean;
+  typeKey?: "developer" | "broker";
+  typeLabel?: string;
 };
 
 const BANNED_NAME_FRAGMENTS = [
@@ -73,7 +75,8 @@ export function getWorkspaceOrganizationDisplay({
   locale = "ar",
 }: OrganizationDisplayInput): WorkspaceOrganizationDisplay {
   const sanitizedName = formatWorkspaceOrganizationName(name, locale);
-  const navbarSubtitle = `${formatOrganizationType(type, locale)} · ${formatOrganizationStatus(status, locale)}`;
+  const typeLabel = formatOrganizationType(type, locale);
+  const navbarSubtitle = `${typeLabel} · ${formatOrganizationStatus(status, locale)}`;
 
   return {
     name: sanitizedName,
@@ -81,5 +84,7 @@ export function getWorkspaceOrganizationDisplay({
     navbarSubtitle,
     logoUrl: logoUrl ?? null,
     isVerified: isVerified === true,
+    typeKey: type === "red" ? "developer" : "broker",
+    typeLabel,
   };
 }

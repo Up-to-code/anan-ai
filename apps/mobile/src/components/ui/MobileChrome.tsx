@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { AppText } from "@/components/ui/AppText";
 import { cn } from "@/lib/cn";
-import { useAppTheme } from "@/lib/mobileTheme";
+import { getMobileShadow, useAppTheme } from "@/lib/mobileTheme";
 
 type SurfaceTone = "default" | "muted" | "highlight" | "success" | "danger" | "dark" | "glass";
 type SurfaceRadius = "chip" | "card" | "panel" | "hero" | "pill";
@@ -25,6 +25,7 @@ export function MobileSurface({
   tone = "default",
   radius = "card",
   padded = true,
+  shadow = "none",
   style,
   ...props
 }: ViewProps & {
@@ -50,6 +51,7 @@ export function MobileSurface({
           borderColor: colors.borderColor,
           padding: padded ? 20 : 0,
         },
+        shadow === "none" ? null : getMobileShadow(shadow),
         style,
       ]}
     >

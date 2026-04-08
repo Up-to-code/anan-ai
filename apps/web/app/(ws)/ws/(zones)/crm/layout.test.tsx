@@ -1,50 +1,21 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-const { useWorkspaceSignalCounts } = vi.hoisted(() => ({
-  useWorkspaceSignalCounts: vi.fn(() => ({ notificationCount: 0, inboxCount: 0 })),
-}));
-const { useQuery } = vi.hoisted(() => ({
-  useQuery: vi.fn(() => undefined),
+const { getWorkspaceLocale } = vi.hoisted(() => ({
+  getWorkspaceLocale: vi.fn(),
 }));
 
-const { requireWorkspaceData, getLayoutSidebarData, redirect, usePathname, useSearchParams } = vi.hoisted(() => ({
-  requireWorkspaceData: vi.fn(),
-  getLayoutSidebarData: vi.fn(),
-  redirect: vi.fn(),
-  usePathname: vi.fn(),
-  useSearchParams: vi.fn(() => new URLSearchParams()),
-}));
-const { useRouter } = vi.hoisted(() => ({
-  useRouter: vi.fn(() => ({ replace: vi.fn(), refresh: vi.fn(), push: vi.fn() })),
+vi.mock("../../_lib/workspaceLocale", () => ({
+  getWorkspaceLocale,
 }));
 
-vi.mock("../../_lib/workspaceData", () => ({
-  requireWorkspaceData,
-  getLayoutSidebarData,
-}));
-
-vi.mock("next/navigation", () => ({
-  redirect,
-  usePathname,
-  useSearchParams,
-  useRouter,
-}));
-
-vi.mock("convex/react", () => ({
-  useQuery,
-}));
-
-vi.mock("../inbox/pages/InboxPage/useRealtimeInbox", () => ({
-  useWorkspaceSignalCounts,
-}));
-
-const { getComplianceRulesetForCurrentOrg } = vi.hoisted(() => ({
-  getComplianceRulesetForCurrentOrg: vi.fn(() => Promise.resolve(null)),
-}));
-
-vi.mock("@/server/domains/compliance/service", () => ({
-  getComplianceRulesetForCurrentOrg,
+vi.mock("./shared/navigation/CrmRouteTabs", () => ({
+  default: ({ labels }: { labels: { deals: string; clients: string } }) => (
+    <div data-slot="crm-route-tabs">
+      <span>{labels.deals}</span>
+      <span>{labels.clients}</span>
+    </div>
+  ),
 }));
 
 vi.mock("next/link", () => ({
@@ -58,37 +29,16 @@ vi.mock("next/link", () => ({
 import CrmZoneLayout from "./layout";
 
 describe("/ws/crm layout", () => {
-  beforeEach(() => {
-    requireWorkspaceData.mockReset();
-    getLayoutSidebarData.mockReset();
-    redirect.mockReset();
-    usePathname.mockReset();
-    usePathname.mockReturnValue("/ws/crm");
-  });
-
-  it("renders the focused CRM zone shell with local navigation", async () => {
-    requireWorkspaceData.mockResolvedValue({
-      user: { name: "Ahmed", email: "ahmed@example.com" },
-      session: { role: "developer" },
-      visibleZoneKeys: ["overview", "crm", "settings"],
-      organizations: [{ id: "red-1", type: "red", name: "Alpha Dev", slug: "alpha-dev", status: "active", isVerified: true }],
-    });
-    getLayoutSidebarData.mockResolvedValue({
-      user: { name: "Ahmed", email: "ahmed@example.com" },
-      organizations: [{ id: "red-1", type: "red", name: "Alpha Dev", slug: "alpha-dev", status: "active", isVerified: true }],
-      recentConversations: [],
-      allConversations: [],
-      signalCounts: { notificationCount: 0, inboxCount: 0 },
-    });
+  it("renders CRM local navigation without owning the workspace shell", async () => {
+    getWorkspaceLocale.mockResolvedValue("ar");
 
     const element = await CrmZoneLayout({ children: <div>Content</div> });
     const markup = renderToStaticMarkup(element);
 
-    expect(markup).toContain("data-slot=\"workspace-shell\"");
-    expect(markup).toContain("إدارة الصفقات");
-    expect(markup).toContain("/ws/crm");
+    expect(markup).not.toContain("data-slot=\"workspace-shell\"");
+    expect(markup).toContain("data-slot=\"crm-route-tabs\"");
     expect(markup).toContain("الصفقات");
     expect(markup).toContain("العملاء");
-    expect(markup).not.toContain("الوسطاء");
+    expect(markup).toContain("Content");
   });
 });

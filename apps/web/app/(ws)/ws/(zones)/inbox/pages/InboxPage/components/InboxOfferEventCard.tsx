@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { ArrowUpLeft, Check, Clock3, FileText, MapPin, Shield, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiUnsafe } from "@/lib/convexApi";
@@ -100,9 +100,10 @@ export default function InboxOfferEventCard({
   }) => Promise<{ ok: true } | void | null>;
 }) {
   const [pendingAction, setPendingAction] = useState<"accepted" | "rejected" | null>(null);
+  const { isAuthenticated, isLoading } = useConvexAuth();
   const liveOffer = useQuery(
     (apiUnsafe["shared_logic/offers"] as { getOfferLiveState: unknown }).getOfferLiveState as never,
-    { offerId: metadata.offerId } as never,
+    (!isLoading && isAuthenticated ? { offerId: metadata.offerId } : "skip") as never,
   ) as OfferLiveState | null | undefined;
   const state = liveOffer ?? buildFallbackState(metadata);
   const messageSummary = state.description ?? body;

@@ -8,18 +8,12 @@ type RefreshRotationResult =
   | { replayDetected: true }
   | {
       replayDetected?: false;
-      userId: string;
+      tenantOrgId: string;
+      ownerType: "broker" | "RED";
+      ownerBrokerId?: string;
+      ownerREDId?: string;
       pairwiseSubject: string;
       scopes: string[];
-      user: {
-        email?: string | null;
-        name?: string | null;
-        displayName?: string | null;
-        image?: string | null;
-      };
-      profile?: {
-        name?: string | null;
-      } | null;
     };
 
 export type ParsedTokenRequest = {
@@ -30,17 +24,13 @@ export type ParsedTokenRequest = {
 };
 
 type AuthorizationCodeExchange = {
-  userId: string;
+  tenantOrgId: string;
+  ownerType: "broker" | "RED";
+  ownerBrokerId?: string;
+  ownerREDId?: string;
   pairwiseSubject: string;
   scopes: string[];
   nonce?: string | null;
-  user: {
-    email?: string | null;
-    name?: string | null;
-    displayName?: string | null;
-    image?: string | null;
-  };
-  profile?: { name?: string | null } | null;
 };
 type RefreshGrantRotation = Exclude<RefreshRotationResult, { replayDetected: true }>;
 
@@ -80,14 +70,12 @@ async function exchangeAuthorizationCode(
 async function issueAuthorizationCodeTokens(clientId: string, accessTokenJti: string, exchange: AuthorizationCodeExchange) {
   const tokens = await issueTokenSet({
     clientId,
-    userId: String(exchange.userId),
-    pairwiseSubject: exchange.pairwiseSubject,
+    subject: exchange.pairwiseSubject,
+    tenantOrgId: exchange.tenantOrgId,
+    ownerType: exchange.ownerType,
+    ownerId: exchange.ownerType === "broker" ? String(exchange.ownerBrokerId) : String(exchange.ownerREDId),
     scopes: exchange.scopes,
     accessTokenJti,
-    email: exchange.user.email ?? null,
-    name: exchange.user.name ?? exchange.user.displayName ?? exchange.profile?.name ?? null,
-    image: exchange.user.image ?? null,
-    nonce: exchange.nonce,
   });
   return { tokens, scopes: exchange.scopes };
 }
@@ -128,13 +116,12 @@ async function rotateRefreshToken(ctx: any, parsed: ParsedTokenRequest & { clien
 async function issueRefreshGrantTokens(clientId: string, accessTokenJti: string, rotated: RefreshGrantRotation) {
   const tokens = await issueTokenSet({
     clientId,
-    userId: String(rotated.userId),
-    pairwiseSubject: rotated.pairwiseSubject,
+    subject: rotated.pairwiseSubject,
+    tenantOrgId: rotated.tenantOrgId,
+    ownerType: rotated.ownerType,
+    ownerId: rotated.ownerType === "broker" ? String(rotated.ownerBrokerId) : String(rotated.ownerREDId),
     scopes: rotated.scopes,
     accessTokenJti,
-    email: rotated.user.email ?? null,
-    name: rotated.user.name ?? rotated.user.displayName ?? rotated.profile?.name ?? null,
-    image: rotated.user.image ?? null,
   });
   return { tokens, scopes: rotated.scopes };
 }

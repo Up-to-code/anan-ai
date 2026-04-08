@@ -14,6 +14,7 @@ type CursorPropertyMediaViewerProps = {
   showCounter?: boolean;
   overlay?: ReactNode;
   onOpenGallery?: (initialIndex: number) => void;
+  interactionMode?: "swipe" | "static";
 };
 
 function clampIndex(index: number, imageCount: number) {
@@ -24,7 +25,7 @@ function clampIndex(index: number, imageCount: number) {
 /**
  * WHY:   Mobile cursor cards need one shared media viewer so chat-generated property cards can swipe images without inventing a second gallery pattern.
  * WHAT:  Renders an inline property media stage with local paging, an optional counter, and tap-to-open support for the fullscreen gallery.
- * HOW:   Reuses the shared gallery viewport when multiple images are available and falls back to a single static image when the media set is small or the layout width is still measuring.
+ * HOW:   Reuses the shared gallery viewport for full card contexts, while compact thumbnail contexts can opt into a static first-image mode to avoid nesting extra virtualized lists.
  */
 export function CursorPropertyMediaViewer({
   images,
@@ -35,6 +36,7 @@ export function CursorPropertyMediaViewer({
   showCounter = true,
   overlay,
   onOpenGallery,
+  interactionMode = "swipe",
 }: CursorPropertyMediaViewerProps) {
   const theme = useAppTheme();
   const media = images.length > 0 ? images : [""];
@@ -44,6 +46,7 @@ export function CursorPropertyMediaViewer({
   const resolvedWidth = width ?? measuredWidth;
   const hasMultipleImages = media.length > 1;
   const shouldShowCounter = showCounter && hasMultipleImages;
+  const useStaticImage = interactionMode === "static" || !hasMultipleImages || !resolvedWidth;
 
   useEffect(() => {
     setCurrentIndex((previousIndex) => clampIndex(previousIndex, media.length));
@@ -76,7 +79,7 @@ export function CursorPropertyMediaViewer({
         position: "relative",
       }}
     >
-      {hasMultipleImages && resolvedWidth ? (
+      {!useStaticImage ? (
         <GalleryViewport
           key={`${mediaKey}-${resolvedWidth}`}
           images={media}

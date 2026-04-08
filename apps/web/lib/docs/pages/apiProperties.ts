@@ -5,7 +5,7 @@ export const apiPropertiesPage: DocsPageDefinition = {
     title: "Delegated Properties API",
     description: "Read and create properties with delegated OAuth access.",
     summary:
-      "Use `/api/oauth/properties` for delegated property operations. Ownership is tied to caller profile context and scope permissions.",
+      "Use `/api/oauth/properties` for delegated property operations. Ownership is tied to the connected organization and scope permissions.",
     sections: [
       {
         id: "properties-get",
@@ -15,7 +15,7 @@ export const apiPropertiesPage: DocsPageDefinition = {
             title: "List properties",
             method: "GET",
             path: "/api/oauth/properties",
-            description: "Returns properties accessible through caller ownership links.",
+            description: "Returns properties accessible through the connected organization grant.",
             requiredScopes: ["properties:read_own", "properties:read"],
             notes: [
               "At least one of these scopes is required: `properties:read_own` or `properties:read`.",
@@ -45,7 +45,7 @@ export const apiPropertiesPage: DocsPageDefinition = {
             title: "Create property",
             method: "POST",
             path: "/api/oauth/properties",
-            description: "Creates a draft property owned via caller broker/RED context.",
+            description: "Creates a draft property owned by the connected organization.",
             requiredScopes: ["properties:create_own"],
             requestExample: {
               title: "Request body",

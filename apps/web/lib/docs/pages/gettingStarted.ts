@@ -5,24 +5,24 @@ export const gettingStartedPage: DocsPageDefinition = {
     title: "Getting Started",
     description: "Fast path from credentials to your first successful API call.",
     summary:
-      "Choose between owner-created organization API keys for broker or developer org data, or OAuth for delegated user access.",
+      "Choose between owner-created organization API keys for broker or developer org data, or OAuth for delegated organization app access.",
     sections: [
       {
         id: "integration-checklist",
         title: "Integration Checklist",
         summary: "Start by choosing the correct auth model, then wire your environment and first request with the smallest possible permission set.",
         bullets: [
-          "Choose your auth model first: organization API keys for backend-to-backend access to the current broker or developer organization, or OAuth for delegated user access.",
+          "Choose your auth model first: organization API keys for backend-to-backend access to the current broker or developer organization, or OAuth for delegated organization app access.",
           "For organization API keys, create the key in Workspace Settings → API Keys as an organization owner and store it securely because the full secret is shown once.",
           "Managers can still view API key metadata and revoke keys, but only owners can create them.",
-          "For OAuth, get your `client_id` and `client_secret` from Anan onboarding and register redirect URIs before launch.",
+          "For OAuth, get your `client_id` and `client_secret` from Anan onboarding, register redirect URIs, and expect the consent screen to target one organization at a time.",
           "Store API keys, access tokens, and refresh tokens securely; rotate or revoke them if you suspect exposure.",
           "Use the minimum permission set required for each integration path.",
         ],
         callouts: [
           {
             title: "Recommended Starting Path",
-            body: "Use organization API keys first if you are building an internal backend integration for one broker or developer organization. Move to OAuth only when you need delegated user authorization.",
+            body: "Use organization API keys first if you are building an internal backend integration for one broker or developer organization. Move to OAuth only when an external app needs a manager-approved organization connection.",
             tone: "info",
           },
         ],

@@ -11,26 +11,28 @@ import Button from "@/components/ui/institutional-button";
 export default function ConsentAutoSubmit({
   action,
   requiresConsent,
+  disabled = false,
   approveLabel,
   children,
 }: {
   action: (formData: FormData) => void | Promise<void>;
   requiresConsent: boolean;
+  disabled?: boolean;
   approveLabel: string;
   children: ReactNode;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (!requiresConsent) {
+    if (!requiresConsent && !disabled) {
       formRef.current?.requestSubmit();
     }
-  }, [requiresConsent]);
+  }, [disabled, requiresConsent]);
 
   return (
     <form ref={formRef} action={action}>
       {children}
-      <Button type="submit" variant="dark" className="w-full justify-center">
+      <Button type="submit" variant="dark" className="w-full justify-center" disabled={disabled}>
         {approveLabel}
       </Button>
     </form>

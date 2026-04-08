@@ -6,7 +6,7 @@ import { ArrowLeft, CheckCircle2 } from "lucide-react-native";
 import { Button } from "@/components/ui/Button";
 import { AppText } from "@/components/ui/AppText";
 import { IconButton } from "@/components/ui/IconButton";
-import { MobileSectionHeading, MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
+import { MobilePill, MobileSectionHeading, MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
 import { api } from "@/lib/convexApi";
 import { useAppTheme } from "@/lib/mobileTheme";
 
@@ -66,7 +66,7 @@ export default function HandoffScreen() {
       />
 
       <View className="flex-1 justify-center">
-        <View className="rounded-[34px] px-6 py-8" style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: mutedSectionBackground }}>
+        <MobileSurface tone="muted" radius="hero" className="gap-6" shadow="none">
           <View className="items-center">
             <View
               className="items-center justify-center rounded-full"
@@ -88,14 +88,19 @@ export default function HandoffScreen() {
             />
           </View>
 
-          <View className="mt-6 overflow-hidden rounded-[28px]" style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: sectionBackground }}>
+          <View className="flex-row-reverse flex-wrap justify-center" style={{ gap: 8 }}>
+            <MobilePill label={order?.status ?? "qualified"} tone="primary" active />
+            <MobilePill label={order?.sourceChannel ?? "app"} />
+          </View>
+
+          <View className="overflow-hidden rounded-[28px]" style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: sectionBackground }}>
             <SummaryRow label="رقم الطلب" value={order?.orderId ?? params.orderId ?? "—"} withBorder />
             <SummaryRow label="الحالة" value={order?.status ?? "qualified"} withBorder />
             <SummaryRow label="المصدر" value={order?.sourceChannel ?? "app"} />
           </View>
 
           {params.threadId ? (
-            <MobileSurface tone="default" radius="card" className="mt-4 gap-2">
+            <MobileSurface tone="default" radius="card" className="gap-2" shadow="none">
               <AppText className="text-right text-[14px] font-cairo-bold" style={{ color: theme.colors.ink }}>
                 يمكنك العودة الآن إلى نفس المحادثة
               </AppText>
@@ -105,7 +110,7 @@ export default function HandoffScreen() {
             </MobileSurface>
           ) : null}
 
-          <View className="mt-6 gap-3">
+          <View className="gap-3">
             <Button
               label="العودة إلى المساعد"
               onPress={() =>
@@ -123,7 +128,7 @@ export default function HandoffScreen() {
               className="rounded-[18px]"
             />
           </View>
-        </View>
+        </MobileSurface>
       </View>
     </View>
   );

@@ -252,34 +252,46 @@ export default function AccountScreen() {
             }
           />
 
-          {account.recentThreads.slice(0, 4).map((thread) => (
-            <Pressable
-              key={thread.id}
-              onPress={() =>
-                router.push({
-                  pathname: "/",
-                  params: { threadId: thread.id },
-                })
-              }
-              className="flex-row-reverse items-center gap-4 rounded-[20px] px-4 py-4 active:opacity-80"
-              style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceMuted }}
-            >
-              <View
-                className="items-center justify-center rounded-full"
-                style={{ width: 42, height: 42, backgroundColor: theme.colors.surface }}
+          {account.recentThreads.length > 0 ? (
+            account.recentThreads.slice(0, 4).map((thread) => (
+              <Pressable
+                key={thread.id}
+                onPress={() =>
+                  router.push({
+                    pathname: "/",
+                    params: { threadId: thread.id },
+                  })
+                }
+                className="flex-row-reverse items-center gap-4 rounded-[20px] px-4 py-4 active:opacity-80"
+                style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceMuted }}
               >
-                <History size={18} color={theme.colors.inkMuted} />
-              </View>
-              <View className="flex-1 items-end">
-                <AppText className="text-right text-[15px] font-cairo-bold" style={{ color: theme.colors.ink }}>
-                  {thread.title}
-                </AppText>
-                <AppText className="mt-1 text-right text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
-                  {thread.preview ?? "افتح المحادثة لمتابعة نفس الرحلة."}
-                </AppText>
-              </View>
-            </Pressable>
-          ))}
+                <View
+                  className="items-center justify-center rounded-full"
+                  style={{ width: 42, height: 42, backgroundColor: theme.colors.surface }}
+                >
+                  <History size={18} color={theme.colors.inkMuted} />
+                </View>
+                <View className="flex-1 items-end">
+                  <AppText className="text-right text-[15px] font-cairo-bold" style={{ color: theme.colors.ink }}>
+                    {thread.title}
+                  </AppText>
+                  <AppText className="mt-1 text-right text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
+                    {thread.preview ?? "افتح المحادثة لمتابعة نفس الرحلة."}
+                  </AppText>
+                </View>
+              </Pressable>
+            ))
+          ) : (
+            <MobileSurface tone="muted" radius="card" className="items-center gap-2 py-8" shadow="none">
+              <History size={18} color={theme.colors.inkMuted} />
+              <AppText className="text-center text-[14px] font-cairo-bold" style={{ color: theme.colors.ink }}>
+                لم تبدأ أي محادثة بعد
+              </AppText>
+              <AppText className="text-center text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
+                ابدأ من المساعد أو من البحث وسيظهر السجل هنا تلقائياً.
+              </AppText>
+            </MobileSurface>
+          )}
         </MobileSurface>
 
         <View
@@ -417,4 +429,3 @@ function AccountRow({
     </Pressable>
   );
 }
-

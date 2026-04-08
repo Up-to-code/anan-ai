@@ -19,12 +19,8 @@ export const handleMetadata = httpAction(async () => {
     response_types_supported: ["code"],
     grant_types_supported: ["authorization_code", "refresh_token"],
     subject_types_supported: ["pairwise"],
-    id_token_signing_alg_values_supported: ["RS256"],
     token_endpoint_auth_methods_supported: ["none", "client_secret_basic"],
     scopes_supported: [
-      "openid",
-      "profile",
-      "email",
       "offline_access",
       "clients:read",
       "clients:create",

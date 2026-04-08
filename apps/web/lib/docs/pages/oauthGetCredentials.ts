@@ -5,7 +5,7 @@ export const oauthGetCredentialsPage: DocsPageDefinition = {
     title: "Authentication & Credentials",
     description: "How to obtain and configure your Anan API Keys and OAuth app credentials.",
     summary:
-      "Organization API keys are created by organization owners from workspace settings, while OAuth app credentials remain onboarding-managed for delegated user access.",
+      "Organization API keys are created by organization owners from workspace settings, while OAuth app credentials remain onboarding-managed for delegated organization app access.",
     sections: [
       {
         id: "organization-api-keys",

@@ -18,6 +18,10 @@ vi.mock("../(zones)/inbox/pages/InboxPage/useRealtimeInbox", () => ({
   useWorkspaceSignalCounts,
 }));
 
+vi.mock("@convex-dev/auth/react", () => ({
+  useAuthActions: () => ({ signOut: vi.fn() }),
+}));
+
 vi.mock("next-themes", () => ({
   useTheme: () => ({ resolvedTheme: "dark", setTheme: vi.fn() }),
 }));
@@ -56,10 +60,11 @@ describe("WorkspaceTopNavbar", () => {
     expect(html).toContain("شركة الواحة");
     expect(html).toContain("Espace promoteur");
     expect(html).toContain("Boîte de réception");
+    expect(html).toContain("data-slot=\"workspace-identity-menu\"");
     expect(html).toContain("data-slot=\"workspace-organization-settings-trigger\"");
     expect(html).toContain("href=\"/ws/settings?tab=org\"");
     expect(html).toContain("data-slot=\"workspace-user-settings-trigger\"");
-    expect(html).toContain("href=\"/ws/settings\"");
+    expect(html).not.toContain("href=\"/ws/settings\"");
     expect(html).toContain("href=\"/ws/notifications\"");
     expect(html).toContain("href=\"/ws/inbox\"");
     expect(html).toContain("data-slot=\"workspace-compliance-badge\"");

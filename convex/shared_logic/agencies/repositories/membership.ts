@@ -122,6 +122,16 @@ export async function requireManagerAccess(
   return current;
 }
 
+/**
+ * WHY:   Internal action entrypoints still need the fully resolved current manager context without reimplementing org access rules.
+ * WHAT:  Returns the current profile, owner, and membership for a manager caller.
+ * HOW:   Reuses `requireManagerAccess` and exposes the resolved values through an internal-only query.
+ */
+export const requireManagerAccessForCurrentUser = internalQuery({
+  args: {},
+  handler: async (ctx) => requireManagerAccess(ctx),
+});
+
 async function requireSameTenantOrAdmin(args: {
   ctx: AgenciesRepositoryCtx;
   owner: OwnerContext;

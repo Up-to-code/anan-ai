@@ -10,10 +10,21 @@ import type {
 } from "@/types/mobile";
 
 const EMPTY_THREAD_STORE: MobileGuestThreadStore = {
-  version: 2,
+  version: 3,
   activeThreadId: null,
   threads: [],
 };
+
+function normalizeSelectedProperties(properties: MobileProperty[] | undefined, activeProperty: MobileProperty | null) {
+  const seen = new Set<string>();
+  const source = properties && properties.length > 0 ? properties : activeProperty ? [activeProperty] : [];
+  return source.filter((property) => {
+    const propertyId = property?.id?.trim();
+    if (!propertyId || seen.has(propertyId)) return false;
+    seen.add(propertyId);
+    return true;
+  });
+}
 
 function normalizeTextPreview(messages: MobileConversationMessage[]) {
   return (
@@ -32,9 +43,15 @@ export function createLocalThreadId() {
 export function hasThreadContent(args: {
   draft: string;
   activeProperty: MobileProperty | null;
+  selectedProperties?: MobileProperty[];
   messages: MobileConversationMessage[];
 }) {
-  return args.messages.length > 0 || args.draft.trim().length > 0 || Boolean(args.activeProperty);
+  return (
+    args.messages.length > 0 ||
+    args.draft.trim().length > 0 ||
+    Boolean(args.activeProperty) ||
+    (args.selectedProperties?.length ?? 0) > 0
+  );
 }
 
 /**
@@ -47,6 +64,7 @@ export function buildStoredThreadRecord(args: {
   draft: string;
   activeThreadKind: MobileStoredThreadKind;
   activeProperty: MobileProperty | null;
+  selectedProperties: MobileProperty[];
   messages: MobileConversationMessage[];
   updatedAt: number;
   existing?: MobileStoredThread | null;
@@ -64,6 +82,7 @@ export function buildStoredThreadRecord(args: {
     draft: args.draft,
     activeThreadKind: args.activeThreadKind,
     activeProperty: args.activeProperty,
+    selectedProperties: normalizeSelectedProperties(args.selectedProperties, args.activeProperty),
     messages: args.messages,
     createdAt,
     updatedAt: args.updatedAt,
@@ -105,7 +124,7 @@ export function readStoredThread(store: MobileGuestThreadStore, threadId?: strin
 
 export function createThreadStore(args: { activeThreadId: string | null; threads: MobileStoredThread[] }): MobileGuestThreadStore {
   return {
-    version: 2,
+    version: 3,
     activeThreadId: args.activeThreadId,
     threads: args.threads.slice().sort((left, right) => right.updatedAt - left.updatedAt),
   };
@@ -128,6 +147,7 @@ export function migrateLegacyGuestSnapshot(value: unknown): MobileGuestThreadSto
     draft: typeof legacy.draft === "string" ? legacy.draft : "",
     activeThreadKind: legacy.activeThreadKind === "live" ? "live" : "welcome",
     activeProperty: legacy.activeProperty ?? null,
+    selectedProperties: normalizeSelectedProperties(legacy.selectedProperties, legacy.activeProperty ?? null),
     messages: legacy.messages,
     updatedAt,
   });
@@ -142,10 +162,14 @@ export function migrateLegacyGuestSnapshot(value: unknown): MobileGuestThreadSto
 export function parseThreadStore(value: unknown): MobileGuestThreadStore | null {
   if (!value || typeof value !== "object") return null;
   const maybeStore = value as Partial<MobileGuestThreadStore>;
-  if (maybeStore.version === 2 && Array.isArray(maybeStore.threads)) {
+  const maybeVersion = (value as { version?: number }).version;
+  if ((maybeVersion === 2 || maybeVersion === 3) && Array.isArray(maybeStore.threads)) {
     return createThreadStore({
       activeThreadId: typeof maybeStore.activeThreadId === "string" ? maybeStore.activeThreadId : null,
-      threads: maybeStore.threads.filter(Boolean) as MobileStoredThread[],
+      threads: (maybeStore.threads.filter(Boolean) as MobileStoredThread[]).map((thread) => ({
+        ...thread,
+        selectedProperties: normalizeSelectedProperties(thread.selectedProperties, thread.activeProperty ?? null),
+      })),
     });
   }
 

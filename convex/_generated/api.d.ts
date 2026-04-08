@@ -323,6 +323,7 @@ import type * as shared_logic_oauth_internal_authorize from "../shared_logic/oau
 import type * as shared_logic_oauth_internal_consent from "../shared_logic/oauth/internal/consent.js";
 import type * as shared_logic_oauth_internal_delegated from "../shared_logic/oauth/internal/delegated.js";
 import type * as shared_logic_oauth_internal_helpers from "../shared_logic/oauth/internal/helpers.js";
+import type * as shared_logic_oauth_internal_organizations from "../shared_logic/oauth/internal/organizations.js";
 import type * as shared_logic_oauth_internal_subjects from "../shared_logic/oauth/internal/subjects.js";
 import type * as shared_logic_oauth_internal_tokens from "../shared_logic/oauth/internal/tokens.js";
 import type * as shared_logic_oauth_internal_tokens_accessLifecycle from "../shared_logic/oauth/internal/tokens/accessLifecycle.js";
@@ -374,9 +375,12 @@ import type * as shared_logic_verifications_types_validation_index from "../shar
 import type * as shared_logic_workspaceWorkflows from "../shared_logic/workspaceWorkflows.js";
 import type * as tenants from "../tenants.js";
 import type * as uploadthing from "../uploadthing.js";
+import type * as user_zone_mobile_analytics from "../user_zone/mobile/analytics.js";
 import type * as user_zone_mobile_assistant from "../user_zone/mobile/assistant.js";
 import type * as user_zone_mobile_contracts from "../user_zone/mobile/contracts.js";
 import type * as user_zone_mobile_feed from "../user_zone/mobile/feed.js";
+import type * as user_zone_mobile_finance from "../user_zone/mobile/finance.js";
+import type * as user_zone_mobile_viewer from "../user_zone/mobile/viewer.js";
 import type * as user_zone_web_assistant from "../user_zone/web/assistant.js";
 import type * as user_zone_web_contracts from "../user_zone/web/contracts.js";
 import type * as user_zone_web_orders from "../user_zone/web/orders.js";
@@ -712,6 +716,7 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/oauth/internal/consent": typeof shared_logic_oauth_internal_consent;
   "shared_logic/oauth/internal/delegated": typeof shared_logic_oauth_internal_delegated;
   "shared_logic/oauth/internal/helpers": typeof shared_logic_oauth_internal_helpers;
+  "shared_logic/oauth/internal/organizations": typeof shared_logic_oauth_internal_organizations;
   "shared_logic/oauth/internal/subjects": typeof shared_logic_oauth_internal_subjects;
   "shared_logic/oauth/internal/tokens": typeof shared_logic_oauth_internal_tokens;
   "shared_logic/oauth/internal/tokens/accessLifecycle": typeof shared_logic_oauth_internal_tokens_accessLifecycle;
@@ -763,9 +768,12 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/workspaceWorkflows": typeof shared_logic_workspaceWorkflows;
   tenants: typeof tenants;
   uploadthing: typeof uploadthing;
+  "user_zone/mobile/analytics": typeof user_zone_mobile_analytics;
   "user_zone/mobile/assistant": typeof user_zone_mobile_assistant;
   "user_zone/mobile/contracts": typeof user_zone_mobile_contracts;
   "user_zone/mobile/feed": typeof user_zone_mobile_feed;
+  "user_zone/mobile/finance": typeof user_zone_mobile_finance;
+  "user_zone/mobile/viewer": typeof user_zone_mobile_viewer;
   "user_zone/web/assistant": typeof user_zone_web_assistant;
   "user_zone/web/contracts": typeof user_zone_web_contracts;
   "user_zone/web/orders": typeof user_zone_web_orders;

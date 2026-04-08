@@ -2,13 +2,14 @@ import { v } from "convex/values";
 import { internalMutation, internalQuery } from "../../../_generated/server";
 
 /**
- * WHY:   Third-party apps need a concrete user-owned resource to exercise delegated client scopes.
- * WHAT:  Creates a CRM client owned by the delegated Anan user.
- * HOW:   Persists ownership by auth user id and mirrors broker/RED links when present.
+ * WHY:   Third-party apps need a concrete org-owned resource to exercise delegated client scopes.
+ * WHAT:  Creates a CRM client scoped to the connected organization.
+ * HOW:   Persists tenant ownership and mirrors broker/RED links while keeping the legacy auth-user field only as metadata.
  */
 export const createDelegatedClient = internalMutation({
   args: {
-    authUserId: v.string(),
+    ownerAuthUserId: v.string(),
+    tenantOrgId: v.string(),
     brokerId: v.optional(v.id("brokers")),
     REDId: v.optional(v.id("RED")),
     sourceClientId: v.string(),
@@ -20,7 +21,8 @@ export const createDelegatedClient = internalMutation({
   },
   handler: async (ctx, args) => {
     const clientId = await ctx.db.insert("crmClients", {
-      ownerAuthUserId: args.authUserId,
+      ownerAuthUserId: args.ownerAuthUserId,
+      tenantOrgId: args.tenantOrgId,
       brokerId: args.brokerId,
       REDId: args.REDId,
       name: args.name,
@@ -36,29 +38,30 @@ export const createDelegatedClient = internalMutation({
 });
 
 /**
- * WHY:   Third-party apps with read scopes need a bounded way to view the caller's own clients.
- * WHAT:  Lists CRM clients owned by the delegated Anan user.
- * HOW:   Filters on the owner auth user id rather than global CRM visibility.
+ * WHY:   Third-party apps with delegated read scopes must stay inside the connected organization boundary.
+ * WHAT:  Lists CRM clients for the connected organization.
+ * HOW:   Filters on `tenantOrgId`, which matches the organization ownership model used by org API keys.
  */
 export const listDelegatedClients = internalQuery({
   args: {
-    authUserId: v.string(),
+    tenantOrgId: v.string(),
   },
   handler: async (ctx, args) => {
     return ctx.db
       .query("crmClients")
-      .withIndex("ownerAuthUserId", (q) => q.eq("ownerAuthUserId", args.authUserId))
+      .withIndex("tenantOrgId", (q) => q.eq("tenantOrgId", args.tenantOrgId))
       .collect();
   },
 });
 
 /**
- * WHY:   Partner apps need a real delegated property write path to validate ownership scopes.
- * WHAT:  Creates a property tied to the caller's broker or RED profile.
- * HOW:   Persists broker/RED ownership links and stamps a minimal draft property record.
+ * WHY:   Partner apps need a real delegated property write path inside the connected organization.
+ * WHAT:  Creates a draft property tied to the organization owner record.
+ * HOW:   Persists tenant org ownership plus broker/RED ownership links for compatibility with existing property flows.
  */
 export const createDelegatedProperty = internalMutation({
   args: {
+    tenantOrgId: v.string(),
     brokerId: v.optional(v.id("brokers")),
     REDId: v.optional(v.id("RED")),
     title: v.string(),
@@ -74,6 +77,7 @@ export const createDelegatedProperty = internalMutation({
     const propertyId = await ctx.db.insert("properties", {
       title: args.title,
       address: args.address,
+      tenantOrgId: args.tenantOrgId,
       brokerId: args.brokerId,
       REDId: args.REDId,
       price: args.price,
@@ -91,28 +95,18 @@ export const createDelegatedProperty = internalMutation({
 });
 
 /**
- * WHY:   `properties:read_own` must expose only resources tied to the delegated caller's org links.
- * WHAT:  Lists properties owned by the caller's broker or RED profile.
- * HOW:   Collects matching broker and RED property sets and merges them without duplication.
+ * WHY:   `properties:read_own` must expose only resources tied to the connected organization.
+ * WHAT:  Lists properties that belong to the organization grant behind the bearer token.
+ * HOW:   Filters directly on `tenantOrgId`, which keeps OAuth access aligned with org API-key ownership.
  */
 export const listDelegatedProperties = internalQuery({
   args: {
-    brokerId: v.optional(v.id("brokers")),
-    REDId: v.optional(v.id("RED")),
+    tenantOrgId: v.string(),
   },
   handler: async (ctx, args) => {
-    const [brokerProperties, redProperties] = await Promise.all([
-      args.brokerId
-        ? ctx.db.query("properties").withIndex("brokerId", (q) => q.eq("brokerId", args.brokerId!)).collect()
-        : Promise.resolve([]),
-      args.REDId
-        ? ctx.db.query("properties").withIndex("REDId", (q) => q.eq("REDId", args.REDId!)).collect()
-        : Promise.resolve([]),
-    ]);
-    const merged = new Map<string, any>();
-    for (const property of [...brokerProperties, ...redProperties]) {
-      merged.set(property._id, property);
-    }
-    return [...merged.values()];
+    return ctx.db
+      .query("properties")
+      .withIndex("tenantOrgId", (q) => q.eq("tenantOrgId", args.tenantOrgId))
+      .collect();
   },
 });

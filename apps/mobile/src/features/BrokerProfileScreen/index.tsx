@@ -8,7 +8,7 @@ import { ArrowLeft, Building2, MapPin, Star, ShieldCheck, Mail, Phone, MessageCi
 import { MobilePropertyCard } from "@/components/property/MobilePropertyCard";
 import { AppText } from "@/components/ui/AppText";
 import { IconButton } from "@/components/ui/IconButton";
-import { MobilePill, MobileTopBar, MobileSurface } from "@/components/ui/MobileChrome";
+import { MobilePill, MobileSectionHeading, MobileTopBar, MobileSurface } from "@/components/ui/MobileChrome";
 import { usePropertyDetail } from "@/hooks/usePropertyDetail";
 import { buildSearchRouteParams, parseSearchRouteParams } from "@/lib/mobileSearch";
 import { useAppTheme, getMobileShadow } from "@/lib/mobileTheme";
@@ -94,11 +94,14 @@ export default function BrokerProfileScreen() {
     continueToAssistant();
   }
 
+  const roleTitle = owner?.type === "RED" ? "تفاصيل المطور" : "تفاصيل الوسيط";
+  const roleLabel = owner?.type === "RED" ? "مطور موثق" : "وسيط موثق";
+
   return (
     <View className="flex-1" style={{ backgroundColor: theme.colors.canvas }}>
       <MobileTopBar
         insetTop={insets.top}
-        title={owner?.type === "RED" ? "تفاصيل المطور" : "تفاصيل الوسيط"}
+        title={roleTitle}
         backgroundColor={theme.colors.canvas}
         borderColor={theme.colors.border}
         leading={<IconButton icon={ArrowLeft} onPress={() => router.back()} tone="panel" />}
@@ -106,45 +109,40 @@ export default function BrokerProfileScreen() {
       />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
-        {/* Header Profile Section */}
-        <View className="items-center px-5 pt-8 pb-6">
-          <View style={{ position: "relative" }}>
-             <Image
+        <View className="gap-6 px-5 pt-6">
+          <MobileSurface tone="muted" radius="hero" className="items-center gap-5" shadow="none">
+            <View style={{ position: "relative" }}>
+              <Image
                 source="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=600&auto=format&fit=crop"
                 style={{ width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: theme.colors.surface }}
                 contentFit="cover"
               />
-              {owner?.isVerified && (
-                <View 
+              {owner?.isVerified ? (
+                <View
                   className="absolute bottom-0 right-0 h-7 w-7 items-center justify-center rounded-full"
                   style={{ backgroundColor: theme.colors.teal, borderWidth: 2, borderColor: theme.colors.surface }}
                 >
                   <ShieldCheck size={16} color="#FFFFFF" />
                 </View>
-              )}
-          </View>
-          
-          <AppText className="mt-5 text-center text-[26px] font-cairo-black tracking-tight" style={{ color: theme.colors.ink }}>
-            {partnerName}
-          </AppText>
-          <AppText className="mt-1 text-center text-[15px] font-cairo-bold" style={{ color: theme.colors.primary }}>
-            {agencyLabel}
-          </AppText>
+              ) : null}
+            </View>
 
-          <View className="mt-6 flex-row-reverse items-center justify-center gap-2">
-             <View className="flex-row-reverse items-center gap-1.5 px-4 py-1.5" style={{ borderRadius: 999, backgroundColor: theme.colors.surfaceMuted }}>
-                <Star size={14} color={theme.colors.primary} fill={theme.colors.primary} />
-                <AppText className="text-[13px] font-cairo-bold" style={{ color: theme.colors.ink }}>{rating}</AppText>
-             </View>
-             <View className="flex-row-reverse items-center gap-1.5 px-4 py-1.5" style={{ borderRadius: 999, backgroundColor: theme.colors.surfaceMuted }}>
-                <Building2 size={14} color={theme.colors.inkMuted} />
-                <AppText className="text-[13px] font-cairo-bold" style={{ color: theme.colors.ink }}>{activeListings} عقارات</AppText>
-             </View>
-          </View>
-        </View>
+            <View className="items-center gap-2">
+              <AppText className="text-center text-[26px] font-cairo-black tracking-tight" style={{ color: theme.colors.ink }}>
+                {partnerName}
+              </AppText>
+              <AppText className="text-center text-[15px] font-cairo-bold" style={{ color: theme.colors.primary }}>
+                {agencyLabel}
+              </AppText>
+            </View>
 
-        {/* Tab Switcher */}
-        <View className="px-5 mb-6">
+            <View className="flex-row-reverse flex-wrap justify-center" style={{ gap: 8 }}>
+              <MobilePill label={roleLabel} tone="primary" active />
+              <MobilePill label={`${activeListings} عقارات`} />
+              <MobilePill label={`${rating} تقييم`} />
+            </View>
+          </MobileSurface>
+
           <View
             className="flex-row-reverse items-center p-1"
             style={{ borderRadius: 999, backgroundColor: theme.colors.surfaceMuted }}
@@ -152,20 +150,22 @@ export default function BrokerProfileScreen() {
             <TabButton label="نبذة التعريف" isActive={activeTab === "about"} onPress={() => setActiveTab("about")} />
             <TabButton label="قائمة العقارات" isActive={activeTab === "listings"} onPress={() => setActiveTab("listings")} />
           </View>
-        </View>
 
-        <View className="px-5">
           {activeTab === "about" ? (
             <View className="gap-6">
-              <MobileSurface tone="highlight" radius="card" className="p-5" shadow="none">
-                <AppText className="text-right text-[20px] font-cairo-bold mb-3" style={{ color: theme.colors.ink }}>عن الشريك</AppText>
+              <MobileSurface tone="highlight" radius="hero" className="gap-3" shadow="none">
+                <MobileSectionHeading
+                  eyebrow="نبذة"
+                  title="عن الشريك"
+                  description="الملف الشخصي هنا جزء من نفس رحلة العقار الحالية وليس صفحة منفصلة عن سياقك."
+                />
                 <AppText className="text-right text-[16px] font-cairo-medium leading-7" style={{ color: theme.colors.inkSoft }}>
                   {description}
                 </AppText>
               </MobileSurface>
 
-              <View>
-                <AppText className="text-right text-[18px] font-cairo-bold mb-4 px-1" style={{ color: theme.colors.ink }}>معلومات إضافية</AppText>
+              <View className="gap-4">
+                <AppText className="text-right text-[18px] font-cairo-bold px-1" style={{ color: theme.colors.ink }}>معلومات إضافية</AppText>
                 <View className="gap-3">
                   <FeatureItem 
                     icon={<MapPin size={20} color={theme.colors.primary} />} 
@@ -185,16 +185,24 @@ export default function BrokerProfileScreen() {
                 </View>
               </View>
 
-              {property && (
-                <View>
-                   <AppText className="text-right text-[18px] font-cairo-bold mb-4 px-1" style={{ color: theme.colors.ink }}>العقار الحالي</AppText>
+              {property ? (
+                <View className="gap-4">
+                  <AppText className="text-right text-[18px] font-cairo-bold px-1" style={{ color: theme.colors.ink }}>العقار الحالي</AppText>
                    <MobilePropertyCard 
                       variant="featured"
                       property={property}
-                      onPress={() => router.push({ pathname: "/property/[id]", params: { id: property.id } })}
+                      onPress={(nextProperty) =>
+                        router.push({
+                          pathname: "/property/[id]",
+                          params: { id: nextProperty.id, ...(threadId ? { threadId } : {}), ...buildSearchRouteParams(searchContext) },
+                        })
+                      }
+                      onActionPress={continueToAssistant}
+                      actionLabel="تابع في المحادثة"
+                      ambientBackgroundColor={theme.colors.canvas}
                    />
                 </View>
-              )}
+              ) : null}
             </View>
           ) : (
             <View className="gap-5">
@@ -203,12 +211,23 @@ export default function BrokerProfileScreen() {
                 <MobilePropertyCard 
                   variant="featured"
                   property={property}
-                  onPress={() => router.push({ pathname: "/property/[id]", params: { id: property.id } })}
+                  onPress={(nextProperty) =>
+                    router.push({
+                      pathname: "/property/[id]",
+                      params: { id: nextProperty.id, ...(threadId ? { threadId } : {}), ...buildSearchRouteParams(searchContext) },
+                    })
+                  }
+                  onActionPress={continueToAssistant}
+                  actionLabel="تابع في المحادثة"
+                  ambientBackgroundColor={theme.colors.canvas}
                 />
               ) : (
-                <View className="items-center py-10">
-                   <AppText className="text-center font-cairo-medium" style={{ color: theme.colors.inkMuted }}>لا توجد عقارات إضافية حالياً.</AppText>
-                </View>
+                <MobileSurface radius="hero" className="items-center gap-2 py-10" shadow="none">
+                  <Star size={20} color={theme.colors.inkMuted} />
+                  <AppText className="text-center font-cairo-medium" style={{ color: theme.colors.inkMuted }}>
+                    لا توجد عقارات إضافية حالياً.
+                  </AppText>
+                </MobileSurface>
               )}
             </View>
           )}

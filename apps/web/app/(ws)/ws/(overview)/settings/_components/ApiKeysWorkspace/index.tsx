@@ -92,7 +92,7 @@ export default function ApiKeysWorkspace({
           <ApiKeysList keys={workspace.keys} canRevoke={canRevoke} isRevoking={workspace.isRevoking} onRevoke={workspace.handleRevoke} />
         ) : (
           <div className="flex min-h-[300px] flex-col items-center justify-center rounded-3xl border border-dashed border-border/60 bg-card/50 p-8 text-center text-muted-foreground">
-            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full border border-border bg-background shadow-sm">
+            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full border border-border bg-background">
               <KeyRound className="h-7 w-7 text-muted-foreground/60" />
             </div>
             <p className="text-[15px] font-semibold text-foreground">{dictionary.settings.apiKeysEmptyTitle}</p>

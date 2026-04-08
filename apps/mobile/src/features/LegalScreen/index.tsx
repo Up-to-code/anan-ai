@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText } from "@/components/ui/AppText";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
-import { MobilePill, MobileTopBar } from "@/components/ui/MobileChrome";
+import { MobilePill, MobileSectionHeading, MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
 import { useBuyerAccount } from "@/hooks/useBuyerAccount";
 import { useAppTheme } from "@/lib/mobileTheme";
 
@@ -63,7 +63,23 @@ export default function LegalScreen() {
         trailing={<View style={{ width: 44, height: 44 }} />}
       />
 
-      <ScrollView className="flex-1 px-5 pt-5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 40) + 20 }}>
+      <ScrollView
+        className="flex-1 px-5 pt-5"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 40) + 20 }}
+      >
+        <MobileSurface tone="muted" radius="hero" className="gap-4" shadow="none">
+          <MobileSectionHeading
+            eyebrow="مركز الثقة"
+            title="الخصوصية، الصوت، والدعم"
+            description="كل عناصر هذه الصفحة مرتبطة مباشرة بعقود البيانات المحلية ومسار الدعم الحقيقي داخل تطبيق المشتري."
+          />
+          <View className="flex-row-reverse flex-wrap" style={{ gap: 8 }}>
+            <MobilePill label={account.viewer.consents.privacyAcceptedAt ? "الخصوصية مراجعَة" : "مراجعة الخصوصية مطلوبة"} tone="primary" active={Boolean(account.viewer.consents.privacyAcceptedAt)} />
+            <MobilePill label={account.viewer.consents.termsAcceptedAt ? "الشروط مراجعَة" : "الشروط بانتظار المراجعة"} tone="primary" active={Boolean(account.viewer.consents.termsAcceptedAt)} />
+          </View>
+        </MobileSurface>
+
         <LegalSection
           icon={ShieldCheck}
           title="الخصوصية"
@@ -162,14 +178,7 @@ function LegalSection({
 }) {
   const theme = useAppTheme();
   return (
-    <View
-      className="mt-5 rounded-[24px] px-5 py-5"
-      style={{
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-        backgroundColor: theme.colors.surface,
-      }}
-    >
+    <MobileSurface className="mt-5 gap-4" radius="hero" shadow="none">
       <View className="flex-row-reverse items-center gap-3">
         <View
           className="items-center justify-center rounded-full"
@@ -190,7 +199,7 @@ function LegalSection({
         {body}
       </AppText>
 
-      <View className="mt-4">{children}</View>
-    </View>
+      <View>{children}</View>
+    </MobileSurface>
   );
 }

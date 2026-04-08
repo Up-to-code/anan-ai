@@ -18,6 +18,7 @@ import {
 } from "lucide-react-native";
 import { Image } from "expo-image";
 import { CursorCardShell } from "@/components/property/CursorCardShell";
+import { CursorPropertyMediaViewer } from "@/components/property/CursorPropertyMediaViewer";
 import { MobilePropertyCard, type MobilePropertyCardVariant } from "@/components/property/MobilePropertyCard";
 import { AppText } from "@/components/ui/AppText";
 import { MobilePill, MobileSectionHeading } from "@/components/ui/MobileChrome";
@@ -31,6 +32,7 @@ type ConversationTimelineProps = {
   messages: MobileConversationMessage[];
   isTyping?: boolean;
   onPropertyPress: (property: MobileProperty) => void;
+  onAddPropertyToSelection?: (property: MobileProperty) => void;
   onOpenProperty?: (property: MobileProperty) => void;
   onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
   onSuggestedPromptPress: (prompt: string) => void;
@@ -39,6 +41,9 @@ type ConversationTimelineProps = {
   showLatestSuggestedPrompts?: boolean;
   onShowMoreSearchResults?: (searchContext: MobileSearchContext) => void;
   ambientBackgroundColor?: string;
+  selectedPropertyIds?: string[];
+  comparePicking?: boolean;
+  maxCompareProperties?: number;
 };
 
 /**
@@ -49,6 +54,7 @@ export function ConversationTimeline({
   messages,
   isTyping,
   onPropertyPress,
+  onAddPropertyToSelection,
   onOpenProperty,
   onOpenGallery,
   onSuggestedPromptPress,
@@ -57,6 +63,9 @@ export function ConversationTimeline({
   showLatestSuggestedPrompts = true,
   onShowMoreSearchResults,
   ambientBackgroundColor,
+  selectedPropertyIds = [],
+  comparePicking = false,
+  maxCompareProperties = 3,
 }: ConversationTimelineProps) {
   const data = [...messages];
   const latestSuggestedPromptMessageId =
@@ -94,12 +103,16 @@ export function ConversationTimeline({
             <ConversationEntry
               message={item}
               onPropertyPress={onPropertyPress}
+              onAddPropertyToSelection={onAddPropertyToSelection}
               onOpenProperty={onOpenProperty}
               onOpenGallery={onOpenGallery}
               onSuggestedPromptPress={onSuggestedPromptPress}
               showSuggestedPrompts={showLatestSuggestedPrompts && item.id === latestSuggestedPromptMessageId}
               onShowMoreSearchResults={onShowMoreSearchResults}
               ambientBackgroundColor={ambientBackgroundColor}
+              selectedPropertyIds={selectedPropertyIds}
+              comparePicking={comparePicking}
+              maxCompareProperties={maxCompareProperties}
             />
           )}
         </View>
@@ -111,21 +124,29 @@ export function ConversationTimeline({
 function ConversationEntry({
   message,
   onPropertyPress,
+  onAddPropertyToSelection,
   onOpenProperty,
   onOpenGallery,
   onSuggestedPromptPress,
   showSuggestedPrompts,
   onShowMoreSearchResults,
   ambientBackgroundColor,
+  selectedPropertyIds,
+  comparePicking,
+  maxCompareProperties,
 }: {
   message: MobileConversationMessage;
   onPropertyPress: (property: MobileProperty) => void;
+  onAddPropertyToSelection?: (property: MobileProperty) => void;
   onOpenProperty?: (property: MobileProperty) => void;
   onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
   onSuggestedPromptPress: (prompt: string) => void;
   showSuggestedPrompts: boolean;
   onShowMoreSearchResults?: (searchContext: MobileSearchContext) => void;
   ambientBackgroundColor?: string;
+  selectedPropertyIds: string[];
+  comparePicking: boolean;
+  maxCompareProperties: number;
 }) {
   const isUser = message.role === "user";
   const structuredCards = message.uiTurn?.cards ?? [];
@@ -141,10 +162,15 @@ function ConversationEntry({
               key={card.id}
               card={card}
               onPropertyPress={onPropertyPress}
+              onAddPropertyToSelection={onAddPropertyToSelection}
               onOpenProperty={onOpenProperty}
               onOpenGallery={onOpenGallery}
               onSuggestedPromptPress={onSuggestedPromptPress}
               ambientBackgroundColor={ambientBackgroundColor}
+              selectedPropertyIds={selectedPropertyIds}
+              comparePicking={comparePicking}
+              maxCompareProperties={maxCompareProperties}
+              relatedProperties={message.properties ?? []}
             />
           ))}
         </View>
@@ -156,9 +182,13 @@ function ConversationEntry({
           description="وحدات متعلقة بالطلب يمكنك اتخاذ إجراء عليها."
           properties={message.properties ?? []}
           onPropertyPress={onPropertyPress}
+          onAddPropertyToSelection={onAddPropertyToSelection}
           onOpenProperty={onOpenProperty}
           onOpenGallery={onOpenGallery}
           ambientBackgroundColor={ambientBackgroundColor}
+          selectedPropertyIds={selectedPropertyIds}
+          comparePicking={comparePicking}
+          maxCompareProperties={maxCompareProperties}
         />
       ) : null}
 
@@ -168,17 +198,21 @@ function ConversationEntry({
           summary={message.searchContext.searchSummary}
           properties={message.searchResults ?? []}
           onPropertyPress={onPropertyPress}
+          onAddPropertyToSelection={onAddPropertyToSelection}
           onOpenProperty={onOpenProperty}
           onOpenGallery={onOpenGallery}
           onShowMoreSearchResults={onShowMoreSearchResults}
           ambientBackgroundColor={ambientBackgroundColor}
+          selectedPropertyIds={selectedPropertyIds}
+          comparePicking={comparePicking}
+          maxCompareProperties={maxCompareProperties}
         />
       ) : null}
 
       {!message.uiTurn && (message.cards?.length ?? 0) > 0 ? (
         <View className="gap-4">
           {(message.cards ?? []).map((card, index) => (
-            <InsightSummaryPanel key={`${card.type}-${index}`} card={card} />
+            <InsightSummaryPanel key={`${card.type}-${index}`} card={card} relatedProperties={message.properties ?? []} />
           ))}
         </View>
       ) : null}
@@ -277,19 +311,27 @@ function PropertyShelf({
   description,
   properties,
   onPropertyPress,
+  onAddPropertyToSelection,
   onOpenProperty,
   onOpenGallery,
   ambientBackgroundColor,
   cardVariant = "compact",
+  selectedPropertyIds,
+  comparePicking,
+  maxCompareProperties,
 }: {
   title: string;
   description: string;
   properties: MobileProperty[];
   onPropertyPress: (property: MobileProperty) => void;
+  onAddPropertyToSelection?: (property: MobileProperty) => void;
   onOpenProperty?: (property: MobileProperty) => void;
   onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
   ambientBackgroundColor?: string;
   cardVariant?: MobilePropertyCardVariant;
+  selectedPropertyIds: string[];
+  comparePicking: boolean;
+  maxCompareProperties: number;
 }) {
   return (
     <View className="gap-4">
@@ -300,10 +342,14 @@ function PropertyShelf({
             key={property.id}
             property={property}
             onPrimaryAction={onPropertyPress}
+            onCompareSelect={onAddPropertyToSelection}
             onSecondaryAction={onOpenProperty}
             onOpenGallery={onOpenGallery}
             ambientBackgroundColor={ambientBackgroundColor}
             variant={cardVariant}
+            selectedPropertyIds={selectedPropertyIds}
+            comparePicking={comparePicking}
+            maxCompareProperties={maxCompareProperties}
           />
         ))}
       </View>
@@ -316,19 +362,27 @@ function SearchResultSection({
   summary,
   properties,
   onPropertyPress,
+  onAddPropertyToSelection,
   onOpenProperty,
   onOpenGallery,
   onShowMoreSearchResults,
   ambientBackgroundColor,
+  selectedPropertyIds,
+  comparePicking,
+  maxCompareProperties,
 }: {
   searchContext: MobileSearchContext;
   summary: string;
   properties: MobileProperty[];
   onPropertyPress: (property: MobileProperty) => void;
+  onAddPropertyToSelection?: (property: MobileProperty) => void;
   onOpenProperty?: (property: MobileProperty) => void;
   onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
   onShowMoreSearchResults?: (searchContext: MobileSearchContext) => void;
   ambientBackgroundColor?: string;
+  selectedPropertyIds: string[];
+  comparePicking: boolean;
+  maxCompareProperties: number;
 }) {
   const theme = useAppTheme();
   const previewResults = properties.slice(0, 3);
@@ -360,9 +414,13 @@ function SearchResultSection({
             key={property.id}
             property={property}
             onPrimaryAction={onPropertyPress}
+            onCompareSelect={onAddPropertyToSelection}
             onSecondaryAction={onOpenProperty}
             onOpenGallery={onOpenGallery}
             ambientBackgroundColor={ambientBackgroundColor}
+            selectedPropertyIds={selectedPropertyIds}
+            comparePicking={comparePicking}
+            maxCompareProperties={maxCompareProperties}
           />
         ))}
 
@@ -391,26 +449,49 @@ function SearchResultSection({
 function ConversationPropertyCard({
   property,
   onPrimaryAction,
+  onCompareSelect,
   onSecondaryAction,
   onOpenGallery,
   ambientBackgroundColor,
   variant = "compact",
+  selectedPropertyIds,
+  comparePicking,
+  maxCompareProperties,
 }: {
   property: MobileProperty;
   onPrimaryAction: (property: MobileProperty) => void;
+  onCompareSelect?: (property: MobileProperty) => void;
   onSecondaryAction?: (property: MobileProperty) => void;
   onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
   ambientBackgroundColor?: string;
   variant?: MobilePropertyCardVariant;
+  selectedPropertyIds: string[];
+  comparePicking: boolean;
+  maxCompareProperties: number;
 }) {
+  const isSelected = selectedPropertyIds.includes(property.id);
+  const selectionLimitReached = selectedPropertyIds.length >= maxCompareProperties;
+  const actionLabel = comparePicking
+    ? isSelected
+      ? "محدد"
+      : selectionLimitReached
+        ? `الحد ${maxCompareProperties}`
+        : "أضف للمقارنة"
+    : "متابعة";
+
   return (
     <MobilePropertyCard
       variant={variant}
       property={property}
       onPress={(nextProperty) => (onSecondaryAction ? onSecondaryAction(nextProperty) : onPrimaryAction(nextProperty))}
-      onActionPress={onPrimaryAction}
+      onActionPress={
+        comparePicking
+          ? (onCompareSelect ? onCompareSelect : onPrimaryAction)
+          : onPrimaryAction
+      }
       onOpenGallery={onOpenGallery}
-      actionLabel="متابعة"
+      actionLabel={actionLabel}
+      actionDisabled={comparePicking && (isSelected || selectionLimitReached)}
       ambientBackgroundColor={ambientBackgroundColor}
     />
   );
@@ -419,17 +500,27 @@ function ConversationPropertyCard({
 function StructuredCardPanel({
   card,
   onPropertyPress,
+  onAddPropertyToSelection,
   onOpenProperty,
   onOpenGallery,
   onSuggestedPromptPress,
   ambientBackgroundColor,
+  selectedPropertyIds,
+  comparePicking,
+  maxCompareProperties,
+  relatedProperties,
 }: {
   card: any;
   onPropertyPress: (property: MobileProperty) => void;
+  onAddPropertyToSelection?: (property: MobileProperty) => void;
   onOpenProperty?: (property: MobileProperty) => void;
   onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
   onSuggestedPromptPress: (prompt: string) => void;
   ambientBackgroundColor?: string;
+  selectedPropertyIds: string[];
+  comparePicking: boolean;
+  maxCompareProperties: number;
+  relatedProperties: MobileProperty[];
 }) {
   switch (card.componentId) {
     case "property_shortlist":
@@ -439,10 +530,14 @@ function StructuredCardPanel({
           description={String(card.props.summary ?? "اختر عقاراً للمتابعة من نفس المحادثة.")}
           properties={(card.props.properties as MobileProperty[]) ?? []}
           onPropertyPress={onPropertyPress}
+          onAddPropertyToSelection={onAddPropertyToSelection}
           onOpenProperty={onOpenProperty}
           onOpenGallery={onOpenGallery}
           ambientBackgroundColor={ambientBackgroundColor}
           cardVariant="generated"
+          selectedPropertyIds={selectedPropertyIds}
+          comparePicking={comparePicking}
+          maxCompareProperties={maxCompareProperties}
         />
       );
     case "bank_offer":
@@ -457,7 +552,7 @@ function StructuredCardPanel({
         />
       );
     default:
-      return <InsightSummaryPanel card={card.props} />;
+      return <InsightSummaryPanel card={card.props} relatedProperties={relatedProperties} />;
   }
 }
 
@@ -540,8 +635,26 @@ function NextStepPanel({
   );
 }
 
-function InsightSummaryPanel({ card }: { card: any }) {
+function InsightSummaryPanel({
+  card,
+  relatedProperties = [],
+}: {
+  card: any;
+  relatedProperties?: MobileProperty[];
+}) {
   const theme = useAppTheme();
+  if (card.type === "comparison_table") {
+    return (
+      <ComparisonTable
+        title={String(card.title ?? "مقارنة")}
+        summary={card.summary ? String(card.summary) : null}
+        columns={Array.isArray(card.columns) ? card.columns.map((column: unknown) => String(column)) : []}
+        rows={Array.isArray(card.rows) ? card.rows.map((row: unknown) => (Array.isArray(row) ? row.map((cell: unknown) => String(cell)) : [])) : []}
+        relatedProperties={relatedProperties}
+      />
+    );
+  }
+
   const icon = resolveInsightIcon(card, theme);
   const rows = extractInsightRows(card);
   const insightTone = resolveInsightTone(card);
@@ -590,9 +703,7 @@ function InsightSummaryPanel({ card }: { card: any }) {
         <AppText className="mt-2 text-[15px] leading-7" style={{ color: theme.colors.inkSoft }}>{String(card.body)}</AppText>
       ) : null}
 
-      {card.rows ? (
-        <ComparisonTable rows={card.rows} />
-      ) : rows.length > 0 ? (
+      {rows.length > 0 ? (
         <View className="gap-2">
           {rows.map((row, index) => (
             <InsightRow
@@ -609,40 +720,162 @@ function InsightSummaryPanel({ card }: { card: any }) {
   );
 }
 
-function ComparisonTable({ rows }: { rows: Array<Array<string>> }) {
+function ComparisonTable({
+  title,
+  summary,
+  columns,
+  rows,
+  relatedProperties,
+}: {
+  title: string;
+  summary: string | null;
+  columns: string[];
+  rows: Array<Array<string>>;
+  relatedProperties: MobileProperty[];
+}) {
   const theme = useAppTheme();
+  const headerLabel = columns[0] ?? "البند";
+  const propertyTitles = columns.length > 1 ? columns.slice(1) : relatedProperties.map((property) => property.title);
+  const labelColumnWidth = 88;
+  const propertyColumnWidth = 116;
+  const imageSize = 34;
+  const resolvedProperties = propertyTitles.map((title, index) => {
+    const normalizedTitle = title.trim();
+    return (
+      relatedProperties.find((property) => property.title.trim() === normalizedTitle) ??
+      relatedProperties[index] ??
+      null
+    );
+  });
+
   return (
-    <View
-      className="mt-4 overflow-hidden"
-      style={{
-        borderRadius: theme.radii.card,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-        backgroundColor: theme.colors.surface,
-      }}
-    >
-      {rows.map((row, rowIndex) => (
+    <View className="gap-3">
+      <AppText className="text-[16px] font-cairo-bold text-right" style={{ color: theme.colors.ink }}>
+        {title}
+      </AppText>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 2 }}>
         <View
-          key={`${row.join("-")}-${rowIndex}`}
-          className="flex-row-reverse px-4 py-3"
           style={{
-            borderBottomWidth: rowIndex === rows.length - 1 ? 0 : 1,
-            borderBottomColor: theme.colors.border,
-            backgroundColor: rowIndex === 0 ? theme.colors.surfaceMuted : theme.colors.surface,
+            minWidth: labelColumnWidth + propertyTitles.length * propertyColumnWidth,
           }}
         >
-          {row.map((cell, cellIndex) => (
-            <View key={`${cell}-${cellIndex}`} className="flex-1">
+          <View
+            className="flex-row-reverse items-end py-2"
+            style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
+          >
+            <View
+              style={{
+                width: labelColumnWidth,
+                paddingHorizontal: 12,
+                justifyContent: "flex-end",
+              }}
+            >
               <AppText
-                className={rowIndex === 0 ? "text-[12px] font-cairo-bold" : "text-[14px] font-cairo-medium"}
-                style={{ color: rowIndex === 0 ? theme.colors.inkMuted : theme.colors.ink }}
+                className="text-[11px] font-cairo-bold text-right"
+                style={{ color: theme.colors.inkMuted }}
               >
-                {cell}
+                {headerLabel}
               </AppText>
+            </View>
+
+            {propertyTitles.map((titleValue, columnIndex) => {
+              const property = resolvedProperties[columnIndex];
+              const propertyImages =
+                property && property.media.length > 0 ? property.media : property ? [getPropertyHeroImage(property)] : [];
+
+              return (
+                <View
+                  key={`${titleValue}-${columnIndex}`}
+                  className="items-center"
+                  style={{
+                    width: propertyColumnWidth,
+                    paddingHorizontal: 8,
+                    gap: 8,
+                  }}
+                >
+                  {property ? (
+                    <CursorPropertyMediaViewer
+                      images={propertyImages}
+                      width={imageSize}
+                      height={imageSize}
+                      borderRadius={999}
+                      backgroundColor={theme.colors.surfaceMuted}
+                      showCounter={false}
+                      interactionMode="static"
+                    />
+                  ) : (
+                    <View
+                      style={{
+                        width: imageSize,
+                        height: imageSize,
+                        borderRadius: 999,
+                        backgroundColor: theme.colors.surfaceMuted,
+                      }}
+                    />
+                  )}
+
+                  <AppText
+                    className="text-center text-[11px] font-cairo-bold"
+                    numberOfLines={2}
+                    style={{ color: theme.colors.ink }}
+                  >
+                    {titleValue}
+                  </AppText>
+                </View>
+              );
+            })}
+          </View>
+
+          {rows.map((row, rowIndex) => (
+            <View
+              key={`${row.join("-")}-${rowIndex}`}
+              className="flex-row-reverse items-center py-3"
+              style={{
+                borderBottomWidth: rowIndex === rows.length - 1 ? 0 : 1,
+                borderBottomColor: theme.colors.border,
+              }}
+            >
+              <View
+                style={{
+                  width: labelColumnWidth,
+                  paddingHorizontal: 12,
+                }}
+              >
+                <AppText
+                  className="text-[12px] font-cairo-bold text-right"
+                  style={{ color: theme.colors.inkMuted }}
+                >
+                  {row[0] ?? "-"}
+                </AppText>
+              </View>
+
+              {propertyTitles.map((_, columnIndex) => (
+                <View
+                  key={`${row[0] ?? "cell"}-${columnIndex}`}
+                  style={{
+                    width: propertyColumnWidth,
+                    paddingHorizontal: 8,
+                  }}
+                >
+                  <AppText
+                    className="text-center text-[13px] font-cairo-bold"
+                    style={{ color: theme.colors.ink }}
+                  >
+                    {row[columnIndex + 1] ?? "-"}
+                  </AppText>
+                </View>
+              ))}
             </View>
           ))}
         </View>
-      ))}
+      </ScrollView>
+
+      {summary ? (
+        <AppText className="text-[13px] leading-6 text-right" style={{ color: theme.colors.inkMuted }}>
+          {summary}
+        </AppText>
+      ) : null}
     </View>
   );
 }

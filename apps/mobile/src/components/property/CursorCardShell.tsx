@@ -17,6 +17,7 @@ type CursorCardActionProps = {
   onPress: () => void;
   ambientBackgroundColor?: string;
   emphasis?: "default" | "primary";
+  disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -103,6 +104,7 @@ export function CursorCardAction({
   onPress,
   ambientBackgroundColor,
   emphasis = "default",
+  disabled = false,
   style,
 }: CursorCardActionProps) {
   const theme = useAppTheme();
@@ -112,6 +114,7 @@ export function CursorCardAction({
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       style={({ pressed }) => [
         {
           minHeight: 38,
@@ -122,7 +125,8 @@ export function CursorCardAction({
           borderColor: isPrimary ? theme.colors.primaryMuted : appearance.actionBorderColor,
           backgroundColor: isPrimary ? theme.colors.primarySoft : appearance.actionSurfaceColor,
           alignSelf: "flex-start",
-          transform: [{ scale: pressed ? 0.98 : 1 }],
+          opacity: disabled ? 0.55 : 1,
+          transform: [{ scale: pressed && !disabled ? 0.98 : 1 }],
         },
         style,
       ]}

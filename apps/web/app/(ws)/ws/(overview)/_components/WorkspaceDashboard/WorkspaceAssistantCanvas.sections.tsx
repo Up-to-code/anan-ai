@@ -19,6 +19,7 @@ import { BrainCircuit, Target, CheckSquare, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { StickToBottomContext } from "use-stick-to-bottom";
+import { getWorkspaceAssistantLandingCopy } from "./WorkspaceAssistantCanvas.copy";
 
 export type AssistantComposerProps = {
   audience: WorkspaceAudience;
@@ -57,6 +58,12 @@ type ThreadViewProps = AssistantComposerProps & {
 const DEFAULT_COMPOSER_STACK_HEIGHT = 128;
 const ASSISTANT_SCROLL_BUTTON_GAP = "14px";
 const ASSISTANT_CONTENT_END_GAP = "28px";
+const LANDING_SUGGESTION_VISUALS = [
+  { icon: Target, colorClass: "text-amber-500" },
+  { icon: BrainCircuit, colorClass: "text-blue-500" },
+  { icon: Wand2, colorClass: "text-emerald-500" },
+  { icon: CheckSquare, colorClass: "text-rose-500" },
+] as const;
 
 function VoiceErrorBanner({
   sendError,
@@ -153,7 +160,7 @@ function AssistantSurface({
     <LayoutGroup id="workspace-assistant-surface">
       <div
         data-slot="assistant-surface"
-        className="assistant-composer-dock-safe-area relative grid min-h-0 min-w-0 flex-1 basis-0 grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-[linear-gradient(180deg,var(--workspace-canvas)_0%,color-mix(in_srgb,var(--workspace-canvas)_88%,var(--workspace-shell))_100%)] text-slate-900 dark:text-slate-100"
+        className="assistant-composer-dock-safe-area relative grid h-full min-h-0 min-w-0 w-full flex-1 basis-0 grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-[linear-gradient(180deg,var(--workspace-canvas)_0%,color-mix(in_srgb,var(--workspace-canvas)_88%,var(--workspace-shell))_100%)] text-slate-900 dark:text-slate-100"
         style={surfaceStyle}
       >
         <div
@@ -285,71 +292,16 @@ export function ThreadView({
 
 export function LandingView(props: LandingViewProps) {
   const { locale, isRtl } = useWebLocale();
-  const unavailableTitle =
-    locale === "fr"
-      ? "Impossible de trouver la conversation demandée."
-      : locale === "en"
-        ? "Could not find the requested conversation."
-        : "تعذر العثور على المحادثة المطلوبة.";
-  const newConversationLabel =
-    locale === "fr"
-      ? "Démarrer une nouvelle conversation"
-      : locale === "en"
-        ? "Start a new conversation"
-        : "بدء محادثة جديدة";
-  const landingTitle =
-    locale === "fr"
-      ? "Comment puis-je vous aider aujourd'hui ?"
-      : locale === "en"
-        ? "How can I help you today?"
-        : "كيف يمكنني مساعدتك اليوم؟";
-  const suggestionChips = [
-    {
-      label:
-        locale === "fr"
-          ? "Préparez une offre de prix pour un client intéressé par un projet résidentiel"
-          : locale === "en"
-            ? "Prepare a price offer for a client interested in a residential project"
-            : "أنشئ عرض سعر لعميل مهتم بمشروع سكني",
-      icon: Target,
-      colorClass: "text-amber-500",
-    },
-    {
-      label:
-        locale === "fr"
-          ? "Analysez le mouvement du marché immobilier à Riyad cette semaine"
-          : locale === "en"
-            ? "Analyze Riyadh real estate market activity this week"
-            : "حلّل حركة السوق العقاري في الرياض هذا الأسبوع",
-      icon: BrainCircuit,
-      colorClass: "text-blue-500",
-    },
-    {
-      label:
-        locale === "fr"
-          ? "Quels nouveaux projets sont proches de nos concurrents ?"
-          : locale === "en"
-            ? "Which new projects are close to our competitors?"
-            : "ما هي المشاريع الجديدة القريبة من منافسينا؟",
-      icon: Wand2,
-      colorClass: "text-emerald-500",
-    },
-    {
-      label:
-        locale === "fr"
-          ? "Comparez la performance des courtiers de mon équipe sur les 30 derniers jours"
-          : locale === "en"
-            ? "Compare my team's broker performance over the last 30 days"
-            : "قارن أداء الوسطاء في فريقي خلال آخر ٣٠ يوم",
-      icon: CheckSquare,
-      colorClass: "text-rose-500",
-    },
-  ];
+  const copy = getWorkspaceAssistantLandingCopy(locale);
+  const suggestionChips = copy.suggestionLabels.map((item, index) => ({
+    ...item,
+    ...LANDING_SUGGESTION_VISUALS[index],
+  }));
   return (
     <LayoutGroup id="workspace-assistant-surface">
       <motion.div
         data-slot="assistant-surface"
-        className="flex min-h-0 min-w-0 flex-1 items-center justify-center bg-background px-6 py-10 sm:px-10 lg:px-16"
+        className="flex h-full min-h-0 min-w-0 w-full flex-1 basis-0 items-center justify-center bg-background px-6 py-10 sm:px-10 lg:px-16"
       >
         <motion.div
           data-slot="assistant-landing-panel"
@@ -364,15 +316,15 @@ export function LandingView(props: LandingViewProps) {
                 className="w-full rounded-[32px] border border-amber-100 bg-amber-50/50 px-8 py-6 text-right dark:border-amber-900/20 dark:bg-amber-900/10 shadow-sm"
             >
               <p className="text-[15px] font-black text-amber-900 dark:text-amber-200 uppercase tracking-tight">
-                {unavailableTitle}
+                {copy.unavailableTitle}
               </p>
               <div className="mt-6 flex items-center justify-end">
                 <button
                   type="button"
                   onClick={props.onResetUnavailableThread}
-                  className="inline-flex items-center rounded-full bg-amber-900 px-6 py-3 text-[12px] font-black uppercase tracking-widest text-white transition hover:bg-amber-800 shadow-md active:scale-95"
-                >
-                  {newConversationLabel}
+                className="inline-flex items-center rounded-full bg-amber-900 px-6 py-3 text-[12px] font-black uppercase tracking-widest text-white transition hover:bg-amber-800 shadow-md active:scale-95"
+              >
+                  {copy.newConversationLabel}
                 </button>
               </div>
             </div>
@@ -388,7 +340,7 @@ export function LandingView(props: LandingViewProps) {
               <AIMotionLogo state="idle" size="standard" />
             </motion.div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 uppercase">
-              {landingTitle}
+              {copy.landingTitle}
             </h1>
           </div>
 

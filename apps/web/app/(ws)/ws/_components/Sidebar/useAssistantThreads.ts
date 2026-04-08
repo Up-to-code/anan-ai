@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/lib/convexApi";
 import type { AnanProThreadSummary } from "@/server/contracts/ananPro";
 
@@ -13,7 +13,11 @@ type UseAssistantThreadsArgs = {
 const assistantApi = api.ai_zone.assistantWorkspace;
 
 export function useAssistantThreads({ serverThreads, limit }: UseAssistantThreadsArgs) {
-  const liveThreads = useQuery(assistantApi.listThreads, { limit });
+  const { isAuthenticated, isLoading } = useConvexAuth();
+  const liveThreads = useQuery(
+    assistantApi.listThreads,
+    !isLoading && isAuthenticated ? { limit } : "skip",
+  );
   const threads = useMemo<AnanProThreadSummary[]>(
     () =>
       (liveThreads ?? serverThreads).map((thread) => ({

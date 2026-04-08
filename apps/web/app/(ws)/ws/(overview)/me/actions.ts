@@ -1,5 +1,6 @@
 "use server";
 
+import { getWorkspaceLocale } from "../../_lib/workspaceLocale";
 import { normalizeDomainError } from "@/server/contracts/errors";
 import type { UpdateProfileInput } from "@/server/contracts/profiles";
 import { updateCurrentProfileForCurrentUser } from "@/server/domains/auth/profiles/service";
@@ -13,8 +14,17 @@ export async function saveProfileAction(
   input: UpdateProfileInput,
 ): Promise<{ ok: true; message: string } | { ok: false; message: string }> {
   try {
+    const locale = await getWorkspaceLocale();
     await updateCurrentProfileForCurrentUser(input);
-    return { ok: true, message: "تم حفظ التعديلات بنجاح." };
+    return {
+      ok: true,
+      message:
+        locale === "en"
+          ? "Changes saved successfully."
+          : locale === "fr"
+            ? "Les modifications ont ete enregistrees avec succes."
+            : "تم حفظ التعديلات بنجاح.",
+    };
   } catch (error) {
     return { ok: false, message: normalizeDomainError(error).message };
   }

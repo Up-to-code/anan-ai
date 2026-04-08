@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "@/lib/convexApi";
 import type { ConversationDetail, ConversationSummary, UserConversationTarget } from "@/server/contracts/inbox";
 
@@ -58,16 +58,31 @@ export function useRealtimeInbox({
   // Track the last conversation ID for which we successfully received live data
   // to avoid showing the loading spinner on every conversation switch.
   const lastResolvedLiveIdRef = useRef<string | null>(null);
+  const { isAuthenticated, isLoading } = useConvexAuth();
+  const liveConversationArgs =
+    !isLoading && isAuthenticated && activeConversationId
+      ? { conversationId: activeConversationId as Id<"inboxConversations"> }
+      : "skip";
+  const liveSearchArgs =
+    !isLoading && isAuthenticated && deferredSearch
+      ? { query: deferredSearch }
+      : "skip";
 
-  const liveConversations = useQuery(inboxApi.listConversations, { archived: false });
-  const liveArchivedConversations = useQuery(inboxApi.listConversations, { archived: true });
+  const liveConversations = useQuery(
+    inboxApi.listConversations,
+    !isLoading && isAuthenticated ? { archived: false } : "skip",
+  );
+  const liveArchivedConversations = useQuery(
+    inboxApi.listConversations,
+    !isLoading && isAuthenticated ? { archived: true } : "skip",
+  );
   const liveConversation = useQuery(
     inboxApi.getConversation,
-    activeConversationId ? { conversationId: activeConversationId as Id<"inboxConversations"> } : "skip",
+    liveConversationArgs,
   );
   const liveSearchResults = useQuery(
     inboxApi.searchConversationTargets,
-    deferredSearch ? { query: deferredSearch } : "skip",
+    liveSearchArgs,
   );
 
   const resolveConversation = useMutation(inboxApi.resolveDirectConversation);

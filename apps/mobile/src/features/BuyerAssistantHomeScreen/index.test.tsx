@@ -18,22 +18,24 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock("react-native", () => {
   const React = require("react");
+  const host = (name: string, props?: Record<string, unknown>, children?: unknown) =>
+    React.createElement(name, props, children);
 
   return {
     Keyboard: {
       addListener: () => ({ remove() {} }),
     },
-    KeyboardAvoidingView: (props: any) => React.createElement("KeyboardAvoidingView", props, props.children),
-    Modal: (props: any) => React.createElement("Modal", props, props.children),
+    KeyboardAvoidingView: (props: any) => host("rn-keyboard-avoiding-view", props, props.children),
+    Modal: (props: any) => host("rn-modal", props, props.children),
     Platform: {
       OS: "ios",
     },
-    Pressable: (props: any) => React.createElement("Pressable", props, props.children),
-    ScrollView: (props: any) => React.createElement("ScrollView", props, props.children),
+    Pressable: (props: any) => host("rn-pressable", props, props.children),
+    ScrollView: (props: any) => host("rn-scroll-view", props, props.children),
     StyleSheet: {
       create: (styles: any) => styles,
     },
-    View: (props: any) => React.createElement("View", props, props.children),
+    View: (props: any) => host("rn-view", props, props.children),
   };
 });
 
@@ -51,37 +53,37 @@ vi.mock("react-native-safe-area-context", () => ({
 }));
 
 vi.mock("lucide-react-native", () => ({
-  Menu: "Menu",
-  Plus: "Plus",
-  User: "User",
+  Menu: "icon-menu",
+  Plus: "icon-plus",
+  User: "icon-user",
 }));
 
 vi.mock("@/components/chat/AnanMark", () => ({
-  AnanMark: "AnanMark",
+  AnanMark: "anan-mark",
 }));
 
 vi.mock("@/components/ui/Button", () => ({
-  Button: "Button",
+  Button: "ui-button",
 }));
 
 vi.mock("@/components/ui/AppText", () => ({
-  AppText: "AppText",
+  AppText: "app-text",
 }));
 
 vi.mock("@/components/ui/IconButton", () => ({
-  IconButton: "IconButton",
+  IconButton: "icon-button",
 }));
 
 vi.mock("@/components/ui/MobileChrome", () => ({
-  MobileSurface: "MobileSurface",
-  MobileTopBar: "MobileTopBar",
+  MobileSurface: "mobile-surface",
+  MobileTopBar: "mobile-top-bar",
 }));
 
 vi.mock("@/features/BuyerAssistantHomeScreen/ConversationComposer", () => ({
   ConversationComposer: (props: Record<string, unknown>) => {
     const React = require("react");
     mockState.composerProps.push(props);
-    return React.createElement("ConversationComposer", props);
+    return React.createElement("conversation-composer");
   },
 }));
 
@@ -89,7 +91,7 @@ vi.mock("@/features/BuyerAssistantHomeScreen/ConversationTimeline", () => ({
   ConversationTimeline: (props: Record<string, unknown>) => {
     const React = require("react");
     mockState.timelineProps.push(props);
-    return React.createElement("ConversationTimeline", props);
+    return React.createElement("conversation-timeline");
   },
 }));
 
@@ -168,8 +170,10 @@ function createProperty(): MobileProperty {
 function buildAssistantState(activeProperty: MobileProperty | null) {
   return {
     activeProperty,
+    selectedProperties: activeProperty ? [activeProperty] : [],
     activeThreadId: "thread-1",
     activeThreadKind: "live",
+    addPropertyToSelection: vi.fn(),
     askAboutProperty: vi.fn(),
     createNewThread: vi.fn(),
     draft: "",
@@ -179,6 +183,7 @@ function buildAssistantState(activeProperty: MobileProperty | null) {
     messages: [{ id: "assistant-1", role: "assistant", text: "مرحبا" }],
     openHistoryThread: vi.fn(),
     recentThreads: [],
+    removePropertyFromSelection: vi.fn(),
     requestAdvisor: vi.fn(),
     resetToWelcome: vi.fn(),
     setDraft: vi.fn(),
@@ -201,7 +206,7 @@ afterEach(() => {
 });
 
 describe("BuyerAssistantHomeScreen", () => {
-  it("routes active-property context into the composer instead of the timeline header", () => {
+  it("routes active-property context into the composer prompt rail instead of the timeline header", () => {
     const activeProperty = createProperty();
     mockState.assistant = buildAssistantState(activeProperty);
     mockState.feed = {
@@ -212,12 +217,12 @@ describe("BuyerAssistantHomeScreen", () => {
     renderToStaticMarkup(React.createElement(BuyerAssistantHomeScreen));
 
     expect(mockState.composerProps).toHaveLength(1);
-    expect(mockState.composerProps[0]?.activeProperty).toBe(activeProperty);
+    expect(mockState.composerProps[0]?.selectedProperties).toEqual([activeProperty]);
     expect(mockState.timelineProps).toHaveLength(1);
     expect(mockState.timelineProps[0]?.contextProperty).toBeUndefined();
   });
 
-  it("does not pass a property helper context into the composer when no property is active", () => {
+  it("does not pass property prompt cards into the composer when no property is active", () => {
     mockState.assistant = buildAssistantState(null);
     mockState.feed = {
       findPropertyById: () => null,
@@ -227,6 +232,6 @@ describe("BuyerAssistantHomeScreen", () => {
     renderToStaticMarkup(React.createElement(BuyerAssistantHomeScreen));
 
     expect(mockState.composerProps).toHaveLength(1);
-    expect(mockState.composerProps[0]?.activeProperty).toBeNull();
+    expect(mockState.composerProps[0]?.selectedProperties).toEqual([]);
   });
 });

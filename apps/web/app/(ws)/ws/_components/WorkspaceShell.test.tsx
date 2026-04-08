@@ -3,10 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WebLocaleProvider } from "@/app/_components/WebLocaleProvider";
 import { getWebDictionary } from "@/lib/i18n";
 
-const { usePathname, useSearchParams, useRouter, useQuery } = vi.hoisted(() => ({
+const { usePathname, useSearchParams, useRouter, useConvexAuth, useQuery } = vi.hoisted(() => ({
   usePathname: vi.fn(),
   useSearchParams: vi.fn(),
   useRouter: vi.fn(() => ({ refresh: vi.fn() })),
+  useConvexAuth: vi.fn(),
   useQuery: vi.fn(),
 }));
 
@@ -17,6 +18,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("convex/react", () => ({
+  useConvexAuth,
   useQuery,
 }));
 
@@ -48,6 +50,8 @@ describe("WorkspaceShell", () => {
     usePathname.mockReturnValue("/ws");
     useSearchParams.mockReset();
     useSearchParams.mockReturnValue(new URLSearchParams());
+    useConvexAuth.mockReset();
+    useConvexAuth.mockReturnValue({ isLoading: false, isAuthenticated: true });
     useQuery.mockReset();
     useQuery.mockReturnValue(undefined);
   });
@@ -66,7 +70,7 @@ describe("WorkspaceShell", () => {
     );
 
     expect(markup).toContain("data-slot=\"workspace-shell\"");
-    expect(markup).toContain("data-variant=\"default\"");
+    expect(markup).toContain("data-variant=\"assistant\"");
     expect(markup).toContain("flex h-full min-h-0 w-full flex-col overflow-hidden");
     expect(markup).toContain("data-slot=\"workspace-sidebar-desktop\"");
     expect(markup).toContain("data-slot=\"workspace-sidebar-trigger\"");
@@ -105,6 +109,8 @@ describe("WorkspaceShell", () => {
     expect(markup).toContain("data-slot=\"workspace-sidebar-desktop\"");
     expect(markup).toContain("data-slot=\"workspace-sidebar-trigger\"");
     expect(markup).toContain("data-slot=\"theme-toggle\"");
+    expect(markup).toContain("bg-[var(--workspace-chrome-sidebar-bg)]");
+    expect(markup).toContain("bg-[var(--workspace-chrome-header-bg)]");
   });
 
   it("renders verification messaging as a light badge in the navbar instead of an in-page alert", () => {

@@ -1,12 +1,12 @@
 import { ArrowUp, Loader2, Mic, X } from "lucide-react-native";
 import { Platform, Pressable, TextInput, View } from "react-native";
-import { useEffect, useState } from "react";
-import { ActivePropertyComposerCard } from "@/features/BuyerAssistantHomeScreen/ActivePropertyComposerCard";
+import { useState } from "react";
 import {
   MobilePromptInputRecordingRow,
   MobilePromptInputShell,
   MobilePromptInputStatus,
 } from "@/components/ui/MobilePromptInput";
+import { PropertyPromptCardsRail } from "@/features/BuyerAssistantHomeScreen/PropertyPromptCardsRail";
 import { useMobileLayout } from "@/lib/mobileLayout";
 import { getMobileShadow, useAppTheme } from "@/lib/mobileTheme";
 import { useVoiceRecording } from "@/hooks/useVoiceRecording";
@@ -17,9 +17,13 @@ type ConversationComposerProps = {
   onChange: (value: string) => void;
   onSend: () => void;
   onSubmitVoiceRecording: (fileUri: string) => Promise<void>;
-  activeProperty?: MobileProperty | null;
-  onApplyActivePropertyPrompt?: (property: MobileProperty) => void;
-  ambientBackgroundColor?: string;
+  selectedProperties?: MobileProperty[];
+  comparePicking?: boolean;
+  maxCompareProperties?: number;
+  onPressPromptProperty?: (property: MobileProperty) => void;
+  onPressComparePrompt?: () => void;
+  onRemoveSelectedProperty?: (propertyId: string) => void;
+  onToggleComparePicking?: () => void;
   variant?: "landing" | "thread";
 };
 
@@ -28,15 +32,18 @@ export function ConversationComposer({
   onChange,
   onSend,
   onSubmitVoiceRecording,
-  activeProperty = null,
-  onApplyActivePropertyPrompt,
-  ambientBackgroundColor,
+  selectedProperties = [],
+  comparePicking = false,
+  maxCompareProperties = 3,
+  onPressPromptProperty,
+  onPressComparePrompt,
+  onRemoveSelectedProperty,
+  onToggleComparePicking,
   variant = "thread",
 }: ConversationComposerProps) {
   const layout = useMobileLayout();
   const theme = useAppTheme();
   const [voiceError, setVoiceError] = useState<string | null>(null);
-  const [dismissedPropertyId, setDismissedPropertyId] = useState<string | null>(null);
 
   const {
     phase,
@@ -84,31 +91,20 @@ export function ConversationComposer({
   const inputPlaceholder =
     variant === "landing" ? "اسأل عن عقار، قارن، أو اطلب تمويلاً..." : "اكتب متابعتك هنا...";
 
-  const actionButtonColor = canSend ? theme.colors.send : theme.colors.composerActionSurface;
-  const actionIconColor = canSend ? theme.colors.sendIcon : theme.colors.composerActionIcon;
-  const actionButtonBorderWidth = !canSend && theme.isDark ? 1.5 : 0;
-  const actionButtonBorderColor = canSend ? "transparent" : theme.colors.composerActionRing;
-  const inputPillHeight = layout.isCompact ? 44 : 48;
+  const actionButtonColor = canSend ? theme.colors.send : theme.colors.surface;
+  const actionIconColor = canSend ? theme.colors.sendIcon : theme.colors.inkSoft;
+  const actionButtonBorderWidth = canSend ? 0 : 1;
+  const actionButtonBorderColor = canSend ? "transparent" : theme.colors.borderStrong;
+  const inputPillHeight = layout.isCompact ? 42 : 44;
   const actionHolderSize = inputPillHeight;
-  const showActivePropertyCard =
+  const showPropertyPromptRail =
     variant === "thread" &&
-    activeProperty &&
-    onApplyActivePropertyPrompt &&
-    dismissedPropertyId !== activeProperty.id;
-
-  useEffect(() => {
-    if (!activeProperty) {
-      setDismissedPropertyId(null);
-      return;
-    }
-
-    if (dismissedPropertyId && dismissedPropertyId !== activeProperty.id) {
-      setDismissedPropertyId(null);
-    }
-  }, [activeProperty, dismissedPropertyId]);
+    selectedProperties.length > 0 &&
+    onPressPromptProperty &&
+    onRemoveSelectedProperty;
 
   return (
-    <View className="w-full gap-2.5">
+    <View className="w-full gap-2">
       {voiceError ? (
         <MobilePromptInputStatus label={voiceError} tone="danger" icon={<X size={14} color={theme.colors.danger} />} />
       ) : null}
@@ -128,21 +124,24 @@ export function ConversationComposer({
         />
       ) : null}
 
-      {showActivePropertyCard ? (
-        <ActivePropertyComposerCard
-          property={activeProperty}
-          onPress={onApplyActivePropertyPrompt}
-          onDismiss={() => setDismissedPropertyId(activeProperty.id)}
-          ambientBackgroundColor={ambientBackgroundColor}
+      {showPropertyPromptRail ? (
+        <PropertyPromptCardsRail
+          properties={selectedProperties}
+          comparePicking={comparePicking}
+          maxCompareProperties={maxCompareProperties}
+          onPressProperty={onPressPromptProperty}
+          onPressCompare={onPressComparePrompt}
+          onRemoveProperty={onRemoveSelectedProperty}
+          onToggleComparePicking={onToggleComparePicking}
         />
       ) : null}
 
       <MobilePromptInputShell
         active={isRecordingSession || canSend}
         expanded={isExpanded}
-        hint={showLandingHint ? "اكتب بشكل طبيعي وسأتولى البحث والمقارنة والخطوة التالية." : null}
+        hint={showLandingHint ? "اكتب طلبك مباشرة." : null}
       >
-        <View className="flex-row items-center gap-2.5">
+        <View className="flex-row items-center gap-2">
           {isRecordingSession ? (
             <MobilePromptInputRecordingRow
               durationSeconds={durationSeconds}
@@ -160,11 +159,11 @@ export function ConversationComposer({
                 className="flex-1 justify-center"
                 style={{
                   minHeight: inputPillHeight,
-                  borderRadius: 22,
+                  borderRadius: 20,
                   borderWidth: 1,
                   borderColor: theme.colors.border,
                   backgroundColor: theme.colors.surface,
-                  paddingHorizontal: 16,
+                  paddingHorizontal: 14,
                 }}
               >
                 <TextInput
@@ -178,14 +177,14 @@ export function ConversationComposer({
                   cursorColor={theme.colors.primary}
                   textAlignVertical="center"
                   style={{
-                    minHeight: layout.isCompact ? 36 : 40,
+                    minHeight: layout.isCompact ? 34 : 36,
                     maxHeight: inputMaxHeight,
                     textAlign,
                     writingDirection,
                     fontFamily: trimmedValue.length === 0 ? "Cairo_500Medium" : "Cairo_600SemiBold",
-                    fontSize: inputFontSize + 1,
+                    fontSize: inputFontSize,
                     color: theme.colors.ink,
-                    paddingVertical: Platform.OS === "ios" ? 6 : 5,
+                    paddingVertical: Platform.OS === "ios" ? 5 : 4,
                     includeFontPadding: false,
                     backgroundColor: "transparent",
                   }}
@@ -197,7 +196,7 @@ export function ConversationComposer({
                 style={{
                   width: actionHolderSize,
                   height: actionHolderSize,
-                  backgroundColor: theme.colors.composerActionBackdrop,
+                  backgroundColor: "transparent",
                 }}
               >
                 <Pressable

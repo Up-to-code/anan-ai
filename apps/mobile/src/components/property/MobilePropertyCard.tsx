@@ -17,6 +17,7 @@ export type MobilePropertyCardProps = {
   property: MobileProperty;
   onPress: (property: MobileProperty) => void;
   onActionPress?: (property: MobileProperty) => void;
+  actionDisabled?: boolean;
   onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
   actionLabel?: string;
   ambientBackgroundColor?: string;
@@ -32,6 +33,7 @@ export function MobilePropertyCard({
   property,
   onPress,
   onActionPress,
+  actionDisabled = false,
   onOpenGallery,
   actionLabel,
   ambientBackgroundColor,
@@ -264,6 +266,7 @@ export function MobilePropertyCard({
               onPress={actionHandler}
               ambientBackgroundColor={ambientBackgroundColor}
               emphasis="primary"
+              disabled={actionDisabled}
               style={{ alignSelf: "flex-end" }}
             />
           </View>

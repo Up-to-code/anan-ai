@@ -8,9 +8,9 @@ vi.mock("@/server/auth/session", () => ({
 import {
   approveAuthorizationForCurrentUser,
   getAuthorizationPromptForCurrentUser,
-  getAuthorizedAppDetailForCurrentUser,
-  listAuthorizedAppsForCurrentUser,
-  revokeAuthorizedAppForCurrentUser,
+  getAuthorizedAppDetailForCurrentOrganization,
+  listAuthorizedAppsForCurrentOrganization,
+  revokeAuthorizedAppForCurrentOrganization,
 } from "./service";
 
 const requireSession = vi.fn(async () => ({
@@ -29,6 +29,13 @@ function createRepository() {
       redirectUri: "https://a.test",
       requestedScopes: [],
       offlineAccess: false,
+      organizations: [],
+      selectedTenantOrgId: null,
+      selectedOrganization: null,
+      requiresOrganizationSelection: false,
+      canApproveSelectedOrganization: false,
+      managerApprovalRequired: false,
+      approvalDisabledReason: null,
       requiresConsent: true,
       existingAuthorization: null,
     })),
@@ -55,22 +62,22 @@ function createRepository() {
 it("loads the authorization prompt through the repository", async () => {
   const repository = createRepository();
 
-  const prompt = await getAuthorizationPromptForCurrentUser("flow-1", { requireSession, repository });
+  const prompt = await getAuthorizationPromptForCurrentUser("flow-1", undefined, { requireSession, repository });
   expect(prompt.flowId).toBe("flow-1");
-  expect(repository.getAuthorizationPrompt).toHaveBeenCalledWith("token-1", "flow-1");
+  expect(repository.getAuthorizationPrompt).toHaveBeenCalledWith("token-1", "flow-1", undefined);
 });
 
 it("lists, approves, and revokes authorized apps through the repository", async () => {
   const repository = createRepository();
 
-  const apps = await listAuthorizedAppsForCurrentUser({ requireSession, repository });
+  const apps = await listAuthorizedAppsForCurrentOrganization({ requireSession, repository });
   expect(apps).toHaveLength(1);
 
   await expect(
-    approveAuthorizationForCurrentUser("flow-1", { requireSession, repository }),
+    approveAuthorizationForCurrentUser("flow-1", "tenant-1", { requireSession, repository }),
   ).resolves.toEqual({ redirectUrl: "https://client.test/cb?code=1" });
 
-  await revokeAuthorizedAppForCurrentUser("c1", { requireSession, repository });
+  await revokeAuthorizedAppForCurrentOrganization("c1", { requireSession, repository });
   expect(repository.revokeAuthorizedApp).toHaveBeenCalledWith("token-1", "c1");
 });
 
@@ -81,6 +88,6 @@ it("bubbles domain errors from authorized app detail", async () => {
   });
 
   await expect(
-    getAuthorizedAppDetailForCurrentUser("c1", { requireSession, repository }),
+    getAuthorizedAppDetailForCurrentOrganization("c1", { requireSession, repository }),
   ).rejects.toBeInstanceOf(DomainError);
 });

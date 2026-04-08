@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { BellDot, MessageSquareMore, X } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { api } from "@/lib/convexApi";
 import type { NotificationSummary } from "@/server/contracts/notifications";
+import NotificationOpenLink from "./NotificationOpenLink";
 
 type ToastItem = NotificationSummary & {
   conversationId: string | null;
@@ -23,12 +23,70 @@ function resolveConversationId(notification: NotificationSummary) {
   return metadataConversationId ?? notification.entityId ?? null;
 }
 
+/**
+ * WHY:   Workspace toasts should share the same explicit read-on-open behavior as the notifications center.
+ * WHAT:  Renders a single toast card with an open action and separate dismiss controls.
+ * HOW:   Uses the shared notification-open link for the primary action and keeps dismiss buttons side-effect free.
+ */
+export function WorkspaceMessageToastCard({
+  toast,
+  onDismiss,
+}: {
+  toast: ToastItem;
+  onDismiss: (toastId: string) => void;
+}) {
+  return (
+    <div className="pointer-events-auto overflow-hidden rounded-[22px] border border-stone-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)] dark:border-stone-800 dark:bg-slate-950">
+      <div className="flex items-start gap-3 p-4">
+        <div className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-stone-950 text-white dark:bg-slate-100 dark:text-slate-950">
+          <MessageSquareMore className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 text-xs font-black tracking-[0.14em] text-stone-500 dark:text-stone-400">
+            <BellDot className="h-3.5 w-3.5" />
+            رسالة جديدة
+          </div>
+          <div className="mt-2 text-sm font-black text-slate-950 dark:text-slate-100">{toast.title}</div>
+          <div className="mt-1 line-clamp-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{toast.summary}</div>
+          <div className="mt-3 flex items-center gap-2">
+            <NotificationOpenLink
+              notificationId={toast.id}
+              href={toast.href}
+              isRead={toast.isRead}
+              className="inline-flex items-center rounded-2xl border border-stone-300 bg-stone-950 px-3 py-2 text-xs font-bold text-white transition hover:bg-stone-800"
+            >
+              فتح المحادثة
+            </NotificationOpenLink>
+            <button
+              type="button"
+              onClick={() => onDismiss(toast.id)}
+              className="inline-flex items-center rounded-2xl border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-bold text-stone-700 transition hover:border-stone-400 hover:text-stone-950 dark:border-stone-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-stone-500 dark:hover:text-white"
+            >
+              تجاهل
+            </button>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onDismiss(toast.id)}
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-stone-400 transition hover:bg-stone-100 hover:text-stone-700 dark:text-stone-500 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+          aria-label="إغلاق التنبيه"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function WorkspaceMessageToasts() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const notifications = useQuery(api.shared_logic.notifications.listWorkspaceNotifications, {
-    limit: 8,
-  });
+  const { isAuthenticated, isLoading } = useConvexAuth();
+  const notifications = useQuery(
+    api.shared_logic.notifications.listWorkspaceNotifications,
+    !isLoading && isAuthenticated ? { limit: 8 } : "skip",
+  );
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const hasSeededInitialNotificationsRef = useRef(false);
   const seededIdsRef = useRef<Set<string>>(new Set());
@@ -132,47 +190,7 @@ export default function WorkspaceMessageToasts() {
   return (
     <div className="pointer-events-none fixed bottom-5 left-5 z-[80] flex w-[min(360px,calc(100vw-2rem))] flex-col gap-3">
       {toasts.map((toast) => (
-        <div
-          key={toast.id}
-          className="pointer-events-auto overflow-hidden rounded-[22px] border border-stone-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)] dark:border-stone-800 dark:bg-slate-950"
-        >
-          <div className="flex items-start gap-3 p-4">
-            <div className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-stone-950 text-white dark:bg-slate-100 dark:text-slate-950">
-              <MessageSquareMore className="h-4 w-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 text-xs font-black tracking-[0.14em] text-stone-500 dark:text-stone-400">
-                <BellDot className="h-3.5 w-3.5" />
-                رسالة جديدة
-              </div>
-              <div className="mt-2 text-sm font-black text-slate-950 dark:text-slate-100">{toast.title}</div>
-              <div className="mt-1 line-clamp-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{toast.summary}</div>
-              <div className="mt-3 flex items-center gap-2">
-                <Link
-                  href={toast.href}
-                  className="inline-flex items-center rounded-2xl border border-stone-300 bg-stone-950 px-3 py-2 text-xs font-bold text-white transition hover:bg-stone-800"
-                >
-                  فتح المحادثة
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => dismissToast(toast.id)}
-                  className="inline-flex items-center rounded-2xl border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-bold text-stone-700 transition hover:border-stone-400 hover:text-stone-950 dark:border-stone-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-stone-500 dark:hover:text-white"
-                >
-                  تجاهل
-                </button>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => dismissToast(toast.id)}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-stone-400 transition hover:bg-stone-100 hover:text-stone-700 dark:text-stone-500 dark:hover:bg-slate-900 dark:hover:text-slate-200"
-              aria-label="إغلاق التنبيه"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+        <WorkspaceMessageToastCard key={toast.id} toast={toast} onDismiss={dismissToast} />
       ))}
     </div>
   );

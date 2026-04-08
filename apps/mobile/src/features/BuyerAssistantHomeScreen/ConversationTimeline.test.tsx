@@ -53,6 +53,10 @@ vi.mock("@/components/property/CursorCardShell", () => ({
   CursorCardShell: "CursorCardShell",
 }));
 
+vi.mock("@/components/property/CursorPropertyMediaViewer", () => ({
+  CursorPropertyMediaViewer: "CursorPropertyMediaViewer",
+}));
+
 vi.mock("@/components/property/MobilePropertyCard", () => ({
   MobilePropertyCard: "MobilePropertyCard",
 }));
@@ -225,5 +229,40 @@ describe("ConversationTimeline", () => {
     expect(variantCounts.generated).toBe(1);
     expect(variantCounts.compact ?? 0).toBeGreaterThanOrEqual(1);
     expect(visibleText).toContain("نتائج البحث المقترحة");
+  });
+
+  it("renders comparison tables inline with shared property thumbnails", () => {
+    const firstProperty = createProperty("compare-1");
+    const secondProperty = createProperty("compare-2");
+    const messages: MobileConversationMessage[] = [
+      {
+        id: "assistant-compare",
+        role: "assistant",
+        text: "هذه مقارنة مباشرة",
+        properties: [firstProperty, secondProperty],
+        cards: [
+          {
+            type: "comparison_table",
+            title: "مقارنة سريعة",
+            columns: ["البند", firstProperty.title, secondProperty.title],
+            rows: [["السعر", "1.4 مليون", "1.2 مليون"]],
+            summary: "فرق سريع بين الخيارين.",
+          },
+        ],
+      },
+    ];
+
+    const tree = materialize(
+      ConversationTimeline({
+        listRef: { current: null },
+        messages,
+        onPropertyPress: vi.fn(),
+        onSuggestedPromptPress: vi.fn(),
+      }),
+    );
+
+    const text = collectTextContent(tree).join(" ");
+    expect(text).toContain("مقارنة سريعة");
+    expect(text).toContain("فرق سريع بين الخيارين.");
   });
 });

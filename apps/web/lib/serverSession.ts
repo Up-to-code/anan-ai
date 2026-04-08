@@ -41,3 +41,11 @@ export function buildWorkspaceSecurityAppsPath(clientId?: string) {
   const base = "/ws/me/security/apps";
   return clientId ? `${base}/${encodeURIComponent(clientId)}` : base;
 }
+
+export function buildWorkspaceOrganizationAppsPath(source?: "legacy-account-apps") {
+  const params = new URLSearchParams({ tab: "apps" });
+  if (source) {
+    params.set("source", source);
+  }
+  return `/ws/settings?${params.toString()}`;
+}

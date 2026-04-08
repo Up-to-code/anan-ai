@@ -59,7 +59,11 @@ const authTables = {
     .index("clientId", ["clientId"])
     .index("isActive", ["isActive"]),
   oauthAuthorizations: defineTable({
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
+    tenantOrgId: v.optional(v.string()),
+    ownerType: v.optional(v.union(v.literal("broker"), v.literal("RED"))),
+    ownerBrokerId: v.optional(v.id("brokers")),
+    ownerREDId: v.optional(v.id("RED")),
     clientId: v.string(),
     grantedScopes: v.array(v.string()),
     offlineAccess: v.boolean(),
@@ -68,14 +72,25 @@ const authTables = {
     updatedAt: v.number(),
     revokedAt: v.optional(v.number()),
     lastUsedAt: v.optional(v.number()),
+    approvedByUserId: v.optional(v.id("users")),
   })
     .index("userId_clientId", ["userId", "clientId"])
     .index("userId", ["userId"])
+    .index("tenantOrgId", ["tenantOrgId"])
+    .index("ownerBrokerId", ["ownerBrokerId"])
+    .index("ownerREDId", ["ownerREDId"])
+    .index("ownerBrokerId_clientId", ["ownerBrokerId", "clientId"])
+    .index("ownerREDId_clientId", ["ownerREDId", "clientId"])
     .index("clientId", ["clientId"]),
   oauthAuthCodes: defineTable({
     codeHash: v.string(),
     clientId: v.string(),
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
+    tenantOrgId: v.optional(v.string()),
+    ownerType: v.optional(v.union(v.literal("broker"), v.literal("RED"))),
+    ownerBrokerId: v.optional(v.id("brokers")),
+    ownerREDId: v.optional(v.id("RED")),
+    approvedByUserId: v.optional(v.id("users")),
     authorizationId: v.id("oauthAuthorizations"),
     redirectUri: v.string(),
     scopes: v.array(v.string()),
@@ -92,7 +107,12 @@ const authTables = {
   oauthAccessTokens: defineTable({
     jti: v.string(),
     clientId: v.string(),
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
+    tenantOrgId: v.optional(v.string()),
+    ownerType: v.optional(v.union(v.literal("broker"), v.literal("RED"))),
+    ownerBrokerId: v.optional(v.id("brokers")),
+    ownerREDId: v.optional(v.id("RED")),
+    approvedByUserId: v.optional(v.id("users")),
     authorizationId: v.id("oauthAuthorizations"),
     sessionId: v.optional(v.string()),
     scopes: v.array(v.string()),
@@ -104,13 +124,19 @@ const authTables = {
     .index("jti", ["jti"])
     .index("clientId", ["clientId"])
     .index("userId", ["userId"])
+    .index("tenantOrgId", ["tenantOrgId"])
     .index("expiresAt", ["expiresAt"]),
   oauthRefreshTokens: defineTable({
     tokenHash: v.string(),
     familyId: v.string(),
     parentTokenId: v.optional(v.id("oauthRefreshTokens")),
     clientId: v.string(),
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
+    tenantOrgId: v.optional(v.string()),
+    ownerType: v.optional(v.union(v.literal("broker"), v.literal("RED"))),
+    ownerBrokerId: v.optional(v.id("brokers")),
+    ownerREDId: v.optional(v.id("RED")),
+    approvedByUserId: v.optional(v.id("users")),
     authorizationId: v.id("oauthAuthorizations"),
     scopes: v.array(v.string()),
     expiresAt: v.number(),
@@ -140,14 +166,25 @@ const authTables = {
     .index("expiresAt", ["expiresAt"]),
   oauthSubjectMappings: defineTable({
     clientId: v.string(),
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
+    tenantOrgId: v.optional(v.string()),
+    ownerType: v.optional(v.union(v.literal("broker"), v.literal("RED"))),
+    ownerBrokerId: v.optional(v.id("brokers")),
+    ownerREDId: v.optional(v.id("RED")),
     pairwiseSubject: v.string(),
     createdAt: v.number(),
   })
     .index("clientId_userId", ["clientId", "userId"])
+    .index("clientId_tenantOrgId", ["clientId", "tenantOrgId"])
+    .index("ownerBrokerId_clientId", ["ownerBrokerId", "clientId"])
+    .index("ownerREDId_clientId", ["ownerREDId", "clientId"])
     .index("pairwiseSubject", ["pairwiseSubject"]),
   oauthAuditLogs: defineTable({
     eventType: v.string(),
+    tenantOrgId: v.optional(v.string()),
+    ownerType: v.optional(v.union(v.literal("broker"), v.literal("RED"))),
+    ownerBrokerId: v.optional(v.id("brokers")),
+    ownerREDId: v.optional(v.id("RED")),
     clientId: v.optional(v.string()),
     userId: v.optional(v.id("users")),
     authorizationId: v.optional(v.id("oauthAuthorizations")),

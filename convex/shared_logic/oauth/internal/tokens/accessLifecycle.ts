@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { internalMutation, internalQuery } from "../../../../_generated/server";
 import { getClientOrThrow } from "../helpers";
-import { loadUserBundle } from "../subjects";
+import { loadOrganizationBundle } from "../subjects";
 import { revokeAuthorizationAccessTokens } from "./common";
 
 function assertConfidentialClientCredentials(client: any, providedSecretHash: string | undefined) {
@@ -28,10 +28,33 @@ async function revokeRefreshFamily(ctx: any, familyId: string, now: number) {
   return family;
 }
 
+function requireOrganizationOwnerFromAuthorization(authorization: any) {
+  if (!authorization.ownerType || !authorization.tenantOrgId) {
+    throw new ConvexError({ code: "INVALID_TOKEN", message: "Legacy user authorization requires reconnect" });
+  }
+  if (authorization.ownerType === "broker" && authorization.ownerBrokerId) {
+    return {
+      ownerType: "broker" as const,
+      ownerBrokerId: authorization.ownerBrokerId,
+      authUserId: "",
+      tenantOrgId: authorization.tenantOrgId,
+    };
+  }
+  if (authorization.ownerType === "RED" && authorization.ownerREDId) {
+    return {
+      ownerType: "RED" as const,
+      ownerREDId: authorization.ownerREDId,
+      authUserId: "",
+      tenantOrgId: authorization.tenantOrgId,
+    };
+  }
+  throw new ConvexError({ code: "INVALID_TOKEN", message: "Organization authorization is malformed" });
+}
+
 /**
- * WHY:   Bearer tokens must be checked against server-side revocation and expiry state.
- * WHAT:  Resolves the active access-token context plus user and subject details.
- * HOW:   Looks up the token by JTI, validates related grant/client rows, and returns the hydrated bundle.
+ * WHY:   Bearer tokens must be checked against server-side revocation and org ownership state.
+ * WHAT:  Resolves the active access-token context plus organization and subject details.
+ * HOW:   Looks up the token by JTI, validates related grant/client rows, and returns the hydrated organization bundle.
  */
 export const getAccessTokenContext = internalQuery({
   args: {
@@ -58,13 +81,13 @@ export const getAccessTokenContext = internalQuery({
       throw new ConvexError({ code: "INVALID_TOKEN", message: "Authorization grant is revoked" });
     }
 
-    const bundle = await loadUserBundle(ctx, accessToken.userId, args.clientId);
+    const owner = requireOrganizationOwnerFromAuthorization(authorization);
+    const bundle = await loadOrganizationBundle(ctx, owner, args.clientId);
     return {
       accessToken,
       client,
       authorization,
-      user: bundle.user,
-      profile: bundle.profile,
+      organization: bundle.organization,
       pairwiseSubject: bundle.subjectMapping.pairwiseSubject,
     };
   },
@@ -73,7 +96,7 @@ export const getAccessTokenContext = internalQuery({
 /**
  * WHY:   Security center and audit trails need observable token usage timestamps.
  * WHAT:  Updates last-used timestamps for access tokens and grants after successful bearer-token use.
- * HOW:   Patches the token and authorization documents and records an audit event.
+ * HOW:   Patches the token and authorization documents.
  */
 export const touchAccessToken = internalMutation({
   args: {
@@ -96,9 +119,9 @@ export const touchAccessToken = internalMutation({
 });
 
 /**
- * WHY:   Users and clients need a standard token revocation path.
- * WHAT:  Revokes the matching refresh-token family and its related grant.
- * HOW:   Accepts a hashed refresh token, revokes all family members, and marks the authorization inactive.
+ * WHY:   OAuth clients need a standard token revocation path that invalidates the connected organization grant.
+ * WHAT:  Revokes the matching refresh-token family and its related org authorization.
+ * HOW:   Accepts a hashed refresh token, revokes all family members, and marks the organization grant inactive.
  */
 export const revokeRefreshTokenFamily = internalMutation({
   args: {
@@ -132,8 +155,12 @@ export const revokeRefreshTokenFamily = internalMutation({
     });
     await ctx.db.insert("oauthAuditLogs", {
       eventType: "token.revoked",
+      tenantOrgId: refresh.tenantOrgId,
+      ownerType: refresh.ownerType,
+      ownerBrokerId: refresh.ownerBrokerId,
+      ownerREDId: refresh.ownerREDId,
       clientId: args.clientId,
-      userId: refresh.userId,
+      userId: refresh.approvedByUserId,
       authorizationId: refresh.authorizationId,
       refreshFamilyId: refresh.familyId,
       metadata: {

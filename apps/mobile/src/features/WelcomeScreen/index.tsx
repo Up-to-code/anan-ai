@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Compass, MessageSquareMore, ShieldCheck } from "lucide-react-native";
 import { AppText } from "@/components/ui/AppText";
@@ -11,6 +12,7 @@ import { useAppTheme } from "@/lib/mobileTheme";
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const theme = useAppTheme();
   const account = useBuyerAccount();
 
@@ -20,20 +22,12 @@ export default function WelcomeScreen() {
   }
 
   return (
-    <View className="flex-1 px-6" style={{ backgroundColor: theme.colors.canvas }}>
-      <View className="flex-1 justify-center">
-        <View
-          className="px-6 py-8"
-          style={{
-            borderRadius: theme.radii.hero, // Soft hero 24px bounding
-            borderWidth: 1, 
-            borderColor: theme.colors.borderStrong, 
-            backgroundColor: theme.colors.surfaceMuted 
-          }}
-        >
+    <View className="flex-1 px-5" style={{ backgroundColor: theme.colors.canvas, paddingBottom: Math.max(insets.bottom, 20) }}>
+      <View className="flex-1 justify-center" style={{ gap: theme.spacing.section }}>
+        <MobileSurface tone="muted" radius="hero" className="gap-8" shadow="none">
           <View className="items-center">
             <View
-              className="mb-6 items-center justify-center"
+              className="items-center justify-center"
               style={{
                 width: 96,
                 height: 96,
@@ -46,7 +40,7 @@ export default function WelcomeScreen() {
               <AnanMark size={40} />
             </View>
 
-            <MobilePill label="ANAN MOBILE" tone="primary" active />
+            <MobilePill label="ANAN MOBILE" tone="primary" active className="mt-6" />
             <MobileSectionHeading
               align="center"
               className="mt-6 items-center"
@@ -60,9 +54,9 @@ export default function WelcomeScreen() {
             <FeatureRow icon={<ShieldCheck size={18} color={theme.colors.teal} />} label="عروض ونتائج موثقة" />
             <FeatureRow icon={<Compass size={18} color={theme.colors.primary} />} label="بحث سريع وواضح" />
           </View>
-        </View>
+        </MobileSurface>
 
-        <View className="mt-6 gap-3">
+        <View className="gap-3">
           <Button
             label="ابدأ مع المساعد"
             onPress={() => void startJourney("/")}

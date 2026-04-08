@@ -19,7 +19,12 @@ export default async function WorkspaceGroupLayout({ children }: { children: Rea
     <ConvexAuthNextjsServerProvider>
       <ConvexClientProvider>
         <WebLocaleProvider locale={locale} dictionary={dictionary}>
-          {children}
+          <div
+            data-slot="workspace-group-layout"
+            className="flex h-full min-h-screen min-h-dvh min-w-0 w-full flex-1 basis-0 flex-col"
+          >
+            {children}
+          </div>
         </WebLocaleProvider>
       </ConvexClientProvider>
     </ConvexAuthNextjsServerProvider>

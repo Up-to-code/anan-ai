@@ -14,6 +14,7 @@ import {
   buildSuggestedPrompts,
 } from "@/lib/mobileData";
 import { buildMobileAgUiTurn } from "@/lib/mobileAgUi";
+import { applyPropertySelectionPromptToDraft } from "@/features/BuyerAssistantHomeScreen/propertyPrompt";
 import {
   clearGuestThreadStore,
   loadGuestThreadStore,
@@ -104,6 +105,24 @@ function readLatestProperty(messages: MobileConversationMessage[]) {
   return null;
 }
 
+function dedupeSelectedProperties(properties: MobileProperty[]) {
+  const seen = new Set<string>();
+  return properties.filter((property) => {
+    const propertyId = property?.id?.trim();
+    if (!propertyId || seen.has(propertyId)) return false;
+    seen.add(propertyId);
+    return true;
+  });
+}
+
+function readSelectedProperties(thread: MobileStoredThread | null) {
+  if (!thread) return [] as MobileProperty[];
+  const storedSelection = dedupeSelectedProperties(thread.selectedProperties ?? []);
+  if (storedSelection.length > 0) return storedSelection;
+  const fallbackProperty = thread.activeProperty ?? readLatestProperty(thread.messages);
+  return fallbackProperty ? [fallbackProperty] : [];
+}
+
 function readLatestUserMessage(messages: MobileConversationMessage[]) {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index];
@@ -125,17 +144,19 @@ function toActiveThreadState(thread: MobileStoredThread | null) {
     return {
       draft: "",
       messages: [] as MobileConversationMessage[],
-      activeProperty: null as MobileProperty | null,
+      selectedProperties: [] as MobileProperty[],
       activeThreadId: null as string | null,
       activeThreadKind: "welcome" as const,
       updatedAt: Date.now(),
     };
   }
 
+  const selectedProperties = readSelectedProperties(thread);
+
   return {
     draft: thread.draft,
     messages: thread.messages,
-    activeProperty: thread.activeProperty ?? readLatestProperty(thread.messages),
+    selectedProperties,
     activeThreadId: thread.id,
     activeThreadKind: thread.activeThreadKind,
     updatedAt: thread.updatedAt,
@@ -174,7 +195,7 @@ function usePropertyAssistantController(args: {
 }) {
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<MobileConversationMessage[]>([]);
-  const [activeProperty, setActiveProperty] = useState<MobileProperty | null>(null);
+  const [selectedProperties, setSelectedProperties] = useState<MobileProperty[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [activeThreadKind, setActiveThreadKind] = useState<"welcome" | "live">("welcome");
   const [isHydrated, setIsHydrated] = useState(false);
@@ -183,6 +204,7 @@ function usePropertyAssistantController(args: {
   const [threadStore, setThreadStore] = useState<MobileGuestThreadStore>(emptyThreadStore());
   const lastUpdatedAt = useRef(Date.now());
   const publicSessionRef = useRef<PublicAssistantSession | null>(null);
+  const activeProperty = selectedProperties[0] ?? null;
 
   useEffect(() => {
     void loadGuestThreadStore().then((store) => {
@@ -191,7 +213,7 @@ function usePropertyAssistantController(args: {
       setThreadStore(store);
       setDraft(nextActiveState.draft);
       setMessages(nextActiveState.messages);
-      setActiveProperty(nextActiveState.activeProperty);
+      setSelectedProperties(nextActiveState.selectedProperties);
       setActiveThreadId(nextActiveState.activeThreadId);
       setActiveThreadKind(nextActiveState.activeThreadKind);
       lastUpdatedAt.current = nextActiveState.updatedAt;
@@ -209,6 +231,7 @@ function usePropertyAssistantController(args: {
         draft,
         activeThreadKind,
         activeProperty,
+        selectedProperties,
         messages,
         updatedAt: lastUpdatedAt.current,
         existing: currentRecord,
@@ -219,7 +242,7 @@ function usePropertyAssistantController(args: {
         : currentStore.threads;
       const nextThreads = nextRecord ? upsertStoredThread(preservedThreads, nextRecord) : preservedThreads;
       const nextStore = {
-        version: 2 as const,
+        version: 3 as const,
         activeThreadId: nextRecord?.id ?? null,
         threads: nextThreads,
       };
@@ -227,7 +250,7 @@ function usePropertyAssistantController(args: {
       void saveGuestThreadStore(nextStore);
       return nextStore;
     });
-  }, [activeProperty, activeThreadId, activeThreadKind, draft, isHydrated, messages]);
+  }, [activeProperty, activeThreadId, activeThreadKind, draft, isHydrated, messages, selectedProperties]);
 
   const recentThreads = useMemo(() => listThreadSummaries(threadStore), [threadStore]);
   const latestUserMessage = useMemo(() => readLatestUserMessage(messages), [messages]);
@@ -252,9 +275,25 @@ function usePropertyAssistantController(args: {
     });
   }
 
+  function addPropertyToSelection(property: MobileProperty) {
+    ensureThreadIdentity();
+    setActiveThreadKind("live");
+    setSelectedProperties((current) => {
+      if (current.some((item) => item.id === property.id)) {
+        return current;
+      }
+      return dedupeSelectedProperties([...current, property]);
+    });
+  }
+
+  function removePropertyFromSelection(propertyId: string) {
+    setSelectedProperties((current) => current.filter((property) => property.id !== propertyId));
+  }
+
   async function submit(prompt = draft, inputMode: "text" | "voice" = "text") {
     const trimmed = prompt.trim();
     if (!trimmed) return;
+    const outboundPrompt = applyPropertySelectionPromptToDraft(trimmed, selectedProperties);
 
     const nextThreadId = ensureThreadIdentity();
     const userMessage: MobileConversationMessage = {
@@ -276,7 +315,7 @@ function usePropertyAssistantController(args: {
 
       if (args.askClientAssistant) {
         const response = await args.askClientAssistant({
-          message: trimmed,
+          message: outboundPrompt,
           threadId: nextThreadId ?? undefined,
           selectedPropertyId: activeProperty?.id,
           inputMode,
@@ -303,19 +342,27 @@ function usePropertyAssistantController(args: {
             cards: response.cards,
           }),
         };
-        setActiveProperty(nextActiveProperty ?? null);
+        if (selectedProperties.length > 1) {
+          setSelectedProperties(
+            dedupeSelectedProperties(
+              selectedProperties.map((property) => response.properties.find((candidate) => candidate.id === property.id) ?? property),
+            ),
+          );
+        } else {
+          setSelectedProperties(nextActiveProperty ? [nextActiveProperty] : []);
+        }
         setActiveThreadId(response.threadId ?? nextThreadId);
         setShowAuthCallout(response.requiresAuthForHandoff);
       } else {
         assistantMessage = {
           ...buildFallbackAssistantMessage({
-            message: trimmed,
+            message: outboundPrompt,
             activeProperty,
           }),
           createdAt: Date.now(),
         };
         if (assistantMessage.properties?.[0]) {
-          setActiveProperty(assistantMessage.properties[0]);
+          setSelectedProperties([assistantMessage.properties[0]]);
         }
         setActiveThreadId(nextThreadId);
       }
@@ -355,7 +402,8 @@ function usePropertyAssistantController(args: {
 
   async function askAboutProperty(property: MobileProperty) {
     ensureThreadIdentity();
-    setActiveProperty(property);
+    setActiveThreadKind("live");
+    setSelectedProperties([property]);
     const focusMessage = {
       ...buildAuthRequiredMessage(),
       id: `assistant-focus-${property.id}-${Date.now()}`,
@@ -447,6 +495,10 @@ function usePropertyAssistantController(args: {
 
   async function requestAdvisor() {
     if (!activeProperty) return;
+    const contextualMessage =
+      selectedProperties.length > 1
+        ? `مقارنة بين ${selectedProperties.map((property) => property.title).join("، ")}. ${latestUserMessage ?? messages.at(-1)?.text ?? activeProperty.title}`
+        : latestUserMessage ?? messages.at(-1)?.text ?? activeProperty.title;
     setShowAuthCallout(true);
     if (!args.createQualifiedHandoff) {
       setMessages((current) => [...current, { ...buildAdvisorFailureMessage(activeProperty.title), createdAt: Date.now() }]);
@@ -457,7 +509,7 @@ function usePropertyAssistantController(args: {
       const session = args.bootstrapPublicSession ? await ensurePublicSession() : null;
       await args.createQualifiedHandoff({
         propertyId: activeProperty.id,
-        message: latestUserMessage ?? messages.at(-1)?.text ?? activeProperty.title,
+        message: contextualMessage,
         externalUserId: session?.guestId,
         threadId: activeThreadId ?? undefined,
         sourceChannel: "app",
@@ -504,7 +556,7 @@ function usePropertyAssistantController(args: {
 
     setDraft(nextThread.draft);
     setMessages(nextThread.messages);
-    setActiveProperty(nextThread.activeProperty ?? readLatestProperty(nextThread.messages));
+    setSelectedProperties(readSelectedProperties(nextThread));
     setActiveThreadId(nextThread.id);
     setActiveThreadKind(nextThread.activeThreadKind);
     setShowAuthCallout(false);
@@ -532,7 +584,7 @@ function usePropertyAssistantController(args: {
   function createNewThread() {
     setDraft("");
     setMessages([]);
-    setActiveProperty(null);
+    setSelectedProperties([]);
     setActiveThreadId(null);
     setActiveThreadKind("welcome");
     setShowAuthCallout(false);
@@ -549,6 +601,7 @@ function usePropertyAssistantController(args: {
     draft,
     messages,
     activeProperty,
+    selectedProperties,
     activeThreadId,
     activeThreadKind,
     recentThreads,
@@ -558,6 +611,8 @@ function usePropertyAssistantController(args: {
     latestUserMessage,
     setDraft,
     setShowAuthCallout,
+    addPropertyToSelection,
+    removePropertyFromSelection,
     submit,
     submitVoiceRecording,
     askAboutProperty,

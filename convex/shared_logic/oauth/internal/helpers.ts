@@ -1,5 +1,6 @@
 import { ConvexError, type GenericId } from "convex/values";
 import type { Doc, Id } from "../../../_generated/dataModel";
+import { buildOwnerContext, type OwnerContext } from "../../agencies/repositories/core";
 
 export async function getClientOrThrow(ctx: any, clientId: string) {
   const client = await ctx.db
@@ -29,9 +30,30 @@ export function ensureScopes(client: Doc<"oauthClients">, requestedScopes: strin
   }
 }
 
-export async function getAuthorizationRecord(ctx: any, userId: Id<"users">, clientId: string) {
+export function buildOAuthOwnerContext(args: {
+  ownerType: "broker" | "RED";
+  ownerBrokerId?: GenericId<"brokers">;
+  ownerREDId?: GenericId<"RED">;
+  authUserId?: string;
+}) {
+  return buildOwnerContext(args);
+}
+
+export async function getLegacyAuthorizationRecord(ctx: any, userId: Id<"users">, clientId: string) {
   return ctx.db
     .query("oauthAuthorizations")
     .withIndex("userId_clientId", (q: any) => q.eq("userId", userId).eq("clientId", clientId))
     .first();
+}
+
+export async function getAuthorizationRecordForOwner(ctx: any, owner: OwnerContext, clientId: string) {
+  return owner.ownerType === "broker"
+    ? ctx.db
+        .query("oauthAuthorizations")
+        .withIndex("ownerBrokerId_clientId", (q: any) => q.eq("ownerBrokerId", owner.ownerBrokerId).eq("clientId", clientId))
+        .first()
+    : ctx.db
+        .query("oauthAuthorizations")
+        .withIndex("ownerREDId_clientId", (q: any) => q.eq("ownerREDId", owner.ownerREDId).eq("clientId", clientId))
+        .first();
 }

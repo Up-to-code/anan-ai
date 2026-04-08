@@ -37,6 +37,7 @@ export default function SearchScreen() {
       params: {
         area: search.selectedArea,
         ownerType: search.selectedOwnerType,
+        ...buildSearchRouteParams(searchContext),
       },
     });
   }

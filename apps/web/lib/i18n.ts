@@ -276,6 +276,7 @@ export type WebDictionary = {
     organization: string;
     verification: string;
     membersAndInvites: string;
+    apps: string;
     apiKeys: string;
     manager: string;
     viewer: string;
@@ -285,6 +286,20 @@ export type WebDictionary = {
     apiKeysSummaryCreate: string;
     apiKeysSummaryRevoke: string;
     apiKeysSummaryNoAccess: string;
+    connectedAppsSummaryManage: string;
+    connectedAppsSummaryReadonly: string;
+    connectedAppsPageTitle: string;
+    connectedAppsPageDescription: string;
+    connectedAppsLegacyNotice: string;
+    connectedAppsReadonlyNotice: string;
+    connectedAppsEmptyTitle: string;
+    connectedAppsEmptyDescription: string;
+    connectedAppsConnectedAt: string;
+    connectedAppsLastUsed: string;
+    connectedAppsNeverUsed: string;
+    connectedAppsRevoke: string;
+    connectedAppsRevoking: string;
+    connectedAppsRevokeConfirm: string;
     apiKeysNoOrgTitle: string;
     apiKeysNoOrgDescription: string;
     apiKeysRestrictedTitle: string;
@@ -394,6 +409,10 @@ export type WebDictionary = {
     verificationSubmitted: string;
     verificationSubmit: string;
     verificationResubmit: string;
+    accountSettingsTitle: string;
+    accountSettingsDescription: string;
+    logoutAction: string;
+    loggingOut: string;
     organizationSettingsTitle: string;
     organizationSettingsDescription: string;
     organizationIdentityTitle: string;
@@ -495,7 +514,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       switchLanguage: "تغيير اللغة",
       activateLightMode: "تفعيل الوضع الفاتح",
       activateDarkMode: "تفعيل الوضع الداكن",
-      workspaceSettings: "الإعدادات",
+      workspaceSettings: "إعدادات المنظمة",
       notifications: "الإشعارات",
       inbox: "الرسائل",
       overviewTitle: "نظرة عامة",
@@ -754,11 +773,12 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
     },
     settings: {
       workspaceLabel: "إعدادات مساحة العمل",
-      title: "الإعدادات",
-      description: "بيانات المنظمة والأعضاء ومفاتيح الربط.",
+      title: "إعدادات المنظمة",
+      description: "إدارة بيانات المنظمة والفريق والتوثيق من مكان واحد.",
       organization: "المنظمة",
       verification: "التوثيق",
       membersAndInvites: "الأعضاء والدعوات",
+      apps: "التطبيقات",
       apiKeys: "مفاتيح API",
       manager: "مدير",
       viewer: "مشاهد",
@@ -768,6 +788,20 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       apiKeysSummaryCreate: "يمكنك إنشاء وإلغاء المفاتيح من هنا.",
       apiKeysSummaryRevoke: "يمكنك مراجعة المفاتيح وإلغاؤها من هنا.",
       apiKeysSummaryNoAccess: "لا تملك صلاحية إدارة هذا القسم.",
+      connectedAppsSummaryManage: "يمكنك مراجعة التطبيقات المرتبطة بالمنظمة وإلغاء أي ربط غير مطلوب.",
+      connectedAppsSummaryReadonly: "يمكنك مراجعة التطبيقات المرتبطة بالمنظمة، بينما يظل الإلغاء متاحاً للمدير فقط.",
+      connectedAppsPageTitle: "تطبيقات المنظمة",
+      connectedAppsPageDescription: "راجع التطبيقات الخارجية المرتبطة بهذه المنظمة والصلاحيات المعتمدة لها.",
+      connectedAppsLegacyNotice: "التطبيقات المرتبطة أصبحت تُدار على مستوى المنظمة. أي ربط قديم على مستوى الحساب الشخصي يحتاج إعادة ربط من جديد لهذه المنظمة.",
+      connectedAppsReadonlyNotice: "يمكن للمدير فقط الموافقة على تطبيق جديد أو إلغاء الربط، لكن يمكنك مراجعة التطبيقات الحالية من هنا.",
+      connectedAppsEmptyTitle: "لا توجد تطبيقات مرتبطة حالياً",
+      connectedAppsEmptyDescription: "ابدأ الربط من شاشة OAuth /authorize الخاصة بالتطبيق الخارجي. ستظهر الموافقات هنا بعد اعتمادها للمنظمة.",
+      connectedAppsConnectedAt: "تم الربط",
+      connectedAppsLastUsed: "آخر استخدام",
+      connectedAppsNeverUsed: "لم يُستخدم",
+      connectedAppsRevoke: "إلغاء الربط",
+      connectedAppsRevoking: "جاري الإلغاء...",
+      connectedAppsRevokeConfirm: "سيتم إلغاء ربط التطبيق عن هذه المنظمة وقطع كل الجلسات الحالية. هل تريد المتابعة؟",
       apiKeysNoOrgTitle: "مفاتيح API",
       apiKeysNoOrgDescription: "أنشئ منظمة أولاً قبل إصدار أي مفاتيح تكامل. ستتمكن من تخصيص صلاحيات محددة لكل مفتاح لضمان أمان بياناتك.",
       apiKeysRestrictedTitle: "مفاتيح API",
@@ -877,7 +911,11 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       verificationSubmitted: "تم إرسال طلب التوثيق بنجاح. سيتم مراجعته من لوحة الأدمن.",
       verificationSubmit: "إرسال الطلب",
       verificationResubmit: "إعادة إرسال المستندات",
-      organizationSettingsTitle: "بيانات المنظمة",
+      accountSettingsTitle: "الحساب والأمان",
+      accountSettingsDescription: "إدارة بيانات حسابك، اسم المستخدم، والأمان.",
+      logoutAction: "تسجيل الخروج",
+      loggingOut: "جاري تسجيل الخروج...",
+      organizationSettingsTitle: "إعدادات المنظمة",
       organizationSettingsDescription: "لوحة أبسط لتحديث هوية المنظمة وبيانات التواصل الأساسية.",
       organizationIdentityTitle: "هوية المنظمة",
       organizationIdentityDescription: "راجع بيانات المنظمة الحالية ثم حدّث الحقول التي تحتاجها فقط.",
@@ -976,7 +1014,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       switchLanguage: "Switch language",
       activateLightMode: "Activate light mode",
       activateDarkMode: "Activate dark mode",
-      workspaceSettings: "Settings",
+      workspaceSettings: "Organization settings",
       notifications: "Notifications",
       inbox: "Inbox",
       overviewTitle: "Overview",
@@ -1235,11 +1273,12 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
     },
     settings: {
       workspaceLabel: "Workspace settings",
-      title: "Settings",
-      description: "Organization details, members, and integration keys.",
+      title: "Organization settings",
+      description: "Manage organization details, team access, and verification in one place.",
       organization: "Organization",
       verification: "Verification",
       membersAndInvites: "Members and invites",
+      apps: "Apps",
       apiKeys: "API keys",
       manager: "Manager",
       viewer: "Viewer",
@@ -1249,6 +1288,20 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       apiKeysSummaryCreate: "You can create and revoke keys from here.",
       apiKeysSummaryRevoke: "You can review and revoke keys from here.",
       apiKeysSummaryNoAccess: "You do not have permission to manage this section.",
+      connectedAppsSummaryManage: "Review organization app connections and revoke anything the team no longer needs.",
+      connectedAppsSummaryReadonly: "Review organization app connections here. Only managers can approve new apps or revoke access.",
+      connectedAppsPageTitle: "Organization apps",
+      connectedAppsPageDescription: "Review external apps connected to this organization and the scopes they were approved for.",
+      connectedAppsLegacyNotice: "Connected apps now belong to the organization. Any old personal app authorization must reconnect under the organization before it will appear here.",
+      connectedAppsReadonlyNotice: "Only organization managers can approve a new app or revoke access, but everyone in the org can review the current connections.",
+      connectedAppsEmptyTitle: "No connected apps yet",
+      connectedAppsEmptyDescription: "Start the connection from the external app's OAuth authorize flow. Approved organization connections will appear here.",
+      connectedAppsConnectedAt: "Connected",
+      connectedAppsLastUsed: "Last used",
+      connectedAppsNeverUsed: "Never used",
+      connectedAppsRevoke: "Revoke",
+      connectedAppsRevoking: "Revoking...",
+      connectedAppsRevokeConfirm: "This will revoke the app for the organization and cut off all active sessions. Continue?",
       apiKeysNoOrgTitle: "API keys",
       apiKeysNoOrgDescription: "Create an organization first before issuing integration keys. You will be able to grant narrow permissions for each key to keep your data secure.",
       apiKeysRestrictedTitle: "API keys",
@@ -1358,7 +1411,11 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       verificationSubmitted: "Verification request submitted successfully. It will be reviewed from the admin panel.",
       verificationSubmit: "Submit request",
       verificationResubmit: "Resubmit documents",
-      organizationSettingsTitle: "Organization details",
+      accountSettingsTitle: "Account & security",
+      accountSettingsDescription: "Manage your profile, username, and account security.",
+      logoutAction: "Log out",
+      loggingOut: "Logging out...",
+      organizationSettingsTitle: "Organization settings",
       organizationSettingsDescription: "A simpler panel for updating the organization identity and essential contact details.",
       organizationIdentityTitle: "Organization identity",
       organizationIdentityDescription: "Review the current organization details, then update only the fields you need.",
@@ -1457,7 +1514,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       switchLanguage: "Changer de langue",
       activateLightMode: "Activer le mode clair",
       activateDarkMode: "Activer le mode sombre",
-      workspaceSettings: "Paramètres",
+      workspaceSettings: "Paramètres de l'organisation",
       notifications: "Notifications",
       inbox: "Boîte de réception",
       overviewTitle: "Vue d'ensemble",
@@ -1716,11 +1773,12 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
     },
     settings: {
       workspaceLabel: "Paramètres de l'espace",
-      title: "Paramètres",
-      description: "Données de l'organisation, membres et clés d'intégration.",
+      title: "Paramètres de l'organisation",
+      description: "Gérez l'organisation, l'équipe et la vérification depuis un seul espace.",
       organization: "Organisation",
       verification: "Vérification",
       membersAndInvites: "Membres et invitations",
+      apps: "Applications",
       apiKeys: "Clés API",
       manager: "Gestionnaire",
       viewer: "Lecteur",
@@ -1730,6 +1788,20 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       apiKeysSummaryCreate: "Vous pouvez créer et révoquer les clés ici.",
       apiKeysSummaryRevoke: "Vous pouvez consulter et révoquer les clés ici.",
       apiKeysSummaryNoAccess: "Vous n'avez pas l'autorisation de gérer cette section.",
+      connectedAppsSummaryManage: "Consultez les applications connectées à l'organisation et révoquez celles qui ne sont plus nécessaires.",
+      connectedAppsSummaryReadonly: "Consultez ici les applications connectées. Seuls les gestionnaires peuvent approuver une nouvelle application ou révoquer l'accès.",
+      connectedAppsPageTitle: "Applications de l'organisation",
+      connectedAppsPageDescription: "Consultez les applications externes connectées à cette organisation et les permissions qui leur ont été approuvées.",
+      connectedAppsLegacyNotice: "Les applications connectées appartiennent désormais à l'organisation. Toute ancienne autorisation personnelle doit être reconnectée sous l'organisation avant d'apparaître ici.",
+      connectedAppsReadonlyNotice: "Seuls les gestionnaires de l'organisation peuvent approuver une nouvelle application ou révoquer l'accès, mais tous les membres peuvent consulter les connexions en cours.",
+      connectedAppsEmptyTitle: "Aucune application connectée pour le moment",
+      connectedAppsEmptyDescription: "Démarrez la connexion depuis le flux OAuth /authorize de l'application externe. Les connexions approuvées pour l'organisation apparaîtront ici.",
+      connectedAppsConnectedAt: "Connectée",
+      connectedAppsLastUsed: "Dernière utilisation",
+      connectedAppsNeverUsed: "Jamais utilisée",
+      connectedAppsRevoke: "Révoquer",
+      connectedAppsRevoking: "Révocation...",
+      connectedAppsRevokeConfirm: "Cette action révoquera l'application pour l'organisation et coupera toutes les sessions actives. Continuer ?",
       apiKeysNoOrgTitle: "Clés API",
       apiKeysNoOrgDescription: "Créez d'abord une organisation avant d'émettre des clés d'intégration. Vous pourrez attribuer des permissions limitées à chaque clé pour sécuriser vos données.",
       apiKeysRestrictedTitle: "Clés API",
@@ -1839,7 +1911,11 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       verificationSubmitted: "La demande de vérification a été envoyée avec succès. Elle sera examinée depuis le panneau d'administration.",
       verificationSubmit: "Envoyer la demande",
       verificationResubmit: "Renvoyer les documents",
-      organizationSettingsTitle: "Détails de l'organisation",
+      accountSettingsTitle: "Compte et sécurité",
+      accountSettingsDescription: "Gérez votre profil, votre nom d'utilisateur et la sécurité du compte.",
+      logoutAction: "Se déconnecter",
+      loggingOut: "Déconnexion...",
+      organizationSettingsTitle: "Paramètres de l'organisation",
       organizationSettingsDescription: "Un panneau plus simple pour mettre à jour l'identité de l'organisation et les coordonnées essentielles.",
       organizationIdentityTitle: "Identité de l'organisation",
       organizationIdentityDescription: "Consultez les informations actuelles de l'organisation puis modifiez uniquement les champs nécessaires.",

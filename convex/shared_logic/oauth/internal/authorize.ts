@@ -1,7 +1,11 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { internalMutation, internalQuery } from "../../../_generated/server";
-import { normalizeRequestedScopes } from "../../../_core/oauth/constants";
+import { normalizeRequestedScopes, OAUTH_SCOPE_REGISTRY } from "../../../_core/oauth/constants";
 import { ensureRedirectUri, ensureScopes, getClientOrThrow } from "./helpers";
+
+function parseRequestedScopeTokens(scope: string | undefined) {
+  return [...new Set((scope ?? "").split(/\s+/).map((value) => value.trim()).filter(Boolean))].sort();
+}
 
 /**
  * WHY:   `/authorize` must validate clients and requested scopes before any UI redirect.
@@ -21,7 +25,16 @@ export const validateAuthorizationRequest = internalQuery({
   handler: async (ctx, args) => {
     const client = await getClientOrThrow(ctx, args.clientId);
     ensureRedirectUri(client, args.redirectUri);
+    const rawRequestedScopes = parseRequestedScopeTokens(args.scope);
     const requestedScopes = normalizeRequestedScopes(args.scope);
+    const supportedScopes = new Set(OAUTH_SCOPE_REGISTRY);
+    const unsupportedScopes = rawRequestedScopes.filter((scope) => !supportedScopes.has(scope as never));
+    if (unsupportedScopes.length > 0) {
+      throw new ConvexError({
+        code: "INVALID_SCOPE",
+        message: `Unsupported scopes requested: ${unsupportedScopes.join(", ")}`,
+      });
+    }
     ensureScopes(client, requestedScopes);
     return {
       clientId: client.clientId,

@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { FlashListRef } from "@shopify/flash-list";
-import { Menu, Plus, User } from "lucide-react-native";
+import { Menu, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AnanMark } from "@/components/chat/AnanMark";
 import { Button } from "@/components/ui/Button";
@@ -11,14 +11,19 @@ import { IconButton } from "@/components/ui/IconButton";
 import { MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
 import { ConversationComposer } from "@/features/BuyerAssistantHomeScreen/ConversationComposer";
 import { ConversationTimeline } from "@/features/BuyerAssistantHomeScreen/ConversationTimeline";
-import { applyActivePropertyPromptToDraft } from "@/features/BuyerAssistantHomeScreen/propertyPrompt";
+import {
+  buildPropertySelectionPrompt,
+  buildPropertySelectionTopicPrompt,
+} from "@/features/BuyerAssistantHomeScreen/propertyPrompt";
 import { usePropertyAssistant } from "@/hooks/usePropertyAssistant";
 import { usePropertyFeed } from "@/hooks/usePropertyFeed";
 import { buildBuyerChatSuggestions, type BuyerChatSuggestion } from "@/lib/buyerAssistantShared";
 import { useMobileLayout } from "@/lib/mobileLayout";
 import { buildAssistantSearchContext, buildSearchRouteParams, filterPropertiesForSearch } from "@/lib/mobileSearch";
-import { useAppTheme, getMobileShadow } from "@/lib/mobileTheme";
+import { getMobileShadow, useAppTheme } from "@/lib/mobileTheme";
 import type { MobileConversationMessage, MobileProperty, MobileSearchContext, MobileThreadSummary } from "@/types/mobile";
+
+const MAX_COMPARE_PROPERTIES = 3;
 
 export default function BuyerAssistantHomeScreen() {
   const insets = useSafeAreaInsets();
@@ -31,6 +36,7 @@ export default function BuyerAssistantHomeScreen() {
   const listRef = useRef<FlashListRef<MobileConversationMessage> | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [isComparePicking, setIsComparePicking] = useState(false);
   const appliedRoutePropertyId = useRef<string | null>(null);
   const appliedThreadId = useRef<string | null>(null);
   const suggestions = useMemo(() => buildBuyerChatSuggestions("ar", "default"), []);
@@ -71,8 +77,17 @@ export default function BuyerAssistantHomeScreen() {
   }, []);
 
   useEffect(() => {
+    if (assistant.selectedProperties.length === 0 && isComparePicking) {
+      setIsComparePicking(false);
+    }
+  }, [assistant.selectedProperties.length, isComparePicking]);
+
+  useEffect(() => {
     if (!assistant.isHydrated) return;
-    if (!params.propertyId) return;
+    if (!params.propertyId) {
+      appliedRoutePropertyId.current = null;
+      return;
+    }
     if (appliedRoutePropertyId.current === params.propertyId) return;
     const property = feed.findPropertyById(params.propertyId);
     if (!property) return;
@@ -83,7 +98,10 @@ export default function BuyerAssistantHomeScreen() {
 
   useEffect(() => {
     if (!assistant.isHydrated) return;
-    if (!params.threadId) return;
+    if (!params.threadId) {
+      appliedThreadId.current = null;
+      return;
+    }
     if (appliedThreadId.current === params.threadId) return;
     appliedThreadId.current = params.threadId;
     void assistant.openHistoryThread(params.threadId);
@@ -143,8 +161,24 @@ export default function BuyerAssistantHomeScreen() {
     });
   }
 
-  function applyActivePropertyPrompt(property: MobileProperty) {
-    assistant.setDraft((currentDraft) => applyActivePropertyPromptToDraft(currentDraft, property));
+  function applyPropertyPromptForProperty(property: MobileProperty) {
+    const prompt = buildPropertySelectionTopicPrompt([property], "details");
+    if (!prompt) return;
+    assistant.setDraft(prompt);
+  }
+
+  function applyComparePrompt() {
+    const prompt = buildPropertySelectionPrompt(assistant.selectedProperties);
+    if (!prompt) return;
+    assistant.setDraft(prompt);
+    setIsComparePicking(false);
+  }
+
+  function addPropertyToSelection(property: MobileProperty) {
+    assistant.addPropertyToSelection(property);
+    if (assistant.selectedProperties.length + 1 >= MAX_COMPARE_PROPERTIES) {
+      setIsComparePicking(false);
+    }
   }
 
   const hasMessages = assistant.messages.length > 0;
@@ -218,12 +252,16 @@ export default function BuyerAssistantHomeScreen() {
               messages={assistant.messages}
               isTyping={assistant.isSubmitting}
               onPropertyPress={(property) => void assistant.askAboutProperty(property)}
+              onAddPropertyToSelection={addPropertyToSelection}
               onOpenProperty={openPropertyDetail}
               onOpenGallery={openPropertyGallery}
               bottomPadding={layout.sectionGap + 8}
               showLatestSuggestedPrompts={!keyboardVisible}
               onShowMoreSearchResults={openSearchResultsScreen}
               ambientBackgroundColor={shellBackgroundColor}
+              selectedPropertyIds={assistant.selectedProperties.map((property) => property.id)}
+              comparePicking={isComparePicking}
+              maxCompareProperties={MAX_COMPARE_PROPERTIES}
               onSuggestedPromptPress={(prompt) => {
                 if (prompt.includes("مستشار")) {
                   void assistant.requestAdvisor();
@@ -261,9 +299,13 @@ export default function BuyerAssistantHomeScreen() {
             onChange={assistant.setDraft}
             onSend={() => void assistant.submit()}
             onSubmitVoiceRecording={(fileUri) => assistant.submitVoiceRecording(fileUri)}
-            activeProperty={assistant.activeProperty}
-            onApplyActivePropertyPrompt={applyActivePropertyPrompt}
-            ambientBackgroundColor={shellBackgroundColor}
+            selectedProperties={assistant.selectedProperties}
+            comparePicking={isComparePicking}
+            maxCompareProperties={MAX_COMPARE_PROPERTIES}
+            onPressPromptProperty={applyPropertyPromptForProperty}
+            onPressComparePrompt={applyComparePrompt}
+            onRemoveSelectedProperty={(propertyId) => assistant.removePropertyFromSelection(propertyId)}
+            onToggleComparePicking={() => setIsComparePicking((current) => !current)}
             variant={isLandingMode ? "landing" : "thread"}
           />
         </View>
@@ -323,70 +365,51 @@ function WelcomeState({
         </View>
       </View>
 
-      <View>
-        <PromptSuggestions prompts={suggestions} onSelect={onSelect} />
-      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 2 }}
+      >
+        <View className="flex-row-reverse gap-3">
+          {suggestions.map((prompt) => (
+            <Pressable
+              key={prompt.id}
+              onPress={() => onSelect(prompt.prompt)}
+              className="justify-center px-3.5 py-3"
+              style={({ pressed }) => ({
+                width: Math.min(Math.max(layout.width * 0.5, 164), 188),
+                minHeight: 68,
+                borderRadius: 14,
+                backgroundColor: theme.colors.promptStarterSurface,
+                borderWidth: 1,
+                borderColor: theme.colors.border,
+                ...getMobileShadow("card"),
+                transform: [{ scale: pressed ? 0.97 : 1 }],
+              })}
+            >
+              <AppText
+                className="text-right font-cairo-bold text-[11.5px] leading-snug"
+                style={{ color: theme.colors.ink }}
+                numberOfLines={2}
+              >
+                {prompt.prompt}
+              </AppText>
+              {prompt.label ? (
+                <AppText
+                  className="mt-0.5 text-right text-[10px] leading-snug"
+                  style={{ color: theme.colors.inkMuted }}
+                  numberOfLines={2}
+                >
+                  {prompt.label}
+                </AppText>
+              ) : null}
+            </Pressable>
+          ))}
+        </View>
+      </ScrollView>
     </View>
   );
 }
-
-function PromptSuggestions({
-  prompts,
-  onSelect,
-}: {
-  prompts: BuyerChatSuggestion[];
-  onSelect: (prompt: string) => void;
-}) {
-  const layout = useMobileLayout();
-  const theme = useAppTheme();
-  const cardWidth = Math.min(Math.max(layout.width * 0.5, 164), 188);
-
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: 2 }}
-    >
-      <View className="flex-row-reverse gap-3">
-        {prompts.map((prompt) => (
-          <Pressable
-            key={prompt.id}
-            onPress={() => onSelect(prompt.prompt)}
-            className="justify-center px-3.5 py-3"
-            style={({ pressed }) => ({
-              width: cardWidth,
-              minHeight: 68,
-              borderRadius: 14,
-              backgroundColor: theme.colors.promptStarterSurface,
-              borderWidth: 1,
-              borderColor: theme.colors.border,
-              ...getMobileShadow("card"),
-              transform: [{ scale: pressed ? 0.97 : 1 }],
-            })}
-          >
-            <AppText
-              className="text-right font-cairo-bold text-[11.5px] leading-snug"
-              style={{ color: theme.colors.ink }}
-              numberOfLines={2}
-            >
-              {prompt.prompt}
-            </AppText>
-            {prompt.label ? (
-              <AppText
-                className="mt-0.5 text-right text-[10px] leading-snug"
-                style={{ color: theme.colors.inkMuted }}
-                numberOfLines={2}
-              >
-                {prompt.label}
-              </AppText>
-            ) : null}
-          </Pressable>
-        ))}
-      </View>
-    </ScrollView>
-  );
-}
-
 
 function AuthGateNotice({
   onContinue,
@@ -395,16 +418,10 @@ function AuthGateNotice({
   onContinue: () => void;
   onRequestAdvisor: () => void;
 }) {
-  const layout = useMobileLayout();
   const theme = useAppTheme();
 
   return (
-    <MobileSurface
-      tone="highlight"
-      radius="card"
-      shadow="none"
-      className="mb-3 px-4 py-4"
-    >
+    <MobileSurface tone="highlight" radius="card" shadow="none" className="mb-3 px-4 py-4">
       <AppText responsiveRole="bodyStrong" className="font-cairo-bold" style={{ color: theme.colors.ink }}>
         يحفظ السجل محلياً
       </AppText>
@@ -448,7 +465,7 @@ function HistorySheet({
         <View
           className="max-h-[78%] pb-8 pt-6"
           style={{
-            borderTopLeftRadius: theme.radii.panel, // Soft panel corner logic
+            borderTopLeftRadius: theme.radii.panel,
             borderTopRightRadius: theme.radii.panel,
             paddingHorizontal: layout.contentPadding,
             backgroundColor: theme.colors.canvasElevated,
@@ -494,12 +511,10 @@ function HistorySheet({
                       onPress={() => onSelectThread(thread)}
                       className="px-5 py-4"
                       style={({ pressed }) => ({
-                        borderRadius: theme.radii.card, // Gentle 16px radius
+                        borderRadius: theme.radii.card,
                         borderWidth: 1,
                         borderColor: isActive ? theme.colors.primary : theme.colors.border,
-                        backgroundColor: isActive
-                          ? theme.colors.primarySoft
-                          : theme.colors.surface,
+                        backgroundColor: isActive ? theme.colors.primarySoft : theme.colors.surface,
                         transform: [{ scale: pressed ? 0.98 : 1 }],
                       })}
                     >

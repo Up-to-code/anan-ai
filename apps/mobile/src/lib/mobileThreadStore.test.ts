@@ -50,6 +50,7 @@ describe("mobileThreadStore", () => {
       draft: "",
       activeThreadKind: "live",
       activeProperty: sampleProperty,
+      selectedProperties: [sampleProperty],
       messages: sampleMessages,
       updatedAt: 200,
     });
@@ -58,6 +59,7 @@ describe("mobileThreadStore", () => {
       draft: "",
       activeThreadKind: "live",
       activeProperty: null,
+      selectedProperties: [],
       messages: [
         {
           id: "user-2",
@@ -88,6 +90,7 @@ describe("mobileThreadStore", () => {
       draft: "",
       activeThreadKind: "live",
       activeProperty: sampleProperty,
+      selectedProperties: [sampleProperty],
       messages: sampleMessages,
       updatedAt: 200,
     });
@@ -109,8 +112,9 @@ describe("mobileThreadStore", () => {
       updatedAt: 200,
     });
 
-    expect(migrated?.version).toBe(2);
+    expect(migrated?.version).toBe(3);
     expect(migrated?.activeThreadId).toBe("legacy-thread");
     expect(migrated?.threads[0]?.messages).toHaveLength(2);
+    expect(migrated?.threads[0]?.selectedProperties).toEqual([sampleProperty]);
   });
 });
