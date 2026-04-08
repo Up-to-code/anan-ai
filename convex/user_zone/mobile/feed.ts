@@ -1,8 +1,11 @@
 import { paginationOptsValidator } from "convex/server";
-import { v } from "convex/values";
+import { v, type Infer } from "convex/values";
 import { internalQuery, query } from "../../_generated/server";
 import { mobilePropertyFeedItemValidator } from "./contracts";
 import { DEFAULT_COMPLIANCE_COUNTRY, findActiveComplianceRuleset } from "../../shared_logic/compliance/utils";
+
+type MobilePropertyFeedItem = Infer<typeof mobilePropertyFeedItemValidator>;
+type PropertyAdLicenseStatus = "pending" | "approved" | "rejected";
 
 type PropertyDoc = {
   _id: any;
@@ -21,6 +24,9 @@ type PropertyDoc = {
   heroImage?: { url: string };
   media?: Array<{ url: string }>;
   bankId?: any;
+  publicationState?: "draft" | "published" | "archived";
+  adLicenseStatus?: PropertyAdLicenseStatus;
+  listingVerified?: boolean;
 };
 
 type PropertyOwner = {
@@ -169,7 +175,7 @@ function buildContactPreview(property: PropertyDoc, owner: PropertyOwner) {
 
 function buildCompliancePreview(args: {
   owner: PropertyOwner;
-  adLicenseStatus?: string;
+  adLicenseStatus?: PropertyAdLicenseStatus;
   listingVerified?: boolean;
 }) {
   const ownerVerified = args.owner.isVerified === true;
@@ -257,9 +263,9 @@ export const getPropertyDetail = query({
 export async function buildMobilePropertyFeedItem(
   ctx: any,
   property: PropertyDoc,
-) {
-  const adLicenseStatus = (property as { adLicenseStatus?: string }).adLicenseStatus;
-  const listingVerified = (property as { listingVerified?: boolean }).listingVerified;
+): Promise<MobilePropertyFeedItem | null> {
+  const adLicenseStatus = property.adLicenseStatus;
+  const listingVerified = property.listingVerified;
   const ownerContext = await resolvePropertyOwner(ctx, property);
   if (!ownerContext) return null;
   const { owner, ownerType, orgType } = ownerContext;
