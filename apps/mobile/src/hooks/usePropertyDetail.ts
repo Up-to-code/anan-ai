@@ -1,8 +1,13 @@
 import { useQuery } from "convex/react";
 import { api } from "@/lib/convexApi";
-import { getFallbackProperties, toMobileProperty } from "@/lib/mobileData";
+import { toMobileProperty } from "@/lib/mobileData";
+import { resolveConvexUrl } from "@/lib/mobileEnv.shared";
 
-const LIVE_BACKEND_ENABLED = Boolean(process.env.EXPO_PUBLIC_CONVEX_URL);
+const LIVE_BACKEND_ENABLED = Boolean(
+  resolveConvexUrl({
+    expoPublicConvexUrl: process.env.EXPO_PUBLIC_CONVEX_URL,
+  }),
+);
 
 function useLivePropertyDetail(propertyId?: string) {
   const liveProperty = useQuery(api.user_zone.mobile.feed.getPropertyDetail, propertyId ? ({ propertyId: propertyId as never } as never) : "skip") as any;
@@ -30,9 +35,10 @@ function useLivePropertyDetail(propertyId?: string) {
   };
 }
 
-function useFallbackPropertyDetail(propertyId?: string) {
+function useUnavailablePropertyDetail(propertyId?: string) {
+  void propertyId;
   return {
-    property: getFallbackProperties().find((item) => item.id === propertyId) ?? null,
+    property: null,
     isLoading: false,
   };
 }
@@ -40,8 +46,8 @@ function useFallbackPropertyDetail(propertyId?: string) {
 /**
  * WHY:   Property routes need a direct read helper when the feed page is not already mounted or fully paged in.
  * WHAT:  Returns one buyer-facing property for the given route id.
- * HOW:   Calls the new mobile detail query in live mode and falls back to the local catalog when Convex is unavailable.
+ * HOW:   Calls the mobile detail query when the backend is configured and otherwise returns an unavailable state.
  */
 export function usePropertyDetail(propertyId?: string) {
-  return LIVE_BACKEND_ENABLED ? useLivePropertyDetail(propertyId) : useFallbackPropertyDetail(propertyId);
+  return LIVE_BACKEND_ENABLED ? useLivePropertyDetail(propertyId) : useUnavailablePropertyDetail(propertyId);
 }

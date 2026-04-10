@@ -32,12 +32,9 @@ describe("AdminShell", () => {
     );
 
     expect(html).toContain("عنان أدمن");
-    expect(html).toContain("التحكم الإداري");
+    expect(html).toContain("MVP Operations");
     expect(html).toContain("لوحة التحكم");
-    expect(html).toContain("المشاريع");
-    expect(html).toContain("البنوك");
-    expect(html).toContain("العقارات");
-    expect(html).toContain("مراجعة العروض");
+    expect(html).toContain("طلبات التوثيق");
     expect(html).not.toContain("Docs");
     expect(html).toContain("href=\"#admin-main-content\"");
     expect(html).toContain("id=\"admin-main-content\"");
@@ -54,5 +51,6 @@ describe("AdminShell", () => {
     expect(html).toContain("aria-label=\"Admin navigation\"");
     expect(html).toContain("data-slot=\"admin-top-navbar\"");
     expect(html).toContain("w-80");
+    expect(html).toContain("MVP Operations");
   });
 });

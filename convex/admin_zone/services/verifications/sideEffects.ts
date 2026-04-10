@@ -3,6 +3,7 @@ import type {
   ReviewStatus,
   VerificationRequestRecord,
 } from "../../../shared_logic/verifications/types";
+import { normalizeUserProfileRoleState } from "../../../_core/security/profileRoles";
 
 async function syncUserVerification(
   ctx: MutationCtx,
@@ -14,14 +15,28 @@ async function syncUserVerification(
   const profile = await ctx.db.get(request.subjectProfileId);
   if (!profile) return;
 
-  const patch: Record<string, unknown> = {
-    roleStatus:
-      status === "approved" ? "approved" : status === "rejected" ? "rejected" : "pending",
-    updatedAt: now,
-  };
+  const normalized = normalizeUserProfileRoleState(profile);
+  const patch: Record<string, unknown> = { updatedAt: now };
 
-  if (status === "approved" && profile.requestedRole) {
-    patch.role = profile.requestedRole;
+  if (status === "approved") {
+    const approvedRole = normalized.requestedRole ?? normalized.role;
+    const approvedState = normalizeUserProfileRoleState({
+      ...profile,
+      role: approvedRole,
+      requestedRole: undefined,
+      roleApprovalStatus: "approved",
+    });
+    patch.role = approvedState.role;
+    patch.requestedRole = approvedState.requestedRole;
+    patch.roleApprovalStatus = approvedState.roleApprovalStatus;
+    patch.brokerId = approvedState.brokerId;
+    patch.developerId = approvedState.developerId;
+  } else {
+    patch.role = normalized.role;
+    patch.requestedRole = normalized.requestedRole;
+    patch.roleApprovalStatus = status === "rejected" ? "rejected" : "pending";
+    patch.brokerId = normalized.brokerId;
+    patch.developerId = normalized.developerId;
   }
 
   await ctx.db.patch(profile._id, patch);

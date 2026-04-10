@@ -1,4 +1,5 @@
 import { MobilePropertyCard } from "@/components/property/MobilePropertyCard";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import type { MobileProperty } from "@/types/mobile";
 
 type SearchResultCardProps = {
@@ -14,13 +15,14 @@ type SearchResultCardProps = {
  * HOW:   Delegates to the shared mobile property list item so chat and search stay visually aligned while keeping screen-specific callbacks.
  */
 export function SearchResultCard({ property, onOpenDetails, onTakeAction, ambientBackgroundColor }: SearchResultCardProps) {
+  const { dictionary } = useMobileLocale();
   return (
     <MobilePropertyCard
       variant="compact"
       property={property}
       onPress={onOpenDetails}
       onActionPress={onTakeAction}
-      actionLabel="تابع في المحادثة"
+      actionLabel={dictionary.search.continueInChat}
       ambientBackgroundColor={ambientBackgroundColor}
     />
   );

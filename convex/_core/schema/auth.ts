@@ -1,8 +1,5 @@
-import { authTables as convexAuthTableDefinitions } from "@convex-dev/auth/server";
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
-
-const { users: _users, ...convexAuthTables } = convexAuthTableDefinitions;
 
 /**
  * WHY:   Persist channel-scoped session tokens for non-web flows (WhatsApp).
@@ -10,7 +7,6 @@ const { users: _users, ...convexAuthTables } = convexAuthTableDefinitions;
  * HOW:   Indexed by authUserId + channel for fast refresh/cleanup lookups.
  */
 const authTables = {
-  ...convexAuthTables,
   channelSessions: defineTable({
     authUserId: v.string(),
     channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web"), v.literal("main_assistant_web")),

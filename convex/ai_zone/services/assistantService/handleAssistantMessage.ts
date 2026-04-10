@@ -30,6 +30,7 @@ export async function handleAssistantMessage(
     startNewThread?: boolean;
     inputMode?: "text" | "voice" | "attachment";
     attachments?: WorkspaceUploadedFileReference[];
+    userMessageMetadata?: Record<string, unknown>;
     regenerate?: boolean;
     regenerateMessageId?: string;
     assistantKind?: AssistantKind;
@@ -59,6 +60,7 @@ export async function handleAssistantMessage(
   mode: "qa" | "action";
   output: string;
   messageId: string;
+  userMessageId?: string;
   promptBudgetMeta?: unknown;
 }> {
   const isWorkspaceAssistant = isWorkspaceKind(args.assistantKind);
@@ -422,6 +424,19 @@ export async function handleAssistantMessage(
       internal.ai_zone.assistantWorkspace._saveConversationStep)
     : (args.saveConversationStepMutationOverride ??
       internal.ai_zone.assistant._saveConversationStep);
+  const mergedUserMessageMetadata = {
+    ...(typeof args.userMessageMetadata === "object" && args.userMessageMetadata
+      ? args.userMessageMetadata
+      : {}),
+    ...(
+      args.inputMode || (args.attachments?.length ?? 0) > 0
+        ? {
+            inputMode: args.inputMode,
+            attachments: args.attachments,
+          }
+        : {}
+    ),
+  };
 
   // 7. Persist the conversation step
   await workspaceStream.emitStage("persist_started", { status: "running" });
@@ -433,11 +448,8 @@ export async function handleAssistantMessage(
     ownerREDId: owner.ownerREDId,
     userMessage: effectiveUserMessage,
     userMessageMetadata:
-      args.inputMode || (args.attachments?.length ?? 0) > 0
-        ? {
-            inputMode: args.inputMode,
-            attachments: args.attachments,
-          }
+      Object.keys(mergedUserMessageMetadata).length > 0
+        ? mergedUserMessageMetadata
         : undefined,
     persistUserMessage: !(args.regenerate && regenerateSource),
     assistantMessage: assistantText,
@@ -462,6 +474,7 @@ export async function handleAssistantMessage(
     mode,
     output: assistantText,
     messageId: saved.assistantMessageId,
+    userMessageId: saved.userMessageId ?? undefined,
     promptBudgetMeta: compiledBuyerContext?.promptBudgetMeta,
   };
 }

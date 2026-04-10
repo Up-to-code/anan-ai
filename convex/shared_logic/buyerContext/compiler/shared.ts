@@ -61,6 +61,20 @@ export async function loadBuyerStateAndMemory(args: {
   return { state, memory };
 }
 
+export function buildEmptyBuyerMemoryContext(): BuyerMemoryContext {
+  return {
+    summary: "",
+    preferences: [],
+    constraints: [],
+    recentInteractions: [],
+    lastSearchSummary: null,
+  };
+}
+
+export function buildEmptyBuyerSummaries(): BuyerSummaryCollection {
+  return {};
+}
+
 export function buildEffectiveBuyerStateSnapshot(state: any): BuyerStateSnapshot | null {
   return state
     ? {
@@ -70,6 +84,10 @@ export function buildEffectiveBuyerStateSnapshot(state: any): BuyerStateSnapshot
           ? String(state.selectedPropertyId)
           : undefined,
         lastResultPropertyIds: state.lastResultPropertyIds.map((id: any) => String(id)),
+        comparisonPropertyIds: state.comparisonPropertyIds?.map((id: any) => String(id)),
+        lastComparisonArtifactId: state.lastComparisonArtifactId
+          ? String(state.lastComparisonArtifactId)
+          : undefined,
         qualification: state.qualification,
       }
     : null;
@@ -130,6 +148,24 @@ export async function loadCompiledBuyerContextIngredients(args: {
     threadId: args.state?.threadId ? String(args.state.threadId) : undefined,
     lineCap: THREAD_RECAP_LINE_CAP,
   });
+  const recentPropertyRefIds = args.state?.threadId
+    ? await args.ctx.db
+        .query("buyerThreadResourceRefs")
+        .withIndex("threadId_createdAt", (q: any) => q.eq("threadId", args.state.threadId))
+        .order("desc")
+        .take(8)
+        .then((rows: Array<{ resourceId: string }>) => {
+          const deduped = new Set<string>();
+          const propertyIds: string[] = [];
+          for (const row of rows) {
+            const key = String(row.resourceId);
+            if (deduped.has(key)) continue;
+            deduped.add(key);
+            propertyIds.push(key);
+          }
+          return propertyIds;
+        })
+    : [];
   const buyerSummarySnippets = selectBuyerSummarySnippets({
     query: args.message,
     summaries: args.summaries,
@@ -148,6 +184,7 @@ export async function loadCompiledBuyerContextIngredients(args: {
   return {
     intent,
     recentThreadRecap,
+    recentPropertyRefIds,
     buyerSummarySnippets,
     rawMemoryFallback,
     companyKnowledgeSnippets,
@@ -160,6 +197,7 @@ export function buildBuyerPromptBlocks(args: {
   memory: BuyerMemoryContext;
   summaries: BuyerSummaryCollection;
   recentThreadRecap: string[];
+  recentPropertyRefIds: string[];
   buyerSummarySnippets: string[];
   rawMemoryFallback: string[];
   companyKnowledgeSnippets: KnowledgeSnippet[];
@@ -234,6 +272,22 @@ export function buildBuyerPromptBlocks(args: {
       bucket: "context",
       priority: args.intent === "search" ? 1 : 5,
     },
+    {
+      name: "recent_property_refs",
+      text: args.recentPropertyRefIds.length
+        ? `Recent property refs: ${args.recentPropertyRefIds.join(", ")}. Use these ids to ground shortlist follow-ups and comparisons without replaying full UI payloads.`
+        : "",
+      bucket: "context",
+      priority: args.intent === "property" ? 1 : 4,
+    },
+    {
+      name: "active_compare_set",
+      text: args.state?.comparisonPropertyIds?.length
+        ? `Active comparison property ids: ${args.state.comparisonPropertyIds.join(", ")}. Reuse this set only when the user is clearly continuing the same comparison.`
+        : "",
+      bucket: "context",
+      priority: args.intent === "property" ? 2 : 6,
+    },
   ];
 }
 
@@ -245,6 +299,7 @@ export function buildBuyerCompilationFingerprint(args: {
   memory: BuyerMemoryContext;
   summaries: BuyerSummaryCollection;
   recentThreadRecap: string[];
+  recentPropertyRefIds: string[];
   companyKnowledgeSnippets: KnowledgeSnippet[];
 }) {
   return serializeForFingerprint({
@@ -255,6 +310,7 @@ export function buildBuyerCompilationFingerprint(args: {
     memorySummary: args.memory.summary,
     summaries: args.summaries,
     recap: args.recentThreadRecap,
+    recentPropertyRefIds: args.recentPropertyRefIds,
     knowledge: args.companyKnowledgeSnippets,
   });
 }

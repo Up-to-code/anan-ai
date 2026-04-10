@@ -12,6 +12,10 @@ export type SessionContext = {
   role?: string;
   brokerId?: string;
   redId?: string;
+  organizationId?: string | null;
+  organizationSlug?: string | null;
+  organizationRole?: string | null;
+  organizationPermissions?: string[];
   isActive: boolean;
 };
 
@@ -26,6 +30,10 @@ export type SessionUser = {
   email?: string | null;
   image?: string | null;
   username?: string | null;
+  organizationId?: string | null;
+  organizationSlug?: string | null;
+  organizationRole?: string | null;
+  organizationPermissions?: string[];
   isActive: boolean;
 };
 
@@ -41,6 +49,10 @@ export function toSessionUser(context: SessionContext): SessionUser {
     email: context.email,
     image: context.image,
     username: context.username,
+    organizationId: context.organizationId,
+    organizationSlug: context.organizationSlug,
+    organizationRole: context.organizationRole,
+    organizationPermissions: context.organizationPermissions,
     isActive: context.isActive,
   };
 }

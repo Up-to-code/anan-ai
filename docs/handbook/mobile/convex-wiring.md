@@ -4,12 +4,7 @@
 
 ## WHY
 
-Mobile must work in two modes:
-
-- **live backend mode** when `EXPO_PUBLIC_CONVEX_URL` is configured,
-- **UI development mode** when backend is not configured.
-
-If wiring is implicit, teams accidentally ship mock-only assumptions into production.
+Mobile buyer runtime is backend-required. If wiring is implicit, teams accidentally ship mock-only assumptions into production.
 
 ---
 
@@ -31,7 +26,7 @@ This chapter documents:
 
 ### Provider behavior (repo pattern)
 
-The mobile app wraps children in a Convex provider when the environment is configured, and otherwise becomes a pass-through wrapper so local UI work can still run.
+The mobile app validates `EXPO_PUBLIC_CONVEX_URL` at boot. When the value is valid, the app mounts the Convex provider and buyer routes. When it is missing or invalid, the app shows one blocking setup screen instead of rendering mock buyer data.
 
 Reference:
 

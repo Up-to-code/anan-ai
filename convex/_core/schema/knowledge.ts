@@ -80,6 +80,8 @@ const knowledgeTables = {
         ),
         selectedPropertyId: v.optional(v.id("properties")),
         lastResultPropertyIds: v.array(v.id("properties")),
+        comparisonPropertyIds: v.optional(v.array(v.id("properties"))),
+        lastComparisonArtifactId: v.optional(v.id("buyerComparisonArtifacts")),
         lastSearchQuery: v.optional(v.string()),
         qualification: v.optional(v.object({
             monthlySalary: v.optional(v.number()),
@@ -190,6 +192,55 @@ const knowledgeTables = {
     })
         .index("sessionId", ["sessionId"])
         .index("sessionId_seq", ["sessionId", "seq"]),
+
+    buyerThreadResourceRefs: defineTable({
+        threadId: v.id("assistantThreads"),
+        userId: v.string(),
+        channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
+        resourceType: v.literal("property"),
+        resourceId: v.id("properties"),
+        source: v.union(
+            v.literal("shortlist_displayed"),
+            v.literal("ui_selected"),
+            v.literal("active_property"),
+            v.literal("comparison_request"),
+        ),
+        messageId: v.optional(v.id("assistantMessages")),
+        rank: v.optional(v.number()),
+        createdAt: v.number(),
+    })
+        .index("threadId_createdAt", ["threadId", "createdAt"])
+        .index("threadId_resource_source_createdAt", ["threadId", "resourceId", "source", "createdAt"])
+        .index("userId_createdAt", ["userId", "createdAt"]),
+
+    buyerComparisonArtifacts: defineTable({
+        threadId: v.id("assistantThreads"),
+        userId: v.string(),
+        channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
+        locale: v.union(v.literal("ar"), v.literal("en"), v.literal("fr")),
+        propertyIds: v.array(v.id("properties")),
+        triggerMessageId: v.optional(v.id("assistantMessages")),
+        selectionSource: v.union(
+            v.literal("ui_selected"),
+            v.literal("history_resolved"),
+            v.literal("text_resolved"),
+        ),
+        digestTitle: v.string(),
+        digestSummary: v.string(),
+        digestHash: v.string(),
+        version: v.string(),
+        snapshot: v.object({
+            message: v.string(),
+            cards: v.array(v.any()),
+            properties: v.array(v.any()),
+            activePropertyId: v.optional(v.id("properties")),
+            suggestedPrompts: v.array(v.string()),
+        }),
+        createdAt: v.number(),
+        lastRefreshedAt: v.number(),
+    })
+        .index("threadId_createdAt", ["threadId", "createdAt"])
+        .index("userId_createdAt", ["userId", "createdAt"]),
 };
 
 export default knowledgeTables;

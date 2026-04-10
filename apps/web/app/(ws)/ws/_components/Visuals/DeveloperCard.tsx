@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Building2, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,13 +18,13 @@ export type DeveloperCardData = {
  * WHAT:  Renders a premium card with avatar, name, group name, developer badge, and location.
  * HOW:   Mirrors the BrokerCard aesthetic with a distinctive indigo accent to differentiate the person type at a glance.
  */
-export default function DeveloperCard({
+const DeveloperCardComponent = ({
   developer,
   className,
 }: {
   developer: DeveloperCardData;
   className?: string;
-}) {
+}) => {
   return (
     <article
       className={cn(
@@ -95,4 +96,6 @@ export default function DeveloperCard({
       </div>
     </article>
   );
-}
+};
+
+export default memo(DeveloperCardComponent);

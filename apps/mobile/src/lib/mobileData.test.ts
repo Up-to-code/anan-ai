@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  buildPropertyFocusMessage,
-  mapMvpPropertyToMobileProperty,
-  toMobileProperty,
-} from "@/lib/mobileData";
+import { mapMvpPropertyToMobileProperty } from "@/lib/mobileFallbackData";
+import { toMobileProperty } from "@/lib/mobileData";
 import type { MobileProperty } from "@/types/mobile";
 
 const sampleProperty: MobileProperty = {
@@ -46,14 +43,6 @@ const sampleProperty: MobileProperty = {
 };
 
 describe("mobileData", () => {
-  it("builds the property focus assistant message with prompts", () => {
-    const message = buildPropertyFocusMessage(sampleProperty);
-
-    expect(message.role).toBe("assistant");
-    expect(message.properties?.[0]?.title).toBe("Olive Residence");
-    expect(message.suggestedPrompts?.length).toBeGreaterThan(0);
-  });
-
   it("normalizes live mobile properties without sharing nested DTO references", () => {
     const normalized = toMobileProperty(sampleProperty);
     sampleProperty.owner.name = "Changed Broker";

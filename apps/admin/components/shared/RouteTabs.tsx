@@ -27,8 +27,8 @@ export default function RouteTabs({ tabs, className, mode = "segmented" }: Route
     <nav
       className={cn(
         mode === "segmented"
-          ? "flex flex-wrap items-center gap-2"
-          : "flex flex-wrap items-center gap-2 border-b border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] pb-2",
+          ? "flex flex-wrap items-center gap-2 border-b border-[color:color-mix(in_srgb,var(--workspace-border)_86%,transparent)] pb-3"
+          : "flex flex-wrap items-center gap-2 border-b border-[color:color-mix(in_srgb,var(--workspace-border)_86%,transparent)] pb-2",
         className,
       )}
       aria-label="section tabs"
@@ -40,17 +40,18 @@ export default function RouteTabs({ tabs, className, mode = "segmented" }: Route
           <Link
             key={tab.href}
             href={tab.href}
+            aria-current={active ? "page" : undefined}
             className={cn(
               mode === "segmented"
-                ? "rounded-2xl border px-4 py-2.5 text-[12px] font-black uppercase tracking-[0.16em] transition-all"
-                : "rounded-xl border border-transparent px-3 py-2 text-[12px] font-black tracking-[0.06em] transition-all",
+                ? "rounded-sm border px-4 py-2.5 text-[12px] font-black uppercase tracking-[0.16em] transition-all"
+                : "rounded-sm border border-transparent px-3 py-2 text-[12px] font-black tracking-[0.08em] transition-all",
               active
                 ? mode === "segmented"
-                  ? "border-[color:color-mix(in_srgb,var(--workspace-highlight)_32%,transparent)] bg-[var(--workspace-highlight)] text-white shadow-sm"
-                  : "border-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_16%,transparent)] text-[var(--workspace-bubble-other-foreground)]"
+                  ? "border-[color:var(--workspace-highlight-border)] bg-[var(--workspace-highlight)] text-white"
+                  : "border-[color:var(--workspace-highlight-border)] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,var(--workspace-panel))] text-[var(--workspace-bubble-other-foreground)]"
                 : mode === "segmented"
-                  ? "border-transparent text-[var(--workspace-muted)] hover:border-[color:color-mix(in_srgb,var(--workspace-border)_80%,transparent)] hover:bg-[var(--workspace-panel)] hover:text-[var(--workspace-bubble-other-foreground)]"
-                  : "text-[var(--workspace-muted)] hover:bg-[color:color-mix(in_srgb,var(--workspace-panel)_92%,transparent)] hover:text-[var(--workspace-bubble-other-foreground)]",
+                  ? "border-transparent text-[var(--workspace-muted)] hover:border-[color:color-mix(in_srgb,var(--workspace-border)_88%,transparent)] hover:bg-[var(--workspace-panel)] hover:text-[var(--workspace-bubble-other-foreground)]"
+                  : "text-[var(--workspace-muted)] hover:border-[color:color-mix(in_srgb,var(--workspace-border)_88%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] hover:text-[var(--workspace-bubble-other-foreground)]",
             )}
           >
             {tab.label}

@@ -51,16 +51,21 @@ export default function AdminTopNavbar({ user, mobileNavigation, title }: AdminT
   return (
     <header
       data-slot="admin-top-navbar"
-      className="sticky top-0 z-40 shrink-0 border-b border-[color:var(--workspace-border)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_88%,transparent)] backdrop-blur-xl supports-[backdrop-filter]:bg-[color:color-mix(in_srgb,var(--workspace-panel)_82%,transparent)]"
+      className="sticky top-0 z-40 shrink-0 border-b border-[color:color-mix(in_srgb,var(--workspace-border)_94%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-chrome-header-bg)_96%,transparent)]"
     >
-      <div className={cn("flex w-full min-w-0 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8", ADMIN_TOPBAR_HEIGHT_CLASS)}>
+      <div
+        className={cn(
+          "grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 sm:px-6 lg:px-8",
+          ADMIN_TOPBAR_HEIGHT_CLASS,
+        )}
+      >
         <div className="flex min-w-0 items-center gap-3">
           {mobileNavigation ? <div className="lg:hidden">{mobileNavigation}</div> : null}
-          <div className="min-w-0">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[var(--workspace-muted)]">
-              التحكم الإداري
+          <div className="min-w-0 border-s-2 border-[var(--workspace-highlight)] ps-3">
+            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[var(--workspace-muted)]">
+              MVP Operations
             </div>
-            <p className="truncate text-base font-black text-[var(--workspace-bubble-other-foreground)] sm:text-lg">
+            <p className="mt-1 truncate text-lg font-black tracking-[-0.04em] text-[var(--workspace-bubble-other-foreground)] sm:text-xl">
               {resolvedTitle}
             </p>
           </div>
@@ -68,30 +73,30 @@ export default function AdminTopNavbar({ user, mobileNavigation, title }: AdminT
 
         <div
           className={cn(
-            "flex shrink-0 items-center gap-2 rounded-[22px] border border-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_94%,transparent)] p-1.5 shadow-sm",
+            "flex shrink-0 items-center gap-2 rounded-md border border-[color:color-mix(in_srgb,var(--workspace-border)_92%,transparent)] bg-[var(--workspace-panel)] p-1.5",
             "max-w-[calc(100vw-6rem)]",
           )}
         >
           <ThemeToggle />
 
-          <div className="hidden items-center gap-3 rounded-[14px] bg-[var(--workspace-elevated)] px-3 py-2 sm:flex">
-            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)] bg-[var(--workspace-panel)] text-[11px] font-black tracking-[0.18em] text-[var(--workspace-bubble-other-foreground)]">
+          <div className="hidden items-center gap-3 border-s border-[color:color-mix(in_srgb,var(--workspace-border)_88%,transparent)] ps-3 sm:flex">
+            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-sm border border-[color:color-mix(in_srgb,var(--workspace-border)_90%,transparent)] bg-[var(--workspace-panel-strong)] text-[11px] font-black tracking-[0.18em] text-[var(--workspace-bubble-other-foreground)]">
               <UserAvatar image={user.image} label={avatarLabel} alt={displayName} />
             </div>
             <div className="min-w-0 text-right">
               <div className="truncate text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{displayName}</div>
-              <div className="truncate text-[11px] font-medium text-[var(--workspace-muted)]">
+              <div className="truncate text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--workspace-muted)]">
                 {user.email || "admin@anan.local"}
               </div>
             </div>
           </div>
 
-          <div className="inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-3 text-[11px] font-black text-emerald-700 dark:text-emerald-300">
+          <div className="inline-flex h-10 items-center gap-2 rounded-sm border border-emerald-500/30 bg-emerald-500/8 px-3 text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300">
             <ShieldCheck className="h-4 w-4" />
-            <span className="hidden sm:inline">Admin</span>
+            <span className="hidden sm:inline">Admin Access</span>
           </div>
 
-          <LogoutButton className="h-10 rounded-xl bg-[var(--workspace-highlight)] px-3 text-white shadow-sm hover:bg-[var(--workspace-highlight-strong)]">
+          <LogoutButton className="h-10 rounded-sm border border-[color:var(--workspace-highlight-border)] bg-[var(--workspace-highlight)] px-3 text-white hover:bg-[var(--workspace-highlight-strong)]">
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">إنهاء الجلسة</span>
           </LogoutButton>

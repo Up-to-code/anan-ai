@@ -19,7 +19,7 @@ This chapter documents the mobile flow:
 - Expo Router entrypoints,
 - feature modules (screen-level orchestration),
 - hooks (data + assistant state),
-- Convex endpoints (user_zone mobile functions).
+- Convex endpoints across the live public buyer assistant path and mobile-specific buyer helpers.
 
 ---
 
@@ -30,7 +30,8 @@ flowchart LR
   R["apps/mobile/app/*\n(Expo Router)"] --> F["src/features/*\n(screen orchestration)"]
   F --> H["src/hooks/*\n(data + state)"]
   H --> C["src/lib/convex*\n(provider + API proxy)"]
-  C --> X["convex/user_zone/mobile/*\n(feed + assistant endpoints)"]
+  C --> A["convex/ai_zone/assistantPublic\n(live buyer assistant)"]
+  C --> X["convex/user_zone/mobile/*\n(feed + account + deterministic helpers)"]
 ```
 
 ### Design rules
@@ -51,7 +52,9 @@ flowchart LR
 ## Where to change code
 
 - Feed endpoints: `convex/user_zone/mobile/feed.ts`
-- Mobile assistant endpoints: `convex/user_zone/mobile/assistant.ts`
+- Live buyer assistant backend: `convex/ai_zone/assistantPublic.ts`
+- Mobile authenticated replay: `convex/user_zone/mobile/account.ts`
+- Deterministic mobile helper: `convex/user_zone/mobile/assistant.ts`
 - Feed hook: `apps/mobile/src/hooks/usePropertyFeed.ts`
 - Assistant hook: `apps/mobile/src/hooks/usePropertyAssistant.ts`
 
@@ -62,4 +65,4 @@ flowchart LR
 - Allowing mock data to “fill missing fields” from real backend items.
 - Drifting hook return shapes without updating feature modules.
 - Passing raw Convex document shapes directly into components.
-
+- Letting mock helper imports leak back into shipped mobile routes or hooks.

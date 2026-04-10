@@ -201,6 +201,40 @@ export const mobileAssistantResponseValidator = v.object({
   suggestedPrompts: v.array(v.string()),
 });
 
+export const mobileLocaleValidator = v.union(v.literal("ar"), v.literal("en"));
+
+export const mobileBuyerProfileValidator = v.object({
+  displayName: v.optional(v.string()),
+  phone: v.optional(v.string()),
+  email: v.optional(v.string()),
+});
+
+export const mobileBuyerConsentsValidator = v.object({
+  privacyAcceptedAt: v.optional(v.number()),
+  termsAcceptedAt: v.optional(v.number()),
+  microphoneAcceptedAt: v.optional(v.number()),
+  supportAcceptedAt: v.optional(v.number()),
+});
+
+export const mobileFinanceDefaultsValidator = v.object({
+  downPaymentPercent: v.number(),
+  preferredYears: v.number(),
+  annualRate: v.number(),
+});
+
+export const mobileFinanceDefaultsPatchValidator = v.object({
+  downPaymentPercent: v.optional(v.number()),
+  preferredYears: v.optional(v.number()),
+  annualRate: v.optional(v.number()),
+});
+
+export const mobileBuyerPreferencesValidator = v.object({
+  locale: mobileLocaleValidator,
+  onboardingCompletedAt: v.optional(v.number()),
+  authEntryDismissedAt: v.optional(v.number()),
+  financeDefaults: mobileFinanceDefaultsValidator,
+});
+
 export const mobileBuyerViewerValidator = v.object({
   id: v.optional(v.string()),
   authUserId: v.optional(v.string()),
@@ -217,6 +251,47 @@ export const mobileBuyerViewerValidator = v.object({
   ),
   isAuthenticated: v.boolean(),
   qualifiedOrdersCount: v.number(),
+  savedPropertyIds: v.array(v.string()),
+  consents: mobileBuyerConsentsValidator,
+  preferences: mobileBuyerPreferencesValidator,
+});
+
+export const mobileGuestBuyerLocalStateValidator = v.object({
+  profile: mobileBuyerProfileValidator,
+  savedPropertyIds: v.array(v.string()),
+  consents: mobileBuyerConsentsValidator,
+  preferences: mobileBuyerPreferencesValidator,
+});
+
+export const mobileAssistantThreadSummaryValidator = v.object({
+  id: v.string(),
+  title: v.string(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+  preview: v.optional(v.string()),
+});
+
+export const mobileAssistantMessageValidator = v.object({
+  id: v.string(),
+  role: v.union(v.literal("assistant"), v.literal("user")),
+  text: v.string(),
+  createdAt: v.number(),
+  properties: v.optional(v.array(mobilePropertyFeedItemValidator)),
+  cards: v.optional(v.array(mobileAssistantResultCardValidator)),
+  activePropertyId: v.optional(v.string()),
+  requiresAuthForHandoff: v.optional(v.boolean()),
+  suggestedPrompts: v.optional(v.array(v.string())),
+  comparisonArtifactId: v.optional(v.id("buyerComparisonArtifacts")),
+  comparisonPropertyIds: v.optional(v.array(v.id("properties"))),
+  selectionSource: v.optional(
+    v.union(v.literal("ui_selected"), v.literal("history_resolved"), v.literal("text_resolved")),
+  ),
+});
+
+export const mobileAssistantStateValidator = v.object({
+  activeThreadId: v.optional(v.string()),
+  recentThreads: v.array(mobileAssistantThreadSummaryValidator),
+  activeMessages: v.array(mobileAssistantMessageValidator),
 });
 
 export const mobileFinanceBankOfferValidator = v.object({

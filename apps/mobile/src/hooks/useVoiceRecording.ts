@@ -22,12 +22,15 @@ export function useVoiceRecording({ onStateChange, onSubmitRecording }: UseVoice
   const [durationSeconds, setDurationSeconds] = useState(0);
   const recordingRef = useRef<Audio.Recording | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const phaseRef = useRef<VoiceRecordingPhase>("idle");
+  const actionLockRef = useRef(false);
   
   // Waveform animation values
   const waveAnims = useRef(Array.from({ length: 18 }, () => new Animated.Value(0))).current;
   const waveLoopRef = useRef<Animated.CompositeAnimation | null>(null);
 
   const setPhaseWithCallback = useCallback((nextPhase: VoiceRecordingPhase) => {
+    phaseRef.current = nextPhase;
     setPhase(nextPhase);
     onStateChange?.(nextPhase);
   }, [onStateChange]);
@@ -73,6 +76,10 @@ export function useVoiceRecording({ onStateChange, onSubmitRecording }: UseVoice
   }, []);
 
   const startRecording = useCallback(async () => {
+    if (actionLockRef.current) return;
+    if (phaseRef.current !== "idle" && phaseRef.current !== "error") return;
+    actionLockRef.current = true;
+
     try {
       setPhaseWithCallback("waiting_for_permission");
       const permission = await Audio.requestPermissionsAsync();
@@ -97,6 +104,8 @@ export function useVoiceRecording({ onStateChange, onSubmitRecording }: UseVoice
     } catch (error) {
       console.error("Failed to start recording", error);
       setPhaseWithCallback("error");
+    } finally {
+      actionLockRef.current = false;
     }
   }, [setPhaseWithCallback, startWaveAnimation]);
 
@@ -119,7 +128,9 @@ export function useVoiceRecording({ onStateChange, onSubmitRecording }: UseVoice
   }, [cleanupTimer, stopWaveAnimation]);
 
   const stopAndSubmit = useCallback(async () => {
+    if (actionLockRef.current) return;
     if (!recordingRef.current) return;
+    actionLockRef.current = true;
     cleanupTimer();
     stopWaveAnimation();
 
@@ -141,6 +152,8 @@ export function useVoiceRecording({ onStateChange, onSubmitRecording }: UseVoice
     } catch (error) {
       console.error("Failed to stop and submit", error);
       setPhaseWithCallback("error");
+    } finally {
+      actionLockRef.current = false;
     }
   }, [cleanupTimer, onSubmitRecording, setPhaseWithCallback, stopWaveAnimation]);
 
@@ -152,7 +165,9 @@ export function useVoiceRecording({ onStateChange, onSubmitRecording }: UseVoice
   }, [cleanupTimer]);
 
   const pauseRecording = useCallback(async () => {
-    if (!recordingRef.current || phase !== "recording") return;
+    if (actionLockRef.current) return;
+    if (!recordingRef.current || phaseRef.current !== "recording") return;
+    actionLockRef.current = true;
 
     try {
       cleanupTimer();
@@ -162,11 +177,15 @@ export function useVoiceRecording({ onStateChange, onSubmitRecording }: UseVoice
     } catch (error) {
       console.error("Failed to pause recording", error);
       setPhaseWithCallback("error");
+    } finally {
+      actionLockRef.current = false;
     }
-  }, [cleanupTimer, phase, setPhaseWithCallback, stopWaveAnimation]);
+  }, [cleanupTimer, setPhaseWithCallback, stopWaveAnimation]);
 
   const resumeRecording = useCallback(async () => {
-    if (!recordingRef.current || phase !== "paused") return;
+    if (actionLockRef.current) return;
+    if (!recordingRef.current || phaseRef.current !== "paused") return;
+    actionLockRef.current = true;
 
     try {
       await recordingRef.current.startAsync();
@@ -176,13 +195,21 @@ export function useVoiceRecording({ onStateChange, onSubmitRecording }: UseVoice
     } catch (error) {
       console.error("Failed to resume recording", error);
       setPhaseWithCallback("error");
+    } finally {
+      actionLockRef.current = false;
     }
-  }, [phase, resumeTimer, setPhaseWithCallback, startWaveAnimation]);
+  }, [resumeTimer, setPhaseWithCallback, startWaveAnimation]);
 
   const cancelRecording = useCallback(async () => {
-    await resetRecorder();
-    setDurationSeconds(0);
-    setPhaseWithCallback("idle");
+    if (actionLockRef.current) return;
+    actionLockRef.current = true;
+    try {
+      await resetRecorder();
+      setDurationSeconds(0);
+      setPhaseWithCallback("idle");
+    } finally {
+      actionLockRef.current = false;
+    }
   }, [resetRecorder, setPhaseWithCallback]);
 
   useEffect(() => {

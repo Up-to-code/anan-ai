@@ -1,6 +1,15 @@
-import { useAction, useMutation } from "convex/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useBuyerAccount } from "@/hooks/useBuyerAccount";
 import { api } from "@/lib/convexApi";
+import { formatMobileCopy, getMobileDictionary } from "@/lib/i18n";
+import type { MobileAssistantSession } from "@/lib/mobileAssistantSession";
+import {
+  clearGuestAssistantSession,
+  loadGuestAssistantSession,
+  saveGuestAssistantSession,
+} from "@/lib/mobileAssistantSession";
+import type { MobileLocale } from "@/lib/locale";
 import {
   buildStoredThreadRecord,
   createLocalThreadId,
@@ -9,12 +18,15 @@ import {
   readStoredThread,
   upsertStoredThread,
 } from "@/lib/mobileThreadStore";
-import {
-  buildFallbackAssistantMessage,
-  buildSuggestedPrompts,
-} from "@/lib/mobileData";
+import { buildSuggestedPrompts } from "@/lib/mobileData";
 import { buildMobileAgUiTurn } from "@/lib/mobileAgUi";
-import { applyPropertySelectionPromptToDraft } from "@/features/BuyerAssistantHomeScreen/propertyPrompt";
+import { resolveConvexUrl } from "@/lib/mobileEnv.shared";
+import {
+  buildAssistantSelectionPayload,
+  dedupeSelectedProperties,
+  readSelectedPropertiesFromMessages,
+  resolveSelectedPropertiesFromAssistantResponse,
+} from "@/hooks/usePropertyAssistantHelpers";
 import {
   clearGuestThreadStore,
   loadGuestThreadStore,
@@ -24,13 +36,15 @@ import type {
   MobileConversationMessage,
   MobileGuestThreadStore,
   MobileProperty,
-  MobileSearchContext,
   MobileStoredThread,
   MobileThreadSummary,
 } from "@/types/mobile";
 
-const LIVE_BACKEND_ENABLED = Boolean(process.env.EXPO_PUBLIC_CONVEX_URL);
-const SEARCH_MORE_PROMPT = "اعرض نتائج مشابهة";
+const LIVE_BACKEND_ENABLED = Boolean(
+  resolveConvexUrl({
+    expoPublicConvexUrl: process.env.EXPO_PUBLIC_CONVEX_URL,
+  }),
+);
 
 type ClientAssistantResponse = {
   message: string;
@@ -40,138 +54,61 @@ type ClientAssistantResponse = {
   activePropertyId?: string;
   requiresAuthForHandoff: boolean;
   threadId?: string;
-};
-
-type PublicAssistantSession = {
-  guestId: string;
-  channelSessionToken: string;
-  expiresAt: number;
+  comparisonArtifactId?: string;
+  comparisonPropertyIds?: string[];
+  selectionSource?: "ui_selected" | "history_resolved" | "text_resolved";
 };
 
 type AskClientAssistantPayload = {
   message: string;
   threadId?: string;
+  startFresh?: boolean;
   selectedPropertyId?: string;
+  selectedPropertyIds?: string[];
   inputMode?: "text" | "voice";
-  locale: "ar";
+  locale: MobileLocale;
 };
 
-function describeFailure(error: unknown) {
-  if (error instanceof Error && error.message.trim()) return error.message;
-  return "unknown_failure";
-}
+type AuthenticatedThreadSelection =
+  | { mode: "latest" }
+  | { mode: "specific"; threadId: string }
+  | { mode: "new" };
 
-function buildAuthRequiredMessage() {
-  return {
-    id: `assistant-auth-required-${Date.now()}`,
-    role: "assistant" as const,
-    text: "يمكنك طلب مستشار من هنا مباشرة، بينما يبقى السجل محفوظاً على هذا الجهاز حالياً.",
-    suggestedPrompts: buildSuggestedPrompts(null),
-  };
-}
+type PersistedAssistantMessage = {
+  id: string;
+  role: "assistant" | "user";
+  text: string;
+  createdAt: number;
+  properties?: MobileProperty[];
+  cards?: Array<any>;
+  activePropertyId?: string;
+  requiresAuthForHandoff?: boolean;
+  suggestedPrompts?: string[];
+  comparisonArtifactId?: string;
+  comparisonPropertyIds?: string[];
+  selectionSource?: "ui_selected" | "history_resolved" | "text_resolved";
+};
 
-function buildLocalHistoryMessage() {
-  return {
-    id: `assistant-local-history-${Date.now()}`,
-    role: "assistant" as const,
-    text: "السجل محفوظ على هذا الجهاز حالياً. أكمّل هنا أو اطلب مستشاراً مباشرة من نفس المحادثة.",
-    suggestedPrompts: buildSuggestedPrompts(null),
-  };
-}
+type AuthenticatedAssistantState = {
+  activeThreadId: string | null;
+  activeMessages: MobileConversationMessage[];
+};
 
-function buildAdvisorSuccessMessage(propertyTitle: string) {
-  return {
-    id: `assistant-handoff-success-${Date.now()}`,
-    role: "assistant" as const,
-    text: `تم رفع طلب المستشار الخاص بـ ${propertyTitle}. سيكمل الفريق المتابعة من نفس سياق المحادثة الحالية.`,
-    suggestedPrompts: buildSuggestedPrompts(null),
-  };
-}
-
-function buildAdvisorFailureMessage(propertyTitle: string) {
-  return {
-    id: `assistant-handoff-failure-${Date.now()}`,
-    role: "assistant" as const,
-    text: `تعذر رفع طلب المستشار لـ ${propertyTitle} حالياً. حاول مرة أخرى بعد قليل وسأحتفظ بالسياق هنا.`,
-    suggestedPrompts: buildSuggestedPrompts(null),
-  };
-}
-
-function readLatestProperty(messages: MobileConversationMessage[]) {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const property = messages[index]?.properties?.[0];
-    if (property) return property;
-  }
-  return null;
-}
-
-function dedupeSelectedProperties(properties: MobileProperty[]) {
-  const seen = new Set<string>();
-  return properties.filter((property) => {
-    const propertyId = property?.id?.trim();
-    if (!propertyId || seen.has(propertyId)) return false;
-    seen.add(propertyId);
-    return true;
-  });
-}
-
-function readSelectedProperties(thread: MobileStoredThread | null) {
-  if (!thread) return [] as MobileProperty[];
-  const storedSelection = dedupeSelectedProperties(thread.selectedProperties ?? []);
-  if (storedSelection.length > 0) return storedSelection;
-  const fallbackProperty = thread.activeProperty ?? readLatestProperty(thread.messages);
-  return fallbackProperty ? [fallbackProperty] : [];
-}
-
-function readLatestUserMessage(messages: MobileConversationMessage[]) {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index];
-    if (message?.role === "user" && message.text.trim()) return message.text.trim();
-  }
-  return null;
-}
-
-function mergeSuggestedPrompts(prompts: string[] | undefined, property: MobileProperty | null) {
-  const nextPrompts = [...(prompts ?? buildSuggestedPrompts(property))];
-  if (property && !nextPrompts.includes(SEARCH_MORE_PROMPT)) {
-    nextPrompts.push(SEARCH_MORE_PROMPT);
-  }
-  return Array.from(new Set(nextPrompts));
-}
-
-function toActiveThreadState(thread: MobileStoredThread | null) {
-  if (!thread) {
-    return {
-      draft: "",
-      messages: [] as MobileConversationMessage[],
-      selectedProperties: [] as MobileProperty[],
-      activeThreadId: null as string | null,
-      activeThreadKind: "welcome" as const,
-      updatedAt: Date.now(),
-    };
-  }
-
-  const selectedProperties = readSelectedProperties(thread);
-
-  return {
-    draft: thread.draft,
-    messages: thread.messages,
-    selectedProperties,
-    activeThreadId: thread.id,
-    activeThreadKind: thread.activeThreadKind,
-    updatedAt: thread.updatedAt,
-  };
-}
-
-/**
- * WHY:   The buyer home screen needs one async source of truth for the same chat-first product model across mobile and public assistant surfaces.
- * WHAT:  Manages the active conversation, local thread history, and in-app advisor escalation.
- * HOW:   Reuses the shared public assistant backend in live mode and falls back to the deterministic local assistant when Convex is unavailable.
- */
-function usePropertyAssistantController(args: {
-  askClientAssistant: ((payload: AskClientAssistantPayload) => Promise<ClientAssistantResponse>) | null;
+type ControllerArgs = {
+  locale: MobileLocale;
+  isAuthenticated: boolean;
+  authenticatedRecentThreads: MobileThreadSummary[];
+  authenticatedState: AuthenticatedAssistantState | undefined;
+  authenticatedThreadSelection: AuthenticatedThreadSelection;
+  setAuthenticatedThreadSelection: (selection: AuthenticatedThreadSelection) => void;
+  sendGuestAssistantMessage:
+    | ((payload: AskClientAssistantPayload & MobileAssistantSession) => Promise<ClientAssistantResponse>)
+    | null;
+  sendAuthenticatedAssistantMessage:
+    | ((payload: AskClientAssistantPayload) => Promise<ClientAssistantResponse>)
+    | null;
   bootstrapPublicSession:
-    | ((payload: { guestId?: string }) => Promise<PublicAssistantSession & { threadId?: string }>)
+    | ((payload: { guestId?: string }) => Promise<MobileAssistantSession & { threadId?: string }>)
     | null;
   generateVoiceUploadUrl:
     | ((payload: { guestId: string; channelSessionToken: string }) => Promise<string>)
@@ -192,22 +129,215 @@ function usePropertyAssistantController(args: {
         sourceChannel: "app";
       }) => Promise<{ orderId: string }>)
     | null;
-}) {
+};
+
+function describeFailure(error: unknown) {
+  if (error instanceof Error && error.message.trim()) return error.message;
+  return "unknown_failure";
+}
+
+function buildAdvisorSuccessMessage(propertyTitle: string, locale: MobileLocale) {
+  const dictionary = getMobileDictionary(locale);
+  return {
+    id: `assistant-handoff-success-${Date.now()}`,
+    role: "assistant" as const,
+    text: formatMobileCopy(dictionary.assistant.advisorSuccess, { title: propertyTitle }),
+    suggestedPrompts: buildSuggestedPrompts(null, locale),
+  };
+}
+
+function buildAdvisorFailureMessage(propertyTitle: string, locale: MobileLocale) {
+  const dictionary = getMobileDictionary(locale);
+  return {
+    id: `assistant-handoff-failure-${Date.now()}`,
+    role: "assistant" as const,
+    text: formatMobileCopy(dictionary.assistant.advisorFailure, { title: propertyTitle }),
+    suggestedPrompts: buildSuggestedPrompts(null, locale),
+  };
+}
+
+function buildServiceUnavailableMessage(locale: MobileLocale) {
+  const dictionary = getMobileDictionary(locale);
+  return {
+    id: `assistant-service-unavailable-${Date.now()}`,
+    role: "assistant" as const,
+    text: dictionary.assistant.serviceUnavailable,
+    suggestedPrompts: buildSuggestedPrompts(null, locale),
+  };
+}
+
+function readLatestProperty(messages: MobileConversationMessage[]) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const property = messages[index]?.properties?.[0];
+    if (property) return property;
+  }
+  return null;
+}
+
+function readSelectedProperties(thread: MobileStoredThread | null) {
+  if (!thread) return [] as MobileProperty[];
+  const storedSelection = dedupeSelectedProperties(thread.selectedProperties ?? []);
+  if (storedSelection.length === 1) return storedSelection;
+  if (storedSelection.length >= 2) return [] as MobileProperty[];
+  const messageSelection = readSelectedPropertiesFromMessages(thread.messages);
+  if (messageSelection.length > 0) return messageSelection;
+  const fallbackProperty = thread.activeProperty ?? readLatestProperty(thread.messages);
+  return fallbackProperty ? [fallbackProperty] : [];
+}
+
+function readLatestUserMessage(messages: MobileConversationMessage[]) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role === "user" && message.text.trim()) return message.text.trim();
+  }
+  return null;
+}
+
+function mergeSuggestedPrompts(prompts: string[] | undefined, property: MobileProperty | null, locale: MobileLocale) {
+  const dictionary = getMobileDictionary(locale);
+  const nextPrompts = [...(prompts ?? buildSuggestedPrompts(property, locale))];
+  if (property && !nextPrompts.includes(dictionary.assistant.showMoreResults)) {
+    nextPrompts.push(dictionary.assistant.showMoreResults);
+  }
+  return Array.from(new Set(nextPrompts));
+}
+
+function toActiveThreadState(thread: MobileStoredThread | null) {
+  if (!thread) {
+    return {
+      draft: "",
+      messages: [] as MobileConversationMessage[],
+      selectedProperties: [] as MobileProperty[],
+      activeThreadId: null as string | null,
+      assistantThreadId: null as string | null,
+      activeThreadKind: "welcome" as const,
+      updatedAt: Date.now(),
+    };
+  }
+
+  const selectedProperties = readSelectedProperties(thread);
+
+  return {
+    draft: thread.draft,
+    messages: thread.messages,
+    selectedProperties,
+    activeThreadId: thread.id,
+    assistantThreadId: thread.assistantThreadId ?? null,
+    activeThreadKind: thread.activeThreadKind,
+    updatedAt: thread.updatedAt,
+  };
+}
+
+function mapPersistedAssistantMessage(message: PersistedAssistantMessage): MobileConversationMessage {
+  return {
+    id: message.id,
+    role: message.role,
+    text: message.text,
+    createdAt: message.createdAt,
+    properties: message.properties,
+    cards: message.cards,
+    suggestedPrompts: message.suggestedPrompts,
+    activePropertyId: message.activePropertyId,
+    requiresAuthForHandoff: message.requiresAuthForHandoff,
+    comparisonArtifactId: message.comparisonArtifactId,
+    comparisonPropertyIds: message.comparisonPropertyIds,
+    selectionSource: message.selectionSource,
+    uiTurn:
+      message.role === "assistant" && ((message.properties?.length ?? 0) > 0 || (message.cards?.length ?? 0) > 0)
+        ? buildMobileAgUiTurn({
+            assistantText: message.text,
+            properties: message.properties ?? [],
+            cards: message.cards ?? [],
+          })
+        : undefined,
+  };
+}
+
+/**
+ * WHY:   The buyer home screen needs one async source of truth for the same chat-first product model across mobile and public assistant surfaces.
+ * WHAT:  Manages the active conversation, guest/local thread history, authenticated saved-thread hydration, and in-app advisor escalation.
+ * HOW:   Uses the shared public assistant backend for signed-in buyers, keeps guest continuity local, and persists guest session tokens for post-auth promotion.
+ */
+function usePropertyAssistantController(args: ControllerArgs) {
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<MobileConversationMessage[]>([]);
   const [selectedProperties, setSelectedProperties] = useState<MobileProperty[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [activeAssistantThreadId, setActiveAssistantThreadId] = useState<string | null>(null);
   const [activeThreadKind, setActiveThreadKind] = useState<"welcome" | "live">("welcome");
   const [isHydrated, setIsHydrated] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAuthCallout, setShowAuthCallout] = useState(false);
   const [threadStore, setThreadStore] = useState<MobileGuestThreadStore>(emptyThreadStore());
   const lastUpdatedAt = useRef(Date.now());
-  const publicSessionRef = useRef<PublicAssistantSession | null>(null);
+  const publicSessionRef = useRef<MobileAssistantSession | null>(null);
+  const draftRef = useRef(draft);
   const activeProperty = selectedProperties[0] ?? null;
+  const deferredDraft = useDeferredValue(draft);
+
+  draftRef.current = draft;
 
   useEffect(() => {
+    let cancelled = false;
+
+    void loadGuestAssistantSession().then((session) => {
+      if (cancelled) return;
+      if (session && session.expiresAt > Date.now()) {
+        publicSessionRef.current = session;
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!args.isAuthenticated) return;
+
+    if (args.authenticatedThreadSelection.mode === "new") {
+      setDraft("");
+      setMessages([]);
+      setSelectedProperties([]);
+      setActiveThreadId(null);
+      setActiveAssistantThreadId(null);
+      setActiveThreadKind("welcome");
+      setShowAuthCallout(false);
+      lastUpdatedAt.current = Date.now();
+      setIsHydrated(true);
+      return;
+    }
+
+    if (!args.authenticatedState) {
+      setIsHydrated(false);
+      return;
+    }
+
+    const nextMessages = args.authenticatedState.activeMessages;
+    setDraft("");
+    setMessages(nextMessages);
+    setSelectedProperties(readSelectedPropertiesFromMessages(nextMessages));
+    setActiveThreadId(args.authenticatedState.activeThreadId);
+    setActiveAssistantThreadId(args.authenticatedState.activeThreadId);
+    setActiveThreadKind(
+      args.authenticatedState.activeThreadId || nextMessages.length > 0 ? "live" : "welcome",
+    );
+    setShowAuthCallout(false);
+    lastUpdatedAt.current = nextMessages.at(-1)?.createdAt ?? Date.now();
+    setIsHydrated(true);
+  }, [
+    args.authenticatedState,
+    args.authenticatedThreadSelection.mode,
+    args.isAuthenticated,
+  ]);
+
+  useEffect(() => {
+    if (args.isAuthenticated) return;
+
+    let cancelled = false;
+
     void loadGuestThreadStore().then((store) => {
+      if (cancelled) return;
       const activeThread = readStoredThread(store, store.activeThreadId);
       const nextActiveState = toActiveThreadState(activeThread);
       setThreadStore(store);
@@ -215,20 +345,26 @@ function usePropertyAssistantController(args: {
       setMessages(nextActiveState.messages);
       setSelectedProperties(nextActiveState.selectedProperties);
       setActiveThreadId(nextActiveState.activeThreadId);
+      setActiveAssistantThreadId(nextActiveState.assistantThreadId);
       setActiveThreadKind(nextActiveState.activeThreadKind);
       lastUpdatedAt.current = nextActiveState.updatedAt;
       setIsHydrated(true);
     });
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [args.isAuthenticated]);
 
   useEffect(() => {
-    if (!isHydrated) return;
+    if (!isHydrated || args.isAuthenticated) return;
 
     setThreadStore((currentStore) => {
       const currentRecord = readStoredThread(currentStore, activeThreadId);
       const nextRecord = buildStoredThreadRecord({
         id: activeThreadId,
-        draft,
+        assistantThreadId: activeAssistantThreadId,
+        draft: deferredDraft,
         activeThreadKind,
         activeProperty,
         selectedProperties,
@@ -250,29 +386,28 @@ function usePropertyAssistantController(args: {
       void saveGuestThreadStore(nextStore);
       return nextStore;
     });
-  }, [activeProperty, activeThreadId, activeThreadKind, draft, isHydrated, messages, selectedProperties]);
+  }, [
+    activeProperty,
+    activeAssistantThreadId,
+    activeThreadId,
+    activeThreadKind,
+    args.isAuthenticated,
+    deferredDraft,
+    isHydrated,
+    messages,
+    selectedProperties,
+  ]);
 
-  const recentThreads = useMemo(() => listThreadSummaries(threadStore), [threadStore]);
+  const guestRecentThreads = useMemo(() => listThreadSummaries(threadStore), [threadStore]);
+  const recentThreads = args.isAuthenticated ? args.authenticatedRecentThreads : guestRecentThreads;
   const latestUserMessage = useMemo(() => readLatestUserMessage(messages), [messages]);
 
   function ensureThreadIdentity() {
+    if (args.isAuthenticated) return activeThreadId;
     if (activeThreadId) return activeThreadId;
     const nextThreadId = createLocalThreadId();
     setActiveThreadId(nextThreadId);
     return nextThreadId;
-  }
-
-  function syncTranscriptToAccount() {
-    setShowAuthCallout(false);
-    setMessages((current) => {
-      if (current.at(-1)?.id.startsWith("assistant-local-history")) return current;
-      const localHistoryMessage = {
-        ...buildLocalHistoryMessage(),
-        createdAt: Date.now(),
-      } satisfies MobileConversationMessage;
-      lastUpdatedAt.current = localHistoryMessage.createdAt ?? Date.now();
-      return [...current, localHistoryMessage];
-    });
   }
 
   function addPropertyToSelection(property: MobileProperty) {
@@ -290,12 +425,38 @@ function usePropertyAssistantController(args: {
     setSelectedProperties((current) => current.filter((property) => property.id !== propertyId));
   }
 
-  async function submit(prompt = draft, inputMode: "text" | "voice" = "text") {
+  async function ensurePublicSession() {
+    const current = publicSessionRef.current;
+    if (current?.guestId && current.channelSessionToken && current.expiresAt > Date.now()) {
+      return current;
+    }
+    if (!args.bootstrapPublicSession) {
+      throw new Error(args.locale === "en" ? "Voice recording is not available right now." : "التسجيل الصوتي غير متاح حالياً.");
+    }
+
+    const nextSession = await args.bootstrapPublicSession({
+      guestId: current?.guestId,
+    });
+    const session = {
+      guestId: nextSession.guestId,
+      channelSessionToken: nextSession.channelSessionToken,
+      expiresAt: nextSession.expiresAt,
+    } satisfies MobileAssistantSession;
+    publicSessionRef.current = session;
+    await saveGuestAssistantSession(session);
+    return session;
+  }
+
+  async function submit(prompt = draftRef.current, inputMode: "text" | "voice" = "text") {
     const trimmed = prompt.trim();
     if (!trimmed) return;
-    const outboundPrompt = applyPropertySelectionPromptToDraft(trimmed, selectedProperties);
-
-    const nextThreadId = ensureThreadIdentity();
+    const nextThreadId = args.isAuthenticated ? activeThreadId : ensureThreadIdentity();
+    const nextAssistantThreadId = args.isAuthenticated ? activeThreadId : activeAssistantThreadId;
+    const shouldStartFresh = args.isAuthenticated
+      ? args.authenticatedThreadSelection.mode === "new"
+      : !nextAssistantThreadId;
+    const selectionPayload = buildAssistantSelectionPayload(selectedProperties);
+    const hadComparisonSelection = selectedProperties.length >= 2;
     const userMessage: MobileConversationMessage = {
       id: `user-${Date.now()}`,
       role: "user",
@@ -311,84 +472,113 @@ function usePropertyAssistantController(args: {
     lastUpdatedAt.current = userMessage.createdAt ?? Date.now();
 
     try {
-      let assistantMessage: MobileConversationMessage;
-
-      if (args.askClientAssistant) {
-        const response = await args.askClientAssistant({
-          message: outboundPrompt,
-          threadId: nextThreadId ?? undefined,
-          selectedPropertyId: activeProperty?.id,
+      let response: ClientAssistantResponse;
+      if (args.isAuthenticated && args.sendAuthenticatedAssistantMessage) {
+        response = await args.sendAuthenticatedAssistantMessage({
+          message: trimmed,
+          threadId: nextAssistantThreadId ?? undefined,
+          startFresh: shouldStartFresh,
+          ...selectionPayload,
           inputMode,
-          locale: "ar",
+          locale: args.locale,
         });
-        const nextActiveProperty =
-          response.properties.find((property) => property.id === String(response.activePropertyId ?? "")) ??
-          response.properties[0] ??
-          activeProperty;
-
-        assistantMessage = {
-          id: `assistant-${Date.now()}`,
-          role: "assistant",
-          text: response.message,
-          createdAt: Date.now(),
-          properties: response.properties,
-          cards: response.cards,
-          suggestedPrompts: mergeSuggestedPrompts(response.suggestedPrompts, nextActiveProperty ?? null),
-          activePropertyId: nextActiveProperty?.id,
-          requiresAuthForHandoff: response.requiresAuthForHandoff,
-          uiTurn: buildMobileAgUiTurn({
-            assistantText: response.message,
-            properties: response.properties,
-            cards: response.cards,
-          }),
-        };
-        if (selectedProperties.length > 1) {
-          setSelectedProperties(
-            dedupeSelectedProperties(
-              selectedProperties.map((property) => response.properties.find((candidate) => candidate.id === property.id) ?? property),
-            ),
-          );
-        } else {
-          setSelectedProperties(nextActiveProperty ? [nextActiveProperty] : []);
-        }
-        setActiveThreadId(response.threadId ?? nextThreadId);
-        setShowAuthCallout(response.requiresAuthForHandoff);
+      } else if (args.sendGuestAssistantMessage) {
+        const session = await ensurePublicSession();
+        response = await args.sendGuestAssistantMessage({
+          guestId: session.guestId,
+          channelSessionToken: session.channelSessionToken,
+          expiresAt: session.expiresAt,
+          message: trimmed,
+          threadId: nextAssistantThreadId ?? undefined,
+          startFresh: shouldStartFresh,
+          ...selectionPayload,
+          inputMode,
+          locale: args.locale,
+        });
       } else {
-        assistantMessage = {
-          ...buildFallbackAssistantMessage({
-            message: outboundPrompt,
-            activeProperty,
-          }),
+        const assistantMessage: MobileConversationMessage = {
+          ...buildServiceUnavailableMessage(args.locale),
           createdAt: Date.now(),
         };
-        if (assistantMessage.properties?.[0]) {
-          setSelectedProperties([assistantMessage.properties[0]]);
+        if (!args.isAuthenticated) {
+          setActiveThreadId(nextThreadId);
         }
-        setActiveThreadId(nextThreadId);
+        lastUpdatedAt.current = assistantMessage.createdAt ?? Date.now();
+        setMessages((current) => [...current, assistantMessage]);
+        return;
       }
 
+      const nextSelectedProperties = resolveSelectedPropertiesFromAssistantResponse({
+        response,
+        currentSelection: selectedProperties,
+        activeProperty,
+      });
+      const nextActiveProperty =
+        nextSelectedProperties.find((property) => property.id === String(response.activePropertyId ?? "")) ??
+        nextSelectedProperties[0] ??
+        response.properties[0] ??
+        activeProperty;
+
+      const assistantMessage: MobileConversationMessage = {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        text: response.message,
+        createdAt: Date.now(),
+        properties: response.properties,
+        cards: response.cards,
+        suggestedPrompts: mergeSuggestedPrompts(response.suggestedPrompts, nextActiveProperty ?? null, args.locale),
+        activePropertyId: nextActiveProperty?.id,
+        requiresAuthForHandoff: response.requiresAuthForHandoff,
+        comparisonArtifactId: response.comparisonArtifactId,
+        comparisonPropertyIds: response.comparisonPropertyIds,
+        selectionSource: response.selectionSource,
+        uiTurn: buildMobileAgUiTurn({
+          assistantText: response.message,
+          properties: response.properties,
+          cards: response.cards,
+        }),
+      };
+
+      setSelectedProperties(hadComparisonSelection ? [] : nextSelectedProperties);
+
+      if (args.isAuthenticated) {
+        const resolvedThreadId = response.threadId ?? nextAssistantThreadId ?? null;
+        if (resolvedThreadId) {
+          setAuthenticatedSelection(args.setAuthenticatedThreadSelection, resolvedThreadId);
+        } else {
+          args.setAuthenticatedThreadSelection({ mode: "new" });
+        }
+        setActiveThreadId(resolvedThreadId);
+        setActiveAssistantThreadId(resolvedThreadId);
+      } else {
+        setActiveThreadId(nextThreadId);
+        setActiveAssistantThreadId(response.threadId ?? nextAssistantThreadId ?? null);
+      }
+      setShowAuthCallout(response.requiresAuthForHandoff);
       lastUpdatedAt.current = assistantMessage.createdAt ?? Date.now();
       setMessages((current) => [...current, assistantMessage]);
     } catch (error) {
       const failureCode = describeFailure(error);
+      const failureText =
+        failureCode === "NOT_FOUND"
+          ? args.locale === "en"
+            ? "I couldn't continue with this property right now. Choose another option and I'll keep going with you."
+            : "لم أتمكن من متابعة هذا العقار الآن. اختر خياراً آخر وسأكمل معك."
+          : args.locale === "en"
+            ? "We could not complete the request right now. Please try again in a moment."
+            : "تعذر إكمال الطلب حالياً. حاول مرة أخرى بعد لحظات.";
       const fallbackMessage: MobileConversationMessage = {
         id: `assistant-error-${Date.now()}`,
         role: "assistant",
-        text:
-          failureCode === "NOT_FOUND"
-            ? "لم أتمكن من متابعة هذا العقار الآن. اختر خياراً آخر وسأكمل معك."
-            : "تعذر إكمال الطلب حالياً. حاول مرة أخرى بعد لحظات.",
+        text: failureText,
         createdAt: Date.now(),
         properties: activeProperty ? [activeProperty] : undefined,
-        suggestedPrompts: mergeSuggestedPrompts(undefined, activeProperty),
+        suggestedPrompts: mergeSuggestedPrompts(undefined, activeProperty, args.locale),
         activePropertyId: activeProperty?.id,
         uiTurn:
           activeProperty
             ? buildMobileAgUiTurn({
-                assistantText:
-                  failureCode === "NOT_FOUND"
-                    ? "لم أتمكن من متابعة هذا العقار الآن. اختر خياراً آخر وسأكمل معك."
-                    : "تعذر إكمال الطلب حالياً. حاول مرة أخرى بعد لحظات.",
+                assistantText: failureText,
                 properties: [activeProperty],
               })
             : undefined,
@@ -400,59 +590,16 @@ function usePropertyAssistantController(args: {
     }
   }
 
-  async function askAboutProperty(property: MobileProperty) {
+  function setPropertyContext(property: MobileProperty) {
     ensureThreadIdentity();
     setActiveThreadKind("live");
     setSelectedProperties([property]);
-    const focusMessage = {
-      ...buildAuthRequiredMessage(),
-      id: `assistant-focus-${property.id}-${Date.now()}`,
-      text: property.aiSummary ?? `أراجع الآن ${property.title}. سأجهز لك التمويل والعائد والتحقق والخطوات التالية.`,
-      properties: [property],
-      activePropertyId: property.id,
-      suggestedPrompts: mergeSuggestedPrompts(undefined, property),
-      uiTurn: buildMobileAgUiTurn({
-        assistantText: property.aiSummary ?? `أراجع الآن ${property.title}.`,
-        properties: [property],
-      }),
-      createdAt: Date.now(),
-    } satisfies MobileConversationMessage;
-
-    setMessages((current) => {
-      if (current.at(-1)?.activePropertyId === property.id) {
-        return current;
-      }
-      lastUpdatedAt.current = focusMessage.createdAt ?? Date.now();
-      return [...current, focusMessage];
-    });
-
-    await submit(`أريد تفاصيل أكثر عن ${property.title}`);
-  }
-
-  async function ensurePublicSession() {
-    const current = publicSessionRef.current;
-    if (current?.guestId && current.channelSessionToken && current.expiresAt > Date.now()) {
-      return current;
-    }
-    if (!args.bootstrapPublicSession) {
-      throw new Error("التسجيل الصوتي غير متاح حالياً.");
-    }
-
-    const nextSession = await args.bootstrapPublicSession({
-      guestId: current?.guestId,
-    });
-    const session = {
-      guestId: nextSession.guestId,
-      channelSessionToken: nextSession.channelSessionToken,
-      expiresAt: nextSession.expiresAt,
-    } satisfies PublicAssistantSession;
-    publicSessionRef.current = session;
-    return session;
+    setShowAuthCallout(false);
   }
 
   async function submitVoiceRecording(fileUri: string) {
     if (!args.generateVoiceUploadUrl || !args.transcribeVoiceFromStorage) {
-      throw new Error("التسجيل الصوتي يحتاج اتصالاً بالخدمة المباشرة.");
+      throw new Error(args.locale === "en" ? "Voice recording requires a live service connection." : "التسجيل الصوتي يحتاج اتصالاً بالخدمة المباشرة.");
     }
 
     const session = await ensurePublicSession();
@@ -471,13 +618,13 @@ function usePropertyAssistantController(args: {
     });
 
     if (!uploadResponse.ok) {
-      throw new Error("تعذر رفع التسجيل الصوتي.");
+      throw new Error(args.locale === "en" ? "Could not upload the voice recording." : "تعذر رفع التسجيل الصوتي.");
     }
 
     const uploadPayload = (await uploadResponse.json().catch(() => null)) as { storageId?: string } | null;
     const storageId = uploadPayload?.storageId?.trim();
     if (!storageId) {
-      throw new Error("تعذر تجهيز الملف الصوتي للتفريغ.");
+      throw new Error(args.locale === "en" ? "Could not prepare the audio file for transcription." : "تعذر تجهيز الملف الصوتي للتفريغ.");
     }
 
     const transcript = await args.transcribeVoiceFromStorage({
@@ -487,7 +634,7 @@ function usePropertyAssistantController(args: {
     });
     const text = transcript.text.trim();
     if (!text) {
-      throw new Error("وصل التسجيل بدون نص قابل للإرسال.");
+      throw new Error(args.locale === "en" ? "The recording arrived without transcribable text." : "وصل التسجيل بدون نص قابل للإرسال.");
     }
 
     await submit(text, "voice");
@@ -497,34 +644,39 @@ function usePropertyAssistantController(args: {
     if (!activeProperty) return;
     const contextualMessage =
       selectedProperties.length > 1
-        ? `مقارنة بين ${selectedProperties.map((property) => property.title).join("، ")}. ${latestUserMessage ?? messages.at(-1)?.text ?? activeProperty.title}`
+        ? args.locale === "en"
+          ? `Comparison between ${selectedProperties.map((property) => property.title).join(", ")}. ${latestUserMessage ?? messages.at(-1)?.text ?? activeProperty.title}`
+          : `مقارنة بين ${selectedProperties.map((property) => property.title).join("، ")}. ${latestUserMessage ?? messages.at(-1)?.text ?? activeProperty.title}`
         : latestUserMessage ?? messages.at(-1)?.text ?? activeProperty.title;
     setShowAuthCallout(true);
     if (!args.createQualifiedHandoff) {
-      setMessages((current) => [...current, { ...buildAdvisorFailureMessage(activeProperty.title), createdAt: Date.now() }]);
+      setMessages((current) => [...current, { ...buildAdvisorFailureMessage(activeProperty.title, args.locale), createdAt: Date.now() }]);
       return;
     }
 
     try {
-      const session = args.bootstrapPublicSession ? await ensurePublicSession() : null;
+      const session = !args.isAuthenticated && args.bootstrapPublicSession ? await ensurePublicSession() : null;
       await args.createQualifiedHandoff({
         propertyId: activeProperty.id,
         message: contextualMessage,
         externalUserId: session?.guestId,
-        threadId: activeThreadId ?? undefined,
+        threadId: activeAssistantThreadId ?? undefined,
         sourceChannel: "app",
       });
 
       setShowAuthCallout(false);
       setMessages((current) => {
         const successMessage = {
-          ...buildAdvisorSuccessMessage(activeProperty.title),
+          ...buildAdvisorSuccessMessage(activeProperty.title, args.locale),
           createdAt: Date.now(),
           activePropertyId: activeProperty.id,
           properties: [activeProperty],
-          suggestedPrompts: mergeSuggestedPrompts(undefined, activeProperty),
+          suggestedPrompts: mergeSuggestedPrompts(undefined, activeProperty, args.locale),
           uiTurn: buildMobileAgUiTurn({
-            assistantText: `تم رفع طلب المستشار الخاص بـ ${activeProperty.title}.`,
+            assistantText:
+              args.locale === "en"
+                ? `The advisor request for ${activeProperty.title} has been submitted.`
+                : `تم رفع طلب المستشار الخاص بـ ${activeProperty.title}.`,
             properties: [activeProperty],
           }),
         } satisfies MobileConversationMessage;
@@ -534,13 +686,16 @@ function usePropertyAssistantController(args: {
     } catch {
       setMessages((current) => {
         const failureMessage = {
-          ...buildAdvisorFailureMessage(activeProperty.title),
+          ...buildAdvisorFailureMessage(activeProperty.title, args.locale),
           createdAt: Date.now(),
           activePropertyId: activeProperty.id,
           properties: [activeProperty],
-          suggestedPrompts: mergeSuggestedPrompts(undefined, activeProperty),
+          suggestedPrompts: mergeSuggestedPrompts(undefined, activeProperty, args.locale),
           uiTurn: buildMobileAgUiTurn({
-            assistantText: `تعذر رفع طلب المستشار لـ ${activeProperty.title} حالياً.`,
+            assistantText:
+              args.locale === "en"
+                ? `We could not submit the advisor request for ${activeProperty.title} right now.`
+                : `تعذر رفع طلب المستشار لـ ${activeProperty.title} حالياً.`,
             properties: [activeProperty],
           }),
         } satisfies MobileConversationMessage;
@@ -551,6 +706,14 @@ function usePropertyAssistantController(args: {
   }
 
   async function openHistoryThread(threadId: string) {
+    if (args.isAuthenticated) {
+      setAuthenticatedSelection(args.setAuthenticatedThreadSelection, threadId);
+      setActiveThreadId(threadId);
+      setActiveAssistantThreadId(threadId);
+      setShowAuthCallout(false);
+      return;
+    }
+
     const nextThread = readStoredThread(threadStore, threadId);
     if (!nextThread) return;
 
@@ -558,27 +721,10 @@ function usePropertyAssistantController(args: {
     setMessages(nextThread.messages);
     setSelectedProperties(readSelectedProperties(nextThread));
     setActiveThreadId(nextThread.id);
+    setActiveAssistantThreadId(nextThread.assistantThreadId ?? null);
     setActiveThreadKind(nextThread.activeThreadKind);
     setShowAuthCallout(false);
     lastUpdatedAt.current = nextThread.updatedAt;
-  }
-
-  function showSearchResults(args: {
-    searchContext: MobileSearchContext;
-    results: MobileProperty[];
-  }) {
-    const message: MobileConversationMessage = {
-      id: `assistant-search-${Date.now()}`,
-      role: "assistant",
-      text: args.searchContext.searchSummary,
-      createdAt: Date.now(),
-      searchContext: args.searchContext,
-      searchResults: args.results,
-      suggestedPrompts: [],
-    };
-
-    lastUpdatedAt.current = message.createdAt ?? Date.now();
-    setMessages((current) => [...current, message]);
   }
 
   function createNewThread() {
@@ -586,15 +732,22 @@ function usePropertyAssistantController(args: {
     setMessages([]);
     setSelectedProperties([]);
     setActiveThreadId(null);
+    setActiveAssistantThreadId(null);
     setActiveThreadKind("welcome");
     setShowAuthCallout(false);
     lastUpdatedAt.current = Date.now();
+    if (args.isAuthenticated) {
+      args.setAuthenticatedThreadSelection({ mode: "new" });
+    }
   }
 
   function resetToWelcome() {
     createNewThread();
-    void clearGuestThreadStore();
-    setThreadStore(emptyThreadStore());
+    if (!args.isAuthenticated) {
+      void clearGuestThreadStore();
+      void clearGuestAssistantSession();
+      setThreadStore(emptyThreadStore());
+    }
   }
 
   return {
@@ -615,55 +768,83 @@ function usePropertyAssistantController(args: {
     removePropertyFromSelection,
     submit,
     submitVoiceRecording,
-    askAboutProperty,
+    setPropertyContext,
     requestAdvisor,
     openHistoryThread,
-    showSearchResults,
     createNewThread,
     resetToWelcome,
-    syncTranscriptToAccount,
   };
 }
 
+function setAuthenticatedSelection(
+  setter: (selection: AuthenticatedThreadSelection) => void,
+  threadId: string | null,
+) {
+  if (threadId) {
+    setter({ mode: "specific", threadId });
+    return;
+  }
+  setter({ mode: "latest" });
+}
+
 function useLivePropertyAssistant() {
-  const sendPublicAssistantMessage = useAction(api.ai_zone.assistantPublic.sendMessage);
+  const account = useBuyerAccount();
+  const sendGuestAssistantMessage = useAction(api.ai_zone.assistantPublic.sendMessage);
+  const sendAuthenticatedAssistantMessage = useAction(api.ai_zone.assistantPublic.sendAuthenticatedMessage);
   const bootstrapPublicSession = useMutation(api.ai_zone.assistantPublic.bootstrapSession);
   const generateVoiceUploadUrl = useMutation(api.ai_zone.assistantPublic.generateVoiceUploadUrl);
   const transcribeVoiceFromStorage = useAction(api.ai_zone.assistantPublic.transcribeVoiceFromStorage);
   const createQualifiedHandoff = useMutation(api.user_zone.mobile.assistant.createQualifiedHandoff);
-  const sessionRef = useRef<PublicAssistantSession | null>(null);
+  const [authenticatedThreadSelection, setAuthenticatedThreadSelection] = useState<AuthenticatedThreadSelection>({
+    mode: "latest",
+  });
 
-  async function ensurePublicSession() {
-    const current = sessionRef.current;
-    if (current?.guestId && current.channelSessionToken && current.expiresAt > Date.now()) {
-      return current;
+  useEffect(() => {
+    if (!account.viewer.isAuthenticated) {
+      setAuthenticatedThreadSelection({ mode: "latest" });
     }
+  }, [account.viewer.isAuthenticated]);
 
-    const nextSession = await bootstrapPublicSession({
-      guestId: current?.guestId,
-    }) as PublicAssistantSession & { threadId?: string };
-    const session = {
-      guestId: nextSession.guestId,
-      channelSessionToken: nextSession.channelSessionToken,
-      expiresAt: nextSession.expiresAt,
-    } satisfies PublicAssistantSession;
-    sessionRef.current = session;
-    return session;
-  }
+  const authenticatedThreadState = useQuery(
+    api.user_zone.mobile.account.getAssistantState,
+    account.viewer.isAuthenticated && authenticatedThreadSelection.mode !== "new"
+      ? ({
+          ...(authenticatedThreadSelection.mode === "specific"
+            ? { threadId: authenticatedThreadSelection.threadId as never }
+            : {}),
+        } as never)
+      : "skip",
+  ) as
+    | {
+        activeThreadId?: string;
+        activeMessages: PersistedAssistantMessage[];
+      }
+    | undefined;
+
+  const authenticatedState = useMemo<AuthenticatedAssistantState | undefined>(() => {
+    if (!account.viewer.isAuthenticated) return undefined;
+    if (authenticatedThreadSelection.mode === "new") {
+      return {
+        activeThreadId: null,
+        activeMessages: [],
+      };
+    }
+    if (!authenticatedThreadState) return undefined;
+    return {
+      activeThreadId: authenticatedThreadState.activeThreadId ?? null,
+      activeMessages: authenticatedThreadState.activeMessages.map(mapPersistedAssistantMessage),
+    };
+  }, [account.viewer.isAuthenticated, authenticatedThreadSelection.mode, authenticatedThreadState]);
 
   return usePropertyAssistantController({
-    askClientAssistant: (async (payload: AskClientAssistantPayload) => {
-      const session = await ensurePublicSession();
-      return sendPublicAssistantMessage({
-        guestId: session.guestId,
-        channelSessionToken: session.channelSessionToken,
-        message: payload.message,
-        threadId: payload.threadId as never,
-        selectedPropertyId: payload.selectedPropertyId as never,
-        inputMode: payload.inputMode,
-        locale: payload.locale,
-      }) as Promise<ClientAssistantResponse>;
-    }) as never,
+    locale: account.viewer.preferences.locale,
+    isAuthenticated: account.viewer.isAuthenticated,
+    authenticatedRecentThreads: account.recentThreads,
+    authenticatedState,
+    authenticatedThreadSelection,
+    setAuthenticatedThreadSelection,
+    sendGuestAssistantMessage: sendGuestAssistantMessage as never,
+    sendAuthenticatedAssistantMessage: sendAuthenticatedAssistantMessage as never,
     bootstrapPublicSession: bootstrapPublicSession as never,
     generateVoiceUploadUrl: generateVoiceUploadUrl as never,
     transcribeVoiceFromStorage: transcribeVoiceFromStorage as never,
@@ -671,9 +852,17 @@ function useLivePropertyAssistant() {
   });
 }
 
-function useFallbackPropertyAssistant() {
+function useUnavailablePropertyAssistant() {
+  const account = useBuyerAccount();
   return usePropertyAssistantController({
-    askClientAssistant: null,
+    locale: account.viewer.preferences.locale,
+    isAuthenticated: false,
+    authenticatedRecentThreads: [],
+    authenticatedState: undefined,
+    authenticatedThreadSelection: { mode: "latest" },
+    setAuthenticatedThreadSelection() {},
+    sendGuestAssistantMessage: null,
+    sendAuthenticatedAssistantMessage: null,
     bootstrapPublicSession: null,
     generateVoiceUploadUrl: null,
     transcribeVoiceFromStorage: null,
@@ -682,5 +871,5 @@ function useFallbackPropertyAssistant() {
 }
 
 export function usePropertyAssistant() {
-  return LIVE_BACKEND_ENABLED ? useLivePropertyAssistant() : useFallbackPropertyAssistant();
+  return LIVE_BACKEND_ENABLED ? useLivePropertyAssistant() : useUnavailablePropertyAssistant();
 }

@@ -5,6 +5,7 @@ import {
   findProfileForResolvedIdentity,
   requireResolvedIdentity,
 } from "../../_core/security/identity";
+import { normalizeUserProfileRoleState } from "../../_core/security/profileRoles";
 
 async function getCurrentProfile(ctx: QueryCtx | MutationCtx) {
   try {
@@ -35,10 +36,10 @@ function buildMyProfileResponse(args: {
   profile: {
     email?: string | null;
     role?: string | null;
-    roleStatus?: string | null;
+    roleApprovalStatus?: string | null;
     requestedRole?: string | null;
     brokerId?: string | null;
-    REDId?: string | null;
+    developerId?: string | null;
     isActive?: boolean;
   };
   name: string | undefined;
@@ -50,10 +51,10 @@ function buildMyProfileResponse(args: {
     name: args.name,
     username: args.username,
     role: args.profile.role,
-    roleStatus: args.profile.roleStatus,
+    roleApprovalStatus: args.profile.roleApprovalStatus,
     requestedRole: args.profile.requestedRole,
     brokerId: args.profile.brokerId,
-    REDId: args.profile.REDId,
+    developerId: args.profile.developerId,
     showInOffersDirectory: args.showInOffersDirectory,
     isActive: args.profile.isActive,
     authProvider: { id: "google", passwordManaged: false },
@@ -88,9 +89,16 @@ export const getMyProfile = query({
       name: current.profile.name ?? current.identity.name ?? null,
       authUserId: current.identity.authUserId,
     });
+    const normalizedRoleState = normalizeUserProfileRoleState(current.profile);
     return buildMyProfileResponse({
       identity: current.identity,
-      profile: current.profile,
+      profile: {
+        ...current.profile,
+        role: normalizedRoleState.role,
+        roleApprovalStatus: normalizedRoleState.roleApprovalStatus,
+        requestedRole: normalizedRoleState.requestedRole,
+        developerId: normalizedRoleState.developerId,
+      },
       name: current.profile.name ?? current.identity.name ?? undefined,
       username,
       showInOffersDirectory: current.profile.showInOffersDirectory ?? true,

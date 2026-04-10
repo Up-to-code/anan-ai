@@ -18,8 +18,10 @@ vi.mock("../(zones)/inbox/pages/InboxPage/useRealtimeInbox", () => ({
   useWorkspaceSignalCounts,
 }));
 
-vi.mock("@convex-dev/auth/react", () => ({
-  useAuthActions: () => ({ signOut: vi.fn() }),
+vi.mock("@clerk/nextjs", () => ({
+  useClerk: () => ({ signOut: vi.fn() }),
+  useOrganization: () => ({ organization: null }),
+  useOrganizationList: () => ({ isLoaded: true, userMemberships: { data: [] } }),
 }));
 
 vi.mock("next-themes", () => ({

@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react"
 import { MessageCircleMore } from "lucide-react";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { cn } from "@/lib/utils";
@@ -9,7 +10,7 @@ import { cn } from "@/lib/utils";
  * WHAT:  Renders the empty thread state with simple guidance for selecting or starting a conversation.
  * HOW:   Uses minimal copy and iconography so the empty state supports the workspace rather than dominating it.
  */
-export function InboxThreadEmptyState() {
+const InboxThreadEmptyStateComponent = function InboxThreadEmptyState() {
   const { dictionary, direction, isRtl } = useWebLocale();
   return (
     <div className="flex h-full min-h-0 flex-1 items-center justify-center bg-background/50 px-6" dir={direction}>
@@ -29,7 +30,7 @@ export function InboxThreadEmptyState() {
  * WHAT:  Renders the loading state for the active inbox thread.
  * HOW:   Keeps the message short and visually light while data subscriptions resolve.
  */
-export function InboxThreadLoadingState() {
+const InboxThreadLoadingStateComponent = function InboxThreadLoadingState() {
   const { dictionary } = useWebLocale();
   return (
     <div className="flex h-full min-h-0 flex-1 items-center justify-center bg-background/50 px-6">
@@ -39,3 +40,6 @@ export function InboxThreadLoadingState() {
     </div>
   );
 }
+
+export const InboxThreadEmptyState = memo(InboxThreadEmptyStateComponent)
+export const InboxThreadLoadingState = memo(InboxThreadLoadingStateComponent)

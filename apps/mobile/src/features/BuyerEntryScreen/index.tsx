@@ -1,14 +1,14 @@
 import React from "react";
 import { View } from "react-native";
+import { Redirect } from "expo-router";
 import BuyerAssistantHomeScreen from "@/features/BuyerAssistantHomeScreen";
-import WelcomeScreen from "@/features/WelcomeScreen";
 import { useBuyerAccount } from "@/hooks/useBuyerAccount";
 import { useAppTheme } from "@/lib/mobileTheme";
 
 /**
- * WHY:   The buyer app should only show the welcome screen on first run, then open directly into the active assistant workspace on subsequent launches.
- * WHAT:  Chooses the initial buyer screen based on the persisted onboarding state.
- * HOW:   Waits for the buyer account contract to hydrate before rendering either the onboarding surface or the assistant home.
+ * WHY:   Launch now depends on auth skip state as well as onboarding.
+ * WHAT:  Gates the buyer launch into auth or the assistant workspace.
+ * HOW:   Waits for the merged buyer account to hydrate, then redirects to the correct route when needed.
  */
 export default function BuyerEntryScreen() {
   const theme = useAppTheme();
@@ -18,5 +18,13 @@ export default function BuyerEntryScreen() {
     return <View style={{ flex: 1, backgroundColor: theme.colors.canvas }} />;
   }
 
-  return account.isOnboardingComplete ? <BuyerAssistantHomeScreen /> : <WelcomeScreen />;
+  if (account.launchRoute === "/auth") {
+    return <Redirect href="/auth" />;
+  }
+
+  if (account.launchRoute !== "/") {
+    return <Redirect href={account.launchRoute} />;
+  }
+
+  return <BuyerAssistantHomeScreen />;
 }

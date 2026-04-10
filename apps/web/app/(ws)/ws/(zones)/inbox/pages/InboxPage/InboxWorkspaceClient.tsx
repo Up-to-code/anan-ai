@@ -94,6 +94,11 @@ export default function InboxWorkspaceClient({
   const isThreadPaneVisible = hasConversationRoute || isResolvingStartConversation || isMobileThreadVisible;
 
   const handleAcceptInvite = async (invite: IncomingOrganizationInvite) => {
+    if (invite.acceptUrl) {
+      window.location.assign(invite.acceptUrl);
+      return;
+    }
+
     const response = await fetch("/api/workspace/incoming-invites/accept", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

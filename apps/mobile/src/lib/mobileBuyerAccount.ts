@@ -1,5 +1,6 @@
 import { Directory, File, Paths } from "expo-file-system";
 import { Platform } from "react-native";
+import { resolveLocale } from "@/lib/locale";
 import type {
   MobileBuyerConsents,
   MobileBuyerLocalState,
@@ -25,7 +26,7 @@ const DEFAULT_PREFERENCES: MobileBuyerPreferences = {
 const DEFAULT_CONSENTS: MobileBuyerConsents = {};
 
 const EMPTY_BUYER_LOCAL_STATE: MobileBuyerLocalState = {
-  version: 1,
+  version: 2,
   profile: DEFAULT_PROFILE,
   savedPropertyIds: [],
   consents: DEFAULT_CONSENTS,
@@ -49,7 +50,7 @@ function ensureNativeStorage(handle: NonNullable<ReturnType<typeof getNativeStor
   }
 }
 
-function normalizeBuyerLocalState(value: unknown): MobileBuyerLocalState {
+export function normalizeBuyerLocalState(value: unknown): MobileBuyerLocalState {
   if (!value || typeof value !== "object") return EMPTY_BUYER_LOCAL_STATE;
 
   const record = value as Partial<MobileBuyerLocalState>;
@@ -62,7 +63,7 @@ function normalizeBuyerLocalState(value: unknown): MobileBuyerLocalState {
     : [];
 
   return {
-    version: 1,
+    version: 2,
     profile: {
       displayName:
         typeof record.profile?.displayName === "string" && record.profile.displayName.trim()
@@ -83,10 +84,14 @@ function normalizeBuyerLocalState(value: unknown): MobileBuyerLocalState {
         typeof record.consents?.supportAcceptedAt === "number" ? record.consents.supportAcceptedAt : undefined,
     },
     preferences: {
-      locale: "ar",
+      locale: resolveLocale(record.preferences?.locale),
       onboardingCompletedAt:
         typeof record.preferences?.onboardingCompletedAt === "number"
           ? record.preferences.onboardingCompletedAt
+          : undefined,
+      authEntryDismissedAt:
+        typeof record.preferences?.authEntryDismissedAt === "number"
+          ? record.preferences.authEntryDismissedAt
           : undefined,
       financeDefaults: {
         downPaymentPercent:
@@ -198,4 +203,3 @@ export async function clearBuyerLocalState() {
 export function emptyBuyerLocalState() {
   return EMPTY_BUYER_LOCAL_STATE;
 }
-

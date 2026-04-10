@@ -17,6 +17,8 @@ import { MobilePill, MobileSectionHeading, MobileSurface, MobileTopBar } from "@
 import { AnalyticsMetricCard } from "@/features/AnalyticsScreen/AnalyticsMetricCard";
 import { AnalyticsTrendChart } from "@/features/AnalyticsScreen/AnalyticsTrendChart";
 import { useBuyerAnalytics } from "@/hooks/useBuyerAnalytics";
+import { cn } from "@/lib/cn";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import { useAppTheme } from "@/lib/mobileTheme";
 
 function resolveSignalTone(index: number, theme: ReturnType<typeof useAppTheme>) {
@@ -46,7 +48,7 @@ function resolveSignalTone(index: number, theme: ReturnType<typeof useAppTheme>)
 /**
  * WHY:   Buyers need a compact, trustworthy market-intelligence surface that reflects current inventory and engagement rather than frozen mock content.
  * WHAT:  Renders the buyer analytics summary, recent trend blocks, area signals, and next-step guidance.
- * HOW:   Reads the shared buyer analytics hook so the route stays coherent in both live Convex mode and explicit fallback mode.
+ * HOW:   Reads the shared buyer analytics hook and renders either the live summary or a compact unavailable state.
  */
 export default function AnalyticsScreen() {
   const router = useRouter();
@@ -54,33 +56,54 @@ export default function AnalyticsScreen() {
   const theme = useAppTheme();
   const analytics = useBuyerAnalytics();
   const summary = analytics.summary;
+  const { dictionary, isRtl } = useMobileLocale();
+
+  if (!summary && analytics.isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center" style={{ backgroundColor: theme.colors.canvas }}>
+        <Activity size={20} color={theme.colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1" style={{ backgroundColor: theme.colors.canvas }}>
       <MobileTopBar
         insetTop={insets.top}
-        title="تحليلات السوق"
-        subtitle={analytics.hasBackend ? "ملخص حي للمشتري" : "ملخص محلي من وضع التطوير"}
+        title={dictionary.navigation.analytics}
+        subtitle={dictionary.navigation.analyticsSubtitle}
         backgroundColor={theme.colors.canvas}
         borderColor={theme.colors.borderStrong}
         leading={<IconButton icon={ArrowLeft} onPress={() => router.back()} tone="panel" />}
         trailing={<IconButton icon={BarChart3} tone="panel" />}
       />
 
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 32, 48) }}
-      >
-        <View
-          style={{
-            paddingHorizontal: theme.spacing.gutterCompact,
-            paddingTop: theme.spacing.gutterCompact,
-            gap: theme.spacing.section,
-          }}
+      {!summary ? (
+        <View className="flex-1 px-5 pt-5">
+          <MobileSurface radius="hero" className="gap-4 px-6 py-8">
+            <AppText className="text-right text-[22px] font-cairo-black" style={{ color: theme.colors.ink }}>
+              {dictionary.runtime.liveDataUnavailableTitle}
+            </AppText>
+            <AppText className="text-right text-[15px] leading-8 font-cairo-medium" style={{ color: theme.colors.inkMuted }}>
+              {dictionary.runtime.liveDataUnavailableBody}
+            </AppText>
+          </MobileSurface>
+        </View>
+      ) : (
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 32, 48) }}
         >
+          <View
+            style={{
+              paddingHorizontal: theme.spacing.gutterCompact,
+              paddingTop: theme.spacing.gutterCompact,
+              gap: theme.spacing.section,
+            }}
+          >
           <MobileSurface tone="muted" radius="hero" className="gap-5">
-            <View className="flex-row-reverse items-start justify-between" style={{ gap: 16 }}>
+            <View className={cn("items-start justify-between", isRtl ? "flex-row-reverse" : "flex-row")} style={{ gap: 16 }}>
               <View
                 className="items-center justify-center rounded-full"
                 style={{ width: 52, height: 52, backgroundColor: theme.colors.primarySoft }}
@@ -90,7 +113,7 @@ export default function AnalyticsScreen() {
 
               <View className="flex-1 gap-3">
                 <AppText className="text-[11px] font-cairo-bold" style={{ color: theme.colors.primary }}>
-                  موجز الحركة
+                  {dictionary.analytics.movementBrief}
                 </AppText>
                 <AppText className="text-[28px] leading-[40px] font-cairo-black" style={{ color: theme.colors.ink }}>
                   {summary.headline}
@@ -101,18 +124,18 @@ export default function AnalyticsScreen() {
               </View>
             </View>
 
-            <View className="flex-row-reverse flex-wrap" style={{ gap: 8 }}>
+            <View className={cn(isRtl ? "flex-row-reverse" : "flex-row", "flex-wrap")} style={{ gap: 8 }}>
               <MobilePill label={summary.updatedAtLabel} tone="primary" active />
               <MobilePill label={summary.topSignalLabel} />
             </View>
 
-            <View className="flex-row-reverse" style={{ gap: 12 }}>
+            <View className={cn(isRtl ? "flex-row-reverse" : "flex-row")} style={{ gap: 12 }}>
               <View
                 className="flex-1 rounded-[20px] px-4 py-4"
                 style={{ backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border }}
               >
                 <AppText className="text-[12px] font-cairo-bold" style={{ color: theme.colors.inkMuted }}>
-                  المتابعات
+                  {dictionary.analytics.followUps}
                 </AppText>
                 <AppText className="mt-2 text-[20px] font-cairo-black" style={{ color: theme.colors.ink }}>
                   {summary.qualifiedLeadLabel}
@@ -124,7 +147,7 @@ export default function AnalyticsScreen() {
                 style={{ backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border }}
               >
                 <AppText className="text-[12px] font-cairo-bold" style={{ color: theme.colors.inkMuted }}>
-                  متوسط التفاعل
+                  {dictionary.analytics.averageResponse}
                 </AppText>
                 <AppText className="mt-2 text-[20px] font-cairo-black" style={{ color: theme.colors.ink }}>
                   {summary.averageResponseLabel}
@@ -133,32 +156,32 @@ export default function AnalyticsScreen() {
             </View>
           </MobileSurface>
 
-          <View className="flex-row-reverse flex-wrap justify-between" style={{ rowGap: 12 }}>
+          <View className={cn(isRtl ? "flex-row-reverse" : "flex-row", "flex-wrap justify-between")} style={{ rowGap: 12 }}>
             <AnalyticsMetricCard
-              label="إجمالي الزيارات"
+              label={dictionary.analytics.totalVisits}
               value={summary.metrics.visits}
-              helper="حجم الوصول الحالي إلى العروض المنشورة."
+              helper={dictionary.analytics.totalVisitsBody}
               icon={Eye}
               tone="default"
             />
             <AnalyticsMetricCard
-              label="رحلات جادة"
+              label={dictionary.analytics.seriousJourneys}
               value={summary.metrics.seriousJourneys}
-              helper="الانتقال من مجرد المشاهدة إلى تفاعل أوضح داخل الرحلة."
+              helper={dictionary.analytics.seriousJourneysBody}
               icon={Users}
               tone="highlight"
             />
             <AnalyticsMetricCard
-              label="معدل التحويل"
+              label={dictionary.analytics.conversionRate}
               value={summary.metrics.conversion}
-              helper="كيف تتحول المشاهدات الحالية إلى تفاعل جاد."
+              helper={dictionary.analytics.conversionRateBody}
               icon={Gauge}
               tone="success"
             />
             <AnalyticsMetricCard
-              label="إشارات المتابعة"
+              label={dictionary.analytics.followUpSignals}
               value={summary.metrics.followUps}
-              helper="المرحلة الأقرب لتسليم الحالة إلى مستشار أو متابعة بشرية."
+              helper={dictionary.analytics.followUpSignalsBody}
               icon={Activity}
               tone="default"
             />
@@ -174,8 +197,8 @@ export default function AnalyticsScreen() {
 
           <MobileSurface radius="hero" className="gap-5">
             <MobileSectionHeading
-              title="أين تتركز الإشارة الآن"
-              description="بدلاً من ازدحام الجداول، اقرأ المناطق من خلال التفاعل، السعر، وجودة العروض."
+              title={dictionary.analytics.whereSignal}
+              description={dictionary.analytics.whereSignalBody}
             />
 
             <View style={{ gap: 12 }}>
@@ -188,7 +211,7 @@ export default function AnalyticsScreen() {
                     className="rounded-[24px] px-4 py-4"
                     style={{ backgroundColor: theme.colors.surfaceMuted, borderWidth: 1, borderColor: theme.colors.border }}
                   >
-                    <View className="flex-row-reverse items-start justify-between" style={{ gap: 12 }}>
+                    <View className={cn("items-start justify-between", isRtl ? "flex-row-reverse" : "flex-row")} style={{ gap: 12 }}>
                       <View
                         className="rounded-full px-3 py-2"
                         style={{ backgroundColor: tone.backgroundColor, borderWidth: 1, borderColor: tone.borderColor }}
@@ -219,10 +242,10 @@ export default function AnalyticsScreen() {
                       />
                     </View>
 
-                    <View className="mt-4 flex-row-reverse" style={{ gap: 12 }}>
+                    <View className={cn("mt-4", isRtl ? "flex-row-reverse" : "flex-row")} style={{ gap: 12 }}>
                       <View className="flex-1">
                         <AppText className="text-[11px] font-cairo-bold" style={{ color: theme.colors.inkMuted }}>
-                          نطاق الميزانية
+                          {dictionary.analytics.budgetRange}
                         </AppText>
                         <AppText className="mt-1 text-[15px] font-cairo-black" style={{ color: theme.colors.ink }}>
                           {signal.budget}
@@ -231,7 +254,7 @@ export default function AnalyticsScreen() {
 
                       <View className="flex-1">
                         <AppText className="text-[11px] font-cairo-bold" style={{ color: theme.colors.inkMuted }}>
-                          إشارة التفاعل
+                          {dictionary.analytics.engagementSignal}
                         </AppText>
                         <AppText className="mt-1 text-[15px] font-cairo-black" style={{ color: theme.colors.ink }}>
                           {signal.response}
@@ -246,8 +269,8 @@ export default function AnalyticsScreen() {
 
           <MobileSurface radius="hero" className="gap-5">
             <MobileSectionHeading
-              title="كيف تتحرك الرحلة"
-              description="الغرض هنا ليس محاكاة لوحة مكتبية، بل إعطاء المشتري قراءة سريعة على نفس الشاشة."
+              title={dictionary.analytics.journeyMotion}
+              description={dictionary.analytics.journeyMotionBody}
             />
 
             <View style={{ gap: 12 }}>
@@ -327,9 +350,9 @@ export default function AnalyticsScreen() {
               </View>
             </Pressable>
           </MobileSurface>
-        </View>
-      </ScrollView>
+          </View>
+        </ScrollView>
+      )}
     </View>
   );
 }
-

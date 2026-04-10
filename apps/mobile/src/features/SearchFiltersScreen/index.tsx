@@ -7,11 +7,13 @@ import { AppText } from "@/components/ui/AppText";
 import { IconButton } from "@/components/ui/IconButton";
 import { MobileSectionHeading, MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
 import { usePropertyFeed } from "@/hooks/usePropertyFeed";
+import { cn } from "@/lib/cn";
 import { getPropertyLocationLabel } from "@/lib/mobileData";
 import { buildSearchRouteParams, parseSearchRouteParams } from "@/lib/mobileSearch";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import { useAppTheme } from "@/lib/mobileTheme";
 
-const ALL_FILTER = "الكل";
+const ALL_FILTER = "all";
 
 /**
  * WHY:   Search filters need a dedicated mobile sheet-style screen without bloating the Expo route file.
@@ -22,6 +24,7 @@ export default function SearchFiltersScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
+  const { dictionary, isRtl } = useMobileLocale();
   const params = useLocalSearchParams<{
     area?: string;
     ownerType?: string;
@@ -36,7 +39,7 @@ export default function SearchFiltersScreen() {
 
   const feed = usePropertyFeed();
   const areas = [ALL_FILTER, ...new Set(feed.properties.map((property) => getPropertyLocationLabel(property)))];
-  const ownerTypes = [ALL_FILTER, "وسيط", "مطور"];
+  const ownerTypes = [ALL_FILTER, "broker", "developer"];
 
   const [selectedArea, setSelectedArea] = useState(params.area ?? ALL_FILTER);
   const [selectedOwnerType, setSelectedOwnerType] = useState(params.ownerType ?? ALL_FILTER);
@@ -56,8 +59,8 @@ export default function SearchFiltersScreen() {
     <View className="flex-1" style={{ backgroundColor: theme.colors.canvas }}>
       <MobileTopBar
         insetTop={insets.top}
-        title="فلاتر البحث"
-        subtitle="اختيارات سريعة داخل نفس الرحلة"
+        title={dictionary.search.filtersTitle}
+        subtitle={dictionary.search.filtersSubtitle}
         backgroundColor={theme.colors.canvas}
         borderColor={theme.colors.border}
         leading={<IconButton icon={ArrowRight} onPress={() => router.back()} tone="panel" />}
@@ -76,21 +79,21 @@ export default function SearchFiltersScreen() {
       >
         <MobileSurface tone="muted" radius="hero" className="gap-5">
           <MobileSectionHeading
-            eyebrow="تخصيص النتائج"
-            title="اختَر ما تريد رؤيته"
-            description="غيّر المنطقة أو نوع الجهة ثم ارجع مباشرة إلى النتائج بدون فقدان سياق البحث الحالي."
+            eyebrow={dictionary.search.customizeResults}
+            title={dictionary.search.chooseWhatToSee}
+            description={dictionary.search.chooseWhatToSeeBody}
           />
         </MobileSurface>
 
         <FilterSection
-          title="المنطقة"
+          title={dictionary.search.areaTitle}
           options={areas}
           selectedValue={selectedArea}
           onSelect={setSelectedArea}
         />
 
         <FilterSection
-          title="نوع الجهة"
+          title={dictionary.search.ownerTypeTitle}
           options={ownerTypes}
           selectedValue={selectedOwnerType}
           onSelect={setSelectedOwnerType}
@@ -114,7 +117,7 @@ export default function SearchFiltersScreen() {
             backgroundColor: theme.colors.primary,
           }}
         >
-          <AppText className="text-[16px] font-cairo-bold text-white">عرض النتائج</AppText>
+          <AppText className="text-[16px] font-cairo-bold text-white">{dictionary.search.resultsTitle}</AppText>
         </Pressable>
       </View>
     </View>
@@ -133,10 +136,16 @@ function FilterSection({
   onSelect: (value: string) => void;
 }) {
   const theme = useAppTheme();
+  const { dictionary, isRtl } = useMobileLocale();
+  const labels: Record<string, string> = {
+    all: dictionary.assistant.searchAll,
+    broker: dictionary.search.ownerBroker,
+    developer: dictionary.search.ownerDeveloper,
+  };
 
   return (
     <MobileSurface radius="hero" className="gap-4">
-      <AppText className="text-right text-[18px] font-cairo-bold" style={{ color: theme.colors.ink }}>
+      <AppText className={cn("text-[18px] font-cairo-bold", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.ink }}>
         {title}
       </AppText>
 
@@ -148,7 +157,7 @@ function FilterSection({
             <Pressable
               key={option}
               onPress={() => onSelect(option)}
-              className="h-12 flex-row-reverse items-center justify-between px-4"
+              className={cn("h-12 items-center justify-between px-4", isRtl ? "flex-row-reverse" : "flex-row")}
               style={{
                 borderRadius: theme.radii.card,
                 borderWidth: 1,
@@ -157,10 +166,10 @@ function FilterSection({
               }}
             >
               <AppText
-                className="text-right font-cairo-bold"
+                className={cn(isRtl ? "text-right" : "text-left", "font-cairo-bold")}
                 style={{ color: isSelected ? theme.colors.primary : theme.colors.ink, fontSize: 15 }}
               >
-                {option}
+                {labels[option] ?? option}
               </AppText>
               {isSelected ? <Check size={18} color={theme.colors.primary} strokeWidth={3} /> : <View style={{ width: 18, height: 18 }} />}
             </Pressable>

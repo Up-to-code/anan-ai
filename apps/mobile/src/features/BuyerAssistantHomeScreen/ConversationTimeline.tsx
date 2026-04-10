@@ -22,7 +22,11 @@ import { CursorPropertyMediaViewer } from "@/components/property/CursorPropertyM
 import { MobilePropertyCard, type MobilePropertyCardVariant } from "@/components/property/MobilePropertyCard";
 import { AppText } from "@/components/ui/AppText";
 import { MobilePill, MobileSectionHeading } from "@/components/ui/MobileChrome";
+import { cn } from "@/lib/cn";
 import { formatCurrency, formatPercent } from "@/lib/formatters";
+import { formatMobileCopy, getMobileDictionary } from "@/lib/i18n";
+import type { MobileLocale } from "@/lib/locale";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import { getPropertyHeroImage, getPropertyLocationLabel } from "@/lib/mobileData";
 import { useAppTheme, type AppTheme } from "@/lib/mobileTheme";
 import type { MobileConversationMessage, MobileProperty, MobileSearchContext } from "@/types/mobile";
@@ -150,6 +154,7 @@ function ConversationEntry({
 }) {
   const isUser = message.role === "user";
   const structuredCards = message.uiTurn?.cards ?? [];
+  const { dictionary } = useMobileLocale();
 
   return (
     <View className={isUser ? "items-start" : "items-stretch"} style={{ gap: 12 }}>
@@ -178,8 +183,8 @@ function ConversationEntry({
 
       {!message.uiTurn && (message.properties?.length ?? 0) > 0 ? (
         <PropertyShelf
-          title="ترشيحات مقترحة"
-          description="وحدات متعلقة بالطلب يمكنك اتخاذ إجراء عليها."
+          title={dictionary.assistant.suggestedPropertiesTitle}
+          description={dictionary.assistant.suggestedPropertiesBody}
           properties={message.properties ?? []}
           onPropertyPress={onPropertyPress}
           onAddPropertyToSelection={onAddPropertyToSelection}
@@ -252,10 +257,11 @@ function UserPromptPanel({ text }: { text: string }) {
 
 function AssistantNarrativePanel({ text }: { text: string }) {
   const theme = useAppTheme();
+  const { dictionary, isRtl, locale } = useMobileLocale();
   return (
     <View className="gap-2">
-      <View className="flex-row-reverse items-center gap-2">
-        <AppText className="text-[12px] font-cairo-bold" style={{ color: theme.colors.primary }}>مساعد عنان</AppText>
+      <View className={cn("items-center gap-2", isRtl ? "flex-row-reverse" : "flex-row")}>
+        <AppText className="text-[12px] font-cairo-bold" style={{ color: theme.colors.primary }}>{dictionary.assistant.title}</AppText>
       </View>
       <View className="px-1">
         <AppText className="text-[15px] leading-8 font-cairo-medium" style={{ color: theme.colors.ink }}>{text}</AppText>
@@ -274,6 +280,7 @@ function ContextPropertyPanel({
   ambientBackgroundColor?: string;
 }) {
   const theme = useAppTheme();
+  const { dictionary, isRtl } = useMobileLocale();
   return (
     <Pressable onPress={onPress} className="mb-4 active:opacity-95">
       <CursorCardShell ambientBackgroundColor={ambientBackgroundColor}>
@@ -283,22 +290,22 @@ function ContextPropertyPanel({
             backgroundColor: theme.colors.surfaceMuted,
           }}
         >
-          <View className="flex-row-reverse items-center justify-between">
+          <View className={cn("items-center justify-between", isRtl ? "flex-row-reverse" : "flex-row")}>
             <View className="flex-1">
-              <AppText className="text-[11px] font-cairo-bold text-right" style={{ color: theme.colors.inkMuted }}>
-                العقار الجاري
+              <AppText className={cn("text-[11px] font-cairo-bold", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.inkMuted }}>
+                {dictionary.navigation.propertyDetail}
               </AppText>
-              <AppText className="mt-1 text-[16px] font-cairo-bold text-right" numberOfLines={1} style={{ color: theme.colors.ink }}>
+              <AppText className={cn("mt-1 text-[16px] font-cairo-bold", isRtl ? "text-right" : "text-left")} numberOfLines={1} style={{ color: theme.colors.ink }}>
                 {property.title}
               </AppText>
-              <View className="mt-2 flex-row-reverse items-center gap-2">
+              <View className={cn("mt-2 items-center gap-2", isRtl ? "flex-row-reverse" : "flex-row")}>
                 <MapPin size={14} color={theme.colors.primary} />
-                <AppText className="flex-1 text-[13px] font-medium tracking-tight text-right" numberOfLines={1} style={{ color: theme.colors.inkMuted }}>
+                <AppText className={cn("flex-1 text-[13px] font-medium tracking-tight", isRtl ? "text-right" : "text-left")} numberOfLines={1} style={{ color: theme.colors.inkMuted }}>
                   {getPropertyLocationLabel(property)}
                 </AppText>
               </View>
             </View>
-            <MobilePill label="فتح التفاصيل" tone="default" />
+            <MobilePill label={dictionary.navigation.propertyDetail} tone="default" />
           </View>
         </View>
       </CursorCardShell>
@@ -333,9 +340,10 @@ function PropertyShelf({
   comparePicking: boolean;
   maxCompareProperties: number;
 }) {
+  const { dictionary } = useMobileLocale();
   return (
     <View className="gap-4">
-      <MobileSectionHeading title={title} description={description} eyebrow="مقترحات" />
+      <MobileSectionHeading title={title} description={description} eyebrow={dictionary.assistant.searchResultsTitle} />
       <View className="gap-4">
         {properties.map((property) => (
           <ConversationPropertyCard
@@ -385,12 +393,13 @@ function SearchResultSection({
   maxCompareProperties: number;
 }) {
   const theme = useAppTheme();
+  const { dictionary, isRtl } = useMobileLocale();
   const previewResults = properties.slice(0, 3);
   const hasMore = properties.length > 3;
 
   return (
     <View className="gap-4">
-      <View className="flex-row-reverse items-start gap-4">
+      <View className={cn("items-start gap-4", isRtl ? "flex-row-reverse" : "flex-row")}>
         <View
           className="items-center justify-center"
           style={{
@@ -403,8 +412,8 @@ function SearchResultSection({
           <Search size={20} color={theme.colors.primary} />
         </View>
         <View className="flex-1 mt-1">
-          <AppText className="text-[18px] font-cairo-bold text-right" style={{ color: theme.colors.ink }}>نتائج البحث المقترحة</AppText>
-          <AppText className="mt-1-5 text-[14px] leading-7 text-right" style={{ color: theme.colors.inkMuted }}>{summary}</AppText>
+          <AppText className={cn("text-[18px] font-cairo-bold", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.ink }}>{dictionary.assistant.searchResultsTitle}</AppText>
+          <AppText className={cn("mt-1-5 text-[14px] leading-7", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.inkMuted }}>{summary}</AppText>
         </View>
       </View>
 
@@ -427,7 +436,7 @@ function SearchResultSection({
         {hasMore && onShowMoreSearchResults ? (
           <Pressable
             onPress={() => onShowMoreSearchResults(searchContext)}
-            className="flex-row-reverse items-center justify-between px-5 py-4 active:opacity-90 mt-1"
+            className={cn("items-center justify-between px-5 py-4 active:opacity-90 mt-1", isRtl ? "flex-row-reverse" : "flex-row")}
             style={{
               borderRadius: theme.radii.pill, // Use pill boundary for actions per system design
               borderWidth: 1,
@@ -437,7 +446,7 @@ function SearchResultSection({
           >
             <ChevronLeft size={16} color={theme.colors.inkSoft} />
             <View className="flex-1">
-              <AppText className="text-right text-[15px] font-cairo-bold" style={{ color: theme.colors.ink }}>كافة النتائج المرتبطة</AppText>
+              <AppText className={cn("text-[15px] font-cairo-bold", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.ink }}>{dictionary.search.resultsTitle}</AppText>
             </View>
           </Pressable>
         ) : null}
@@ -469,15 +478,16 @@ function ConversationPropertyCard({
   comparePicking: boolean;
   maxCompareProperties: number;
 }) {
+  const { dictionary, locale } = useMobileLocale();
   const isSelected = selectedPropertyIds.includes(property.id);
   const selectionLimitReached = selectedPropertyIds.length >= maxCompareProperties;
   const actionLabel = comparePicking
     ? isSelected
-      ? "محدد"
+      ? dictionary.assistant.selectedProperty
       : selectionLimitReached
-        ? `الحد ${maxCompareProperties}`
-        : "أضف للمقارنة"
-    : "متابعة";
+        ? formatMobileCopy(dictionary.assistant.selectionLimit, { count: String(maxCompareProperties) })
+        : dictionary.assistant.selectProperty
+    : dictionary.common.continue;
 
   return (
     <MobilePropertyCard
@@ -522,12 +532,13 @@ function StructuredCardPanel({
   maxCompareProperties: number;
   relatedProperties: MobileProperty[];
 }) {
+  const { dictionary, locale } = useMobileLocale();
   switch (card.componentId) {
     case "property_shortlist":
       return (
         <PropertyShelf
-          title={String(card.props.title ?? "خيارات مقترحة")}
-          description={String(card.props.summary ?? "اختر عقاراً للمتابعة من نفس المحادثة.")}
+          title={String(card.props.title ?? dictionary.assistant.searchResultsTitle)}
+          description={String(card.props.summary ?? dictionary.assistant.choosePropertyToContinue)}
           properties={(card.props.properties as MobileProperty[]) ?? []}
           onPropertyPress={onPropertyPress}
           onAddPropertyToSelection={onAddPropertyToSelection}
@@ -545,10 +556,10 @@ function StructuredCardPanel({
     case "followup_prompt":
       return (
         <NextStepPanel
-          title={String(card.props.title ?? "الخطوة التالية")}
-          summary={String(card.props.summary ?? "أكمل من نفس المحادثة وسأتولى الخطوة التالية.")}
-          actionLabel={String(card.props.actionLabel ?? "أكمل")}
-          onPress={() => onSuggestedPromptPress(String(card.props.actionLabel ?? "أكمل"))}
+          title={String(card.props.title ?? dictionary.common.continue)}
+          summary={String(card.props.summary ?? dictionary.assistant.localHistory)}
+          actionLabel={String(card.props.actionLabel ?? dictionary.common.continue)}
+          onPress={() => onSuggestedPromptPress(String(card.props.actionLabel ?? dictionary.common.continue))}
         />
       );
     default:
@@ -564,6 +575,7 @@ function BankOfferPanel({
   onSuggestedPromptPress: (prompt: string) => void;
 }) {
   const theme = useAppTheme();
+  const { dictionary, locale, isRtl } = useMobileLocale();
   return (
     <View
       className="px-5 py-5"
@@ -574,31 +586,31 @@ function BankOfferPanel({
         backgroundColor: theme.colors.surfaceMuted,
       }}
     >
-      <View className="flex-row-reverse items-center justify-between">
-        <View className="flex-row-reverse items-center gap-3">
+      <View className={cn("items-center justify-between", isRtl ? "flex-row-reverse" : "flex-row")}>
+        <View className={cn("items-center gap-3", isRtl ? "flex-row-reverse" : "flex-row")}>
           <View
             className="items-center justify-center"
             style={{ width: 44, height: 44, borderRadius: theme.radii.pill, backgroundColor: theme.colors.primarySoft }}
           >
             <Wallet size={20} color={theme.colors.primary} />
           </View>
-          <AppText className="text-[18px] font-cairo-bold" style={{ color: theme.colors.ink }}>{String(offer.bankName ?? "عرض بنكي")}</AppText>
+          <AppText className="text-[18px] font-cairo-bold" style={{ color: theme.colors.ink }}>{String(offer.bankName ?? dictionary.cards.bank)}</AppText>
         </View>
-        <MobilePill label={String(offer.rateLabel ?? "تمويل")} tone="primary" active />
+        <MobilePill label={String(offer.rateLabel ?? dictionary.cards.program)} tone="primary" active />
       </View>
 
       <View className="mt-5 gap-4">
-        <InsightRow label="القسط الشهري" value={formatCurrency(Number(offer.monthlyEstimate ?? 0))} emphasized />
-        <InsightRow label="الدفعة الأولى" value={`${String(offer.downPaymentPercent ?? 0)}%`} />
-        <InsightRow label="البرنامج" value={String(offer.rateLabel ?? "تمويل عقاري")} last />
+        <InsightRow label={dictionary.cards.monthlyInstallment} value={formatCurrency(Number(offer.monthlyEstimate ?? 0), locale)} emphasized />
+        <InsightRow label={dictionary.cards.downPayment} value={`${String(offer.downPaymentPercent ?? 0)}%`} />
+        <InsightRow label={dictionary.cards.program} value={String(offer.rateLabel ?? dictionary.cards.program)} last />
       </View>
 
       <View className="mt-6 border-t pt-4" style={{ borderTopColor: theme.colors.borderStrong }}>
         <MobilePill
-          label={`اطلب تمويل من ${String(offer.bankName ?? "البنك")}`}
+          label={locale === "en" ? `Request financing from ${String(offer.bankName ?? dictionary.cards.bank)}` : `اطلب تمويل من ${String(offer.bankName ?? dictionary.cards.bank)}`}
           tone="dark"
           active
-          onPress={() => onSuggestedPromptPress(`اطلب تمويل من ${String(offer.bankName ?? "البنك")}`)}
+          onPress={() => onSuggestedPromptPress(locale === "en" ? `Request financing from ${String(offer.bankName ?? dictionary.cards.bank)}` : `اطلب تمويل من ${String(offer.bankName ?? dictionary.cards.bank)}`)}
         />
       </View>
     </View>
@@ -617,6 +629,7 @@ function NextStepPanel({
   onPress: () => void;
 }) {
   const theme = useAppTheme();
+  const { dictionary, isRtl } = useMobileLocale();
   return (
     <View
       className="px-5 py-5"
@@ -627,8 +640,8 @@ function NextStepPanel({
         backgroundColor: theme.colors.surface,
       }}
     >
-      <MobileSectionHeading eyebrow="طُرح لك" title={title} description={summary} />
-      <View className="mt-5 border-t py-1 flex-row-reverse" style={{ borderTopColor: theme.colors.borderStrong }}>
+      <MobileSectionHeading eyebrow={dictionary.common.continue} title={title} description={summary} />
+      <View className={cn("mt-5 border-t py-1", isRtl ? "flex-row-reverse" : "flex-row")} style={{ borderTopColor: theme.colors.borderStrong }}>
         <MobilePill label={actionLabel} tone="primary" active onPress={onPress} />
       </View>
     </View>
@@ -643,10 +656,11 @@ function InsightSummaryPanel({
   relatedProperties?: MobileProperty[];
 }) {
   const theme = useAppTheme();
+  const { dictionary, isRtl, locale } = useMobileLocale();
   if (card.type === "comparison_table") {
     return (
       <ComparisonTable
-        title={String(card.title ?? "مقارنة")}
+        title={String(card.title ?? dictionary.assistant.comparisonTitle)}
         summary={card.summary ? String(card.summary) : null}
         columns={Array.isArray(card.columns) ? card.columns.map((column: unknown) => String(column)) : []}
         rows={Array.isArray(card.rows) ? card.rows.map((row: unknown) => (Array.isArray(row) ? row.map((cell: unknown) => String(cell)) : [])) : []}
@@ -656,7 +670,7 @@ function InsightSummaryPanel({
   }
 
   const icon = resolveInsightIcon(card, theme);
-  const rows = extractInsightRows(card);
+  const rows = extractInsightRows(card, locale);
   const insightTone = resolveInsightTone(card);
 
   function getInsightColors() {
@@ -684,11 +698,11 @@ function InsightSummaryPanel({
         backgroundColor: colors.bg,
       }}
     >
-      <View className="flex-row-reverse items-center justify-between gap-3 pb-4 mb-2" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
+      <View className={cn("items-center justify-between gap-3 pb-4 mb-2", isRtl ? "flex-row-reverse" : "flex-row")} style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
         <View className="flex-1">
-          <AppText className="text-[18px] font-cairo-bold text-right" style={{ color: theme.colors.ink }}>{String(card.title ?? "ملخص")}</AppText>
+          <AppText className={cn("text-[18px] font-cairo-bold", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.ink }}>{String(card.title ?? dictionary.common.continue)}</AppText>
           {card.summary ? (
-            <AppText className="mt-1 text-[14px] leading-6 text-right" style={{ color: theme.colors.inkMuted }}>{String(card.summary)}</AppText>
+            <AppText className={cn("mt-1 text-[14px] leading-6", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.inkMuted }}>{String(card.summary)}</AppText>
           ) : null}
         </View>
         <View
@@ -734,7 +748,8 @@ function ComparisonTable({
   relatedProperties: MobileProperty[];
 }) {
   const theme = useAppTheme();
-  const headerLabel = columns[0] ?? "البند";
+  const { dictionary, isRtl } = useMobileLocale();
+  const headerLabel = columns[0] ?? dictionary.propertyDetail.itemLabel;
   const propertyTitles = columns.length > 1 ? columns.slice(1) : relatedProperties.map((property) => property.title);
   const labelColumnWidth = 88;
   const propertyColumnWidth = 116;
@@ -761,7 +776,7 @@ function ComparisonTable({
           }}
         >
           <View
-            className="flex-row-reverse items-end py-2"
+            className={`${isRtl ? "flex-row-reverse" : "flex-row"} items-end py-2`}
             style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
           >
             <View
@@ -830,7 +845,7 @@ function ComparisonTable({
           {rows.map((row, rowIndex) => (
             <View
               key={`${row.join("-")}-${rowIndex}`}
-              className="flex-row-reverse items-center py-3"
+              className={`${isRtl ? "flex-row-reverse" : "flex-row"} items-center py-3`}
               style={{
                 borderBottomWidth: rowIndex === rows.length - 1 ? 0 : 1,
                 borderBottomColor: theme.colors.border,
@@ -943,6 +958,7 @@ function PromptTray({
 
 function TypingPanel() {
   const theme = useAppTheme();
+  const { dictionary, isRtl } = useMobileLocale();
   const opacity = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
@@ -958,7 +974,7 @@ function TypingPanel() {
 
   return (
     <View
-      className="self-end px-5 py-3"
+      className={`${isRtl ? "self-end" : "self-start"} px-5 py-3`}
       style={{
         borderRadius: theme.radii.pill,
         borderWidth: 1,
@@ -966,9 +982,9 @@ function TypingPanel() {
         backgroundColor: theme.colors.surfaceMuted,
       }}
     >
-      <Animated.View style={{ opacity }} className="flex-row-reverse items-center gap-3">
+      <Animated.View style={{ opacity }} className={`items-center gap-3 ${isRtl ? "flex-row-reverse" : "flex-row"}`}>
         <View className="h-2 w-2 rounded-full" style={{ backgroundColor: theme.colors.primary }} />
-        <AppText className="text-[12px] font-cairo-medium" style={{ color: theme.colors.ink }}>يكتب الآن...</AppText>
+        <AppText className="text-[12px] font-cairo-medium" style={{ color: theme.colors.ink }}>{dictionary.assistant.typing}</AppText>
       </Animated.View>
     </View>
   );
@@ -1005,86 +1021,89 @@ function resolveInsightIcon(card: any, theme: AppTheme) {
   }
 }
 
-function extractInsightRows(card: any): Array<{ label: string; value: string; emphasized?: boolean }> {
+function extractInsightRows(card: any, locale: MobileLocale): Array<{ label: string; value: string; emphasized?: boolean }> {
+  const dictionary = getMobileDictionary(locale);
   switch (card.type) {
     case "broker_profile":
       return [
-        { label: "الوسيط", value: String(card.brokerName ?? "-"), emphasized: true },
-        { label: "الوكالة", value: String(card.brokerAgency ?? "-") },
-        { label: "التقييم", value: `${String(card.rating ?? "-")} / 5` },
-        { label: "وحدات نشطة", value: String(card.activeListings ?? "-") },
+        { label: dictionary.cards.broker, value: String(card.brokerName ?? "-"), emphasized: true },
+        { label: dictionary.cards.agency, value: String(card.brokerAgency ?? "-") },
+        { label: dictionary.cards.rating, value: `${String(card.rating ?? "-")} / 5` },
+        { label: dictionary.cards.activeListings, value: String(card.activeListings ?? "-") },
       ];
     case "developer_profile":
       return [
-        { label: "المطور", value: String(card.developerName ?? "-"), emphasized: true },
-        { label: "سنة التأسيس", value: String(card.establishedYear ?? "-") },
-        { label: "مشاريع منجزة", value: String(card.completedProjects ?? "-") },
+        { label: dictionary.cards.developer, value: String(card.developerName ?? "-"), emphasized: true },
+        { label: dictionary.cards.establishedYear, value: String(card.establishedYear ?? "-") },
+        { label: dictionary.cards.completedProjects, value: String(card.completedProjects ?? "-") },
       ];
     case "market_analysis":
       return [
-        { label: "المنطقة", value: String(card.location ?? "-"), emphasized: true },
-        { label: "متوسط سعر المتر", value: formatCurrency(Number(card.averagePrice ?? 0)) },
+        { label: dictionary.cards.location, value: String(card.location ?? "-"), emphasized: true },
+        { label: dictionary.cards.averageSqmPrice, value: formatCurrency(Number(card.averagePrice ?? 0), locale) },
         {
-          label: "اتجاه السوق",
+          label: dictionary.cards.marketTrend,
           value: `${card.priceTrend === "up" ? "▲" : card.priceTrend === "down" ? "▼" : "•"} ${String(card.trendPercentage ?? 0)}%`,
           emphasized: true,
         },
       ];
     case "roi_summary":
       return [
-        { label: "سعر الشراء", value: formatCurrency(Number(card.purchasePrice ?? 0)) },
-        { label: "الإيجار السنوي", value: formatCurrency(Number(card.estimatedAnnualRent ?? 0)) },
-        { label: "العائد", value: formatPercent(Number(card.grossYieldPercent ?? 0)), emphasized: true },
+        { label: dictionary.cards.purchasePrice, value: formatCurrency(Number(card.purchasePrice ?? 0), locale) },
+        { label: dictionary.cards.annualRentEstimate, value: formatCurrency(Number(card.estimatedAnnualRent ?? 0), locale) },
+        { label: dictionary.cards.grossYield, value: formatPercent(Number(card.grossYieldPercent ?? 0)), emphasized: true },
       ];
     case "roi_projection":
       return [
-        { label: "سعر الشراء", value: formatCurrency(Number(card.purchasePrice ?? 0)) },
-        { label: "الإيجار السنوي", value: formatCurrency(Number(card.annualRent ?? 0)) },
-        { label: "عائد الإيجار", value: formatPercent(Number(card.yieldPercent ?? 0)), emphasized: true },
+        { label: dictionary.cards.purchasePrice, value: formatCurrency(Number(card.purchasePrice ?? 0), locale) },
+        { label: dictionary.cards.annualRent, value: formatCurrency(Number(card.annualRent ?? 0), locale) },
+        { label: dictionary.cards.annualRentalYield, value: formatPercent(Number(card.yieldPercent ?? 0)), emphasized: true },
       ];
     case "loan_calculator":
       return [
-        { label: "قيمة العقار", value: formatCurrency(Number(card.propertyPrice ?? 0)) },
-        { label: "الدفعة المقدمة", value: formatCurrency(Number(card.downPayment ?? 0)) },
-        { label: "المدة", value: `${String(card.years ?? 0)} سنة`, emphasized: true },
+        { label: dictionary.cards.propertyValue, value: formatCurrency(Number(card.propertyPrice ?? 0), locale) },
+        { label: dictionary.cards.upfrontPayment, value: formatCurrency(Number(card.downPayment ?? 0), locale) },
+        { label: dictionary.cards.financeDuration, value: locale === "en" ? `${String(card.years ?? 0)} yrs` : `${String(card.years ?? 0)} سنة`, emphasized: true },
       ];
     case "payment_plan":
       return [
-        { label: "الدفعة الأولى", value: formatCurrency(Number(card.downPayment ?? 0)) },
-        { label: "القسط الشهري", value: formatCurrency(Number(card.monthlyInstallment ?? 0)), emphasized: true },
-        { label: "مدة السداد", value: `${String(card.durationMonths ?? 0)} شهر` },
+        { label: dictionary.cards.downPayment, value: formatCurrency(Number(card.downPayment ?? 0), locale) },
+        { label: dictionary.cards.monthlyInstallment, value: formatCurrency(Number(card.monthlyInstallment ?? 0), locale), emphasized: true },
+        { label: dictionary.cards.repaymentPeriodMonths, value: locale === "en" ? `${String(card.durationMonths ?? 0)} mo` : `${String(card.durationMonths ?? 0)} شهر` },
       ];
     case "mortgage_check":
       return [
-        { label: "الحالة", value: mortgageLabel(String(card.estimatedEligibility ?? "review")), emphasized: true },
-        ...(card.recommendedBudget ? [{ label: "ميزانية مقترحة", value: formatCurrency(Number(card.recommendedBudget)) }] : []),
+        { label: dictionary.cards.status, value: mortgageLabel(String(card.estimatedEligibility ?? "review"), locale), emphasized: true },
+        ...(card.recommendedBudget ? [{ label: dictionary.cards.suggestedBudget, value: formatCurrency(Number(card.recommendedBudget), locale) }] : []),
         ...(card.monthlyInstallmentEstimate
-          ? [{ label: "قسط تقريبي", value: formatCurrency(Number(card.monthlyInstallmentEstimate)) }]
+          ? [{ label: dictionary.cards.estimatedInstallment, value: formatCurrency(Number(card.monthlyInstallmentEstimate), locale) }]
           : []),
       ];
     case "permit_status":
-      return [{ label: "التحقق", value: permitLabel(String(card.permitStatus ?? "pending_review")), emphasized: true }];
+      return [{ label: dictionary.cards.verification, value: permitLabel(String(card.permitStatus ?? "pending_review"), locale), emphasized: true }];
     case "bank_offer":
       return [
-        { label: "البنك", value: String(card.bankName ?? "-"), emphasized: true },
-        { label: "البرنامج", value: String(card.rateLabel ?? "-") },
-        { label: "القسط الشهري", value: formatCurrency(Number(card.monthlyEstimate ?? 0)) },
+        { label: dictionary.cards.bank, value: String(card.bankName ?? "-"), emphasized: true },
+        { label: dictionary.cards.program, value: String(card.rateLabel ?? "-") },
+        { label: dictionary.cards.monthlyInstallment, value: formatCurrency(Number(card.monthlyEstimate ?? 0), locale) },
       ];
     case "accent_note":
-      return [{ label: "الحالة", value: String(card.tone === "success" ? "إيجابي" : card.tone === "warning" ? "تنبيه" : "معلومة"), emphasized: true }];
+      return [{ label: dictionary.cards.status, value: String(card.tone === "success" ? dictionary.cards.positive : card.tone === "warning" ? dictionary.cards.warning : dictionary.cards.info), emphasized: true }];
     default:
       return [];
   }
 }
 
-function mortgageLabel(value: string) {
-  if (value === "eligible") return "مؤهل مبدئياً";
-  if (value === "review") return "بحاجة مراجعة";
-  return "نحتاج بيانات إضافية";
+function mortgageLabel(value: string, locale: MobileLocale) {
+  const dictionary = getMobileDictionary(locale);
+  if (value === "eligible") return dictionary.cards.eligibilityEligible;
+  if (value === "review") return dictionary.cards.eligibilityReview;
+  return dictionary.cards.eligibilityUnknown;
 }
 
-function permitLabel(value: string) {
-  if (value === "verified") return "موثق";
-  if (value === "pending_review") return "مراجعة معلقة";
-  return "غير متاح";
+function permitLabel(value: string, locale: MobileLocale) {
+  const dictionary = getMobileDictionary(locale);
+  if (value === "verified") return dictionary.cards.permitVerified;
+  if (value === "pending_review") return dictionary.cards.permitPending;
+  return dictionary.cards.permitUnavailable;
 }

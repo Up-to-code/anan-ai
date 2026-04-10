@@ -1,23 +1,23 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { DomainError } from "@/server/contracts/errors";
 
-const { createOrganizationForCurrentUser } = vi.hoisted(() => ({
-  createOrganizationForCurrentUser: vi.fn(),
+const { bootstrapCurrentOrganizationFromClerk } = vi.hoisted(() => ({
+  bootstrapCurrentOrganizationFromClerk: vi.fn(),
 }));
 
 vi.mock("@/server/domains/auth/organizations/service", () => ({
-  createOrganizationForCurrentUser,
+  bootstrapCurrentOrganizationFromClerk,
 }));
 
 import { POST } from "./route";
 
 beforeEach(() => {
-  createOrganizationForCurrentUser.mockReset();
+  bootstrapCurrentOrganizationFromClerk.mockReset();
 });
 
 it("returns 201 when the organization is created", async () => {
-  createOrganizationForCurrentUser.mockResolvedValue({
-    id: "broker-1",
+  bootstrapCurrentOrganizationFromClerk.mockResolvedValue({
+    id: "org_1",
     type: "broker",
     name: "Fresh Start Realty",
     slug: "fresh-start-realty",
@@ -28,14 +28,14 @@ it("returns 201 when the organization is created", async () => {
   const response = await POST(
     new Request("http://localhost/api/organizations", {
       method: "POST",
-      body: JSON.stringify({ name: "Fresh Start Realty", type: "broker" }),
+      body: JSON.stringify({ organizationId: "org_1", name: "Fresh Start Realty", type: "broker" }),
       headers: { "Content-Type": "application/json" },
     }),
   );
 
   expect(response.status).toBe(201);
   await expect(response.json()).resolves.toEqual({
-    id: "broker-1",
+    id: "org_1",
     type: "broker",
     name: "Fresh Start Realty",
     slug: "fresh-start-realty",
@@ -62,7 +62,7 @@ it("returns a stable invalid-json error", async () => {
 });
 
 it("serializes domain failures", async () => {
-  createOrganizationForCurrentUser.mockRejectedValue(
+  bootstrapCurrentOrganizationFromClerk.mockRejectedValue(
     new DomainError({
       code: "ORGANIZATION_EXISTS",
       message: "This account already has an organization",
@@ -73,7 +73,7 @@ it("serializes domain failures", async () => {
   const response = await POST(
     new Request("http://localhost/api/organizations", {
       method: "POST",
-      body: JSON.stringify({ name: "Fresh Start Realty", type: "broker" }),
+      body: JSON.stringify({ organizationId: "org_1", name: "Fresh Start Realty", type: "broker" }),
       headers: { "Content-Type": "application/json" },
     }),
   );

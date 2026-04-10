@@ -1,5 +1,11 @@
+import { vi } from "vitest";
 import { describe, expect, it } from "vitest";
 import { getWorkspaceIdentityActions } from "./WorkspaceIdentityMenu";
+
+vi.mock("@clerk/nextjs", () => ({
+  useOrganization: () => ({ organization: null }),
+  useOrganizationList: () => ({ isLoaded: true, userMemberships: { data: [] } }),
+}));
 
 describe("getWorkspaceIdentityActions", () => {
   it("routes the account action to the personal workspace area", () => {

@@ -910,7 +910,7 @@ async function ensureProfile(args: {
   username: string;
   role: "broker" | "developer";
   brokerId?: Id<"brokers">;
-  REDId?: Id<"RED">;
+  developerId?: Id<"RED">;
   currentTenantOrgId?: string;
 }) {
   const now = Date.now();
@@ -925,11 +925,13 @@ async function ensureProfile(args: {
     usernameLower: args.username.toLowerCase(),
     role: args.role,
     brokerId: args.brokerId,
-    REDId: args.REDId,
+    developerId: args.developerId,
+    REDId: undefined,
     currentTenantOrgId: args.currentTenantOrgId,
     isActive: true,
-    roleStatus: "approved" as const,
-    requestedRole: args.role,
+    roleApprovalStatus: "approved" as const,
+    roleStatus: undefined,
+    requestedRole: undefined,
     updatedAt: now,
   };
   if (existing) {
@@ -1004,7 +1006,7 @@ async function ensureOrganizationProfileLinks(args: {
   name: string;
   ownerType: OrganizationKind;
   brokerId?: Id<"brokers">;
-  REDId?: Id<"RED">;
+  developerId?: Id<"RED">;
   tenantOrgId: string;
 }) {
   const username = slugifyAscii(args.profileEmail.split("@")[0] ?? args.profileAuthUserId) || args.profileAuthUserId.slice(0, 24);
@@ -1016,7 +1018,7 @@ async function ensureOrganizationProfileLinks(args: {
     username,
     role: args.ownerType === "broker" ? "broker" : "developer",
     brokerId: args.brokerId,
-    REDId: args.REDId,
+    developerId: args.developerId,
     currentTenantOrgId: args.tenantOrgId,
   });
 }
@@ -1105,13 +1107,16 @@ async function ensurePlaygroundOrganization(ctx: MutationCtx, args: { playground
   const existingProfile =
     (await findProfileByAuthUserId(ctx, authUserId)) ??
     (await findProfileByEmail(ctx, normalizedEmail));
-  if (existingProfile?.REDId) {
-    const existingRed = await ctx.db.get(existingProfile.REDId);
+  const existingDeveloperId = ((existingProfile as any)?.developerId ??
+    (existingProfile as any)?.REDId) as Id<"RED"> | undefined;
+  if (existingDeveloperId) {
+    const existingProfileRecord = existingProfile!;
+    const existingRed = (await ctx.db.get(existingDeveloperId)) as any;
     if (!existingRed) {
       throw new Error("Existing playground RED organization missing");
     }
     const tenantOrgId =
-      existingProfile.currentTenantOrgId ??
+      existingProfileRecord.currentTenantOrgId ??
       (await ensureTenantOrgLinkForExistingOwner({
         ctx,
         authUserId,
@@ -1136,9 +1141,9 @@ async function ensurePlaygroundOrganization(ctx: MutationCtx, args: { playground
       ctx,
       profileAuthUserId: authUserId,
       profileEmail: normalizedEmail,
-      name: existingProfile.name ?? PLAYGROUND_NAME,
+      name: existingProfileRecord.name ?? PLAYGROUND_NAME,
       ownerType: "red",
-      REDId: existingRed._id,
+      developerId: existingRed._id,
       tenantOrgId,
     });
     return {
@@ -1221,7 +1226,7 @@ async function ensurePlaygroundOrganization(ctx: MutationCtx, args: { playground
       actorAuthUserId: authUserId,
     });
     const profile = (await findProfileByAuthUserId(ctx, authUserId)) ?? (await findProfileByEmail(ctx, normalizedEmail));
-    const redId = (created.organization.id ?? profile?.REDId) as Id<"RED">;
+    const redId = (created.organization.id ?? (profile as any)?.developerId) as Id<"RED">;
     const link = await ctx.db.query("tenantOrgLinks").withIndex("ownerREDId", (q) => q.eq("ownerREDId", redId)).first();
     if (!profile || !redId || !link) {
       throw new Error("Failed to create playground organization");
@@ -1244,7 +1249,7 @@ async function ensurePlaygroundOrganization(ctx: MutationCtx, args: { playground
       profileEmail: normalizedEmail,
       name: profile.name ?? PLAYGROUND_NAME,
       ownerType: "red",
-      REDId: redId,
+      developerId: redId,
       tenantOrgId: link.tenantOrgId,
     });
     return {
@@ -1286,7 +1291,7 @@ async function ensurePlaygroundOrganization(ctx: MutationCtx, args: { playground
     profileEmail: normalizedEmail,
     name: existingProfile?.name ?? PLAYGROUND_NAME,
     ownerType: "red",
-    REDId: existingRed._id,
+    developerId: existingRed._id,
     tenantOrgId: link.tenantOrgId,
   });
   return {
@@ -1409,7 +1414,7 @@ async function ensureSyntheticOrganization(args: {
       profileEmail: ownerIdentity.email,
       name: ownerIdentity.displayName,
       ownerType: args.ownerType,
-      REDId: redId,
+      developerId: redId,
       tenantOrgId: link.tenantOrgId,
     });
     return {
@@ -1496,7 +1501,7 @@ async function ensureSyntheticOrganization(args: {
     profileEmail: ownerIdentity.email,
     name: ownerIdentity.displayName,
     ownerType: args.ownerType,
-    REDId: redId,
+    developerId: redId,
     tenantOrgId: link.tenantOrgId,
   });
   return {
@@ -1525,7 +1530,7 @@ async function ensureMember(ctx: MutationCtx, args: {
     username: args.spec.username,
     role: args.spec.profileRole,
     brokerId: args.organization.ownerType === "broker" ? args.organization.ownerBrokerId : undefined,
-    REDId: args.organization.ownerType === "red" ? args.organization.ownerREDId : undefined,
+    developerId: args.organization.ownerType === "red" ? args.organization.ownerREDId : undefined,
     currentTenantOrgId: args.organization.tenantOrgId,
   });
   if (args.spec.authUserId === args.organization.ownerAuthUserId) {
@@ -1884,7 +1889,7 @@ async function listExternalSeedOwners(ctx: MutationCtx, playgroundTenantOrgId: s
       typeof profile.email === "string" &&
       profile.email.endsWith("@seed.anansa.local") &&
       profile.authUserId.endsWith("-owner") &&
-      (profile.brokerId || profile.REDId),
+      (profile.brokerId || (profile as any).developerId),
   );
 }
 
@@ -1903,9 +1908,9 @@ async function ensureLegacyOffer(args: {
   return args.ctx.db.insert("offers", {
     propertyId: args.propertyId,
     fromBrokerId: args.sender.brokerId,
-    fromREDId: args.sender.REDId,
+    fromREDId: (args.sender as any).developerId,
     toBrokerId: args.recipient.brokerId,
-    toREDId: args.recipient.REDId,
+    toREDId: (args.recipient as any).developerId,
     recipientAuthUserId: args.recipient.authUserId,
     price: 1250000,
     status: "pending",
@@ -1933,8 +1938,8 @@ async function ensureSeededConversationNetwork(args: {
     const counterpart = counterpartSlice[index]!;
     const counterpartProperties = counterpart.brokerId
       ? await args.ctx.db.query("properties").withIndex("brokerId", (q) => q.eq("brokerId", counterpart.brokerId!)).collect()
-      : counterpart.REDId
-        ? await args.ctx.db.query("properties").withIndex("REDId", (q) => q.eq("REDId", counterpart.REDId!)).collect()
+      : (counterpart as any).developerId
+        ? await args.ctx.db.query("properties").withIndex("REDId", (q) => q.eq("REDId", (counterpart as any).developerId!)).collect()
         : [];
     const property = counterpartProperties.find((item) => item.publicationState === "published") ?? counterpartProperties[0];
     if (!property) continue;
@@ -1959,11 +1964,11 @@ async function ensureSeededConversationNetwork(args: {
           authUserId: counterpart.authUserId,
           name: counterpart.name ?? counterpart.email ?? "عضو seeded",
           role: counterpart.brokerId ? "broker" : "developer",
-          organizationId: counterpart.brokerId ? String(counterpart.brokerId) : String(counterpart.REDId),
+          organizationId: counterpart.brokerId ? String(counterpart.brokerId) : String((counterpart as any).developerId),
           organizationType: counterpart.brokerId ? "broker" : "developer",
           organizationName: counterpart.brokerId
             ? (await args.ctx.db.get(counterpart.brokerId))?.name ?? counterpart.name
-            : (await args.ctx.db.get(counterpart.REDId!))?.name ?? counterpart.name,
+            : ((await args.ctx.db.get((counterpart as any).developerId!)) as any)?.name ?? counterpart.name,
         },
         recipient: {
           recipientAuthUserId: playgroundOwner.authUserId,
@@ -1997,7 +2002,7 @@ async function ensureSeededConversationNetwork(args: {
         senderUserId: counterpart.authUserId,
         targetUserId: playgroundOwner.authUserId,
         recipientBrokerId: playgroundOwner.brokerId ?? undefined,
-        recipientREDId: playgroundOwner.REDId ?? undefined,
+        recipientREDId: (playgroundOwner as any).developerId ?? undefined,
         offerId: String(offerId),
         propertyId: String(property._id),
         title: `عرض seeded - ${property.title}`,
@@ -2018,7 +2023,7 @@ async function ensureSeededConversationNetwork(args: {
           propertyId: property._id,
           ownerAuthUserId: counterpart.authUserId,
           fromBrokerId: counterpart.brokerId,
-          fromREDId: counterpart.REDId,
+          fromREDId: (counterpart as any).developerId,
           title: `حزمة تعاون seeded - ${property.title}`,
           summary: `حزمة مشتركة بين playground والسوق [${SAUDI_SEED_NAMESPACE}]`,
           askingPrice: property.price,
@@ -2049,7 +2054,7 @@ async function ensureSeededConversationNetwork(args: {
           offerCaseId,
           authUserId: counterpart.authUserId,
           brokerId: counterpart.brokerId,
-          REDId: counterpart.REDId,
+          REDId: (counterpart as any).developerId,
           role: "inventory_owner",
           status: "active",
           createdAt: Date.now(),
@@ -2059,7 +2064,7 @@ async function ensureSeededConversationNetwork(args: {
           offerCaseId,
           authUserId: playgroundOwner.authUserId,
           brokerId: playgroundOwner.brokerId,
-          REDId: playgroundOwner.REDId,
+          REDId: (playgroundOwner as any).developerId,
           role: "execution_partner",
           status: "accepted",
           createdAt: Date.now(),

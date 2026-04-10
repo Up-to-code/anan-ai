@@ -24,12 +24,12 @@ function canIncludeProfile(profile: any, role: "broker" | "developer", currentAu
   if (profile.authUserId === currentAuthUserId) return false;
   if (profile.isActive === false || profile.showInOffersDirectory === false) return false;
   if (role === "broker") return Boolean(profile.brokerId);
-  return Boolean(profile.REDId);
+  return Boolean(profile.developerId);
 }
 
 async function resolveProfileOrganization(ctx: AgenciesRepositoryCtx, profile: any): Promise<any | null> {
   if (profile.brokerId) return ctx.db.get(profile.brokerId as any);
-  if (profile.REDId) return ctx.db.get(profile.REDId as any);
+  if (profile.developerId) return ctx.db.get(profile.developerId as any);
   return null;
 }
 
@@ -102,7 +102,7 @@ async function listOffersDirectoryProfilesForOwner(
   const [profiles, invites] = await Promise.all([
     ctx.db
       .query("userProfiles")
-      .withIndex("roleStatus", (q) => q.eq("roleStatus", "approved"))
+      .withIndex("roleApprovalStatus", (q) => q.eq("roleApprovalStatus", "approved"))
       .collect(),
     listTeamInvitesForOwner(ctx, args.owner),
   ]);

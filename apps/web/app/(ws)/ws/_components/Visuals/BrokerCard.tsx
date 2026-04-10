@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ShieldCheck, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BrokerPresence } from "./BrokerPresenceChip";
@@ -28,13 +29,13 @@ const STATE_ACCENT: Record<BrokerPresence["state"], { border: string; dot: strin
  * WHAT:  Renders a real card with avatar, name, group name, badges, and a coloured status accent.
  * HOW:   Accepts the existing BrokerPresence type so all current data flows straight in.
  */
-export default function BrokerCard({
+const BrokerCardComponent = ({
   broker,
   className,
 }: {
   broker: BrokerPresence;
   className?: string;
-}) {
+}) => {
   const accent = STATE_ACCENT[broker.state];
 
   return (
@@ -119,4 +120,6 @@ export default function BrokerCard({
       </div>
     </article>
   );
-}
+};
+
+export default memo(BrokerCardComponent);

@@ -34,10 +34,10 @@ it("rejects broker sessions without a linked broker", async () => {
   await expect(requireBrokerSession()).rejects.toBeInstanceOf(DomainError);
 });
 
-it("accepts developer sessions for either developer role label", async () => {
+it("accepts developer sessions with a linked developer owner", async () => {
   vi.mocked(requireSessionContext).mockResolvedValue({
     token: "token",
-    context: { userId: "u1", role: "RED", redId: "red-1", isActive: true },
+    context: { userId: "u1", role: "developer", redId: "red-1", isActive: true },
     profile: null,
   });
 

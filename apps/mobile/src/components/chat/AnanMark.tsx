@@ -1,3 +1,4 @@
+import { memo } from "react";
 import Svg, { Circle, Path } from "react-native-svg";
 
 type AnanMarkProps = {
@@ -9,7 +10,7 @@ type AnanMarkProps = {
  * WHAT:  Renders the icon portion of the shared Anan logo asset.
  * HOW:   Rebuilds the production brand geometry from `apps/marketing/public/brand-logo.svg` using `react-native-svg`.
  */
-export function AnanMark({ size = 28 }: AnanMarkProps) {
+export const AnanMark = memo(function AnanMark({ size = 28 }: AnanMarkProps) {
   return (
     <Svg width={size} height={size} viewBox="110 70 180 200" fill="none">
       <Path d="M200 250L200 110" stroke="#2A7DBD" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
@@ -28,4 +29,4 @@ export function AnanMark({ size = 28 }: AnanMarkProps) {
       <Circle cx="242" cy="223" r="12" fill="#0C2D54" />
     </Svg>
   );
-}
+});

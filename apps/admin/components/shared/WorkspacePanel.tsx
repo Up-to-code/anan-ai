@@ -18,20 +18,20 @@ type WorkspacePanelProps = {
 
 const tones = {
   default:
-    "rounded-[32px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] text-[var(--workspace-bubble-other-foreground)] shadow-[0_16px_48px_-30px_rgba(15,23,42,0.28)] backdrop-blur-sm",
+    "rounded-lg border border-[color:color-mix(in_srgb,var(--workspace-border)_94%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_98%,transparent)] text-[var(--workspace-bubble-other-foreground)]",
   dark:
-    "rounded-[32px] border border-[color:color-mix(in_srgb,var(--workspace-highlight)_26%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-sidebar-strong)_88%,transparent)] text-white shadow-[0_18px_56px_-32px_rgba(2,6,23,0.6)]",
+    "rounded-lg border border-[color:var(--workspace-highlight-border)] bg-[color:color-mix(in_srgb,var(--workspace-sidebar-strong)_94%,#0b1220)] text-white",
   muted:
-    "rounded-[32px] border border-[color:color-mix(in_srgb,var(--workspace-border)_74%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_72%,transparent)] text-[var(--workspace-bubble-other-foreground)]",
+    "rounded-lg border border-[color:color-mix(in_srgb,var(--workspace-border)_90%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_82%,transparent)] text-[var(--workspace-bubble-other-foreground)]",
   warn:
-    "rounded-[32px] border border-amber-400/20 bg-[color:color-mix(in_srgb,#f59e0b_12%,var(--workspace-panel))] text-[var(--workspace-bubble-other-foreground)] shadow-[0_12px_42px_-30px_rgba(245,158,11,0.35)]",
+    "rounded-lg border border-amber-500/30 bg-[color:color-mix(in_srgb,#f59e0b_10%,var(--workspace-panel))] text-[var(--workspace-bubble-other-foreground)]",
 };
 
 const densityStyles = {
   hero: {
-    simple: "p-5 sm:p-7",
-    header: "px-5 py-5 sm:px-6 sm:py-6",
-    body: "px-5 py-5 sm:px-6 sm:py-6",
+    simple: "p-5 sm:p-6",
+    header: "px-5 py-5 sm:px-6 sm:py-5",
+    body: "px-5 py-5 sm:px-6 sm:py-5",
     footer: "px-5 py-4 sm:px-6",
   },
   default: {
@@ -93,7 +93,7 @@ export default function WorkspacePanel({
       {header ? (
         <div
           className={cn(
-            "border-b border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)]",
+            "border-b border-[color:color-mix(in_srgb,var(--workspace-border)_86%,transparent)]",
             densityStyle.header,
             headerClassName,
           )}
@@ -117,7 +117,7 @@ export default function WorkspacePanel({
       {footer ? (
         <div
           className={cn(
-            "border-t border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)]",
+            "border-t border-[color:color-mix(in_srgb,var(--workspace-border)_86%,transparent)]",
             densityStyle.footer,
             footerClassName,
           )}

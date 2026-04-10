@@ -1,6 +1,7 @@
 import { api, internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 import type { ActionCtx } from "../../_generated/server";
+import { buildBuyerComparisonSnapshot } from "../../shared_logic/buyerComparisons";
 
 type SupportedLocale = "ar" | "en" | "fr";
 
@@ -136,6 +137,8 @@ type PersistedBuyerState = {
   state: "idle" | "search_results" | "property_selected" | "handoff_ready";
   selectedPropertyId?: Id<"properties">;
   lastResultPropertyIds: Array<Id<"properties">>;
+  comparisonPropertyIds?: Array<Id<"properties">>;
+  lastComparisonArtifactId?: Id<"buyerComparisonArtifacts">;
   lastSearchQuery?: string;
   qualification?: BuyerQualification;
   createdAt: number;
@@ -178,10 +181,15 @@ type StructuredBuyerResponse = {
   suggestedPrompts: string[];
   activePropertyId?: Id<"properties">;
   requiresAuthForHandoff: boolean;
+  comparisonArtifactId?: Id<"buyerComparisonArtifacts">;
+  comparisonPropertyIds?: Array<Id<"properties">>;
+  selectionSource?: "ui_selected" | "history_resolved" | "text_resolved";
   buyerContext: {
     state: PersistedBuyerState["state"];
     selectedPropertyId?: Id<"properties">;
     lastResultPropertyIds: Array<Id<"properties">>;
+    comparisonPropertyIds?: Array<Id<"properties">>;
+    lastComparisonArtifactId?: Id<"buyerComparisonArtifacts">;
     lastSearchQuery?: string;
     qualification?: BuyerQualification;
     memorySummary: string;
@@ -202,6 +210,7 @@ const HANDOFF_KEYWORDS = ["advisor", "handoff", "book", "visit", "call", "contac
 const BROKER_KEYWORDS = ["broker", "advisor", "agent", "وسيط", "مستشار"];
 const DEVELOPER_KEYWORDS = ["developer", "company", "develop", "مطور", "شركة", "المطور"];
 const EXPLICIT_SEARCH_KEYWORDS = ["search", "find", "show me", "browse", "ابحث", "أبحث", "اعرض", "دور"];
+const buyerComparisonsInternal = (internal as Record<string, any>)["shared_logic/buyerComparisons"];
 
 function includesIntent(message: string, keywords: string[]) {
   return keywords.some((keyword) => message.includes(keyword));
@@ -209,6 +218,20 @@ function includesIntent(message: string, keywords: string[]) {
 
 function isExplicitSearchIntent(message: string) {
   return includesIntent(message, EXPLICIT_SEARCH_KEYWORDS);
+}
+
+function buildEmptyBuyerContext(): BuyerContext {
+  return {
+    state: null,
+    memory: {
+      summary: "",
+      preferences: [],
+      constraints: [],
+      recentInteractions: [],
+      lastSearchSummary: null,
+    },
+    summaries: {},
+  };
 }
 
 function isMoreResultsIntent(message: string) {
@@ -553,47 +576,6 @@ function buildLoanCalculatorCard(
       };
 }
 
-function buildComparisonCard(locale: SupportedLocale, property: BuyerProperty): BuyerCard {
-  return locale === "en"
-    ? {
-        type: "comparison_table",
-        title: "Quick comparison baseline",
-        columns: ["Metric", "Value"],
-        rows: [
-          ["Price", formatCurrency(property.price, locale)],
-          ["Area", property.area ?? property.location ?? "Not specified"],
-          ["Bedrooms", String(property.beds)],
-          ["Bathrooms", String(property.baths)],
-        ],
-        summary: "This gives you the core decision inputs before comparing it with another option.",
-      }
-    : locale === "fr"
-      ? {
-          type: "comparison_table",
-          title: "Base de comparaison rapide",
-          columns: ["Indicateur", "Valeur"],
-          rows: [
-            ["Prix", formatCurrency(property.price, locale)],
-            ["Zone", property.area ?? property.location ?? "Non précisée"],
-            ["Chambres", String(property.beds)],
-            ["Salles de bain", String(property.baths)],
-          ],
-          summary: "Cela résume les éléments clés de la décision avant une comparaison plus large.",
-        }
-      : {
-        type: "comparison_table",
-        title: "مقارنة سريعة",
-        columns: ["البند", "القيمة"],
-        rows: [
-          ["السعر", formatCurrency(property.price, locale)],
-          ["المنطقة", property.area ?? property.location ?? "غير محدد"],
-          ["غرف النوم", String(property.beds)],
-          ["الحمامات", String(property.baths)],
-        ],
-        summary: "هذا الجدول يلخص أهم عناصر القرار قبل فتح مقارنة أوسع مع خيار آخر.",
-      };
-}
-
 function buildPermitCard(locale: SupportedLocale, property: BuyerProperty): BuyerCard {
   return locale === "en"
     ? {
@@ -747,7 +729,6 @@ async function buildCardsForProperty(params: {
     }));
     cards.push(...(await buildBankOfferCards(ctx, locale, property, qualification)));
   }
-  if (includesIntent(normalizedMessage, COMPARE_KEYWORDS)) cards.push(buildComparisonCard(locale, property));
   if (includesIntent(normalizedMessage, PERMIT_KEYWORDS)) cards.push(buildPermitCard(locale, property));
   if (includesIntent(normalizedMessage, HANDOFF_KEYWORDS)) cards.push(buildHandoffCard(locale));
   if (includesIntent(normalizedMessage, BROKER_KEYWORDS)) {
@@ -769,6 +750,63 @@ async function buildCardsForProperty(params: {
   }
 
   return cards;
+}
+
+function normalizeComparisonText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildComparisonFollowupMessage(locale: SupportedLocale) {
+  if (locale === "fr") {
+    return "Dis-moi quels deux biens tu veux comparer depuis les résultats actuels, ou sélectionne-les dans l'interface puis redemande la comparaison.";
+  }
+  if (locale === "en") {
+    return "Tell me which two properties you want to compare from the current results, or select them in the UI and ask again.";
+  }
+  return "حدّد لي أي عقارين تريد مقارنتهما من النتائج الحالية، أو اخترهما من الواجهة ثم أعد طلب المقارنة.";
+}
+
+async function loadProperties(
+  ctx: ActionCtx,
+  propertyIds: Array<Id<"properties">>,
+): Promise<BuyerProperty[]> {
+  const properties = await Promise.all(propertyIds.map((propertyId) => loadProperty(ctx, propertyId)));
+  return properties.filter(Boolean) as BuyerProperty[];
+}
+
+function findNamedPropertyMatches(args: {
+  message: string;
+  properties: BuyerProperty[];
+}) {
+  const normalizedMessage = normalizeComparisonText(args.message);
+  return args.properties.filter((property) => {
+    const title = normalizeComparisonText(property.title);
+    const address = normalizeComparisonText(property.address);
+    const area = normalizeComparisonText(property.area ?? property.location ?? "");
+    return (
+      title.length > 0 && normalizedMessage.includes(title)
+    ) || (
+      address.length > 0 && normalizedMessage.includes(address)
+    ) || (
+      area.length > 0 && normalizedMessage.includes(area)
+    );
+  });
+}
+
+function uniquePropertyIds(propertyIds: Array<Id<"properties">>) {
+  const seen = new Set<string>();
+  const ordered: Array<Id<"properties">> = [];
+  for (const propertyId of propertyIds) {
+    const key = String(propertyId);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    ordered.push(propertyId);
+  }
+  return ordered;
 }
 
 async function loadProperty(
@@ -830,6 +868,149 @@ async function runDiversifiedSearch(args: {
     properties: mappedProperties.slice(0, args.limit),
     diversified: diversified.length > 0 && mappedProperties.length > diversified.length,
   };
+}
+
+async function persistBuyerPropertyRefs(args: {
+  ctx: ActionCtx;
+  owner: BuyerOwner;
+  threadId?: Id<"assistantThreads">;
+  channel: "web";
+  properties?: BuyerProperty[];
+  activePropertyId?: Id<"properties">;
+  selectedPropertyIds?: Array<Id<"properties">>;
+  comparisonPropertyIds?: Array<Id<"properties">>;
+}) {
+  if (!args.threadId) return;
+
+  const refs: Array<{
+    resourceId: Id<"properties">;
+    source: "shortlist_displayed" | "ui_selected" | "active_property" | "comparison_request";
+    rank?: number;
+  }> = [];
+
+  for (const [index, propertyId] of (args.selectedPropertyIds ?? []).entries()) {
+    refs.push({
+      resourceId: propertyId,
+      source: "ui_selected",
+      rank: index,
+    });
+  }
+
+  for (const [index, property] of (args.properties ?? []).entries()) {
+    refs.push({
+      resourceId: property.id,
+      source: "shortlist_displayed",
+      rank: index,
+    });
+  }
+
+  if (args.activePropertyId) {
+    refs.push({
+      resourceId: args.activePropertyId,
+      source: "active_property",
+    });
+  }
+
+  for (const [index, propertyId] of (args.comparisonPropertyIds ?? []).entries()) {
+    refs.push({
+      resourceId: propertyId,
+      source: "comparison_request",
+      rank: index,
+    });
+  }
+
+  if (refs.length === 0) return;
+
+  await args.ctx.runMutation(
+    buyerComparisonsInternal.trackBuyerPropertyRefsInternal,
+    {
+      threadId: args.threadId,
+      userId: args.owner.userId,
+      channel: args.channel,
+      refs,
+    },
+  );
+}
+
+async function resolveBuyerComparisonRequest(args: {
+  ctx: ActionCtx;
+  threadId?: Id<"assistantThreads">;
+  message: string;
+  currentState: PersistedBuyerState | null;
+  selectedPropertyIds?: Array<Id<"properties">>;
+}) {
+  const explicitPropertyIds = uniquePropertyIds(args.selectedPropertyIds ?? []);
+  if (explicitPropertyIds.length >= 2) {
+    return {
+      propertyIds: explicitPropertyIds.slice(0, 4),
+      selectionSource: "ui_selected" as const,
+    };
+  }
+
+  const recentRefs = args.threadId
+    ? ((await args.ctx.runQuery(
+        buyerComparisonsInternal.listRecentThreadPropertyRefsInternal,
+        {
+          threadId: args.threadId,
+          limit: 8,
+        },
+      )) as Array<{
+        resourceId: Id<"properties">;
+        source: "shortlist_displayed" | "ui_selected" | "active_property" | "comparison_request";
+      }>)
+    : [];
+
+  const uiSelectedIds = uniquePropertyIds(
+    recentRefs
+      .filter((ref) => ref.source === "ui_selected")
+      .map((ref) => ref.resourceId),
+  );
+  if (uiSelectedIds.length >= 2) {
+    return {
+      propertyIds: uiSelectedIds.slice(0, 4),
+      selectionSource: "history_resolved" as const,
+    };
+  }
+
+  const shortlistIds = uniquePropertyIds(
+    recentRefs
+      .filter((ref) => ref.source !== "ui_selected")
+      .map((ref) => ref.resourceId),
+  ).slice(0, 6);
+  const shortlistProperties = shortlistIds.length > 0
+    ? await loadProperties(args.ctx, shortlistIds)
+    : [];
+  const namedMatches = findNamedPropertyMatches({
+    message: args.message,
+    properties: shortlistProperties,
+  });
+  if (namedMatches.length >= 2) {
+    return {
+      propertyIds: uniquePropertyIds(namedMatches.map((property) => property.id)).slice(0, 4),
+      selectionSource: "text_resolved" as const,
+    };
+  }
+
+  const primaryPropertyId = explicitPropertyIds[0] ?? args.currentState?.selectedPropertyId;
+  if (
+    primaryPropertyId &&
+    namedMatches[0] &&
+    String(namedMatches[0].id) !== String(primaryPropertyId)
+  ) {
+    return {
+      propertyIds: [primaryPropertyId, namedMatches[0].id],
+      selectionSource: explicitPropertyIds[0] ? ("ui_selected" as const) : ("text_resolved" as const),
+    };
+  }
+
+  if ((args.currentState?.comparisonPropertyIds?.length ?? 0) >= 2) {
+    return {
+      propertyIds: uniquePropertyIds(args.currentState?.comparisonPropertyIds ?? []).slice(0, 4),
+      selectionSource: "history_resolved" as const,
+    };
+  }
+
+  return null;
 }
 
 async function rememberBuyerSignal(args: {
@@ -938,25 +1119,211 @@ export async function buildStructuredBuyerResponse(args: {
   message: string;
   assistantText: string;
   threadId?: Id<"assistantThreads">;
+  startFresh?: boolean;
   selectedPropertyId?: Id<"properties">;
+  selectedPropertyIds?: Array<Id<"properties">>;
+  triggerMessageId?: Id<"assistantMessages">;
   qualification?: BuyerQualification;
   promptBudgetMeta?: PromptBudgetMeta;
 }): Promise<StructuredBuyerResponse> {
   const normalizedMessage = args.message.trim().toLowerCase();
-  const buyerContext = (await args.ctx.runQuery(
+  const persistedBuyerContext = (await args.ctx.runQuery(
     internal.shared_logic.buyerContext.getBuyerContextInternal,
     {
       channel: args.channel,
       userId: args.owner.userId,
     },
   )) as BuyerContext;
-
+  const buyerContext = args.startFresh ? buildEmptyBuyerContext() : persistedBuyerContext;
   const currentState = buyerContext.state;
   const resolvedQualification = mergeQualification(
     currentState?.qualification,
     args.qualification,
     normalizedMessage,
   );
+  const compareIntent = includesIntent(normalizedMessage, COMPARE_KEYWORDS);
+  const searchIntent =
+    isExplicitSearchIntent(normalizedMessage) ||
+    includesIntent(normalizedMessage, SEARCH_KEYWORDS);
+
+  if ((args.selectedPropertyIds?.length ?? 0) > 0) {
+    await persistBuyerPropertyRefs({
+      ctx: args.ctx,
+      owner: args.owner,
+      threadId: args.threadId,
+      channel: args.channel,
+      selectedPropertyIds: args.selectedPropertyIds,
+    });
+  }
+
+  if (compareIntent) {
+    const resolvedComparison = await resolveBuyerComparisonRequest({
+      ctx: args.ctx,
+      threadId: args.threadId,
+      message: args.message,
+      currentState,
+      selectedPropertyIds: args.selectedPropertyIds,
+    });
+
+    if (!resolvedComparison) {
+      return {
+        message: buildComparisonFollowupMessage(args.locale),
+        properties: [],
+        cards: [],
+        suggestedPrompts: [],
+        requiresAuthForHandoff: false,
+        buyerContext: {
+          state: currentState?.state ?? "idle",
+          selectedPropertyId: currentState?.selectedPropertyId,
+          lastResultPropertyIds: currentState?.lastResultPropertyIds ?? [],
+          comparisonPropertyIds: currentState?.comparisonPropertyIds,
+          lastComparisonArtifactId: currentState?.lastComparisonArtifactId,
+          lastSearchQuery: currentState?.lastSearchQuery,
+          qualification: resolvedQualification,
+          memorySummary: buyerContext.memory.summary,
+          activePropertySummary: buyerContext.summaries.activePropertySummary,
+          searchSummary: buyerContext.summaries.searchJourneySummary,
+          financeQualificationSummary:
+            buyerContext.summaries.financeQualificationSummary,
+          promptBudgetMeta: args.promptBudgetMeta,
+        },
+      };
+    }
+
+    const comparisonProperties = await loadProperties(
+      args.ctx,
+      resolvedComparison.propertyIds,
+    );
+    if (comparisonProperties.length < 2) {
+      return {
+        message: buildComparisonFollowupMessage(args.locale),
+        properties: [],
+        cards: [],
+        suggestedPrompts: [],
+        requiresAuthForHandoff: false,
+        buyerContext: {
+          state: currentState?.state ?? "idle",
+          selectedPropertyId: currentState?.selectedPropertyId,
+          lastResultPropertyIds: currentState?.lastResultPropertyIds ?? [],
+          comparisonPropertyIds: currentState?.comparisonPropertyIds,
+          lastComparisonArtifactId: currentState?.lastComparisonArtifactId,
+          lastSearchQuery: currentState?.lastSearchQuery,
+          qualification: resolvedQualification,
+          memorySummary: buyerContext.memory.summary,
+          activePropertySummary: buyerContext.summaries.activePropertySummary,
+          searchSummary: buyerContext.summaries.searchJourneySummary,
+          financeQualificationSummary:
+            buyerContext.summaries.financeQualificationSummary,
+          promptBudgetMeta: args.promptBudgetMeta,
+        },
+      };
+    }
+
+    const comparisonPayload = buildBuyerComparisonSnapshot({
+      locale: args.locale,
+      properties: comparisonProperties,
+      selectionSource: resolvedComparison.selectionSource,
+    });
+
+    const comparisonArtifactId = await args.ctx.runMutation(
+      buyerComparisonsInternal.storeBuyerComparisonArtifactInternal,
+      {
+        threadId: args.threadId as Id<"assistantThreads">,
+        userId: args.owner.userId,
+        channel: args.channel,
+        locale: args.locale,
+        propertyIds: resolvedComparison.propertyIds,
+        triggerMessageId: args.triggerMessageId,
+        selectionSource: resolvedComparison.selectionSource,
+        digestTitle: comparisonPayload.digestTitle,
+        digestSummary: comparisonPayload.digestSummary,
+        digestHash: comparisonPayload.digestHash,
+        version: "v1",
+        snapshot: comparisonPayload.snapshot,
+      },
+    );
+
+    await rememberBuyerSignal({
+      ctx: args.ctx,
+      owner: args.owner,
+      threadId: args.threadId,
+      message: normalizedMessage,
+      property: comparisonProperties[0],
+      qualification: resolvedQualification,
+    });
+
+    await persistBuyerPropertyRefs({
+      ctx: args.ctx,
+      owner: args.owner,
+      threadId: args.threadId,
+      channel: args.channel,
+      properties: comparisonPayload.snapshot.properties as unknown as BuyerProperty[],
+      activePropertyId: comparisonPayload.snapshot.activePropertyId,
+      comparisonPropertyIds: resolvedComparison.propertyIds,
+    });
+
+    await args.ctx.runMutation(
+      internal.shared_logic.buyerContext.upsertBuyerChannelStateInternal,
+      {
+        channel: args.channel,
+        userId: args.owner.userId,
+        threadId: args.threadId,
+        state: "property_selected",
+        selectedPropertyId: comparisonPayload.snapshot.activePropertyId,
+        lastResultPropertyIds:
+          currentState?.lastResultPropertyIds?.length
+            ? currentState.lastResultPropertyIds
+            : comparisonProperties.map((property) => property.id),
+        comparisonPropertyIds: resolvedComparison.propertyIds,
+        lastComparisonArtifactId: comparisonArtifactId,
+        lastSearchQuery: currentState?.lastSearchQuery,
+        qualification: resolvedQualification,
+      },
+    );
+
+    const refreshedBuyerContext = (await args.ctx.runQuery(
+      internal.shared_logic.buyerContext.getBuyerContextInternal,
+      {
+        channel: args.channel,
+        userId: args.owner.userId,
+      },
+    )) as BuyerContext;
+
+    return {
+      message: comparisonPayload.snapshot.message,
+      properties: comparisonPayload.snapshot.properties as unknown as BuyerProperty[],
+      cards: comparisonPayload.snapshot.cards as BuyerCard[],
+      suggestedPrompts: comparisonPayload.snapshot.suggestedPrompts,
+      activePropertyId: comparisonPayload.snapshot.activePropertyId,
+      requiresAuthForHandoff: false,
+      comparisonArtifactId,
+      comparisonPropertyIds: resolvedComparison.propertyIds,
+      selectionSource: resolvedComparison.selectionSource,
+      buyerContext: {
+        state: "property_selected",
+        selectedPropertyId: comparisonPayload.snapshot.activePropertyId,
+        lastResultPropertyIds:
+          refreshedBuyerContext.state?.lastResultPropertyIds ??
+          (currentState?.lastResultPropertyIds?.length
+            ? currentState.lastResultPropertyIds
+            : comparisonProperties.map((property) => property.id)),
+        comparisonPropertyIds:
+          refreshedBuyerContext.state?.comparisonPropertyIds ??
+          resolvedComparison.propertyIds,
+        lastComparisonArtifactId:
+          refreshedBuyerContext.state?.lastComparisonArtifactId ??
+          comparisonArtifactId,
+        lastSearchQuery: refreshedBuyerContext.state?.lastSearchQuery ?? currentState?.lastSearchQuery,
+        qualification: resolvedQualification,
+        memorySummary: refreshedBuyerContext.memory.summary,
+        activePropertySummary: refreshedBuyerContext.summaries.activePropertySummary,
+        searchSummary: refreshedBuyerContext.summaries.searchJourneySummary,
+        financeQualificationSummary:
+          refreshedBuyerContext.summaries.financeQualificationSummary,
+        promptBudgetMeta: args.promptBudgetMeta,
+      },
+    };
+  }
 
   const explicitSearch = isExplicitSearchIntent(normalizedMessage);
   const moreResults = isMoreResultsIntent(normalizedMessage);
@@ -964,6 +1331,49 @@ export async function buildStructuredBuyerResponse(args: {
     !explicitSearch && !moreResults
       ? (args.selectedPropertyId ?? currentState?.selectedPropertyId)
       : undefined;
+
+  if (!compareIntent && !moreResults && !searchIntent && !propertyFocusId) {
+    if (args.startFresh) {
+      await args.ctx.runMutation(
+        internal.shared_logic.buyerContext.upsertBuyerChannelStateInternal,
+        {
+          channel: args.channel,
+          userId: args.owner.userId,
+          threadId: args.threadId,
+          state: "idle",
+          selectedPropertyId: undefined,
+          lastResultPropertyIds: [],
+          comparisonPropertyIds: undefined,
+          lastComparisonArtifactId: undefined,
+          lastSearchQuery: undefined,
+          qualification: resolvedQualification,
+        },
+      );
+    }
+
+    return {
+      message: args.assistantText.trim() || args.message,
+      properties: [],
+      cards: [],
+      suggestedPrompts: [],
+      requiresAuthForHandoff: false,
+      buyerContext: {
+        state: args.startFresh ? "idle" : currentState?.state ?? "idle",
+        selectedPropertyId: args.startFresh ? undefined : currentState?.selectedPropertyId,
+        lastResultPropertyIds: args.startFresh ? [] : currentState?.lastResultPropertyIds ?? [],
+        comparisonPropertyIds: undefined,
+        lastComparisonArtifactId: undefined,
+        lastSearchQuery: args.startFresh ? undefined : currentState?.lastSearchQuery,
+        qualification: resolvedQualification,
+        memorySummary: buyerContext.memory.summary,
+        activePropertySummary: buyerContext.summaries.activePropertySummary,
+        searchSummary: buyerContext.summaries.searchJourneySummary,
+        financeQualificationSummary:
+          buyerContext.summaries.financeQualificationSummary,
+        promptBudgetMeta: args.promptBudgetMeta,
+      },
+    };
+  }
 
   const focusedProperty = await loadProperty(args.ctx, propertyFocusId);
 
@@ -1002,10 +1412,21 @@ export async function buildStructuredBuyerResponse(args: {
           currentState?.lastResultPropertyIds?.length
             ? currentState.lastResultPropertyIds
             : [focusedProperty.id],
+        comparisonPropertyIds: undefined,
+        lastComparisonArtifactId: undefined,
         lastSearchQuery: currentState?.lastSearchQuery,
         qualification: resolvedQualification,
       },
     );
+
+    await persistBuyerPropertyRefs({
+      ctx: args.ctx,
+      owner: args.owner,
+      threadId: args.threadId,
+      channel: args.channel,
+      properties: [focusedProperty],
+      activePropertyId: focusedProperty.id,
+    });
 
     const refreshedBuyerContext = (await args.ctx.runQuery(
       internal.shared_logic.buyerContext.getBuyerContextInternal,
@@ -1030,6 +1451,8 @@ export async function buildStructuredBuyerResponse(args: {
           (currentState?.lastResultPropertyIds?.length
             ? currentState.lastResultPropertyIds
             : [focusedProperty.id]),
+        comparisonPropertyIds: refreshedBuyerContext.state?.comparisonPropertyIds,
+        lastComparisonArtifactId: refreshedBuyerContext.state?.lastComparisonArtifactId,
         lastSearchQuery: refreshedBuyerContext.state?.lastSearchQuery ?? currentState?.lastSearchQuery,
         qualification: resolvedQualification,
         memorySummary: refreshedBuyerContext.memory.summary,
@@ -1097,10 +1520,21 @@ export async function buildStructuredBuyerResponse(args: {
           : "idle",
       selectedPropertyId: activeProperty?.id,
       lastResultPropertyIds: properties.map((property) => property.id),
+      comparisonPropertyIds: undefined,
+      lastComparisonArtifactId: undefined,
       lastSearchQuery: effectiveQuery,
       qualification: resolvedQualification,
     },
   );
+
+  await persistBuyerPropertyRefs({
+    ctx: args.ctx,
+    owner: args.owner,
+    threadId: args.threadId,
+    channel: args.channel,
+    properties,
+    activePropertyId: activeProperty?.id,
+  });
 
   const refreshedBuyerContext = (await args.ctx.runQuery(
     internal.shared_logic.buyerContext.getBuyerContextInternal,
@@ -1132,6 +1566,8 @@ export async function buildStructuredBuyerResponse(args: {
       selectedPropertyId: activeProperty?.id,
       lastResultPropertyIds:
         refreshedBuyerContext.state?.lastResultPropertyIds ?? properties.map((property) => property.id),
+      comparisonPropertyIds: refreshedBuyerContext.state?.comparisonPropertyIds,
+      lastComparisonArtifactId: refreshedBuyerContext.state?.lastComparisonArtifactId,
       lastSearchQuery: refreshedBuyerContext.state?.lastSearchQuery ?? effectiveQuery,
       qualification: resolvedQualification,
       memorySummary: refreshedBuyerContext.memory.summary,

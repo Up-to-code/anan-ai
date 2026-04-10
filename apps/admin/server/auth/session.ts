@@ -1,6 +1,7 @@
-import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import {
   isClearlyExpiredJwtToken,
+  isMissingClerkJwtTemplateError,
   isNoAuthProviderError,
 } from "../../../../convex/_core/security/authProviderErrors";
 import { DomainError } from "@/server/contracts/errors";
@@ -21,8 +22,38 @@ type SessionDependencies = {
   profilesRepository: ProfilesRepository;
 };
 
+const clerkConvexJwtTemplate = process.env.CLERK_CONVEX_JWT_TEMPLATE?.trim() || "convex";
+
+function toMissingClerkTemplateDomainError(template: string) {
+  return new DomainError({
+    code: "AUTH_CONFIGURATION_ERROR",
+    message:
+      `Clerk JWT template "${template}" was not found. Create a Clerk JWT template named "${template}" for Convex, ` +
+      "or set CLERK_CONVEX_JWT_TEMPLATE to the name of your existing Clerk JWT template.",
+    status: 503,
+  });
+}
+
+function mapClerkTokenError(error: unknown) {
+  if (isMissingClerkJwtTemplateError(error)) {
+    return toMissingClerkTemplateDomainError(clerkConvexJwtTemplate);
+  }
+
+  return error;
+}
+
 const defaultDependencies: SessionDependencies = {
-  getToken: async () => (await convexAuthNextjsToken()) ?? null,
+  getToken: async () => {
+    const { getToken, userId } = await auth();
+    if (!userId) {
+      return null;
+    }
+    try {
+      return (await getToken({ template: clerkConvexJwtTemplate })) ?? null;
+    } catch (error) {
+      throw mapClerkTokenError(error);
+    }
+  },
   sessionsRepository: convexSessionsRepository,
   profilesRepository: convexProfilesRepository,
 };
@@ -72,7 +103,7 @@ function buildResolvedSession(
       username: profile?.username,
       role: profile?.role,
       brokerId: profile?.brokerId,
-      redId: profile?.REDId,
+      redId: profile?.developerId,
       isActive: user.isActive,
     },
   };
@@ -86,7 +117,12 @@ function buildResolvedSession(
 export async function getOptionalSessionContext(
   dependencies: SessionDependencies = defaultDependencies,
 ): Promise<ResolvedSession | null> {
-  const token = await dependencies.getToken();
+  let token: string | null;
+  try {
+    token = await dependencies.getToken();
+  } catch (error) {
+    throw mapClerkTokenError(error);
+  }
   if (!token) {
     return null;
   }

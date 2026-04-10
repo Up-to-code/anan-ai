@@ -9,6 +9,7 @@ const mockState = vi.hoisted(() => ({
   composerProps: [] as Array<Record<string, unknown>>,
   timelineProps: [] as Array<Record<string, unknown>>,
   assistant: null as any,
+  assistantSearchContext: null as any,
   feed: null as any,
   localParams: {} as Record<string, string | undefined>,
   router: {
@@ -116,9 +117,8 @@ vi.mock("@/lib/mobileLayout", () => ({
 }));
 
 vi.mock("@/lib/mobileSearch", () => ({
-  buildAssistantSearchContext: () => null,
+  buildAssistantSearchContext: () => mockState.assistantSearchContext,
   buildSearchRouteParams: (value: unknown) => value,
-  filterPropertiesForSearch: () => [],
 }));
 
 vi.mock("@/lib/mobileTheme", () => ({
@@ -174,7 +174,6 @@ function buildAssistantState(activeProperty: MobileProperty | null) {
     activeThreadId: "thread-1",
     activeThreadKind: "live",
     addPropertyToSelection: vi.fn(),
-    askAboutProperty: vi.fn(),
     createNewThread: vi.fn(),
     draft: "",
     isHydrated: true,
@@ -186,19 +185,19 @@ function buildAssistantState(activeProperty: MobileProperty | null) {
     removePropertyFromSelection: vi.fn(),
     requestAdvisor: vi.fn(),
     resetToWelcome: vi.fn(),
+    setPropertyContext: vi.fn(),
     setDraft: vi.fn(),
     setShowAuthCallout: vi.fn(),
     showAuthCallout: false,
-    showSearchResults: vi.fn(),
     submit: vi.fn(),
     submitVoiceRecording: vi.fn(),
-    syncTranscriptToAccount: vi.fn(),
   };
 }
 
 afterEach(() => {
   vi.clearAllMocks();
   mockState.assistant = null;
+  mockState.assistantSearchContext = null;
   mockState.composerProps = [];
   mockState.feed = null;
   mockState.localParams = {};
@@ -233,5 +232,48 @@ describe("BuyerAssistantHomeScreen", () => {
 
     expect(mockState.composerProps).toHaveLength(1);
     expect(mockState.composerProps[0]?.selectedProperties).toEqual([]);
+  });
+
+  it("uses property presses to set chat context instead of auto-sending a synthetic turn", () => {
+    const activeProperty = createProperty();
+    mockState.assistant = buildAssistantState(activeProperty);
+    mockState.feed = {
+      findPropertyById: () => activeProperty,
+      properties: [activeProperty],
+    };
+
+    renderToStaticMarkup(React.createElement(BuyerAssistantHomeScreen));
+
+    expect(mockState.timelineProps).toHaveLength(1);
+    (mockState.timelineProps[0]?.onPropertyPress as ((property: MobileProperty) => void) | undefined)?.(activeProperty);
+
+    expect(mockState.assistant.setPropertyContext).toHaveBeenCalledWith(activeProperty);
+    expect(mockState.assistant.submit).not.toHaveBeenCalled();
+  });
+
+  it("opens the search screen for similar-results prompts instead of injecting a local assistant search turn", () => {
+    const activeProperty = createProperty();
+    mockState.assistant = buildAssistantState(activeProperty);
+    mockState.assistantSearchContext = {
+      threadId: "thread-1",
+      sourcePropertyId: activeProperty.id,
+      searchSummary: "نتائج مشابهة",
+      area: activeProperty.area,
+      ownerType: "broker",
+    };
+    mockState.feed = {
+      findPropertyById: () => activeProperty,
+      properties: [activeProperty],
+    };
+
+    renderToStaticMarkup(React.createElement(BuyerAssistantHomeScreen));
+
+    (mockState.timelineProps[0]?.onSuggestedPromptPress as ((prompt: string) => void) | undefined)?.("اعرض نتائج مشابهة");
+
+    expect(mockState.router.push).toHaveBeenCalledWith({
+      pathname: "/search",
+      params: mockState.assistantSearchContext,
+    });
+    expect(mockState.assistant.submit).not.toHaveBeenCalledWith("اعرض نتائج مشابهة");
   });
 });

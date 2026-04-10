@@ -1,8 +1,9 @@
-import React from "react";
+import React, { memo, useMemo } from "react";
 import { View, Pressable } from "react-native";
 import { Compass, Sparkles, ChevronLeft } from "lucide-react-native";
 import { MobilePropertyCard } from "@/components/property/MobilePropertyCard";
 import { AppText } from "@/components/ui/AppText";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import { useAppTheme, getMobileShadow } from "@/lib/mobileTheme";
 import type { MobileProperty, MobileSearchContext } from "@/types/mobile";
 
@@ -16,7 +17,7 @@ type SearchResultsPanelProps = {
   ambientBackgroundColor?: string;
 };
 
-export function SearchResultsPanel({
+export const SearchResultsPanel = memo(function SearchResultsPanel({
   searchContext,
   results,
   onPropertyPress,
@@ -26,10 +27,9 @@ export function SearchResultsPanel({
   ambientBackgroundColor,
 }: SearchResultsPanelProps) {
   const theme = useAppTheme();
+  const { dictionary, isRtl, locale } = useMobileLocale();
 
-  if (results.length === 0) return null;
-
-  const displayResults = results.slice(0, 2);
+  const displayResults = useMemo(() => results.slice(0, 2), [results]);
 
   return (
     <View className="mt-5 gap-5">
@@ -43,11 +43,11 @@ export function SearchResultsPanel({
         }}
       >
         <View className="gap-3 px-4 py-4">
-          <View className="flex-row-reverse items-center justify-between">
-            <View className="flex-row-reverse items-center gap-2">
+          <View className={`items-center justify-between ${isRtl ? "flex-row-reverse" : "flex-row"}`}>
+            <View className={`items-center gap-2 ${isRtl ? "flex-row-reverse" : "flex-row"}`}>
               <Sparkles size={16} color={theme.colors.accent} />
               <AppText responsiveRole="bodyStrong" className="font-cairo-bold" style={{ color: theme.colors.ink }}>
-                نتائج موسّعة من نفس الطلب
+                {dictionary.assistant.searchResultsTitle}
               </AppText>
             </View>
             <View
@@ -55,12 +55,12 @@ export function SearchResultsPanel({
               style={{ backgroundColor: theme.colors.surfaceMuted }}
             >
               <AppText responsiveRole="meta" className="font-cairo-bold" style={{ color: theme.colors.inkMuted }}>
-                {results.length} خيارات
+                {locale === "en" ? `${results.length} options` : `${results.length} خيارات`}
               </AppText>
             </View>
           </View>
 
-          <View className="flex-row-reverse items-start gap-2">
+          <View className={`items-start gap-2 ${isRtl ? "flex-row-reverse" : "flex-row"}`}>
             <View
               className="mt-0.5 items-center justify-center rounded-full"
               style={{ width: 32, height: 32, backgroundColor: theme.colors.surfaceMuted }}
@@ -68,7 +68,7 @@ export function SearchResultsPanel({
               <Compass size={16} color={theme.colors.primary} />
             </View>
             <View className="flex-1">
-              <AppText responsiveRole="body" className="font-medium text-right" style={{ color: theme.colors.inkMuted }}>
+              <AppText responsiveRole="body" className={`font-medium ${isRtl ? "text-right" : "text-left"}`} style={{ color: theme.colors.inkMuted }}>
                 {searchContext.searchSummary}
               </AppText>
             </View>
@@ -85,7 +85,7 @@ export function SearchResultsPanel({
             onPress={onOpenProperty ?? onPropertyPress}
             onActionPress={onPropertyPress}
             onOpenGallery={onOpenGallery}
-            actionLabel="متابعة"
+            actionLabel={dictionary.common.continue}
             ambientBackgroundColor={ambientBackgroundColor}
           />
         ))}
@@ -94,7 +94,7 @@ export function SearchResultsPanel({
       {results.length > 2 ? (
         <View className="items-center">
           <Pressable
-            className="flex-row-reverse items-center justify-center px-8 py-3"
+            className={`items-center justify-center px-8 py-3 ${isRtl ? "flex-row-reverse" : "flex-row"}`}
             style={({ pressed }) => ({
               borderRadius: theme.radii.pill,
               borderWidth: 1,
@@ -105,8 +105,8 @@ export function SearchResultsPanel({
             })}
             onPress={onShowMore}
           >
-            <AppText className="ml-2 font-cairo-bold text-[14px]" style={{ color: theme.colors.ink }}>
-              عرض كافة النتائج ({results.length})
+            <AppText className={`${isRtl ? "ml-2" : "mr-2"} font-cairo-bold text-[14px]`} style={{ color: theme.colors.ink }}>
+              {locale === "en" ? `Show all results (${results.length})` : `عرض كافة النتائج (${results.length})`}
             </AppText>
             <ChevronLeft size={16} color={theme.colors.ink} />
           </Pressable>
@@ -114,4 +114,4 @@ export function SearchResultsPanel({
       ) : null}
     </View>
   );
-}
+});

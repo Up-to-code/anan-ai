@@ -256,7 +256,7 @@ export const bootstrapOfferConversation = mutation({
     offerId: v.string(),
   },
   handler: async (ctx, { offerId }) => {
-    const access = await requireRole(ctx, ["broker", "RED"]);
+    const access = await requireRole(ctx, ["broker", "developer"]);
     const offer = await getOfferLiveStateService(ctx, { offerId });
     if (!offer) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Offer not found" });

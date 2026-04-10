@@ -46,7 +46,6 @@
     "@browserbasehq/convex-stagehand": "^0.0.2",
     "@convex-dev/action-cache": "^0.3.0",
     "@convex-dev/agent": "^0.3.2",
-    "@convex-dev/auth": "^0.0.91",
     "@convex-dev/rag": "^0.7.0",
     "@convex-dev/rate-limiter": "^0.3.2",
     "@convex-dev/workflow": "^0.3.4",

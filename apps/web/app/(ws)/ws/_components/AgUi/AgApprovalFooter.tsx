@@ -1,8 +1,9 @@
 "use client";
 
+import { memo } from "react"
 import { CheckCircle2, RotateCcw } from "lucide-react";
 
-export default function AgApprovalFooter({
+const AgApprovalFooterComponent = function AgApprovalFooter({
   approveLabel = "اعتماد التنفيذ",
   editLabel = "طلب تعديل",
   onApprove,
@@ -34,3 +35,5 @@ export default function AgApprovalFooter({
     </div>
   );
 }
+
+export default memo(AgApprovalFooterComponent)

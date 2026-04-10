@@ -28,6 +28,8 @@ export const buyerChannelStateRecordValidator = v.object({
   state: buyerChannelStateValidator,
   selectedPropertyId: v.optional(v.id("properties")),
   lastResultPropertyIds: v.array(v.id("properties")),
+  comparisonPropertyIds: v.optional(v.array(v.id("properties"))),
+  lastComparisonArtifactId: v.optional(v.id("buyerComparisonArtifacts")),
   lastSearchQuery: v.optional(v.string()),
   qualification: v.optional(buyerQualificationValidator),
   createdAt: v.number(),

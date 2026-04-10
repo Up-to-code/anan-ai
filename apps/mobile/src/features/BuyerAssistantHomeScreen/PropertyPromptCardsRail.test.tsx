@@ -14,6 +14,7 @@ vi.mock("expo-linear-gradient", () => ({
 }));
 
 vi.mock("lucide-react-native", () => ({
+  Check: "Check",
   Plus: "Plus",
   Scale3d: "Scale3d",
   X: "X",
@@ -51,6 +52,20 @@ vi.mock("@/lib/mobileTheme", () => ({
   }),
 }));
 
+vi.mock("@/lib/mobileLocale", () => ({
+  useMobileLocale: () => ({
+    dictionary: {
+      assistant: {
+        compareNow: "قارن الآن",
+        doneSelecting: "تم",
+        selectProperty: "اختر عقاراً",
+      },
+    },
+    isRtl: true,
+    locale: "ar",
+  }),
+}));
+
 function createProperty(id: string, title: string): MobileProperty {
   return {
     id,
@@ -78,7 +93,7 @@ afterEach(() => {
 });
 
 describe("PropertyPromptCardsRail", () => {
-  it("renders circular property prompt tabs and the compare shortcut", () => {
+  it("renders the explicit compare action only after selection mode is closed", () => {
     const tree = PropertyPromptCardsRail({
       properties: [createProperty("property-1", "Palm Residence"), createProperty("property-2", "Garden Villa")],
       onPressProperty: vi.fn(),
@@ -89,6 +104,23 @@ describe("PropertyPromptCardsRail", () => {
 
     const text = collectTextContent(tree).join(" ");
 
-    expect(text).toContain("مقارنة");
+    expect(text).toContain("قارن الآن");
+    expect(text).toContain("اختر عقاراً");
+  });
+
+  it("hides compare while selection mode is active and shows a done control instead", () => {
+    const tree = PropertyPromptCardsRail({
+      properties: [createProperty("property-1", "Palm Residence"), createProperty("property-2", "Garden Villa")],
+      comparePicking: true,
+      onPressProperty: vi.fn(),
+      onPressCompare: vi.fn(),
+      onRemoveProperty: vi.fn(),
+      onToggleComparePicking: vi.fn(),
+    });
+
+    const text = collectTextContent(tree).join(" ");
+
+    expect(text).not.toContain("قارن الآن");
+    expect(text).toContain("تم");
   });
 });

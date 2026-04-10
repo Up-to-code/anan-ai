@@ -1,4 +1,5 @@
 import { LucideIcon } from "lucide-react-native";
+import { memo } from "react";
 import { Pressable, PressableProps, StyleSheet } from "react-native";
 import { useAppTheme } from "@/lib/mobileTheme";
 
@@ -13,7 +14,14 @@ type IconButtonProps = PressableProps & {
  * WHY:   Icon buttons in the unified system leverage pill/circular hit zones.
  * WHAT:  Icon button rendering utilizing 9999px radii and 1px frame strokes.
  */
-export function IconButton({ icon: Icon, active, tone = "light", size = "default", className, ...props }: IconButtonProps) {
+const styles = StyleSheet.create({
+  base: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});
+
+export const IconButton = memo(function IconButton({ icon: Icon, active, tone = "light", size = "default", className, ...props }: IconButtonProps) {
   const theme = useAppTheme();
 
   const buttonSizes = {
@@ -80,11 +88,6 @@ export function IconButton({ icon: Icon, active, tone = "light", size = "default
       />
     </Pressable>
   );
-}
-
-const styles = StyleSheet.create({
-  base: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
 });
+
+export default IconButton;

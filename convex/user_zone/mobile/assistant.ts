@@ -1,4 +1,4 @@
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getAuthUserId } from "../../_core/security/authIdentity";
 import { ConvexError, type Infer, v } from "convex/values";
 import { action, mutation } from "../../_generated/server";
 import { internal } from "../../_generated/api";
@@ -140,7 +140,10 @@ type AssistantResponseParams = {
     location?: string;
     beds: number;
     baths: number;
+    sqft?: number;
+    status?: string;
     owner: { name: string; isVerified: boolean };
+    finance?: { bankOfferCount?: number };
   };
   message: string;
   qualification?: {
@@ -233,15 +236,24 @@ function buildPermitCard(property: AssistantResponseParams["property"]) {
 function buildComparisonCard(property: AssistantResponseParams["property"]) {
   return {
     type: "comparison_table" as const,
-    title: "مقارنة سريعة",
-    columns: ["البند", "القيمة"],
+    title: "خط أساس للمقارنة",
+    columns: ["البند", property.title],
     rows: [
       ["السعر", formatCurrency(property.price)],
       ["الموقع", property.area ?? property.location ?? "غير محدد"],
       ["غرف النوم", String(property.beds)],
       ["الحمامات", String(property.baths)],
+      ["المساحة", property.sqft ? String(property.sqft) : "غير محدد"],
+      ["الحالة", property.status ?? "متاح"],
+      ["الشريك", property.owner.name],
+      [
+        "التمويل",
+        property.finance?.bankOfferCount
+          ? `${property.finance.bankOfferCount} عروض بنكية متاحة`
+          : "لا توجد عروض بنكية ظاهرة",
+      ],
     ],
-    summary: "هذا الجدول يلخص أهم عناصر القرار بسرعة قبل فتح مقارنة أوسع.",
+    summary: "هذا الجدول يستخدم نفس عناصر القرار الأساسية حتى يصبح هذا العقار جاهزاً للمقارنة مع خيارات أخرى.",
   };
 }
 

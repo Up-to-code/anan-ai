@@ -1,71 +1,51 @@
 import { ArrowUp, Loader2, Mic, X } from "lucide-react-native";
 import { Platform, Pressable, TextInput, View } from "react-native";
-import { useState } from "react";
-import { useMobileLayout } from "@/lib/mobileLayout";
+import React from "react";
 import {
   MobilePromptInputRecordingRow,
   MobilePromptInputShell,
   MobilePromptInputStatus,
 } from "@/components/ui/MobilePromptInput";
-import { getMobileShadow, useAppTheme } from "@/lib/mobileTheme";
-import { useVoiceRecording } from "@/hooks/useVoiceRecording";
+import { getMobileShadow } from "@/lib/mobileTheme";
+import { useComposerState } from "@/hooks/useComposerState";
 
 type ComposerDockProps = {
   value: string;
   onChange: (value: string) => void;
-  onSend: () => void;
+  onSend: (value: string) => void;
   onSubmitVoiceRecording: (fileUri: string) => Promise<void>;
 };
 
 export function ComposerDock({ value, onChange, onSend, onSubmitVoiceRecording }: ComposerDockProps) {
-  const layout = useMobileLayout();
-  const theme = useAppTheme();
-  const [voiceError, setVoiceError] = useState<string | null>(null);
-
   const {
+    theme,
+    locale,
+    voiceError,
+    setVoiceError,
     phase,
     durationSeconds,
     waveAnims,
-    startRecording,
-    stopAndSubmit,
+    isRecordingSession,
+    isVoiceBusy,
+    isTyping,
+    trimmedValue,
+    canSend,
+    textAlign,
+    writingDirection,
+    actionButtonSize,
+    inputFontSize,
+    inputMaxHeight,
+    actionButtonColor,
+    actionIconColor,
+    actionButtonBorderWidth,
+    actionButtonBorderColor,
+    inputPillHeight,
+    actionHolderSize,
+    handleChangeText,
+    handlePrimaryActionPress,
     cancelRecording,
-  } = useVoiceRecording({
-    onStateChange: (nextPhase) => {
-      if (nextPhase !== "error") {
-        setVoiceError(null);
-      }
-    },
-    onSubmitRecording: async (uri) => {
-      try {
-        await onSubmitVoiceRecording(uri);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "تعذر إكمال التسجيل الصوتي.";
-        setVoiceError(message);
-        throw error;
-      }
-    },
-  });
-
-  const isRecording = phase === "recording";
-  const isRecordingSession = isRecording;
-  const isVoiceBusy =
-    phase === "waiting_for_permission" || phase === "uploading" || phase === "transcribing" || phase === "sending";
-  
-  const trimmedValue = value.trim();
-  const isTyping = trimmedValue.length > 0;
-  const canSend = isTyping && !isRecording && !isVoiceBusy;
-  const startsWithLatin = /^[A-Za-z0-9]/.test(trimmedValue);
-  const textAlign = startsWithLatin ? "left" : "right";
-  const writingDirection = startsWithLatin ? "ltr" : "rtl";
-  const actionButtonSize = layout.isCompact ? 40 : 44;
-  const inputFontSize = layout.isCompact ? 15 : 16;
-  const inputMaxHeight = layout.isCompact ? 112 : 132;
-  const actionButtonColor = canSend ? theme.colors.send : theme.colors.composerActionSurface;
-  const actionIconColor = canSend ? theme.colors.sendIcon : theme.colors.composerActionIcon;
-  const actionButtonBorderWidth = !canSend && theme.isDark ? 1.5 : 0;
-  const actionButtonBorderColor = canSend ? "transparent" : theme.colors.composerActionRing;
-  const inputPillHeight = layout.isCompact ? 44 : 48;
-  const actionHolderSize = inputPillHeight;
+    stopAndSubmit,
+  } = useComposerState({ value, onChange, onSend, onSubmitVoiceRecording });
 
   return (
     <View className="w-full bg-transparent px-3 pb-2 gap-2.5">
@@ -77,12 +57,12 @@ export function ComposerDock({ value, onChange, onSend, onSubmitVoiceRecording }
         <MobilePromptInputStatus
           label={
             phase === "waiting_for_permission"
-              ? "ننتظر إذن الميكروفون"
+              ? (locale === "en" ? "Waiting for microphone permission" : "ننتظر إذن الميكروفون")
               : phase === "uploading"
-                ? "نرفع التسجيل"
+                ? (locale === "en" ? "Uploading recording" : "نرفع التسجيل")
                 : phase === "transcribing"
-                  ? "نحوّل الصوت إلى نص"
-                  : "نرسل الرسالة"
+                  ? (locale === "en" ? "Transcribing voice to text" : "نحوّل الصوت إلى نص")
+                  : (locale === "en" ? "Sending message" : "نرسل الرسالة")
           }
           icon={<Loader2 size={14} color={theme.colors.primary} />}
         />
@@ -116,16 +96,16 @@ export function ComposerDock({ value, onChange, onSend, onSubmitVoiceRecording }
               >
                 <TextInput
                   value={value}
-                  onChangeText={onChange}
+                  onChangeText={handleChangeText}
                   multiline
                   blurOnSubmit={false}
                   editable={!isVoiceBusy}
-                  placeholder="رسالة مساعد عنان..."
+                  placeholder={locale === "en" ? "Message the Anan assistant..." : "رسالة مساعد عنان..."}
                   placeholderTextColor={theme.colors.inkMuted}
                   cursorColor={theme.colors.primary}
                   textAlignVertical="center"
                   style={{
-                    minHeight: layout.isCompact ? 36 : 40,
+                    minHeight: 36,
                     maxHeight: inputMaxHeight,
                     textAlign,
                     writingDirection,
@@ -148,14 +128,7 @@ export function ComposerDock({ value, onChange, onSend, onSubmitVoiceRecording }
                 }}
               >
                 <Pressable
-                  onPress={() => {
-                    if (canSend) {
-                      onSend();
-                      return;
-                    }
-                    setVoiceError(null);
-                    void startRecording();
-                  }}
+                  onPress={handlePrimaryActionPress}
                   disabled={isVoiceBusy}
                   className="items-center justify-center"
                   style={({ pressed }) => ({
@@ -173,7 +146,7 @@ export function ComposerDock({ value, onChange, onSend, onSubmitVoiceRecording }
                   {canSend ? (
                     <ArrowUp size={18} color={actionIconColor} strokeWidth={2.35} />
                   ) : (
-                    <Mic size={layout.isCompact ? 18 : 20} color={actionIconColor} strokeWidth={2.2} />
+                    <Mic size={18} color={actionIconColor} strokeWidth={2.2} />
                   )}
                 </Pressable>
               </View>

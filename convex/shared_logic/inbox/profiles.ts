@@ -25,7 +25,7 @@ export async function getUserImageByEmail(
 
 export async function getProfileByOrganizationTarget(
   ctx: ReadCtx,
-  args: { brokerId?: Id<"brokers">; REDId?: Id<"RED"> }
+  args: { brokerId?: Id<"brokers">; developerId?: Id<"RED"> }
 ) {
   if (args.brokerId) {
     return ctx.db
@@ -34,10 +34,10 @@ export async function getProfileByOrganizationTarget(
       .first();
   }
 
-  if (args.REDId) {
+  if (args.developerId) {
     return ctx.db
       .query("userProfiles")
-      .withIndex("REDId", (q) => q.eq("REDId", args.REDId!))
+      .withIndex("developerId", (q) => q.eq("developerId", args.developerId!))
       .first();
   }
 
@@ -46,14 +46,14 @@ export async function getProfileByOrganizationTarget(
 
 export async function getOrganizationNameByOwner(
   ctx: ReadCtx,
-  args: { brokerId?: Id<"brokers">; REDId?: Id<"RED"> }
+  args: { brokerId?: Id<"brokers">; developerId?: Id<"RED"> }
 ) {
   if (args.brokerId) {
     return (await ctx.db.get(args.brokerId))?.name ?? null;
   }
 
-  if (args.REDId) {
-    return (await ctx.db.get(args.REDId))?.name ?? null;
+  if (args.developerId) {
+    return (await ctx.db.get(args.developerId))?.name ?? null;
   }
 
   return null;
@@ -65,7 +65,7 @@ export async function getOfferAuthorProjection(ctx: MutationCtx, senderUserId: s
   const organizationName =
     (await getOrganizationNameByOwner(ctx, {
       brokerId: senderProfile?.brokerId ?? undefined,
-      REDId: senderProfile?.REDId ?? undefined,
+      developerId: (senderProfile as any)?.developerId ?? undefined,
     })) ?? authorName;
 
   return { authorName, organizationName };
@@ -76,10 +76,10 @@ export async function getCollaborationActorProjection(
   authUserId: string
 ): Promise<CollaborationActor> {
   const profile = await getProfileByAuthUserId(ctx, authUserId);
-  const role = profile?.role === "RED" ? "developer" : profile?.role ?? "user";
+  const role = profile?.role ?? "user";
   const organizationName = await getOrganizationNameByOwner(ctx, {
     brokerId: profile?.brokerId ?? undefined,
-    REDId: profile?.REDId ?? undefined,
+    developerId: (profile as any)?.developerId ?? undefined,
   });
 
   return {
@@ -88,12 +88,12 @@ export async function getCollaborationActorProjection(
     role,
     organizationId: profile?.brokerId
       ? String(profile.brokerId)
-      : profile?.REDId
-        ? String(profile.REDId)
+      : (profile as any)?.developerId
+        ? String((profile as any).developerId)
         : null,
     organizationType: profile?.brokerId
       ? "broker"
-      : profile?.REDId
+      : (profile as any)?.developerId
         ? "developer"
         : null,
     organizationName,
@@ -107,19 +107,19 @@ export async function getCollaborationRecipientProjection(
   const profile = await getProfileByAuthUserId(ctx, authUserId);
   const organizationName = await getOrganizationNameByOwner(ctx, {
     brokerId: profile?.brokerId ?? undefined,
-    REDId: profile?.REDId ?? undefined,
+    developerId: (profile as any)?.developerId ?? undefined,
   });
 
   return {
     recipientAuthUserId: authUserId,
     organizationId: profile?.brokerId
       ? String(profile.brokerId)
-      : profile?.REDId
-        ? String(profile.REDId)
+      : (profile as any)?.developerId
+        ? String((profile as any).developerId)
         : null,
     organizationType: profile?.brokerId
       ? "broker"
-      : profile?.REDId
+      : (profile as any)?.developerId
         ? "developer"
         : null,
     organizationName,

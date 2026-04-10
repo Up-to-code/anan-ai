@@ -1,26 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { ConvexAuthNextjsProvider } from "@convex-dev/auth/nextjs";
+import { useAuth } from "@clerk/nextjs";
 import { ConvexReactClient } from "convex/react";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
 
 /**
- * WHY:   Admin client components use Convex auth hooks for sign-in and sign-out actions.
- * WHAT:  Provides one browser-stable Convex React client bridged through the Next.js auth provider.
- * HOW:   Lazily creates the client once per session using the same public Convex URL configured for the app.
+ * WHY:   Admin client components still need authenticated Convex hooks after the Clerk migration.
+ * WHAT:  Provides one browser-stable Convex React client bridged through Clerk auth.
+ * HOW:   Lazily creates the client once per session and passes Clerk's `useAuth` hook into `ConvexProviderWithClerk`.
  */
 export default function ConvexClientProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  type ProviderClient = React.ComponentProps<typeof ConvexAuthNextjsProvider>["client"];
-  const [client] = useState<ProviderClient>(
+  const [client] = useState(
     () =>
       new ConvexReactClient(
         process.env.NEXT_PUBLIC_CONVEX_URL as string,
-      ) as unknown as ProviderClient,
+      ),
   );
 
-  return <ConvexAuthNextjsProvider client={client}>{children}</ConvexAuthNextjsProvider>;
+  return <ConvexProviderWithClerk client={client} useAuth={useAuth}>{children}</ConvexProviderWithClerk>;
 }

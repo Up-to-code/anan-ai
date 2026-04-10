@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { MobilePill, MobileSectionHeading, MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
 import { useBuyerAccount } from "@/hooks/useBuyerAccount";
+import { cn } from "@/lib/cn";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import { useAppTheme } from "@/lib/mobileTheme";
 
 /**
@@ -21,19 +23,20 @@ export default function LegalScreen() {
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
   const account = useBuyerAccount();
+  const { dictionary, isRtl } = useMobileLocale();
 
   function confirmDeleteLocalData() {
     Alert.alert(
-      "حذف البيانات المحلية",
-      "سيتم حذف سجل المحادثات، العقارات المحفوظة، وتفضيلات هذا الجهاز فقط.",
+      dictionary.legal.clearLocalDataTitle,
+      dictionary.legal.clearLocalDataConfirm,
       [
-        { text: "إلغاء", style: "cancel" },
+        { text: dictionary.common.cancel, style: "cancel" },
         {
-          text: "حذف",
+          text: dictionary.common.delete,
           style: "destructive",
           onPress: async () => {
             await account.resetLocalBuyerState();
-            Alert.alert("تم الحذف", "تم حذف بيانات هذا الجهاز.");
+            Alert.alert(dictionary.legal.deletedTitle, dictionary.legal.deletedBody);
           },
         },
       ],
@@ -48,7 +51,7 @@ export default function LegalScreen() {
       await Linking.openURL(mailUrl);
       return;
     }
-    Alert.alert("الدعم", "support@anan.sa");
+    Alert.alert(dictionary.legal.supportTitleShort, "support@anan.sa");
   }
 
   return (
@@ -57,8 +60,8 @@ export default function LegalScreen() {
         insetTop={insets.top}
         backgroundColor={theme.colors.canvas}
         borderColor={theme.colors.border}
-        title="الخصوصية والبيانات"
-        subtitle="إرشادات دقيقة داخل التطبيق"
+        title={dictionary.navigation.legal}
+        subtitle={dictionary.navigation.legalSubtitle}
         leading={<IconButton icon={ArrowLeft} onPress={() => router.back()} tone="panel" />}
         trailing={<View style={{ width: 44, height: 44 }} />}
       />
@@ -70,25 +73,25 @@ export default function LegalScreen() {
       >
         <MobileSurface tone="muted" radius="hero" className="gap-4" shadow="none">
           <MobileSectionHeading
-            eyebrow="مركز الثقة"
-            title="الخصوصية، الصوت، والدعم"
-            description="كل عناصر هذه الصفحة مرتبطة مباشرة بعقود البيانات المحلية ومسار الدعم الحقيقي داخل تطبيق المشتري."
+            eyebrow={dictionary.legal.trustCenter}
+            title={dictionary.legal.title}
+            description={dictionary.legal.description}
           />
-          <View className="flex-row-reverse flex-wrap" style={{ gap: 8 }}>
-            <MobilePill label={account.viewer.consents.privacyAcceptedAt ? "الخصوصية مراجعَة" : "مراجعة الخصوصية مطلوبة"} tone="primary" active={Boolean(account.viewer.consents.privacyAcceptedAt)} />
-            <MobilePill label={account.viewer.consents.termsAcceptedAt ? "الشروط مراجعَة" : "الشروط بانتظار المراجعة"} tone="primary" active={Boolean(account.viewer.consents.termsAcceptedAt)} />
+          <View className={cn(isRtl ? "flex-row-reverse" : "flex-row", "flex-wrap")} style={{ gap: 8 }}>
+            <MobilePill label={account.viewer.consents.privacyAcceptedAt ? dictionary.account.privacyReviewed : dictionary.legal.reviewRequired} tone="primary" active={Boolean(account.viewer.consents.privacyAcceptedAt)} />
+            <MobilePill label={account.viewer.consents.termsAcceptedAt ? dictionary.account.termsReviewed : dictionary.account.termsPending} tone="primary" active={Boolean(account.viewer.consents.termsAcceptedAt)} />
           </View>
         </MobileSurface>
 
         <LegalSection
           icon={ShieldCheck}
-          title="الخصوصية"
-          body="يستخدم عنان بيانات المحادثة الحالية لتقديم التوصيات العقارية، المقارنة، ومتابعة نفس الرحلة. عند العمل كضيف، يبقى السجل محفوظاً محلياً على هذا الجهاز."
-          status={account.viewer.consents.privacyAcceptedAt ? "تمت المراجعة" : "بانتظار المراجعة"}
+          title={dictionary.legal.privacyTitle}
+          body={dictionary.legal.privacyBody}
+          status={account.viewer.consents.privacyAcceptedAt ? dictionary.legal.reviewDone : dictionary.legal.reviewPending}
           statusTone={account.viewer.consents.privacyAcceptedAt ? "primary" : "default"}
         >
           <Button
-            label="أؤكد فهم سياسة الخصوصية"
+            label={dictionary.legal.confirmPrivacy}
             variant="secondary"
             onPress={() => void account.setConsent("privacyAcceptedAt")}
           />
@@ -96,13 +99,13 @@ export default function LegalScreen() {
 
         <LegalSection
           icon={Mic}
-          title="استخدام الميكروفون"
-          body="لن يطلب التطبيق إذن الميكروفون إلا عندما تبدأ تسجيل رسالة صوتية بنفسك. يستخدم الصوت لتحويله إلى نص داخل نفس المحادثة."
-          status={account.viewer.consents.microphoneAcceptedAt ? "تمت المراجعة" : "اختياري"}
+          title={dictionary.legal.microphoneTitle}
+          body={dictionary.legal.microphoneBody}
+          status={account.viewer.consents.microphoneAcceptedAt ? dictionary.legal.reviewDone : dictionary.legal.optional}
           statusTone={account.viewer.consents.microphoneAcceptedAt ? "primary" : "default"}
         >
           <Button
-            label="فهمت استخدام الميكروفون"
+            label={dictionary.legal.confirmMicrophone}
             variant="secondary"
             onPress={() => void account.setConsent("microphoneAcceptedAt")}
           />
@@ -110,13 +113,13 @@ export default function LegalScreen() {
 
         <LegalSection
           icon={FileText}
-          title="الشروط والاستخدام"
-          body="التجربة الحالية مخصصة لتصفح العقارات، المقارنة، فهم التمويل، وطلب المتابعة. لا توجد مدفوعات داخل التطبيق في هذه النسخة."
-          status={account.viewer.consents.termsAcceptedAt ? "تمت المراجعة" : "بانتظار المراجعة"}
+          title={dictionary.legal.termsTitle}
+          body={dictionary.legal.termsBody}
+          status={account.viewer.consents.termsAcceptedAt ? dictionary.legal.reviewDone : dictionary.legal.reviewPending}
           statusTone={account.viewer.consents.termsAcceptedAt ? "primary" : "default"}
         >
           <Button
-            label="أؤكد فهم شروط الاستخدام"
+            label={dictionary.legal.confirmTerms}
             variant="secondary"
             onPress={() => void account.setConsent("termsAcceptedAt")}
           />
@@ -124,17 +127,17 @@ export default function LegalScreen() {
 
         <LegalSection
           icon={HelpCircle}
-          title="الدعم"
-          body="يمكنك طلب الدعم من داخل التطبيق عبر المساعد أو مراسلة فريق التشغيل مباشرة. هذا يضمن أن أسئلة المراجعة أو الخصوصية تصل إلى نفس الجهة المسؤولة."
-          status={account.viewer.consents.supportAcceptedAt ? "تم فتح قناة الدعم" : "متاح دائماً"}
+          title={dictionary.legal.supportTitle}
+          body={dictionary.legal.supportBody}
+          status={account.viewer.consents.supportAcceptedAt ? dictionary.legal.supportOpened : dictionary.legal.alwaysAvailable}
           statusTone={account.viewer.consents.supportAcceptedAt ? "primary" : "default"}
         >
-          <Button label="تواصل مع الدعم" onPress={() => void openSupport()} />
+          <Button label={dictionary.legal.contactSupport} onPress={() => void openSupport()} />
         </LegalSection>
 
         <Pressable
           onPress={confirmDeleteLocalData}
-          className="mt-5 flex-row-reverse items-center gap-4 rounded-[24px] px-5 py-5 active:opacity-80"
+          className={cn("mt-5 items-center gap-4 rounded-[24px] px-5 py-5 active:opacity-80", isRtl ? "flex-row-reverse" : "flex-row")}
           style={{
             borderWidth: 1,
             borderColor: theme.colors.danger,
@@ -148,11 +151,11 @@ export default function LegalScreen() {
             <Trash2 size={18} color={theme.colors.danger} />
           </View>
           <View className="flex-1">
-            <AppText className="text-right text-[16px] font-cairo-black" style={{ color: theme.colors.danger }}>
-              حذف البيانات المحلية
+            <AppText className={cn("text-[16px] font-cairo-black", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.danger }}>
+              {dictionary.legal.clearLocalData}
             </AppText>
-            <AppText className="mt-1 text-right text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
-              يمسح السجل المحلي والعقارات المحفوظة وتفضيلات هذا الجهاز فقط.
+            <AppText className={cn("mt-1 text-[13px] font-medium", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.inkMuted }}>
+              {dictionary.legal.clearLocalDataBody}
             </AppText>
           </View>
         </Pressable>
@@ -177,25 +180,26 @@ function LegalSection({
   children: ReactNode;
 }) {
   const theme = useAppTheme();
+  const { isRtl } = useMobileLocale();
   return (
     <MobileSurface className="mt-5 gap-4" radius="hero" shadow="none">
-      <View className="flex-row-reverse items-center gap-3">
+      <View className={cn("items-center gap-3", isRtl ? "flex-row-reverse" : "flex-row")}>
         <View
           className="items-center justify-center rounded-full"
           style={{ width: 42, height: 42, backgroundColor: theme.colors.primarySoft }}
         >
           <Icon size={18} color={theme.colors.primary} />
         </View>
-        <AppText className="flex-1 text-right text-[18px] font-cairo-black" style={{ color: theme.colors.ink }}>
+        <AppText className={cn("flex-1 text-[18px] font-cairo-black", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.ink }}>
           {title}
         </AppText>
       </View>
 
-      <View className="mt-4 flex-row-reverse">
+      <View className={cn("mt-4", isRtl ? "flex-row-reverse" : "flex-row")}>
         <MobilePill label={status} tone={statusTone === "primary" ? "primary" : "default"} active={statusTone === "primary"} />
       </View>
 
-      <AppText className="mt-4 text-right text-[15px] leading-8" style={{ color: theme.colors.inkMuted }}>
+      <AppText className={cn("mt-4 text-[15px] leading-8", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.inkMuted }}>
         {body}
       </AppText>
 

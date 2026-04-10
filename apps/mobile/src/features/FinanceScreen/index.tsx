@@ -10,6 +10,8 @@ import { MobileSectionHeading, MobileSurface, MobileTopBar } from "@/components/
 import { useBuyerAccount } from "@/hooks/useBuyerAccount";
 import { useBuyerFinance } from "@/hooks/useBuyerFinance";
 import { usePropertyDetail } from "@/hooks/usePropertyDetail";
+import { formatMobileCopy } from "@/lib/i18n";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import { formatCurrency } from "@/lib/formatters";
 import { getPropertyLocationLabel } from "@/lib/mobileData";
 import { buildSearchRouteParams, parseSearchRouteParams } from "@/lib/mobileSearch";
@@ -31,6 +33,7 @@ export default function FinanceScreen() {
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
   const account = useBuyerAccount();
+  const { dictionary, isRtl, locale, textAlign } = useMobileLocale();
   const params = useLocalSearchParams<{
     propertyId?: string;
     threadId?: string;
@@ -44,7 +47,7 @@ export default function FinanceScreen() {
   const searchContext = parseSearchRouteParams(params);
   const { property, isLoading: isPropertyLoading } = usePropertyDetail(propertyId);
 
-  const propertyPrice = property?.price ?? 1_200_000;
+  const propertyPrice = property?.price ?? 0;
   const initialDownPayment = useMemo(
     () =>
       property?.finance?.defaultDownPayment ??
@@ -102,12 +105,37 @@ export default function FinanceScreen() {
     );
   }
 
+  if (!finance.estimate && !finance.isLoading) {
+    return (
+      <View className="flex-1" style={{ backgroundColor: theme.colors.canvas }}>
+        <MobileTopBar
+          insetTop={insets.top}
+          title={dictionary.financeScreen.title}
+          subtitle={dictionary.financeScreen.subtitle}
+          leading={<IconButton icon={ArrowLeft} onPress={() => router.back()} tone="panel" />}
+        />
+        <View className="flex-1 px-5 pt-5">
+          <MobileSurface radius="hero" className="gap-4 px-6 py-8">
+            <AppText className={`${isRtl ? "text-right" : "text-left"} text-[22px] font-cairo-black`} style={{ color: theme.colors.ink }}>
+              {dictionary.runtime.liveDataUnavailableTitle}
+            </AppText>
+            <AppText className={`${isRtl ? "text-right" : "text-left"} text-[15px] leading-8 font-cairo-medium`} style={{ color: theme.colors.inkMuted }}>
+              {dictionary.runtime.liveDataUnavailableBody}
+            </AppText>
+          </MobileSurface>
+        </View>
+      </View>
+    );
+  }
+
+  const estimate = finance.estimate;
+
   return (
     <View className="flex-1" style={{ backgroundColor: theme.colors.canvas }}>
       <MobileTopBar
         insetTop={insets.top}
-        title="التمويل"
-        subtitle="سيناريو حي داخل نفس الرحلة"
+        title={dictionary.financeScreen.title}
+        subtitle={dictionary.financeScreen.subtitle}
         leading={<IconButton icon={ArrowLeft} onPress={() => router.back()} tone="panel" />}
         trailing={
           <View
@@ -123,93 +151,95 @@ export default function FinanceScreen() {
         <View className="gap-5">
           <MobileSurface tone="muted" radius="hero" className="gap-4">
             <MobileSectionHeading
-              eyebrow="العقار المرجعي"
-              title={property?.title ?? "سيناريو تمويل عام"}
-              description={property ? getPropertyLocationLabel(property) : "يمكنك استخدام هذا السيناريو حتى قبل اختيار عقار محدد."}
+              eyebrow={dictionary.financeScreen.referencePropertyEyebrow}
+              title={property?.title ?? dictionary.financeScreen.generalScenario}
+              description={property ? getPropertyLocationLabel(property) : dictionary.financeScreen.generalScenarioDescription}
             />
 
-            <View className="flex-row-reverse" style={{ gap: 12 }}>
-              <MetricCard icon={Wallet} label="سعر العقار" value={formatCurrency(propertyPrice)} />
+            <View className={isRtl ? "flex-row-reverse" : "flex-row"} style={{ gap: 12 }}>
+              <MetricCard icon={Wallet} label={dictionary.financeScreen.propertyPrice} value={formatCurrency(propertyPrice, locale)} />
               <MetricCard
                 icon={Landmark}
-                label="عدد عروض البنك"
-                value={String(property?.finance?.bankOfferCount ?? finance.estimate.bankOffers.length)}
+                label={dictionary.financeScreen.bankOfferCount}
+                value={String(property?.finance?.bankOfferCount ?? estimate?.bankOffers.length ?? 0)}
               />
             </View>
           </MobileSurface>
 
           <MobileSurface radius="hero" className="gap-4">
             <MobileSectionHeading
-              eyebrow="افتراضات المشتري"
-              title="عدّل السيناريو"
-              description="كل تغيير ينعكس مباشرة على التقدير الحالي ويمكن حفظه كافتراض افتراضي لاحقاً."
+              eyebrow={dictionary.financeScreen.buyerAssumptionsEyebrow}
+              title={dictionary.financeScreen.adjustScenario}
+              description={dictionary.financeScreen.adjustScenarioDescription}
             />
 
             <FinanceInput
-              label="الدفعة الأولى"
+              label={dictionary.financeScreen.downPayment}
               value={downPaymentInput}
               onChangeText={setDownPaymentInput}
               placeholder={String(initialDownPayment)}
             />
             <FinanceInput
-              label="مدة السداد (سنة)"
+              label={dictionary.financeScreen.repaymentYears}
               value={yearsInput}
               onChangeText={setYearsInput}
               placeholder="20"
             />
             <FinanceInput
-              label="نسبة الفائدة السنوية"
+              label={dictionary.financeScreen.annualInterest}
               value={rateInput}
               onChangeText={setRateInput}
               placeholder="4.75"
             />
             <FinanceInput
-              label="الراتب الشهري"
+              label={dictionary.financeScreen.monthlySalary}
               value={salaryInput}
               onChangeText={setSalaryInput}
-              placeholder="اختياري لتحليل القدرة"
+              placeholder={dictionary.financeScreen.monthlySalaryPlaceholder}
             />
 
-            <Button label="احفظ هذه الافتراضات" variant="secondary" onPress={() => void persistCurrentDefaults()} />
+            <Button label={dictionary.financeScreen.saveDefaults} variant="secondary" onPress={() => void persistCurrentDefaults()} />
           </MobileSurface>
 
           <MobileSurface radius="hero" className="gap-4">
             <MobileSectionHeading
-              eyebrow="التقدير الحالي"
-              title={formatCurrency(finance.estimate.monthlyPayment)}
-              description={finance.estimate.summary}
+              eyebrow={dictionary.financeScreen.currentEstimateEyebrow}
+              title={formatCurrency(estimate?.monthlyPayment ?? 0, locale)}
+              description={estimate?.summary ?? dictionary.runtime.liveDataUnavailableBody}
             />
 
-            <View className="flex-row-reverse flex-wrap" style={{ gap: 12 }}>
-              <MetricPill label="قيمة التمويل" value={formatCurrency(finance.estimate.loanAmount)} />
-              <MetricPill label="إجمالي الفائدة" value={formatCurrency(finance.estimate.totalInterest)} />
-              <MetricPill label="إجمالي المدفوع" value={formatCurrency(finance.estimate.totalPaid)} />
+            <View className={`${isRtl ? "flex-row-reverse" : "flex-row"} flex-wrap`} style={{ gap: 12 }}>
+              <MetricPill label={dictionary.financeScreen.financingValue} value={formatCurrency(estimate?.loanAmount ?? 0, locale)} />
+              <MetricPill label={dictionary.financeScreen.totalInterest} value={formatCurrency(estimate?.totalInterest ?? 0, locale)} />
+              <MetricPill label={dictionary.financeScreen.totalPaid} value={formatCurrency(estimate?.totalPaid ?? 0, locale)} />
             </View>
 
             <View
               className="rounded-[20px] px-4 py-4"
               style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceMuted }}
             >
-              <View className="flex-row-reverse items-center gap-2">
+              <View className={`items-center gap-2 ${isRtl ? "flex-row-reverse" : "flex-row"}`}>
                 <Percent size={16} color={theme.colors.primary} />
-                <AppText className="text-right text-[14px] font-cairo-bold" style={{ color: theme.colors.ink }}>
-                  حالة القدرة
+                <AppText className={`${isRtl ? "text-right" : "text-left"} text-[14px] font-cairo-bold`} style={{ color: theme.colors.ink }}>
+                  {dictionary.financeScreen.affordabilityStatus}
                 </AppText>
               </View>
-              <AppText className="mt-2 text-right text-[15px] font-cairo-black" style={{ color: theme.colors.primary }}>
-                {finance.estimate.affordabilityStatus === "comfortable"
-                  ? "مريح"
-                  : finance.estimate.affordabilityStatus === "review"
-                    ? "يحتاج مراجعة"
-                    : "مرهق"}
+              <AppText className={`mt-2 ${isRtl ? "text-right" : "text-left"} text-[15px] font-cairo-black`} style={{ color: theme.colors.primary }}>
+                {estimate?.affordabilityStatus === "comfortable"
+                  ? dictionary.financeScreen.affordabilityComfortable
+                  : estimate?.affordabilityStatus === "review"
+                    ? dictionary.financeScreen.affordabilityReview
+                    : dictionary.financeScreen.affordabilityStretch}
               </AppText>
-              {finance.estimate.recommendedBudget ? (
-                <AppText className="mt-1 text-right text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
-                  الميزانية التقديرية المناسبة: {formatCurrency(finance.estimate.recommendedBudget)}
+              {estimate?.recommendedBudget ? (
+                <AppText className={`mt-1 ${isRtl ? "text-right" : "text-left"} text-[13px] font-medium`} style={{ color: theme.colors.inkMuted }}>
+                  {formatMobileCopy(dictionary.financeScreen.recommendedBudget, {
+                    value: formatCurrency(estimate.recommendedBudget, locale),
+                  })}
                 </AppText>
               ) : (
-                <AppText className="mt-1 text-right text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
-                  أضف الراتب الشهري لتحصل على قراءة أوضح للقدرة.
+                <AppText className={`mt-1 ${isRtl ? "text-right" : "text-left"} text-[13px] font-medium`} style={{ color: theme.colors.inkMuted }}>
+                  {dictionary.financeScreen.addSalaryHint}
                 </AppText>
               )}
             </View>
@@ -217,12 +247,12 @@ export default function FinanceScreen() {
 
           <MobileSurface radius="hero" className="gap-4">
             <MobileSectionHeading
-              eyebrow="عروض بنكية"
-              title={finance.estimate.bankOffers.length > 0 ? "مقارنة أولية" : "لا توجد عروض بنكية حالياً"}
+              eyebrow={dictionary.financeScreen.bankOffersEyebrow}
+              title={estimate?.bankOffers.length ? dictionary.financeScreen.initialComparison : dictionary.financeScreen.noBankOffers}
               description={
-                finance.estimate.bankOffers.length > 0
-                  ? "تم ربط التقدير بأقرب المنتجات البنكية المتاحة لهذا العقار."
-                  : "سيظل التقدير العام متاحاً حتى لو لم يكن للعقار بنك مرتبط بعد."
+                estimate?.bankOffers.length
+                  ? dictionary.financeScreen.initialComparisonBody
+                  : dictionary.financeScreen.noBankOffersBody
               }
             />
 
@@ -231,18 +261,18 @@ export default function FinanceScreen() {
                 <ActivityIndicator size="small" color={theme.colors.primary} />
               </View>
             ) : (
-              finance.estimate.bankOffers.map((offer) => (
+              (estimate?.bankOffers ?? []).map((offer) => (
                 <View
                   key={`${offer.bankName}-${offer.rateLabel}`}
                   className="rounded-[20px] px-4 py-4"
                   style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceMuted }}
                 >
-                  <View className="flex-row-reverse items-start justify-between gap-3">
-                    <View className="items-end">
-                      <AppText className="text-right text-[16px] font-cairo-black" style={{ color: theme.colors.ink }}>
+                  <View className={`items-start justify-between gap-3 ${isRtl ? "flex-row-reverse" : "flex-row"}`}>
+                    <View className={isRtl ? "items-end" : "items-start"}>
+                      <AppText className={`${isRtl ? "text-right" : "text-left"} text-[16px] font-cairo-black`} style={{ color: theme.colors.ink }}>
                         {offer.bankName}
                       </AppText>
-                      <AppText className="mt-1 text-right text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
+                      <AppText className={`mt-1 ${isRtl ? "text-right" : "text-left"} text-[13px] font-medium`} style={{ color: theme.colors.inkMuted }}>
                         {offer.summary}
                       </AppText>
                     </View>
@@ -254,8 +284,8 @@ export default function FinanceScreen() {
                   </View>
 
                   <View className="mt-3 flex-row-reverse" style={{ gap: 12 }}>
-                    <MetricPill label="دفعة أولى" value={`${offer.downPaymentPercent}%`} />
-                    <MetricPill label="قسط تقديري" value={formatCurrency(offer.monthlyEstimate)} />
+                    <MetricPill label={dictionary.financeScreen.downPayment} value={`${offer.downPaymentPercent}%`} />
+                    <MetricPill label={dictionary.financeScreen.estimatedInstallment} value={formatCurrency(offer.monthlyEstimate, locale)} />
                   </View>
                 </View>
               ))
@@ -264,7 +294,7 @@ export default function FinanceScreen() {
 
           <View className="gap-3 pb-4">
             <Button
-              label="العودة إلى المساعد"
+              label={dictionary.financeScreen.backToAssistant}
               onPress={() =>
                 router.replace({
                   pathname: "/",
@@ -281,7 +311,7 @@ export default function FinanceScreen() {
             />
             {property ? (
               <Button
-                label="افتح تفاصيل العقار"
+                label={dictionary.financeScreen.openPropertyDetails}
                 variant="secondary"
                 onPress={() =>
                   router.push({
@@ -314,9 +344,10 @@ function FinanceInput({
   placeholder: string;
 }) {
   const theme = useAppTheme();
+  const { direction, textAlign } = useMobileLocale();
   return (
     <View>
-      <AppText className="mb-2 text-right text-[13px] font-cairo-bold" style={{ color: theme.colors.inkMuted }}>
+      <AppText className={`mb-2 ${textAlign === "right" ? "text-right" : "text-left"} text-[13px] font-cairo-bold`} style={{ color: theme.colors.inkMuted }}>
         {label}
       </AppText>
       <TextInput
@@ -326,13 +357,14 @@ function FinanceInput({
         placeholder={placeholder}
         placeholderTextColor={theme.colors.inkMuted}
         cursorColor={theme.colors.primary}
-        className="h-12 px-4 text-right font-cairo-bold"
+        className={`h-12 px-4 ${textAlign === "right" ? "text-right" : "text-left"} font-cairo-bold`}
         style={{
           borderRadius: theme.radii.card,
           borderWidth: 1,
           borderColor: theme.colors.border,
           backgroundColor: theme.colors.surfaceMuted,
           color: theme.colors.ink,
+          writingDirection: direction,
         }}
       />
     </View>
@@ -349,18 +381,19 @@ function MetricCard({
   value: string;
 }) {
   const theme = useAppTheme();
+  const { isRtl } = useMobileLocale();
   return (
     <View
       className="flex-1 rounded-[20px] px-4 py-4"
       style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surface }}
     >
-      <View className="flex-row-reverse items-center gap-2">
+      <View className={`items-center gap-2 ${isRtl ? "flex-row-reverse" : "flex-row"}`}>
         <Icon size={16} color={theme.colors.primary} />
-        <AppText className="text-right text-[12px] font-cairo-bold" style={{ color: theme.colors.inkMuted }}>
+        <AppText className={`${isRtl ? "text-right" : "text-left"} text-[12px] font-cairo-bold`} style={{ color: theme.colors.inkMuted }}>
           {label}
         </AppText>
       </View>
-      <AppText className="mt-2 text-right text-[17px] font-cairo-black" style={{ color: theme.colors.ink }}>
+      <AppText className={`mt-2 ${isRtl ? "text-right" : "text-left"} text-[17px] font-cairo-black`} style={{ color: theme.colors.ink }}>
         {value}
       </AppText>
     </View>
@@ -369,15 +402,16 @@ function MetricCard({
 
 function MetricPill({ label, value }: { label: string; value: string }) {
   const theme = useAppTheme();
+  const { isRtl } = useMobileLocale();
   return (
     <View
       className="flex-1 rounded-[18px] px-3 py-3"
       style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surface }}
     >
-      <AppText className="text-right text-[11px] font-cairo-bold" style={{ color: theme.colors.inkMuted }}>
+      <AppText className={`${isRtl ? "text-right" : "text-left"} text-[11px] font-cairo-bold`} style={{ color: theme.colors.inkMuted }}>
         {label}
       </AppText>
-      <AppText className="mt-1 text-right text-[15px] font-cairo-black" style={{ color: theme.colors.ink }}>
+      <AppText className={`mt-1 ${isRtl ? "text-right" : "text-left"} text-[15px] font-cairo-black`} style={{ color: theme.colors.ink }}>
         {value}
       </AppText>
     </View>

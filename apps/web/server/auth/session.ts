@@ -1,7 +1,8 @@
-import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { cache } from "react";
 import {
   isClearlyExpiredJwtToken,
+  isMissingClerkJwtTemplateError,
   isNoAuthProviderError,
 } from "../../../../convex/_core/security/authProviderErrors";
 import { DomainError } from "@/server/contracts/errors";
@@ -18,12 +19,57 @@ export type ResolvedSession = {
 
 type SessionDependencies = {
   getToken: () => Promise<string | null>;
+  getClerkContext: () => Promise<{
+    organizationId?: string | null;
+    organizationSlug?: string | null;
+    organizationRole?: string | null;
+    organizationPermissions?: string[];
+  }>;
   sessionsRepository: SessionsRepository;
   profilesRepository: ProfilesRepository;
 };
 
+const clerkConvexJwtTemplate = process.env.CLERK_CONVEX_JWT_TEMPLATE?.trim() || "convex";
+
+function toMissingClerkTemplateDomainError(template: string) {
+  return new DomainError({
+    code: "AUTH_CONFIGURATION_ERROR",
+    message:
+      `Clerk JWT template "${template}" was not found. Create a Clerk JWT template named "${template}" for Convex, ` +
+      "or set CLERK_CONVEX_JWT_TEMPLATE to the name of your existing Clerk JWT template.",
+    status: 503,
+  });
+}
+
+function mapClerkTokenError(error: unknown) {
+  if (isMissingClerkJwtTemplateError(error)) {
+    return toMissingClerkTemplateDomainError(clerkConvexJwtTemplate);
+  }
+
+  return error;
+}
+
 const defaultDependencies: SessionDependencies = {
-  getToken: async () => (await convexAuthNextjsToken()) ?? null,
+  getToken: async () => {
+    const { getToken, userId } = await auth();
+    if (!userId) {
+      return null;
+    }
+    try {
+      return (await getToken({ template: clerkConvexJwtTemplate })) ?? null;
+    } catch (error) {
+      throw mapClerkTokenError(error);
+    }
+  },
+  getClerkContext: async () => {
+    const { orgId, orgSlug, orgRole, orgPermissions } = await auth();
+    return {
+      organizationId: orgId ?? null,
+      organizationSlug: orgSlug ?? null,
+      organizationRole: orgRole ?? null,
+      organizationPermissions: Array.isArray(orgPermissions) ? orgPermissions : [],
+    };
+  },
   sessionsRepository: convexSessionsRepository,
   profilesRepository: convexProfilesRepository,
 };
@@ -57,7 +103,12 @@ async function getUserAndProfile(
   }
 }
 
-function buildResolvedSession(token: string, user: NonNullable<Awaited<ReturnType<SessionsRepository["getCurrent"]>>>, profile: Awaited<ReturnType<ProfilesRepository["getCurrent"]>>) {
+function buildResolvedSession(
+  token: string,
+  user: NonNullable<Awaited<ReturnType<SessionsRepository["getCurrent"]>>>,
+  profile: Awaited<ReturnType<ProfilesRepository["getCurrent"]>>,
+  clerkContext: Awaited<ReturnType<SessionDependencies["getClerkContext"]>>,
+) {
   return {
     token,
     profile,
@@ -69,7 +120,11 @@ function buildResolvedSession(token: string, user: NonNullable<Awaited<ReturnTyp
       username: profile?.username,
       role: profile?.role,
       brokerId: profile?.brokerId,
-      redId: profile?.REDId,
+      redId: profile?.developerId,
+      organizationId: clerkContext.organizationId ?? user.organizationId ?? null,
+      organizationSlug: clerkContext.organizationSlug ?? user.organizationSlug ?? null,
+      organizationRole: clerkContext.organizationRole ?? user.organizationRole ?? null,
+      organizationPermissions: clerkContext.organizationPermissions ?? user.organizationPermissions ?? [],
       isActive: user.isActive,
     },
   };
@@ -78,7 +133,16 @@ function buildResolvedSession(token: string, user: NonNullable<Awaited<ReturnTyp
 async function resolveOptionalSessionContext(
   dependencies: SessionDependencies,
 ): Promise<ResolvedSession | null> {
-  const token = await dependencies.getToken();
+  let token: string | null;
+  let clerkContext: Awaited<ReturnType<SessionDependencies["getClerkContext"]>>;
+  try {
+    [token, clerkContext] = await Promise.all([
+      dependencies.getToken(),
+      dependencies.getClerkContext(),
+    ]);
+  } catch (error) {
+    throw mapClerkTokenError(error);
+  }
   if (!token) {
     return null;
   }
@@ -89,7 +153,7 @@ async function resolveOptionalSessionContext(
     return null;
   }
 
-  return buildResolvedSession(token, user, profile);
+  return buildResolvedSession(token, user, profile, clerkContext);
 }
 
 const getOptionalSessionContextCached = cache(async () => resolveOptionalSessionContext(defaultDependencies));

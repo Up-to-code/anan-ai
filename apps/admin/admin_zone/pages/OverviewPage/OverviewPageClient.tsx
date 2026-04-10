@@ -7,7 +7,7 @@ import SectionScaffold from "@/components/shared/SectionScaffold";
 import StatCard from "@/components/shared/StatCard";
 import StatusBadge from "@/components/shared/StatusBadge";
 import WorkspacePanel from "@/components/shared/WorkspacePanel";
-import { analyticsTabs } from "@/lib/adminSectionTabs";
+import { overviewTabs } from "@/lib/adminSectionTabs";
 import type { CommandCenterOverviewViewModel } from "@/admin_zone/viewModels/commandCenter";
 
 type OverviewPageClientProps = {
@@ -28,7 +28,7 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
       eyebrow="مركز القيادة"
       title="لوحة التحكم"
       description="قراءة قيادية حية تربط الطلب، القنوات، سعة الشركاء، الخط التجاري، والمخاطر التشغيلية داخل منصة أنان."
-      tabs={analyticsTabs}
+      tabs={overviewTabs}
       actions={<AdminRangeControl />}
       layout="dashboard"
       headerVariant="compact"
@@ -48,7 +48,7 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
             maxBodyHeightClassName="max-h-[300px]"
           >
             {secondaryInsights.map((insight) => (
-              <div key={insight.id} className="rounded-[24px] border border-white/10 bg-white/6 p-5">
+              <div key={insight.id} className="rounded-lg border border-white/12 bg-white/5 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-base font-black text-white">{insight.title}</div>
                   <StatusBadge
@@ -83,7 +83,7 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
             {viewModel.topOrganizations.map((organization) => (
               <div
                 key={organization.id}
-                className="rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] p-4"
+                className="rounded-lg border border-[color:color-mix(in_srgb,var(--workspace-border)_90%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_98%,transparent)] p-4"
               >
                 <div className="grid gap-3">
                   <div className="flex items-start justify-between gap-3">
@@ -101,19 +101,19 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
                     </div>
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-center">
-                    <div className="rounded-[18px] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_58%,transparent)] px-2 py-3">
+                    <div className="rounded-sm border border-[color:color-mix(in_srgb,var(--workspace-border)_84%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_72%,transparent)] px-2 py-3">
                       <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--workspace-muted)]">Score</div>
                       <div className="mt-1 text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{organization.score}</div>
                     </div>
-                    <div className="rounded-[18px] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_58%,transparent)] px-2 py-3">
+                    <div className="rounded-sm border border-[color:color-mix(in_srgb,var(--workspace-border)_84%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_72%,transparent)] px-2 py-3">
                       <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--workspace-muted)]">Inventory</div>
                       <div className="mt-1 text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{organization.inventory}</div>
                     </div>
-                    <div className="rounded-[18px] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_58%,transparent)] px-2 py-3">
+                    <div className="rounded-sm border border-[color:color-mix(in_srgb,var(--workspace-border)_84%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_72%,transparent)] px-2 py-3">
                       <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--workspace-muted)]">Offers</div>
                       <div className="mt-1 text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{organization.offers}</div>
                     </div>
-                    <div className="rounded-[18px] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_58%,transparent)] px-2 py-3">
+                    <div className="rounded-sm border border-[color:color-mix(in_srgb,var(--workspace-border)_84%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_72%,transparent)] px-2 py-3">
                       <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--workspace-muted)]">Members</div>
                       <div className="mt-1 text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{organization.members}</div>
                     </div>
@@ -129,11 +129,12 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
         <WorkspacePanel
           tone="dark"
           density="hero"
+          className="border-[color:color-mix(in_srgb,var(--workspace-highlight)_42%,transparent)]"
           header={
             <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
               <div className="space-y-2">
                 <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/60">Live Priority</div>
-                <h2 className="text-3xl font-black tracking-tight text-white">{primaryInsight.title}</h2>
+                <h2 className="text-3xl font-black tracking-[-0.05em] text-white">{primaryInsight.title}</h2>
                 <p className="max-w-2xl text-sm leading-7 text-white/72">{primaryInsight.body}</p>
               </div>
               <StatusBadge
@@ -152,7 +153,7 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
           {viewModel.apiRisk.slice(0, 3).map((item) => (
             <div
               key={item.id}
-              className="rounded-[24px] border border-white/10 bg-white/6 px-4 py-4"
+              className="rounded-lg border border-white/12 bg-white/5 px-4 py-4"
             >
               <div className="text-[11px] font-black uppercase tracking-[0.16em] text-white/58">{item.label}</div>
               <div className="mt-2 text-2xl font-black tracking-tight text-white">{item.value}</div>
@@ -169,7 +170,7 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
             value={metric.value}
             delta={metric.delta}
             hint={metric.hint}
-            className="rounded-[26px] p-5"
+            className="min-h-[12rem]"
           />
         ))}
       </AdminMetricGrid>
@@ -181,10 +182,10 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
             <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--workspace-muted)]">
               Network Flow
             </div>
-            <h2 className="text-3xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
+            <h2 className="text-3xl font-black tracking-[-0.05em] text-[var(--workspace-bubble-other-foreground)]">
               شبكة القيادة التشغيلية
             </h2>
-            <p className="max-w-3xl text-sm font-medium leading-7 text-[var(--workspace-muted)]">
+            <p className="max-w-3xl text-sm font-bold leading-7 text-[var(--workspace-muted)]">
               هذا الرسم يوضح كيف يدخل الطلب إلى النظام، كيف يمر عبر القنوات والشركاء، وأين يتعطل قبل أن يتحول إلى صفقات رابحة.
             </p>
           </div>
@@ -279,7 +280,7 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
           {viewModel.queueFocus.map((item) => (
             <div
               key={item.id}
-              className="rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_52%,transparent)] p-4"
+              className="rounded-lg border border-[color:color-mix(in_srgb,var(--workspace-border)_88%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_72%,transparent)] p-4"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{item.label}</div>
@@ -312,7 +313,7 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
           {viewModel.dataHealth.map((item) => (
             <div
               key={item.id}
-              className="rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_52%,transparent)] p-4"
+              className="rounded-lg border border-[color:color-mix(in_srgb,var(--workspace-border)_88%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_72%,transparent)] p-4"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="text-base font-black text-[var(--workspace-bubble-other-foreground)]">{item.label}</div>
@@ -343,7 +344,7 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
           {viewModel.apiRisk.map((item) => (
             <div
               key={item.id}
-              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[20px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_52%,transparent)] px-4 py-3"
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-sm border border-[color:color-mix(in_srgb,var(--workspace-border)_88%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_72%,transparent)] px-4 py-3"
             >
               <span className="text-sm font-bold text-[var(--workspace-muted)]">{item.label}</span>
               <span className="text-lg font-black text-[var(--workspace-bubble-other-foreground)]">{item.value}</span>
@@ -371,7 +372,7 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
         {viewModel.alerts.map((alert) => (
           <div
             key={alert.id}
-            className="rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] p-4"
+            className="rounded-lg border border-[color:color-mix(in_srgb,var(--workspace-border)_90%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_98%,transparent)] p-4"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-2">

@@ -8,8 +8,8 @@ describe("PageHeader", () => {
       <PageHeader eyebrow="المستخدمون" title="كل المستخدمين" description="وصف مختصر" actions={<button>إضافة</button>} />,
     );
 
-    expect(markup).toContain("text-3xl");
-    expect(markup).toContain("pb-5");
+    expect(markup).toContain("text-4xl");
+    expect(markup).toContain("pb-4");
     expect(markup).toContain("إضافة");
   });
 
@@ -18,7 +18,8 @@ describe("PageHeader", () => {
       <PageHeader eyebrow="مركز القيادة" title="لوحة التحكم" description="وصف أطول" variant="hero" />,
     );
 
-    expect(markup).toContain("text-4xl");
-    expect(markup).toContain("pb-7");
+    expect(markup).toContain("text-5xl");
+    expect(markup).toContain("pb-6");
+    expect(markup).toContain("h-px w-6");
   });
 });

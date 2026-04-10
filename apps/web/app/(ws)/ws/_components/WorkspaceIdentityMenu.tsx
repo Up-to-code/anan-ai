@@ -20,6 +20,7 @@ import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import type { WorkspaceOrganizationDisplay } from "../_lib/organizationDisplay";
 import type { SidebarUser } from "./Sidebar/types";
 import WorkspaceSignOutAction from "./WorkspaceSignOutAction";
+import WorkspaceOrganizationSwitcher from "./WorkspaceOrganizationSwitcher";
 
 type WorkspaceIdentityMenuProps = {
   user: SidebarUser;
@@ -178,8 +179,11 @@ export default function WorkspaceIdentityMenu({
         <DropdownMenuContent
           align="end"
           sideOffset={8}
-          className="w-[min(12rem,calc(100vw-1rem))] min-w-0 rounded-[16px] bg-[var(--workspace-panel)] p-1 shadow-none ring-0"
+          className="w-[min(19rem,calc(100vw-1rem))] min-w-0 rounded-[16px] bg-[var(--workspace-panel)] p-1 shadow-none ring-0"
         >
+          <div className="px-1 pb-1">
+            <WorkspaceOrganizationSwitcher />
+          </div>
           {actions.map((action) => (
             <DropdownMenuItem
               key={action.key}

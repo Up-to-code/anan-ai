@@ -1,4 +1,4 @@
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getAuthUserId } from "./_core/security/authIdentity";
 import { makeTenantsAPI, Tenants } from "@djpanda/convex-tenants";
 import { authz } from "./authz";
 import { components } from "./_generated/api";

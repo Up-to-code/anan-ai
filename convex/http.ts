@@ -5,7 +5,6 @@ import {
   handleWhatsAppWebhookGet,
   handleWhatsAppWebhookPost,
 } from "./ai_zone/channels/whatsapp/webhook";
-import { auth } from "./auth";
 import { components } from "./_generated/api";
 import {
   handleAuthorize,
@@ -20,7 +19,6 @@ import {
 
 const http = httpRouter();
 
-auth.addHttpRoutes(http);
 registerRoutes(http, components.uploadthingFileTracker);
 
 http.route({

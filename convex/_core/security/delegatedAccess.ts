@@ -10,6 +10,7 @@ export type DelegatedAccessContext = {
   clientId: string;
   scopes: string[];
   brokerId?: Id<"brokers">;
+  developerId?: Id<"RED">;
   REDId?: Id<"RED">;
   profile: Doc<"userProfiles"> | null;
 };
@@ -48,7 +49,8 @@ export async function requireDelegatedScopes(
     clientId: delegated.clientId,
     scopes: delegated.scopes,
     brokerId: profile?.brokerId,
-    REDId: profile?.REDId,
+    developerId: (profile as any)?.developerId ?? (profile as any)?.REDId,
+    REDId: (profile as any)?.developerId ?? (profile as any)?.REDId,
     profile,
   };
 }

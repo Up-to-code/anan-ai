@@ -1,4 +1,4 @@
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getAuthUserId } from "../../_core/security/authIdentity";
 import { v } from "convex/values";
 import { query } from "../../_generated/server";
 import { buildMobilePropertyFeedItem } from "../mobile/feed";

@@ -7,6 +7,7 @@ import type {
   BuyerThreadKind,
   BuyerThreadSummary,
 } from "@/lib/buyerAssistantShared";
+import type { MobileLocale } from "@/lib/locale";
 
 export type MobileProperty = BuyerProperty;
 export type MobileAssistantCard = BuyerAssistantCard;
@@ -35,13 +36,14 @@ export type MobileBuyerConsents = {
 };
 
 export type MobileBuyerPreferences = {
-  locale: "ar";
+  locale: MobileLocale;
   onboardingCompletedAt?: number;
+  authEntryDismissedAt?: number;
   financeDefaults: MobileFinanceDefaults;
 };
 
 export type MobileBuyerLocalState = {
-  version: 1;
+  version: 2;
   profile: MobileBuyerProfile;
   savedPropertyIds: string[];
   consents: MobileBuyerConsents;
@@ -54,19 +56,22 @@ export type MobileBuyerViewerIdentity = {
   displayName: string;
   email?: string;
   phone?: string;
+  imageUrl?: string;
   role: "guest" | "user" | "broker" | "developer" | "RED" | "admin";
   isAuthenticated: boolean;
   qualifiedOrdersCount: number;
 };
 
-export type MobileBuyerViewer = MobileBuyerViewerIdentity & {
-  hasBackend: boolean;
-  sessionMode: "guest" | "identified";
-  activeThreadId: string | null;
-  threadCount: number;
+export type MobileBuyerViewerState = MobileBuyerViewerIdentity & {
   savedPropertyIds: string[];
   consents: MobileBuyerConsents;
   preferences: MobileBuyerPreferences;
+};
+
+export type MobileBuyerViewer = MobileBuyerViewerState & {
+  sessionMode: "guest" | "identified";
+  activeThreadId: string | null;
+  threadCount: number;
 };
 
 export type MobileFinanceBankOffer = {
@@ -140,6 +145,7 @@ export type MobileBuyerAnalyticsSummary = {
 export type MobileGuestSnapshot = {
   draft: string;
   activeThreadId: string | null;
+  assistantThreadId?: string | null;
   activeThreadKind: MobileStoredThreadKind;
   activeProperty: MobileProperty | null;
   selectedProperties?: MobileProperty[];
@@ -149,6 +155,7 @@ export type MobileGuestSnapshot = {
 
 export type MobileStoredThread = {
   id: string;
+  assistantThreadId?: string | null;
   draft: string;
   activeThreadKind: MobileStoredThreadKind;
   activeProperty: MobileProperty | null;
@@ -164,7 +171,7 @@ export type MobileGuestThreadStore = {
   threads: MobileStoredThread[];
 };
 
-export type MobileSearchOwnerType = "وسيط" | "مطور";
+export type MobileSearchOwnerType = "broker" | "developer";
 
 export type MobileBrokerBadgeTone = "plum" | "sky" | "ink";
 
@@ -181,7 +188,7 @@ export type MobileBroker = {
   avatar: string;
   company: string;
   badges: MobileBrokerBadge[];
-  languages: string[];
+  languages: Array<"ar" | "en">;
   phone: string;
   whatsapp: string;
   isVerified: boolean;
@@ -205,3 +212,9 @@ export type MobileConversationMessage = BuyerAssistantMessage & {
   searchContext?: MobileSearchContext;
   searchResults?: MobileProperty[];
 };
+
+export type MobileAuthReturnTarget = string;
+
+export type MobileAuthLaunchRoute = "/auth" | "/";
+
+export type MobileAuthEmailStep = "idle" | "verify" | "complete_profile";

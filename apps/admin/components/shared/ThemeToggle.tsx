@@ -40,7 +40,7 @@ export default function ThemeToggle({
     <div
       data-slot="theme-toggle"
       className={cn(
-        "inline-flex items-center gap-1 rounded-[18px] border border-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_94%,transparent)] p-1 shadow-sm",
+        "inline-flex items-center gap-1 rounded-md border border-[color:color-mix(in_srgb,var(--workspace-border)_92%,transparent)] bg-[var(--workspace-panel)] p-1",
         className,
       )}
       aria-label="مبدل المظهر"
@@ -58,10 +58,10 @@ export default function ThemeToggle({
             title={`تفعيل وضع ${option.label}`}
             onClick={() => setTheme(option.value)}
             className={cn(
-              "inline-flex h-9 items-center gap-2 rounded-[14px] px-3 text-[11px] font-black tracking-[0.14em] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_32%,transparent)]",
+              "inline-flex h-9 items-center gap-2 rounded-sm border border-transparent px-3 text-[11px] font-black tracking-[0.14em] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--workspace-highlight-border)]",
               active
-                ? "bg-[var(--workspace-highlight)] text-white shadow-sm"
-                : "text-[var(--workspace-muted)] hover:bg-[var(--workspace-elevated)] hover:text-[var(--workspace-bubble-other-foreground)]",
+                ? "border-[color:var(--workspace-highlight-border)] bg-[var(--workspace-highlight)] text-white"
+                : "text-[var(--workspace-muted)] hover:border-[color:color-mix(in_srgb,var(--workspace-border)_88%,transparent)] hover:bg-[var(--workspace-elevated)] hover:text-[var(--workspace-bubble-other-foreground)]",
             )}
           >
             <Icon className="h-4 w-4" />

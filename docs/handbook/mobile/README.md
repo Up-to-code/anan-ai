@@ -6,7 +6,7 @@
 
 The mobile app is the buyer-facing surface. It is media-heavy and UX-sensitive, and it must not hardcode backend assumptions that drift from Convex.
 
-Mobile also often runs with partial configuration during development (mock fallback), so boundaries must be explicit.
+The shipped mobile app is backend-required, so boundaries between runtime code and legacy mock tooling must stay explicit.
 
 ---
 
@@ -26,7 +26,7 @@ Mobile lives in `apps/mobile` and uses:
 1. Keep route files thin (Expo Router screens delegate into feature modules).
 2. UI components render; hooks orchestrate; Convex endpoints own business logic.
 3. Do not render raw Convex table rows: map into mobile DTOs.
-4. Treat “mock fallback” as an explicit mode, not as invisible data mixing.
+4. Do not let runtime buyer flows fall back to mock data when backend wiring is missing.
 
 ---
 

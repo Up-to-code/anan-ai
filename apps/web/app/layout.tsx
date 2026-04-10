@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { cookies } from "next/headers";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { RootFontFaces, rootFontClassName } from "@/lib/rootFonts";
 import { getWebDictionary } from "@/lib/i18n";
@@ -25,16 +26,18 @@ export default async function RootLayout({
   return (
     <html lang={locale} dir={isRtlLocale(locale) ? "rtl" : "ltr"} suppressHydrationWarning>
       <body className={`${rootFontClassName} bg-background text-foreground antialiased`}>
-        <ThemeProvider>
-          <Suspense fallback={null}>
-            <WebLocaleProvider locale={locale} dictionary={dictionary}>
-              <PostHogProvider>
-                <RootFontFaces />
-                {children}
-              </PostHogProvider>
-            </WebLocaleProvider>
-          </Suspense>
-        </ThemeProvider>
+        <ClerkProvider>
+          <ThemeProvider>
+            <Suspense fallback={null}>
+              <WebLocaleProvider locale={locale} dictionary={dictionary}>
+                <PostHogProvider>
+                  <RootFontFaces />
+                  {children}
+                </PostHogProvider>
+              </WebLocaleProvider>
+            </Suspense>
+          </ThemeProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

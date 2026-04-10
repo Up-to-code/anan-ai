@@ -51,7 +51,7 @@ const broker: MobileBroker = {
     { id: "verified", label: "معتمد", tone: "sky" },
     { id: "trusted", label: "TruBroker", tone: "ink" },
   ],
-  languages: ["عربي", "يتحدث الإنجليزية"],
+  languages: ["ar", "en"],
   phone: "+201000000000",
   whatsapp: "+201000000000",
   isVerified: true,

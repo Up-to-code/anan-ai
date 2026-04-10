@@ -6,6 +6,7 @@ const mockState = vi.hoisted(() => ({
   buyerAccount: {
     isHydrated: false,
     isOnboardingComplete: false,
+    launchRoute: "/",
   },
 }));
 
@@ -13,12 +14,12 @@ vi.mock("react-native", () => ({
   View: "View",
 }));
 
-vi.mock("@/features/BuyerAssistantHomeScreen", () => ({
-  default: "BuyerAssistantHomeScreen",
+vi.mock("expo-router", () => ({
+  Redirect: "Redirect",
 }));
 
-vi.mock("@/features/WelcomeScreen", () => ({
-  default: "WelcomeScreen",
+vi.mock("@/features/BuyerAssistantHomeScreen", () => ({
+  default: "BuyerAssistantHomeScreen",
 }));
 
 vi.mock("@/hooks/useBuyerAccount", () => ({
@@ -38,30 +39,47 @@ describe("BuyerEntryScreen", () => {
     mockState.buyerAccount = {
       isHydrated: false,
       isOnboardingComplete: false,
+      launchRoute: "/",
     };
 
     const tree = BuyerEntryScreen();
 
     expect(findElementsByType(tree, "View")).toHaveLength(1);
-    expect(findElementsByType(tree, "WelcomeScreen")).toHaveLength(0);
     expect(findElementsByType(tree, "BuyerAssistantHomeScreen")).toHaveLength(0);
   });
 
-  it("shows onboarding only for first-run buyers", () => {
+  it("opens first-run buyers directly into the assistant home", () => {
     mockState.buyerAccount = {
       isHydrated: true,
       isOnboardingComplete: false,
+      launchRoute: "/",
     };
 
     const tree = BuyerEntryScreen();
 
-    expect(findElementsByType(tree, "WelcomeScreen")).toHaveLength(1);
+    expect(findElementsByType(tree, "Redirect")).toHaveLength(0);
+    expect(findElementsByType(tree, "BuyerAssistantHomeScreen")).toHaveLength(1);
+  });
+
+  it("routes new unauthenticated buyers into auth before a fresh thread", () => {
+    mockState.buyerAccount = {
+      isHydrated: true,
+      isOnboardingComplete: false,
+      launchRoute: "/auth",
+    };
+
+    const tree = BuyerEntryScreen();
+
+    const redirects = findElementsByType(tree, "Redirect");
+    expect(redirects).toHaveLength(1);
+    expect(redirects[0]?.props?.href).toBe("/auth");
   });
 
   it("opens the assistant workspace once onboarding is complete", () => {
     mockState.buyerAccount = {
       isHydrated: true,
       isOnboardingComplete: true,
+      launchRoute: "/",
     };
 
     const tree = BuyerEntryScreen();

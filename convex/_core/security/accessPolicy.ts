@@ -2,10 +2,14 @@ import { ConvexError } from "convex/values";
 import type { Doc, Id } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
 import { findProfileForResolvedIdentity, requireResolvedIdentity } from "./identity";
+import {
+  normalizeUserProfileRoleState,
+  type UserRole,
+} from "./profileRoles";
 
 type Ctx = QueryCtx | MutationCtx;
 
-export type ProtectedRole = "admin" | "broker" | "developer" | "user" | "RED";
+export type ProtectedRole = UserRole;
 
 export type AccessContext = {
   authUserId: string;
@@ -13,12 +17,12 @@ export type AccessContext = {
   role: ProtectedRole;
   profile: Doc<"userProfiles"> | null;
   brokerId?: Id<"brokers">;
+  developerId?: Id<"RED">;
   REDId?: Id<"RED">;
-  roleStatus?: Doc<"userProfiles">["roleStatus"];
+  roleApprovalStatus?: Doc<"userProfiles">["roleApprovalStatus"];
 };
 
 function normalizeRole(value: unknown): ProtectedRole | null {
-  if (value === "RED") return "developer";
   if (
     value === "admin" ||
     value === "broker" ||
@@ -40,13 +44,14 @@ function assertActiveProfile(profile: Doc<"userProfiles"> | null) {
 }
 
 function resolveEffectiveRole(profile: Doc<"userProfiles"> | null, identityRole?: string): ProtectedRole | null {
-  if (profile?.roleStatus === "pending") {
+  const normalizedProfile = profile ? normalizeUserProfileRoleState(profile) : null;
+  if (normalizedProfile?.roleApprovalStatus === "pending") {
     throw new ConvexError({
       code: "ROLE_PENDING",
       message: "Role is pending approval",
     });
   }
-  if (profile?.roleStatus === "rejected") {
+  if (normalizedProfile?.roleApprovalStatus === "rejected") {
     throw new ConvexError({
       code: "ROLE_REJECTED",
       message: "Role request was rejected",
@@ -74,13 +79,14 @@ function assertAllowedRole(
 }
 
 function assertLinkedRoleEntity(role: ProtectedRole, profile: Doc<"userProfiles"> | null) {
+  const normalizedProfile = profile ? normalizeUserProfileRoleState(profile) : null;
   if (role === "broker" && !profile?.brokerId) {
     throw new ConvexError({
       code: "FORBIDDEN",
       message: "Broker profile not linked",
     });
   }
-  if (role === "developer" && !profile?.REDId) {
+  if (role === "developer" && !normalizedProfile?.developerId) {
     throw new ConvexError({
       code: "FORBIDDEN",
       message: "Developer (RED) profile not linked",
@@ -114,6 +120,7 @@ export async function requireRole(
 ): Promise<AccessContext> {
   const identity = await requireResolvedIdentity(ctx);
   const profile = await findProfileForResolvedIdentity(ctx, identity);
+  const normalizedProfile = profile ? normalizeUserProfileRoleState(profile) : null;
   assertActiveProfile(profile);
   const role = resolveEffectiveRole(profile, (identity.identity as { role?: string }).role);
   assertAllowedRole(role, normalizeAllowedRoles(allowedRoles));
@@ -125,8 +132,9 @@ export async function requireRole(
     role,
     profile,
     brokerId: profile?.brokerId,
-    REDId: profile?.REDId,
-    roleStatus: profile?.roleStatus,
+    developerId: normalizedProfile?.developerId,
+    REDId: normalizedProfile?.developerId,
+    roleApprovalStatus: normalizedProfile?.roleApprovalStatus,
   };
 }
 
@@ -137,9 +145,9 @@ export async function requireRole(
  */
 export async function requireVerifiedRole(
   ctx: Ctx,
-  role: "broker" | "developer" | "RED",
+  role: "broker" | "developer",
 ): Promise<AccessContext> {
-  const normalizedRole = role === "RED" ? "developer" : role;
+  const normalizedRole = role;
   const access = await requireRole(ctx, [normalizedRole]);
 
   if (normalizedRole === "broker") {
@@ -151,7 +159,7 @@ export async function requireVerifiedRole(
       });
     }
   } else {
-    const red = await ctx.db.get(access.REDId!);
+    const red = await ctx.db.get(access.developerId!);
     if (!red?.isVerified) {
       throw new ConvexError({
         code: "VERIFICATION_REQUIRED",

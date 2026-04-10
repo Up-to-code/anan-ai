@@ -72,7 +72,7 @@ export function buildDeveloperSummary(args: {
     status: developer.status ?? "pending",
     isVerified: developer.isVerified === true,
     contactEmail: developer.contactEmail,
-    linkedProfilesCount: profiles.filter((profile: any) => profile.REDId === developer._id).length,
+    linkedProfilesCount: profiles.filter((profile: any) => profile.developerId === developer._id).length,
     membersCount: countActiveMembers(members),
     propertyCount: properties.filter((property: any) => property.REDId === developer._id).length,
     pendingVerificationCount: countPendingVerifications(

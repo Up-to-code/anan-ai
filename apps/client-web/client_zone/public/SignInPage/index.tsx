@@ -1,6 +1,8 @@
 "use client";
 
+import { SignInButton, useAuth } from "@clerk/nextjs";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useLocale } from "@/app/_components/LocaleProvider";
 import { Button } from "@/components/ui/button";
 
@@ -16,6 +18,8 @@ export default function SignInPage({
   returnTo: string;
   intent?: string;
 }) {
+  const router = useRouter();
+  const { isSignedIn } = useAuth();
   const { dictionary } = useLocale();
   const heading =
     intent === "advisor"
@@ -36,9 +40,15 @@ export default function SignInPage({
           <span className="font-black">{dictionary.signIn.returnLabel}</span> {returnTo}
         </div>
         <div className="flex flex-wrap justify-end gap-3">
-          <Link href={returnTo}>
-            <Button className="rounded-full px-6">{dictionary.signIn.continueCta}</Button>
-          </Link>
+          {isSignedIn ? (
+            <Button className="rounded-full px-6" onClick={() => router.push(returnTo)}>
+              {dictionary.signIn.continueCta}
+            </Button>
+          ) : (
+            <SignInButton mode="modal" fallbackRedirectUrl={returnTo} forceRedirectUrl={returnTo}>
+              <Button className="rounded-full px-6">{dictionary.signIn.continueCta}</Button>
+            </SignInButton>
+          )}
           <Link href="/app">
             <Button variant="outline" className="rounded-full px-6">{dictionary.signIn.assistantCta}</Button>
           </Link>

@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { useAuthActions } from "@convex-dev/auth/react";
+import { useClerk } from "@clerk/nextjs";
 
 type OnboardingLogoutButtonProps = {
   label?: string;
@@ -22,7 +22,7 @@ export default function OnboardingLogoutButton({
   className,
 }: OnboardingLogoutButtonProps) {
   const router = useRouter();
-  const { signOut } = useAuthActions();
+  const { signOut } = useClerk();
   const [isPending, startTransition] = useTransition();
 
   const baseClasses =
@@ -37,7 +37,7 @@ export default function OnboardingLogoutButton({
       type="button"
       onClick={() => {
         startTransition(async () => {
-          await signOut();
+          await signOut({ redirectUrl: "/signin" });
           router.replace("/signin");
           router.refresh();
         });

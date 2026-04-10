@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import ConvexClientProvider from "./ConvexClientProvider";
 import ThemeProvider from "./theme-provider";
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 /**
  * WHY:   The standalone admin app needs its own root layout and token setup.
- * WHAT:  Provides the Cairo-based RTL document shell and the shared Convex auth server provider.
+ * WHAT:  Provides the Cairo-based RTL document shell and the shared Clerk + Convex providers.
  * HOW:   Mirrors the web app baseline while branding the experience for admin operations.
  */
 export default async function RootLayout({
@@ -30,9 +30,9 @@ export default async function RootLayout({
         className={`${rootFontClassName} workspace-root-chrome bg-background text-foreground`}
       >
         <ThemeProvider>
-          <ConvexAuthNextjsServerProvider>
+          <ClerkProvider>
             <ConvexClientProvider>{children}</ConvexClientProvider>
-          </ConvexAuthNextjsServerProvider>
+          </ClerkProvider>
         </ThemeProvider>
       </body>
     </html>

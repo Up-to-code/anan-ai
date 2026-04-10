@@ -1,16 +1,8 @@
-import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
-import ConvexClientProvider from "../../ConvexClientProvider";
-
 /**
- * WHY:   The sign-in page uses Convex Auth client actions (`useAuthActions`) which require the Convex React provider.
- * WHAT:  Wraps only `/signin` with Convex Auth (server + client) providers so other public pages stay static/low-JS.
- * HOW:   Scopes providers to this route segment instead of the global root layout.
+ * WHY:   The public sign-in route no longer needs app-local auth providers once Clerk lives at the root layout.
+ * WHAT:  Leaves `/signin` as a thin route segment wrapper.
+ * HOW:   Returns children directly so the page only depends on the global Clerk provider.
  */
 export default function SigninLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <ConvexAuthNextjsServerProvider>
-      <ConvexClientProvider>{children}</ConvexClientProvider>
-    </ConvexAuthNextjsServerProvider>
-  );
+  return children;
 }
-

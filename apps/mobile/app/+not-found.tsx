@@ -2,6 +2,7 @@ import { Stack, useRouter } from "expo-router";
 import { View } from "react-native";
 import { AppText } from "@/components/ui/AppText";
 import { Button } from "@/components/ui/Button";
+import { useMobileLocale } from "@/lib/mobileLocale";
 
 /**
  * WHY:   The mobile app still needs a recoverable fallback when a route is missing.
@@ -10,19 +11,20 @@ import { Button } from "@/components/ui/Button";
  */
 export default function NotFoundScreen() {
   const router = useRouter();
+  const { dictionary } = useMobileLocale();
 
   return (
     <>
-      <Stack.Screen options={{ title: "غير موجود" }} />
+      <Stack.Screen options={{ title: dictionary.navigation.notFound }} />
       <View className="flex-1 items-center justify-center bg-panel px-6">
         <View className="w-full max-w-[320px] gap-4 border border-line bg-white px-5 py-6">
           <AppText tone="headline" className="text-xl">
-            هذه الصفحة غير متاحة
+            {dictionary.navigation.notFound}
           </AppText>
           <AppText className="text-sm leading-6 text-muted">
-            ارجع إلى مساحة المحادثة الرئيسية لمتابعة البحث، مقارنة الوحدات، أو طلب تمويل مناسب.
+            {dictionary.navigation.notFoundBody}
           </AppText>
-          <Button label="العودة إلى عنان" onPress={() => router.replace("/")} />
+          <Button label={dictionary.navigation.backToAnan} onPress={() => router.replace("/")} />
         </View>
       </View>
     </>

@@ -61,6 +61,7 @@ export function hasThreadContent(args: {
  */
 export function buildStoredThreadRecord(args: {
   id: string | null;
+  assistantThreadId?: string | null;
   draft: string;
   activeThreadKind: MobileStoredThreadKind;
   activeProperty: MobileProperty | null;
@@ -79,6 +80,7 @@ export function buildStoredThreadRecord(args: {
 
   return {
     id: args.id,
+    assistantThreadId: args.assistantThreadId ?? args.existing?.assistantThreadId ?? null,
     draft: args.draft,
     activeThreadKind: args.activeThreadKind,
     activeProperty: args.activeProperty,
@@ -144,6 +146,10 @@ export function migrateLegacyGuestSnapshot(value: unknown): MobileGuestThreadSto
   const updatedAt = typeof legacy.updatedAt === "number" ? legacy.updatedAt : Date.now();
   const legacyThread = buildStoredThreadRecord({
     id: activeThreadId,
+    assistantThreadId:
+      typeof legacy.assistantThreadId === "string" && legacy.assistantThreadId.trim()
+        ? legacy.assistantThreadId
+        : null,
     draft: typeof legacy.draft === "string" ? legacy.draft : "",
     activeThreadKind: legacy.activeThreadKind === "live" ? "live" : "welcome",
     activeProperty: legacy.activeProperty ?? null,
@@ -168,6 +174,10 @@ export function parseThreadStore(value: unknown): MobileGuestThreadStore | null 
       activeThreadId: typeof maybeStore.activeThreadId === "string" ? maybeStore.activeThreadId : null,
       threads: (maybeStore.threads.filter(Boolean) as MobileStoredThread[]).map((thread) => ({
         ...thread,
+        assistantThreadId:
+          typeof thread.assistantThreadId === "string" && thread.assistantThreadId.trim()
+            ? thread.assistantThreadId
+            : null,
         selectedProperties: normalizeSelectedProperties(thread.selectedProperties, thread.activeProperty ?? null),
       })),
     });

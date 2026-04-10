@@ -27,7 +27,7 @@ function mapOrganizationMembers(rawMembers: Awaited<ReturnType<typeof listCurren
     membershipId: member.membershipId ?? member.id,
     username: member.username,
     role: member.role,
-    statusLabel: member.isActive ? "نشط" : member.roleStatus ?? "قيد التفعيل",
+    statusLabel: member.isActive ? "نشط" : member.roleApprovalStatus ?? "قيد التفعيل",
   }));
 }
 

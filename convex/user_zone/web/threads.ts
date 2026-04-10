@@ -1,5 +1,6 @@
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getAuthUserId } from "../../_core/security/authIdentity";
 import { ConvexError, type Infer, v } from "convex/values";
+import { api, internal } from "../../_generated/api";
 import { internalMutation, mutation, query } from "../../_generated/server";
 import {
   createAssistantThread,
@@ -8,6 +9,7 @@ import {
   listThreadMessages,
   saveConversationStep,
 } from "../../ai_zone/services/assistantService";
+import { buildBuyerComparisonSnapshot } from "../../shared_logic/buyerComparisons";
 import {
   clientThreadMessageValidator,
   clientThreadSummaryValidator,
@@ -16,6 +18,7 @@ import {
 
 const CLIENT_ASSISTANT_KIND = "anan_main_public" as const;
 const CLIENT_ORCHESTRATOR_NAME = "client_web";
+const buyerComparisonsInternal = (internal as Record<string, any>)["shared_logic/buyerComparisons"];
 
 type StoredClientMessage = Infer<typeof clientThreadMessageValidator>;
 type TranscriptSeedMessage = Infer<typeof clientTranscriptSeedMessageValidator>;
@@ -33,6 +36,10 @@ function readOptionalStringArray(value: unknown) {
 
 function readOptionalProperties(value: unknown) {
   return Array.isArray(value) ? (value as StoredClientMessage["properties"]) : undefined;
+}
+
+function readOptionalPropertyIds(value: unknown) {
+  return Array.isArray(value) ? (value as StoredClientMessage["comparisonPropertyIds"]) : undefined;
 }
 
 function readOptionalCards(value: unknown) {
@@ -58,6 +65,15 @@ function mapStoredMessage(message: {
     requiresAuthForHandoff:
       typeof metadata.requiresAuthForHandoff === "boolean" ? metadata.requiresAuthForHandoff : undefined,
     suggestedPrompts: readOptionalStringArray(metadata.suggestedPrompts),
+    comparisonArtifactId:
+      typeof metadata.comparisonArtifactId === "string" ? (metadata.comparisonArtifactId as never) : undefined,
+    comparisonPropertyIds: readOptionalPropertyIds(metadata.comparisonPropertyIds),
+    selectionSource:
+      metadata.selectionSource === "ui_selected" ||
+      metadata.selectionSource === "history_resolved" ||
+      metadata.selectionSource === "text_resolved"
+        ? metadata.selectionSource
+        : undefined,
   };
 }
 
@@ -69,7 +85,85 @@ function buildAssistantMetadata(message: TranscriptSeedMessage) {
     activePropertyId: message.activePropertyId,
     requiresAuthForHandoff: message.requiresAuthForHandoff,
     suggestedPrompts: message.suggestedPrompts,
+    comparisonArtifactId: message.comparisonArtifactId,
+    comparisonPropertyIds: message.comparisonPropertyIds,
+    selectionSource: message.selectionSource,
   };
+}
+
+async function hydrateStoredMessages(args: {
+  ctx: any;
+  threadId?: string;
+  messages: Array<{
+    _id: string;
+    role: "assistant" | "user";
+    content: string;
+    createdAt: number;
+    metadata?: unknown;
+  }>;
+}) {
+  const artifactCache = new Map<string, Promise<any>>();
+  const propertyCache = new Map<string, Promise<any>>();
+
+  const loadArtifact = async (artifactId: string) => {
+    if (!artifactCache.has(artifactId)) {
+      artifactCache.set(
+        artifactId,
+        args.ctx.runQuery(
+          buyerComparisonsInternal.getBuyerComparisonArtifactInternal,
+          {
+            artifactId,
+            threadId: args.threadId,
+          },
+        ),
+      );
+    }
+    return artifactCache.get(artifactId);
+  };
+
+  const loadProperty = async (propertyId: string) => {
+    if (!propertyCache.has(propertyId)) {
+      propertyCache.set(
+        propertyId,
+        args.ctx.runQuery(
+          api.user_zone.web.properties.getPropertyDetail,
+          { propertyId },
+        ),
+      );
+    }
+    return propertyCache.get(propertyId);
+  };
+
+  return Promise.all(
+    args.messages.map(async (message) => {
+      const mapped = mapStoredMessage(message);
+      if (!mapped.comparisonArtifactId) return mapped;
+
+      const artifact = await loadArtifact(String(mapped.comparisonArtifactId));
+      if (!artifact) return mapped;
+
+      const liveProperties = await Promise.all(
+        (artifact.propertyIds as string[]).map((propertyId) => loadProperty(propertyId)),
+      );
+      const snapshot =
+        liveProperties.every(Boolean) && liveProperties.length >= 2
+          ? buildBuyerComparisonSnapshot({
+              locale: artifact.locale,
+              properties: liveProperties as any,
+              selectionSource: artifact.selectionSource,
+            }).snapshot
+          : artifact.snapshot;
+
+      return {
+        ...mapped,
+        text: snapshot.message,
+        properties: snapshot.properties,
+        cards: snapshot.cards,
+        activePropertyId: snapshot.activePropertyId,
+        suggestedPrompts: snapshot.suggestedPrompts,
+      } satisfies StoredClientMessage;
+    }),
+  );
 }
 
 async function requireAuthenticatedBuyer(ctx: { auth: unknown }, authReader: () => Promise<string | null>) {
@@ -143,7 +237,11 @@ export const getClientThreadMessages = query({
       CLIENT_ASSISTANT_KIND,
     );
 
-    return messages.map(mapStoredMessage);
+    return hydrateStoredMessages({
+      ctx,
+      threadId: args.threadId ? String(args.threadId) : undefined,
+      messages: messages as any,
+    });
   },
 });
 
@@ -188,7 +286,11 @@ export const getClientAssistantState = query({
 
     return {
       recentThreads: await buildClientThreadSummaries(ctx, threads as any),
-      activeMessages: messages.map(mapStoredMessage),
+      activeMessages: await hydrateStoredMessages({
+        ctx,
+        threadId: args.threadId ? String(args.threadId) : undefined,
+        messages: messages as any,
+      }),
     };
   },
 });

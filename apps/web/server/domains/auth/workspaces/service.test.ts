@@ -34,12 +34,19 @@ function createBrokerSession(args: { userId: string; brokerId: string; name?: st
       brokerId: args.brokerId,
       isActive: true,
     },
-    profile: { role: "broker", roleStatus: "approved", brokerId: args.brokerId },
+    profile: { role: "broker", roleApprovalStatus: "approved", brokerId: args.brokerId },
   };
 }
 
 function createOrganization(args: { id: string; type: "broker" | "red"; name: string; slug: string }) {
-  return { ...args, status: "active" as const, isVerified: true };
+  return {
+    ...args,
+    organizationId: args.id,
+    status: "active" as const,
+    isVerified: true,
+    legacyOwnerType: args.type === "broker" ? ("broker" as const) : ("RED" as const),
+    legacyOwnerId: args.id,
+  };
 }
 
 it("resolves broker workspace behavior when organization access is blocked", async () => {
@@ -70,11 +77,11 @@ it("falls back to the first organization when the current org is not set", async
   expect(behavior.ownerContext).toEqual({ ownerType: "broker", ownerId: "broker-1" });
 });
 
-it("normalizes legacy RED roles into the developer audience", async () => {
+it("resolves developer workspace behavior from canonical developer profile links", async () => {
   const requireSession = createRequireSession({
     token: "token-2",
-    context: { userId: "user-2", role: "RED", redId: "red-1", isActive: true },
-    profile: { role: "RED", REDId: "red-1" },
+    context: { userId: "user-2", role: "developer", redId: "red-1", isActive: true },
+    profile: { role: "developer", developerId: "red-1" },
   });
   const organizationsRepository = createOrganizationsRepository({
     listForCurrentUser: vi.fn(async () => [createOrganization({ id: "red-1", type: "red", name: "Alpha Developments", slug: "alpha-developments" })]),

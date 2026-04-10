@@ -29,7 +29,7 @@ export function buildWorkspaceScopedSessionResolver(
         ...session,
         context: {
           ...session.context,
-          role: session.context.role === "RED" ? "RED" : "developer",
+          role: "developer",
           redId: session.context.redId ?? ownerContext.ownerId,
         },
       };

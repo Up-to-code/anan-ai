@@ -112,11 +112,11 @@ export async function listSentOffersService(ctx: QueryCtx) {
         q.eq("fromBrokerId", current.profile.brokerId as Id<"brokers">),
       )
       .collect();
-  } else if (current.profile.REDId) {
+  } else if ((current.profile as any).developerId) {
     results = await ctx.db
       .query("offers")
       .withIndex("fromREDId", (q) =>
-        q.eq("fromREDId", current.profile.REDId as Id<"RED">),
+        q.eq("fromREDId", (current.profile as any).developerId as Id<"RED">),
       )
       .collect();
   }
@@ -141,11 +141,11 @@ export async function listReceivedOffersService(ctx: QueryCtx) {
         q.eq("toBrokerId", current.profile.brokerId as Id<"brokers">),
       )
       .collect();
-  } else if (current.profile.REDId) {
+  } else if ((current.profile as any).developerId) {
     results = await ctx.db
       .query("offers")
       .withIndex("toREDId", (q) =>
-        q.eq("toREDId", current.profile.REDId as Id<"RED">),
+        q.eq("toREDId", (current.profile as any).developerId as Id<"RED">),
       )
       .collect();
   }

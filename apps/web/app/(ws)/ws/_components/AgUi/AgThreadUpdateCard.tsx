@@ -1,3 +1,4 @@
+import { memo } from "react"
 import { ArrowLeftRight, Clock3 } from "lucide-react";
 
 type AgThreadUpdateCardProps = {
@@ -41,7 +42,7 @@ function ThreadStatusFooter({ status, update }: { status: string; update: string
   );
 }
 
-export default function AgThreadUpdateCard({
+const AgThreadUpdateCardComponent = function AgThreadUpdateCard({
   subject,
   sender,
   recipient,
@@ -72,3 +73,5 @@ export default function AgThreadUpdateCard({
     </section>
   );
 }
+
+export default memo(AgThreadUpdateCardComponent)

@@ -7,7 +7,9 @@
     "userInterfaceStyle": "automatic",
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      "@clerk/expo",
+      "expo-apple-authentication"
     ],
     "ios": {
       "infoPlist": {

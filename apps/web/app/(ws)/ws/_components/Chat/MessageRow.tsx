@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { memo } from "react";
 import { AIMotionLogo, type AIMotionState } from "../AIMotion";
 import { cn } from "@/lib/utils";
 import type { UploadedFileReference } from "@/server/contracts/files";
@@ -12,7 +12,7 @@ import {
   resolveAssistantDirection,
 } from "./WorkspaceAssistantBadges";
 
-export default function MessageRow({
+const MessageRowComponent = function MessageRow({
   isUser,
   content,
   meta,
@@ -128,3 +128,5 @@ export default function MessageRow({
     </div>
   );
 }
+
+export default memo(MessageRowComponent);

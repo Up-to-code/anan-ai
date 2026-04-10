@@ -55,6 +55,15 @@ export const clientThreadMessageValidator = v.object({
   activePropertyId: v.optional(v.id("properties")),
   requiresAuthForHandoff: v.optional(v.boolean()),
   suggestedPrompts: v.optional(v.array(v.string())),
+  comparisonArtifactId: v.optional(v.id("buyerComparisonArtifacts")),
+  comparisonPropertyIds: v.optional(v.array(v.id("properties"))),
+  selectionSource: v.optional(
+    v.union(
+      v.literal("ui_selected"),
+      v.literal("history_resolved"),
+      v.literal("text_resolved"),
+    ),
+  ),
 });
 
 /**
@@ -70,6 +79,15 @@ export const clientTranscriptSeedMessageValidator = v.object({
   activePropertyId: v.optional(v.id("properties")),
   requiresAuthForHandoff: v.optional(v.boolean()),
   suggestedPrompts: v.optional(v.array(v.string())),
+  comparisonArtifactId: v.optional(v.id("buyerComparisonArtifacts")),
+  comparisonPropertyIds: v.optional(v.array(v.id("properties"))),
+  selectionSource: v.optional(
+    v.union(
+      v.literal("ui_selected"),
+      v.literal("history_resolved"),
+      v.literal("text_resolved"),
+    ),
+  ),
 });
 
 const clientOrderStatusValidator = v.union(

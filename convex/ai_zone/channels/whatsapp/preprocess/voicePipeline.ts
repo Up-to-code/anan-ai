@@ -24,7 +24,7 @@ export type VoicePipelineResult =
 export async function processVoicePipeline(
   input: VoicePipelineInput,
 ): Promise<VoicePipelineResult> {
-  // TODO: Call transformVoiceToText(mediaId) when services/transcription exists.
+  // TODO(voicePipeline): Replace with transformVoiceToText(mediaId) when services/transcription exists.
   // For now, return fallback so structure is in place.
   const isEnglish = input.preferredLanguage === "en";
   const fallback = isEnglish ? VOICE_FALLBACK_MESSAGE_EN : VOICE_FALLBACK_MESSAGE_AR;

@@ -91,7 +91,7 @@ describe("SearchResultsPanel", () => {
     const text = collectTextContent(tree).join(" ");
     const showMoreButtons = findElementsByType(tree, "Pressable");
 
-    expect(text).toContain("نتائج موسّعة من نفس الطلب");
+    expect(text).toContain("نتائج البحث المقترحة");
     expect(text).toContain(searchContext.searchSummary);
     expect(cards).toHaveLength(2);
     expect(cards.every((card) => card?.props?.variant === "compact")).toBe(true);

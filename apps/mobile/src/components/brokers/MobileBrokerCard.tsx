@@ -1,8 +1,10 @@
-import React from "react";
+import React, { memo } from "react";
 import { MessageCircle, Phone, ShieldCheck } from "lucide-react-native";
 import { Image } from "expo-image";
 import { Pressable, View } from "react-native";
 import { AppText } from "@/components/ui/AppText";
+import { cn } from "@/lib/cn";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import { useAppTheme } from "@/lib/mobileTheme";
 import type { MobileBroker } from "@/types/mobile";
 
@@ -13,18 +15,23 @@ type MobileBrokerCardProps = {
   onPressCall: (broker: MobileBroker) => void;
 };
 
-export function MobileBrokerCard({
+export const MobileBrokerCard = memo(function MobileBrokerCard({
   broker,
   onPress,
   onPressWhatsApp,
   onPressCall,
 }: MobileBrokerCardProps) {
   const theme = useAppTheme();
+  const { dictionary, isRtl } = useMobileLocale();
+  const languageLabels = {
+    ar: dictionary.brokers.speaksArabic,
+    en: dictionary.brokers.speaksEnglish,
+  } as const;
 
   return (
     <Pressable
       onPress={() => onPress(broker)}
-      className="flex-row-reverse overflow-hidden"
+      className={cn(isRtl ? "flex-row-reverse" : "flex-row", "overflow-hidden")}
       style={({ pressed }) => ({
         borderRadius: theme.radii.hero,
         borderWidth: 1,
@@ -42,14 +49,14 @@ export function MobileBrokerCard({
 
       <View className="flex-1 justify-between px-4 py-4">
         <View className="gap-2">
-          <View className="flex-row-reverse items-center gap-2">
-            <AppText className="flex-1 text-right text-[24px] font-cairo-black leading-8" style={{ color: theme.colors.ink }}>
+          <View className={cn("items-center gap-2", isRtl ? "flex-row-reverse" : "flex-row")}>
+            <AppText className={cn("flex-1 text-[24px] font-cairo-black leading-8", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.ink }}>
               {broker.name}
             </AppText>
             {broker.isVerified ? <ShieldCheck size={18} color={theme.colors.teal} /> : null}
           </View>
 
-          <View className="flex-row-reverse flex-wrap gap-2">
+          <View className={cn(isRtl ? "flex-row-reverse" : "flex-row", "flex-wrap gap-2")}>
             {broker.badges.map((badge) => (
               <View
                 key={badge.id}
@@ -80,22 +87,22 @@ export function MobileBrokerCard({
             ))}
           </View>
 
-          <AppText className="text-right text-[18px] font-cairo-medium" style={{ color: theme.colors.inkSoft }}>
+          <AppText className={cn("text-[18px] font-cairo-medium", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.inkSoft }}>
             {broker.company}
           </AppText>
-          <AppText className="text-right text-[14px] font-cairo-medium" style={{ color: theme.colors.inkMuted }}>
-            {broker.languages.join(" • ")}
+          <AppText className={cn("text-[14px] font-cairo-medium", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.inkMuted }}>
+            {broker.languages.map((language) => languageLabels[language]).join(" • ")}
           </AppText>
         </View>
 
-        <View className="flex-row-reverse gap-3 pt-3">
+        <View className={cn(isRtl ? "flex-row-reverse" : "flex-row", "gap-3 pt-3")}>
           <QuickAction
-            label="اتصال"
+            label={dictionary.common.call}
             icon={<Phone size={18} color={theme.colors.primary} />}
             onPress={() => onPressCall(broker)}
           />
           <QuickAction
-            label="واتساب"
+            label={dictionary.common.whatsapp}
             icon={<MessageCircle size={18} color={theme.colors.teal} />}
             onPress={() => onPressWhatsApp(broker)}
           />
@@ -103,7 +110,7 @@ export function MobileBrokerCard({
       </View>
     </Pressable>
   );
-}
+});
 
 function QuickAction({
   label,
@@ -115,6 +122,7 @@ function QuickAction({
   onPress: () => void;
 }) {
   const theme = useAppTheme();
+  const { isRtl } = useMobileLocale();
 
   return (
     <Pressable
@@ -122,7 +130,7 @@ function QuickAction({
         event.stopPropagation();
         onPress();
       }}
-      className="flex-1 flex-row-reverse items-center justify-center gap-2 px-3 py-3"
+      className={cn("flex-1 items-center justify-center gap-2 px-3 py-3", isRtl ? "flex-row-reverse" : "flex-row")}
       style={({ pressed }) => ({
         borderRadius: theme.radii.card,
         borderWidth: 1,

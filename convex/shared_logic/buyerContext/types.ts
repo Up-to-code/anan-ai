@@ -18,6 +18,8 @@ export type BuyerStateRecordInput = {
   state: BuyerChannelState;
   selectedPropertyId?: string;
   lastResultPropertyIds: string[];
+  comparisonPropertyIds?: string[];
+  lastComparisonArtifactId?: string;
   lastSearchQuery?: string;
   qualification?: BuyerQualification;
   createdAt: number;
@@ -29,6 +31,8 @@ export type BuyerStateSnapshot = {
   lastSearchQuery?: string;
   selectedPropertyId?: string;
   lastResultPropertyIds: string[];
+  comparisonPropertyIds?: string[];
+  lastComparisonArtifactId?: string;
   qualification?: BuyerQualification;
 };
 

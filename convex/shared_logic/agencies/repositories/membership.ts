@@ -190,7 +190,7 @@ export async function listTeamMembersForOwner(ctx: AgenciesRepositoryCtx, owner:
         email: profile.email ?? "",
         username: profile.username ?? undefined,
         role: normalizeTenantRole(membership.role),
-        roleStatus: profile.roleStatus,
+        roleApprovalStatus: profile.roleApprovalStatus,
         isActive: profile.isActive,
       };
     }),

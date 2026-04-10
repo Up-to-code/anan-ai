@@ -1,95 +1,111 @@
-import { Alert, Appearance, Pressable, ScrollView, View } from "react-native";
-import { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
+import { Alert, Image, ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
-import {
-  ArrowLeft,
-  BarChart3,
-  Bookmark,
-  FileText,
-  Globe,
-  History,
-  LogOut,
-  Moon,
-  Monitor,
-  ShieldCheck,
-  Sparkles,
-  Sun,
-  Trash2,
-  User as UserIcon,
-} from "lucide-react-native";
+import { ArrowLeft, Bookmark, Clock3, LogOut, SlidersHorizontal, User as UserIcon } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MobilePropertyCard } from "@/components/property/MobilePropertyCard";
 import { AppText } from "@/components/ui/AppText";
-import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
-import { MobilePill, MobileSectionHeading, MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
+import { MobileTopBar } from "@/components/ui/MobileChrome";
 import { useBuyerAccount } from "@/hooks/useBuyerAccount";
+import { useBuyerAuth } from "@/hooks/useBuyerAuth";
 import { usePropertyFeed } from "@/hooks/usePropertyFeed";
+import { cn } from "@/lib/cn";
+import { formatMobileCopy } from "@/lib/i18n";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import { useAppTheme } from "@/lib/mobileTheme";
-import { getThemePreference, setThemePreference, type ThemeOverrideMode } from "@/lib/themeStore";
+import { AccountActionList, AccountActionRow, AccountPageIntro, AccountSection } from "./shared";
+
+function resolveIdentityLabel(args: {
+  displayName?: string | null;
+  email?: string | null;
+  fallback: string;
+}) {
+  const displayName = args.displayName?.trim();
+  if (displayName && displayName !== "ضيف عنان") return displayName;
+
+  const emailPrefix = args.email?.trim().split("@")[0]?.replace(/[^a-zA-Z0-9]/g, "")?.slice(0, 5);
+  if (emailPrefix) return emailPrefix;
+
+  return args.fallback;
+}
 
 /**
- * WHY:   Buyers need one trustworthy control center for profile identity, saved properties, conversation continuity, and device-level controls.
- * WHAT:  Renders the buyer account surface backed by the merged mobile account contract.
- * HOW:   Combines live viewer identity with local saved items, thread history, finance defaults, and privacy/reset actions inside one calm mobile layout.
+ * WHY:   Buyers need a calm personal hub that feels close to the assistant shell without becoming a dashboard.
+ * WHAT:  Renders the account home around identity first, then a quiet list of return paths and controls.
+ * HOW:   Reads the shared buyer account and feed state, trims down badges/stats, and keeps saved/history continuity visible through light metadata.
  */
 export default function AccountScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
   const account = useBuyerAccount();
+  const auth = useBuyerAuth();
   const feed = usePropertyFeed();
-  const [themeMode, setThemeMode] = useState<ThemeOverrideMode>("system");
-
-  useEffect(() => {
-    getThemePreference().then(setThemeMode);
-  }, []);
+  const { locale, dictionary, isRtl } = useMobileLocale();
+  const accountCopy = dictionary.account;
+  const navigationCopy = dictionary.navigation;
+  const settingsCopy = dictionary.settings;
 
   const savedProperties = useMemo(
     () =>
       account.viewer.savedPropertyIds
         .map((propertyId) => feed.findPropertyById(propertyId))
-        .filter(Boolean)
-        .slice(0, 3),
+        .filter(Boolean),
     [account.viewer.savedPropertyIds, feed],
   );
+  const featuredSavedProperty = savedProperties[0] ?? null;
+  const latestThread = account.recentThreads[0];
+  const viewerMeta = account.viewer.phone ?? account.viewer.email;
+  const profileStatus = account.viewer.isAuthenticated ? viewerMeta : accountCopy.guestMode;
+  const localeLabel = locale === "ar" ? dictionary.locale.arabic : dictionary.locale.english;
+  const guestSummary = [
+    formatMobileCopy(accountCopy.savedCount, { count: account.viewer.savedPropertyIds.length }),
+    formatMobileCopy(accountCopy.chatsCount, { count: account.viewer.threadCount }),
+  ].join(" · ");
+  const heroTitle = account.viewer.isAuthenticated
+    ? resolveIdentityLabel({
+        displayName: account.authSources.clerk?.displayName ?? account.viewer.displayName,
+        email: account.authSources.clerk?.email ?? account.viewer.email,
+        fallback: accountCopy.linkedAccount,
+      })
+    : accountCopy.guestMode;
+  const heroImageUrl = account.authSources.clerk?.imageUrl;
+  const heroSubline = account.viewer.isAuthenticated ? viewerMeta ?? accountCopy.linkedAccount : guestSummary;
+  const heroFootnote = account.viewer.isAuthenticated
+    ? [
+        formatMobileCopy(accountCopy.savedCount, { count: account.viewer.savedPropertyIds.length }),
+        formatMobileCopy(accountCopy.chatsCount, { count: account.viewer.threadCount }),
+      ].join(" · ")
+    : featuredSavedProperty?.title ?? latestThread?.title ?? localeLabel;
+  const sessionLabel = account.viewer.isAuthenticated ? settingsCopy.signOut : settingsCopy.connectAccount;
+  const verificationLabel = account.viewer.isAuthenticated ? dictionary.common.verified : accountCopy.guestMode;
 
-  async function handleThemeChange(mode: ThemeOverrideMode) {
-    setThemeMode(mode);
-    await setThemePreference(mode);
-    Appearance.setColorScheme(mode === "system" ? null : mode);
+  function openSettings() {
+    router.push("/account/settings");
   }
 
-  async function confirmResetLocalData() {
+  function confirmSessionAction() {
     Alert.alert(
-      "حذف البيانات المحلية",
-      "سيتم حذف السجل المحلي، العقارات المحفوظة، وتفضيلات هذا الجهاز فقط.",
+      account.viewer.isAuthenticated ? settingsCopy.signOutTitle : settingsCopy.connectAccountTitle,
+      account.viewer.isAuthenticated ? settingsCopy.signOutBody : settingsCopy.connectAccountBody,
       [
-        { text: "إلغاء", style: "cancel" },
+        { text: dictionary.common.cancel, style: "cancel" },
         {
-          text: "حذف",
-          style: "destructive",
+          text: account.viewer.isAuthenticated ? settingsCopy.signOut : settingsCopy.openSignIn,
+          style: account.viewer.isAuthenticated ? "destructive" : "default",
           onPress: async () => {
-            await account.resetLocalBuyerState();
-            Alert.alert("تم الحذف", "تم حذف بيانات هذا الجهاز.");
-          },
-        },
-      ],
-    );
-  }
+            if (account.viewer.isAuthenticated) {
+              const nextPath = await auth.signOutToGuest();
+              if (nextPath) router.replace(nextPath);
+              return;
+            }
 
-  async function confirmLogout() {
-    Alert.alert(
-      "تسجيل الخروج",
-      "سيعود التطبيق إلى شاشة البداية المحلية على هذا الجهاز.",
-      [
-        { text: "إلغاء", style: "cancel" },
-        {
-          text: "تسجيل الخروج",
-          style: "destructive",
-          onPress: async () => {
-            await account.resetLocalBuyerState();
-            router.replace("/welcome");
+            router.push({
+              pathname: "/auth",
+              params: {
+                returnTo: "/account",
+              },
+            });
           },
         },
       ],
@@ -102,330 +118,125 @@ export default function AccountScreen() {
         insetTop={insets.top}
         backgroundColor={theme.colors.canvas}
         borderColor={theme.colors.border}
-        title="حسابي"
-        subtitle="الهوية، السجل، والخصوصية"
+        title={navigationCopy.accountTitle}
         leading={<IconButton icon={ArrowLeft} onPress={() => router.back()} tone="panel" />}
         trailing={<View style={{ width: 44, height: 44 }} />}
       />
 
       <ScrollView
-        className="flex-1 px-5 pt-6"
+        className="flex-1 px-5 pt-5"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 36) + 32 }}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 36) + 24 }}
       >
-        <MobileSurface tone="muted" radius="hero" className="gap-5">
-          <View className="flex-row-reverse items-center gap-4">
-            <View
-              className="items-center justify-center"
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: theme.radii.card,
-                backgroundColor: theme.colors.surface,
-                borderWidth: 1,
-                borderColor: theme.colors.primaryMuted,
-              }}
-            >
-              <UserIcon size={28} color={theme.colors.primary} />
-            </View>
-
-            <View className="flex-1 items-end">
-              <AppText className="text-right text-[22px] font-cairo-black" style={{ color: theme.colors.ink }}>
-                {account.viewer.displayName}
-              </AppText>
-              <AppText className="mt-1 text-right text-[14px] font-medium" style={{ color: theme.colors.inkMuted }}>
-                {account.viewer.phone ?? account.viewer.email ?? "جلسة محلية على هذا الجهاز"}
-              </AppText>
-            </View>
-          </View>
-
-          <View className="flex-row-reverse flex-wrap" style={{ gap: 8 }}>
-            <MobilePill label={account.viewer.isAuthenticated ? "حساب مرتبط" : "وضع الضيف"} tone="primary" active />
-            <MobilePill label={`${account.viewer.threadCount} محادثة`} />
-            <MobilePill label={`${account.viewer.savedPropertyIds.length} محفوظ`} />
-          </View>
-
-          <AppText className="text-right text-[14px] leading-7 font-medium" style={{ color: theme.colors.inkSoft }}>
-            {account.viewer.isAuthenticated
-              ? "تم دمج الهوية الحية مع البيانات المحلية حتى تبقى المحادثة، العقارات المحفوظة، والتفضيلات متماسكة داخل نفس الرحلة."
-              : "لا يزال التطبيق يعمل كاملاً على هذا الجهاز حتى بدون تسجيل دخول، مع حفظ السجل والعقارات المحفوظة محلياً."}
-          </AppText>
-        </MobileSurface>
-
-        <View className="mt-6 gap-3">
-          <AppText className="mx-1 text-right text-[14px] font-cairo-bold" style={{ color: theme.colors.inkMuted }}>
-            مظهر التطبيق
-          </AppText>
-          <View
-            className="flex-row-reverse p-1"
-            style={{
-              borderRadius: theme.radii.card,
-              borderWidth: 1,
-              borderColor: theme.colors.border,
-              backgroundColor: theme.colors.surfaceMuted,
-            }}
-          >
-            <ThemeToggleButton
-              active={themeMode === "system"}
-              icon={Monitor}
-              label="تلقائي"
-              onPress={() => void handleThemeChange("system")}
-            />
-            <ThemeToggleButton
-              active={themeMode === "dark"}
-              icon={Moon}
-              label="داكن"
-              onPress={() => void handleThemeChange("dark")}
-            />
-            <ThemeToggleButton
-              active={themeMode === "light"}
-              icon={Sun}
-              label="فاتح"
-              onPress={() => void handleThemeChange("light")}
-            />
-          </View>
-        </View>
-
-        <MobileSurface className="mt-6 gap-4" radius="hero">
-          <MobileSectionHeading
-            eyebrow="التمويل الافتراضي"
-            title="افتراضاتك الحالية"
-            description="يستخدمها التطبيق كنقطة بداية في شاشة التمويل والمحادثة عند غياب بيانات أكثر دقة."
-          />
-          <View className="flex-row-reverse" style={{ gap: 12 }}>
-            <MetricPill label="دفعة أولى" value={`${account.viewer.preferences.financeDefaults.downPaymentPercent}%`} />
-            <MetricPill label="مدة" value={`${account.viewer.preferences.financeDefaults.preferredYears} سنة`} />
-            <MetricPill label="فائدة" value={`${account.viewer.preferences.financeDefaults.annualRate}%`} />
-          </View>
-          <Button label="افتح التمويل" variant="secondary" onPress={() => router.push("/finance")} />
-        </MobileSurface>
-
-        <MobileSurface className="mt-6 gap-4" radius="hero">
-          <MobileSectionHeading
-            eyebrow="العقارات المحفوظة"
-            title={savedProperties.length > 0 ? "ارجع إلى اختياراتك بسرعة" : "لا توجد عقارات محفوظة بعد"}
-            description={
-              savedProperties.length > 0
-                ? "يمكنك فتح التفاصيل أو العودة مباشرة إلى المحادثة بنفس العقار."
-                : "افتح أي عقار من التفاصيل ثم احفظه ليظهر هنا داخل حسابك."
-            }
-          />
-
-          {savedProperties.length > 0 ? (
-            <View style={{ gap: 12 }}>
-              {savedProperties.map((property) => (
-                <MobilePropertyCard
-                  key={property!.id}
-                  variant="compact"
-                  property={property!}
-                  onPress={(nextProperty) =>
-                    router.push({
-                      pathname: "/property/[id]",
-                      params: { id: nextProperty.id },
-                    })
-                  }
-                  onActionPress={(nextProperty) =>
-                    router.push({
-                      pathname: "/",
-                      params: {
-                        propertyId: nextProperty.id,
-                        ...(account.viewer.activeThreadId ? { threadId: account.viewer.activeThreadId } : {}),
-                      },
-                    })
-                  }
-                  actionLabel="تابع في المحادثة"
-                  ambientBackgroundColor={theme.colors.canvas}
+        <View className="gap-5">
+          <AccountPageIntro title={heroTitle} description={heroSubline ?? undefined} tone="muted">
+            <View className="items-center gap-3 py-4">
+              {heroImageUrl ? (
+                <Image
+                  source={{ uri: heroImageUrl }}
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 36,
+                    backgroundColor: theme.colors.surfaceMuted,
+                  }}
                 />
-              ))}
-            </View>
-          ) : null}
-        </MobileSurface>
-
-        <MobileSurface className="mt-6 gap-4" radius="hero">
-          <MobileSectionHeading
-            eyebrow="سجل المحادثات"
-            title={account.recentThreads.length > 0 ? "آخر المحادثات" : "لا توجد محادثات محلية بعد"}
-            description={
-              account.recentThreads.length > 0
-                ? "كل محادثة تعيدك إلى نفس السياق المحفوظ على هذا الجهاز."
-                : "بمجرد بدء محادثة مع المساعد سيظهر السجل هنا."
-            }
-          />
-
-          {account.recentThreads.length > 0 ? (
-            account.recentThreads.slice(0, 4).map((thread) => (
-              <Pressable
-                key={thread.id}
-                onPress={() =>
-                  router.push({
-                    pathname: "/",
-                    params: { threadId: thread.id },
-                  })
-                }
-                className="flex-row-reverse items-center gap-4 rounded-[20px] px-4 py-4 active:opacity-80"
-                style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceMuted }}
-              >
+              ) : (
                 <View
-                  className="items-center justify-center rounded-full"
-                  style={{ width: 42, height: 42, backgroundColor: theme.colors.surface }}
+                  className="items-center justify-center"
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 36,
+                    backgroundColor: theme.colors.primarySoft,
+                  }}
                 >
-                  <History size={18} color={theme.colors.inkMuted} />
+                  <UserIcon size={30} color={theme.colors.primary} />
                 </View>
-                <View className="flex-1 items-end">
-                  <AppText className="text-right text-[15px] font-cairo-bold" style={{ color: theme.colors.ink }}>
-                    {thread.title}
+              )}
+              <View className="items-center gap-1">
+                <AppText className="text-center text-[22px] font-cairo-bold" style={{ color: theme.colors.ink }}>
+                  {heroTitle}
+                </AppText>
+                {heroSubline ? (
+                  <AppText className="text-center text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
+                    {heroSubline}
                   </AppText>
-                  <AppText className="mt-1 text-right text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
-                    {thread.preview ?? "افتح المحادثة لمتابعة نفس الرحلة."}
-                  </AppText>
-                </View>
-              </Pressable>
-            ))
-          ) : (
-            <MobileSurface tone="muted" radius="card" className="items-center gap-2 py-8" shadow="none">
-              <History size={18} color={theme.colors.inkMuted} />
-              <AppText className="text-center text-[14px] font-cairo-bold" style={{ color: theme.colors.ink }}>
-                لم تبدأ أي محادثة بعد
-              </AppText>
-              <AppText className="text-center text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
-                ابدأ من المساعد أو من البحث وسيظهر السجل هنا تلقائياً.
-              </AppText>
-            </MobileSurface>
-          )}
-        </MobileSurface>
+                ) : null}
+              </View>
+              <View
+                className="px-3 py-1"
+                style={{
+                  borderRadius: 999,
+                  backgroundColor: account.viewer.isAuthenticated ? "#E8F7EE" : theme.colors.surfaceMuted,
+                }}
+              >
+                <AppText
+                  className="text-[12px] font-cairo-bold"
+                  style={{ color: account.viewer.isAuthenticated ? "#1F7A45" : theme.colors.inkMuted }}
+                >
+                  {verificationLabel}
+                </AppText>
+              </View>
+              {heroFootnote ? (
+                <AppText className="text-center text-[12px] font-medium" style={{ color: theme.colors.inkSoft }}>
+                  {heroFootnote}
+                </AppText>
+              ) : null}
+            </View>
+          </AccountPageIntro>
 
-        <View
-          className="mt-6 overflow-hidden"
-          style={{
-            borderRadius: theme.radii.card,
-            borderWidth: 1,
-            borderColor: theme.colors.border,
-            backgroundColor: theme.colors.surface,
-          }}
-        >
-          <AccountRow icon={BarChart3} label="رؤى السوق" onPress={() => router.push("/analytics")} withBorder />
-          <AccountRow icon={ShieldCheck} label="الخصوصية والبيانات" onPress={() => router.push("/legal")} withBorder />
-          <AccountRow icon={FileText} label="الشروط والاستخدام" onPress={() => router.push("/legal")} withBorder />
-          <AccountRow icon={Globe} label="لغة التطبيق - العربية" onPress={() => {}} withBorder />
-          <AccountRow
-            icon={Sparkles}
-            label="ابدأ محادثة جديدة"
-            onPress={() => router.push("/")}
-            withBorder
-          />
-          <AccountRow icon={Trash2} label="حذف البيانات المحلية" onPress={() => void confirmResetLocalData()} destructive />
-        </View>
+          <AccountSection>
+            <AccountActionList>
+              <AccountActionRow
+                icon={UserIcon}
+                label={accountCopy.profile}
+                description={profileStatus}
+                testID="account-hub-profile"
+                onPress={() => router.push("/account/profile")}
+                withBorder
+              />
+              <AccountActionRow
+                icon={Bookmark}
+                label={accountCopy.savedProperties}
+                description={featuredSavedProperty?.title ?? accountCopy.savedProperties}
+                status={String(account.viewer.savedPropertyIds.length)}
+                testID="account-hub-saved"
+                onPress={() => router.push("/account/saved")}
+                withBorder
+              />
+              <AccountActionRow
+                icon={Clock3}
+                label={accountCopy.history}
+                description={latestThread?.title ?? latestThread?.preview}
+                status={String(account.viewer.threadCount)}
+                testID="account-hub-history"
+                onPress={() => router.push("/account/history")}
+                withBorder
+              />
+              <AccountActionRow
+                icon={SlidersHorizontal}
+                label={accountCopy.settings}
+                status={localeLabel}
+                testID="account-hub-settings"
+                onPress={openSettings}
+              />
+            </AccountActionList>
+          </AccountSection>
 
-        <View
-          className="mt-6 overflow-hidden"
-          style={{
-            borderRadius: theme.radii.card,
-            borderWidth: 1,
-            borderColor: theme.colors.border,
-            backgroundColor: theme.colors.surface,
-          }}
-        >
-          <AccountRow icon={LogOut} label="تسجيل الخروج" onPress={() => void confirmLogout()} destructive />
+          <AccountSection>
+            <AccountActionList>
+              <AccountActionRow
+                icon={LogOut}
+                label={sessionLabel}
+                destructive={account.viewer.isAuthenticated}
+                testID="account-hub-session"
+                onPress={confirmSessionAction}
+              />
+            </AccountActionList>
+          </AccountSection>
         </View>
       </ScrollView>
     </View>
-  );
-}
-
-function ThemeToggleButton({
-  active,
-  icon: Icon,
-  label,
-  onPress,
-}: {
-  active: boolean;
-  icon: typeof Monitor;
-  label: string;
-  onPress: () => void;
-}) {
-  const theme = useAppTheme();
-
-  return (
-    <Pressable
-      onPress={onPress}
-      className="flex-1 flex-row-reverse items-center justify-center gap-2 py-3"
-      style={{
-        borderRadius: theme.radii.card - 4,
-        backgroundColor: active ? theme.colors.surface : "transparent",
-        ...(active
-          ? {
-              borderWidth: 1,
-              borderColor: theme.colors.border,
-            }
-          : {}),
-      }}
-    >
-      <Icon size={16} color={active ? theme.colors.primary : theme.colors.inkMuted} />
-      <AppText
-        className={`text-[14px] ${active ? "font-cairo-bold" : "font-cairo-medium"}`}
-        style={{ color: active ? theme.colors.primary : theme.colors.inkMuted }}
-      >
-        {label}
-      </AppText>
-    </Pressable>
-  );
-}
-
-function MetricPill({ label, value }: { label: string; value: string }) {
-  const theme = useAppTheme();
-  return (
-    <View
-      className="flex-1 rounded-[18px] px-3 py-3"
-      style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceMuted }}
-    >
-      <AppText className="text-right text-[11px] font-cairo-bold" style={{ color: theme.colors.inkMuted }}>
-        {label}
-      </AppText>
-      <AppText className="mt-1 text-right text-[16px] font-cairo-black" style={{ color: theme.colors.ink }}>
-        {value}
-      </AppText>
-    </View>
-  );
-}
-
-function AccountRow({
-  icon: Icon,
-  label,
-  onPress,
-  destructive,
-  withBorder,
-}: {
-  icon: typeof Bookmark;
-  label: string;
-  onPress: () => void;
-  destructive?: boolean;
-  withBorder?: boolean;
-}) {
-  const theme = useAppTheme();
-
-  return (
-    <Pressable
-      onPress={onPress}
-      className="flex-row-reverse items-center gap-4 px-5 py-4 active:opacity-60"
-      style={withBorder ? { borderBottomWidth: 1, borderBottomColor: theme.colors.border } : undefined}
-    >
-      <View
-        className="items-center justify-center"
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: theme.radii.card,
-          backgroundColor: destructive ? theme.colors.dangerSoft : theme.colors.surfaceMuted,
-        }}
-      >
-        <Icon size={20} color={destructive ? theme.colors.danger : theme.colors.inkMuted} />
-      </View>
-      <AppText
-        className="flex-1 text-right text-[15px] font-cairo-bold"
-        style={{ color: destructive ? theme.colors.danger : theme.colors.ink }}
-      >
-        {label}
-      </AppText>
-    </Pressable>
   );
 }

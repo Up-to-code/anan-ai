@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyPropertySelectionPromptToDraft,
   buildPropertySelectionTopicPrompt,
+  buildPropertySelectionTopicPromptForLocale,
   buildPropertySelectionPrompt,
 } from "@/features/BuyerAssistantHomeScreen/propertyPrompt";
 import type { MobileProperty } from "@/types/mobile";
@@ -46,13 +47,13 @@ describe("propertyPrompt", () => {
     );
   });
 
-  it("prefixes comparison context once when several properties are selected", () => {
+  it("keeps multi-property drafts unchanged until the user explicitly chooses compare", () => {
     expect(
       applyPropertySelectionPromptToDraft(
         "ما الأفضل للاستثمار؟",
         [createProperty("property-1", "Palm Residence"), createProperty("property-2", "Garden Villa")],
       ),
-    ).toBe("بالنسبة إلى مقارنة بين Palm Residence وGarden Villa: ما الأفضل للاستثمار؟");
+    ).toBe("ما الأفضل للاستثمار؟");
   });
 
   it("builds topic prompts for fixed-card content shortcuts", () => {
@@ -63,5 +64,15 @@ describe("propertyPrompt", () => {
         "comparison",
       ),
     ).toBe("أريد مقارنة بين Palm Residence وGarden Villa من حيث السعر والمساحة والموقع وخيارات التمويل");
+  });
+
+  it("builds English prompts when the mobile locale is en", () => {
+    expect(buildPropertySelectionPrompt([createProperty()], "en")).toBe("I want more details about Palm Residence");
+    expect(applyPropertySelectionPromptToDraft("Calculate the monthly installment", [createProperty()], "en")).toBe(
+      "About Palm Residence: Calculate the monthly installment",
+    );
+    expect(buildPropertySelectionTopicPromptForLocale([createProperty()], "finance", "en")).toBe(
+      "Calculate financing for Palm Residence",
+    );
   });
 });

@@ -69,3 +69,42 @@ export function isClearlyExpiredJwtToken(
   return (expiresAtSeconds * 1000) <= (nowMs - TOKEN_EXPIRY_SKEW_MS);
 }
 
+/**
+ * WHY:   Clerk-backed session resolution should distinguish a missing JWT template from ordinary signed-out state.
+ * WHAT:  Returns true when the error shape matches Clerk's 404 response for an unknown JWT template.
+ * HOW:   Checks the HTTP status plus common Clerk error message payload fields without depending on Clerk classes directly.
+ */
+export function isMissingClerkJwtTemplateError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  if (!("status" in error) || error.status !== 404) {
+    return false;
+  }
+
+  const message = "message" in error && typeof error.message === "string" ? error.message : "";
+  const longMessage =
+    "longMessage" in error && typeof error.longMessage === "string" ? error.longMessage : "";
+  const combinedMessage = `${message} ${longMessage}`.toLowerCase();
+
+  if (combinedMessage.includes("not found")) {
+    return true;
+  }
+
+  if (!("errors" in error) || !Array.isArray(error.errors)) {
+    return false;
+  }
+
+  return error.errors.some((entry) => {
+    if (!entry || typeof entry !== "object") {
+      return false;
+    }
+
+    const entryCode = "code" in entry && typeof entry.code === "string" ? entry.code.toLowerCase() : "";
+    const entryMessage =
+      "message" in entry && typeof entry.message === "string" ? entry.message.toLowerCase() : "";
+
+    return entryCode.includes("not_found") || entryMessage.includes("not found");
+  });
+}

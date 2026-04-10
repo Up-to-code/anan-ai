@@ -1,9 +1,11 @@
+import { memo } from "react"
+
 /**
  * WHY:   Destructive workspace actions need one explicit target summary before the user confirms execution.
  * WHAT:  Renders the selected target, a short description, and key identifying lines.
  * HOW:   Keeps the content structured and compact so confirmation flows stay clear and hard to misread.
  */
-export default function AgTargetSummary({
+const AgTargetSummaryComponent = function AgTargetSummary({
   title,
   description,
   lines,
@@ -29,3 +31,5 @@ export default function AgTargetSummary({
     </section>
   );
 }
+
+export default memo(AgTargetSummaryComponent)

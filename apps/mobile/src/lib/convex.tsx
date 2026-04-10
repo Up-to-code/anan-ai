@@ -1,18 +1,21 @@
 import { ReactNode } from "react";
-import { ConvexProvider as ConvexReactProvider, ConvexReactClient } from "convex/react";
+import { useAuth } from "@clerk/expo";
+import { ConvexReactClient } from "convex/react";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { getMobileBackendReadiness } from "@/lib/mobileEnv";
 
-const convexUrl = process.env.EXPO_PUBLIC_CONVEX_URL;
+const convexUrl = getMobileBackendReadiness().convexUrl;
 const convexClient = convexUrl ? new ConvexReactClient(convexUrl) : null;
 
 /**
- * WHY:   The mobile app should consume live Convex data when a deployment URL is configured.
- * WHAT:  Wraps children in a Convex provider when the environment is ready.
- * HOW:   Falls back to a pass-through wrapper so local UI work still functions without backend setup.
+ * WHY:   Convex remains the only runtime data source for the shipped mobile buyer app.
+ * WHAT:  Wraps children in the live Convex provider when the backend config is valid.
+ * HOW:   Uses the validated mobile readiness helper and otherwise stays pass-through so the blocking shell can render.
  */
 export function ConvexProvider({ children }: { children: ReactNode }) {
   if (!convexClient) {
     return children;
   }
 
-  return <ConvexReactProvider client={convexClient}>{children}</ConvexReactProvider>;
+  return <ConvexProviderWithClerk client={convexClient} useAuth={useAuth}>{children}</ConvexProviderWithClerk>;
 }

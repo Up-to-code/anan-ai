@@ -35,9 +35,9 @@ export function buildUserKey(value: {
 
 export function resolveVerificationStatus(
   latestStatus?: string | null,
-  roleStatus?: string | null
+  roleApprovalStatus?: string | null
 ) {
-  return latestStatus ?? roleStatus ?? "none";
+  return latestStatus ?? roleApprovalStatus ?? "none";
 }
 
 function buildBrokerProjection(

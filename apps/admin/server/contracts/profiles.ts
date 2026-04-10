@@ -10,10 +10,10 @@ export type ProfileSummary = {
   name?: string;
   username?: string;
   role?: string;
-  roleStatus?: string;
+  roleApprovalStatus?: string;
   requestedRole?: string;
   brokerId?: string;
-  REDId?: string;
+  developerId?: string;
   isActive?: boolean;
   authProvider: {
     id: "google";

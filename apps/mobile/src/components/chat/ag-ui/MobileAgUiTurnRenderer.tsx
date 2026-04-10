@@ -4,6 +4,8 @@ import { InsightCard } from "@/components/chat/InsightCard";
 import { PropertyRecommendationRow } from "@/components/chat/PropertyRecommendationRow";
 import { BankOfferCard } from "@/components/chat/BankOfferCard";
 import { MobilePill, MobileSurface } from "@/components/ui/MobileChrome";
+import { cn } from "@/lib/cn";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import { useAppTheme } from "@/lib/mobileTheme";
 import type { MobileAgUiTurn, MobileProperty } from "@/types/mobile";
 
@@ -27,6 +29,7 @@ export function MobileAgUiTurnRenderer({
   onFollowupPromptPress: (prompt: string) => void;
   ambientBackgroundColor?: string;
 }) {
+  const { dictionary, locale, isRtl } = useMobileLocale();
   return (
     <View className="mt-6 w-full gap-4">
       {turn.cards.map((card) => {
@@ -39,7 +42,7 @@ export function MobileAgUiTurnRenderer({
                 onPropertyPress={onPropertyPress}
                 onOpenProperty={onOpenProperty}
                 onOpenGallery={onOpenGallery}
-                onShowMore={() => onFollowupPromptPress("اعرض نتائج مشابهة")}
+                onShowMore={() => onFollowupPromptPress(dictionary.assistant.showMoreResults)}
                 ambientBackgroundColor={ambientBackgroundColor}
                 cardVariant="generated"
               />
@@ -49,17 +52,17 @@ export function MobileAgUiTurnRenderer({
               <BankOfferCard 
                 key={card.id} 
                 offer={card.props as any}
-                onPress={() => onFollowupPromptPress(`اطلب تمويل من ${card.props.bankName}`)} 
+                onPress={() => onFollowupPromptPress(locale === "en" ? `Request financing from ${card.props.bankName}` : `اطلب تمويل من ${card.props.bankName}`)} 
               />
             );
           case "followup_prompt":
             return (
               <FollowupPromptCard
                 key={card.id}
-                title={String(card.props.title ?? "الخطوة التالية")}
-                summary={String(card.props.summary ?? "أكمل من نفس المحادثة وسأتولى الخطوة التالية.")}
-                actionLabel={String(card.props.actionLabel ?? "اطلب مستشاراً")}
-                onPress={() => onFollowupPromptPress(String(card.props.actionLabel ?? "اطلب مستشاراً"))}
+                title={String(card.props.title ?? dictionary.common.continue)}
+                summary={String(card.props.summary ?? dictionary.assistant.localHistory)}
+                actionLabel={String(card.props.actionLabel ?? dictionary.assistant.requestAdvisor)}
+                onPress={() => onFollowupPromptPress(String(card.props.actionLabel ?? dictionary.assistant.requestAdvisor))}
               />
             );
           case "comparison_table":
@@ -95,6 +98,7 @@ function FollowupPromptCard({
   onPress: () => void;
 }) {
   const theme = useAppTheme();
+  const { isRtl } = useMobileLocale();
 
   return (
     <MobileSurface tone="muted" radius="card" className="overflow-hidden px-5 py-5">
@@ -102,14 +106,14 @@ function FollowupPromptCard({
         className="gap-2 pb-5"
         style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
       >
-        <AppText responsiveRole="title" className="font-cairo-bold text-right" style={{ color: theme.colors.ink }}>
+        <AppText responsiveRole="title" className={cn("font-cairo-bold", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.ink }}>
           {title}
         </AppText>
-        <AppText responsiveRole="body" className="font-medium text-right" style={{ color: theme.colors.inkMuted }}>
+        <AppText responsiveRole="body" className={cn("font-medium", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.inkMuted }}>
           {summary}
         </AppText>
       </View>
-      <View className="pt-5 flex-row-reverse">
+      <View className={cn("pt-5", isRtl ? "flex-row-reverse" : "flex-row")}>
         <MobilePill label={actionLabel} tone="primary" active onPress={onPress} />
       </View>
     </MobileSurface>

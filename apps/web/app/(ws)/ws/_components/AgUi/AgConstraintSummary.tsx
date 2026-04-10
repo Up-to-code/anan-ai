@@ -1,9 +1,11 @@
+import { memo } from "react"
+
 /**
  * WHY:   Constraint summaries should read like natural confirmation, not a tag cloud.
  * WHAT:  Renders understood constraints as a readable sentence instead of a grid of tags.
  * HOW:   Joins constraints with commas and presents them as conversational text with a subtle accent.
  */
-export default function AgConstraintSummary({
+const AgConstraintSummaryComponent = function AgConstraintSummary({
   constraints,
 }: {
   constraints: string[];
@@ -19,3 +21,5 @@ export default function AgConstraintSummary({
     </div>
   );
 }
+
+export default memo(AgConstraintSummaryComponent)

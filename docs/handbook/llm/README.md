@@ -62,4 +62,5 @@ Rules for any LLM/human making changes:
 - `docs/handbook/llm/anan-general-platform-brief.md` — general-audience company explainer for events, customers, partners, and broad introductions
 - `docs/handbook/llm/anan-live-event-pitch.md` — live-speaking and event-ready Anan pitch for stage intros, demos, and short public presentations
 - `docs/handbook/llm/anan-investor-pitch-brief.md` — research-backed investor narrative brief combining codebase truth with YC-style pitch-writing rules
+- `docs/handbook/llm/anan-investor-product-deep-dive.md` — investor-facing product explainer focused on what Anan is, how the buyer and workspace sides connect, and why it is bigger than a point solution
 - `docs/handbook/llm/anan-investor-pitch-source.json` — machine-readable investor deck source with slide arc, comparison logic, why-now framing, and structured blanks for missing startup facts

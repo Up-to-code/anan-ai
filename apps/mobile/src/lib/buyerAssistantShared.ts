@@ -1,4 +1,6 @@
-export type BuyerAssistantLocale = "ar" | "en" | "fr";
+import type { MobileLocale } from "@/lib/locale";
+
+export type BuyerAssistantLocale = MobileLocale;
 
 export type BuyerThreadKind = "welcome" | "live" | "demo";
 
@@ -219,6 +221,9 @@ export type BuyerAssistantMessage = {
   suggestedPrompts?: string[];
   activePropertyId?: string;
   requiresAuthForHandoff?: boolean;
+  comparisonArtifactId?: string;
+  comparisonPropertyIds?: string[];
+  selectionSource?: "ui_selected" | "history_resolved" | "text_resolved";
   uiTurn?: BuyerAgUiTurn;
 };
 
@@ -257,31 +262,6 @@ export function buildBuyerChatSuggestions(locale: BuyerAssistantLocale, variant:
 
     prompts.forEach((item, index) => {
       suggestions.push({ id: `ar-${variant}-${index + 1}`, prompt: item.prompt, label: item.label });
-    });
-
-    return suggestions;
-  }
-
-  if (locale === "fr") {
-    const prompts =
-      variant === "discovery"
-        ? [
-            { prompt: "Montre-moi des options à Riyad", label: "Selon le quartier, le budget et le type de bien" },
-            { prompt: "Je cherche un appartement 3 chambres", label: "Avec services et commodités à proximité" },
-            { prompt: "Compare deux biens similaires", label: "Prix, surface, rendement et plan de paiement" },
-            { prompt: "Quels sont les meilleurs investissements ?", label: "Pour louer ou revendre dans ce marché" },
-            { prompt: "Présente-moi des promoteurs fiables", label: "Basé sur leur réputation et leurs livraisons" },
-          ]
-        : [
-            { prompt: "Montre-moi les meilleures options", label: "Selon mon budget et la bonne zone" },
-            { prompt: "Calcule un financement pour 1,2M", label: "Avec acompte et mensualité estimée" },
-            { prompt: "Quel est le rendement attendu ?", label: "Pour les unités neuves et l'investissement" },
-            { prompt: "Vérifie ce promoteur", label: "Réputation, livraisons et projets passés" },
-            { prompt: "Je veux parler à un conseiller", label: "Pour la suite, la réservation et l'achat" },
-          ];
-
-    prompts.forEach((item, index) => {
-      suggestions.push({ id: `fr-${variant}-${index + 1}`, prompt: item.prompt, label: item.label });
     });
 
     return suggestions;

@@ -1,5 +1,5 @@
-import WelcomeScreen from "@/features/WelcomeScreen/index";
+import { Redirect } from "expo-router";
 
 export default function WelcomeRoute() {
-  return <WelcomeScreen />;
+  return <Redirect href="/?newThread=1" />;
 }

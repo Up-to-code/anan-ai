@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { OrganizationSummary } from "@/server/contracts/organizations";
@@ -11,7 +12,7 @@ import {
 /**
  * Simplified member card — clean row layout with avatar, name, email, role, and optional footer.
  */
-export default function OrganizationMemberCard({
+const OrganizationMemberCardComponent = function OrganizationMemberCard({
   member,
   organizationType,
   footer,
@@ -93,3 +94,5 @@ export default function OrganizationMemberCard({
     </article>
   );
 }
+
+export default memo(OrganizationMemberCardComponent);

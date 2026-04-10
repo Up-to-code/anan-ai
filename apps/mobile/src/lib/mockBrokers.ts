@@ -12,7 +12,7 @@ const MOCK_BROKERS: MobileBroker[] = [
       { id: "diamond", label: "معتمد", tone: "sky" },
       { id: "trubroker", label: "TruBroker", tone: "ink" },
     ],
-    languages: ["يتحدث الإنجليزية"],
+    languages: ["en"],
     phone: "+201001112233",
     whatsapp: "+201001112233",
     isVerified: true,
@@ -33,7 +33,7 @@ const MOCK_BROKERS: MobileBroker[] = [
       { id: "diamond", label: "معتمد", tone: "sky" },
       { id: "trubroker", label: "TruBroker", tone: "ink" },
     ],
-    languages: ["يتحدث الإنجليزية", "عربي"],
+    languages: ["en", "ar"],
     phone: "+201022233344",
     whatsapp: "+201022233344",
     isVerified: true,
@@ -54,7 +54,7 @@ const MOCK_BROKERS: MobileBroker[] = [
       { id: "diamond", label: "معتمد", tone: "sky" },
       { id: "trubroker", label: "TruBroker", tone: "ink" },
     ],
-    languages: ["يتحدث الإنجليزية"],
+    languages: ["en"],
     phone: "+201033344455",
     whatsapp: "+201033344455",
     isVerified: true,
@@ -88,7 +88,7 @@ export function filterMockBrokers(args: {
       normalizedQuery.length === 0 ||
       broker.name.toLowerCase().includes(normalizedQuery) ||
       broker.company.toLowerCase().includes(normalizedQuery);
-    const matchesLocation = args.location === "كل المناطق" || broker.location === args.location;
+    const matchesLocation = args.location === "all" || args.location === "كل المناطق" || broker.location === args.location;
     const matchesVerification = !args.verifiedOnly || broker.isVerified;
 
     return matchesQuery && matchesLocation && matchesVerification;

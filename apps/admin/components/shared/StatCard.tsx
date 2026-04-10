@@ -28,31 +28,31 @@ export default function StatCard({ label, value, hint, icon: Icon, delta, classN
   return (
     <div
       className={cn(
-        "rounded-[32px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_97%,transparent)] p-7 shadow-[0_16px_42px_-30px_rgba(15,23,42,0.22)] transition-all duration-200 hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_20%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--workspace-panel)_100%,transparent)]",
+        "rounded-lg border border-[color:color-mix(in_srgb,var(--workspace-border)_94%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_98%,transparent)] p-5 transition-all duration-200 hover:border-[color:var(--workspace-highlight-border)] hover:bg-[color:color-mix(in_srgb,var(--workspace-panel)_100%,transparent)]",
         className,
       )}
     >
-      <div className="flex items-start justify-between gap-6">
-        <div className="space-y-2 text-right">
-          <div className="text-[11px] font-black uppercase leading-none tracking-[0.2em] text-[var(--workspace-muted)]">
+      <div className="flex items-start justify-between gap-6 border-b border-[color:color-mix(in_srgb,var(--workspace-border)_84%,transparent)] pb-5">
+        <div className="space-y-3 text-right">
+          <div className="text-[11px] font-black uppercase leading-none tracking-[0.22em] text-[var(--workspace-muted)]">
             {label}
           </div>
-          <div className="text-4xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">{value}</div>
+          <div className="text-4xl font-black tracking-[-0.05em] text-[var(--workspace-bubble-other-foreground)]">{value}</div>
         </div>
         {Icon ? (
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[20px] border border-[color:color-mix(in_srgb,var(--workspace-border)_78%,transparent)] bg-[var(--workspace-elevated)] text-[var(--workspace-highlight)]">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-[color:color-mix(in_srgb,var(--workspace-border)_88%,transparent)] bg-[var(--workspace-panel-strong)] text-[var(--workspace-highlight)]">
             <Icon className="h-6 w-6" />
           </div>
         ) : null}
       </div>
-      
-      <div className="mt-6 flex items-center justify-between border-t border-[color:color-mix(in_srgb,var(--workspace-border)_68%,transparent)] pt-5">
+
+      <div className="mt-4 flex items-center justify-between gap-4">
         {deltaLabel ? (
           <div className={cn(
-            "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-black tracking-wide", 
+            "inline-flex items-center rounded-sm border px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em]",
             (numericDelta ?? 0) >= 0 
-              ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400" 
-              : "bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400"
+              ? "border-emerald-500/30 bg-emerald-500/8 text-emerald-600 dark:text-emerald-400"
+              : "border-rose-500/30 bg-rose-500/8 text-rose-600 dark:text-rose-400"
           )}>
             {deltaLabel} • {deltaLabel.startsWith("+") ? "زيادة" : "نقصان"}
           </div>

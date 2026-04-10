@@ -1,8 +1,8 @@
 import { ConvexError } from "convex/values";
-import { getAuthSessionId, getAuthUserId } from "@convex-dev/auth/server";
 import type { Doc } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
 import { getProfileByAuthUserId, getProfileByEmail } from "./profileLookup";
+import { getAuthSessionId, getAuthUserId } from "./authIdentity";
 
 type Ctx = QueryCtx | MutationCtx;
 type Identity = Awaited<ReturnType<Ctx["auth"]["getUserIdentity"]>>;

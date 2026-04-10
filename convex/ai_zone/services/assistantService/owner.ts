@@ -30,11 +30,11 @@ export async function resolveAssistantOwner(ctx: ReadCtx): Promise<AssistantOwne
       ownerBrokerId: profile.brokerId,
     };
   }
-  if (profile?.REDId) {
+  if ((profile as any)?.developerId) {
     return {
       userId: identity.authUserId,
       ownerType: "RED",
-      ownerREDId: profile.REDId,
+      ownerREDId: (profile as any).developerId,
     };
   }
   return { userId: identity.authUserId, ownerType: "user" };
@@ -52,4 +52,3 @@ export async function resolveAssistantOwnerSafe(
     return null;
   }
 }
-

@@ -12,7 +12,7 @@ type OfferPartyArgs = {
 async function findWorkspaceProfileByParty(ctx: MutationCtx, args: OfferPartyArgs) {
   return getProfileByOrganizationTarget(ctx, {
     brokerId: args.brokerId,
-    REDId: args.redId,
+    developerId: args.redId,
   });
 }
 

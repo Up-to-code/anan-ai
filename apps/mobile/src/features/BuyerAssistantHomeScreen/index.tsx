@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { FlashListRef } from "@shopify/flash-list";
@@ -13,55 +13,77 @@ import { ConversationComposer } from "@/features/BuyerAssistantHomeScreen/Conver
 import { ConversationTimeline } from "@/features/BuyerAssistantHomeScreen/ConversationTimeline";
 import {
   buildPropertySelectionPrompt,
-  buildPropertySelectionTopicPrompt,
+  buildPropertySelectionTopicPromptForLocale,
 } from "@/features/BuyerAssistantHomeScreen/propertyPrompt";
 import { usePropertyAssistant } from "@/hooks/usePropertyAssistant";
 import { usePropertyFeed } from "@/hooks/usePropertyFeed";
-import { buildBuyerChatSuggestions, type BuyerChatSuggestion } from "@/lib/buyerAssistantShared";
+import { cn } from "@/lib/cn";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import { useMobileLayout } from "@/lib/mobileLayout";
-import { buildAssistantSearchContext, buildSearchRouteParams, filterPropertiesForSearch } from "@/lib/mobileSearch";
-import { getMobileShadow, useAppTheme } from "@/lib/mobileTheme";
+import { buildAssistantSearchContext, buildSearchRouteParams } from "@/lib/mobileSearch";
+import { useAppTheme } from "@/lib/mobileTheme";
 import type { MobileConversationMessage, MobileProperty, MobileSearchContext, MobileThreadSummary } from "@/types/mobile";
 
 const MAX_COMPARE_PROPERTIES = 3;
+
+function useStableEvent<T extends (...args: never[]) => void>(handler: T) {
+  const handlerRef = useRef(handler);
+  handlerRef.current = handler;
+
+  return useCallback(((...args: Parameters<T>) => handlerRef.current(...args)) as T, []);
+}
 
 export default function BuyerAssistantHomeScreen() {
   const insets = useSafeAreaInsets();
   const layout = useMobileLayout();
   const theme = useAppTheme();
+  const { locale, dictionary, isRtl } = useMobileLocale();
   const assistant = usePropertyAssistant();
   const feed = usePropertyFeed();
   const router = useRouter();
-  const params = useLocalSearchParams<{ propertyId?: string; threadId?: string }>();
+  const params = useLocalSearchParams<{ newThread?: string; propertyId?: string; threadId?: string }>();
   const listRef = useRef<FlashListRef<MobileConversationMessage> | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [isComparePicking, setIsComparePicking] = useState(false);
   const appliedRoutePropertyId = useRef<string | null>(null);
   const appliedThreadId = useRef<string | null>(null);
-  const suggestions = useMemo(() => buildBuyerChatSuggestions("ar", "default"), []);
+  const appliedNewThreadToken = useRef<string | null>(null);
   const assistantSearchContext = useMemo(
     () =>
       buildAssistantSearchContext({
         activeProperty: assistant.activeProperty,
         lastUserMessage: assistant.latestUserMessage,
         threadId: assistant.activeThreadId,
+        locale,
       }),
-    [assistant.activeProperty, assistant.activeThreadId, assistant.latestUserMessage],
+    [assistant.activeProperty, assistant.activeThreadId, assistant.latestUserMessage, locale],
   );
   const composerBottomInset = keyboardVisible ? 10 : Math.max(insets.bottom, 12);
-  
+  const scrollTimelineToEnd = useStableEvent((animated: boolean) => {
+    listRef.current?.scrollToEnd({ animated });
+  });
+  const handleCreateNewThread = useStableEvent(() => {
+    assistant.createNewThread();
+  });
+  const handleSetPropertyContext = useStableEvent((property: MobileProperty) => {
+    assistant.setPropertyContext(property);
+  });
+  const handleOpenHistoryThread = useStableEvent((threadId: string) => {
+    void assistant.openHistoryThread(threadId);
+  });
+
   useEffect(() => {
-    const timer = setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
+    const timer = setTimeout(() => scrollTimelineToEnd(true), 50);
     return () => clearTimeout(timer);
-  }, [assistant.messages.length]);
+  }, [assistant.messages.length, scrollTimelineToEnd]);
 
   useEffect(() => {
     if (keyboardVisible) {
-      const timer = setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 120);
+      const timer = setTimeout(() => scrollTimelineToEnd(true), 120);
       return () => clearTimeout(timer);
     }
-  }, [keyboardVisible]);
+  }, [keyboardVisible, scrollTimelineToEnd]);
 
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -84,6 +106,20 @@ export default function BuyerAssistantHomeScreen() {
 
   useEffect(() => {
     if (!assistant.isHydrated) return;
+    if (!params.newThread) {
+      appliedNewThreadToken.current = null;
+      return;
+    }
+    if (appliedNewThreadToken.current === params.newThread) return;
+
+    appliedNewThreadToken.current = params.newThread;
+    setIsComparePicking(false);
+    handleCreateNewThread();
+    router.replace("/");
+  }, [assistant.isHydrated, handleCreateNewThread, params.newThread, router]);
+
+  useEffect(() => {
+    if (!assistant.isHydrated) return;
     if (!params.propertyId) {
       appliedRoutePropertyId.current = null;
       return;
@@ -93,8 +129,9 @@ export default function BuyerAssistantHomeScreen() {
     if (!property) return;
 
     appliedRoutePropertyId.current = property.id;
-    void assistant.askAboutProperty(property);
-  }, [assistant, assistant.isHydrated, feed, params.propertyId]);
+    setIsComparePicking(false);
+    handleSetPropertyContext(property);
+  }, [assistant.isHydrated, feed, handleSetPropertyContext, params.propertyId]);
 
   useEffect(() => {
     if (!assistant.isHydrated) return;
@@ -104,8 +141,9 @@ export default function BuyerAssistantHomeScreen() {
     }
     if (appliedThreadId.current === params.threadId) return;
     appliedThreadId.current = params.threadId;
-    void assistant.openHistoryThread(params.threadId);
-  }, [assistant, assistant.isHydrated, params.threadId]);
+    setIsComparePicking(false);
+    handleOpenHistoryThread(params.threadId);
+  }, [assistant.isHydrated, handleOpenHistoryThread, params.threadId]);
 
   function openPropertyDetail(property: MobileProperty) {
     router.push({
@@ -130,28 +168,7 @@ export default function BuyerAssistantHomeScreen() {
 
   function openAssistantSearchInChat() {
     if (!assistantSearchContext) return;
-    const filtered = filterPropertiesForSearch(feed.properties, {
-      query: assistantSearchContext.query ?? "",
-      selectedArea: assistantSearchContext.area ?? "الكل",
-      selectedOwnerType: assistantSearchContext.ownerType ?? "الكل",
-      allFilterLabel: "الكل",
-    }).filter((property) => property.id !== assistantSearchContext.sourcePropertyId);
-
-    const nextResults = filtered.slice(0, 6);
-    if (nextResults.length === 0) {
-      assistant.showSearchResults({
-        searchContext: assistantSearchContext,
-        results: assistantSearchContext.sourcePropertyId
-          ? feed.properties.filter((property) => property.id !== assistantSearchContext.sourcePropertyId).slice(0, 6)
-          : feed.properties.slice(0, 6),
-      });
-      return;
-    }
-
-    assistant.showSearchResults({
-      searchContext: assistantSearchContext,
-      results: nextResults,
-    });
+    openSearchResultsScreen(assistantSearchContext);
   }
 
   function openSearchResultsScreen(searchContext: MobileSearchContext) {
@@ -162,13 +179,13 @@ export default function BuyerAssistantHomeScreen() {
   }
 
   function applyPropertyPromptForProperty(property: MobileProperty) {
-    const prompt = buildPropertySelectionTopicPrompt([property], "details");
+    const prompt = buildPropertySelectionTopicPromptForLocale([property], "details", locale);
     if (!prompt) return;
     assistant.setDraft(prompt);
   }
 
   function applyComparePrompt() {
-    const prompt = buildPropertySelectionPrompt(assistant.selectedProperties);
+    const prompt = buildPropertySelectionPrompt(assistant.selectedProperties, locale);
     if (!prompt) return;
     assistant.setDraft(prompt);
     setIsComparePicking(false);
@@ -181,17 +198,27 @@ export default function BuyerAssistantHomeScreen() {
     }
   }
 
+  function submitDraft(nextValue: string) {
+    setIsComparePicking(false);
+    void assistant.submit(nextValue);
+  }
+
+  function submitSuggestedPrompt(prompt: string) {
+    setIsComparePicking(false);
+    if (prompt === dictionary.assistant.requestAdvisor || prompt.toLowerCase().includes("advisor")) {
+      void assistant.requestAdvisor();
+      return;
+    }
+    if (prompt === dictionary.assistant.showMoreResults || prompt.toLowerCase().includes("similar results")) {
+      openAssistantSearchInChat();
+      return;
+    }
+    void assistant.submit(prompt);
+  }
+
   const hasMessages = assistant.messages.length > 0;
   const isLandingMode = assistant.activeThreadKind === "welcome" && !hasMessages;
   const shellBackgroundColor = isLandingMode ? theme.colors.canvas : theme.colors.canvasElevated;
-  const latestSuggestions =
-    assistant.messages
-      .at(-1)
-      ?.suggestedPrompts?.map((prompt, index) => ({
-        id: `${index}-${prompt}`,
-        prompt,
-        label: undefined,
-      })) ?? suggestions;
 
   return (
     <View className="flex-1" style={{ backgroundColor: shellBackgroundColor }}>
@@ -205,7 +232,7 @@ export default function BuyerAssistantHomeScreen() {
             onPress={() => setIsHistoryOpen(true)}
             tone="panel"
             size="sm"
-            accessibilityLabel="سجل المحادثات"
+            accessibilityLabel={dictionary.assistant.history}
           />
         }
         trailing={
@@ -214,12 +241,12 @@ export default function BuyerAssistantHomeScreen() {
             onPress={() => router.push("/account")}
             tone="panel"
             size="sm"
-            accessibilityLabel="الحساب"
+            accessibilityLabel={dictionary.common.account}
           />
         }
         centerSlot={
           <View
-            className="flex-row-reverse items-center gap-2"
+            className={cn("items-center gap-2", isRtl ? "flex-row-reverse" : "flex-row")}
           >
             <AnanMark size={16} />
             <AppText
@@ -227,7 +254,7 @@ export default function BuyerAssistantHomeScreen() {
               className="font-cairo-bold"
               style={{ color: theme.colors.ink, fontSize: 16 }}
             >
-              مساعد عنان
+              {dictionary.assistant.title}
             </AppText>
           </View>
         }
@@ -256,28 +283,17 @@ export default function BuyerAssistantHomeScreen() {
               listRef={listRef}
               messages={assistant.messages}
               isTyping={assistant.isSubmitting}
-              onPropertyPress={(property) => void assistant.askAboutProperty(property)}
+              onPropertyPress={(property) => assistant.setPropertyContext(property)}
               onAddPropertyToSelection={addPropertyToSelection}
               onOpenProperty={openPropertyDetail}
               onOpenGallery={openPropertyGallery}
               bottomPadding={layout.sectionGap}
-              showLatestSuggestedPrompts={false}
               onShowMoreSearchResults={openSearchResultsScreen}
               ambientBackgroundColor={shellBackgroundColor}
               selectedPropertyIds={assistant.selectedProperties.map((property) => property.id)}
               comparePicking={isComparePicking}
               maxCompareProperties={MAX_COMPARE_PROPERTIES}
-              onSuggestedPromptPress={(prompt) => {
-                if (prompt.includes("مستشار")) {
-                  void assistant.requestAdvisor();
-                  return;
-                }
-                if (prompt.includes("نتائج مشابهة")) {
-                  openAssistantSearchInChat();
-                  return;
-                }
-                void assistant.submit(prompt);
-              }}
+              onSuggestedPromptPress={submitSuggestedPrompt}
             />
           )}
         </View>
@@ -294,20 +310,15 @@ export default function BuyerAssistantHomeScreen() {
         >
           {assistant.showAuthCallout ? (
             <AuthGateNotice
-              onContinue={() => void assistant.syncTranscriptToAccount()}
+              onContinue={() => assistant.setShowAuthCallout(false)}
               onRequestAdvisor={() => void assistant.requestAdvisor()}
             />
           ) : null}
 
-          <ExamplePromptFeed
-            prompts={latestSuggestions}
-            onSelect={(prompt) => void assistant.submit(prompt)}
-          />
-
           <ConversationComposer
             value={assistant.draft}
             onChange={assistant.setDraft}
-            onSend={() => void assistant.submit()}
+            onSend={submitDraft}
             onSubmitVoiceRecording={(fileUri) => assistant.submitVoiceRecording(fileUri)}
             selectedProperties={assistant.selectedProperties}
             comparePicking={isComparePicking}
@@ -327,10 +338,12 @@ export default function BuyerAssistantHomeScreen() {
         recentThreads={assistant.recentThreads}
         onClose={() => setIsHistoryOpen(false)}
         onReset={() => {
+          setIsComparePicking(false);
           assistant.createNewThread();
           setIsHistoryOpen(false);
         }}
         onSelectThread={(thread) => {
+          setIsComparePicking(false);
           setIsHistoryOpen(false);
           void assistant.openHistoryThread(thread.id);
         }}
@@ -343,6 +356,7 @@ function WelcomeState({
 }: {}) {
   const layout = useMobileLayout();
   const theme = useAppTheme();
+  const { dictionary } = useMobileLocale();
 
   return (
     <View
@@ -360,73 +374,12 @@ function WelcomeState({
           className="text-center font-cairo-bold text-[22px]"
           style={{ color: theme.colors.ink }}
         >
-          كيف أقدر أساعدك اليوم؟
+          {dictionary.auth.title}
         </AppText>
       </View>
 
       <View className="px-6">
       </View>
-    </View>
-  );
-}
-
-function ExamplePromptFeed({
-  prompts,
-  onSelect,
-}: {
-  prompts: BuyerChatSuggestion[];
-  onSelect: (prompt: string) => void;
-}) {
-  const layout = useMobileLayout();
-  const theme = useAppTheme();
-
-  if (prompts.length === 0) return null;
-
-  return (
-    <View
-      className="mb-3"
-    >
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 2 }}
-      >
-        <View className="flex-row-reverse gap-2.5">
-          {prompts.map((prompt) => (
-            <Pressable
-              key={prompt.id}
-              onPress={() => onSelect(prompt.prompt)}
-              className="justify-center px-4 py-3.5"
-              style={({ pressed }) => ({
-                width: Math.min(Math.max(layout.width * 0.5, 168), 208),
-                minHeight: 70,
-                borderRadius: 18,
-                backgroundColor: theme.colors.surface,
-                borderWidth: 1,
-                borderColor: theme.colors.border,
-                transform: [{ scale: pressed ? 0.97 : 1 }],
-              })}
-            >
-              <AppText
-                className="text-right font-cairo-bold text-[13px] leading-6"
-                style={{ color: theme.colors.ink }}
-                numberOfLines={2}
-              >
-                {prompt.prompt}
-              </AppText>
-              {prompt.label ? (
-                <AppText
-                  className="mt-1 text-right text-[10.5px] leading-5"
-                  style={{ color: theme.colors.inkMuted }}
-                  numberOfLines={2}
-                >
-                  {prompt.label}
-                </AppText>
-              ) : null}
-            </Pressable>
-          ))}
-        </View>
-      </ScrollView>
     </View>
   );
 }
@@ -439,21 +392,22 @@ function AuthGateNotice({
   onRequestAdvisor: () => void;
 }) {
   const theme = useAppTheme();
+  const { dictionary, isRtl } = useMobileLocale();
 
   return (
     <MobileSurface tone="highlight" radius="card" shadow="none" className="mb-3 px-4 py-4">
       <AppText responsiveRole="bodyStrong" className="font-cairo-bold" style={{ color: theme.colors.ink }}>
-        يحفظ السجل محلياً
+        {dictionary.account.localSession}
       </AppText>
       <AppText responsiveRole="body" className="mt-2 font-medium" style={{ color: theme.colors.inkSoft }}>
-        أكمل المحادثة داخل التطبيق مباشرة، أو اطلب تدخل المستشار إذا احتجت.
+        {dictionary.assistant.localHistory}
       </AppText>
-      <View className="mt-5 flex-row-reverse gap-3">
+      <View className={`mt-5 gap-3 ${isRtl ? "flex-row-reverse" : "flex-row"}`}>
         <View style={{ flex: 1 }}>
-          <Button label="فهمت" variant="secondary" size="sm" onPress={onContinue} />
+          <Button label={dictionary.common.confirm} variant="secondary" size="sm" onPress={onContinue} />
         </View>
         <View style={{ flex: 1 }}>
-          <Button label="اطلب مستشاراً" variant="accent" size="sm" onPress={onRequestAdvisor} />
+          <Button label={dictionary.assistant.requestAdvisor} variant="accent" size="sm" onPress={onRequestAdvisor} />
         </View>
       </View>
     </MobileSurface>
@@ -477,6 +431,7 @@ function HistorySheet({
 }) {
   const layout = useMobileLayout();
   const theme = useAppTheme();
+  const { dictionary, isRtl } = useMobileLocale();
 
   return (
     <Modal visible={open} animationType="slide" transparent onRequestClose={onClose}>
@@ -495,17 +450,17 @@ function HistorySheet({
             <View className="h-1.5 w-16 rounded-full" style={{ backgroundColor: theme.colors.borderStrong }} />
           </View>
           <View className="mb-5 gap-3">
-            <View className="flex-row-reverse items-center justify-between gap-3">
+            <View className={`items-center justify-between gap-3 ${isRtl ? "flex-row-reverse" : "flex-row"}`}>
               <AppText responsiveRole="title" className="font-cairo-bold" style={{ color: theme.colors.ink }}>
-                السجل السابق
+                {dictionary.assistant.history}
               </AppText>
-              <Button label="إغلاق" variant="ghost" size="sm" onPress={onClose} />
+              <Button label={dictionary.common.close} variant="ghost" size="sm" onPress={onClose} />
             </View>
             <AppText responsiveRole="body" className="font-medium" style={{ color: theme.colors.inkMuted }}>
-              افتح محادثة سابقة أو ابدأ محادثة جديدة.
+              {dictionary.accountHistory.titleBody}
             </AppText>
             <Button
-              label="محادثة جديدة"
+              label={dictionary.assistant.threadFallbackTitle}
               variant="accent"
               size="sm"
               onPress={onReset}
@@ -518,7 +473,7 @@ function HistorySheet({
             {recentThreads.length === 0 ? (
               <MobileSurface tone="muted" radius="card" shadow="none" className="px-5 py-5">
                 <AppText responsiveRole="body" className="font-bold text-center" style={{ color: theme.colors.inkMuted }}>
-                  لا يوجد سجل محفوظ.
+                  {dictionary.accountHistory.emptyTitle}
                 </AppText>
               </MobileSurface>
             ) : (

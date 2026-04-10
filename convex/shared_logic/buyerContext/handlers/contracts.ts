@@ -26,10 +26,12 @@ export const compiledBuyerContextValidator = v.object({
   memory: buyerMemoryContextValidator,
   summaries: buyerContextSummariesValidator,
   recentThreadRecap: v.array(v.string()),
+  recentPropertyRefIds: v.array(v.id("properties")),
   buyerSummarySnippets: v.array(v.string()),
   rawMemoryFallback: v.array(v.string()),
   companyKnowledgeSnippets: v.array(knowledgeSnippetValidator),
   alreadyShownPropertyIds: v.array(v.id("properties")),
+  activeComparisonPropertyIds: v.array(v.id("properties")),
   compiledPromptContext: v.string(),
   promptBudgetMeta: promptBudgetMetaValidator,
 });

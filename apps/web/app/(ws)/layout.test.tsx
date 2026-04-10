@@ -1,10 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@convex-dev/auth/nextjs/server", () => ({
-  ConvexAuthNextjsServerProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
 vi.mock("@/app/ConvexClientProvider", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));

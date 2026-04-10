@@ -1,21 +1,20 @@
 import { ArrowUp, Loader2, Mic, X } from "lucide-react-native";
 import { Platform, Pressable, TextInput, View } from "react-native";
-import { useState } from "react";
+import React from "react";
 import {
   MobilePromptInputRecordingRow,
   MobilePromptInputShell,
   MobilePromptInputStatus,
 } from "@/components/ui/MobilePromptInput";
 import { PropertyPromptCardsRail } from "@/features/BuyerAssistantHomeScreen/PropertyPromptCardsRail";
-import { useMobileLayout } from "@/lib/mobileLayout";
-import { getMobileShadow, useAppTheme } from "@/lib/mobileTheme";
-import { useVoiceRecording } from "@/hooks/useVoiceRecording";
+import { getMobileShadow } from "@/lib/mobileTheme";
+import { useComposerState } from "@/hooks/useComposerState";
 import type { MobileProperty } from "@/types/mobile";
 
 type ConversationComposerProps = {
   value: string;
   onChange: (value: string) => void;
-  onSend: () => void;
+  onSend: (value: string) => void;
   onSubmitVoiceRecording: (fileUri: string) => Promise<void>;
   selectedProperties?: MobileProperty[];
   comparePicking?: boolean;
@@ -41,61 +40,56 @@ export function ConversationComposer({
   onToggleComparePicking,
   variant = "thread",
 }: ConversationComposerProps) {
-  const layout = useMobileLayout();
-  const theme = useAppTheme();
-  const [voiceError, setVoiceError] = useState<string | null>(null);
-
   const {
+    layout,
+    theme,
+    locale,
+    voiceError,
     phase,
     durationSeconds,
     waveAnims,
-    startRecording,
-    stopAndSubmit,
+    isRecordingSession,
+    isVoiceBusy,
+    hasText,
+    isTyping,
+    trimmedValue,
+    canSend,
+    textAlign,
+    writingDirection,
+    actionButtonSize,
+    inputMaxHeight,
+    actionButtonColor,
+    actionIconColor,
+    actionButtonBorderWidth,
+    actionButtonBorderColor,
+    inputPillHeight,
+    actionHolderSize,
+    handleChangeText,
+    handlePrimaryActionPress,
     cancelRecording,
-  } = useVoiceRecording({
-    onStateChange: (nextPhase) => {
-      if (nextPhase !== "error") {
-        setVoiceError(null);
-      }
-    },
-    onSubmitRecording: async (uri) => {
-      try {
-        await onSubmitVoiceRecording(uri);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "تعذر إكمال التسجيل الصوتي.";
-        setVoiceError(message);
-        throw error;
-      }
-    },
-  });
-
-  const isRecording = phase === "recording";
-  const isRecordingSession = isRecording;
-  const isVoiceBusy =
-    phase === "waiting_for_permission" || phase === "uploading" || phase === "transcribing" || phase === "sending";
-
-  const trimmedValue = value.trim();
-  const canSend = trimmedValue.length > 0 && !isRecording && !isVoiceBusy;
-  const startsWithLatin = /^[A-Za-z0-9]/.test(trimmedValue);
-  const textAlign = startsWithLatin ? "left" : "right";
-  const writingDirection = startsWithLatin ? "ltr" : "rtl";
+    stopAndSubmit,
+  } = useComposerState({ value, onChange, onSend, onSubmitVoiceRecording });
 
   const isExpanded = value.includes("\n") || trimmedValue.length > 48;
 
-  const actionButtonSize = layout.isCompact ? 40 : 44;
+  const actionButtonSizeCalc = layout.isCompact ? 40 : 44;
   const sendIconSize = layout.isCompact ? 17 : 18;
   const micIconSize = layout.isCompact ? 18 : 20;
-  const inputMaxHeight = layout.isCompact ? 112 : 132;
+  const inputMaxHeightCalc = layout.isCompact ? 112 : 132;
   const inputFontSize = layout.isCompact ? 15 : 16;
   const inputPlaceholder =
-    variant === "landing" ? "اسأل عن عقار، قارن، أو اطلب تمويلاً..." : "اكتب متابعتك هنا...";
+    variant === "landing"
+      ? locale === "en"
+        ? "Ask about a property or request financing..."
+        : "اسأل عن عقار أو اطلب تمويلاً..."
+      : locale === "en"
+        ? "Type your follow-up here..."
+        : "اكتب متابعتك هنا...";
 
-  const actionButtonColor = canSend ? theme.colors.send : theme.colors.composerActionSurface;
-  const actionIconColor = canSend ? theme.colors.sendIcon : theme.colors.composerActionIcon;
-  const actionButtonBorderWidth = canSend ? 0 : theme.isDark ? 1.5 : 0;
-  const actionButtonBorderColor = canSend ? "transparent" : theme.colors.composerActionRing;
-  const inputPillHeight = layout.isCompact ? 44 : 46;
-  const actionHolderSize = inputPillHeight;
+  const actionButtonBorderWidthCalc = canSend ? 0 : theme.isDark ? 1.5 : 0;
+  const actionButtonBorderColorCalc = canSend ? "transparent" : theme.colors.composerActionRing;
+  const inputPillHeightCalc = layout.isCompact ? 44 : 46;
+
   const showPropertyPromptRail =
     variant === "thread" &&
     selectedProperties.length > 0 &&
@@ -112,12 +106,12 @@ export function ConversationComposer({
         <MobilePromptInputStatus
           label={
             phase === "waiting_for_permission"
-              ? "ننتظر إذن الميكروفون"
+              ? (locale === "en" ? "Waiting for microphone permission" : "ننتظر إذن الميكروفون")
               : phase === "uploading"
-                ? "نرفع التسجيل"
+                ? (locale === "en" ? "Uploading recording" : "نرفع التسجيل")
                 : phase === "transcribing"
-                  ? "نحوّل الصوت إلى نص"
-                  : "نرسل الرسالة"
+                  ? (locale === "en" ? "Transcribing voice to text" : "نحوّل الصوت إلى نص")
+                  : (locale === "en" ? "Sending message" : "نرسل الرسالة")
           }
           icon={<Loader2 size={14} color={theme.colors.primary} />}
         />
@@ -136,7 +130,7 @@ export function ConversationComposer({
       ) : null}
 
       <MobilePromptInputShell
-        active={isRecordingSession || canSend || trimmedValue.length > 0}
+        active={isTyping || isRecordingSession || canSend}
         expanded={isExpanded}
         hint={null}
       >
@@ -157,7 +151,7 @@ export function ConversationComposer({
               <View
                 className="flex-1 justify-center"
                 style={{
-                  minHeight: inputPillHeight,
+                  minHeight: inputPillHeightCalc,
                   borderRadius: 22,
                   borderWidth: 1,
                   borderColor: theme.colors.border,
@@ -167,7 +161,7 @@ export function ConversationComposer({
               >
                 <TextInput
                   value={value}
-                  onChangeText={onChange}
+                  onChangeText={handleChangeText}
                   multiline
                   blurOnSubmit={false}
                   editable={!isVoiceBusy}
@@ -177,7 +171,7 @@ export function ConversationComposer({
                   textAlignVertical="center"
                   style={{
                     minHeight: layout.isCompact ? 36 : 38,
-                    maxHeight: inputMaxHeight,
+                    maxHeight: inputMaxHeightCalc,
                     textAlign,
                     writingDirection,
                     fontFamily: trimmedValue.length === 0 ? "Cairo_500Medium" : "Cairo_600SemiBold",
@@ -199,23 +193,16 @@ export function ConversationComposer({
                 }}
               >
                 <Pressable
-                  onPress={() => {
-                    if (canSend) {
-                      onSend();
-                      return;
-                    }
-                    setVoiceError(null);
-                    void startRecording();
-                  }}
+                  onPress={handlePrimaryActionPress}
                   disabled={isVoiceBusy}
                   className="items-center justify-center"
                   style={({ pressed }) => ({
-                    borderRadius: actionButtonSize / 2,
-                    width: actionButtonSize,
-                    height: actionButtonSize,
+                    borderRadius: actionButtonSizeCalc / 2,
+                    width: actionButtonSizeCalc,
+                    height: actionButtonSizeCalc,
                     backgroundColor: actionButtonColor,
-                    borderWidth: actionButtonBorderWidth,
-                    borderColor: actionButtonBorderColor,
+                    borderWidth: actionButtonBorderWidthCalc,
+                    borderColor: actionButtonBorderColorCalc,
                     ...getMobileShadow("float"),
                     opacity: isVoiceBusy ? 0.6 : 1,
                     transform: [{ scale: pressed ? 0.94 : 1 }],

@@ -7,6 +7,7 @@ describe("WorkspacePanel", () => {
     const markup = renderToStaticMarkup(<WorkspacePanel density="compact">panel</WorkspacePanel>);
 
     expect(markup).toContain("p-4");
+    expect(markup).toContain("rounded-lg");
   });
 
   it("uses hero density spacing for structured panels", () => {
@@ -16,7 +17,8 @@ describe("WorkspacePanel", () => {
       </WorkspacePanel>,
     );
 
-    expect(markup).toContain("sm:py-6");
+    expect(markup).toContain("sm:py-5");
+    expect(markup).toContain("border-b");
     expect(markup).toContain("header");
     expect(markup).toContain("footer");
   });

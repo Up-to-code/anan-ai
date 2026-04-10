@@ -10,8 +10,8 @@ function resolveProfileOrganizationName(args: { profile: any; brokers: any[]; de
   const { profile, brokers, developers } = args;
   return profile.brokerId
     ? brokers.find((item: any) => item._id === profile.brokerId)?.name
-    : profile.REDId
-      ? developers.find((item: any) => item._id === profile.REDId)?.name
+    : profile.developerId
+      ? developers.find((item: any) => item._id === profile.developerId)?.name
       : null;
 }
 
@@ -35,10 +35,10 @@ function mapProfileRow(args: { profile: any; brokers: any[]; developers: any[]; 
     name: profile.name ?? profile.email ?? "مستخدم عنان",
     email: profile.email ?? null,
     role: profile.role ?? null,
-    roleStatus: profile.roleStatus ?? null,
+    roleApprovalStatus: profile.roleApprovalStatus ?? null,
     requestedRole: profile.requestedRole ?? null,
     organizationName: resolveProfileOrganizationName({ profile, brokers, developers }),
-    verificationStatus: resolveVerificationStatus(latestRequest?.currentStatus, profile.roleStatus),
+    verificationStatus: resolveVerificationStatus(latestRequest?.currentStatus, profile.roleApprovalStatus),
     isActive: profile.isActive ?? true,
   };
 }

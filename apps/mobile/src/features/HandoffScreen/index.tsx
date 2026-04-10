@@ -8,6 +8,8 @@ import { AppText } from "@/components/ui/AppText";
 import { IconButton } from "@/components/ui/IconButton";
 import { MobilePill, MobileSectionHeading, MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
 import { api } from "@/lib/convexApi";
+import { formatMobileCopy } from "@/lib/i18n";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import { useAppTheme } from "@/lib/mobileTheme";
 
 const LIVE_BACKEND_ENABLED = Boolean(process.env.EXPO_PUBLIC_CONVEX_URL);
@@ -41,6 +43,7 @@ export default function HandoffScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
+  const { dictionary, isRtl } = useMobileLocale();
   const params = useLocalSearchParams<{ orderId?: string; threadId?: string }>();
   const order = useOrderDetail(params.orderId);
   const screenBackground = theme.colors.canvas;
@@ -59,8 +62,8 @@ export default function HandoffScreen() {
     <View className="flex-1 px-5" style={{ backgroundColor: screenBackground, paddingBottom: Math.max(insets.bottom, 20) }}>
       <MobileTopBar
         insetTop={insets.top}
-        title="طلب المستشار"
-        subtitle="تأكيد داخل نفس الرحلة"
+        title={dictionary.handoff.title}
+        subtitle={dictionary.handoff.subtitle}
         leading={<IconButton icon={ArrowLeft} onPress={() => router.replace("/")} tone="panel" />}
         trailing={<View style={{ width: 44, height: 44 }} />}
       />
@@ -77,42 +80,42 @@ export default function HandoffScreen() {
             <MobileSectionHeading
               align="center"
               className="mt-5"
-              title={order === null && params.orderId ? "تم حفظ الطلب محلياً" : "تم تجهيز طلبك"}
+              title={order === null && params.orderId ? dictionary.handoff.savedLocallyTitle : dictionary.handoff.preparedTitle}
               description={
                 order?.property?.title
-                  ? `تم حفظ طلب المستشار المرتبط بـ ${order.property.title}.`
+                  ? formatMobileCopy(dictionary.handoff.savedForProperty, { title: order.property.title })
                   : order === null && params.orderId
-                    ? "تمت العودة إلى التطبيق لكن تفاصيل الطلب الحية غير متاحة حالياً. يمكنك متابعة نفس المحادثة مباشرة."
-                    : "تم حفظ الطلب وربطه بالمحادثة الحالية قدر الإمكان."
+                    ? dictionary.handoff.liveUnavailable
+                    : dictionary.handoff.savedBestEffort
               }
             />
           </View>
 
-          <View className="flex-row-reverse flex-wrap justify-center" style={{ gap: 8 }}>
+          <View className={`${isRtl ? "flex-row-reverse" : "flex-row"} flex-wrap justify-center`} style={{ gap: 8 }}>
             <MobilePill label={order?.status ?? "qualified"} tone="primary" active />
             <MobilePill label={order?.sourceChannel ?? "app"} />
           </View>
 
           <View className="overflow-hidden rounded-[28px]" style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: sectionBackground }}>
-            <SummaryRow label="رقم الطلب" value={order?.orderId ?? params.orderId ?? "—"} withBorder />
-            <SummaryRow label="الحالة" value={order?.status ?? "qualified"} withBorder />
-            <SummaryRow label="المصدر" value={order?.sourceChannel ?? "app"} />
+            <SummaryRow label={dictionary.handoff.orderId} value={order?.orderId ?? params.orderId ?? "—"} withBorder />
+            <SummaryRow label={dictionary.handoff.status} value={order?.status ?? "qualified"} withBorder />
+            <SummaryRow label={dictionary.handoff.source} value={order?.sourceChannel ?? "app"} />
           </View>
 
           {params.threadId ? (
             <MobileSurface tone="default" radius="card" className="gap-2" shadow="none">
-              <AppText className="text-right text-[14px] font-cairo-bold" style={{ color: theme.colors.ink }}>
-                يمكنك العودة الآن إلى نفس المحادثة
+              <AppText className={`${isRtl ? "text-right" : "text-left"} text-[14px] font-cairo-bold`} style={{ color: theme.colors.ink }}>
+                {dictionary.handoff.returnToConversationTitle}
               </AppText>
-              <AppText className="text-right text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
-                سيبقى العقار والطلب مرتبطين بسياق الرحلة الحالية على هذا الجهاز.
+              <AppText className={`${isRtl ? "text-right" : "text-left"} text-[13px] font-medium`} style={{ color: theme.colors.inkMuted }}>
+                {dictionary.handoff.returnToConversationBody}
               </AppText>
             </MobileSurface>
           ) : null}
 
           <View className="gap-3">
             <Button
-              label="العودة إلى المساعد"
+              label={dictionary.handoff.returnToAssistant}
               onPress={() =>
                 router.replace({
                   pathname: "/",
@@ -122,7 +125,7 @@ export default function HandoffScreen() {
               className="rounded-[18px] bg-slate-900"
             />
             <Button
-              label="افتح البحث"
+              label={dictionary.handoff.openSearch}
               variant="secondary"
               onPress={() => router.replace("/search")}
               className="rounded-[18px]"
@@ -144,13 +147,14 @@ function SummaryRow({
   withBorder?: boolean;
 }) {
   const theme = useAppTheme();
+  const { isRtl } = useMobileLocale();
   return (
     <View
-      className={`flex-row-reverse items-center justify-between px-5 py-4 ${withBorder ? "border-b" : ""}`}
+      className={`items-center justify-between px-5 py-4 ${isRtl ? "flex-row-reverse" : "flex-row"} ${withBorder ? "border-b" : ""}`}
       style={withBorder ? { borderBottomColor: theme.colors.border } : undefined}
     >
-      <AppText className="text-right text-[15px] font-bold" style={{ color: theme.colors.inkMuted }}>{label}</AppText>
-      <AppText className="text-right text-[17px] font-cairo-black" style={{ color: theme.colors.ink }}>{value}</AppText>
+      <AppText className={`${isRtl ? "text-right" : "text-left"} text-[15px] font-bold`} style={{ color: theme.colors.inkMuted }}>{label}</AppText>
+      <AppText className={`${isRtl ? "text-right" : "text-left"} text-[17px] font-cairo-black`} style={{ color: theme.colors.ink }}>{value}</AppText>
     </View>
   );
 }

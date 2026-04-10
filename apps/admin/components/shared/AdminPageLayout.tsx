@@ -64,7 +64,7 @@ export default function AdminPageLayout({
 
   if (!rail) {
     return (
-      <div className={cn("grid min-w-0 max-w-full content-start gap-4 xl:gap-5", widthClassName, className)}>
+      <div className={cn("grid min-w-0 max-w-full content-start gap-4 xl:gap-[1.125rem]", widthClassName, className)}>
         {main}
       </div>
     );
@@ -73,16 +73,16 @@ export default function AdminPageLayout({
   return (
     <div
       className={cn(
-        "grid min-w-0 max-w-full items-start gap-4 xl:gap-5",
+        "grid min-w-0 max-w-full items-start gap-4 xl:gap-4",
         widthClassName,
         layoutVariantClasses[variant],
         className,
       )}
     >
-      <div className={cn("grid min-w-0 content-start gap-4 xl:gap-5", mainClassName)}>{main}</div>
+      <div className={cn("grid min-w-0 content-start gap-4 xl:gap-4", mainClassName)}>{main}</div>
       <aside
         className={cn(
-          "grid min-w-0 content-start gap-4 xl:gap-5",
+          "grid min-w-0 content-start gap-4 xl:gap-4",
           stickyRail && ADMIN_STICKY_RAIL_TOP_CLASS,
           stickyRail && railScroll && ADMIN_STICKY_RAIL_MAX_HEIGHT_CLASS,
           stickyRail && railScroll && "xl:overflow-y-auto xl:pr-1",
@@ -120,5 +120,5 @@ export function AdminMetricGrid({ children, className, minItemWidth = 240 }: Adm
  * HOW:   Uses a one-column grid with consistent gaps so nested layouts remain predictable inside larger canvases.
  */
 export function AdminSectionStack({ children, className }: AdminSectionStackProps) {
-  return <div className={cn("grid min-w-0 max-w-full content-start gap-4 xl:gap-5", className)}>{children}</div>;
+  return <div className={cn("grid min-w-0 max-w-full content-start gap-4 xl:gap-4", className)}>{children}</div>;
 }

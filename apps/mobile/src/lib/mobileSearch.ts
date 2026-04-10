@@ -1,4 +1,6 @@
 import { getPropertyLocationLabel } from "@/lib/mobileData";
+import { formatMobileCopy, getMobileDictionary } from "@/lib/i18n";
+import type { MobileLocale } from "@/lib/locale";
 import type { MobileProperty, MobileSearchContext, MobileSearchOwnerType } from "@/types/mobile";
 
 export type MobileSearchRouteParams = {
@@ -33,7 +35,7 @@ export function parseSearchRouteParams(params: Record<string, string | string[] 
   if (sourcePropertyId) context.sourcePropertyId = sourcePropertyId;
   if (query) context.query = query;
   if (area) context.area = area;
-  if (ownerType === "وسيط" || ownerType === "مطور") {
+  if (ownerType === "broker" || ownerType === "developer") {
     context.ownerType = ownerType;
   }
 
@@ -54,7 +56,7 @@ export function buildSearchRouteParams(context: MobileSearchContext | null | und
 }
 
 export function getOwnerTypeLabel(property: MobileProperty): MobileSearchOwnerType {
-  return property.owner.type === "broker" ? "وسيط" : "مطور";
+  return property.owner.type === "broker" ? "broker" : "developer";
 }
 
 /**
@@ -66,13 +68,15 @@ export function buildAssistantSearchContext(args: {
   activeProperty?: MobileProperty | null;
   lastUserMessage?: string | null;
   threadId?: string | null;
+  locale?: MobileLocale;
 }): MobileSearchContext | null {
+  const dictionary = getMobileDictionary(args.locale ?? "ar");
   const property = args.activeProperty ?? null;
   if (property) {
     return {
       threadId: args.threadId ?? undefined,
       sourcePropertyId: property.id,
-      searchSummary: `نتائج مشابهة لـ ${property.title}`,
+      searchSummary: formatMobileCopy(dictionary.assistant.searchContextFromProperty, { title: property.title }),
       area: getPropertyLocationLabel(property),
       ownerType: getOwnerTypeLabel(property),
     };
@@ -83,7 +87,7 @@ export function buildAssistantSearchContext(args: {
 
   return {
     threadId: args.threadId ?? undefined,
-    searchSummary: "نتائج بناءً على طلبك الأخير",
+    searchSummary: dictionary.assistant.searchContextFromPrompt,
     query: lastUserMessage,
   };
 }
@@ -107,8 +111,8 @@ export function filterPropertiesForSearch(
     const matchesArea = args.selectedArea === args.allFilterLabel || getPropertyLocationLabel(property) === args.selectedArea;
     const matchesOwnerType =
       args.selectedOwnerType === args.allFilterLabel ||
-      (args.selectedOwnerType === "وسيط" && property.owner.type === "broker") ||
-      (args.selectedOwnerType === "مطور" && property.owner.type === "RED");
+      ((args.selectedOwnerType === "broker" || args.selectedOwnerType === "وسيط") && property.owner.type === "broker") ||
+      ((args.selectedOwnerType === "developer" || args.selectedOwnerType === "مطور") && property.owner.type === "RED");
 
     return matchesText && matchesArea && matchesOwnerType;
   });

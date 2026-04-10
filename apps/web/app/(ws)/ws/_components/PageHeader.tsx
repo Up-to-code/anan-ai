@@ -1,3 +1,4 @@
+import { memo } from "react"
 import { cn } from "@/lib/utils";
 
 type PageHeaderProps = {
@@ -8,7 +9,7 @@ type PageHeaderProps = {
   actions?: React.ReactNode;
 };
 
-export default function PageHeader({
+const PageHeaderComponent = function PageHeader({
   eyebrow,
   title,
   description,
@@ -34,3 +35,5 @@ export default function PageHeader({
     </header>
   );
 }
+
+export default memo(PageHeaderComponent)
