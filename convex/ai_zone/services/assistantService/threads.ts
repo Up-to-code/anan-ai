@@ -1,12 +1,26 @@
 import type { QueryCtx } from "../../../_generated/server";
 import type { Doc, Id } from "../../../_generated/dataModel";
-import type { AssistantKind, AssistantOwner, ThreadScope } from "./types";
+import {
+  getAgentMessageById,
+  getAssistantThreadStateByThreadId,
+  listAgentThreadMessages,
+  listAssistantMessageStatesByThreadId,
+  mapAssistantMessageState,
+  mapAssistantThreadState,
+} from "./runtime";
+import type {
+  AssistantKind,
+  AssistantMessageRecord,
+  AssistantOwner,
+  AssistantThreadRecord,
+  ThreadScope,
+} from "./types";
 import { WORKSPACE_KINDS } from "./types";
 import { isWorkspaceKind, normalizeOwner } from "./utils";
 
 function matchesAssistantKind(
-  thread: Doc<"assistantThreads">,
-  assistantKind?: AssistantKind
+  thread: { assistantKind?: AssistantKind },
+  assistantKind?: AssistantKind,
 ): boolean {
   if (!assistantKind) return true;
 
@@ -17,10 +31,8 @@ function matchesAssistantKind(
   return kind === assistantKind;
 }
 
-function getThreadScope(thread: Doc<"assistantThreads">): ThreadScope {
-  return (thread as { scope?: ThreadScope }).scope === "organization"
-    ? "organization"
-    : "user";
+function getThreadScope(thread: { scope?: ThreadScope }): ThreadScope {
+  return thread.scope === "organization" ? "organization" : "user";
 }
 
 function toAssistantKind(kind?: AssistantKind) {
@@ -28,9 +40,9 @@ function toAssistantKind(kind?: AssistantKind) {
 }
 
 function canAccessThread(
-  thread: Doc<"assistantThreads">,
+  thread: AssistantThreadRecord,
   owner: AssistantOwner,
-  assistantKind?: AssistantKind
+  assistantKind?: AssistantKind,
 ): boolean {
   if (!matchesAssistantKind(thread, assistantKind)) return false;
 
@@ -40,14 +52,14 @@ function canAccessThread(
       return Boolean(
         owner.ownerBrokerId &&
           thread.ownerBrokerId &&
-          String(owner.ownerBrokerId) === String(thread.ownerBrokerId)
+          String(owner.ownerBrokerId) === String(thread.ownerBrokerId),
       );
     }
     if (owner.ownerType === "RED") {
       return Boolean(
         owner.ownerREDId &&
           thread.ownerREDId &&
-          String(owner.ownerREDId) === String(thread.ownerREDId)
+          String(owner.ownerREDId) === String(thread.ownerREDId),
       );
     }
     return false;
@@ -56,85 +68,220 @@ function canAccessThread(
   return thread.userId === owner.userId;
 }
 
-async function collectOrganizationThreads(
-  ctx: QueryCtx,
-  owner: AssistantOwner,
-  assistantKind?: AssistantKind
-) {
-  if (!isWorkspaceKind(assistantKind)) {
-    return [] as Doc<"assistantThreads">[];
-  }
-  if (owner.ownerType === "broker" && owner.ownerBrokerId) {
-    return ctx.db
-      .query("assistantThreads")
-      .withIndex("ownerBrokerId", (q: any) => q.eq("ownerBrokerId", owner.ownerBrokerId))
-      .collect();
-  }
-  if (owner.ownerType === "RED" && owner.ownerREDId) {
-    return ctx.db
-      .query("assistantThreads")
-      .withIndex("ownerREDId", (q: any) => q.eq("ownerREDId", owner.ownerREDId))
-      .collect();
-  }
-  return [] as Doc<"assistantThreads">[];
+function mapLegacyThread(
+  thread: Doc<"assistantThreads">,
+): AssistantThreadRecord {
+  return {
+    _id: String(thread._id),
+    userId: thread.userId,
+    scope: thread.scope,
+    ownerType: thread.ownerType,
+    ownerBrokerId: thread.ownerBrokerId,
+    ownerREDId: thread.ownerREDId,
+    mode: thread.mode,
+    orchestratorName: thread.orchestratorName,
+    assistantKind: thread.assistantKind,
+    title: thread.title,
+    legacyThreadId: thread._id,
+    createdAt: thread.createdAt,
+    updatedAt: thread.updatedAt,
+  };
 }
 
-async function collectUserThreadsByKind(
+function mapLegacyMessage(
+  message: Doc<"assistantMessages">,
+): AssistantMessageRecord {
+  return {
+    _id: String(message._id),
+    threadId: String(message.threadId),
+    role: message.role,
+    content: message.content,
+    mode: message.mode,
+    metadata:
+      message.metadata && typeof message.metadata === "object" && !Array.isArray(message.metadata)
+        ? (message.metadata as Record<string, unknown>)
+        : undefined,
+    legacyMessageId: message._id,
+    createdAt: message.createdAt,
+  };
+}
+
+function getThreadDedupKey(thread: AssistantThreadRecord) {
+  return thread.legacyThreadId
+    ? `legacy:${String(thread.legacyThreadId)}`
+    : `canonical:${thread._id}`;
+}
+
+async function collectCanonicalThreads(
   ctx: QueryCtx,
   owner: AssistantOwner,
-  assistantKind: AssistantKind,
-  limit: number,
-) {
-  const rows = await ctx.db
-    .query("assistantThreads")
-    .withIndex("userId_assistantKind_updatedAt", (q: any) =>
-      q.eq("userId", owner.userId).eq("assistantKind", assistantKind),
-    )
+  assistantKind?: AssistantKind,
+  limit = 24,
+): Promise<AssistantThreadRecord[]> {
+  const mapped = (rows: Doc<"assistantThreadState">[]) =>
+    rows.map((row) => mapAssistantThreadState(row));
+
+  if (assistantKind && !isWorkspaceKind(assistantKind)) {
+    const rows = await ctx.db
+      .query("assistantThreadState")
+      .withIndex("userId_assistantKind_updatedAt", (q: any) =>
+        q.eq("userId", owner.userId).eq("assistantKind", toAssistantKind(assistantKind)),
+      )
+      .collect();
+    return mapped(rows).slice(-limit);
+  }
+
+  if (assistantKind && isWorkspaceKind(assistantKind)) {
+    const [userRows, orgRows] = await Promise.all([
+      Promise.all(
+        WORKSPACE_KINDS.map((kind) =>
+          ctx.db
+            .query("assistantThreadState")
+            .withIndex("userId_assistantKind_updatedAt", (q: any) =>
+              q.eq("userId", owner.userId).eq("assistantKind", kind),
+            )
+            .collect(),
+        ),
+      ),
+      owner.ownerType === "broker" && owner.ownerBrokerId
+        ? Promise.all(
+            WORKSPACE_KINDS.map((kind) =>
+              ctx.db
+                .query("assistantThreadState")
+                .withIndex("ownerBrokerId_assistantKind_updatedAt", (q: any) =>
+                  q.eq("ownerBrokerId", owner.ownerBrokerId).eq("assistantKind", kind),
+                )
+                .collect(),
+            ),
+          )
+        : owner.ownerType === "RED" && owner.ownerREDId
+          ? Promise.all(
+              WORKSPACE_KINDS.map((kind) =>
+                ctx.db
+                  .query("assistantThreadState")
+                  .withIndex("ownerREDId_assistantKind_updatedAt", (q: any) =>
+                    q.eq("ownerREDId", owner.ownerREDId).eq("assistantKind", kind),
+                  )
+                  .collect(),
+              ),
+            )
+          : Promise.resolve([]),
+    ]);
+
+    return [...mapped(userRows.flat()), ...mapped(orgRows.flat())].slice(-limit);
+  }
+
+  const userRows = await ctx.db
+    .query("assistantThreadState")
+    .withIndex("userId", (q: any) => q.eq("userId", owner.userId))
     .collect();
+  const orgRows =
+    owner.ownerType === "broker" && owner.ownerBrokerId
+      ? await ctx.db
+          .query("assistantThreadState")
+          .withIndex("ownerBrokerId", (q: any) => q.eq("ownerBrokerId", owner.ownerBrokerId))
+          .collect()
+      : owner.ownerType === "RED" && owner.ownerREDId
+        ? await ctx.db
+            .query("assistantThreadState")
+            .withIndex("ownerREDId", (q: any) => q.eq("ownerREDId", owner.ownerREDId))
+            .collect()
+        : [];
 
-  return rows.slice(-limit);
+  return [...mapped(userRows), ...mapped(orgRows)];
 }
 
-async function collectOrganizationThreadsByKind(
+async function collectLegacyThreads(
   ctx: QueryCtx,
   owner: AssistantOwner,
-  assistantKind: AssistantKind,
-  limit: number,
-) {
-  if (owner.ownerType === "broker" && owner.ownerBrokerId) {
+  assistantKind?: AssistantKind,
+): Promise<AssistantThreadRecord[]> {
+  const dedupe = (rows: Doc<"assistantThreads">[]) =>
+    rows
+      .map(mapLegacyThread)
+      .filter((thread) => canAccessThread(thread, owner, assistantKind));
+
+  if (assistantKind && !isWorkspaceKind(assistantKind)) {
     const rows = await ctx.db
       .query("assistantThreads")
-      .withIndex("ownerBrokerId_assistantKind_updatedAt", (q: any) =>
-        q.eq("ownerBrokerId", owner.ownerBrokerId).eq("assistantKind", assistantKind),
+      .withIndex("userId_assistantKind_updatedAt", (q: any) =>
+        q.eq("userId", owner.userId).eq("assistantKind", toAssistantKind(assistantKind)),
       )
       .collect();
-    return rows.slice(-limit);
+    return dedupe(rows);
   }
 
-  if (owner.ownerType === "RED" && owner.ownerREDId) {
-    const rows = await ctx.db
-      .query("assistantThreads")
-      .withIndex("ownerREDId_assistantKind_updatedAt", (q: any) =>
-        q.eq("ownerREDId", owner.ownerREDId).eq("assistantKind", assistantKind),
-      )
-      .collect();
-    return rows.slice(-limit);
+  if (assistantKind && isWorkspaceKind(assistantKind)) {
+    const [userRows, orgRows] = await Promise.all([
+      Promise.all(
+        WORKSPACE_KINDS.map((kind) =>
+          ctx.db
+            .query("assistantThreads")
+            .withIndex("userId_assistantKind_updatedAt", (q: any) =>
+              q.eq("userId", owner.userId).eq("assistantKind", kind),
+            )
+            .collect(),
+        ),
+      ),
+      owner.ownerType === "broker" && owner.ownerBrokerId
+        ? Promise.all(
+            WORKSPACE_KINDS.map((kind) =>
+              ctx.db
+                .query("assistantThreads")
+                .withIndex("ownerBrokerId_assistantKind_updatedAt", (q: any) =>
+                  q.eq("ownerBrokerId", owner.ownerBrokerId).eq("assistantKind", kind),
+                )
+                .collect(),
+            ),
+          )
+        : owner.ownerType === "RED" && owner.ownerREDId
+          ? Promise.all(
+              WORKSPACE_KINDS.map((kind) =>
+                ctx.db
+                  .query("assistantThreads")
+                  .withIndex("ownerREDId_assistantKind_updatedAt", (q: any) =>
+                    q.eq("ownerREDId", owner.ownerREDId).eq("assistantKind", kind),
+                  )
+                  .collect(),
+              ),
+            )
+          : Promise.resolve([]),
+    ]);
+
+    return dedupe([...userRows.flat(), ...orgRows.flat()]);
   }
 
-  return [] as Doc<"assistantThreads">[];
+  const userRows = await ctx.db
+    .query("assistantThreads")
+    .withIndex("userId", (q: any) => q.eq("userId", owner.userId))
+    .collect();
+  const orgRows =
+    owner.ownerType === "broker" && owner.ownerBrokerId
+      ? await ctx.db
+          .query("assistantThreads")
+          .withIndex("ownerBrokerId", (q: any) => q.eq("ownerBrokerId", owner.ownerBrokerId))
+          .collect()
+      : owner.ownerType === "RED" && owner.ownerREDId
+        ? await ctx.db
+            .query("assistantThreads")
+            .withIndex("ownerREDId", (q: any) => q.eq("ownerREDId", owner.ownerREDId))
+            .collect()
+        : [];
+
+  return dedupe([...userRows, ...orgRows]);
 }
 
 function dedupeAccessibleThreads(
-  threads: Doc<"assistantThreads">[],
+  threads: AssistantThreadRecord[],
   owner: AssistantOwner,
-  assistantKind?: AssistantKind
+  assistantKind?: AssistantKind,
 ) {
-  const deduped: Doc<"assistantThreads">[] = [];
+  const deduped: AssistantThreadRecord[] = [];
   const seen = new Set<string>();
   for (const thread of threads) {
-    const id = String(thread._id);
-    if (seen.has(id)) continue;
-    seen.add(id);
+    const key = getThreadDedupKey(thread);
+    if (seen.has(key)) continue;
+    seen.add(key);
     if (canAccessThread(thread, owner, assistantKind)) {
       deduped.push(thread);
     }
@@ -147,61 +294,30 @@ async function collectAccessibleThreads(
   owner: AssistantOwner,
   assistantKind?: AssistantKind,
   limit = 24,
-): Promise<Doc<"assistantThreads">[]> {
-  if (assistantKind && !isWorkspaceKind(assistantKind)) {
-    const exactKindThreads = await collectUserThreadsByKind(
-      ctx,
-      owner,
-      toAssistantKind(assistantKind),
-      limit,
-    );
-    return dedupeAccessibleThreads(exactKindThreads, owner, assistantKind);
-  }
-
-  if (assistantKind && isWorkspaceKind(assistantKind)) {
-    const [userThreadsByKind, organizationThreadsByKind] = await Promise.all([
-      Promise.all(
-        WORKSPACE_KINDS.map((kind) =>
-          collectUserThreadsByKind(ctx, owner, kind, limit),
-        ),
-      ),
-      Promise.all(
-        WORKSPACE_KINDS.map((kind) =>
-          collectOrganizationThreadsByKind(ctx, owner, kind, limit),
-        ),
-      ),
-    ]);
-
-    return dedupeAccessibleThreads(
-      [...userThreadsByKind.flat(), ...organizationThreadsByKind.flat()],
-      owner,
-      assistantKind,
-    );
-  }
-
-  const userThreads = await ctx.db
-    .query("assistantThreads")
-    .withIndex("userId", (q: any) => q.eq("userId", owner.userId))
-    .collect();
-  const organizationThreads = await collectOrganizationThreads(ctx, owner, assistantKind);
-  return dedupeAccessibleThreads([...userThreads, ...organizationThreads], owner, assistantKind);
+) {
+  const [canonicalThreads, legacyThreads] = await Promise.all([
+    collectCanonicalThreads(ctx, owner, assistantKind, limit),
+    collectLegacyThreads(ctx, owner, assistantKind),
+  ]);
+  return dedupeAccessibleThreads(
+    [...canonicalThreads, ...legacyThreads],
+    owner,
+    assistantKind,
+  ).slice(0, limit);
 }
 
-/**
- * Fetches the most recent assistant thread for a given owner context.
- */
 export async function getLatestThread(
   ctx: QueryCtx,
   ownerOrUser: string | AssistantOwner,
-  assistantKind?: AssistantKind
-): Promise<Doc<"assistantThreads"> | null> {
+  assistantKind?: AssistantKind,
+): Promise<AssistantThreadRecord | null> {
   const owner = normalizeOwner(ownerOrUser);
   const threads = await collectAccessibleThreads(ctx, owner, assistantKind, 12);
   if (threads.length === 0) return null;
 
   if (isWorkspaceKind(assistantKind)) {
     const latestOrganizationThread = threads.find(
-      (thread) => getThreadScope(thread) === "organization"
+      (thread) => getThreadScope(thread) === "organization",
     );
     if (latestOrganizationThread) {
       return latestOrganizationThread;
@@ -211,14 +327,11 @@ export async function getLatestThread(
   return threads[0] ?? null;
 }
 
-/**
- * Returns recent assistant threads for the current owner context and assistant kind.
- */
 export async function listRecentThreads(
   ctx: QueryCtx,
   ownerOrUser: string | AssistantOwner,
   assistantKind?: AssistantKind,
-  limit = 6
+  limit = 6,
 ) {
   const owner = normalizeOwner(ownerOrUser);
   const threads = await collectAccessibleThreads(ctx, owner, assistantKind, Math.max(limit, 6));
@@ -228,55 +341,38 @@ export async function listRecentThreads(
   }
 
   const organizationThreads = threads.filter(
-    (thread) => getThreadScope(thread) === "organization"
+    (thread) => getThreadScope(thread) === "organization",
   );
   const legacyUserThreads = threads.filter(
-    (thread) => getThreadScope(thread) !== "organization"
+    (thread) => getThreadScope(thread) !== "organization",
   );
   return [...organizationThreads, ...legacyUserThreads].slice(0, limit);
 }
 
-/**
- * Returns one specific assistant thread only when the current owner is allowed to access it.
- */
 export async function getAccessibleThread(
   ctx: QueryCtx,
   ownerOrUser: string | AssistantOwner,
-  threadId: Id<"assistantThreads">,
-  assistantKind?: AssistantKind
+  threadId: string,
+  assistantKind?: AssistantKind,
 ) {
   const owner = normalizeOwner(ownerOrUser);
-  const thread = await ctx.db.get(threadId);
-  if (!thread || !canAccessThread(thread, owner, assistantKind)) return null;
-  return thread;
+
+  const canonicalThreadState = await getAssistantThreadStateByThreadId(ctx, threadId);
+  if (canonicalThreadState) {
+    const canonicalThread = mapAssistantThreadState(canonicalThreadState);
+    return canAccessThread(canonicalThread, owner, assistantKind) ? canonicalThread : null;
+  }
+
+  const legacyThreadId = ctx.db.normalizeId("assistantThreads", threadId);
+  if (!legacyThreadId) return null;
+
+  const legacyThread = await ctx.db.get(legacyThreadId);
+  if (!legacyThread) return null;
+  const mapped = mapLegacyThread(legacyThread);
+  return canAccessThread(mapped, owner, assistantKind) ? mapped : null;
 }
 
-/**
- * Lists all messages for a thread, verifying ownership first.
- */
-export async function listThreadMessages(
-  ctx: QueryCtx,
-  owner: AssistantOwner,
-  threadId?: Id<"assistantThreads">,
-  assistantKind?: AssistantKind
-) {
-  const thread = threadId
-    ? await ctx.db.get(threadId)
-    : await getLatestThread(ctx, owner, assistantKind);
-  if (!thread || !canAccessThread(thread, owner, assistantKind)) return [];
-
-  const messages = await ctx.db
-    .query("assistantMessages")
-    .withIndex("threadId_createdAt", (q) => q.eq("threadId", thread._id))
-    .collect();
-
-  return messages.sort((a, b) => a.createdAt - b.createdAt);
-}
-
-/**
- * Reads the latest persisted assistant message preview for one thread using the ordered message index.
- */
-export async function getLatestThreadPreview(
+async function listLegacyMessages(
   ctx: QueryCtx,
   threadId: Id<"assistantThreads">,
 ) {
@@ -285,16 +381,105 @@ export async function getLatestThreadPreview(
     .withIndex("threadId_createdAt", (q) => q.eq("threadId", threadId))
     .collect();
 
-  return messages.sort((a, b) => a.createdAt - b.createdAt).at(-1)?.content;
+  return messages
+    .sort((a, b) => a.createdAt - b.createdAt)
+    .map((message) => mapLegacyMessage(message));
 }
 
-/**
- * Internal helper to fetch a specific message content by ID.
- * Used by durable workflows which only receive the message ID.
- */
+async function listCanonicalMessages(
+  ctx: QueryCtx,
+  thread: AssistantThreadRecord,
+) {
+  const [messageDocs, messageStateRowsRaw] = await Promise.all([
+    listAgentThreadMessages(ctx, thread._id),
+    listAssistantMessageStatesByThreadId(ctx, thread._id),
+  ]);
+  const messageStateRows = messageStateRowsRaw as Doc<"assistantMessageState">[];
+  const stateByMessageId = new Map(
+    messageStateRows.map((row: Doc<"assistantMessageState">) => [row.messageId, row] as const),
+  );
+  const canonicalMessages = messageDocs.map((message) =>
+    mapAssistantMessageState({
+      message,
+      state: stateByMessageId.get(message._id) ?? null,
+    }),
+  );
+
+  if (!thread.legacyThreadId) {
+    return canonicalMessages.sort((a, b) => a.createdAt - b.createdAt);
+  }
+
+  const legacyMessages = await listLegacyMessages(ctx, thread.legacyThreadId);
+  const mappedLegacyIds = new Set(
+    messageStateRows
+      .map((row: Doc<"assistantMessageState">) => row.legacyMessageId)
+      .filter((id): id is Id<"assistantMessages"> => Boolean(id))
+      .map((id: Id<"assistantMessages">) => String(id)),
+  );
+
+  const unmappedLegacyMessages = legacyMessages.filter(
+    (message) => !mappedLegacyIds.has(String(message.legacyMessageId)),
+  );
+
+  return [...unmappedLegacyMessages, ...canonicalMessages].sort(
+    (a, b) => a.createdAt - b.createdAt,
+  );
+}
+
+export async function listThreadMessages(
+  ctx: QueryCtx,
+  owner: AssistantOwner,
+  threadId?: string,
+  assistantKind?: AssistantKind,
+) {
+  const thread = threadId
+    ? await getAccessibleThread(ctx, owner, threadId, assistantKind)
+    : await getLatestThread(ctx, owner, assistantKind);
+  if (!thread || !canAccessThread(thread, owner, assistantKind)) return [];
+
+  const canonicalThreadState = await getAssistantThreadStateByThreadId(ctx, thread._id);
+  if (canonicalThreadState) {
+    return listCanonicalMessages(ctx, thread);
+  }
+
+  if (!thread.legacyThreadId) return [];
+  return listLegacyMessages(ctx, thread.legacyThreadId);
+}
+
+export async function getLatestThreadPreview(
+  ctx: QueryCtx,
+  threadId: string,
+) {
+  const threadState = await getAssistantThreadStateByThreadId(ctx, threadId);
+  if (threadState) {
+    const messages = await listCanonicalMessages(ctx, mapAssistantThreadState(threadState));
+    return messages.at(-1)?.content;
+  }
+
+  const legacyThreadId = ctx.db.normalizeId("assistantThreads", threadId);
+  if (!legacyThreadId) return undefined;
+  const messages = await listLegacyMessages(ctx, legacyThreadId);
+  return messages.at(-1)?.content;
+}
+
 export async function getMessageContent(
   ctx: QueryCtx,
-  messageId: Id<"assistantMessages">
-): Promise<Doc<"assistantMessages"> | null> {
-  return ctx.db.get(messageId);
+  messageId: string,
+): Promise<AssistantMessageRecord | null> {
+  const componentMessage = await getAgentMessageById(ctx, messageId);
+  if (componentMessage) {
+    const state = (await ctx.db
+      .query("assistantMessageState")
+      .withIndex("messageId", (q) => q.eq("messageId", messageId))
+      .first());
+    return mapAssistantMessageState({
+      message: componentMessage,
+      state,
+    });
+  }
+
+  const legacyMessageId = ctx.db.normalizeId("assistantMessages", messageId);
+  if (!legacyMessageId) return null;
+  const legacyMessage = await ctx.db.get(legacyMessageId);
+  return legacyMessage ? mapLegacyMessage(legacyMessage) : null;
 }

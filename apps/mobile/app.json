@@ -9,7 +9,15 @@
       "expo-router",
       "expo-font",
       "@clerk/expo",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
+        }
+      ]
     ],
     "ios": {
       "infoPlist": {

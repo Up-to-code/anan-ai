@@ -9,6 +9,10 @@ import {
   listThreadMessages,
   saveConversationStep,
 } from "../../ai_zone/services/assistantService";
+import {
+  getAssistantThreadStateByThreadId,
+  saveCanonicalMessage,
+} from "../../ai_zone/services/assistantService/runtime";
 import { buildBuyerComparisonSnapshot } from "../../shared_logic/buyerComparisons";
 import {
   clientThreadMessageValidator,
@@ -223,7 +227,7 @@ export const listClientThreads = query({
  */
 export const getClientThreadMessages = query({
   args: {
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
   },
   returns: v.array(clientThreadMessageValidator),
   handler: async (ctx, args) => {
@@ -252,7 +256,7 @@ export const getClientThreadMessages = query({
  */
 export const getClientAssistantState = query({
   args: {
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
     limit: v.optional(v.number()),
   },
   returns: v.object({
@@ -305,7 +309,7 @@ export const createClientThread = mutation({
     title: v.optional(v.string()),
   },
   returns: v.object({
-    threadId: v.id("assistantThreads"),
+    threadId: v.string(),
   }),
   handler: async (ctx, args) => {
     const userId = await requireAuthenticatedBuyer(ctx, () => getAuthUserId(ctx));
@@ -330,7 +334,7 @@ export const seedClientThreadFromTranscript = mutation({
     messages: v.array(clientTranscriptSeedMessageValidator),
   },
   returns: v.object({
-    threadId: v.id("assistantThreads"),
+    threadId: v.string(),
   }),
   handler: async (ctx, args) => {
     const userId = await requireAuthenticatedBuyer(ctx, () => getAuthUserId(ctx));
@@ -349,23 +353,52 @@ export const seedClientThreadFromTranscript = mutation({
 
     const now = Date.now();
     for (const [index, message] of args.messages.entries()) {
-      await ctx.db.insert("assistantMessages", {
+      const createdAt = now + index;
+      const legacyMessageId = created.legacyThreadId
+        ? await ctx.db.insert("assistantMessages", {
+            threadId: created.legacyThreadId,
+            role: message.role,
+            content: message.text,
+            mode: "qa",
+            metadata: buildAssistantMetadata(message),
+            createdAt,
+          })
+        : undefined;
+      const canonicalMessage = await saveCanonicalMessage(ctx as never, {
         threadId: created.threadId,
         role: message.role,
         content: message.text,
+      });
+      await ctx.db.insert("assistantMessageState", {
+        messageId: canonicalMessage.messageId,
+        threadId: created.threadId,
+        role: message.role,
         mode: "qa",
         metadata: buildAssistantMetadata(message),
-        createdAt: now + index,
+        legacyMessageId,
+        createdAt,
       });
     }
 
-    await ctx.db.patch(created.threadId, {
-      title: resolvedTitle,
-      updatedAt: now + args.messages.length,
-      mode: "qa",
-      assistantKind: CLIENT_ASSISTANT_KIND,
-      orchestratorName: CLIENT_ORCHESTRATOR_NAME,
-    });
+    const threadState = await getAssistantThreadStateByThreadId(ctx, created.threadId);
+    if (threadState) {
+      await ctx.db.patch(threadState._id, {
+        title: resolvedTitle,
+        updatedAt: now + args.messages.length,
+        mode: "qa",
+        assistantKind: CLIENT_ASSISTANT_KIND,
+        orchestratorName: CLIENT_ORCHESTRATOR_NAME,
+      });
+    }
+    if (created.legacyThreadId) {
+      await ctx.db.patch(created.legacyThreadId, {
+        title: resolvedTitle,
+        updatedAt: now + args.messages.length,
+        mode: "qa",
+        assistantKind: CLIENT_ASSISTANT_KIND,
+        orchestratorName: CLIENT_ORCHESTRATOR_NAME,
+      });
+    }
 
     return created;
   },
@@ -378,7 +411,7 @@ export const seedClientThreadFromTranscript = mutation({
  */
 export const persistClientConversationTurn = internalMutation({
   args: {
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
     userId: v.string(),
     userMessage: v.string(),
     userMessageMetadata: v.optional(v.any()),
@@ -386,9 +419,9 @@ export const persistClientConversationTurn = internalMutation({
     assistantMetadata: v.optional(v.any()),
   },
   returns: v.object({
-    threadId: v.id("assistantThreads"),
-    userMessageId: v.optional(v.id("assistantMessages")),
-    assistantMessageId: v.id("assistantMessages"),
+    threadId: v.string(),
+    userMessageId: v.optional(v.string()),
+    assistantMessageId: v.string(),
   }),
   handler: async (ctx, args) => {
     const saved = await saveConversationStep(ctx as never, {

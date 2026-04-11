@@ -1,8 +1,11 @@
-import type { Doc } from "../../../_generated/dataModel";
-import type { WorkspaceActionState, WorkspaceUploadedFileReference } from "./types";
+import type {
+  AssistantMessageRecord,
+  WorkspaceActionState,
+  WorkspaceUploadedFileReference,
+} from "./types";
 
 export function getLatestWorkspaceActionState(
-  messages: Array<Doc<"assistantMessages">>
+  messages: Array<AssistantMessageRecord>,
 ): WorkspaceActionState | null {
   for (let i = messages.length - 1; i >= 0; i -= 1) {
     const message = messages[i];
@@ -22,7 +25,7 @@ export function getLatestWorkspaceActionState(
 }
 
 export function buildRecentThreadContext(
-  messages: Array<Doc<"assistantMessages">>,
+  messages: Array<AssistantMessageRecord>,
   limit = 6
 ): string {
   if (messages.length === 0) return "";

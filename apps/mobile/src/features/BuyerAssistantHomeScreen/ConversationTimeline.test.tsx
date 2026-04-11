@@ -1,39 +1,55 @@
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConversationTimeline } from "@/features/BuyerAssistantHomeScreen/ConversationTimeline";
-import { collectTextContent, findElementsByType } from "@/test/reactTree";
-import type { MobileConversationMessage, MobileProperty } from "@/types/mobile";
+import type { MobileConversationMessage, MobileProperty, MobileSearchContext } from "@/types/mobile";
+
+const renderToStaticMarkup = require("react-dom/server").renderToStaticMarkup as (element: React.ReactElement) => string;
 
 vi.mock("react-native", () => ({
-  Animated: {
-    Value: class {
-      interpolate() {
-        return 1;
-      }
-    },
-    loop: () => ({ start() {}, stop() {} }),
-    sequence: () => ({}),
-    timing: () => ({}),
+  Dimensions: {
+    get: () => ({ height: 844, width: 390 }),
+  },
+  Keyboard: {
+    addListener: () => ({ remove() {} }),
+  },
+  KeyboardAvoidingView: "KeyboardAvoidingView",
+  Platform: {
+    OS: "ios",
   },
   Pressable: "Pressable",
   ScrollView: "ScrollView",
   View: "View",
 }));
 
-vi.mock("@shopify/flash-list", () => ({
-  FlashList: ({ data, ListHeaderComponent, renderItem }: any) =>
-    React.createElement(
-      "FlashList",
-      {},
-      [ListHeaderComponent, ...data.map((item: any, index: number) => renderItem({ item, index }))].filter(Boolean),
-    ),
-}));
+vi.mock("react-native-gifted-chat", () => {
+  const React = require("react");
+  const host = (name: string, props?: Record<string, unknown>, children?: unknown) => React.createElement(name, props, children);
+
+  return {
+    GiftedChat: ({ messages, renderBubble, renderCustomView, renderInputToolbar }: any) =>
+      host(
+        "GiftedChat",
+        {},
+        [
+          ...(messages ?? []).map((message: any) =>
+            host(
+              "GiftedMessage",
+              { key: message._id },
+              [renderBubble?.({ currentMessage: message }), renderCustomView?.({ currentMessage: message })],
+            ),
+          ),
+          renderInputToolbar?.({}),
+        ],
+      ),
+  };
+});
 
 vi.mock("lucide-react-native", () => ({
   Bath: "Bath",
   BedDouble: "BedDouble",
   Building2: "Building2",
   ChevronLeft: "ChevronLeft",
+  Compass: "Compass",
   MapPin: "MapPin",
   Percent: "Percent",
   Ruler: "Ruler",
@@ -49,7 +65,36 @@ vi.mock("expo-image", () => ({
   Image: "Image",
 }));
 
+vi.mock("@/components/chat/ag-ui/MobileAgUiTurnRenderer", () => ({
+  MobileAgUiTurnRenderer: ({ turn }: Record<string, any>) => {
+    const React = require("react");
+    const cards = (turn?.cards ?? []).flatMap((card: any) => {
+      if (card.componentId !== "property_shortlist") return [];
+      return (card.props?.properties ?? []).map((property: MobileProperty) =>
+        React.createElement(
+          "MobilePropertyCard",
+          {
+            key: property.id,
+            property: property.id,
+            variant: "generated",
+          },
+          property.id,
+        ),
+      );
+    });
+    return React.createElement("AgUiTurn", {}, cards);
+  },
+}));
+
+vi.mock("@/components/chat/InsightCard", () => ({
+  InsightCard: ({ card }: Record<string, any>) => {
+    const React = require("react");
+    return React.createElement("InsightCard", {}, [card?.title, card?.summary].filter(Boolean).join(" "));
+  },
+}));
+
 vi.mock("@/components/property/CursorCardShell", () => ({
+  CursorCardAction: "CursorCardAction",
   CursorCardShell: "CursorCardShell",
 }));
 
@@ -58,16 +103,58 @@ vi.mock("@/components/property/CursorPropertyMediaViewer", () => ({
 }));
 
 vi.mock("@/components/property/MobilePropertyCard", () => ({
-  MobilePropertyCard: "MobilePropertyCard",
+  MobilePropertyCard: (props: Record<string, unknown>) => {
+    const React = require("react");
+    return React.createElement(
+      "MobilePropertyCard",
+      {
+        ...props,
+        property: props.property ? String((props.property as MobileProperty).id) : undefined,
+      },
+      props.property ? String((props.property as MobileProperty).id) : null,
+    );
+  },
 }));
 
 vi.mock("@/components/ui/AppText", () => ({
-  AppText: "AppText",
+  AppText: (props: Record<string, unknown>) => {
+    const React = require("react");
+    return React.createElement("AppText", props, props.children);
+  },
+}));
+
+vi.mock("@/components/ui/Button", () => ({
+  Button: (props: Record<string, unknown>) => {
+    const React = require("react");
+    return React.createElement("Button", props, props.label);
+  },
 }));
 
 vi.mock("@/components/ui/MobileChrome", () => ({
-  MobilePill: "MobilePill",
+  MobilePill: (props: Record<string, unknown>) => {
+    const React = require("react");
+    return React.createElement("MobilePill", props, props.label);
+  },
   MobileSectionHeading: "MobileSectionHeading",
+  MobileSurface: (props: Record<string, unknown>) => {
+    const React = require("react");
+    return React.createElement("MobileSurface", props, props.children);
+  },
+}));
+
+vi.mock("@/features/BuyerAssistantHomeScreen/ConversationComposer", () => ({
+  ConversationComposer: (props: Record<string, unknown>) => {
+    const React = require("react");
+    return React.createElement(
+      "ConversationComposer",
+      {
+        ...props,
+        isProcessingState: props.isProcessing ? "true" : "false",
+        selectedCount: Array.isArray(props.selectedProperties) ? props.selectedProperties.length : 0,
+      },
+      null,
+    );
+  },
 }));
 
 vi.mock("@/lib/mobileData", () => ({
@@ -75,9 +162,35 @@ vi.mock("@/lib/mobileData", () => ({
   getPropertyLocationLabel: (property: MobileProperty) => property.location,
 }));
 
+vi.mock("@/lib/mobileLocale", () => ({
+  useMobileLocale: () => ({
+    dictionary: {
+      account: {
+        localSession: "جلسة محلية",
+      },
+      assistant: {
+        localHistory: "سجلك الحالي محفوظ على هذا الجهاز فقط.",
+        requestAdvisor: "اطلب مستشار",
+        searchResultsTitle: "نتائج البحث المقترحة",
+        selectProperty: "اختر العقار",
+        showMoreResults: "اعرض نتائج أكثر",
+      },
+      common: {
+        confirm: "متابعة",
+        continue: "متابعة",
+        selected: "تم الاختيار",
+      },
+    },
+    isRtl: true,
+    locale: "ar",
+  }),
+}));
+
 vi.mock("@/lib/mobileTheme", () => ({
+  getMobileShadow: () => ({}),
   useAppTheme: () => ({
     colors: {
+      accent: "#0f766e",
       border: "#e4e4e7",
       borderStrong: "#d4d4d8",
       canvas: "#fafafa",
@@ -85,14 +198,21 @@ vi.mock("@/lib/mobileTheme", () => ({
       inkMuted: "#71717a",
       inkSoft: "#27272a",
       primary: "#2563eb",
+      primaryMuted: "#bfdbfe",
       primarySoft: "#dbeafe",
       successSoft: "#dcfce7",
+      danger: "#dc2626",
       dangerSoft: "#fee2e2",
       surface: "#ffffff",
       surfaceMuted: "#f4f4f5",
+      teal: "#0f766e",
       userBubble: "#2563eb",
       userBubbleText: "#ffffff",
     },
+    cursorCard: {
+      surfaceColor: "#ffffff",
+    },
+    isDark: false,
     radii: {
       bubble: 24,
       card: 16,
@@ -127,37 +247,19 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-function materialize(node: unknown): unknown {
-  if (Array.isArray(node)) {
-    return node.map((child) => materialize(child));
-  }
-
-  if (!node || typeof node !== "object") {
-    return node;
-  }
-
-  const element = node as {
-    type?: unknown;
-    props?: Record<string, unknown> & {
-      children?: unknown;
-    };
-  };
-
-  if (typeof element.type === "function") {
-    return materialize(element.type(element.props ?? {}));
-  }
-
-  if (!element.props) {
-    return element;
-  }
-
-  return {
-    ...element,
-    props: {
-      ...element.props,
-      children: materialize(element.props.children),
-    },
-  };
+function renderTimeline(props: Partial<React.ComponentProps<typeof ConversationTimeline>> = {}) {
+  return renderToStaticMarkup(
+    React.createElement(ConversationTimeline, {
+      messages: [],
+      value: "",
+      onChange: vi.fn(),
+      onSend: vi.fn(),
+      onSubmitVoiceRecording: vi.fn(async () => undefined),
+      onPropertyPress: vi.fn(),
+      onSuggestedPromptPress: vi.fn(),
+      ...props,
+    }),
+  );
 }
 
 describe("ConversationTimeline", () => {
@@ -195,40 +297,18 @@ describe("ConversationTimeline", () => {
         text: "هذه نتائج بحث",
         searchContext: {
           searchSummary: "شقق قريبة من الخدمات",
-        },
+        } as MobileSearchContext,
         searchResults: [searchProperty],
       },
     ];
 
-    const tree = materialize(
-      ConversationTimeline({
-        listRef: { current: null },
-        messages,
-        onPropertyPress: vi.fn(),
-        onSuggestedPromptPress: vi.fn(),
-      }),
-    );
+    const html = renderTimeline({ messages });
 
-    const cards = findElementsByType(tree, "MobilePropertyCard") as Array<{
-      props?: {
-        property?: MobileProperty;
-        variant?: string;
-      };
-    }>;
-    const shortlistCard = cards.find((card) => card.props?.property?.id === shortlistProperty.id);
-    const fallbackCard = cards.find((card) => card.props?.property?.id === fallbackProperty.id);
-    const variantCounts = cards.reduce<Record<string, number>>((counts, card) => {
-      const variant = card.props?.variant ?? "unknown";
-      counts[variant] = (counts[variant] ?? 0) + 1;
-      return counts;
-    }, {});
-    const visibleText = collectTextContent(tree).join(" ");
-
-    expect(shortlistCard?.props?.variant).toBe("generated");
-    expect(fallbackCard?.props?.variant).toBe("compact");
-    expect(variantCounts.generated).toBe(1);
-    expect(variantCounts.compact ?? 0).toBeGreaterThanOrEqual(1);
-    expect(visibleText).toContain("نتائج البحث المقترحة");
+    expect(html).toContain('MobilePropertyCard');
+    expect(html).toContain(`property=\"${shortlistProperty.id}\" variant=\"generated\"`);
+    expect(html).toContain(`property=\"${fallbackProperty.id}\"`);
+    expect((html.match(/variant=\"compact\"/g) ?? []).length).toBeGreaterThanOrEqual(2);
+    expect(html).toContain("نتائج البحث المقترحة");
   });
 
   it("renders comparison tables inline with shared property thumbnails", () => {
@@ -252,17 +332,28 @@ describe("ConversationTimeline", () => {
       },
     ];
 
-    const tree = materialize(
-      ConversationTimeline({
-        listRef: { current: null },
-        messages,
-        onPropertyPress: vi.fn(),
-        onSuggestedPromptPress: vi.fn(),
-      }),
-    );
+    const html = renderTimeline({ messages });
 
-    const text = collectTextContent(tree).join(" ");
-    expect(text).toContain("مقارنة سريعة");
-    expect(text).toContain("فرق سريع بين الخيارين.");
+    expect(html).toContain("مقارنة سريعة");
+    expect(html).toContain("فرق سريع بين الخيارين.");
+  });
+
+  it("keeps the composer in the Gifted Chat toolbar and shows the auth gate above it", () => {
+    const selectedProperty = createProperty("selected");
+    const html = renderTimeline({
+      isTyping: true,
+      selectedProperties: [selectedProperty],
+      showAuthCallout: true,
+      onContinueAuthGate: vi.fn(),
+      onRequestAdvisor: vi.fn(),
+      composerVariant: "thread",
+    });
+
+    expect(html).toContain('ConversationComposer');
+    expect(html).toContain('variant=\"thread\"');
+    expect(html).toContain('selectedCount=\"1\"');
+    expect(html).toContain('isProcessingState=\"true\"');
+    expect(html).toContain("جلسة محلية");
+    expect(html).toContain("سجلك الحالي محفوظ على هذا الجهاز فقط.");
   });
 });

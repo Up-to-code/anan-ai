@@ -1,5 +1,5 @@
 import { useRef, useMemo, useCallback, useState, useEffect } from "react";
-import { Animated } from "react-native";
+import { Animated, Keyboard } from "react-native";
 import { useVoiceRecording } from "@/hooks/useVoiceRecording";
 import { useMobileLayout } from "@/lib/mobileLayout";
 import { useMobileLocale } from "@/lib/mobileLocale";
@@ -57,8 +57,12 @@ export function useComposerState({
 
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const latestValueRef = useRef(value);
+  const [draftValue, setDraftValue] = useState(value);
 
-  latestValueRef.current = value;
+  useEffect(() => {
+    latestValueRef.current = value;
+    setDraftValue(value);
+  }, [value]);
 
   const {
     phase,
@@ -102,7 +106,7 @@ export function useComposerState({
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const trimmed = value.trim();
+    const trimmed = draftValue.trim();
     const hasTextNow = trimmed.length > 0;
     
     if (hasTextNow) {
@@ -124,16 +128,16 @@ export function useComposerState({
         clearTimeout(typingTimeoutRef.current);
       }
     };
-  }, [value]);
+  }, [draftValue]);
 
-  const trimmedValue = useMemo(() => latestValueRef.current.trim(), [value]);
+  const trimmedValue = useMemo(() => draftValue.trim(), [draftValue]);
   const canSend = trimmedValue.length > 0 && !isRecording && !isVoiceBusy;
   const startsWithLatin = useMemo(
     () => /^[A-Za-z0-9]/.test(trimmedValue),
     [trimmedValue]
   );
-  const textAlign = startsWithLatin ? "left" : "right";
-  const writingDirection = startsWithLatin ? "ltr" : "rtl";
+  const textAlign = trimmedValue.length === 0 ? (locale === "en" ? "left" : "right") : startsWithLatin ? "left" : "right";
+  const writingDirection = trimmedValue.length === 0 ? (locale === "en" ? "ltr" : "rtl") : startsWithLatin ? "ltr" : "rtl";
 
   const actionButtonSize = layout.isCompact ? 40 : 44;
   const inputFontSize = layout.isCompact ? 15 : 16;
@@ -154,6 +158,7 @@ export function useComposerState({
   const handleChangeText = useCallback(
     (nextValue: string) => {
       latestValueRef.current = nextValue;
+      setDraftValue(nextValue);
       onChange(nextValue);
     },
     [onChange]
@@ -162,6 +167,7 @@ export function useComposerState({
   const handlePrimaryActionPress = useCallback(() => {
     const nextValue = latestValueRef.current.trim();
     if (nextValue.length > 0 && !isRecording && !isVoiceBusy) {
+      Keyboard.dismiss();
       onSend(nextValue);
       return;
     }

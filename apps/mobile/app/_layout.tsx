@@ -8,8 +8,8 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
-import { Appearance, I18nManager, View } from "react-native";
+import { useEffect, type ReactNode } from "react";
+import { Appearance, I18nManager, TurboModuleRegistry, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppText } from "@/components/ui/AppText";
@@ -25,6 +25,34 @@ void SplashScreen.preventAutoHideAsync();
 
 const clerkPublishableKey = getMobileClerkPublishableKey();
 const mobileBackend = getMobileBackendReadiness();
+
+function hasKeyboardControllerRuntime() {
+  const keyboardControllerModule = TurboModuleRegistry.get("KeyboardController") as
+    | { getConstants?: unknown }
+    | null;
+  return typeof keyboardControllerModule?.getConstants === "function";
+}
+
+function OptionalKeyboardProvider({ children }: { children: ReactNode }) {
+  try {
+    if (!hasKeyboardControllerRuntime()) {
+      return <>{children}</>;
+    }
+
+    const keyboardController = require("react-native-keyboard-controller") as {
+      KeyboardProvider?: React.ComponentType<{ children: ReactNode }>;
+    };
+
+    if (!keyboardController.KeyboardProvider) {
+      return <>{children}</>;
+    }
+
+    const Provider = keyboardController.KeyboardProvider;
+    return <Provider>{children}</Provider>;
+  } catch {
+    return <>{children}</>;
+  }
+}
 
 function BackendRequiredScreen() {
   const theme = useAppTheme();
@@ -102,15 +130,17 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
-          <ConvexProvider>
-            <BuyerAccountProvider>
-              <AppShell />
-            </BuyerAccountProvider>
-          </ConvexProvider>
-        </ClerkProvider>
-      </SafeAreaProvider>
+      <OptionalKeyboardProvider>
+        <SafeAreaProvider>
+          <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
+            <ConvexProvider>
+              <BuyerAccountProvider>
+                <AppShell />
+              </BuyerAccountProvider>
+            </ConvexProvider>
+          </ClerkProvider>
+        </SafeAreaProvider>
+      </OptionalKeyboardProvider>
     </GestureHandlerRootView>
   );
 }

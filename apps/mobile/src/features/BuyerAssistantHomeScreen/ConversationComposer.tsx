@@ -1,6 +1,6 @@
 import { ArrowUp, Loader2, Mic, X } from "lucide-react-native";
-import { Platform, Pressable, TextInput, View } from "react-native";
-import React from "react";
+import { Animated, Platform, Pressable, TextInput, View } from "react-native";
+import React, { useEffect, useRef } from "react";
 import {
   MobilePromptInputRecordingRow,
   MobilePromptInputShell,
@@ -23,6 +23,7 @@ type ConversationComposerProps = {
   onPressComparePrompt?: () => void;
   onRemoveSelectedProperty?: (propertyId: string) => void;
   onToggleComparePicking?: () => void;
+  isProcessing?: boolean;
   variant?: "landing" | "thread";
 };
 
@@ -38,6 +39,7 @@ export function ConversationComposer({
   onPressComparePrompt,
   onRemoveSelectedProperty,
   onToggleComparePicking,
+  isProcessing = false,
   variant = "thread",
 }: ConversationComposerProps) {
   const {
@@ -89,12 +91,14 @@ export function ConversationComposer({
   const actionButtonBorderWidthCalc = canSend ? 0 : theme.isDark ? 1.5 : 0;
   const actionButtonBorderColorCalc = canSend ? "transparent" : theme.colors.composerActionRing;
   const inputPillHeightCalc = layout.isCompact ? 44 : 46;
+  const showProcessingAction = isProcessing || phase === "sending";
 
   const showPropertyPromptRail =
     variant === "thread" &&
     selectedProperties.length > 0 &&
     onPressPromptProperty &&
     onRemoveSelectedProperty;
+  const rowDirectionClassName = locale === "en" ? "flex-row" : "flex-row-reverse";
 
   return (
     <View className="w-full gap-2">
@@ -130,11 +134,11 @@ export function ConversationComposer({
       ) : null}
 
       <MobilePromptInputShell
-        active={isTyping || isRecordingSession || canSend}
+        active={isProcessing || isTyping || isRecordingSession || canSend}
         expanded={isExpanded}
         hint={null}
       >
-        <View className="flex-row items-center gap-2.5">
+        <View className={`${rowDirectionClassName} items-center gap-2.5`}>
           {isRecordingSession ? (
             <MobilePromptInputRecordingRow
               durationSeconds={durationSeconds}
@@ -152,11 +156,13 @@ export function ConversationComposer({
                 className="flex-1 justify-center"
                 style={{
                   minHeight: inputPillHeightCalc,
-                  borderRadius: 22,
+                  borderRadius: 24,
                   borderWidth: 1,
                   borderColor: theme.colors.border,
-                  backgroundColor: theme.colors.surface,
+                  backgroundColor: theme.colors.surfaceMuted,
                   paddingHorizontal: 16,
+                  paddingTop: 4,
+                  paddingBottom: 4,
                 }}
               >
                 <TextInput
@@ -165,10 +171,14 @@ export function ConversationComposer({
                   multiline
                   blurOnSubmit={false}
                   editable={!isVoiceBusy}
+                  textAlign={textAlign}
                   placeholder={inputPlaceholder}
                   placeholderTextColor={theme.colors.inkMuted}
                   cursorColor={theme.colors.primary}
+                  selectionColor={theme.colors.primary}
                   textAlignVertical="center"
+                  scrollEnabled={isExpanded}
+                  underlineColorAndroid="transparent"
                   style={{
                     minHeight: layout.isCompact ? 36 : 38,
                     maxHeight: inputMaxHeightCalc,
@@ -194,7 +204,9 @@ export function ConversationComposer({
               >
                 <Pressable
                   onPress={handlePrimaryActionPress}
-                  disabled={isVoiceBusy}
+                  disabled={isVoiceBusy || showProcessingAction}
+                  hitSlop={10}
+                  pressRetentionOffset={12}
                   className="items-center justify-center"
                   style={({ pressed }) => ({
                     borderRadius: actionButtonSizeCalc / 2,
@@ -204,11 +216,21 @@ export function ConversationComposer({
                     borderWidth: actionButtonBorderWidthCalc,
                     borderColor: actionButtonBorderColorCalc,
                     ...getMobileShadow("float"),
-                    opacity: isVoiceBusy ? 0.6 : 1,
+                    opacity: isVoiceBusy || showProcessingAction ? 0.92 : 1,
                     transform: [{ scale: pressed ? 0.94 : 1 }],
                   })}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    showProcessingAction
+                      ? (locale === "en" ? "Processing response" : "نعالج الرد الآن")
+                      : canSend
+                        ? (locale === "en" ? "Send message" : "إرسال الرسالة")
+                        : (locale === "en" ? "Start voice recording" : "بدء التسجيل الصوتي")
+                  }
                 >
-                  {canSend ? (
+                  {showProcessingAction ? (
+                    <ProcessingActionIcon color={actionIconColor} compact={layout.isCompact} />
+                  ) : canSend ? (
                     <ArrowUp size={sendIconSize} color={actionIconColor} strokeWidth={2.35} />
                   ) : (
                     <Mic size={micIconSize} color={actionIconColor} strokeWidth={2.2} />
@@ -220,5 +242,51 @@ export function ConversationComposer({
         </View>
       </MobilePromptInputShell>
     </View>
+  );
+}
+
+function ProcessingActionIcon({
+  color,
+  compact,
+}: {
+  color: string;
+  compact: boolean;
+}) {
+  const pulse = useRef(new Animated.Value(0.86)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 620,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0.86,
+          duration: 620,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => {
+      loop.stop();
+    };
+  }, [pulse]);
+
+  const squareSize = compact ? 11 : 12;
+
+  return (
+    <Animated.View
+      style={{
+        width: squareSize,
+        height: squareSize,
+        borderRadius: compact ? 3 : 4,
+        backgroundColor: color,
+        opacity: pulse,
+        transform: [{ scale: pulse }],
+      }}
+    />
   );
 }

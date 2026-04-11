@@ -6,7 +6,6 @@ import type { WorkflowId } from "@convex-dev/workflow";
 import { api, components, internal } from "../../../_generated/api";
 import { internalAction } from "../../../_generated/server";
 import { v } from "convex/values";
-import type { Id } from "../../../_generated/dataModel";
 import { WORKFLOW_RETRY_POLICY } from "../../../shared_logic/lib/retry";
 
 export const workflow = new WorkflowManager(components.workflow as never, {
@@ -39,14 +38,14 @@ export const generateResponseWorkflow = workflow.define({
     // Since we only have promptMessageId here, we'll need to fetch it first via query
     const messageDoc = await step.runQuery(
       internal.ai_zone.assistant._getMessageContent,
-      { messageId: promptMessageId as Id<"assistantMessages"> }
+      { messageId: promptMessageId }
     );
 
     if (!messageDoc) throw new Error("Could not find message content");
 
     await step.runAction(
       sendMessageAction as never,
-      { message: messageDoc.content, threadId: threadId as Id<"assistantThreads"> } as never,
+      { message: messageDoc.content, threadId } as never,
       { name: "generateResponse" },
     );
   },

@@ -1,5 +1,5 @@
 import Constants from "expo-constants";
-import { resolveClerkPublishableKey, resolveConvexUrl } from "@/lib/mobileEnv.shared";
+import { resolveClerkPublishableKey, resolveConvexSiteUrl, resolveConvexUrl } from "@/lib/mobileEnv.shared";
 
 /**
  * WHY:   Missing mobile auth env should fail with a repo-specific fix message instead of Clerk's generic runtime error.
@@ -36,10 +36,30 @@ export function getMobileBackendReadiness() {
   const convexUrl = resolveConvexUrl({
     expoPublicConvexUrl: process.env.EXPO_PUBLIC_CONVEX_URL,
   });
+  const convexSiteUrl = resolveConvexSiteUrl({
+    expoPublicConvexUrl: process.env.EXPO_PUBLIC_CONVEX_URL,
+    expoPublicConvexSiteUrl: process.env.EXPO_PUBLIC_CONVEX_SITE_URL,
+  });
 
   return {
     convexUrl,
+    convexSiteUrl,
     isReady: Boolean(convexUrl),
     reason: convexUrl ? null : rawConvexUrl ? ("invalid_convex_url" as const) : ("missing_convex_url" as const),
   };
+}
+
+/**
+ * WHY:   The mobile chat transport needs one stable helper to resolve the Convex-hosted stream endpoint.
+ * WHAT:  Returns the OpenAI-compatible base path for the mobile assistant stream.
+ * HOW:   Builds the route from the validated public Convex site URL and trims trailing slashes for client-safe concatenation.
+ */
+export function getMobileAssistantStreamBaseUrl() {
+  const convexSiteUrl = resolveConvexSiteUrl({
+    expoPublicConvexUrl: process.env.EXPO_PUBLIC_CONVEX_URL,
+    expoPublicConvexSiteUrl: process.env.EXPO_PUBLIC_CONVEX_SITE_URL,
+  });
+
+  if (!convexSiteUrl) return null;
+  return `${convexSiteUrl}/api/mobile/assistant/stream`;
 }

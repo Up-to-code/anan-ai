@@ -15,7 +15,7 @@ const REF_DEDUPE_WINDOW_MS = 1000 * 60 * 5;
  */
 export const trackBuyerPropertyRefsInternal = internalMutation({
   args: {
-    threadId: v.id("assistantThreads"),
+    threadId: v.string(),
     userId: v.string(),
     channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
     refs: v.array(v.object({
@@ -26,7 +26,7 @@ export const trackBuyerPropertyRefsInternal = internalMutation({
         v.literal("active_property"),
         v.literal("comparison_request"),
       ),
-      messageId: v.optional(v.id("assistantMessages")),
+      messageId: v.optional(v.string()),
       rank: v.optional(v.number()),
     })),
   },
@@ -74,12 +74,12 @@ export const trackBuyerPropertyRefsInternal = internalMutation({
  */
 export const storeBuyerComparisonArtifactInternal = internalMutation({
   args: {
-    threadId: v.id("assistantThreads"),
+    threadId: v.string(),
     userId: v.string(),
     channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
     locale: v.union(v.literal("ar"), v.literal("en"), v.literal("fr")),
     propertyIds: v.array(v.id("properties")),
-    triggerMessageId: v.optional(v.id("assistantMessages")),
+    triggerMessageId: v.optional(v.string()),
     selectionSource: buyerComparisonSelectionSourceValidator,
     digestTitle: v.string(),
     digestSummary: v.string(),

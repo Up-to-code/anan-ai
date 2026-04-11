@@ -6,7 +6,6 @@ import type { MobileProperty } from "@/types/mobile";
 const renderToStaticMarkup = require("react-dom/server").renderToStaticMarkup as (element: React.ReactElement) => string;
 
 const mockState = vi.hoisted(() => ({
-  composerProps: [] as Array<Record<string, unknown>>,
   timelineProps: [] as Array<Record<string, unknown>>,
   assistant: null as any,
   assistantSearchContext: null as any,
@@ -78,14 +77,6 @@ vi.mock("@/components/ui/IconButton", () => ({
 vi.mock("@/components/ui/MobileChrome", () => ({
   MobileSurface: "mobile-surface",
   MobileTopBar: "mobile-top-bar",
-}));
-
-vi.mock("@/features/BuyerAssistantHomeScreen/ConversationComposer", () => ({
-  ConversationComposer: (props: Record<string, unknown>) => {
-    const React = require("react");
-    mockState.composerProps.push(props);
-    return React.createElement("conversation-composer");
-  },
 }));
 
 vi.mock("@/features/BuyerAssistantHomeScreen/ConversationTimeline", () => ({
@@ -189,6 +180,7 @@ function buildAssistantState(activeProperty: MobileProperty | null) {
     setDraft: vi.fn(),
     setShowAuthCallout: vi.fn(),
     showAuthCallout: false,
+    streamingAssistantText: "",
     submit: vi.fn(),
     submitVoiceRecording: vi.fn(),
   };
@@ -198,7 +190,6 @@ afterEach(() => {
   vi.clearAllMocks();
   mockState.assistant = null;
   mockState.assistantSearchContext = null;
-  mockState.composerProps = [];
   mockState.feed = null;
   mockState.localParams = {};
   mockState.timelineProps = [];
@@ -215,9 +206,8 @@ describe("BuyerAssistantHomeScreen", () => {
 
     renderToStaticMarkup(React.createElement(BuyerAssistantHomeScreen));
 
-    expect(mockState.composerProps).toHaveLength(1);
-    expect(mockState.composerProps[0]?.selectedProperties).toEqual([activeProperty]);
     expect(mockState.timelineProps).toHaveLength(1);
+    expect(mockState.timelineProps[0]?.selectedProperties).toEqual([activeProperty]);
     expect(mockState.timelineProps[0]?.contextProperty).toBeUndefined();
   });
 
@@ -230,8 +220,8 @@ describe("BuyerAssistantHomeScreen", () => {
 
     renderToStaticMarkup(React.createElement(BuyerAssistantHomeScreen));
 
-    expect(mockState.composerProps).toHaveLength(1);
-    expect(mockState.composerProps[0]?.selectedProperties).toEqual([]);
+    expect(mockState.timelineProps).toHaveLength(1);
+    expect(mockState.timelineProps[0]?.selectedProperties).toEqual([]);
   });
 
   it("uses property presses to set chat context instead of auto-sending a synthetic turn", () => {

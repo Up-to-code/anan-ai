@@ -16,6 +16,7 @@ import {
   handleToken,
   handleUserInfo,
 } from "./_core/oauth/http";
+import { handleMobileAssistantStream } from "./ai_zone/assistantPublicHttp";
 
 const http = httpRouter();
 
@@ -42,6 +43,12 @@ http.route({
   path: "/api/whatsapp/webhook",
   method: "POST",
   handler: handleWhatsAppWebhookPost,
+});
+
+http.route({
+  path: "/api/mobile/assistant/stream/chat/completions",
+  method: "POST",
+  handler: httpAction(handleMobileAssistantStream),
 });
 
 http.route({

@@ -41,6 +41,10 @@ function loadRootEnv() {
     parsed.EXPO_PUBLIC_CONVEX_URL = parsed.CONVEX_URL;
   }
 
+  if (!parsed.EXPO_PUBLIC_CONVEX_SITE_URL && parsed.CONVEX_SITE_URL) {
+    parsed.EXPO_PUBLIC_CONVEX_SITE_URL = parsed.CONVEX_SITE_URL;
+  }
+
   if (!parsed.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY && parsed.CLERK_PUBLISHABLE_KEY) {
     parsed.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY = parsed.CLERK_PUBLISHABLE_KEY;
   }

@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, View } from "react-native";
+import { Modal, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { FlashListRef } from "@shopify/flash-list";
 import { Menu, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AnanMark } from "@/components/chat/AnanMark";
@@ -9,7 +8,6 @@ import { Button } from "@/components/ui/Button";
 import { AppText } from "@/components/ui/AppText";
 import { IconButton } from "@/components/ui/IconButton";
 import { MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
-import { ConversationComposer } from "@/features/BuyerAssistantHomeScreen/ConversationComposer";
 import { ConversationTimeline } from "@/features/BuyerAssistantHomeScreen/ConversationTimeline";
 import {
   buildPropertySelectionPrompt,
@@ -22,7 +20,7 @@ import { useMobileLocale } from "@/lib/mobileLocale";
 import { useMobileLayout } from "@/lib/mobileLayout";
 import { buildAssistantSearchContext, buildSearchRouteParams } from "@/lib/mobileSearch";
 import { useAppTheme } from "@/lib/mobileTheme";
-import type { MobileConversationMessage, MobileProperty, MobileSearchContext, MobileThreadSummary } from "@/types/mobile";
+import type { MobileProperty, MobileSearchContext, MobileThreadSummary } from "@/types/mobile";
 
 const MAX_COMPARE_PROPERTIES = 3;
 
@@ -35,16 +33,13 @@ function useStableEvent<T extends (...args: never[]) => void>(handler: T) {
 
 export default function BuyerAssistantHomeScreen() {
   const insets = useSafeAreaInsets();
-  const layout = useMobileLayout();
   const theme = useAppTheme();
   const { locale, dictionary, isRtl } = useMobileLocale();
   const assistant = usePropertyAssistant();
   const feed = usePropertyFeed();
   const router = useRouter();
   const params = useLocalSearchParams<{ newThread?: string; propertyId?: string; threadId?: string }>();
-  const listRef = useRef<FlashListRef<MobileConversationMessage> | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [isComparePicking, setIsComparePicking] = useState(false);
   const appliedRoutePropertyId = useRef<string | null>(null);
   const appliedThreadId = useRef<string | null>(null);
@@ -59,10 +54,6 @@ export default function BuyerAssistantHomeScreen() {
       }),
     [assistant.activeProperty, assistant.activeThreadId, assistant.latestUserMessage, locale],
   );
-  const composerBottomInset = keyboardVisible ? 10 : Math.max(insets.bottom, 12);
-  const scrollTimelineToEnd = useStableEvent((animated: boolean) => {
-    listRef.current?.scrollToEnd({ animated });
-  });
   const handleCreateNewThread = useStableEvent(() => {
     assistant.createNewThread();
   });
@@ -72,31 +63,6 @@ export default function BuyerAssistantHomeScreen() {
   const handleOpenHistoryThread = useStableEvent((threadId: string) => {
     void assistant.openHistoryThread(threadId);
   });
-
-  useEffect(() => {
-    const timer = setTimeout(() => scrollTimelineToEnd(true), 50);
-    return () => clearTimeout(timer);
-  }, [assistant.messages.length, scrollTimelineToEnd]);
-
-  useEffect(() => {
-    if (keyboardVisible) {
-      const timer = setTimeout(() => scrollTimelineToEnd(true), 120);
-      return () => clearTimeout(timer);
-    }
-  }, [keyboardVisible, scrollTimelineToEnd]);
-
-  useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
-    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
 
   useEffect(() => {
     if (assistant.selectedProperties.length === 0 && isComparePicking) {
@@ -260,62 +226,12 @@ export default function BuyerAssistantHomeScreen() {
         }
       />
 
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={0}
-      >
-        <View className="flex-1">
-          {isLandingMode ? (
-            <ScrollView
-              className="flex-1"
-              contentContainerStyle={{
-                flexGrow: 1,
-                paddingHorizontal: layout.contentPadding,
-                paddingBottom: layout.sectionGap,
-              }}
-              showsVerticalScrollIndicator={false}
-            >
-              <WelcomeState />
-            </ScrollView>
-          ) : (
-            <ConversationTimeline
-              listRef={listRef}
-              messages={assistant.messages}
-              isTyping={assistant.isSubmitting}
-              onPropertyPress={(property) => assistant.setPropertyContext(property)}
-              onAddPropertyToSelection={addPropertyToSelection}
-              onOpenProperty={openPropertyDetail}
-              onOpenGallery={openPropertyGallery}
-              bottomPadding={layout.sectionGap}
-              onShowMoreSearchResults={openSearchResultsScreen}
-              ambientBackgroundColor={shellBackgroundColor}
-              selectedPropertyIds={assistant.selectedProperties.map((property) => property.id)}
-              comparePicking={isComparePicking}
-              maxCompareProperties={MAX_COMPARE_PROPERTIES}
-              onSuggestedPromptPress={submitSuggestedPrompt}
-            />
-          )}
-        </View>
-
-        <View
-          style={{
-            paddingHorizontal: layout.contentPadding,
-            paddingTop: assistant.showAuthCallout ? 6 : 6,
-            paddingBottom: composerBottomInset,
-            borderTopWidth: isLandingMode ? 0 : 1, // 1px delicate border
-            borderTopColor: theme.colors.border,
-            backgroundColor: shellBackgroundColor,
-          }}
-        >
-          {assistant.showAuthCallout ? (
-            <AuthGateNotice
-              onContinue={() => assistant.setShowAuthCallout(false)}
-              onRequestAdvisor={() => void assistant.requestAdvisor()}
-            />
-          ) : null}
-
-          <ConversationComposer
+      <View className="flex-1">
+        {isLandingMode ? (
+          <ConversationTimeline
+            messages={[]}
+            isTyping={assistant.isSubmitting}
+            streamingAssistantText={assistant.streamingAssistantText}
             value={assistant.draft}
             onChange={assistant.setDraft}
             onSend={submitDraft}
@@ -327,10 +243,53 @@ export default function BuyerAssistantHomeScreen() {
             onPressComparePrompt={applyComparePrompt}
             onRemoveSelectedProperty={(propertyId) => assistant.removePropertyFromSelection(propertyId)}
             onToggleComparePicking={() => setIsComparePicking((current) => !current)}
-            variant={isLandingMode ? "landing" : "thread"}
+            onPropertyPress={(property) => assistant.setPropertyContext(property)}
+            onAddPropertyToSelection={addPropertyToSelection}
+            onOpenProperty={openPropertyDetail}
+            onOpenGallery={openPropertyGallery}
+            onShowMoreSearchResults={openSearchResultsScreen}
+            ambientBackgroundColor={shellBackgroundColor}
+            bottomInset={insets.bottom}
+            headerContent={<WelcomeState />}
+            selectedPropertyIds={assistant.selectedProperties.map((property) => property.id)}
+            onSuggestedPromptPress={submitSuggestedPrompt}
+            showAuthCallout={assistant.showAuthCallout}
+            onContinueAuthGate={() => assistant.setShowAuthCallout(false)}
+            onRequestAdvisor={() => void assistant.requestAdvisor()}
+            composerVariant="landing"
           />
-        </View>
-      </KeyboardAvoidingView>
+        ) : (
+          <ConversationTimeline
+            messages={assistant.messages}
+            isTyping={assistant.isSubmitting}
+            streamingAssistantText={assistant.streamingAssistantText}
+            value={assistant.draft}
+            onChange={assistant.setDraft}
+            onSend={submitDraft}
+            onSubmitVoiceRecording={(fileUri) => assistant.submitVoiceRecording(fileUri)}
+            selectedProperties={assistant.selectedProperties}
+            comparePicking={isComparePicking}
+            maxCompareProperties={MAX_COMPARE_PROPERTIES}
+            onPressPromptProperty={applyPropertyPromptForProperty}
+            onPressComparePrompt={applyComparePrompt}
+            onRemoveSelectedProperty={(propertyId) => assistant.removePropertyFromSelection(propertyId)}
+            onToggleComparePicking={() => setIsComparePicking((current) => !current)}
+            onPropertyPress={(property) => assistant.setPropertyContext(property)}
+            onAddPropertyToSelection={addPropertyToSelection}
+            onOpenProperty={openPropertyDetail}
+            onOpenGallery={openPropertyGallery}
+            onShowMoreSearchResults={openSearchResultsScreen}
+            ambientBackgroundColor={shellBackgroundColor}
+            bottomInset={insets.bottom}
+            selectedPropertyIds={assistant.selectedProperties.map((property) => property.id)}
+            onSuggestedPromptPress={submitSuggestedPrompt}
+            showAuthCallout={assistant.showAuthCallout}
+            onContinueAuthGate={() => assistant.setShowAuthCallout(false)}
+            onRequestAdvisor={() => void assistant.requestAdvisor()}
+            composerVariant="thread"
+          />
+        )}
+      </View>
 
       <HistorySheet
         open={isHistoryOpen}
@@ -352,8 +311,7 @@ export default function BuyerAssistantHomeScreen() {
   );
 }
 
-function WelcomeState({
-}: {}) {
+function WelcomeState() {
   const layout = useMobileLayout();
   const theme = useAppTheme();
   const { dictionary } = useMobileLocale();
@@ -381,36 +339,6 @@ function WelcomeState({
       <View className="px-6">
       </View>
     </View>
-  );
-}
-
-function AuthGateNotice({
-  onContinue,
-  onRequestAdvisor,
-}: {
-  onContinue: () => void;
-  onRequestAdvisor: () => void;
-}) {
-  const theme = useAppTheme();
-  const { dictionary, isRtl } = useMobileLocale();
-
-  return (
-    <MobileSurface tone="highlight" radius="card" shadow="none" className="mb-3 px-4 py-4">
-      <AppText responsiveRole="bodyStrong" className="font-cairo-bold" style={{ color: theme.colors.ink }}>
-        {dictionary.account.localSession}
-      </AppText>
-      <AppText responsiveRole="body" className="mt-2 font-medium" style={{ color: theme.colors.inkSoft }}>
-        {dictionary.assistant.localHistory}
-      </AppText>
-      <View className={`mt-5 gap-3 ${isRtl ? "flex-row-reverse" : "flex-row"}`}>
-        <View style={{ flex: 1 }}>
-          <Button label={dictionary.common.confirm} variant="secondary" size="sm" onPress={onContinue} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Button label={dictionary.assistant.requestAdvisor} variant="accent" size="sm" onPress={onRequestAdvisor} />
-        </View>
-      </View>
-    </MobileSurface>
   );
 }
 

@@ -133,7 +133,7 @@ type BuyerCard =
 type PersistedBuyerState = {
   channel: "whatsapp" | "app" | "web";
   userId: string;
-  threadId?: Id<"assistantThreads">;
+  threadId?: string;
   state: "idle" | "search_results" | "property_selected" | "handoff_ready";
   selectedPropertyId?: Id<"properties">;
   lastResultPropertyIds: Array<Id<"properties">>;
@@ -873,7 +873,7 @@ async function runDiversifiedSearch(args: {
 async function persistBuyerPropertyRefs(args: {
   ctx: ActionCtx;
   owner: BuyerOwner;
-  threadId?: Id<"assistantThreads">;
+  threadId?: string;
   channel: "web";
   properties?: BuyerProperty[];
   activePropertyId?: Id<"properties">;
@@ -934,7 +934,7 @@ async function persistBuyerPropertyRefs(args: {
 
 async function resolveBuyerComparisonRequest(args: {
   ctx: ActionCtx;
-  threadId?: Id<"assistantThreads">;
+  threadId?: string;
   message: string;
   currentState: PersistedBuyerState | null;
   selectedPropertyIds?: Array<Id<"properties">>;
@@ -1016,7 +1016,7 @@ async function resolveBuyerComparisonRequest(args: {
 async function rememberBuyerSignal(args: {
   ctx: ActionCtx;
   owner: BuyerOwner;
-  threadId?: Id<"assistantThreads">;
+  threadId?: string;
   message: string;
   property?: BuyerProperty | null;
   qualification?: BuyerQualification;
@@ -1118,11 +1118,11 @@ export async function buildStructuredBuyerResponse(args: {
   locale: SupportedLocale;
   message: string;
   assistantText: string;
-  threadId?: Id<"assistantThreads">;
+  threadId?: string;
   startFresh?: boolean;
   selectedPropertyId?: Id<"properties">;
   selectedPropertyIds?: Array<Id<"properties">>;
-  triggerMessageId?: Id<"assistantMessages">;
+  triggerMessageId?: string;
   qualification?: BuyerQualification;
   promptBudgetMeta?: PromptBudgetMeta;
 }): Promise<StructuredBuyerResponse> {
@@ -1228,7 +1228,7 @@ export async function buildStructuredBuyerResponse(args: {
     const comparisonArtifactId = await args.ctx.runMutation(
       buyerComparisonsInternal.storeBuyerComparisonArtifactInternal,
       {
-        threadId: args.threadId as Id<"assistantThreads">,
+        threadId: args.threadId,
         userId: args.owner.userId,
         channel: args.channel,
         locale: args.locale,

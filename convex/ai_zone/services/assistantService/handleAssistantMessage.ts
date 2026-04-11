@@ -1,12 +1,17 @@
 import type { ActionCtx } from "../../../_generated/server";
-import type { Doc, Id } from "../../../_generated/dataModel";
 import { ConvexError } from "convex/values";
 import { api, internal } from "../../../_generated/api";
-import { orchestrate } from "../../agents/anan";
-import { orchestrate as orchestrateWorkspace } from "../../agents/anan_workspace";
 import type { WorkspaceStructuredOutput } from "../../agents/anan_workspace/types";
+import { runAssistantSurfaceRuntime } from "../../openMultiAgent";
 import { resolveWorkspaceAgUiTurn } from "../agUi";
-import type { AssistantKind, AssistantOwner, WorkspaceActionState, WorkspaceProjectActionState } from "./types";
+import type {
+  AssistantKind,
+  AssistantMessageRecord,
+  AssistantOwner,
+  AssistantThreadRecord,
+  WorkspaceActionState,
+  WorkspaceProjectActionState,
+} from "./types";
 import { isPublicAssistantKind, isWorkspaceKind } from "./utils";
 import { getLatestWorkspaceActionState } from "./workspaceContext";
 import { normalizeWorkspaceStructuredOutput, buildProjectQuestions } from "./workspaceParsing";
@@ -26,7 +31,7 @@ export async function handleAssistantMessage(
   ctx: ActionCtx,
   args: {
     message: string;
-    threadId?: Id<"assistantThreads">;
+    threadId?: string;
     startNewThread?: boolean;
     inputMode?: "text" | "voice" | "attachment";
     attachments?: WorkspaceUploadedFileReference[];
@@ -38,13 +43,13 @@ export async function handleAssistantMessage(
     promptPrefix?: string;
     streamSessionId?: string;
     ownerOverride?: AssistantOwner;
-    initialThreadOverride?: Doc<"assistantThreads"> | null;
+    initialThreadOverride?: AssistantThreadRecord | null;
     runtimeContextOverride?: {
-      thread?: Doc<"assistantThreads"> | null;
+      thread?: AssistantThreadRecord | null;
       owner: AssistantOwner;
       entitlement?: { mode: "qa" | "action" };
-      existingMessages?: Array<Doc<"assistantMessages">>;
-      regenerateSource?: Doc<"assistantMessages"> | null;
+      existingMessages?: Array<AssistantMessageRecord>;
+      regenerateSource?: AssistantMessageRecord | null;
       effectiveUserMessage?: string;
       knowledge?: Array<{ title: string; category?: string | null; excerpt: string }>;
       compiledBuyerContext?: {
@@ -118,9 +123,7 @@ export async function handleAssistantMessage(
 
   let activeThreadId = (shouldStartFreshWorkspaceThread
     ? undefined
-    : (args.threadId ?? thread?._id)) as
-    | Id<"assistantThreads">
-    | undefined;
+    : (args.threadId ?? thread?._id)) as string | undefined;
 
   // 2. Get entitlement (determines qa vs action mode)
   const entitlement = runtimeContext?.entitlement ?? await ctx.runQuery(
@@ -139,7 +142,7 @@ export async function handleAssistantMessage(
     const created = await ctx.runMutation(api.ai_zone.assistantWorkspace.createThread, {
       title: args.message.trim().slice(0, 80) || (args.attachments?.length ? "محادثة مرفقات جديدة" : "محادثة جديدة"),
     });
-    activeThreadId = created.threadId as Id<"assistantThreads">;
+    activeThreadId = created.threadId;
   }
 
   if (isWorkspaceAssistant && activeThreadId) {
@@ -150,12 +153,12 @@ export async function handleAssistantMessage(
     isWorkspaceAssistant && activeThreadId
       ? ((await ctx.runQuery(api.ai_zone.assistantWorkspace.listMessages, {
           threadId: activeThreadId,
-        })) as Array<Doc<"assistantMessages">>)
+        })) as Array<AssistantMessageRecord>)
       : isPublicAssistantKind(args.assistantKind) && activeThreadId
         ? ((await ctx.runQuery(internal.ai_zone.assistantPublic._listMessagesForOwner, {
             userId: owner.userId,
             threadId: activeThreadId,
-          })) as Array<Doc<"assistantMessages">>)
+          })) as Array<AssistantMessageRecord>)
         : []
   );
 
@@ -263,43 +266,34 @@ export async function handleAssistantMessage(
         output: directWorkspaceCommand.assistantText,
         structured: { questions: [] },
       }
-    : isWorkspaceAssistant
-      ? await orchestrateWorkspace({
-          ctx,
-          prompt: basePrompt,
-          role: roleMap[owner.ownerType] ?? "user",
-          userId: owner.userId,
-          threadId: activeThreadId,
-          ragContext: knowledgeContext || undefined,
-          channel: "app",
-          streamSessionId: args.streamSessionId,
-          onStageEvent: (event) => {
-            if (event.teamId && !routedTeamIds.includes(event.teamId)) {
-              routedTeamIds.push(event.teamId);
-            }
-            if (event.agentName && !routedAgentNames.includes(event.agentName)) {
-              routedAgentNames.push(event.agentName);
-            }
-            return workspaceStream.emitStage(event.phase, {
-              status: event.status,
-              teamId: event.teamId,
-              agentName: event.agentName,
-              details: event.details,
-            });
-          },
-          onTextDelta: workspaceStream.emitDelta,
-          onStreamCancelledCheck: workspaceStream.isCancelled,
-        })
-      : await orchestrate({
-          ctx,
-          prompt: basePrompt,
-          role: roleMap[owner.ownerType] ?? "user",
-          userId: owner.userId,
-          threadId: activeThreadId,
-          ragContext: knowledgeContext || undefined,
-          channel: isPublicAssistantKind(args.assistantKind) ? "web" : "app",
-          promptBudgetMeta: compiledBuyerContext?.promptBudgetMeta,
-        });
+    : await runAssistantSurfaceRuntime({
+        surface: isWorkspaceAssistant ? "workspace" : "default",
+        ctx,
+        prompt: basePrompt,
+        role: roleMap[owner.ownerType] ?? "user",
+        userId: owner.userId,
+        threadId: activeThreadId,
+        ragContext: knowledgeContext || undefined,
+        channel: isPublicAssistantKind(args.assistantKind) ? "web" : "app",
+        promptBudgetMeta: compiledBuyerContext?.promptBudgetMeta,
+        streamSessionId: args.streamSessionId,
+        onStageEvent: (event) => {
+          if (event.teamId && !routedTeamIds.includes(event.teamId)) {
+            routedTeamIds.push(event.teamId);
+          }
+          if (event.agentName && !routedAgentNames.includes(event.agentName)) {
+            routedAgentNames.push(event.agentName);
+          }
+          return workspaceStream.emitStage(event.phase, {
+            status: event.status,
+            teamId: event.teamId,
+            agentName: event.agentName,
+            details: event.details,
+          });
+        },
+        onTextDelta: workspaceStream.emitDelta,
+        onStreamCancelledCheck: workspaceStream.isCancelled,
+      });
 
   let assistantText = result.output;
   const wasCancelled = Boolean((result as { cancelled?: boolean }).cancelled);

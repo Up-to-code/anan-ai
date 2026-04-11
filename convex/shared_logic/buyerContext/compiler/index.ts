@@ -1,4 +1,3 @@
-import type { Id } from "../../../_generated/dataModel";
 import { getCompiledContextKey } from "../constants";
 import { upsertSummaryMemory } from "../storage";
 import {
@@ -20,7 +19,7 @@ export async function buildCompiledBuyerContextPayload(args: {
   channel: BuyerChannel;
   userId: string;
   message: string;
-  threadId?: Id<"assistantThreads">;
+  threadId?: string;
   persistCompiledCache: boolean;
   startFresh?: boolean;
 }) {

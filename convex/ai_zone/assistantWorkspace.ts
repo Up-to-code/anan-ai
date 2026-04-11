@@ -72,7 +72,7 @@ export const getThreadSafe = query({
 
 export const listMessages = query({
   args: {
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const owner = await resolveAssistantOwner(ctx);
@@ -92,7 +92,7 @@ export const listThreads = query({
 
 export const getThreadById = query({
   args: {
-    threadId: v.id("assistantThreads"),
+    threadId: v.string(),
   },
   handler: async (ctx, args) => {
     const owner = await resolveAssistantOwner(ctx);
@@ -107,7 +107,7 @@ export const getThreadById = query({
  */
 export const getRuntimeContextBundle = query({
   args: {
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
     message: v.string(),
     regenerate: v.optional(v.boolean()),
     regenerateMessageId: v.optional(v.string()),
@@ -147,7 +147,7 @@ export const getRuntimeContextBundle = query({
 export const sendMessage = action({
   args: {
     message: v.string(),
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
     startNewThread: v.optional(v.boolean()),
     inputMode: v.optional(v.union(v.literal("text"), v.literal("voice"), v.literal("attachment"))),
     attachments: v.optional(v.array(v.object({
@@ -235,7 +235,7 @@ export const transcribeVoiceFromStorage = action({
 
 export const _saveConversationStep = internalMutation({
   args: {
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
     userId: v.string(),
     ownerType: v.union(v.literal("broker"), v.literal("RED"), v.literal("user")),
     ownerBrokerId: v.optional(v.id("brokers")),

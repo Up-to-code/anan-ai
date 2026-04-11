@@ -24,6 +24,35 @@ export type WorkspaceUploadedFileReference = {
 export type AssistantKind = "default" | "anan_workspace" | "anan_pro" | "anan_main_public";
 export type ThreadScope = "user" | "organization";
 
+export type AssistantThreadRecord = {
+  _id: string;
+  userId: string;
+  scope?: ThreadScope;
+  ownerType: "broker" | "RED" | "user";
+  ownerBrokerId?: Id<"brokers">;
+  ownerREDId?: Id<"RED">;
+  mode: "qa" | "action";
+  channel?: "app" | "web" | "whatsapp";
+  orchestratorName?: string;
+  assistantKind?: AssistantKind;
+  title?: string;
+  legacyThreadId?: Id<"assistantThreads">;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type AssistantMessageRecord = {
+  _id: string;
+  threadId: string;
+  role: "user" | "assistant";
+  content: string;
+  mode: "qa" | "action";
+  metadata?: Record<string, unknown>;
+  legacyMessageId?: Id<"assistantMessages">;
+  promptMessageId?: string;
+  createdAt: number;
+};
+
 export type WorkspaceProjectFields = {
   name?: string;
   city?: string;

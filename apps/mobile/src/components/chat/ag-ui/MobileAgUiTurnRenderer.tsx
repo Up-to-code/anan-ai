@@ -21,6 +21,9 @@ export function MobileAgUiTurnRenderer({
   onOpenGallery,
   onFollowupPromptPress,
   ambientBackgroundColor,
+  selectionEnabled = false,
+  selectedPropertyIds = [],
+  onAddPropertyToSelection,
 }: {
   turn: MobileAgUiTurn;
   onPropertyPress: (property: MobileProperty) => void;
@@ -28,6 +31,9 @@ export function MobileAgUiTurnRenderer({
   onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
   onFollowupPromptPress: (prompt: string) => void;
   ambientBackgroundColor?: string;
+  selectionEnabled?: boolean;
+  selectedPropertyIds?: string[];
+  onAddPropertyToSelection?: (property: MobileProperty) => void;
 }) {
   const { dictionary, locale, isRtl } = useMobileLocale();
   return (
@@ -45,6 +51,9 @@ export function MobileAgUiTurnRenderer({
                 onShowMore={() => onFollowupPromptPress(dictionary.assistant.showMoreResults)}
                 ambientBackgroundColor={ambientBackgroundColor}
                 cardVariant="generated"
+                selectionEnabled={selectionEnabled}
+                selectedPropertyIds={selectedPropertyIds}
+                onAddPropertyToSelection={onAddPropertyToSelection}
               />
             );
           case "bank_offer":

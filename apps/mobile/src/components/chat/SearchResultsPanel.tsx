@@ -15,6 +15,9 @@ type SearchResultsPanelProps = {
   onOpenGallery?: (property: MobileProperty, initialIndex: number) => void;
   onShowMore?: () => void;
   ambientBackgroundColor?: string;
+  selectionEnabled?: boolean;
+  selectedPropertyIds?: string[];
+  onAddPropertyToSelection?: (property: MobileProperty) => void;
 };
 
 export const SearchResultsPanel = memo(function SearchResultsPanel({
@@ -25,9 +28,13 @@ export const SearchResultsPanel = memo(function SearchResultsPanel({
   onOpenGallery,
   onShowMore,
   ambientBackgroundColor,
+  selectionEnabled = false,
+  selectedPropertyIds = [],
+  onAddPropertyToSelection,
 }: SearchResultsPanelProps) {
   const theme = useAppTheme();
   const { dictionary, isRtl, locale } = useMobileLocale();
+  const selectedActionLabel = locale === "en" ? "Selected" : "تم الاختيار";
 
   const displayResults = useMemo(() => results.slice(0, 2), [results]);
 
@@ -83,9 +90,16 @@ export const SearchResultsPanel = memo(function SearchResultsPanel({
             variant="compact"
             property={property}
             onPress={onOpenProperty ?? onPropertyPress}
-            onActionPress={onPropertyPress}
+            onActionPress={selectionEnabled ? onAddPropertyToSelection : onPropertyPress}
+            actionDisabled={selectionEnabled && selectedPropertyIds.includes(property.id)}
             onOpenGallery={onOpenGallery}
-            actionLabel={dictionary.common.continue}
+            actionLabel={
+              selectionEnabled
+                ? selectedPropertyIds.includes(property.id)
+                  ? selectedActionLabel
+                  : dictionary.assistant.selectProperty
+                : dictionary.common.continue
+            }
             ambientBackgroundColor={ambientBackgroundColor}
           />
         ))}

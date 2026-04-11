@@ -1,6 +1,7 @@
 import { useAction, useMutation, useQuery } from "convex/react";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useBuyerAccount } from "@/hooks/useBuyerAccount";
+import { useMobileAssistantGenUiTransport } from "@/hooks/useMobileAssistantGenUiTransport";
 import { api } from "@/lib/convexApi";
 import { formatMobileCopy, getMobileDictionary } from "@/lib/i18n";
 import type { MobileAssistantSession } from "@/lib/mobileAssistantSession";
@@ -69,6 +70,8 @@ type AskClientAssistantPayload = {
   locale: MobileLocale;
 };
 
+type GuestAssistantCredentials = Pick<MobileAssistantSession, "guestId" | "channelSessionToken">;
+
 type AuthenticatedThreadSelection =
   | { mode: "latest" }
   | { mode: "specific"; threadId: string }
@@ -102,7 +105,7 @@ type ControllerArgs = {
   authenticatedThreadSelection: AuthenticatedThreadSelection;
   setAuthenticatedThreadSelection: (selection: AuthenticatedThreadSelection) => void;
   sendGuestAssistantMessage:
-    | ((payload: AskClientAssistantPayload & MobileAssistantSession) => Promise<ClientAssistantResponse>)
+    | ((payload: AskClientAssistantPayload & GuestAssistantCredentials) => Promise<ClientAssistantResponse>)
     | null;
   sendAuthenticatedAssistantMessage:
     | ((payload: AskClientAssistantPayload) => Promise<ClientAssistantResponse>)
@@ -274,6 +277,7 @@ function usePropertyAssistantController(args: ControllerArgs) {
   const draftRef = useRef(draft);
   const activeProperty = selectedProperties[0] ?? null;
   const deferredDraft = useDeferredValue(draft);
+  const mobileStreamTransport = useMobileAssistantGenUiTransport();
 
   draftRef.current = draft;
 
@@ -473,39 +477,44 @@ function usePropertyAssistantController(args: ControllerArgs) {
 
     try {
       let response: ClientAssistantResponse;
-      if (args.isAuthenticated && args.sendAuthenticatedAssistantMessage) {
-        response = await args.sendAuthenticatedAssistantMessage({
+      const guestSession = !args.isAuthenticated ? await ensurePublicSession().catch(() => null) : null;
+
+      try {
+        response = (await mobileStreamTransport.submitTurn({
           message: trimmed,
           threadId: nextAssistantThreadId ?? undefined,
           startFresh: shouldStartFresh,
-          ...selectionPayload,
           inputMode,
           locale: args.locale,
-        });
-      } else if (args.sendGuestAssistantMessage) {
-        const session = await ensurePublicSession();
-        response = await args.sendGuestAssistantMessage({
-          guestId: session.guestId,
-          channelSessionToken: session.channelSessionToken,
-          expiresAt: session.expiresAt,
-          message: trimmed,
-          threadId: nextAssistantThreadId ?? undefined,
-          startFresh: shouldStartFresh,
-          ...selectionPayload,
-          inputMode,
-          locale: args.locale,
-        });
-      } else {
-        const assistantMessage: MobileConversationMessage = {
-          ...buildServiceUnavailableMessage(args.locale),
-          createdAt: Date.now(),
-        };
-        if (!args.isAuthenticated) {
-          setActiveThreadId(nextThreadId);
+          guestId: guestSession?.guestId,
+          channelSessionToken: guestSession?.channelSessionToken,
+          selectedPropertyId: selectionPayload.selectedPropertyId ? String(selectionPayload.selectedPropertyId) : undefined,
+          selectedPropertyIds: selectionPayload.selectedPropertyIds?.map((propertyId) => String(propertyId)),
+        })) as ClientAssistantResponse;
+      } catch (streamError) {
+        if (args.isAuthenticated && args.sendAuthenticatedAssistantMessage) {
+          response = await args.sendAuthenticatedAssistantMessage({
+            message: trimmed,
+            threadId: nextAssistantThreadId ?? undefined,
+            startFresh: shouldStartFresh,
+            ...selectionPayload,
+            inputMode,
+            locale: args.locale,
+          });
+        } else if (args.sendGuestAssistantMessage && guestSession) {
+          response = await args.sendGuestAssistantMessage({
+            guestId: guestSession.guestId,
+            channelSessionToken: guestSession.channelSessionToken,
+            message: trimmed,
+            threadId: nextAssistantThreadId ?? undefined,
+            startFresh: shouldStartFresh,
+            ...selectionPayload,
+            inputMode,
+            locale: args.locale,
+          });
+        } else {
+          throw streamError;
         }
-        lastUpdatedAt.current = assistantMessage.createdAt ?? Date.now();
-        setMessages((current) => [...current, assistantMessage]);
-        return;
       }
 
       const nextSelectedProperties = resolveSelectedPropertiesFromAssistantResponse({
@@ -759,7 +768,8 @@ function usePropertyAssistantController(args: ControllerArgs) {
     activeThreadKind,
     recentThreads,
     isHydrated,
-    isSubmitting,
+    isSubmitting: isSubmitting || mobileStreamTransport.isStreaming,
+    streamingAssistantText: mobileStreamTransport.streamingText,
     showAuthCallout,
     latestUserMessage,
     setDraft,

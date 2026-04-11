@@ -17,7 +17,7 @@ export const buyerComparisonSelectionSourceValidator = v.union(
  * HOW:   Uses one fixed resource type so future expansion stays explicit.
  */
 export const buyerComparisonResourceRefValidator = v.object({
-  threadId: v.id("assistantThreads"),
+  threadId: v.string(),
   userId: v.string(),
   channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
   resourceType: v.literal("property"),
@@ -28,7 +28,7 @@ export const buyerComparisonResourceRefValidator = v.object({
     v.literal("active_property"),
     v.literal("comparison_request"),
   ),
-  messageId: v.optional(v.id("assistantMessages")),
+  messageId: v.optional(v.string()),
   rank: v.optional(v.number()),
   createdAt: v.number(),
 });
@@ -52,12 +52,12 @@ export const buyerComparisonSnapshotValidator = v.object({
  * HOW:   Keeps digest metadata small while separating the snapshot from message metadata.
  */
 export const buyerComparisonArtifactValidator = v.object({
-  threadId: v.id("assistantThreads"),
+  threadId: v.string(),
   userId: v.string(),
   channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
   locale: v.union(v.literal("ar"), v.literal("en"), v.literal("fr")),
   propertyIds: v.array(v.id("properties")),
-  triggerMessageId: v.optional(v.id("assistantMessages")),
+  triggerMessageId: v.optional(v.string()),
   selectionSource: buyerComparisonSelectionSourceValidator,
   digestTitle: v.string(),
   digestSummary: v.string(),

@@ -1,11 +1,13 @@
 import { getAuthUserId } from "../../_core/security/authIdentity";
 import { ConvexError, type Infer, v } from "convex/values";
-import { action, mutation } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { action, mutation, query } from "../../_generated/server";
+import { api, internal } from "../../_generated/api";
 import {
   mobileAssistantResponseValidator,
+  mobileFinanceEstimateValidator,
   mobileQualificationContextValidator,
 } from "./contracts";
+import { buildBuyerComparisonSnapshot } from "../../shared_logic/buyerComparisons";
 
 function describeFailure(error: unknown) {
   if (error instanceof Error && error.message.trim()) return error.message;
@@ -129,6 +131,130 @@ export const createQualifiedHandoff = mutation({
 
       throw error;
     }
+  },
+});
+
+/**
+ * WHY:   The mobile generated-UI layer needs one direct property detail primitive instead of re-implementing feed hydration in the client.
+ * WHAT:  Returns the buyer-facing mobile property detail DTO for one property id.
+ * HOW:   Delegates to the shared mobile feed detail query so the card shape stays identical across surfaces.
+ */
+export const getPropertyTool = query({
+  args: {
+    propertyId: v.id("properties"),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return ctx.runQuery(api.user_zone.mobile.feed.getPropertyDetail as never, args as never);
+  },
+});
+
+/**
+ * WHY:   Generated assistant cards need one backend search primitive that returns the same mobile property DTOs used elsewhere in the app.
+ * WHAT:  Searches published properties and hydrates the results into mobile-ready property cards.
+ * HOW:   Uses the shared property search query first, then maps each hit through the mobile feed detail contract.
+ */
+export const searchPropertiesTool = action({
+  args: {
+    query: v.string(),
+    limit: v.optional(v.number()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const results = await ctx.runQuery((api as any)["shared_logic/properties/search"].search, {
+      query: args.query,
+      limit: args.limit ?? 6,
+      onlyAvailable: true,
+    });
+
+    const hydrated = await Promise.all(
+      (results as Array<{ _id: string }>).map((result) =>
+        ctx.runQuery(api.user_zone.mobile.feed.getPropertyDetail as never, {
+          propertyId: result._id as never,
+        }),
+      ),
+    );
+
+    return hydrated.filter(Boolean);
+  },
+});
+
+/**
+ * WHY:   The mobile generated-UI layer should reuse the existing finance contract instead of performing mortgage math inside the renderer.
+ * WHAT:  Returns the mobile finance estimate for one property or explicit scenario.
+ * HOW:   Delegates to the existing mobile finance query with the same validated args and response shape.
+ */
+export const estimateFinanceTool = query({
+  args: {
+    propertyId: v.optional(v.id("properties")),
+    propertyPrice: v.optional(v.number()),
+    downPayment: v.optional(v.number()),
+    years: v.optional(v.number()),
+    annualRate: v.optional(v.number()),
+    monthlySalary: v.optional(v.number()),
+  },
+  returns: mobileFinanceEstimateValidator,
+  handler: async (ctx, args) => {
+    return ctx.runQuery(api.user_zone.mobile.finance.getEstimate as never, args as never) as any;
+  },
+});
+
+/**
+ * WHY:   The new chat host needs one explicit comparison primitive that returns the same buyer comparison content used elsewhere.
+ * WHAT:  Builds a buyer-safe comparison snapshot for a small selected property set.
+ * HOW:   Hydrates the requested properties through the mobile feed detail contract, then uses the shared comparison snapshot builder.
+ */
+export const buildComparisonTool = action({
+  args: {
+    propertyIds: v.array(v.id("properties")),
+    locale: v.optional(v.union(v.literal("ar"), v.literal("en"), v.literal("fr"))),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const properties = await Promise.all(
+      args.propertyIds.map((propertyId) =>
+        ctx.runQuery(api.user_zone.mobile.feed.getPropertyDetail as never, {
+          propertyId: propertyId as never,
+        }),
+      ),
+    );
+
+    const availableProperties = properties.filter(Boolean);
+    if (availableProperties.length < 2) {
+      throw new ConvexError({
+        code: "INVALID_INPUT",
+        message: "At least two published properties are required to build a comparison.",
+      });
+    }
+
+    return buildBuyerComparisonSnapshot({
+      locale: args.locale ?? "ar",
+      properties: availableProperties as any,
+      selectionSource: "ui_selected",
+    }).snapshot;
+  },
+});
+
+/**
+ * WHY:   Generated UI actions should request advisor handoff through one stable mobile-specific API instead of duplicating order creation logic.
+ * WHAT:  Wraps the existing qualified handoff mutation behind a tool-friendly name.
+ * HOW:   Forwards the validated args to the mobile handoff mutation so the CRM/order behavior remains unchanged.
+ */
+export const requestAdvisorTool = mutation({
+  args: {
+    propertyId: v.id("properties"),
+    message: v.string(),
+    qualification: v.optional(mobileQualificationContextValidator),
+    externalUserId: v.optional(v.string()),
+    threadId: v.optional(v.string()),
+    sourceChannel: v.optional(v.union(v.literal("app"), v.literal("web"))),
+  },
+  returns: v.object({
+    orderId: v.id("orders"),
+    status: v.literal("qualified"),
+  }),
+  handler: async (ctx, args) => {
+    return ctx.runMutation(api.user_zone.mobile.assistant.createQualifiedHandoff as never, args as never) as any;
   },
 });
 

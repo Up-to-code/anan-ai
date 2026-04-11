@@ -24,7 +24,7 @@ export const buyerChannelStateValidator = v.union(
 export const buyerChannelStateRecordValidator = v.object({
   channel: buyerChannelValidator,
   userId: v.string(),
-  threadId: v.optional(v.id("assistantThreads")),
+  threadId: v.optional(v.string()),
   state: buyerChannelStateValidator,
   selectedPropertyId: v.optional(v.id("properties")),
   lastResultPropertyIds: v.array(v.id("properties")),

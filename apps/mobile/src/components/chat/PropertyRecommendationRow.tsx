@@ -15,6 +15,9 @@ type PropertyRecommendationRowProps = {
   onShowMore?: () => void;
   ambientBackgroundColor?: string;
   cardVariant?: MobilePropertyCardVariant;
+  selectionEnabled?: boolean;
+  selectedPropertyIds?: string[];
+  onAddPropertyToSelection?: (property: MobileProperty) => void;
 };
 
 /**
@@ -30,9 +33,13 @@ export const PropertyRecommendationRow = memo(function PropertyRecommendationRow
   onShowMore,
   ambientBackgroundColor,
   cardVariant = "compact",
+  selectionEnabled = false,
+  selectedPropertyIds = [],
+  onAddPropertyToSelection,
 }: PropertyRecommendationRowProps) {
   const theme = useAppTheme();
   const { dictionary, isRtl, locale } = useMobileLocale();
+  const selectedActionLabel = locale === "en" ? "Selected" : "تم الاختيار";
 
   const displayProperties = useMemo(() => properties.slice(0, 2), [properties]);
 
@@ -45,9 +52,16 @@ export const PropertyRecommendationRow = memo(function PropertyRecommendationRow
             variant={cardVariant}
             property={property}
             onPress={onOpenProperty ?? onPropertyPress}
-            onActionPress={onPropertyPress}
+            onActionPress={selectionEnabled ? onAddPropertyToSelection : onPropertyPress}
+            actionDisabled={selectionEnabled && selectedPropertyIds.includes(property.id)}
             onOpenGallery={onOpenGallery}
-            actionLabel={dictionary.common.continue}
+            actionLabel={
+              selectionEnabled
+                ? selectedPropertyIds.includes(property.id)
+                  ? selectedActionLabel
+                  : dictionary.assistant.selectProperty
+                : dictionary.common.continue
+            }
             ambientBackgroundColor={ambientBackgroundColor}
           />
         ))}

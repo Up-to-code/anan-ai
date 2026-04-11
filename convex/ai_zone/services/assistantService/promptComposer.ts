@@ -1,14 +1,17 @@
-import type { Doc } from "../../../_generated/dataModel";
 import { buildRecentThreadContext } from "./workspaceContext";
-import type { WorkspaceActionState, WorkspaceUploadedFileReference } from "./types";
+import type {
+  AssistantMessageRecord,
+  WorkspaceActionState,
+  WorkspaceUploadedFileReference,
+} from "./types";
 
 type KnowledgeItem = { title: string; category?: string | null; excerpt: string };
 
 export function selectRegenerateSource(options: {
-  existingMessages: Array<Doc<"assistantMessages">>;
+  existingMessages: Array<AssistantMessageRecord>;
   regenerate: boolean | undefined;
   regenerateMessageId: string | undefined;
-}): Doc<"assistantMessages"> | null {
+}): AssistantMessageRecord | null {
   const { existingMessages, regenerate, regenerateMessageId } = options;
   if (!regenerate) return null;
   if (regenerateMessageId) {
@@ -33,7 +36,7 @@ export function buildKnowledgeContext(knowledge: KnowledgeItem[]): string {
 
 export function buildWorkspaceContextBlock(options: {
   isWorkspaceAssistant: boolean;
-  existingMessages: Array<Doc<"assistantMessages">>;
+  existingMessages: Array<AssistantMessageRecord>;
   previousActionState: WorkspaceActionState | null;
 }): string {
   const recentContext = buildRecentThreadContext(options.existingMessages);

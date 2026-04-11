@@ -26,7 +26,7 @@ function sourcePriority(source: string) {
  */
 export const listRecentThreadPropertyRefsInternal = internalQuery({
   args: {
-    threadId: v.id("assistantThreads"),
+    threadId: v.string(),
     limit: v.optional(v.number()),
   },
   returns: v.array(buyerComparisonResourceRefValidator),
@@ -69,7 +69,7 @@ export const listRecentThreadPropertyRefsInternal = internalQuery({
 export const getBuyerComparisonArtifactInternal = internalQuery({
   args: {
     artifactId: v.id("buyerComparisonArtifacts"),
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
   },
   returns: v.union(v.null(), buyerComparisonArtifactValidator),
   handler: async (ctx, args) => {

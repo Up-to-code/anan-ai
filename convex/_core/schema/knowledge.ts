@@ -71,7 +71,7 @@ const knowledgeTables = {
     buyerChannelStates: defineTable({
         channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
         userId: v.string(),
-        threadId: v.optional(v.id("assistantThreads")),
+        threadId: v.optional(v.string()),
         state: v.union(
             v.literal("idle"),
             v.literal("search_results"),
@@ -151,6 +151,53 @@ const knowledgeTables = {
         .index("threadId", ["threadId"])
         .index("threadId_createdAt", ["threadId", "createdAt"]),
 
+    assistantThreadState: defineTable({
+        threadId: v.string(),
+        userId: v.string(),
+        scope: v.optional(v.union(v.literal("user"), v.literal("organization"))),
+        ownerType: v.union(v.literal("broker"), v.literal("RED"), v.literal("user")),
+        ownerBrokerId: v.optional(v.id("brokers")),
+        ownerREDId: v.optional(v.id("RED")),
+        mode: v.union(v.literal("qa"), v.literal("action")),
+        channel: v.optional(v.union(v.literal("app"), v.literal("web"), v.literal("whatsapp"))),
+        orchestratorName: v.optional(v.string()),
+        assistantKind: v.optional(
+            v.union(
+                v.literal("default"),
+                v.literal("anan_workspace"),
+                v.literal("anan_pro"),
+                v.literal("anan_main_public"),
+            ),
+        ),
+        title: v.optional(v.string()),
+        legacyThreadId: v.optional(v.id("assistantThreads")),
+        migrationStatus: v.optional(v.union(v.literal("canonical"), v.literal("backfilled"))),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    })
+        .index("threadId", ["threadId"])
+        .index("legacyThreadId", ["legacyThreadId"])
+        .index("userId", ["userId"])
+        .index("userId_assistantKind_updatedAt", ["userId", "assistantKind", "updatedAt"])
+        .index("ownerBrokerId", ["ownerBrokerId"])
+        .index("ownerBrokerId_assistantKind_updatedAt", ["ownerBrokerId", "assistantKind", "updatedAt"])
+        .index("ownerREDId", ["ownerREDId"])
+        .index("ownerREDId_assistantKind_updatedAt", ["ownerREDId", "assistantKind", "updatedAt"]),
+
+    assistantMessageState: defineTable({
+        messageId: v.string(),
+        threadId: v.string(),
+        role: v.union(v.literal("user"), v.literal("assistant")),
+        mode: v.union(v.literal("qa"), v.literal("action")),
+        metadata: v.optional(v.any()),
+        legacyMessageId: v.optional(v.id("assistantMessages")),
+        promptMessageId: v.optional(v.string()),
+        createdAt: v.number(),
+    })
+        .index("messageId", ["messageId"])
+        .index("legacyMessageId", ["legacyMessageId"])
+        .index("threadId_createdAt", ["threadId", "createdAt"]),
+
     assistantStreamEvents: defineTable({
         sessionId: v.string(),
         seq: v.number(),
@@ -178,7 +225,7 @@ const knowledgeTables = {
         teamId: v.optional(v.string()),
         agentName: v.optional(v.string()),
         delta: v.optional(v.string()),
-        threadId: v.optional(v.id("assistantThreads")),
+        threadId: v.optional(v.string()),
         title: v.optional(v.string()),
         meta: v.optional(v.any()),
         message: v.optional(v.string()),
@@ -194,7 +241,7 @@ const knowledgeTables = {
         .index("sessionId_seq", ["sessionId", "seq"]),
 
     buyerThreadResourceRefs: defineTable({
-        threadId: v.id("assistantThreads"),
+        threadId: v.string(),
         userId: v.string(),
         channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
         resourceType: v.literal("property"),
@@ -205,7 +252,7 @@ const knowledgeTables = {
             v.literal("active_property"),
             v.literal("comparison_request"),
         ),
-        messageId: v.optional(v.id("assistantMessages")),
+        messageId: v.optional(v.string()),
         rank: v.optional(v.number()),
         createdAt: v.number(),
     })
@@ -214,12 +261,12 @@ const knowledgeTables = {
         .index("userId_createdAt", ["userId", "createdAt"]),
 
     buyerComparisonArtifacts: defineTable({
-        threadId: v.id("assistantThreads"),
+        threadId: v.string(),
         userId: v.string(),
         channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
         locale: v.union(v.literal("ar"), v.literal("en"), v.literal("fr")),
         propertyIds: v.array(v.id("properties")),
-        triggerMessageId: v.optional(v.id("assistantMessages")),
+        triggerMessageId: v.optional(v.string()),
         selectionSource: v.union(
             v.literal("ui_selected"),
             v.literal("history_resolved"),
