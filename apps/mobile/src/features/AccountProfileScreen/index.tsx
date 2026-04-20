@@ -56,16 +56,16 @@ export default function AccountProfileScreen() {
     phone.trim() !== (account.viewer.phone ?? "") ||
     email.trim() !== (account.viewer.email ?? "");
   const identityTitle = resolveIdentityLabel({
-    displayName: account.authSources.clerk?.displayName ?? account.viewer.displayName,
-    email: account.authSources.clerk?.email ?? account.viewer.email,
+    displayName: account.authSources.auth?.displayName ?? account.viewer.displayName,
+    email: account.authSources.auth?.email ?? account.viewer.email,
     fallback: accountCopy.linkedAccount,
   });
   const identityRows = [
-    { label: profileCopy.email, value: account.authSources.clerk?.email ?? account.viewer.email },
-    { label: profileCopy.phone, value: account.authSources.clerk?.phone ?? account.viewer.phone },
+    { label: profileCopy.email, value: account.authSources.auth?.email ?? account.viewer.email },
+    { label: profileCopy.phone, value: account.authSources.auth?.phone ?? account.viewer.phone },
   ].filter((row): row is { label: string; value: string } => typeof row.value === "string" && row.value.trim().length > 0);
   const identityDescription = account.viewer.email ?? account.viewer.phone ?? undefined;
-  const avatarUrl = account.authSources.clerk?.imageUrl;
+  const avatarUrl = account.authSources.auth?.imageUrl;
 
   async function saveProfile() {
     await account.updateProfile({

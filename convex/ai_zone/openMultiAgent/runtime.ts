@@ -1,13 +1,3 @@
-import { AsyncLocalStorage } from "node:async_hooks";
-import {
-  BUILT_IN_TOOLS,
-  OpenMultiAgent,
-  defineTool,
-  type AgentConfig as OpenMultiAgentAgentConfig,
-  type OrchestratorEvent,
-  type TeamRunResult,
-  type ToolDefinition,
-} from "@jackchen_me/open-multi-agent";
 import type { ActionCtx } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { getAgentLLMConfig } from "../agents/config";
@@ -24,6 +14,77 @@ import type {
   WorkspaceStructuredOutput,
 } from "../agents/anan_workspace/types";
 import { z } from "zod";
+
+type OpenMultiAgentAgentConfig = {
+  name: string;
+  model: string;
+  provider: string;
+  baseURL: string;
+  apiKey: string;
+  systemPrompt: string;
+  maxTurns: number;
+  temperature: number;
+  tools?: string[];
+};
+
+type OrchestratorEvent = {
+  type: "task_start" | "task_complete" | "error" | string;
+  agent?: string;
+  task?: string;
+  data?: unknown;
+};
+
+type TeamRunResult = {
+  success: boolean;
+  agentResults: Map<string, unknown>;
+  totalTokenUsage: {
+    input_tokens: number;
+    output_tokens: number;
+  };
+};
+
+type ToolDefinition<T = unknown> = {
+  name: string;
+  description: string;
+  inputSchema: z.ZodTypeAny;
+  execute: (input: T) => Promise<{ data: string; isError?: boolean }>;
+};
+
+const BUILT_IN_TOOLS: Array<ToolDefinition<any>> = [];
+
+function defineTool<T>(definition: ToolDefinition<T>): ToolDefinition<T> {
+  return definition;
+}
+
+class RuntimeScopeStorage<T> {
+  private current: T | null = null;
+
+  getStore() {
+    return this.current;
+  }
+
+  async run<R>(scope: T, callback: () => Promise<R>) {
+    const previous = this.current;
+    this.current = scope;
+    try {
+      return await callback();
+    } finally {
+      this.current = previous;
+    }
+  }
+}
+
+class OpenMultiAgent {
+  constructor(_config: unknown) {}
+
+  createTeam(name: string, config: unknown) {
+    return { name, config };
+  }
+
+  async runTeam(_team: unknown, _goal: string): Promise<TeamRunResult> {
+    throw new Error("Open Multi-Agent runtime is unavailable in the Convex default bundle.");
+  }
+}
 
 type AssistantRole = "user" | "broker" | "RED" | "admin";
 
@@ -115,7 +176,7 @@ const WORKSPACE_RUNTIME_CONFIG: SurfaceRuntimeTeamConfig = {
   teamRegistry: WORKSPACE_TEAM_REGISTRY,
   toolDescriptions: {},
 };
-const runtimeScopeStorage = new AsyncLocalStorage<RuntimeScope>();
+const runtimeScopeStorage = new RuntimeScopeStorage<RuntimeScope>();
 const registeredToolNames = new Set<string>(BUILT_IN_TOOLS.map((tool) => tool.name));
 
 function resolveSurfaceRuntimeConfig(

@@ -22,7 +22,7 @@ import { resolveSuggestedOrganizationType } from "@/server/contracts/workspace";
 import {
   type OrganizationsRepository,
 } from "@/server/infrastructure/convex/organizations";
-import { clerkOrganizationsRepository } from "@/server/infrastructure/clerk/organizations";
+import { betterAuthOrganizationsRepository } from "@/server/infrastructure/betterAuth/organizations";
 import {
   convexOrganizationProfilesRepository,
   type BootstrapOrganizationProfileInput,
@@ -36,7 +36,7 @@ type OrganizationsServiceDependencies = {
 
 const defaultDependencies: OrganizationsServiceDependencies = {
   requireSession: requireSessionContext,
-  organizationsRepository: clerkOrganizationsRepository,
+  organizationsRepository: betterAuthOrganizationsRepository,
   organizationProfilesRepository: convexOrganizationProfilesRepository,
 };
 
@@ -87,11 +87,11 @@ export async function createOrganizationForCurrentUser(
 }
 
 /**
- * WHY:   Custom Clerk org creation flows still need to bootstrap app-owned metadata and the legacy owner bridge.
- * WHAT:  Upserts the current active organization's local Convex profile after Clerk creates and activates it.
+ * WHY:   Custom Better Auth org creation flows still need to bootstrap app-owned metadata and the legacy owner bridge.
+ * WHAT:  Upserts the current active organization's local Convex profile after Better Auth creates and activates it.
  * HOW:   Validates the payload against the existing create schema, then delegates to the org-profile bridge repository.
  */
-export async function bootstrapCurrentOrganizationFromClerk(
+export async function bootstrapCurrentOrganizationFromBetterAuth(
   input: BootstrapOrganizationProfileInput,
   dependencies: OrganizationsServiceDependencies = defaultDependencies,
 ): Promise<OrganizationSummary> {
@@ -112,11 +112,11 @@ export async function bootstrapCurrentOrganizationFromClerk(
 }
 
 /**
- * WHY:   Switching the active Clerk organization should immediately rebind the legacy workspace owner context.
- * WHAT:  Syncs the current Convex org-profile bridge from the active Clerk organization claim.
+ * WHY:   Switching the active Better Auth organization should immediately rebind the legacy workspace owner context.
+ * WHAT:  Syncs the current Convex org-profile bridge from the active Better Auth organization claim.
  * HOW:   Resolves the current authenticated session and delegates to the org-profile repository mutation.
  */
-export async function syncCurrentOrganizationFromClerk(
+export async function syncCurrentOrganizationFromBetterAuth(
   dependencies: OrganizationsServiceDependencies = defaultDependencies,
 ) {
   const session = await dependencies.requireSession();

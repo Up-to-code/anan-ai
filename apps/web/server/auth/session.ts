@@ -1,8 +1,8 @@
-import { auth } from "@clerk/nextjs/server";
 import { cache } from "react";
+import { getToken } from "@/lib/auth-server";
 import {
   isClearlyExpiredJwtToken,
-  isMissingClerkJwtTemplateError,
+  isMissingAuthTokenConfigurationError,
   isNoAuthProviderError,
 } from "../../../../convex/_core/security/authProviderErrors";
 import { DomainError } from "@/server/contracts/errors";
@@ -17,59 +17,23 @@ export type ResolvedSession = {
   profile: ProfileSummary | null;
 };
 
+type AuthOrganizationContext = {
+  organizationId?: string | null;
+  organizationSlug?: string | null;
+  organizationRole?: string | null;
+  organizationPermissions?: string[];
+};
+
 type SessionDependencies = {
   getToken: () => Promise<string | null>;
-  getClerkContext: () => Promise<{
-    organizationId?: string | null;
-    organizationSlug?: string | null;
-    organizationRole?: string | null;
-    organizationPermissions?: string[];
-  }>;
+  getOrganizationContext: () => Promise<AuthOrganizationContext>;
   sessionsRepository: SessionsRepository;
   profilesRepository: ProfilesRepository;
 };
 
-const clerkConvexJwtTemplate = process.env.CLERK_CONVEX_JWT_TEMPLATE?.trim() || "convex";
-
-function toMissingClerkTemplateDomainError(template: string) {
-  return new DomainError({
-    code: "AUTH_CONFIGURATION_ERROR",
-    message:
-      `Clerk JWT template "${template}" was not found. Create a Clerk JWT template named "${template}" for Convex, ` +
-      "or set CLERK_CONVEX_JWT_TEMPLATE to the name of your existing Clerk JWT template.",
-    status: 503,
-  });
-}
-
-function mapClerkTokenError(error: unknown) {
-  if (isMissingClerkJwtTemplateError(error)) {
-    return toMissingClerkTemplateDomainError(clerkConvexJwtTemplate);
-  }
-
-  return error;
-}
-
 const defaultDependencies: SessionDependencies = {
-  getToken: async () => {
-    const { getToken, userId } = await auth();
-    if (!userId) {
-      return null;
-    }
-    try {
-      return (await getToken({ template: clerkConvexJwtTemplate })) ?? null;
-    } catch (error) {
-      throw mapClerkTokenError(error);
-    }
-  },
-  getClerkContext: async () => {
-    const { orgId, orgSlug, orgRole, orgPermissions } = await auth();
-    return {
-      organizationId: orgId ?? null,
-      organizationSlug: orgSlug ?? null,
-      organizationRole: orgRole ?? null,
-      organizationPermissions: Array.isArray(orgPermissions) ? orgPermissions : [],
-    };
-  },
+  getToken,
+  getOrganizationContext: async () => ({}),
   sessionsRepository: convexSessionsRepository,
   profilesRepository: convexProfilesRepository,
 };
@@ -97,7 +61,7 @@ async function getUserAndProfile(
     throw new DomainError({
       code: "AUTH_CONFIGURATION_ERROR",
       message:
-        "Active session token could not be matched to an auth provider. Verify CONVEX_SITE_URL issuer alignment.",
+        "Active session token could not be matched to an auth provider. Verify Better Auth Convex issuer alignment.",
       status: 503,
     });
   }
@@ -107,7 +71,7 @@ function buildResolvedSession(
   token: string,
   user: NonNullable<Awaited<ReturnType<SessionsRepository["getCurrent"]>>>,
   profile: Awaited<ReturnType<ProfilesRepository["getCurrent"]>>,
-  clerkContext: Awaited<ReturnType<SessionDependencies["getClerkContext"]>>,
+  organizationContext: AuthOrganizationContext,
 ) {
   return {
     token,
@@ -121,10 +85,10 @@ function buildResolvedSession(
       role: profile?.role,
       brokerId: profile?.brokerId,
       redId: profile?.developerId,
-      organizationId: clerkContext.organizationId ?? user.organizationId ?? null,
-      organizationSlug: clerkContext.organizationSlug ?? user.organizationSlug ?? null,
-      organizationRole: clerkContext.organizationRole ?? user.organizationRole ?? null,
-      organizationPermissions: clerkContext.organizationPermissions ?? user.organizationPermissions ?? [],
+      organizationId: organizationContext.organizationId ?? user.organizationId ?? null,
+      organizationSlug: organizationContext.organizationSlug ?? user.organizationSlug ?? null,
+      organizationRole: organizationContext.organizationRole ?? user.organizationRole ?? null,
+      organizationPermissions: organizationContext.organizationPermissions ?? user.organizationPermissions ?? [],
       isActive: user.isActive,
     },
   };
@@ -134,26 +98,36 @@ async function resolveOptionalSessionContext(
   dependencies: SessionDependencies,
 ): Promise<ResolvedSession | null> {
   let token: string | null;
-  let clerkContext: Awaited<ReturnType<SessionDependencies["getClerkContext"]>>;
+  let organizationContext: AuthOrganizationContext;
   try {
-    [token, clerkContext] = await Promise.all([
+    [token, organizationContext] = await Promise.all([
       dependencies.getToken(),
-      dependencies.getClerkContext(),
+      dependencies.getOrganizationContext(),
     ]);
   } catch (error) {
-    throw mapClerkTokenError(error);
+    if (isMissingAuthTokenConfigurationError(error)) {
+      throw new DomainError({
+        code: "AUTH_CONFIGURATION_ERROR",
+        message: "Better Auth token configuration is missing or unreachable.",
+        status: 503,
+      });
+    }
+    throw error;
   }
   if (!token) {
     return null;
   }
 
-  const { user, profile } = await getUserAndProfile(dependencies, token);
+  let { user, profile } = await getUserAndProfile(dependencies, token);
 
   if (!user || user.isActive === false) {
     return null;
   }
+  if (!profile) {
+    profile = await dependencies.profilesRepository.ensureCurrent(token);
+  }
 
-  return buildResolvedSession(token, user, profile, clerkContext);
+  return buildResolvedSession(token, user, profile, organizationContext);
 }
 
 const getOptionalSessionContextCached = cache(async () => resolveOptionalSessionContext(defaultDependencies));
@@ -161,7 +135,7 @@ const getOptionalSessionContextCached = cache(async () => resolveOptionalSession
 /**
  * WHY:   Every web-facing service needs the same authenticated context without duplicating token and profile lookups.
  * WHAT:  Resolves the optional current session, returning null when no active authenticated user exists.
- * HOW:   Reads the Convex auth token, fetches the session projection and current profile, then builds SessionContext.
+ * HOW:   Reads the Better Auth Convex token, fetches the session projection and current profile, then builds SessionContext.
  */
 export async function getOptionalSessionContext(
   dependencies: SessionDependencies = defaultDependencies,

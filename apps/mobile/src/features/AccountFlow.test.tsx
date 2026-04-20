@@ -35,7 +35,7 @@ const mockState = vi.hoisted(() => ({
       },
     },
     authSources: {
-      clerk: {
+      auth: {
         displayName: "أحمد",
         email: "ahmed@example.com",
         phone: "0500000000",
@@ -249,7 +249,7 @@ afterEach(() => {
   mockState.buyerAccount.viewer.threadCount = 1;
   mockState.buyerAccount.viewer.preferences.locale = "ar";
   mockState.buyerAccount.recentThreads = [{ id: "thread-1", title: "شقة في الرياض", preview: "أريد تمويلاً مناسباً", updatedAt: Date.UTC(2026, 3, 10) }];
-  mockState.buyerAccount.authSources.clerk = {
+  mockState.buyerAccount.authSources.auth = {
     displayName: "أحمد",
     email: "ahmed@example.com",
     phone: "0500000000",
@@ -264,7 +264,7 @@ describe("native mobile account flow", () => {
     expect(html).toContain("شقة الياسمين");
     expect(html).toContain("العقارات المحفوظة");
     expect(html).toContain("سجل المحادثات");
-    expect(html).toContain("سجّل الدخول أو اربط الحساب");
+    expect(html).toContain("ربط الحساب");
 
     mockState.actionRows.find((row) => row.testID === "account-hub-profile")?.onPress?.();
     mockState.actionRows.find((row) => row.testID === "account-hub-saved")?.onPress?.();
@@ -316,7 +316,7 @@ describe("native mobile account flow", () => {
     html = renderToStaticMarkup(React.createElement(AccountProfileScreen));
     expect(html).toContain("ahmed@example.com");
     expect(html).toContain("الاسم الظاهر");
-    expect(html).toContain("20y");
+    expect(html).toContain("0500000000");
   });
 
   it("renders the account home cleanly in English without Arabic fallback copy", () => {
@@ -324,7 +324,7 @@ describe("native mobile account flow", () => {
     mockState.buyerAccount.viewer.displayName = "Ahmed";
     mockState.buyerAccount.viewer.phone = "+966500000000";
     mockState.buyerAccount.viewer.isAuthenticated = true;
-    mockState.buyerAccount.authSources.clerk = {
+    mockState.buyerAccount.authSources.auth = {
       displayName: "Ahmed",
       email: "ahmed@example.com",
       phone: "+966500000000",

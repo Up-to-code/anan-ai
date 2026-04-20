@@ -97,8 +97,8 @@ export function useRealtimeInbox({
     [baseSendConversationMessage, currentUserId],
   );
 
-  const activeConversations = liveConversations ?? initialConversations;
-  const archivedConversations = liveArchivedConversations ?? [];
+  const activeConversations: ConversationSummary[] = liveConversations ?? initialConversations;
+  const archivedConversations: ConversationSummary[] = liveArchivedConversations ?? [];
   const conversations = showArchived ? archivedConversations : activeConversations;
   const initialConversationForActiveThread =
     initialConversation?.id === activeConversationId ? initialConversation : null;
@@ -248,9 +248,9 @@ export function useRealtimeInbox({
     };
   }, [activeConversationId, conversation, markConversationRead]);
 
-  const filteredSearchResults = useMemo(
+  const filteredSearchResults = useMemo<UserConversationTarget[]>(
     () =>
-      (liveSearchResults ?? []).filter((result) => result.id !== currentUserId),
+      ((liveSearchResults ?? []) as UserConversationTarget[]).filter((result) => result.id !== currentUserId),
     [currentUserId, liveSearchResults],
   );
 

@@ -70,11 +70,11 @@ export function isClearlyExpiredJwtToken(
 }
 
 /**
- * WHY:   Clerk-backed session resolution should distinguish a missing JWT template from ordinary signed-out state.
- * WHAT:  Returns true when the error shape matches Clerk's 404 response for an unknown JWT template.
- * HOW:   Checks the HTTP status plus common Clerk error message payload fields without depending on Clerk classes directly.
+ * WHY:   Session resolution should distinguish a missing token endpoint/configuration from ordinary signed-out state.
+ * WHAT:  Returns true when the error shape matches a provider 404 for an unknown token template or endpoint.
+ * HOW:   Checks the HTTP status plus common provider error message payload fields without depending on SDK classes.
  */
-export function isMissingClerkJwtTemplateError(error: unknown): boolean {
+export function isMissingAuthTokenConfigurationError(error: unknown): boolean {
   if (!error || typeof error !== "object") {
     return false;
   }

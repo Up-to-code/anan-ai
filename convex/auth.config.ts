@@ -1,15 +1,11 @@
 import type { AuthConfig } from "convex/server";
+import { getAuthConfigProvider } from "@convex-dev/better-auth/auth-config";
 
 /**
- * WHY:   Convex must validate Clerk-issued JWTs before authenticated queries and mutations trust the caller.
- * WHAT:  Registers Clerk as the sole JWT issuer for Convex-backed app sessions.
- * HOW:   Uses `CLERK_JWT_ISSUER_DOMAIN` and the `convex` application id required by the official Convex Clerk integration.
+ * WHY:   Convex must validate Better Auth JWTs before authenticated queries and mutations trust the caller.
+ * WHAT:  Registers the Better Auth Convex provider as the issuer for app sessions.
+ * HOW:   Uses the official Convex Better Auth component auth config provider.
  */
 export default {
-  providers: [
-    {
-      domain: process.env.CLERK_JWT_ISSUER_DOMAIN!,
-      applicationID: "convex",
-    },
-  ],
+  providers: [getAuthConfigProvider()],
 } satisfies AuthConfig;

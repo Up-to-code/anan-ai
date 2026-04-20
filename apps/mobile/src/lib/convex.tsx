@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
-import { useAuth } from "@clerk/expo";
+import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 import { ConvexReactClient } from "convex/react";
-import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { authClient } from "@/lib/auth-client";
 import { getMobileBackendReadiness } from "@/lib/mobileEnv";
 
 const convexUrl = getMobileBackendReadiness().convexUrl;
@@ -17,5 +17,9 @@ export function ConvexProvider({ children }: { children: ReactNode }) {
     return children;
   }
 
-  return <ConvexProviderWithClerk client={convexClient} useAuth={useAuth}>{children}</ConvexProviderWithClerk>;
+  return (
+    <ConvexBetterAuthProvider client={convexClient} authClient={authClient}>
+      {children}
+    </ConvexBetterAuthProvider>
+  );
 }

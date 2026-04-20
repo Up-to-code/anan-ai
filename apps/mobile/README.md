@@ -24,20 +24,19 @@ pnpm --dir apps/mobile test
 ## Required mobile env
 
 - Root env source of truth: [`.env.local`](/Users/ahmedmansour/anan-lit/.env.local)
-- `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` for app boot and Clerk mobile auth
-- `CLERK_PUBLISHABLE_KEY` is also supported locally as a compatibility fallback
 - `EXPO_PUBLIC_CONVEX_URL` is required for buyer routes; without it the app shows one blocking setup screen instead of fallback data
+- `EXPO_PUBLIC_CONVEX_SITE_URL` is required for Better Auth's Expo session bridge and Convex HTTP auth routes
 - When the root env already defines `CONVEX_URL`, the mobile dev wrapper reuses it as `EXPO_PUBLIC_CONVEX_URL` automatically
-- `CLERK_SECRET_KEY` and `CLERK_JWT_ISSUER_DOMAIN` stay server/cloud env values and must not be exposed as `EXPO_PUBLIC_*`
+- When the root env already defines `CONVEX_SITE_URL`, the mobile dev wrapper reuses it as `EXPO_PUBLIC_CONVEX_SITE_URL` automatically
 
 ## Convex env sync
 
-Push Clerk envs to the active Convex deployment with:
+Push Better Auth envs to the active Convex deployment with:
 
 ```bash
-npx convex env set CLERK_PUBLISHABLE_KEY <your-clerk-publishable-key> --deployment dev:<name>
-npx convex env set CLERK_SECRET_KEY <your-clerk-secret-key> --deployment dev:<name>
-npx convex env set CLERK_JWT_ISSUER_DOMAIN <your-clerk-jwt-issuer-domain> --deployment dev:<name>
+npx convex env set BETTER_AUTH_SECRET <your-better-auth-secret> --deployment dev:<name>
+npx convex env set GOOGLE_CLIENT_ID <your-google-client-id> --deployment dev:<name>
+npx convex env set GOOGLE_CLIENT_SECRET <your-google-client-secret> --deployment dev:<name>
 ```
 
 For this repo, the active dev deployment is typically declared in the root [`.env.local`](/Users/ahmedmansour/anan-lit/.env.local) as `CONVEX_DEPLOYMENT`.

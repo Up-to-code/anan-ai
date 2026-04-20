@@ -16,6 +16,11 @@ export const convexProfilesRepository: ProfilesRepository = {
     })) as Awaited<ReturnType<ProfilesRepository["getCurrent"]>>;
     return profile;
   },
+  async ensureCurrent(token) {
+    return fetchMutation(usersApi.ensureMyProfile as never, {} as never, {
+      token,
+    }) as ReturnType<ProfilesRepository["ensureCurrent"]>;
+  },
   async updateCurrent(token, input) {
     return fetchMutation(usersApi.updateMyProfile as never, input as never, {
       token,

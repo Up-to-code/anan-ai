@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useOrganizationCreationDefaults, useOrganizationList } from "@clerk/nextjs";
+import { useState } from "react";
+import { authClient } from "@/lib/auth-client";
 import type { WorkspaceAudience } from "@/server/contracts/workspace";
 
 function slugifyOrganizationName(value: string) {
@@ -11,32 +11,6 @@ function slugifyOrganizationName(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 48);
-}
-
-function readSuggestedName(source: unknown) {
-  const candidate = source as
-    | {
-        suggestedName?: unknown;
-        organizationName?: unknown;
-        name?: unknown;
-        defaults?: { organizationName?: unknown };
-      }
-    | undefined;
-
-  const values = [
-    candidate?.suggestedName,
-    candidate?.organizationName,
-    candidate?.name,
-    candidate?.defaults?.organizationName,
-  ];
-
-  for (const value of values) {
-    if (typeof value === "string" && value.trim().length > 0) {
-      return value.trim();
-    }
-  }
-
-  return null;
 }
 
 type OrganizationDetailsStepProps = {
@@ -59,28 +33,10 @@ export default function OrganizationDetailsStep({
   onBack,
   onCreated,
 }: OrganizationDetailsStepProps) {
-  const clerkOrganizationList = useOrganizationList({
-    userMemberships: {
-      infinite: true,
-      keepPreviousData: true,
-    },
-  } as never) as unknown as {
-    isLoaded?: boolean;
-    createOrganization?: (input: { name: string; slug: string }) => Promise<unknown>;
-    setActive?: (input: { organization: string }) => Promise<unknown>;
-  };
-  const organizationCreationDefaults = useOrganizationCreationDefaults() as unknown;
   const [name, setName] = useState("");
   const [type, setType] = useState<"broker" | "red">(suggestedOrganizationType);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    const suggestedName = readSuggestedName(organizationCreationDefaults);
-    if (!name && suggestedName) {
-      setName(suggestedName);
-    }
-  }, [name, organizationCreationDefaults]);
 
   const helperText =
     audience === "developer"
@@ -95,18 +51,19 @@ export default function OrganizationDetailsStep({
     setIsSubmitting(true);
 
     try {
-      if (!clerkOrganizationList.isLoaded || !clerkOrganizationList.createOrganization || !clerkOrganizationList.setActive) {
-        throw new Error("تعذر تحميل خدمات الجهات حالياً.");
-      }
-
       const trimmedName = name.trim();
       const fallbackSlug = slugifyOrganizationName(trimmedName);
-      const createdResult = await clerkOrganizationList.createOrganization({
+      const createdResult = await authClient.organization.create({
         name: trimmedName,
         slug: fallbackSlug,
-      });
-      const createdOrganization = ((createdResult as { organization?: Record<string, unknown> } | null)?.organization ??
-        createdResult) as Record<string, unknown> | null;
+        metadata: {
+          organizationType: type === "red" ? "developer" : "broker",
+        },
+      } as never);
+      if (createdResult.error) {
+        throw new Error(createdResult.error.message ?? "تعذر إنشاء الجهة.");
+      }
+      const createdOrganization = createdResult.data as Record<string, unknown> | null;
       const organizationId =
         typeof createdOrganization?.id === "string" ? createdOrganization.id : null;
       const organizationSlug =
@@ -118,7 +75,12 @@ export default function OrganizationDetailsStep({
         throw new Error("تم إنشاء الجهة لكن تعذر قراءة بياناتها.");
       }
 
-      await clerkOrganizationList.setActive({ organization: organizationId });
+      const activeResult = await authClient.organization.setActive({
+        organizationId,
+      } as never);
+      if (activeResult.error) {
+        throw new Error(activeResult.error.message ?? "تعذر تفعيل الجهة.");
+      }
 
       const response = await fetch("/api/organizations", {
         method: "POST",

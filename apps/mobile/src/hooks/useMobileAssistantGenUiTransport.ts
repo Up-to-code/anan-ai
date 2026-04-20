@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo, useRef } from "react";
-import { useAuth } from "@clerk/expo";
 import EventSource from "react-native-sse";
 import { isReactElement, useChat } from "react-native-gen-ui";
 import { z } from "zod";
+import { authClient } from "@/lib/auth-client";
 import { getMobileAssistantStreamBaseUrl } from "@/lib/mobileEnv";
 import type { MobileLocale } from "@/lib/locale";
 import type { MobileAssistantCard, MobileProperty } from "@/types/mobile";
@@ -308,7 +308,7 @@ class MobileAssistantGenUiClient {
  * HOW:   Uses a custom SSE client pointed at the Convex HTTP stream route, captures the synthetic structured-response tool call, and exposes the live assistant text separately for optimistic rendering.
  */
 export function useMobileAssistantGenUiTransport() {
-  const { isSignedIn, getToken } = useAuth();
+  const { data: session } = authClient.useSession();
   const basePath = getMobileAssistantStreamBaseUrl();
   const requestMetaRef = useRef<StreamSubmitArgs | null>(null);
   const pendingResolveRef = useRef<((value: StructuredAssistantStreamTurn) => void) | null>(null);
@@ -321,11 +321,12 @@ export function useMobileAssistantGenUiTransport() {
       basePath,
       getRequestMeta: () => requestMetaRef.current,
       getAuthToken: async () => {
-        if (!isSignedIn) return null;
-        return getToken({ skipCache: false });
+        if (!session?.session) return null;
+        const { data } = await authClient.convex.token({ fetchOptions: { throw: false } });
+        return data?.token ?? null;
       },
     });
-  }, [basePath, getToken, isSignedIn]);
+  }, [basePath, session?.session]);
 
   const chat = useChat({
     openAi: transport as any,

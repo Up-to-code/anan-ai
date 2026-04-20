@@ -3,9 +3,9 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { useClerk } from "@clerk/nextjs";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
 type WorkspaceSignOutActionProps = {
@@ -16,14 +16,13 @@ type WorkspaceSignOutActionProps = {
 /**
  * WHY:   Workspace surfaces need one reusable sign-out action so account menus and account pages do not drift in copy, behavior, or localization.
  * WHAT:  Signs the current user out and renders either a standalone button or a dropdown-menu item.
- * HOW:   Uses Convex Auth's `signOut`, then redirects to `/signin`, while reading all labels from the shared web dictionary.
+ * HOW:   Uses Better Auth's `signOut`, then redirects to `/signin`, while reading all labels from the shared web dictionary.
  */
 export default function WorkspaceSignOutAction({
   variant = "button",
   className,
 }: WorkspaceSignOutActionProps) {
   const router = useRouter();
-  const { signOut } = useClerk();
   const { dictionary, isRtl } = useWebLocale();
   const [isPending, startTransition] = useTransition();
 
@@ -31,7 +30,7 @@ export default function WorkspaceSignOutAction({
 
   const handleSignOut = () => {
     startTransition(async () => {
-      await signOut({ redirectUrl: "/signin" });
+      await authClient.signOut();
       router.replace("/signin");
       router.refresh();
     });

@@ -5,7 +5,7 @@ const organizationTypeValidator = v.union(v.literal("broker"), v.literal("red"))
 const legacyOwnerTypeValidator = v.union(v.literal("broker"), v.literal("RED"));
 
 /**
- * WHY:   Clerk Organizations become the tenant source of truth, but the app still needs local metadata
+ * WHY:   Better Auth Organizations become the tenant source of truth, but the app still needs local metadata
  *        and a compatibility bridge while older workspace/business flows migrate.
  * WHAT:  Org-scoped metadata tables for profiles, files, conversations, assistant sessions/events, and memory.
  * HOW:   Every table is rooted on `organizationId` and indexed for the current hot paths so future migrations

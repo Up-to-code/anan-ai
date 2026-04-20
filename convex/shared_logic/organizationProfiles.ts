@@ -2,9 +2,9 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import { requireSession } from "../_core/security/accessPolicy";
 import {
-  requireClerkOrganizationContext,
-  requireClerkOrganizationPermission,
-} from "../_core/security/clerkOrganizations";
+  requireAuthOrganizationContext,
+  requireAuthOrganizationPermission,
+} from "../_core/security/authOrganizations";
 import { findProfileByAuthUserId } from "./agencies/repositories/core";
 import { tenants } from "../tenants";
 import { auditLog } from "../auditLog";
@@ -189,8 +189,8 @@ async function createLegacyOrganizationBridge(ctx: any, args: {
 }
 
 /**
- * WHY:   Web services need to hydrate Clerk organization memberships with app-owned metadata in one round-trip.
- * WHAT:  Lists local organization profile records by Clerk organization ids.
+ * WHY:   Web services need to hydrate Better Auth organization memberships with app-owned metadata in one round-trip.
+ * WHAT:  Lists local organization profile records by Better Auth organization ids.
  * HOW:   Filters the indexed `organizationProfiles` table and returns the normalized DTO shape used by the web gateway.
  */
 export const listOrganizationProfilesByIds = query({
@@ -208,14 +208,14 @@ export const listOrganizationProfilesByIds = query({
 });
 
 /**
- * WHY:   Workspace bootstrapping needs the app-owned metadata for the currently active Clerk organization.
+ * WHY:   Workspace bootstrapping needs the app-owned metadata for the currently active Better Auth organization.
  * WHAT:  Returns the current organization's local profile bridge.
- * HOW:   Resolves the active Clerk organization id from Convex auth claims and loads the mapped profile by index.
+ * HOW:   Resolves the active Better Auth organization id from Convex auth claims and loads the mapped profile by index.
  */
 export const getCurrentOrganizationProfile = query({
   args: {},
   handler: async (ctx) => {
-    const organization = await requireClerkOrganizationContext(ctx);
+    const organization = await requireAuthOrganizationContext(ctx);
     return mapOrganizationProfile(
       await getOrganizationProfileByOrganizationId(ctx, organization.organizationId),
     );
@@ -223,9 +223,9 @@ export const getCurrentOrganizationProfile = query({
 });
 
 /**
- * WHY:   New Clerk organizations still need a local metadata row and a compatibility bridge while business zones migrate.
+ * WHY:   New Better Auth organizations still need a local metadata row and a compatibility bridge while business zones migrate.
  * WHAT:  Creates or updates the current active organization's local profile bridge and syncs the caller's active tenant link.
- * HOW:   Uses the active Clerk org claim, creates legacy owner/link records when missing, then upserts the local profile row.
+ * HOW:   Uses the active Better Auth org claim, creates legacy owner/link records when missing, then upserts the local profile row.
  */
 export const bootstrapCurrentOrganizationProfile = mutation({
   args: {
@@ -236,7 +236,7 @@ export const bootstrapCurrentOrganizationProfile = mutation({
   },
   handler: async (ctx, args) => {
     const actor = await requireSession(ctx);
-    const activeOrganization = await requireClerkOrganizationContext(ctx);
+    const activeOrganization = await requireAuthOrganizationContext(ctx);
 
     if (activeOrganization.organizationId !== args.organizationId) {
       throw new ConvexError({
@@ -323,7 +323,7 @@ export const bootstrapCurrentOrganizationProfile = mutation({
         legacyTenantOrgId: nextValues.legacyTenantOrgId,
         type: args.type,
       },
-      tags: ["organizations", "clerk", "bootstrap"],
+      tags: ["organizations", "better-auth", "bootstrap"],
     });
 
     return mapOrganizationProfile(inserted);
@@ -331,15 +331,15 @@ export const bootstrapCurrentOrganizationProfile = mutation({
 });
 
 /**
- * WHY:   Switching the active Clerk organization should immediately sync the local workspace owner bridge.
+ * WHY:   Switching the active Better Auth organization should immediately sync the local workspace owner bridge.
  * WHAT:  Rebinds the current profile to the active organization's legacy tenant mapping when available.
- * HOW:   Resolves the active Clerk org claim, loads the bridge row, and patches `currentTenantOrgId` on the caller's profile.
+ * HOW:   Resolves the active Better Auth org claim, loads the bridge row, and patches `currentTenantOrgId` on the caller's profile.
  */
 export const syncCurrentOrganizationProfile = mutation({
   args: {},
   handler: async (ctx) => {
     const actor = await requireSession(ctx);
-    const organization = await requireClerkOrganizationContext(ctx);
+    const organization = await requireAuthOrganizationContext(ctx);
     const profile = await getOrganizationProfileByOrganizationId(ctx, organization.organizationId);
     if (!profile) {
       return null;
@@ -371,7 +371,7 @@ export const updateCurrentOrganizationProfile = mutation({
   },
   handler: async (ctx, args) => {
     const actor = await requireSession(ctx);
-    const organization = await requireClerkOrganizationPermission(ctx, "org:workspace:manage");
+    const organization = await requireAuthOrganizationPermission(ctx, "org:workspace:manage");
     const existing = await getOrganizationProfileByOrganizationId(ctx, organization.organizationId);
 
     if (!existing) {
@@ -402,7 +402,7 @@ export const updateCurrentOrganizationProfile = mutation({
       metadata: {
         organizationId: organization.organizationId,
       },
-      tags: ["organizations", "clerk", "settings"],
+      tags: ["organizations", "better-auth", "settings"],
     });
 
     return mapOrganizationProfile(updated);

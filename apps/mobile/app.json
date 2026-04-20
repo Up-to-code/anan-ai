@@ -8,7 +8,6 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "@clerk/expo",
       "expo-apple-authentication",
       [
         "expo-build-properties",

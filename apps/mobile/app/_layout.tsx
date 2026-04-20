@@ -1,8 +1,6 @@
 import "react-native-gesture-handler";
 import "../global.css";
 
-import { ClerkProvider } from "@clerk/expo";
-import { tokenCache } from "@clerk/expo/token-cache";
 import { Cairo_400Regular, Cairo_500Medium, Cairo_700Bold, Cairo_900Black } from "@expo-google-fonts/cairo";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -17,13 +15,12 @@ import { MobileSurface } from "@/components/ui/MobileChrome";
 import { BuyerAccountProvider, useBuyerAccount } from "@/hooks/useBuyerAccount";
 import { ConvexProvider } from "@/lib/convex";
 import { MobileLocaleProvider, useMobileLocale } from "@/lib/mobileLocale";
-import { getMobileBackendReadiness, getMobileClerkPublishableKey } from "@/lib/mobileEnv";
+import { getMobileBackendReadiness } from "@/lib/mobileEnv";
 import { useAppTheme } from "@/lib/mobileTheme";
 import { getThemePreference } from "@/lib/themeStore";
 
 void SplashScreen.preventAutoHideAsync();
 
-const clerkPublishableKey = getMobileClerkPublishableKey();
 const mobileBackend = getMobileBackendReadiness();
 
 function hasKeyboardControllerRuntime() {
@@ -132,13 +129,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <OptionalKeyboardProvider>
         <SafeAreaProvider>
-          <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
-            <ConvexProvider>
-              <BuyerAccountProvider>
-                <AppShell />
-              </BuyerAccountProvider>
-            </ConvexProvider>
-          </ClerkProvider>
+          <ConvexProvider>
+            <BuyerAccountProvider>
+              <AppShell />
+            </BuyerAccountProvider>
+          </ConvexProvider>
         </SafeAreaProvider>
       </OptionalKeyboardProvider>
     </GestureHandlerRootView>

@@ -21,7 +21,7 @@ describe("organizationInvitesActions", () => {
     });
   });
 
-  it("redirects to Clerk invitation urls when present", async () => {
+  it("redirects to provider invitation urls when present", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const assignSpy = vi.fn();
     vi.stubGlobal("window", {
@@ -32,11 +32,11 @@ describe("organizationInvitesActions", () => {
 
     const result = await acceptIncomingInvite({
       token: "orginv_123",
-      acceptUrl: "https://clerk.test/invitations/accept",
+      acceptUrl: "https://auth.test/invitations/accept",
     });
 
     expect(result).toBe(true);
-    expect(assignSpy).toHaveBeenCalledWith("https://clerk.test/invitations/accept");
+    expect(assignSpy).toHaveBeenCalledWith("https://auth.test/invitations/accept");
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 

@@ -8,26 +8,8 @@ const { useRouter } = vi.hoisted(() => ({
     replace: vi.fn(),
   })),
 }));
-const { useClerk, useOrganizationList, useOrganizationCreationDefaults } = vi.hoisted(() => ({
-  useClerk: vi.fn(() => ({
-    signOut: vi.fn(),
-  })),
-  useOrganizationList: vi.fn(() => ({
-    isLoaded: true,
-    createOrganization: vi.fn(),
-    setActive: vi.fn(),
-  })),
-  useOrganizationCreationDefaults: vi.fn(() => null),
-}));
-
 vi.mock("next/navigation", () => ({
   useRouter,
-}));
-
-vi.mock("@clerk/nextjs", () => ({
-  useClerk,
-  useOrganizationList,
-  useOrganizationCreationDefaults,
 }));
 
 beforeEach(() => {

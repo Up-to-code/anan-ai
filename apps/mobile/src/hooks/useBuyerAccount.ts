@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "convex/react";
-import { useAuth, useUser } from "@clerk/expo";
 import { createContext, createElement, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/convexApi";
+import { authClient } from "@/lib/auth-client";
 import {
   clearBuyerLocalState,
   emptyBuyerLocalState,
@@ -111,8 +111,9 @@ function useLiveAccountMutations() {
 }
 
 function useBuyerAccountController() {
-  const { isLoaded: isAuthLoaded, isSignedIn } = useAuth();
-  const { user } = useUser();
+  const { data: session, isPending: isAuthPending } = authClient.useSession();
+  const isSignedIn = Boolean(session?.session);
+  const user = session?.user ?? null;
   const liveViewer = LIVE_BACKEND_ENABLED ? useLiveBuyerViewer(Boolean(isSignedIn)) : null;
   const liveAssistantState = LIVE_BACKEND_ENABLED ? useLiveAssistantState(Boolean(isSignedIn)) : null;
   const liveMutations = LIVE_BACKEND_ENABLED ? useLiveAccountMutations() : null;
@@ -146,16 +147,15 @@ function useBuyerAccountController() {
     }
   }, [isHydrated, isSignedIn]);
 
-  const clerkIdentity = useMemo<MobileBuyerViewerIdentity | null>(() => {
+  const authIdentity = useMemo<MobileBuyerViewerIdentity | null>(() => {
     if (!isSignedIn || !user) return null;
 
     return {
       id: user.id,
       authUserId: user.id,
-      displayName: user.fullName?.trim() || user.firstName?.trim() || user.primaryEmailAddress?.emailAddress || "عميل عنان",
-      email: user.primaryEmailAddress?.emailAddress ?? undefined,
-      phone: user.primaryPhoneNumber?.phoneNumber ?? undefined,
-      imageUrl: user.imageUrl ?? undefined,
+      displayName: user.name?.trim() || user.email || "عميل عنان",
+      email: user.email ?? undefined,
+      imageUrl: user.image ?? undefined,
       role: "user",
       isAuthenticated: true,
       qualifiedOrdersCount: 0,
@@ -405,7 +405,7 @@ function useBuyerAccountController() {
     const identity =
       liveViewer && liveViewer.isAuthenticated
         ? liveViewer
-        : clerkIdentity ?? {
+        : authIdentity ?? {
             displayName: accountState.profile.displayName,
             phone: accountState.profile.phone,
             email: accountState.profile.email,
@@ -423,7 +423,7 @@ function useBuyerAccountController() {
       consents: accountState.consents,
       preferences: accountState.preferences,
     };
-  }, [accountState, activeThreadId, clerkIdentity, liveViewer, recentThreads.length]);
+  }, [accountState, activeThreadId, authIdentity, liveViewer, recentThreads.length]);
 
   const isViewerReady = !LIVE_BACKEND_ENABLED || !isSignedIn || (liveViewer !== undefined && liveAssistantState !== undefined);
   const resolvedLaunchRoute = resolveBuyerLaunchRoute({
@@ -433,11 +433,11 @@ function useBuyerAccountController() {
   });
 
   return {
-    isHydrated: isHydrated && isAuthLoaded && isViewerReady,
+    isHydrated: isHydrated && !isAuthPending && isViewerReady,
     localState,
     viewer,
     authSources: {
-      clerk: clerkIdentity,
+      auth: authIdentity,
       convex: liveViewer,
     },
     recentThreads,

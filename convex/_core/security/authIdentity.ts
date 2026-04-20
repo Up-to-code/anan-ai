@@ -20,7 +20,7 @@ export async function getAuthUserId(ctx: Ctx): Promise<string | null> {
 /**
  * WHY:   Session-aware features still need a stable request/session identifier after the provider migration.
  * WHAT:  Resolves the authenticated session identifier from Convex identity claims.
- * HOW:   Returns Clerk's token identifier when present and `null` otherwise.
+ * HOW:   Returns Convex's token identifier when present and `null` otherwise.
  */
 export async function getAuthSessionId(ctx: Ctx): Promise<string | null> {
   const identity = await ctx.auth.getUserIdentity();

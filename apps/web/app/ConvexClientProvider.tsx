@@ -1,19 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 import { ConvexReactClient } from "convex/react";
-import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { authClient } from "@/lib/auth-client";
 
 /**
- * WHY:   Client workspace surfaces need authenticated Convex hooks for live queries and mutations after the Clerk cutover.
- * WHAT:  Provides one browser-stable Convex React client bridged through Clerk auth.
- * HOW:   Lazily creates the client once per browser session and passes Clerk's `useAuth` hook to `ConvexProviderWithClerk`.
+ * WHY:   Client workspace surfaces need authenticated Convex hooks for live queries and mutations.
+ * WHAT:  Provides one browser-stable Convex React client bridged through Better Auth.
+ * HOW:   Lazily creates the client once per browser session and passes the SSR token into the Better Auth provider.
  */
 export default function ConvexClientProvider({
   children,
+  initialToken,
 }: {
   children: React.ReactNode;
+  initialToken?: string | null;
 }) {
   const [client] = useState(
     () =>
@@ -22,5 +24,9 @@ export default function ConvexClientProvider({
       ),
   );
 
-  return <ConvexProviderWithClerk client={client} useAuth={useAuth}>{children}</ConvexProviderWithClerk>;
+  return (
+    <ConvexBetterAuthProvider client={client} authClient={authClient} initialToken={initialToken}>
+      {children}
+    </ConvexBetterAuthProvider>
+  );
 }

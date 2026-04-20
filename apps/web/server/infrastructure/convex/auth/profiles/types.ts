@@ -7,5 +7,6 @@ import type { ProfileSummary, UpdateProfileInput } from "@/server/contracts/prof
  */
 export type ProfilesRepository = {
   getCurrent(token: string): Promise<ProfileSummary | null>;
+  ensureCurrent(token: string): Promise<ProfileSummary>;
   updateCurrent(token: string, input: UpdateProfileInput): Promise<ProfileSummary>;
 };

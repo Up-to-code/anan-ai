@@ -1,7 +1,7 @@
-import { useAuth, useClerk, useSignIn, useSignUp, useSSO, useUser, isClerkAPIResponseError } from "@clerk/expo";
 import * as WebBrowser from "expo-web-browser";
 import { useMemo, useState } from "react";
 import { Platform } from "react-native";
+import { authClient } from "@/lib/auth-client";
 import { useBuyerAccount } from "@/hooks/useBuyerAccount";
 import { resolvePostAuthRoute, resolvePostGuestRoute } from "@/lib/mobileAuthRouting";
 import { emptyBuyerLocalState, saveBuyerLocalState } from "@/lib/mobileBuyerAccount";
@@ -10,50 +10,29 @@ import type { MobileAuthEmailStep, MobileAuthReturnTarget } from "@/types/mobile
 void WebBrowser.maybeCompleteAuthSession();
 
 /**
- * WHY:   Mobile auth now needs one place to coordinate Clerk state, guest-mode continuity, and route decisions.
+ * WHY:   Mobile auth needs one place to coordinate Better Auth state, guest-mode continuity, and route decisions.
  * WHAT:  Exposes buyer auth actions for OAuth, email code, guest skip, and sign-out.
- * HOW:   Wraps Clerk custom-flow APIs with app-specific routing, Arabic-friendly error messages, and guest dismissal persistence.
+ * HOW:   Wraps Better Auth client APIs with app-specific routing, Arabic-friendly error messages, and guest persistence.
  */
 export function useBuyerAuth() {
   const account = useBuyerAccount();
-  const { isLoaded, isSignedIn } = useAuth();
-  const { user } = useUser();
-  const clerk = useClerk();
-  const { startSSOFlow } = useSSO();
-  const { signIn, fetchStatus: signInFetchStatus } = useSignIn();
-  const { signUp, fetchStatus: signUpFetchStatus } = useSignUp();
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [oauthLoading, setOauthLoading] = useState<"google" | "apple" | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
 
-  const emailStep = useMemo<MobileAuthEmailStep>(() => {
-    if (signUp.status === "missing_requirements") {
-      return "complete_profile";
-    }
-    if (signIn.status === "needs_first_factor") {
-      return "verify";
-    }
-    return "idle";
-  }, [signIn.status, signUp.status]);
-
-  const isBusy = oauthLoading !== null || signInFetchStatus === "fetching" || signUpFetchStatus === "fetching";
-  const missingProfileFields = signUp.missingFields ?? [];
+  const emailStep = useMemo<MobileAuthEmailStep>(() => (pendingEmail ? "verify" : "idle"), [pendingEmail]);
+  const isBusy = oauthLoading !== null || isEmailLoading;
 
   function clearError() {
     setErrorMessage(null);
   }
 
   function formatError(error: unknown, fallback: string) {
-    if (isClerkAPIResponseError(error)) {
-      const nextMessage = error.errors[0]?.longMessage || error.errors[0]?.message;
-      if (nextMessage?.trim()) {
-        return nextMessage.trim();
-      }
+    if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
+      return error.message.trim() || fallback;
     }
-
-    if (error instanceof Error && error.message.trim()) {
-      return error.message.trim();
-    }
-
     return fallback;
   }
 
@@ -74,63 +53,21 @@ export function useBuyerAuth() {
     return getPostAuthPath(returnTo);
   }
 
-  async function activateSession(sessionId: string, returnTo?: MobileAuthReturnTarget | null) {
-    await clerk.setActive({ session: sessionId });
-    return finalizeAuthenticatedSession(returnTo);
-  }
-
-  async function startGoogleSignIn(returnTo?: MobileAuthReturnTarget | null) {
+  async function startSocialSignIn(provider: "google" | "apple", returnTo?: MobileAuthReturnTarget | null) {
     clearError();
-    setOauthLoading("google");
+    setOauthLoading(provider);
 
     try {
-      const { createdSessionId, setActive } = await startSSOFlow({
-        strategy: "oauth_google",
-      });
-
-      if (!createdSessionId) {
-        throw new Error("لم يكتمل تسجيل الدخول عبر Google. حاول مرة أخرى.");
+      const { error } = await authClient.signIn.social({
+        provider,
+        callbackURL: getPostAuthPath(returnTo),
+      } as never);
+      if (error) {
+        throw error;
       }
-
-      if (setActive) {
-        await setActive({ session: createdSessionId });
-        await finalizeAuthenticatedSession(returnTo);
-      } else {
-        await activateSession(createdSessionId, returnTo);
-      }
-
       return getPostAuthPath(returnTo);
     } catch (error) {
-      setErrorMessage(formatError(error, "Google غير متاح حالياً في إعدادات هذا التطبيق."));
-      return null;
-    } finally {
-      setOauthLoading(null);
-    }
-  }
-
-  async function startAppleSignIn(returnTo?: MobileAuthReturnTarget | null) {
-    clearError();
-    setOauthLoading("apple");
-
-    try {
-      const { createdSessionId, setActive } = await startSSOFlow({
-        strategy: "oauth_apple",
-      });
-
-      if (!createdSessionId) {
-        throw new Error("لم يكتمل تسجيل الدخول عبر Apple. حاول مرة أخرى.");
-      }
-
-      if (setActive) {
-        await setActive({ session: createdSessionId });
-        await finalizeAuthenticatedSession(returnTo);
-      } else {
-        await activateSession(createdSessionId, returnTo);
-      }
-
-      return getPostAuthPath(returnTo);
-    } catch (error) {
-      setErrorMessage(formatError(error, "Apple غير متاح حالياً في إعدادات هذا التطبيق."));
+      setErrorMessage(formatError(error, provider === "google" ? "Google غير متاح حالياً في إعدادات هذا التطبيق." : "Apple غير متاح حالياً في إعدادات هذا التطبيق."));
       return null;
     } finally {
       setOauthLoading(null);
@@ -146,41 +83,31 @@ export function useBuyerAuth() {
       return false;
     }
 
+    setIsEmailLoading(true);
     try {
-      const { error: createError } = await signIn.create({
-        identifier: normalizedEmail,
-        signUpIfMissing: true,
-      } as Parameters<typeof signIn.create>[0]);
-
-      if (createError) {
-        throw createError;
+      const { error } = await authClient.emailOtp.sendVerificationOtp({
+        email: normalizedEmail,
+        type: "sign-in",
+      });
+      if (error) {
+        throw error;
       }
-
-      const { error: sendError } = await signIn.emailCode.sendCode();
-      if (sendError) {
-        throw sendError;
-      }
-
+      setPendingEmail(normalizedEmail);
       return true;
     } catch (error) {
-      setErrorMessage(formatError(error, "تعذر إرسال رمز التحقق بالبريد الإلكتروني حالياً."));
+      setErrorMessage(formatError(error, "تسجيل الدخول بالبريد غير مفعّل بعد في هذا التطبيق."));
       return false;
+    } finally {
+      setIsEmailLoading(false);
     }
   }
 
   async function resendEmailCode() {
-    clearError();
-
-    try {
-      const { error } = await signIn.emailCode.sendCode();
-      if (error) {
-        throw error;
-      }
-      return true;
-    } catch (error) {
-      setErrorMessage(formatError(error, "تعذر إعادة إرسال الرمز الآن."));
+    if (!pendingEmail) {
+      setErrorMessage("أعد إدخال بريدك الإلكتروني أولاً.");
       return false;
     }
+    return requestEmailCode(pendingEmail);
   }
 
   async function verifyEmailCode({
@@ -192,84 +119,41 @@ export function useBuyerAuth() {
   }) {
     clearError();
 
+    if (!pendingEmail) {
+      setErrorMessage("أعد إدخال بريدك الإلكتروني أولاً.");
+      return { status: "error" as const, nextPath: null };
+    }
+
+    setIsEmailLoading(true);
     try {
-      const { error } = await signIn.emailCode.verifyCode({ code: code.trim() });
+      const { error } = await authClient.signIn.emailOtp({
+        email: pendingEmail,
+        otp: code.trim(),
+      });
       if (error) {
-        if (isClerkAPIResponseError(error) && error.errors[0]?.code === "sign_up_if_missing_transfer") {
-          const transfer = await signUp.create({ transfer: true });
-          if (transfer.error) {
-            throw transfer.error;
-          }
-
-          if (signUp.status === "complete" && signUp.createdSessionId) {
-            const nextPath = await activateSession(signUp.createdSessionId, returnTo);
-            return { status: "complete" as const, nextPath };
-          }
-
-          if (signUp.status === "missing_requirements") {
-            return { status: "needs_profile" as const, nextPath: null };
-          }
-        }
-
         throw error;
       }
-
-      if (signIn.status === "complete" && signIn.createdSessionId) {
-        const nextPath = await activateSession(signIn.createdSessionId, returnTo);
-        return { status: "complete" as const, nextPath };
-      }
-
-      if (signIn.status === "needs_client_trust") {
-        setErrorMessage("يلزم تحقق إضافي قبل إكمال الجلسة. راجع إعدادات Clerk لهذا الأسلوب.");
-        return { status: "blocked" as const, nextPath: null };
-      }
-
-      return { status: "pending" as const, nextPath: null };
+      setPendingEmail(null);
+      const nextPath = await finalizeAuthenticatedSession(returnTo);
+      return { status: "complete" as const, nextPath };
     } catch (error) {
       setErrorMessage(formatError(error, "الرمز غير صحيح أو انتهت صلاحيته."));
       return { status: "error" as const, nextPath: null };
+    } finally {
+      setIsEmailLoading(false);
     }
   }
 
-  async function completeTransferredSignUp({
-    legalAccepted,
-    returnTo,
-  }: {
+  async function completeTransferredSignUp(_args?: {
     legalAccepted?: boolean;
     returnTo?: MobileAuthReturnTarget | null;
   }) {
-    clearError();
-
-    try {
-      const payload =
-        missingProfileFields.includes("legal_accepted") && legalAccepted
-          ? { legalAccepted: true }
-          : {};
-      const { error } = await signUp.update(payload);
-      if (error) {
-        throw error;
-      }
-
-      if (signUp.status === "complete" && signUp.createdSessionId) {
-        const nextPath = await activateSession(signUp.createdSessionId, returnTo);
-        return { status: "complete" as const, nextPath };
-      }
-
-      if (signUp.status === "missing_requirements") {
-        setErrorMessage("ما زالت هناك بيانات مطلوبة لإكمال إنشاء الحساب.");
-        return { status: "needs_profile" as const, nextPath: null };
-      }
-
-      return { status: "pending" as const, nextPath: null };
-    } catch (error) {
-      setErrorMessage(formatError(error, "تعذر إكمال إنشاء الحساب الآن."));
-      return { status: "error" as const, nextPath: null };
-    }
+    return { status: "complete" as const, nextPath: null };
   }
 
   async function startOver() {
     clearError();
-    await Promise.all([signIn.reset(), signUp.reset()]);
+    setPendingEmail(null);
   }
 
   async function continueAsGuest() {
@@ -282,7 +166,7 @@ export function useBuyerAuth() {
     clearError();
 
     try {
-      await clerk.signOut();
+      await authClient.signOut();
       await account.resetLocalBuyerState();
       await saveBuyerLocalState({
         ...emptyBuyerLocalState(),
@@ -300,21 +184,21 @@ export function useBuyerAuth() {
 
   return {
     account,
-    isLoaded,
-    isAuthenticated: Boolean(isSignedIn),
+    isLoaded: !isSessionPending,
+    isAuthenticated: Boolean(session?.session),
     isAppleAvailable: Platform.OS === "ios",
-    user,
+    user: session?.user ?? null,
     emailStep,
     errorMessage,
     isBusy,
     isGoogleLoading: oauthLoading === "google",
     isAppleLoading: oauthLoading === "apple",
-    missingProfileFields,
+    missingProfileFields: [] as string[],
     clearError,
     getPostAuthPath,
     getPostGuestPath,
-    startGoogleSignIn,
-    startAppleSignIn,
+    startGoogleSignIn: (returnTo?: MobileAuthReturnTarget | null) => startSocialSignIn("google", returnTo),
+    startAppleSignIn: (returnTo?: MobileAuthReturnTarget | null) => startSocialSignIn("apple", returnTo),
     requestEmailCode,
     resendEmailCode,
     verifyEmailCode,

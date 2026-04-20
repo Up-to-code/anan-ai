@@ -64,12 +64,12 @@ export default function AccountScreen() {
   ].join(" · ");
   const heroTitle = account.viewer.isAuthenticated
     ? resolveIdentityLabel({
-        displayName: account.authSources.clerk?.displayName ?? account.viewer.displayName,
-        email: account.authSources.clerk?.email ?? account.viewer.email,
+        displayName: account.authSources.auth?.displayName ?? account.viewer.displayName,
+        email: account.authSources.auth?.email ?? account.viewer.email,
         fallback: accountCopy.linkedAccount,
       })
     : accountCopy.guestMode;
-  const heroImageUrl = account.authSources.clerk?.imageUrl;
+  const heroImageUrl = account.authSources.auth?.imageUrl;
   const heroSubline = account.viewer.isAuthenticated ? viewerMeta ?? accountCopy.linkedAccount : guestSummary;
   const heroFootnote = account.viewer.isAuthenticated
     ? [

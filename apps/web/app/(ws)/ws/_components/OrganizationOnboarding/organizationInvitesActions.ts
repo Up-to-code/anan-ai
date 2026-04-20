@@ -7,8 +7,8 @@ import type { IncomingOrganizationInvite } from "@/server/contracts/organization
 
 /**
  * WHY:   Accepting invites should use the same endpoint everywhere in the workspace.
- * WHAT:  Opens Clerk's invitation URL when available, otherwise falls back to the legacy accept endpoint.
- * HOW:   Redirects the browser for Clerk-backed invites and only posts JSON for legacy invite tokens.
+ * WHAT:  Opens the provider invitation URL when available, otherwise falls back to the legacy accept endpoint.
+ * HOW:   Redirects the browser for provider-backed invites and only posts JSON for legacy invite tokens.
  */
 export async function acceptIncomingInvite(invite: Pick<IncomingOrganizationInvite, "token" | "acceptUrl">): Promise<boolean> {
   if (invite.acceptUrl && typeof window !== "undefined") {

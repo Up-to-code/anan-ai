@@ -13,7 +13,7 @@ it("treats clearly expired NoAuthProvider tokens as logged out", async () => {
   const expiredToken = createJwtWithExp(Math.floor((Date.now() - (60 * 1000)) / 1000));
   const dependencies = {
     getToken: vi.fn(async () => expiredToken),
-    getClerkContext: vi.fn(async () => ({})),
+    getOrganizationContext: vi.fn(async () => ({})),
     sessionsRepository: {
       getCurrent: vi.fn(async () => {
         throw new Error(JSON.stringify({
@@ -34,7 +34,7 @@ it("surfaces provider mismatches for active tokens as AUTH_CONFIGURATION_ERROR",
   const activeToken = createJwtWithExp(Math.floor((Date.now() + (60 * 60 * 1000)) / 1000));
   const dependencies = {
     getToken: vi.fn(async () => activeToken),
-    getClerkContext: vi.fn(async () => ({})),
+    getOrganizationContext: vi.fn(async () => ({})),
     sessionsRepository: {
       getCurrent: vi.fn(async () => {
         throw new Error(JSON.stringify({
@@ -54,7 +54,7 @@ it("surfaces provider mismatches for active tokens as AUTH_CONFIGURATION_ERROR",
   });
 });
 
-it("surfaces missing Clerk JWT templates as AUTH_CONFIGURATION_ERROR", async () => {
+it("surfaces missing auth provider token configuration as AUTH_CONFIGURATION_ERROR", async () => {
   const dependencies = {
     getToken: vi.fn(async () => {
       throw {
@@ -63,7 +63,7 @@ it("surfaces missing Clerk JWT templates as AUTH_CONFIGURATION_ERROR", async () 
         errors: [{ code: "resource_not_found", message: "JWT template not found" }],
       };
     }),
-    getClerkContext: vi.fn(async () => ({})),
+    getOrganizationContext: vi.fn(async () => ({})),
     sessionsRepository: {
       getCurrent: vi.fn(async () => null),
     },

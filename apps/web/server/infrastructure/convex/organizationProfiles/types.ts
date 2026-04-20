@@ -8,7 +8,7 @@ export type BootstrapOrganizationProfileInput = {
 };
 
 /**
- * WHY:   Clerk-backed organization flows still need app-owned metadata and a legacy owner bridge in Convex.
+ * WHY:   Better Auth organization flows still need app-owned metadata and a legacy owner bridge in Convex.
  * WHAT:  Defines the org-profile bridge reads and writes used by the web gateway.
  * HOW:   Implementations hide Convex transport details and return normalized organization summaries.
  */

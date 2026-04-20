@@ -6,6 +6,7 @@ import {
   handleWhatsAppWebhookPost,
 } from "./ai_zone/channels/whatsapp/webhook";
 import { components } from "./_generated/api";
+import { authComponent, createAuth } from "./betterAuth/auth";
 import {
   handleAuthorize,
   handleDelegatedClients,
@@ -20,6 +21,7 @@ import { handleMobileAssistantStream } from "./ai_zone/assistantPublicHttp";
 
 const http = httpRouter();
 
+authComponent.registerRoutes(http, createAuth, { cors: true });
 registerRoutes(http, components.uploadthingFileTracker);
 
 http.route({

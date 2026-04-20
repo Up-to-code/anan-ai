@@ -11,7 +11,7 @@ export type {
 } from "./types";
 
 /**
- * WHY:   Clerk becomes the org authority, but Convex still owns app-specific org metadata and compatibility bridges.
+ * WHY:   Better Auth becomes the org authority, but Convex still owns app-specific org metadata and compatibility bridges.
  * WHAT:  Repository adapter for the org-profile bridge functions in Convex.
  * HOW:   Calls the shared `organizationProfiles` capability with the current Convex auth token.
  */

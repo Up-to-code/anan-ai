@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { useClerk } from "@clerk/nextjs";
+import { authClient } from "@/lib/auth-client";
 
 type OnboardingLogoutButtonProps = {
   label?: string;
@@ -14,7 +14,7 @@ type OnboardingLogoutButtonProps = {
 /**
  * WHY:   Onboarding should always provide a fast way to switch accounts.
  * WHAT:  Signs the current user out and returns them to the sign-in route.
- * HOW:   Calls Convex Auth sign-out and navigates to `/signin` with a transition state.
+ * HOW:   Calls Better Auth sign-out and navigates to `/signin` with a transition state.
  */
 export default function OnboardingLogoutButton({
   label = "تسجيل الخروج",
@@ -22,7 +22,6 @@ export default function OnboardingLogoutButton({
   className,
 }: OnboardingLogoutButtonProps) {
   const router = useRouter();
-  const { signOut } = useClerk();
   const [isPending, startTransition] = useTransition();
 
   const baseClasses =
@@ -37,7 +36,7 @@ export default function OnboardingLogoutButton({
       type="button"
       onClick={() => {
         startTransition(async () => {
-          await signOut({ redirectUrl: "/signin" });
+          await authClient.signOut();
           router.replace("/signin");
           router.refresh();
         });

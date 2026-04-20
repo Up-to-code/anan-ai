@@ -2,6 +2,7 @@ import { apiUnsafe } from "@/lib/convexApi";
 
 export type UsersApiRefs = {
   getMyProfile: unknown;
+  ensureMyProfile: unknown;
   updateMyProfile: unknown;
 };
 

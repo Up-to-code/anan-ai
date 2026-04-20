@@ -1,8 +1,3 @@
-type ClerkEnvSources = {
-  expoPublicClerkPublishableKey?: string | null;
-  clerkPublishableKey?: string | null;
-};
-
 type ConvexEnvSources = {
   expoPublicConvexUrl?: string | null;
   expoPublicConvexSiteUrl?: string | null;
@@ -11,15 +6,6 @@ type ConvexEnvSources = {
 function normalizeEnvValue(value?: string | null) {
   const normalized = value?.trim();
   return normalized ? normalized : null;
-}
-
-/**
- * WHY:   Mobile auth setup should prefer Expo's public env contract while preserving a local compatibility fallback.
- * WHAT:  Resolves the Clerk publishable key from the supported mobile env sources.
- * HOW:   Prefers EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY, then falls back to CLERK_PUBLISHABLE_KEY exposed through app config.
- */
-export function resolveClerkPublishableKey(sources: ClerkEnvSources) {
-  return normalizeEnvValue(sources.expoPublicClerkPublishableKey) ?? normalizeEnvValue(sources.clerkPublishableKey);
 }
 
 /**

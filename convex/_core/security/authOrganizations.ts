@@ -22,12 +22,11 @@ function readStringArray(value: unknown) {
 }
 
 /**
- * WHY:   Clerk Organizations are now the runtime tenant boundary for the workspace.
+ * WHY:   Auth provider organizations are the runtime tenant boundary for the workspace.
  * WHAT:  Reads the active organization id, slug, role, and permissions from Convex identity claims.
- * HOW:   Supports both Clerk-style snake_case claims and camelCase fallbacks so the helper remains stable
- *        across JWT template changes during the migration.
+ * HOW:   Supports snake_case and camelCase fallbacks so the helper remains stable across provider JWT changes.
  */
-export async function getClerkOrganizationContext(ctx: Ctx): Promise<{
+export async function getAuthOrganizationContext(ctx: Ctx): Promise<{
   organizationId: string | null;
   organizationSlug: string | null;
   organizationRole: string | null;
@@ -50,11 +49,11 @@ export async function getClerkOrganizationContext(ctx: Ctx): Promise<{
 
 /**
  * WHY:   Org-scoped workspace functions should fail consistently when the caller has no active org context.
- * WHAT:  Returns the current Clerk organization context or throws a standardized forbidden error.
- * HOW:   Delegates to `getClerkOrganizationContext` and enforces an `organizationId`.
+ * WHAT:  Returns the current auth organization context or throws a standardized forbidden error.
+ * HOW:   Delegates to `getAuthOrganizationContext` and enforces an `organizationId`.
  */
-export async function requireClerkOrganizationContext(ctx: Ctx) {
-  const organization = await getClerkOrganizationContext(ctx);
+export async function requireAuthOrganizationContext(ctx: Ctx) {
+  const organization = await getAuthOrganizationContext(ctx);
   if (!organization?.organizationId) {
     throw new ConvexError({
       code: "FORBIDDEN",
@@ -70,13 +69,13 @@ export async function requireClerkOrganizationContext(ctx: Ctx) {
 /**
  * WHY:   Internal org workspace records should only be reachable when the active org grants the matching permission.
  * WHAT:  Checks the current org permissions/role for the requested capability.
- * HOW:   Allows either the explicit Clerk custom permission or a high-privilege org role such as owner/admin.
+ * HOW:   Allows either the explicit custom permission or a high-privilege org role such as owner/admin.
  */
-export async function requireClerkOrganizationPermission(
+export async function requireAuthOrganizationPermission(
   ctx: Ctx,
   permission: string,
 ) {
-  const organization = await requireClerkOrganizationContext(ctx);
+  const organization = await requireAuthOrganizationContext(ctx);
   const normalizedRole = (organization.organizationRole ?? "").toLowerCase();
   const hasElevatedRole =
     normalizedRole.includes("owner") ||

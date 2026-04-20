@@ -1,57 +1,41 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, Plus, RefreshCw } from "lucide-react";
-import { useOrganization, useOrganizationList } from "@clerk/nextjs";
-import { cn } from "@/lib/utils";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
+import { authClient } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
 
-function readMemberships(source: unknown) {
-  const resource = source as { data?: unknown[] } | undefined;
-  return Array.isArray(resource?.data) ? resource.data : [];
-}
-
-function readString(value: unknown) {
-  return typeof value === "string" && value.trim().length > 0 ? value : null;
-}
-
-function getOrganizationFromMembership(membership: unknown) {
-  return ((membership as { organization?: Record<string, unknown> } | null)?.organization ?? null);
-}
+type OrganizationSummary = {
+  id: string;
+  name: string;
+  slug?: string | null;
+};
 
 /**
- * WHY:   The workspace navbar needs a fully custom org switcher that matches Anan's brand while Clerk owns org truth.
- * WHAT:  Lists the current user's Clerk organization memberships and switches the active org on demand.
- * HOW:   Uses Clerk's low-level hooks, then posts to the sync route so the Convex compatibility bridge follows the active org.
+ * WHY:   The workspace navbar needs a custom org switcher that matches Anan's workspace chrome.
+ * WHAT:  Lists the current user's Better Auth organizations and switches the active org on demand.
+ * HOW:   Uses Better Auth organization client actions, then asks the server to refresh the Convex compatibility bridge.
  */
 export default function WorkspaceOrganizationSwitcher() {
   const router = useRouter();
   const { dictionary, direction, isRtl } = useWebLocale();
-  const clerkOrganizations = useOrganizationList({
-    userMemberships: {
-      infinite: true,
-      keepPreviousData: true,
-    },
-  } as never) as unknown as {
-    isLoaded?: boolean;
-    setActive?: (args: { organization: string }) => Promise<unknown>;
-    userMemberships?: unknown;
+  const { data: organizations, isPending: isLoadingOrganizations } =
+    authClient.useListOrganizations() as {
+      data?: OrganizationSummary[] | null;
+      isPending?: boolean;
+    };
+  const { data: activeOrganization } = authClient.useActiveOrganization() as {
+    data?: OrganizationSummary | null;
   };
-  const activeOrganization = (useOrganization() as unknown as {
-    organization?: Record<string, unknown> | null;
-  }).organization;
-  const memberships = useMemo(
-    () => readMemberships(clerkOrganizations.userMemberships),
-    [clerkOrganizations.userMemberships],
-  );
   const [status, setStatus] = useState<string | null>(null);
   const [pendingOrganizationId, setPendingOrganizationId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const handleSwitch = (organizationId: string) => {
-    if (!clerkOrganizations.setActive || organizationId === pendingOrganizationId) {
+    if (organizationId === pendingOrganizationId) {
       return;
     }
 
@@ -59,7 +43,12 @@ export default function WorkspaceOrganizationSwitcher() {
     setStatus(null);
     startTransition(async () => {
       try {
-        await clerkOrganizations.setActive?.({ organization: organizationId });
+        const { error } = await authClient.organization.setActive({
+          organizationId,
+        } as never);
+        if (error) {
+          throw new Error(error.message ?? "Please try again.");
+        }
         await fetch("/api/organizations/current/sync", {
           method: "POST",
         });
@@ -72,7 +61,7 @@ export default function WorkspaceOrganizationSwitcher() {
     });
   };
 
-  if (!clerkOrganizations.isLoaded) {
+  if (isLoadingOrganizations) {
     return (
       <div className="rounded-xl border border-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)] bg-[var(--workspace-panel)] px-3 py-2">
         <div className="flex items-center gap-2 text-[12px] font-medium text-[var(--workspace-muted)]">
@@ -103,21 +92,15 @@ export default function WorkspaceOrganizationSwitcher() {
       </div>
 
       <div className="space-y-1">
-        {memberships.map((membership) => {
-          const organization = getOrganizationFromMembership(membership);
-          const organizationId = readString(organization?.id);
-          if (!organization || !organizationId) {
-            return null;
-          }
-
-          const isActive = organizationId === readString(activeOrganization?.id);
-          const isLoading = pendingOrganizationId === organizationId && isPending;
+        {(organizations ?? []).map((organization) => {
+          const isActive = organization.id === activeOrganization?.id;
+          const isLoading = pendingOrganizationId === organization.id && isPending;
 
           return (
             <button
-              key={organizationId}
+              key={organization.id}
               type="button"
-              onClick={() => handleSwitch(organizationId)}
+              onClick={() => handleSwitch(organization.id)}
               disabled={isLoading}
               className={cn(
                 "flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-start transition-all",
@@ -127,11 +110,9 @@ export default function WorkspaceOrganizationSwitcher() {
               )}
             >
               <div className="min-w-0">
-                <div className="truncate text-[13px] font-bold">
-                  {readString(organization.name) ?? "Organization"}
-                </div>
+                <div className="truncate text-[13px] font-bold">{organization.name}</div>
                 <div className={cn("mt-0.5 truncate text-[11px] font-medium", isActive ? "text-white/80" : "text-[var(--workspace-muted)]")}>
-                  {readString((membership as { role?: unknown } | null)?.role) ?? "org:member"}
+                  {organization.slug ?? "organization"}
                 </div>
               </div>
               <div className="shrink-0">

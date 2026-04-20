@@ -15,7 +15,7 @@ import {
 import {
   type OrganizationsRepository,
 } from "@/server/infrastructure/convex/organizations";
-import { clerkOrganizationsRepository } from "@/server/infrastructure/clerk/organizations";
+import { betterAuthOrganizationsRepository } from "@/server/infrastructure/betterAuth/organizations";
 
 export type WorkspaceSnapshot = {
   user: SessionUser;
@@ -31,7 +31,7 @@ type WorkspacesServiceDependencies = {
 
 const defaultDependencies: WorkspacesServiceDependencies = {
   requireSession: requireSessionContext,
-  organizationsRepository: clerkOrganizationsRepository,
+  organizationsRepository: betterAuthOrganizationsRepository,
 };
 
 async function loadWorkspaceState(

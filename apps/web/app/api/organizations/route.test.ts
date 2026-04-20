@@ -1,22 +1,22 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { DomainError } from "@/server/contracts/errors";
 
-const { bootstrapCurrentOrganizationFromClerk } = vi.hoisted(() => ({
-  bootstrapCurrentOrganizationFromClerk: vi.fn(),
+const { bootstrapCurrentOrganizationFromBetterAuth } = vi.hoisted(() => ({
+  bootstrapCurrentOrganizationFromBetterAuth: vi.fn(),
 }));
 
 vi.mock("@/server/domains/auth/organizations/service", () => ({
-  bootstrapCurrentOrganizationFromClerk,
+  bootstrapCurrentOrganizationFromBetterAuth,
 }));
 
 import { POST } from "./route";
 
 beforeEach(() => {
-  bootstrapCurrentOrganizationFromClerk.mockReset();
+  bootstrapCurrentOrganizationFromBetterAuth.mockReset();
 });
 
 it("returns 201 when the organization is created", async () => {
-  bootstrapCurrentOrganizationFromClerk.mockResolvedValue({
+  bootstrapCurrentOrganizationFromBetterAuth.mockResolvedValue({
     id: "org_1",
     type: "broker",
     name: "Fresh Start Realty",
@@ -62,7 +62,7 @@ it("returns a stable invalid-json error", async () => {
 });
 
 it("serializes domain failures", async () => {
-  bootstrapCurrentOrganizationFromClerk.mockRejectedValue(
+  bootstrapCurrentOrganizationFromBetterAuth.mockRejectedValue(
     new DomainError({
       code: "ORGANIZATION_EXISTS",
       message: "This account already has an organization",

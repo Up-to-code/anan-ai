@@ -5,9 +5,17 @@ import { api, internal } from "../../_generated/api";
 import {
   mobileAssistantResponseValidator,
   mobileFinanceEstimateValidator,
+  mobilePropertyFeedItemValidator,
   mobileQualificationContextValidator,
 } from "./contracts";
 import { buildBuyerComparisonSnapshot } from "../../shared_logic/buyerComparisons";
+
+type MobilePropertyFeedItem = Infer<typeof mobilePropertyFeedItemValidator>;
+type MobileFinanceEstimate = Infer<typeof mobileFinanceEstimateValidator>;
+type QualifiedHandoffResult = {
+  orderId: any;
+  status: "qualified";
+};
 
 function describeFailure(error: unknown) {
   if (error instanceof Error && error.message.trim()) return error.message;
@@ -144,8 +152,8 @@ export const getPropertyTool = query({
     propertyId: v.id("properties"),
   },
   returns: v.any(),
-  handler: async (ctx, args) => {
-    return ctx.runQuery(api.user_zone.mobile.feed.getPropertyDetail as never, args as never);
+  handler: async (ctx, args): Promise<MobilePropertyFeedItem | null> => {
+    return await ctx.runQuery(api.user_zone.mobile.feed.getPropertyDetail as never, args as never);
   },
 });
 
@@ -160,22 +168,22 @@ export const searchPropertiesTool = action({
     limit: v.optional(v.number()),
   },
   returns: v.any(),
-  handler: async (ctx, args) => {
-    const results = await ctx.runQuery((api as any)["shared_logic/properties/search"].search, {
+  handler: async (ctx, args): Promise<MobilePropertyFeedItem[]> => {
+    const results: Array<{ _id: string }> = await ctx.runQuery((api as any)["shared_logic/properties/search"].search, {
       query: args.query,
       limit: args.limit ?? 6,
       onlyAvailable: true,
     });
 
-    const hydrated = await Promise.all(
-      (results as Array<{ _id: string }>).map((result) =>
+    const hydrated: Array<MobilePropertyFeedItem | null> = await Promise.all(
+      results.map(async (result): Promise<MobilePropertyFeedItem | null> =>
         ctx.runQuery(api.user_zone.mobile.feed.getPropertyDetail as never, {
           propertyId: result._id as never,
         }),
       ),
     );
 
-    return hydrated.filter(Boolean);
+    return hydrated.filter((property): property is MobilePropertyFeedItem => Boolean(property));
   },
 });
 
@@ -194,8 +202,8 @@ export const estimateFinanceTool = query({
     monthlySalary: v.optional(v.number()),
   },
   returns: mobileFinanceEstimateValidator,
-  handler: async (ctx, args) => {
-    return ctx.runQuery(api.user_zone.mobile.finance.getEstimate as never, args as never) as any;
+  handler: async (ctx, args): Promise<MobileFinanceEstimate> => {
+    return await ctx.runQuery(api.user_zone.mobile.finance.getEstimate as never, args as never);
   },
 });
 
@@ -210,16 +218,18 @@ export const buildComparisonTool = action({
     locale: v.optional(v.union(v.literal("ar"), v.literal("en"), v.literal("fr"))),
   },
   returns: v.any(),
-  handler: async (ctx, args) => {
-    const properties = await Promise.all(
-      args.propertyIds.map((propertyId) =>
+  handler: async (ctx, args): Promise<unknown> => {
+    const properties: Array<MobilePropertyFeedItem | null> = await Promise.all(
+      args.propertyIds.map(async (propertyId): Promise<MobilePropertyFeedItem | null> =>
         ctx.runQuery(api.user_zone.mobile.feed.getPropertyDetail as never, {
           propertyId: propertyId as never,
         }),
       ),
     );
 
-    const availableProperties = properties.filter(Boolean);
+    const availableProperties: MobilePropertyFeedItem[] = properties.filter(
+      (property): property is MobilePropertyFeedItem => Boolean(property),
+    );
     if (availableProperties.length < 2) {
       throw new ConvexError({
         code: "INVALID_INPUT",
@@ -253,8 +263,8 @@ export const requestAdvisorTool = mutation({
     orderId: v.id("orders"),
     status: v.literal("qualified"),
   }),
-  handler: async (ctx, args) => {
-    return ctx.runMutation(api.user_zone.mobile.assistant.createQualifiedHandoff as never, args as never) as any;
+  handler: async (ctx, args): Promise<QualifiedHandoffResult> => {
+    return await ctx.runMutation(api.user_zone.mobile.assistant.createQualifiedHandoff as never, args as never);
   },
 });
 
