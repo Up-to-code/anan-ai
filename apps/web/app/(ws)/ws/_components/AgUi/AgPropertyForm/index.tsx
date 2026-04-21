@@ -1,9 +1,19 @@
 "use client";
 
+import { motion } from "framer-motion";
+import { useState } from "react";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import ZonePageIntro from "../../ZoneShell/ZonePageIntro";
 import { AgPropertyFormHeaderActions } from "../AgPropertyFormHeaderActions";
 import { AgPropertyFormSafetyOverlay } from "../AgPropertyFormSafetyOverlay";
+import {
+  CreationFlowActions,
+  CreationFlowMotionStep,
+  CreationFlowProgress,
+  expertStaggerContainer,
+  expertStaggerItem,
+} from "../AgCreationFlow";
+import { FieldLabel } from "./controls";
 import { useAgPropertyForm } from "./useAgPropertyForm";
 import type { AgPropertyFormProps } from "./types";
 import {
@@ -14,8 +24,25 @@ import {
   ReviewStep,
   SharingStep,
   SpecsStep,
-  StepNavigation,
 } from "./steps";
+
+function ProjectStepIntro({
+  step,
+  title,
+  description,
+}: {
+  step: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <motion.div variants={expertStaggerItem}>
+      <FieldLabel>{step}</FieldLabel>
+      <h2 className="text-3xl font-black tracking-tight text-foreground lg:text-4xl">{title}</h2>
+      <p className="mt-4 max-w-2xl text-[15px] font-semibold leading-7 text-[var(--workspace-muted)]">{description}</p>
+    </motion.div>
+  );
+}
 
 /**
  * WHY:   Project create and edit need one simplified, Safari-safe flow instead of long split-column forms.
@@ -36,6 +63,7 @@ export default function AgPropertyForm({
   onRevokeViewer,
 }: AgPropertyFormProps) {
   const { locale } = useWebLocale();
+  const [direction, setDirection] = useState(1);
   const form = useAgPropertyForm({ propertyId, initialData, brokers, onSave });
   const resolvedTitle =
     title ??
@@ -71,33 +99,11 @@ export default function AgPropertyForm({
           ? "Create project"
           : "إنشاء مشروع جديد";
 
-  const renderCurrentStep = () => {
-    if (form.activeStep.key === "basic") {
+  const renderCurrentStepFields = () => {
+    if (form.activeStep.key === "identity") {
       return <BasicStep formState={form.formState} fieldErrors={form.submissionFeedback?.fieldErrors ?? {}} setFormState={form.setFormState} />;
     }
-    if (form.activeStep.key === "payment") {
-      return <PaymentStep formState={form.formState} setFormState={form.setFormState} />;
-    }
-    if (form.activeStep.key === "gallery") {
-      return (
-        <GalleryStep
-          fieldErrors={form.submissionFeedback?.fieldErrors ?? {}}
-          formState={form.formState}
-          handleImageSelection={form.handleImageSelection}
-          inputRef={form.inputRef}
-          isUploading={form.isUploading}
-          mockDataEnabled={form.mockDataEnabled}
-          moveImage={form.moveImage}
-          previewAspectClass={form.previewAspectClass}
-          previewObjectClass={form.previewObjectClass}
-          removeImage={form.removeImage}
-          setCoverImageKey={form.setCoverImageKey}
-          setFormState={form.setFormState}
-          uploadError={form.uploadError}
-        />
-      );
-    }
-    if (form.activeStep.key === "specs") {
+    if (form.activeStep.key === "scale") {
       return (
         <SpecsStep
           adLicenseLabel={form.adLicenseLabel}
@@ -118,42 +124,58 @@ export default function AgPropertyForm({
         />
       );
     }
-    if (form.activeStep.key === "compliance") {
-      return (
-        <ComplianceStep
-          adLicenseLabel={form.adLicenseLabel}
-          adLicenseTone={form.adLicenseTone}
-          fieldErrors={form.submissionFeedback?.fieldErrors ?? {}}
-          formState={form.formState}
-          handleLicenseFiles={form.handleLicenseFiles}
-          handleLicenseSubmit={form.handleLicenseSubmit}
-          isLicenseUploading={form.isLicenseUploading}
-          licenseDocs={form.licenseDocs}
-          licenseError={form.licenseError}
-          licenseInputRef={form.licenseInputRef}
-          licenseSubmitted={form.licenseSubmitted}
-          licenseSubmitting={form.licenseSubmitting}
-          propertyId={propertyId}
-          setFormState={form.setFormState}
-          setLicenseDocs={form.setLicenseDocs}
-        />
-      );
+    if (form.activeStep.key === "pricing") {
+      return <PaymentStep formState={form.formState} setFormState={form.setFormState} />;
     }
-    if (form.activeStep.key === "sharing") {
+    if (form.activeStep.key === "services") {
       return (
-        <SharingStep
-          brokerSearch={form.brokerSearch}
-          fieldErrors={form.submissionFeedback?.fieldErrors ?? {}}
-          filteredBrokers={form.filteredBrokers}
-          formState={form.formState}
-          handlePermitFiles={form.handlePermitFiles}
-          onRevokeViewer={onRevokeViewer}
-          permitInputRef={form.permitInputRef}
-          selectedBroker={form.selectedBroker}
-          setBrokerSearch={form.setBrokerSearch}
-          setFormState={form.setFormState}
-          setSelectedBrokerId={form.setSelectedBrokerId}
-        />
+        <div className="space-y-6">
+          <GalleryStep
+            fieldErrors={form.submissionFeedback?.fieldErrors ?? {}}
+            formState={form.formState}
+            handleImageSelection={form.handleImageSelection}
+            inputRef={form.inputRef}
+            isUploading={form.isUploading}
+            mockDataEnabled={form.mockDataEnabled}
+            moveImage={form.moveImage}
+            previewAspectClass={form.previewAspectClass}
+            previewObjectClass={form.previewObjectClass}
+            removeImage={form.removeImage}
+            setCoverImageKey={form.setCoverImageKey}
+            setFormState={form.setFormState}
+            uploadError={form.uploadError}
+          />
+          <ComplianceStep
+            adLicenseLabel={form.adLicenseLabel}
+            adLicenseTone={form.adLicenseTone}
+            fieldErrors={form.submissionFeedback?.fieldErrors ?? {}}
+            formState={form.formState}
+            handleLicenseFiles={form.handleLicenseFiles}
+            handleLicenseSubmit={form.handleLicenseSubmit}
+            isLicenseUploading={form.isLicenseUploading}
+            licenseDocs={form.licenseDocs}
+            licenseError={form.licenseError}
+            licenseInputRef={form.licenseInputRef}
+            licenseSubmitted={form.licenseSubmitted}
+            licenseSubmitting={form.licenseSubmitting}
+            propertyId={propertyId}
+            setFormState={form.setFormState}
+            setLicenseDocs={form.setLicenseDocs}
+          />
+          <SharingStep
+            brokerSearch={form.brokerSearch}
+            fieldErrors={form.submissionFeedback?.fieldErrors ?? {}}
+            filteredBrokers={form.filteredBrokers}
+            formState={form.formState}
+            handlePermitFiles={form.handlePermitFiles}
+            onRevokeViewer={onRevokeViewer}
+            permitInputRef={form.permitInputRef}
+            selectedBroker={form.selectedBroker}
+            setBrokerSearch={form.setBrokerSearch}
+            setFormState={form.setFormState}
+            setSelectedBrokerId={form.setSelectedBrokerId}
+          />
+        </div>
       );
     }
     return (
@@ -164,11 +186,26 @@ export default function AgPropertyForm({
           setShowSafetyConfirm={form.setShowSafetyConfirm}
           submitLabel={resolvedSubmitLabel}
         />
-      );
+    );
+  };
+
+  const handleStepChange = (index: number) => {
+    setDirection(index > form.currentStepIndex ? 1 : -1);
+    form.setCurrentStepIndex(index);
+  };
+
+  const handleBack = () => {
+    setDirection(-1);
+    form.setCurrentStepIndex((current) => Math.max(0, current - 1));
+  };
+
+  const handleNext = () => {
+    setDirection(1);
+    form.setCurrentStepIndex((current) => Math.min(form.stepDefinitions.length - 1, current + 1));
   };
 
   return (
-    <div className="flex min-h-full w-full flex-col pb-12">
+    <div className="flex min-h-full w-full flex-col pb-16">
       {form.showSafetyConfirm ? (
         <AgPropertyFormSafetyOverlay
           savePending={form.savePending}
@@ -184,22 +221,46 @@ export default function AgPropertyForm({
         actions={form.isEditMode ? <AgPropertyFormHeaderActions onCancel={onCancel} cancelHref={cancelHref} onDelete={onDelete} /> : undefined}
       />
 
-      <div className="space-y-6 py-4 lg:py-6">
+      <div className="mx-auto mt-4 w-full max-w-3xl">
+        <CreationFlowProgress
+          steps={form.stepDefinitions}
+          currentStepIndex={form.currentStepIndex}
+          onStepChange={handleStepChange}
+        />
+      </div>
+
+      <div className="mx-auto mt-8 w-full max-w-3xl overflow-visible pb-24">
         {form.submissionFeedback ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-right text-sm font-semibold text-rose-700">
+          <div className="mb-7 rounded-[20px] bg-rose-500/10 px-5 py-4 text-right text-[14px] font-bold text-rose-600">
             {form.submissionFeedback.message}
           </div>
         ) : null}
 
-        <StepNavigation
-          activeStepTitle={form.activeStep.title}
-          activeStepSummary={form.activeStep.summary}
-          currentStepIndex={form.currentStepIndex}
-          isLastStep={form.isLastStep}
-          setCurrentStepIndex={form.setCurrentStepIndex}
-        />
+        <div className="pb-8">
+          <CreationFlowMotionStep stepKey={form.activeStep.key} direction={direction}>
+            <motion.div className="space-y-7" variants={expertStaggerContainer} initial="enter" animate="center">
+              <ProjectStepIntro
+                step={`${locale === "en" ? "Step" : locale === "fr" ? "Etape" : "الخطوة"} ${form.currentStepIndex + 1}`}
+                title={form.activeStep.title}
+                description={form.activeStep.summary}
+              />
+              {renderCurrentStepFields()}
+            </motion.div>
+          </CreationFlowMotionStep>
+        </div>
 
-        {renderCurrentStep()}
+        <CreationFlowActions
+          isFirstStep={form.currentStepIndex === 0}
+          isLastStep={form.isLastStep}
+          pending={form.savePending}
+          previousLabel="رجوع"
+          nextLabel="متابعة"
+          saveLabel={resolvedSubmitLabel}
+          savingLabel={locale === "fr" ? "Enregistrement..." : locale === "en" ? "Saving..." : "جارٍ الحفظ..."}
+          onBack={handleBack}
+          onNext={handleNext}
+          onSave={() => form.setShowSafetyConfirm(true)}
+        />
       </div>
     </div>
   );

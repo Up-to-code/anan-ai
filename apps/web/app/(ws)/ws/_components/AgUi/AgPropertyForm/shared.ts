@@ -2,6 +2,7 @@ import type { UploadedFileReference } from "@/server/contracts/files";
 import type { PropertyViewerSummary } from "@/server/contracts/properties";
 import type { AppLocale } from "@/lib/locale";
 import type {
+  ExpertPriceComparison,
   GalleryAspectRatio,
   GalleryDisplayMode,
   ProjectBrokerAuthorizationFormData,
@@ -27,6 +28,15 @@ export type AgPropertyFormState = {
   galleryAspectRatio: GalleryAspectRatio;
   privatePermitSummary: string;
   privatePermitFiles: UploadedFileReference[];
+  expertProjectType: "residential" | "commercial" | "mixed_use" | "land" | "hospitality";
+  projectScale: string;
+  productMix: string;
+  primaryUnitType: string;
+  sizeRange: string;
+  priceComparison: ExpertPriceComparison;
+  comparisonNotes: string;
+  expertNotes: string;
+  services: string[];
   rooms: string;
   baths: string;
   area: string;
@@ -80,36 +90,30 @@ export function getLicenseStatusUi(locale: AppLocale) {
 export function getStepDefinitions(locale: AppLocale): StepDefinition[] {
   if (locale === "en") {
     return [
-      { key: "basic", title: "Identity", summary: "Project name and structured Saudi location" },
-      { key: "sharing", title: "Ownership", summary: "Owner, authorization, and distribution scope" },
-      { key: "specs", title: "Units", summary: "Unit inventory, size, rooms, and availability" },
-      { key: "payment", title: "Payment", summary: "Starting price, payment plan, and finance notes" },
-      { key: "compliance", title: "Compliance", summary: "Ad license, WAFI evidence, and legal files" },
-      { key: "gallery", title: "Media", summary: "Uploads, ordering, cover image, and presentation" },
-      { key: "review", title: "Readiness", summary: "Blockers and publish request review" },
+      { key: "identity", title: "Identity", summary: "Project name, type, visibility, and Saudi location" },
+      { key: "scale", title: "Scale", summary: "Project scale, product mix, unit profile, and space range" },
+      { key: "pricing", title: "Pricing", summary: "Starting price, payment plan, and market position" },
+      { key: "services", title: "Services", summary: "Services, media, compliance, and authorization evidence" },
+      { key: "review", title: "Expert review", summary: "Readiness summary and save confirmation" },
     ];
   }
 
   if (locale === "fr") {
     return [
-      { key: "basic", title: "Identite", summary: "Nom du projet et adresse saoudienne structuree" },
-      { key: "sharing", title: "Propriete", summary: "Proprietaire, autorisation et portee marketing" },
-      { key: "specs", title: "Unites", summary: "Inventaire, surfaces, pieces et disponibilite" },
-      { key: "payment", title: "Paiement", summary: "Prix, plan de paiement et notes finance" },
-      { key: "compliance", title: "Conformite", summary: "Licence publicitaire, WAFI et documents" },
-      { key: "gallery", title: "Media", summary: "Images, ordre, couverture et presentation" },
-      { key: "review", title: "Pret", summary: "Blocages et demande de publication" },
+      { key: "identity", title: "Identite", summary: "Nom, type, visibilite et adresse saoudienne" },
+      { key: "scale", title: "Echelle", summary: "Echelle, mix produit, profil unite et surface" },
+      { key: "pricing", title: "Prix", summary: "Prix de depart, paiement et position marche" },
+      { key: "services", title: "Services", summary: "Services, medias, conformite et autorisation" },
+      { key: "review", title: "Revue expert", summary: "Resume de preparation et confirmation" },
     ];
   }
 
   return [
-    { key: "basic", title: "هوية المشروع", summary: "الاسم والموقع السعودي المنظم" },
-    { key: "sharing", title: "المالك والتفويض", summary: "الملكية والتفويض ونطاق التسويق" },
-    { key: "specs", title: "الوحدات", summary: "المخزون والمساحات والغرف والتوفر" },
-    { key: "payment", title: "خطة الدفع", summary: "السعر والدفعات والتمويل والحسابات" },
-    { key: "compliance", title: "الامتثال السعودي", summary: "الرخصة الإعلانية ووافي والمستندات" },
-    { key: "gallery", title: "الميديا والعرض", summary: "الصور والغلاف والوصف والمزايا" },
-    { key: "review", title: "الجاهزية للنشر", summary: "مراجعة العوائق وطلب النشر" },
+    { key: "identity", title: "هوية المشروع", summary: "الاسم والنوع والظهور والموقع السعودي" },
+    { key: "scale", title: "الحجم والمزيج", summary: "حجم المشروع ومزيج المنتجات ونطاق المساحات" },
+    { key: "pricing", title: "السعر والمقارنة", summary: "السعر وخطة الدفع وموقعه من السوق" },
+    { key: "services", title: "الخدمات والجاهزية", summary: "الخدمات والميديا والامتثال والتفويض" },
+    { key: "review", title: "مراجعة الخبير", summary: "ملخص الجاهزية وتأكيد الحفظ" },
   ];
 }
 
@@ -233,6 +237,15 @@ export function createInitialFormState(initialData?: Partial<ProjectFormData>, c
     galleryAspectRatio: initialData?.galleryAspectRatio ?? "landscape",
     privatePermitSummary: initialData?.privatePermitSummary ?? "",
     privatePermitFiles: initialData?.privatePermitFiles ?? [],
+    expertProjectType: initialData?.expertProjectType ?? "residential",
+    projectScale: initialData?.projectScale ?? "",
+    productMix: initialData?.productMix ?? "",
+    primaryUnitType: initialData?.primaryUnitType ?? "apartment",
+    sizeRange: initialData?.sizeRange ?? "",
+    priceComparison: initialData?.priceComparison ?? "unknown",
+    comparisonNotes: initialData?.comparisonNotes ?? "",
+    expertNotes: initialData?.expertNotes ?? "",
+    services: initialData?.services ?? [],
     rooms: initialData?.rooms ?? "",
     baths: initialData?.baths ?? "",
     area: initialData?.area ?? "",

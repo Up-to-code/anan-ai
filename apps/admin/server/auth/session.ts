@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import {
   isClearlyExpiredJwtToken,
-  isMissingClerkJwtTemplateError,
+  isMissingAuthTokenConfigurationError,
   isNoAuthProviderError,
 } from "../../../../convex/_core/security/authProviderErrors";
 import { DomainError } from "@/server/contracts/errors";
@@ -35,7 +35,7 @@ function toMissingClerkTemplateDomainError(template: string) {
 }
 
 function mapClerkTokenError(error: unknown) {
-  if (isMissingClerkJwtTemplateError(error)) {
+  if (isMissingAuthTokenConfigurationError(error)) {
     return toMissingClerkTemplateDomainError(clerkConvexJwtTemplate);
   }
 

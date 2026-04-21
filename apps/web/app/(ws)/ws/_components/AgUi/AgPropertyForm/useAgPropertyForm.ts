@@ -359,6 +359,7 @@ export function useAgPropertyForm({
     selectedBroker,
     selectedBrokerId,
     setCurrentStepIndex,
+    stepDefinitions,
     setBrokerSearch,
     setCoverImageKey,
     setFormState: setFormStateWithFeedbackReset,

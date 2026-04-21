@@ -41,6 +41,17 @@ function buildInitialProjectFormData(project: WorkspaceProject, property: Worksp
     galleryAspectRatio: presentation?.galleryAspectRatio ?? "landscape",
     privatePermitSummary: presentation?.privatePermitSummary ?? "",
     privatePermitFiles: presentation?.privatePermitFiles ?? [],
+    expertProjectType: ["residential", "commercial", "mixed_use", "land", "hospitality"].includes(presentation?.expertMetadata?.assetType ?? "")
+      ? presentation?.expertMetadata?.assetType as ProjectFormData["expertProjectType"]
+      : "residential",
+    projectScale: presentation?.expertMetadata?.projectScale ?? "",
+    productMix: presentation?.expertMetadata?.productMix ?? "",
+    primaryUnitType: presentation?.expertMetadata?.primaryUnitType ?? "apartment",
+    sizeRange: presentation?.expertMetadata?.sizeRange ?? "",
+    priceComparison: presentation?.expertMetadata?.priceComparison ?? "unknown",
+    comparisonNotes: presentation?.expertMetadata?.comparisonNotes ?? "",
+    expertNotes: presentation?.expertMetadata?.expertNotes ?? "",
+    services: presentation?.expertMetadata?.services ?? [],
     rooms: unit?.bedrooms !== undefined ? String(unit.bedrooms) : project.specs.rooms.replace(/[^\d]/g, ""),
     baths: unit?.bathrooms !== undefined ? String(unit.bathrooms) : project.specs.baths.replace(/[^\d]/g, ""),
     area: unit?.sizeSqm !== undefined ? String(unit.sizeSqm) : project.specs.area.replace(/[^\d]/g, ""),

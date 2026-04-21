@@ -10,7 +10,7 @@ vi.mock("@/lib/uploadthing", () => ({
 
 import AgPropertyForm from "./AgPropertyForm";
 
-it("renders the project form as a six-step wizard", () => {
+it("renders the project form as a five-step expert wizard", () => {
   const markup = renderToStaticMarkup(
     <AgPropertyForm
       initialData={{
@@ -41,13 +41,12 @@ it("renders the project form as a six-step wizard", () => {
     />,
   );
 
-  expect(markup).toContain("الخطوة 1 من 6");
-  expect(markup).toContain("تعريف المشروع");
-  expect(markup).toContain("الرسالة التسويقية");
-  expect(markup).toContain("المعرض البصري");
-  expect(markup).toContain("المواصفات والتوثيق");
-  expect(markup).toContain("المشاركة والوصول");
-  expect(markup).toContain("المراجعة قبل الحفظ");
-  expect(markup).toContain("ابدأ بتعريف المشروع بوضوح");
-  expect(markup).toContain("الاسم والسعر والموقع وطريقة الظهور");
+  expect(markup).toContain("الخطوة 1 من 5");
+  expect(markup).toContain("هوية المشروع");
+  expect(markup).toContain("الحجم والمزيج");
+  expect(markup).toContain("السعر والمقارنة");
+  expect(markup).toContain("الخدمات والجاهزية");
+  expect(markup).toContain("مراجعة الخبير");
+  expect(markup).toContain("الاسم والنوع والظهور والموقع السعودي");
+  expect(markup).toContain("نوع المشروع");
 });

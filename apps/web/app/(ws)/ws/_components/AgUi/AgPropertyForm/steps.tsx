@@ -16,15 +16,11 @@ import {
 import type { UploadedFileReference } from "@/server/contracts/files";
 import type { BrokerPresence } from "../../Visuals/BrokerPresenceChip";
 import type { ProjectFormFieldErrors } from "../../../(zones)/projects/shared/forms/projectFormSubmission";
-import { BrokerAvatar, FieldLabel, ReviewRow, SectionCard, TextArea, TextInput, UploadTile } from "./controls";
+import { BrokerAvatar, FieldLabel, ReviewRow, SectionCard, SelectInput, TextArea, TextInput, UploadTile } from "./controls";
 import { GALLERY_ASPECT_OPTIONS, GALLERY_DISPLAY_OPTIONS, STEP_DEFINITIONS } from "./shared";
 import type { AgPropertyFormState } from "./shared";
 
 function StepShell({
-  badge,
-  title,
-  description,
-  checklist,
   children,
 }: {
   badge: string;
@@ -33,28 +29,82 @@ function StepShell({
   checklist: string[];
   children: React.ReactNode;
 }) {
-  return (
-    <div className="space-y-6">
-      <section className="rounded-[24px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-5 text-right lg:p-6">
-        <div className="inline-flex rounded-full border border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,var(--workspace-panel))] px-3 py-1.5 text-[11px] font-black text-foreground">
-          {badge}
-        </div>
-        <h2 className="mt-3 text-2xl font-black tracking-tight text-foreground">{title}</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--workspace-muted)]">{description}</p>
-        <div className="mt-4 flex flex-wrap justify-end gap-2">
-          {checklist.map((item) => (
-            <span
-              key={item}
-              className="rounded-full border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-3 py-1.5 text-[12px] font-semibold text-[var(--workspace-muted)]"
-            >
-              {item}
-            </span>
-          ))}
-        </div>
-      </section>
+  return <div className="space-y-7">{children}</div>;
+}
 
-      {children}
-    </div>
+const PROJECT_TYPE_OPTIONS = [
+  { value: "residential", label: "سكني", helper: "فلل أو شقق أو مجمعات سكنية" },
+  { value: "commercial", label: "تجاري", helper: "مكاتب أو محلات أو واجهات تجارية" },
+  { value: "mixed_use", label: "متعدد الاستخدام", helper: "مزيج سكني وتجاري أو خدمي" },
+  { value: "land", label: "أرض", helper: "أرض خام أو مطورة" },
+  { value: "hospitality", label: "ضيافة", helper: "فندقي أو شقق مخدومة" },
+] as const;
+
+const PROJECT_SERVICE_OPTIONS = ["مواقف", "أمن", "نادي", "مساحات خضراء", "مصاعد", "مدارس قريبة", "مرافق طبية", "مسارات مشي"];
+const SAUDI_CITY_OPTIONS = ["الرياض", "جدة", "الخبر", "الدمام", "مكة", "المدينة", "الطائف", "أبها"];
+const PROJECT_SCALE_OPTIONS = [
+  { value: "بوتيك / أقل من 30 وحدة", label: "بوتيك", helper: "أقل من 30 وحدة" },
+  { value: "متوسط / 30-150 وحدة", label: "متوسط", helper: "30-150 وحدة" },
+  { value: "كبير / 150-500 وحدة", label: "كبير", helper: "150-500 وحدة" },
+  { value: "وجهة / أكثر من 500 وحدة", label: "وجهة", helper: "أكثر من 500 وحدة" },
+];
+const PRODUCT_MIX_OPTIONS = ["شقق", "فلل", "دوبلكس", "تاون هاوس", "بنتهاوس", "محلات", "مكاتب"];
+const PRIMARY_UNIT_TYPE_OPTIONS = ["شقق", "فلل", "دوبلكس", "تاون هاوس", "استوديو", "تجاري"];
+const SIZE_RANGE_OPTIONS = ["أقل من 100 م²", "100-180 م²", "180-300 م²", "300 م² فأكثر"];
+const PROJECT_STATUS_OPTIONS = [
+  { value: "active", label: "جاهز للنشر" },
+  { value: "pending", label: "مسودة" },
+  { value: "maintenance", label: "مؤرشف أو مخفي" },
+];
+const UNIT_AVAILABILITY_OPTIONS = [
+  { value: "available", label: "متاح" },
+  { value: "reserved", label: "محجوز" },
+  { value: "sold", label: "مباع" },
+  { value: "draft", label: "مسودة" },
+] as const;
+
+function toggleValue(values: string[], value: string) {
+  return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
+}
+
+function splitChoices(value: string) {
+  return value
+    .split(/[،,\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function toggleDelimitedValue(value: string, option: string) {
+  return toggleValue(splitChoices(value), option).join("، ");
+}
+
+function ChoiceButton({
+  active,
+  label,
+  helper,
+  icon,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  helper?: string;
+  icon?: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`min-h-[88px] rounded-2xl border px-4 py-4 text-right transition ${
+        active
+          ? "border-foreground bg-foreground text-background shadow-lg shadow-black/10"
+          : "border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-foreground hover:bg-[var(--workspace-accent-soft)]"
+      }`}
+    >
+      {icon ? <div className="mb-2 opacity-90">{icon}</div> : null}
+      <div className="text-sm font-black">{label}</div>
+      {helper ? <div className="mt-1 text-[11px] font-semibold opacity-75">{helper}</div> : null}
+    </button>
   );
 }
 
@@ -76,6 +126,37 @@ export function BasicStep({
     >
       <SectionCard title="بطاقة تعريف المشروع" description="سجّل البيانات الأساسية كما تريد أن يفهمها الفريق والمستلم من أول نظرة.">
         <div className="grid gap-5">
+          <div className="grid gap-2">
+            <FieldLabel>نوع المشروع</FieldLabel>
+            <div className="grid gap-3 md:grid-cols-5">
+              {PROJECT_TYPE_OPTIONS.map((option) => {
+                const active = formState.expertProjectType === option.value;
+                return (
+                  <ChoiceButton
+                    key={option.value}
+                    active={active}
+                    label={option.label}
+                    helper={option.helper}
+                    icon={<Building2 className="h-5 w-5" />}
+                    onClick={() => setFormState((prev) => ({
+                      ...prev,
+                      expertProjectType: option.value,
+                      dossier: {
+                        ...prev.dossier,
+                        projectType:
+                          option.value === "land"
+                            ? "land"
+                            : option.value === "mixed_use" || option.value === "commercial"
+                              ? "mixed_use"
+                          : "ready_property",
+                      },
+                    }))}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
           <div className="grid gap-2">
             <FieldLabel>اسم المشروع</FieldLabel>
             <TextInput
@@ -149,6 +230,22 @@ export function BasicStep({
             <div className="grid gap-4 md:grid-cols-2">
               <div className="grid gap-2">
                 <FieldLabel>المدينة</FieldLabel>
+                <div className="mb-2 flex flex-wrap justify-end gap-2">
+                  {SAUDI_CITY_OPTIONS.map((city) => (
+                    <button
+                      key={city}
+                      type="button"
+                      onClick={() => setFormState((prev) => ({ ...prev, dossier: { ...prev.dossier, city } }))}
+                      className={`rounded-full border px-3 py-1.5 text-[12px] font-bold transition ${
+                        formState.dossier.city === city
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-[var(--workspace-muted)] hover:text-foreground"
+                      }`}
+                    >
+                      {city}
+                    </button>
+                  ))}
+                </div>
                 <TextInput
                   value={formState.dossier.city}
                   onChange={(value) => setFormState((prev) => ({ ...prev, dossier: { ...prev.dossier, city: value } }))}
@@ -264,6 +361,35 @@ export function GalleryStep(props: {
       description="املأ هذه الخطوة بالصور التي تريد أن تقود الانطباع الأول، ثم اختر صورة الغلاف وطريقة عرضها."
       checklist={["صورة غلاف قوية", "ترتيب الصور حسب الأولوية", "أسلوب عرض مناسب لكل لقطة"]}
     >
+      <SectionCard title="الخدمات التي ترفع قيمة المشروع" description="اختر الخدمات التي تساعد الخبير أو الوسيط على فهم قوة المشروع بسرعة.">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {PROJECT_SERVICE_OPTIONS.map((service) => {
+            const active = props.formState.services.includes(service);
+            return (
+              <button
+                key={service}
+                type="button"
+                onClick={() => props.setFormState((prev) => ({ ...prev, services: toggleValue(prev.services, service), amenitiesText: toggleValue(prev.services, service).join("، ") }))}
+                className={`rounded-2xl border px-4 py-4 text-right text-sm font-black transition ${
+                  active ? "border-foreground bg-foreground text-background" : "border-border bg-muted/10 text-foreground hover:bg-muted/20"
+                }`}
+              >
+                {service}
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-5 grid gap-2">
+          <FieldLabel>ملاحظات الخبير</FieldLabel>
+          <TextArea
+            rows={3}
+            value={props.formState.expertNotes}
+            onChange={(value) => props.setFormState((prev) => ({ ...prev, expertNotes: value }))}
+            placeholder="اكتب أي ملاحظة تساعد فريق المبيعات على قراءة المشروع كخبير عقاري."
+          />
+        </div>
+      </SectionCard>
+
       <SectionCard title="مكتبة الصور" description="ارفع الصور الأساسية ثم اختر الغلاف ورتّب التسلسل كما تريد أن يراه المستلم.">
         <div className="space-y-4">
           <input
@@ -456,15 +582,11 @@ export function SpecsStep(props: {
         <div className="grid gap-5">
           <div className="grid gap-2">
             <FieldLabel>حالة المشروع</FieldLabel>
-            <select
+            <SelectInput
               value={props.formState.status}
-              onChange={(event) => props.setFormState((prev) => ({ ...prev, status: event.target.value }))}
-              className="min-h-[54px] w-full rounded-2xl border border-border bg-muted/20 px-4 py-3 text-base font-semibold text-foreground outline-none transition focus:border-ring focus:bg-card"
-            >
-              <option value="active">جاهز للنشر</option>
-              <option value="pending">مسودة</option>
-              <option value="maintenance">مؤرشف أو مخفي</option>
-            </select>
+              onChange={(value) => props.setFormState((prev) => ({ ...prev, status: value }))}
+              options={PROJECT_STATUS_OPTIONS}
+            />
           </div>
 
           <div className="grid gap-5 md:grid-cols-3">
@@ -502,30 +624,127 @@ export function SpecsStep(props: {
           <div className="rounded-2xl border border-border bg-muted/20 p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <span className="text-sm font-black text-foreground">المواقف</span>
-              <label className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <span>متوفر</span>
-                <input
-                  type="checkbox"
-                  checked={props.formState.hasParking}
-                  onChange={(event) =>
+              <span className="text-xs font-semibold text-[var(--workspace-muted)]">اختر الأكثر شيوعاً ثم عدّل الرقم عند الحاجة</span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-4">
+              {[
+                ["", "لا يوجد"],
+                ["1", "موقف واحد"],
+                ["2", "موقفان"],
+                ["3", "3+"],
+              ].map(([value, label]) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() =>
                     props.setFormState((prev) => ({
                       ...prev,
-                      hasParking: event.target.checked,
-                      parkingSpaces: event.target.checked ? prev.parkingSpaces : "",
+                      hasParking: Boolean(value),
+                      parkingSpaces: value,
                     }))
                   }
-                  className="h-4 w-4 accent-stone-900"
-                />
-              </label>
+                  className={`rounded-2xl border px-4 py-3 text-sm font-black transition ${
+                    props.formState.parkingSpaces === value
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-foreground hover:bg-[var(--workspace-accent-soft)]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
-            <TextInput
-              type="number"
-              value={props.formState.parkingSpaces}
-              onChange={(value) => props.setFormState((prev) => ({ ...prev, parkingSpaces: value }))}
-              placeholder="عدد المواقف"
-              disabled={!props.formState.hasParking}
-              error={props.fieldErrors.parkingSpaces}
-            />
+            {props.fieldErrors.parkingSpaces ? <p className="mt-2 text-sm font-semibold text-rose-700">{props.fieldErrors.parkingSpaces}</p> : null}
+          </div>
+
+          <div className="grid gap-5 rounded-[20px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-5">
+            <div>
+              <h4 className="text-sm font-black text-foreground">حجم المشروع ومزيج المنتجات</h4>
+              <p className="mt-1 text-xs font-semibold leading-6 text-muted-foreground">
+                هذه الحقول تجعل المدخلات أقرب لطريقة عمل خبير عقاري عند تقييم المشروع.
+              </p>
+            </div>
+            <div className="grid gap-5">
+              <div className="grid gap-2">
+                <FieldLabel>حجم المشروع</FieldLabel>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {PROJECT_SCALE_OPTIONS.map((option) => (
+                    <ChoiceButton
+                      key={option.value}
+                      active={props.formState.projectScale === option.value}
+                      label={option.label}
+                      helper={option.helper}
+                      onClick={() => props.setFormState((prev) => ({ ...prev, projectScale: option.value }))}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <FieldLabel>مزيج المنتجات</FieldLabel>
+                <div className="flex flex-wrap justify-end gap-2">
+                  {PRODUCT_MIX_OPTIONS.map((option) => {
+                    const active = splitChoices(props.formState.productMix).includes(option);
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => props.setFormState((prev) => ({ ...prev, productMix: toggleDelimitedValue(prev.productMix, option) }))}
+                        className={`rounded-full border px-3 py-2 text-[12px] font-black transition ${
+                          active
+                            ? "border-foreground bg-foreground text-background"
+                            : "border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-foreground hover:bg-[var(--workspace-accent-soft)]"
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <FieldLabel>نوع الوحدة الرئيسي</FieldLabel>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {PRIMARY_UNIT_TYPE_OPTIONS.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() =>
+                        props.setFormState((prev) => ({
+                          ...prev,
+                          primaryUnitType: option,
+                          units: [{ ...prev.units[0], label: prev.units[0]?.label || option }],
+                        }))
+                      }
+                      className={`rounded-2xl border px-4 py-3 text-sm font-black transition ${
+                        props.formState.primaryUnitType === option
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-foreground hover:bg-[var(--workspace-accent-soft)]"
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <FieldLabel>نطاق المساحات</FieldLabel>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {SIZE_RANGE_OPTIONS.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => props.setFormState((prev) => ({ ...prev, sizeRange: option }))}
+                      className={`rounded-2xl border px-4 py-3 text-sm font-black transition ${
+                        props.formState.sizeRange === option
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-foreground hover:bg-[var(--workspace-accent-soft)]"
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="rounded-2xl border border-border bg-muted/20 p-4">
@@ -546,16 +765,11 @@ export function SpecsStep(props: {
               </div>
               <div className="grid gap-2">
                 <FieldLabel>الإتاحة</FieldLabel>
-                <select
+                <SelectInput
                   value={props.formState.units[0]?.status ?? "available"}
-                  onChange={(event) => props.setFormState((prev) => ({ ...prev, units: [{ ...prev.units[0], status: event.target.value as AgPropertyFormState["units"][number]["status"] }] }))}
-                  className="min-h-[54px] w-full rounded-2xl border border-border bg-muted/20 px-4 py-3 text-base font-semibold text-foreground outline-none transition focus:border-ring focus:bg-card"
-                >
-                  <option value="available">متاح</option>
-                  <option value="reserved">محجوز</option>
-                  <option value="sold">مباع</option>
-                  <option value="draft">مسودة</option>
-                </select>
+                  onChange={(value) => props.setFormState((prev) => ({ ...prev, units: [{ ...prev.units[0], status: value }] }))}
+                  options={UNIT_AVAILABILITY_OPTIONS}
+                />
               </div>
               <div className="grid gap-2">
                 <FieldLabel>الدور</FieldLabel>
@@ -947,6 +1161,37 @@ export function PaymentStep({
     >
       <SectionCard title="خطة الدفع الرئيسية" description="هذه البيانات تغذي ملف المشروع ولا تعني اعتماداً مالياً أو قانونياً نهائياً.">
         <div className="grid gap-5">
+          <div className="grid gap-3 md:grid-cols-3">
+            {[
+              ["below_market", "أقل من السوق", "فرصة سعرية تحتاج إبرازها"],
+              ["fair_market", "سعر عادل", "متوازن مع المنافسين"],
+              ["above_market", "أعلى من السوق", "يحتاج مبررات قيمة قوية"],
+            ].map(([value, label, helper]) => {
+              const active = formState.priceComparison === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setFormState((prev) => ({ ...prev, priceComparison: value as AgPropertyFormState["priceComparison"] }))}
+                  className={`rounded-2xl border px-4 py-4 text-right transition ${
+                    active ? "border-foreground bg-foreground text-background" : "border-border bg-muted/10 text-foreground hover:bg-muted/20"
+                  }`}
+                >
+                  <div className="text-sm font-black">{label}</div>
+                  <div className="mt-1 text-xs font-semibold opacity-75">{helper}</div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="grid gap-2">
+            <FieldLabel>ملاحظات المقارنة السعرية</FieldLabel>
+            <TextArea
+              rows={3}
+              value={formState.comparisonNotes}
+              onChange={(value) => setFormState((prev) => ({ ...prev, comparisonNotes: value }))}
+              placeholder="قارن السعر بالمشاريع القريبة أو اشرح سبب قوة السعر."
+            />
+          </div>
           <div className="grid gap-5 md:grid-cols-3">
             <div className="grid gap-2">
               <FieldLabel>سعر البداية</FieldLabel>
@@ -1016,7 +1261,6 @@ export function ComplianceStep(props: {
       description="هذه حقول تشغيلية للمراجعة وليست فتوى قانونية. النشر العام يبقى محجوباً حتى تكتمل الجاهزية."
       checklist={["رخصة إعلان", "مستندات نظامية", "مراجعة قانونية موصى بها"]}
     >
-      <SpecsStep {...props} />
       <SectionCard title="مستندات الامتثال المطلوبة" description="اختر المستندات التي لديك الآن. الأدمن يستطيع اعتمادها أو رفضها لاحقاً.">
         <div className="grid gap-3 md:grid-cols-2">
           {documentTypes.map(([documentType, label]) => {
@@ -1119,15 +1363,6 @@ export function ReviewStep(props: {
             راجع الحالة ونوع الظهور والتصريح الخاص قبل الحفظ. هذه العناصر تحدد أين يظهر المشروع ومن يستطيع الوصول إليه.
           </p>
         </div>
-
-        <button
-          type="button"
-          onClick={() => props.setShowSafetyConfirm(true)}
-          disabled={props.savePending}
-          className="mt-5 w-full rounded-2xl bg-foreground px-4 py-4 text-base font-black text-background transition hover:brightness-110 disabled:opacity-60"
-        >
-          {props.savePending ? "جارٍ الحفظ..." : props.submitLabel}
-        </button>
 
         <div className="mt-4 flex items-center gap-2 text-sm text-[var(--workspace-muted)]">
           <Check className="h-4 w-4" />

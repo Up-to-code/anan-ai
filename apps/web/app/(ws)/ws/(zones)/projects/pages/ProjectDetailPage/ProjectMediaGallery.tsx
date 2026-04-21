@@ -54,9 +54,9 @@ export default function ProjectMediaGallery({
   }
 
   return (
-    <section className="overflow-hidden rounded-[24px] border border-stone-200 bg-stone-950">
+    <section className="overflow-hidden rounded-[24px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)]">
       <div
-        className="relative aspect-[16/9] w-full overflow-hidden bg-stone-900"
+        className="relative aspect-[16/9] w-full overflow-hidden bg-[var(--workspace-elevated)]"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -95,7 +95,7 @@ export default function ProjectMediaGallery({
       </div>
 
       {hasMultipleImages ? (
-        <div className="border-t border-white/10 bg-stone-950/95 p-4">
+        <div className="border-t border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-4">
           <div className="hidden gap-3 sm:grid sm:grid-cols-4 lg:grid-cols-5">
             {images.map((image, index) => {
               const isActive = index === activeIndex;
@@ -106,8 +106,8 @@ export default function ProjectMediaGallery({
                   onClick={() => goTo(index)}
                   className={`overflow-hidden rounded-2xl border transition ${
                     isActive
-                      ? "border-amber-300/80 ring-1 ring-amber-300/60"
-                      : "border-white/10 opacity-75 hover:opacity-100"
+                      ? "border-[color:var(--workspace-highlight)] ring-1 ring-[color:var(--workspace-highlight)]"
+                      : "border-[color:var(--workspace-border)] opacity-75 hover:opacity-100"
                   }`}
                   aria-label={`الانتقال إلى الصورة ${index + 1}`}
                 >
@@ -129,7 +129,7 @@ export default function ProjectMediaGallery({
                 onClick={() => goTo(index)}
                 aria-label={`الانتقال إلى الصورة ${index + 1}`}
                 className={`h-2.5 rounded-full transition ${
-                  index === activeIndex ? "w-8 bg-amber-300" : "w-2.5 bg-white/35"
+                  index === activeIndex ? "w-8 bg-[var(--workspace-highlight)]" : "w-2.5 bg-[var(--workspace-border)]"
                 }`}
               />
             ))}

@@ -23,6 +23,18 @@ export type WorkspaceProject = {
     spaces: number | null;
     label: string;
   };
+  expert: {
+    assetType: string | null;
+    listingType: string | null;
+    projectScale: string | null;
+    productMix: string | null;
+    primaryUnitType: string | null;
+    sizeRange: string | null;
+    priceComparison: string | null;
+    comparisonNotes: string | null;
+    expertNotes: string | null;
+    services: string[];
+  };
   permit: {
     statusLabel: string;
     privateSummary: string | null;

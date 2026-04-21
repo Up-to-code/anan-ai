@@ -5,6 +5,7 @@ import type { ProjectFormSaveResult } from "../../../(zones)/projects/shared/for
 
 export type GalleryDisplayMode = "cover" | "fit";
 export type GalleryAspectRatio = "auto" | "landscape" | "square" | "portrait";
+export type ExpertPriceComparison = "below_market" | "fair_market" | "above_market" | "unknown";
 
 export type ProjectDossierFormData = {
   projectType: "ready_property" | "off_plan" | "land" | "mixed_use";
@@ -77,6 +78,15 @@ export type ProjectFormData = {
   galleryAspectRatio: GalleryAspectRatio;
   privatePermitSummary: string;
   privatePermitFiles: UploadedFileReference[];
+  expertProjectType: "residential" | "commercial" | "mixed_use" | "land" | "hospitality";
+  projectScale: string;
+  productMix: string;
+  primaryUnitType: string;
+  sizeRange: string;
+  priceComparison: ExpertPriceComparison;
+  comparisonNotes: string;
+  expertNotes: string;
+  services: string[];
   rooms: string;
   baths: string;
   area: string;

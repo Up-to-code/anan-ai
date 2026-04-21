@@ -92,25 +92,30 @@ function ProjectFormLayout(args: {
   onDeleteConfirm: () => void;
 }) {
   const { locale } = useWebLocale();
+  const form = (
+    <AgPropertyForm
+      propertyId={args.projectId}
+      initialData={args.initialData}
+      title={args.title}
+      description={args.description}
+      submitLabel={args.pending ? (locale === "fr" ? "Enregistrement..." : locale === "en" ? "Saving..." : "جارٍ الحفظ...") : args.submitLabel}
+      onSave={args.onSave}
+      onCancel={args.onCancel}
+      cancelHref={args.cancelHref}
+      onDelete={args.onDelete}
+      onRevokeViewer={args.onRevokeViewer}
+    />
+  );
 
   return (
     <div className="min-h-full bg-background/60 pb-20">
-      <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-        <div className="overflow-hidden rounded-[28px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] shadow-sm">
-          <AgPropertyForm
-            propertyId={args.projectId}
-            initialData={args.initialData}
-            title={args.title}
-            description={args.description}
-            submitLabel={args.pending ? (locale === "fr" ? "Enregistrement..." : locale === "en" ? "Saving..." : "جارٍ الحفظ...") : args.submitLabel}
-            onSave={args.onSave}
-            onCancel={args.onCancel}
-            cancelHref={args.cancelHref}
-            onDelete={args.onDelete}
-            onRevokeViewer={args.onRevokeViewer}
-          />
+      {args.projectId ? (
+        <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          <div className="overflow-hidden rounded-[28px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] shadow-sm">
+            {form}
+          </div>
         </div>
-      </div>
+      ) : form}
       {args.onDelete ? (
         <ProjectDeleteModal open={args.showDeleteModal} onClose={args.onDeleteClose} onConfirm={args.onDeleteConfirm} />
       ) : null}

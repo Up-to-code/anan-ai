@@ -83,6 +83,7 @@ function resolveGalleryImages(property: PropertyDetail) {
  */
 export function mapPropertyToWorkspaceProject(property: PropertyDetail): WorkspaceProject {
   const presentation = parsePropertyBody(property.body)?.presentation;
+  const expertMetadata = presentation?.expertMetadata;
   const galleryImages = resolveGalleryImages(property);
   const parkingSpaces = presentation?.parkingSpaces ?? null;
   const hasParking = presentation?.hasParking ?? Boolean(parkingSpaces && parkingSpaces > 0);
@@ -106,6 +107,18 @@ export function mapPropertyToWorkspaceProject(property: PropertyDetail): Workspa
       hasParking,
       spaces: parkingSpaces,
       label: hasParking ? (parkingSpaces ? `${parkingSpaces} مواقف` : "متوفر") : "غير متوفر",
+    },
+    expert: {
+      assetType: expertMetadata?.assetType ?? null,
+      listingType: expertMetadata?.listingType ?? null,
+      projectScale: expertMetadata?.projectScale ?? null,
+      productMix: expertMetadata?.productMix ?? null,
+      primaryUnitType: expertMetadata?.primaryUnitType ?? null,
+      sizeRange: expertMetadata?.sizeRange ?? null,
+      priceComparison: expertMetadata?.priceComparison ?? null,
+      comparisonNotes: expertMetadata?.comparisonNotes ?? null,
+      expertNotes: expertMetadata?.expertNotes ?? null,
+      services: expertMetadata?.services ?? [],
     },
     permit: {
       statusLabel: resolvePermitStatusLabel(property.adLicenseStatus),
@@ -187,6 +200,15 @@ export function mapWorkspaceProjectToPropertyInput(project: {
   parkingSpaces?: string;
   privatePermitSummary?: string;
   privatePermitFiles?: UploadedFileReference[];
+  expertProjectType?: import("@/app/(ws)/ws/public").ProjectFormData["expertProjectType"];
+  projectScale?: string;
+  productMix?: string;
+  primaryUnitType?: string;
+  sizeRange?: string;
+  priceComparison?: import("@/app/(ws)/ws/public").ProjectFormData["priceComparison"];
+  comparisonNotes?: string;
+  expertNotes?: string;
+  services?: string[];
   coverImageKey?: string | null;
   galleryDisplayMode?: "cover" | "fit";
   galleryAspectRatio?: "auto" | "landscape" | "square" | "portrait";
@@ -240,6 +262,17 @@ export function mapWorkspaceProjectToPropertyInput(project: {
         coverImageKey: project.coverImageKey ?? orderedImages[0]?.key ?? undefined,
         galleryDisplayMode: project.galleryDisplayMode ?? ("cover" as const),
         galleryAspectRatio: project.galleryAspectRatio ?? ("landscape" as const),
+        expertMetadata: {
+          assetType: project.expertProjectType || project.dossier?.projectType,
+          projectScale: project.projectScale?.trim() || undefined,
+          productMix: project.productMix?.trim() || undefined,
+          primaryUnitType: project.primaryUnitType?.trim() || undefined,
+          sizeRange: project.sizeRange?.trim() || undefined,
+          priceComparison: project.priceComparison ?? "unknown",
+          comparisonNotes: project.comparisonNotes?.trim() || undefined,
+          expertNotes: project.expertNotes?.trim() || undefined,
+          services: project.services?.length ? project.services : undefined,
+        },
         privatePermitSummary: project.privatePermitSummary?.trim() || undefined,
         privatePermitFiles: project.privatePermitFiles?.length ? project.privatePermitFiles : undefined,
         privatePermitVisibility: hasPrivatePermitMaterial ? ("conversation_only" as const) : undefined,
