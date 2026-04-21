@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getVerificationsPageData } from "@/admin_zone/api/verifications";
+import { AdminMetricGrid } from "@/components/shared/AdminPageLayout";
 import DataTable from "@/components/shared/DataTable";
 import SectionScaffold from "@/components/shared/SectionScaffold";
 import StatusBadge from "@/components/shared/StatusBadge";
@@ -34,62 +35,66 @@ export default async function VerificationsPage() {
       title="طلبات التوثيق"
       description="مراجعة واعتماد أو إغلاق طلبات توثيق المنظمات والإعلانات من لوحة الأدمن."
       tabs={verificationTabs}
+      layout="list"
+      contentWidth="contained"
     >
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <WorkspacePanel>
+      <AdminMetricGrid minItemWidth={180}>
+        <WorkspacePanel density="compact">
           <div className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">جديد</div>
           <div className="mt-3 text-3xl font-black tracking-tight text-foreground">{summary.new}</div>
         </WorkspacePanel>
-        <WorkspacePanel>
+        <WorkspacePanel density="compact">
           <div className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">قيد المراجعة</div>
           <div className="mt-3 text-3xl font-black tracking-tight text-foreground">{summary.inReview}</div>
         </WorkspacePanel>
-        <WorkspacePanel>
+        <WorkspacePanel density="compact">
           <div className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">معتمد</div>
           <div className="mt-3 text-3xl font-black tracking-tight text-foreground">{summary.approved}</div>
         </WorkspacePanel>
-        <WorkspacePanel>
+        <WorkspacePanel density="compact">
           <div className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">مرفوض</div>
           <div className="mt-3 text-3xl font-black tracking-tight text-foreground">{summary.rejected}</div>
         </WorkspacePanel>
-        <WorkspacePanel>
+        <WorkspacePanel density="compact">
           <div className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">مغلق</div>
           <div className="mt-3 text-3xl font-black tracking-tight text-foreground">{summary.closed}</div>
         </WorkspacePanel>
-      </div>
+      </AdminMetricGrid>
 
-      <DataTable headers={["الطلب", "النوع", "المنظمة", "الحالة", "الملفات", "تاريخ الإرسال"]}>
-        {rows.map((row) => {
-          const requestId = toRequestId(row);
-          return (
-            <tr key={requestId} className="group transition-colors hover:bg-muted/5">
-              <td className="px-5 py-4">
-                <Link href={`/verifications/${requestId}`} className="block font-black tracking-tight text-foreground transition-colors hover:text-primary">
-                  {toStringValue(row.subjectName)}
-                </Link>
-                <div className="mt-1 text-[11px] font-bold text-muted-foreground/60">
-                  {toStringValue(row.title, "طلب توثيق")}
-                </div>
-              </td>
-              <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">
-                {labelForVerificationType(typeof row.requestType === "string" ? row.requestType : null)}
-              </td>
-              <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">
-                {toStringValue(row.organizationName)}
-              </td>
-              <td className="px-5 py-4">
-                <StatusBadge value={typeof row.currentStatus === "string" ? row.currentStatus : null} />
-              </td>
-              <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">
-                {toNumberValue(row.documentsCount) ?? 0}
-              </td>
-              <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/50">
-                {formatDateTime(toNumberValue(row.submittedAt))}
-              </td>
-            </tr>
-          );
-        })}
-      </DataTable>
+      <WorkspacePanel density="default" bodyClassName="!px-0 !py-0">
+        <DataTable headers={["الطلب", "النوع", "المنظمة", "الحالة", "الملفات", "تاريخ الإرسال"]} className="rounded-none border-0 bg-transparent shadow-none">
+          {rows.map((row) => {
+            const requestId = toRequestId(row);
+            return (
+              <tr key={requestId} className="group transition-colors hover:bg-muted/5">
+                <td className="px-5 py-4">
+                  <Link href={`/verifications/${requestId}`} className="block font-black tracking-tight text-foreground transition-colors hover:text-primary">
+                    {toStringValue(row.subjectName)}
+                  </Link>
+                  <div className="mt-1 text-[11px] font-bold text-muted-foreground/60">
+                    {toStringValue(row.title, "طلب توثيق")}
+                  </div>
+                </td>
+                <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">
+                  {labelForVerificationType(typeof row.requestType === "string" ? row.requestType : null)}
+                </td>
+                <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">
+                  {toStringValue(row.organizationName)}
+                </td>
+                <td className="px-5 py-4">
+                  <StatusBadge value={typeof row.currentStatus === "string" ? row.currentStatus : null} />
+                </td>
+                <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/70">
+                  {toNumberValue(row.documentsCount) ?? 0}
+                </td>
+                <td className="px-5 py-4 text-[13px] font-bold text-muted-foreground/50">
+                  {formatDateTime(toNumberValue(row.submittedAt))}
+                </td>
+              </tr>
+            );
+          })}
+        </DataTable>
+      </WorkspacePanel>
     </SectionScaffold>
   );
 }

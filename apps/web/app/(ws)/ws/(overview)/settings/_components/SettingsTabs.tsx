@@ -35,7 +35,7 @@ export default function SettingsTabs({ tabs, defaultTab }: SettingsTabsProps) {
 
   return (
     <div
-      className="rounded-[24px] border border-border/70 bg-card/80 p-2 shadow-sm backdrop-blur-sm"
+      className="pb-1"
       dir={locale === "ar" ? "rtl" : "ltr"}
     >
       <nav className="flex flex-wrap gap-2" aria-label="Tabs">
@@ -49,10 +49,10 @@ export default function SettingsTabs({ tabs, defaultTab }: SettingsTabsProps) {
               href={href}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-[13px] font-bold transition-all",
+                "inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-bold transition-all",
                 isActive
-                  ? "bg-[var(--workspace-highlight)] text-white shadow-sm"
-                  : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                  ? "bg-[var(--workspace-panel)] text-[var(--workspace-highlight)]"
+                  : "text-muted-foreground hover:bg-[var(--workspace-panel)] hover:text-foreground",
               )}
             >
               {Icon ? <Icon className="h-4 w-4" /> : null}

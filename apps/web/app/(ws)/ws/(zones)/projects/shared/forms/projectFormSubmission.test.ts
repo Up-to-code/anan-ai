@@ -53,5 +53,5 @@ it("flags the specs step when parking is enabled without spaces", () => {
   });
 
   expect(feedback?.fieldErrors.parkingSpaces).toBe("أدخل عدد المواقف عندما تكون المواقف متاحة.");
-  expect(getFirstProjectFormErrorStep(feedback?.fieldErrors ?? {})).toBe(3);
+  expect(getFirstProjectFormErrorStep(feedback?.fieldErrors ?? {})).toBe(1);
 });

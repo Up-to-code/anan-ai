@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "convex/react";
-import { Menu, Mic, Search as SearchIcon, ArrowUp, User } from "lucide-react";
+import { Menu, Mic, ArrowUp, User } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/convexApi";
 import { useBuyerAssistant } from "@/client_zone/assistant/BuyerAssistantPage/useBuyerAssistant";
@@ -46,7 +46,6 @@ export default function AssistantScreen() {
     () => messages.at(-1)?.suggestedPrompts?.filter((prompt) => prompt.trim().length > 0) ?? getDefaultSuggestions().map((item) => item.prompt),
     [messages],
   );
-  const showWelcome = messages.length === 1 && messages[0]?.id === "welcome";
   const activeProperty = assistant.activeProperty ? normalizeBuyerProperty(assistant.activeProperty) : null;
 
   async function askAboutProperty(property: ReturnType<typeof normalizeBuyerProperty>) {
@@ -103,66 +102,15 @@ export default function AssistantScreen() {
   const main = (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {showWelcome ? (
-          <div className="flex min-h-full flex-col justify-center px-5 pb-6 pt-4 md:px-8 md:py-8 lg:px-8">
-            <div className="mx-auto w-full max-w-2xl space-y-6 text-center">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <AnanMark />
-              </div>
-
-              <div className="space-y-3">
-                <h1 className="text-[30px] leading-[42px] font-black text-slate-900 dark:text-slate-50 md:text-[38px] md:leading-[52px]">
-                  ابدأ رحلتك العقارية من مكان واحد
-                </h1>
-                <p className="mx-auto max-w-xl text-[15px] leading-8 font-medium text-slate-500 dark:text-slate-400">
-                  احك لي عن المنطقة والميزانية ونوع العقار، أو افتح البحث إذا أردت تصفح الخيارات أولاً ثم العودة للمحادثة بنفس السياق.
-                </p>
-              </div>
-
-              <div className="rounded-[28px] border border-slate-200 bg-white px-4 py-4 text-right dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex flex-row-reverse items-center gap-2">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800">
-                    <SearchIcon className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <h2 className="text-[15px] font-black text-slate-900 dark:text-slate-50">نفس تجربة الموبايل، أفضل على الشاشة الكبيرة</h2>
-                    <p className="mt-1 text-[13px] leading-6 text-slate-500 dark:text-slate-400">
-                      افتح البحث أو العقار أو السجل، ثم ارجع للمساعد مع نفس السياق بدون التنقل بين منتجات مختلفة.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-2">
-                {latestPromptSet.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => void submitPrompt(prompt)}
-                    className="w-full rounded-full border border-slate-200 bg-white px-5 py-4 text-[14px] font-black text-slate-900 shadow-sm transition active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-50"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-
-              <Link href="/search" className="inline-flex items-center justify-center gap-2 self-center text-[14px] font-black text-blue-600">
-                <SearchIcon className="h-4 w-4" />
-                افتح البحث المباشر
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div data-testid="client-assistant-thread" className="mx-auto w-full max-w-4xl">
-            <MessageThread
-              messages={messages}
-              isSending={assistant.isSending}
-              onSelectPrompt={(prompt) => void submitPrompt(prompt)}
-              onAskAboutProperty={(property) => void askAboutProperty(normalizeBuyerProperty(property))}
-              activeThreadId={assistant.threadId}
-            />
-          </div>
-        )}
+        <div data-testid="client-assistant-thread" className="mx-auto w-full max-w-4xl">
+          <MessageThread
+            messages={messages}
+            isSending={assistant.isSending}
+            onSelectPrompt={(prompt) => void submitPrompt(prompt)}
+            onAskAboutProperty={(property) => void askAboutProperty(normalizeBuyerProperty(property))}
+            activeThreadId={assistant.threadId}
+          />
+        </div>
       </div>
 
       <div className="hidden shrink-0 border-t border-slate-200 bg-white/95 px-6 py-4 backdrop-blur lg:block dark:border-slate-800 dark:bg-slate-950/95">

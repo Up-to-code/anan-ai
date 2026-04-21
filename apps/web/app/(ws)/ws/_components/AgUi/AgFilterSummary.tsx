@@ -1,9 +1,11 @@
+import { memo } from "react"
+
 /**
  * WHY:   Workspace search and listing results should make the active filters visible at a glance.
  * WHAT:  Renders applied filters as compact Arabic pills with a short section title.
  * HOW:   Uses a lightweight flex-wrap layout so the card stays readable on mobile and desktop.
  */
-export default function AgFilterSummary({
+const AgFilterSummaryComponent = function AgFilterSummary({
   title,
   filters,
 }: {
@@ -28,3 +30,5 @@ export default function AgFilterSummary({
     </section>
   );
 }
+
+export default memo(AgFilterSummaryComponent)

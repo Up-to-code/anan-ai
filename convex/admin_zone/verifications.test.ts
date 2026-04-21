@@ -180,7 +180,7 @@ it("returns verification detail with subject metadata and decision history", asy
       name: "Broker Detail User",
       email: "detail@example.com",
       role: "broker",
-      roleStatus: "pending",
+      roleApprovalStatus: "pending",
     } as any);
     requestId = await ctx.db.insert("verificationRequests", {
       requestType: "broker",
@@ -208,4 +208,53 @@ it("returns verification detail with subject metadata and decision history", asy
   expect((detail as any)?.subject?.broker?.name).toBe("Broker Detail");
   expect((detail as any)?.documentsCount).toBe(1);
   expect((detail as any)?.decisionHistory).toHaveLength(2);
+});
+
+it("approves a requested developer role and clears the stale requested role", async () => {
+  const t = convexTest(schema, modules);
+  let redId = "" as any;
+  let profileId = "" as any;
+  let requestId = "" as any;
+
+  await t.run(async (ctx) => {
+    redId = await ctx.db.insert("RED", {
+      name: "Developer Approval",
+      slug: "developer-approval",
+      isVerified: false,
+      status: "pending",
+    } as any);
+    profileId = await ctx.db.insert("userProfiles", {
+      authUserId: "auth-dev",
+      name: "Developer User",
+      email: "developer@example.com",
+      role: "user",
+      requestedRole: "developer",
+      roleApprovalStatus: "pending",
+      developerId: redId,
+    } as any);
+    requestId = await ctx.db.insert("verificationRequests", {
+      requestType: "user",
+      subjectProfileId: profileId,
+      authUserId: "auth-dev",
+      title: "طلب ترقية مطور",
+      currentStatus: "new",
+      submittedData: {},
+      attachedDocuments: [],
+      submittedAt: Date.now(),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    } as any);
+  });
+
+  await t.mutation(
+    api.admin_zone.verifications.reviewVerificationRequest as never,
+    { id: requestId, status: "approved", reviewerId: "admin-auth" } as never,
+  );
+
+  const profile = (await t.run((ctx) => ctx.db.get(profileId))) as Doc<"userProfiles"> | null;
+
+  expect(profile?.role).toBe("developer");
+  expect((profile as any)?.developerId).toBe(redId);
+  expect((profile as any)?.requestedRole).toBeUndefined();
+  expect((profile as any)?.roleApprovalStatus).toBe("approved");
 });

@@ -1,41 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const { requireWorkspaceData, getLayoutSidebarData, redirect, usePathname, useSearchParams } = vi.hoisted(() => ({
-  requireWorkspaceData: vi.fn(),
-  getLayoutSidebarData: vi.fn(),
-  redirect: vi.fn(),
-  usePathname: vi.fn(),
-  useSearchParams: vi.fn(() => new URLSearchParams()),
-}));
-
-vi.mock("../../_lib/workspaceData", () => ({
-  requireWorkspaceData,
-  getLayoutSidebarData,
-}));
-
-vi.mock("../../_components/WorkspaceShell", () => ({
-  default: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="workspace-shell">
-      <div data-slot="workspace-sidebar-desktop" />
-      {children}
-    </div>
-  ),
-}));
-
-vi.mock("next/navigation", () => ({
-  redirect,
-  usePathname,
-  useSearchParams,
-}));
-
-const { getComplianceRulesetForCurrentOrg } = vi.hoisted(() => ({
-  getComplianceRulesetForCurrentOrg: vi.fn(() => Promise.resolve(null)),
-}));
-
-vi.mock("@/server/domains/compliance/service", () => ({
-  getComplianceRulesetForCurrentOrg,
-}));
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
   default: ({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) => (
@@ -45,42 +9,32 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("./shared/navigation/MarketRouteTabs", () => ({
+  default: () => (
+    <div data-slot="market-route-tabs">
+      <span>الملخص</span>
+      <span>المدن</span>
+      <span>المناطق الساخنة</span>
+      <span>نتائج السوق</span>
+      <span>مساعد الكلمات</span>
+    </div>
+  ),
+}));
+
 import MarketZoneLayout from "./layout";
 
 describe("/ws/market layout", () => {
-  beforeEach(() => {
-    requireWorkspaceData.mockReset();
-    getLayoutSidebarData.mockReset();
-    redirect.mockReset();
-    usePathname.mockReset();
-    usePathname.mockReturnValue("/ws/market");
-  });
-
-  it("renders the market layout inside the main workspace shell", async () => {
-    requireWorkspaceData.mockResolvedValue({
-      user: { name: "Ahmed", email: "ahmed@example.com" },
-      session: { role: "broker" },
-      visibleZoneKeys: ["overview", "market", "projects", "offers", "settings"],
-      organizations: [{ id: "broker-1", type: "broker", name: "Broker Org", slug: "broker-org", status: "active", isVerified: true }],
-    });
-    getLayoutSidebarData.mockResolvedValue({
-      user: { name: "Ahmed", email: "ahmed@example.com" },
-      organizations: [{ id: "broker-1", type: "broker", name: "Broker Org", slug: "broker-org", status: "active", isVerified: true }],
-      recentAssistantThreads: [],
-      allAssistantThreads: [],
-      signalCounts: { notificationCount: 0, inboxCount: 0 },
-    });
-
+  it("renders market local navigation without recreating the workspace shell", async () => {
     const element = await MarketZoneLayout({ children: <div>Content</div> });
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain("data-slot=\"market-shell\"");
-    expect(markup).toContain("data-slot=\"workspace-shell\"");
-    expect(markup).toContain("data-slot=\"workspace-sidebar-desktop\"");
+    expect(markup).not.toContain("data-slot=\"workspace-shell\"");
     expect(markup).toContain("الملخص");
     expect(markup).toContain("المدن");
     expect(markup).toContain("المناطق الساخنة");
     expect(markup).toContain("نتائج السوق");
     expect(markup).toContain("مساعد الكلمات");
+    expect(markup).toContain("Content");
   });
 });

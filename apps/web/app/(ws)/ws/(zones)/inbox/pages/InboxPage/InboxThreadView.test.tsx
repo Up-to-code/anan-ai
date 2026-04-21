@@ -6,6 +6,10 @@ import { getInboxThreadMenuActionLabels } from "./components/InboxThreadHeader";
 
 vi.mock("convex/react", () => ({
   useQuery: vi.fn(() => null),
+  useConvexAuth: vi.fn(() => ({
+    isAuthenticated: true,
+    isLoading: false,
+  })),
 }));
 
 vi.mock("@/lib/uploadthing", () => ({

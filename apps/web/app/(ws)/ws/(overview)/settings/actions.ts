@@ -15,6 +15,7 @@ import {
   createCurrentOrganizationApiKeyForCurrentUser,
   revokeCurrentOrganizationApiKeyForCurrentUser,
 } from "@/server/domains/auth/organizationApiKeys/service";
+import { revokeAuthorizedAppForCurrentOrganization } from "@/server/domains/auth/oauth/service";
 
 type ActionResult = { ok: true; message: string } | { ok: false; message: string };
 
@@ -66,6 +67,20 @@ export async function revokeOrganizationApiKeyAction(keyId: string): Promise<Act
   try {
     await revokeCurrentOrganizationApiKeyForCurrentUser(keyId);
     return { ok: true, message: "تم إلغاء المفتاح ولن يعمل بعد الآن." };
+  } catch (error) {
+    return { ok: false, message: normalizeDomainError(error).message };
+  }
+}
+
+/**
+ * WHY:   Connected app revocation belongs inside organization settings alongside other integration controls.
+ * WHAT:  Revokes one organization-owned OAuth app authorization.
+ * HOW:   Delegates to the org OAuth domain service and returns the same compact action envelope used elsewhere in settings.
+ */
+export async function revokeOrganizationConnectedAppAction(clientId: string): Promise<ActionResult> {
+  try {
+    await revokeAuthorizedAppForCurrentOrganization(clientId);
+    return { ok: true, message: "تم إلغاء ربط التطبيق عن هذه المنظمة." };
   } catch (error) {
     return { ok: false, message: normalizeDomainError(error).message };
   }

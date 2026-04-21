@@ -13,10 +13,10 @@ export type CurrentProfile = {
   username?: string;
   role?: string;
   brokerId?: import("../../_generated/dataModel").Id<"brokers">;
-  REDId?: import("../../_generated/dataModel").Id<"RED">;
+  developerId?: import("../../_generated/dataModel").Id<"RED">;
   isActive?: boolean;
   requestedRole?: string;
-  roleStatus?: "pending" | "approved" | "rejected";
+  roleApprovalStatus?: "pending" | "approved" | "rejected";
 };
 
 type Ctx = QueryCtx | MutationCtx;
@@ -48,8 +48,8 @@ export async function requireOwnerProfile(
   if (profile.brokerId) {
     return { ...profile, ownerType: "broker", ownerBrokerId: profile.brokerId };
   }
-  if (profile.REDId) {
-    return { ...profile, ownerType: "RED", ownerREDId: profile.REDId };
+  if (profile.developerId) {
+    return { ...profile, ownerType: "RED", ownerREDId: profile.developerId };
   }
   throw new ConvexError({ code: "FORBIDDEN", message: "Organization owner profile required" });
 }

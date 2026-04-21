@@ -20,7 +20,7 @@ function buildRoleEventMetadata(args: {
     actor: {
       authUserId: args.current.profile.authUserId,
       name: args.current.profile.name ?? args.current.profile.email ?? "عضو الفريق",
-      role: args.current.profile.role === "RED" ? "developer" : args.current.profile.role ?? "user",
+      role: args.current.profile.role ?? "user",
       organizationId,
       organizationType,
       organizationName: args.organizationName,

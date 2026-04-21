@@ -1,4 +1,4 @@
-import PropertyDetailScreen from "@/features/PropertyDetailScreen";
+import PropertyDetailScreen from "@/features/PropertyDetailScreen/index";
 
 /**
  * WHY:   The buyer journey needs one dedicated property detail route for deeper review.

@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  buildPropertyFocusMessage,
-  mapMvpPropertyToMobileProperty,
-  toMobileProperty,
-} from "@/lib/mobileData";
+import { mapMvpPropertyToMobileProperty } from "@/lib/mobileFallbackData";
+import { toMobileProperty } from "@/lib/mobileData";
 import type { MobileProperty } from "@/types/mobile";
 
 const sampleProperty: MobileProperty = {
@@ -24,22 +21,40 @@ const sampleProperty: MobileProperty = {
     isVerified: true,
   },
   aiSummary: "وحدة جاهزة في موقع حيوي.",
+  finance: {
+    defaultDownPayment: 120000,
+    defaultYears: 20,
+    defaultAnnualRate: 4.75,
+    estimatedLoanAmount: 1080000,
+    estimatedMonthlyPayment: 7000,
+    bankOfferCount: 2,
+  },
+  contact: {
+    hasPhone: true,
+    hasEmail: true,
+    hasWhatsApp: false,
+    mapQuery: "Riyadh Front",
+  },
+  compliance: {
+    permitStatus: "verified",
+    ownerVerified: true,
+    listingVerified: true,
+  },
 };
 
 describe("mobileData", () => {
-  it("builds the property focus assistant message with prompts", () => {
-    const message = buildPropertyFocusMessage(sampleProperty);
-
-    expect(message.role).toBe("assistant");
-    expect(message.properties?.[0]?.title).toBe("Olive Residence");
-    expect(message.suggestedPrompts?.length).toBeGreaterThan(0);
-  });
-
-  it("normalizes live mobile properties without mutating the owner shape", () => {
+  it("normalizes live mobile properties without sharing nested DTO references", () => {
     const normalized = toMobileProperty(sampleProperty);
+    sampleProperty.owner.name = "Changed Broker";
+    sampleProperty.finance!.defaultYears = 30;
+    sampleProperty.contact!.mapQuery = "Changed Map";
+    sampleProperty.compliance!.permitStatus = "pending_review";
 
-    expect(normalized.owner.name).toBe(sampleProperty.owner.name);
+    expect(normalized.owner.name).toBe("Broker One");
     expect(normalized.media).toEqual(sampleProperty.media);
+    expect(normalized.finance?.defaultYears).toBe(20);
+    expect(normalized.contact?.mapQuery).toBe("Riyadh Front");
+    expect(normalized.compliance?.permitStatus).toBe("verified");
   });
 
   it("maps MVP properties into the mobile property contract", () => {
@@ -68,5 +83,23 @@ describe("mobileData", () => {
 
     expect(mapped.owner.slug).toBe("legacy-broker");
     expect(mapped.media).toEqual(["https://example.com/hero.jpg"]);
+    expect(mapped.finance).toMatchObject({
+      defaultDownPayment: 95000,
+      defaultYears: 20,
+      defaultAnnualRate: 4.75,
+      estimatedLoanAmount: 855000,
+      bankOfferCount: 0,
+    });
+    expect(mapped.contact).toEqual({
+      hasPhone: false,
+      hasEmail: false,
+      hasWhatsApp: false,
+      mapQuery: "Riyadh",
+    });
+    expect(mapped.compliance).toEqual({
+      permitStatus: "verified",
+      ownerVerified: true,
+      listingVerified: true,
+    });
   });
 });

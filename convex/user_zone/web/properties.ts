@@ -4,6 +4,7 @@ import { api } from "../../_generated/api";
 import { mobilePropertyFeedItemValidator } from "./contracts";
 import { buildMobilePropertyFeedItem } from "../mobile/feed";
 import type { Infer } from "convex/values";
+import { isPropertyDistributionReady } from "../../shared_logic/projects/readiness";
 
 type PropertyFeedItem = Infer<typeof mobilePropertyFeedItemValidator>;
 
@@ -13,9 +14,9 @@ async function mapPublishedProperties(
   limit: number,
 ) {
   const mapped = await Promise.all(
-    properties.map((property) =>
-      buildMobilePropertyFeedItem(ctx, property),
-    ),
+    properties
+      .filter((property) => isPropertyDistributionReady(property as any))
+      .map((property) => buildMobilePropertyFeedItem(ctx, property)),
   );
 
   return mapped.filter(Boolean).slice(0, limit) as PropertyFeedItem[];
@@ -44,7 +45,7 @@ export const getPropertyDetail = query({
   handler: async (ctx, { propertyId }) => {
     const property = await ctx.db.get(propertyId);
     if (!property) return null;
-    if (property.publicationState && property.publicationState !== "published") return null;
+    if (!isPropertyDistributionReady(property as any)) return null;
     return buildMobilePropertyFeedItem(ctx, property as Parameters<typeof buildMobilePropertyFeedItem>[1]);
   },
 });

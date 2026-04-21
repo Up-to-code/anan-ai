@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ActivityIndicator, Pressable, PressableProps, View } from "react-native";
 import { AppText } from "@/components/ui/AppText";
 import { cn } from "@/lib/cn";
@@ -17,7 +18,7 @@ type ButtonProps = PressableProps & {
  * WHY:   The new Unified Rounded system dictates pill containers and delicate 1px bounds.
  * WHAT:  Modern pill-shaped button with soft zinc borders for outlines.
  */
-export function Button({
+export const Button = memo(function Button({
   label,
   variant = "primary",
   loading,
@@ -121,4 +122,4 @@ export function Button({
       </View>
     </Pressable>
   );
-}
+});

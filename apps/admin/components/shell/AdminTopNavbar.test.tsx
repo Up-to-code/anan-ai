@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 const { usePathname } = vi.hoisted(() => ({
-  usePathname: vi.fn(() => "/organizations"),
+  usePathname: vi.fn(() => "/verifications"),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -32,10 +32,10 @@ describe("AdminTopNavbar", () => {
       />,
     );
 
-    expect(html).toContain("التحكم الإداري");
-    expect(html).toContain("كل المنظمات");
+    expect(html).toContain("MVP Operations");
+    expect(html).toContain("طلبات التوثيق");
     expect(html).toContain("Nada Admin");
-    expect(html).toContain("Admin");
+    expect(html).toContain("Admin Access");
     expect(html).toContain("مبدل المظهر");
     expect(html).not.toContain("<h1");
   });

@@ -104,9 +104,9 @@ export const handleToken = httpAction(async (ctx, request) => {
 });
 
 /**
- * WHY:   OIDC clients need a scoped identity endpoint separate from token introspection.
- * WHAT:  Returns the current user's identity claims for a valid bearer token.
- * HOW:   Verifies the JWT, resolves the server-side token record, updates last-used timestamps, and filters claims by scope.
+ * WHY:   The legacy `/userinfo` route must fail safely now that OAuth grants belong to organizations, not user identities.
+ * WHAT:  Rejects valid org-owned bearer tokens with `insufficient_scope` rather than exposing user claims.
+ * HOW:   Verifies the JWT, touches token usage for audit purposes, then returns a scoped denial response.
  */
 export const handleUserInfo = httpAction(async (ctx, request) => {
   try {
@@ -125,22 +125,7 @@ export const handleUserInfo = httpAction(async (ctx, request) => {
       jti,
       now: Date.now(),
     });
-    const scopes = new Set(context.accessToken.scopes);
-    return jsonResponse({
-      sub: context.pairwiseSubject,
-      ...(scopes.has("profile")
-        ? {
-            name: context.user.name ?? context.user.displayName ?? context.profile?.name ?? undefined,
-            picture: context.user.image ?? undefined,
-          }
-        : {}),
-      ...(scopes.has("email")
-        ? {
-            email: context.user.email ?? undefined,
-            email_verified: Boolean(context.user.emailVerificationTime),
-          }
-        : {}),
-    });
+    return jsonResponse({ error: "insufficient_scope" }, 403);
   } catch (error) {
     return jsonResponse({ error: "invalid_token", error_description: (error as Error).message }, 401);
   }

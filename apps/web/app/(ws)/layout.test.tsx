@@ -1,10 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@convex-dev/auth/nextjs/server", () => ({
-  ConvexAuthNextjsServerProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
 vi.mock("@/app/ConvexClientProvider", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -34,6 +30,8 @@ describe("workspace group layout", () => {
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain("data-slot=\"workspace-locale-provider\"");
+    expect(markup).toContain("data-slot=\"workspace-group-layout\"");
+    expect(markup).toContain("min-h-dvh");
     expect(markup).toContain("data-locale=\"ar\"");
     expect(markup).toContain("Body");
   });

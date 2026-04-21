@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 const { usePathname } = vi.hoisted(() => ({
-  usePathname: vi.fn(() => "/users"),
+  usePathname: vi.fn(() => "/verifications"),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -22,8 +22,7 @@ describe("AdminSidebar", () => {
     );
 
     expect(html).toContain("href=\"/overview\"");
-    expect(html).toContain("href=\"/users\"");
-    expect(html).toContain("href=\"/organizations\"");
+    expect(html).toContain("href=\"/verifications\"");
     expect(html).not.toContain("href=\"/ws");
   });
 
@@ -33,7 +32,7 @@ describe("AdminSidebar", () => {
     );
 
     expect(html).toContain("aria-label=\"لوحة التحكم\"");
-    expect(html).toContain("aria-label=\"مراجعة العروض\"");
+    expect(html).toContain("aria-label=\"طلبات التوثيق\"");
     expect(html).not.toContain("admin@example.com");
   });
 });

@@ -10,7 +10,11 @@ import { IconButton } from "@/components/ui/IconButton";
 import { MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
 import { GalleryViewport } from "@/features/GalleryScreen/GalleryViewport";
 import { StickyJourneyBar } from "@/features/PropertyDetailScreen/StickyJourneyBar";
+import { useBuyerAccount } from "@/hooks/useBuyerAccount";
 import { usePropertyDetail } from "@/hooks/usePropertyDetail";
+import { formatMobileCopy, getMobileDictionary } from "@/lib/i18n";
+import type { MobileLocale } from "@/lib/locale";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import { formatCurrency } from "@/lib/formatters";
 import { getPropertyHeroImage, getPropertyLocationLabel } from "@/lib/mobileData";
 import { buildSearchRouteParams, parseSearchRouteParams } from "@/lib/mobileSearch";
@@ -26,6 +30,8 @@ export default function PropertyDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
+  const account = useBuyerAccount();
+  const { dictionary, isRtl, locale } = useMobileLocale();
   const params = useLocalSearchParams<{
     id?: string;
     threadId?: string;
@@ -67,12 +73,12 @@ export default function PropertyDetailScreen() {
   function requestAdvisor() {
     if (!property) return;
     Alert.alert(
-      "افتح صفحة المحادثة أولاً",
-      "حتى نكمل الطلب بنفس سياق العقار والنتائج، افتح صفحة المحادثة أولاً ثم اطلب المستشار من داخلها.",
+      dictionary.property.openChatFirstTitle,
+      dictionary.property.openChatFirstBody,
       [
-        { text: "لاحقاً", style: "cancel" },
+        { text: dictionary.common.later, style: "cancel" },
         {
-          text: "افتح المحادثة",
+          text: dictionary.property.openChat,
           onPress: continueToAssistant,
         },
       ],
@@ -127,19 +133,6 @@ export default function PropertyDetailScreen() {
     });
   }
 
-  function openBrokerProfile() {
-    if (!property) return;
-    router.push({
-      pathname: "/broker/[id]",
-      params: {
-        id: property.owner.id || "1",
-        propertyId: property.id,
-        ...(threadId ? { threadId } : {}),
-        ...buildSearchRouteParams(searchContext),
-      },
-    });
-  }
-
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center" style={{ backgroundColor: theme.colors.canvas }}>
@@ -153,27 +146,27 @@ export default function PropertyDetailScreen() {
       <View className="flex-1" style={{ backgroundColor: theme.colors.canvas }}>
         <MobileTopBar
           insetTop={insets.top}
-          title="تفاصيل العقار"
+          title={dictionary.propertyDetail.title}
           backgroundColor={theme.colors.canvas}
           borderColor={theme.colors.border}
           leading={<IconButton icon={ArrowLeft} onPress={() => router.back()} tone="panel" />}
         />
         <View className="flex-1 items-center justify-center px-6">
-          <MobileSurface className="w-full items-center gap-4 px-8 py-10" radius="hero">
-            <AppText className="text-center text-2xl font-cairo-bold" style={{ color: theme.colors.ink }}>
-              الوحدة غير متاحة
-            </AppText>
-            <AppText className="text-center text-[15px] font-medium leading-relaxed" style={{ color: theme.colors.inkMuted }}>
-              عد إلى البحث أو المحادثة الرئيسية لاختيار وحدة أخرى.
-            </AppText>
-          </MobileSurface>
+            <MobileSurface className="w-full items-center gap-4 px-8 py-10" radius="hero">
+              <AppText className="text-center text-2xl font-cairo-bold" style={{ color: theme.colors.ink }}>
+                {dictionary.property.unavailableTitle}
+              </AppText>
+              <AppText className="text-center text-[15px] font-medium leading-relaxed" style={{ color: theme.colors.inkMuted }}>
+                {dictionary.property.unavailableBody}
+              </AppText>
+            </MobileSurface>
         </View>
       </View>
     );
   }
 
-  const propertyTypeLabel = getPropertyTypeLabel(property);
-  const listingTypeLabel = getListingTypeLabel(property);
+  const propertyTypeLabel = getPropertyTypeLabel(property, locale);
+  const listingTypeLabel = getListingTypeLabel(property, locale);
   const images = property.media.length > 0 ? property.media : [getPropertyHeroImage(property)];
   const owner = property.owner;
   const anyOwner = owner as {
@@ -181,12 +174,13 @@ export default function PropertyDetailScreen() {
     contactEmail?: string;
     agencyLabel?: string;
   };
+  const isSaved = account.isPropertySaved(property.id);
 
   return (
     <View className="flex-1" style={{ backgroundColor: theme.colors.canvas }}>
       <MobileTopBar
         insetTop={insets.top}
-        title="تفاصيل العقار"
+        title={dictionary.propertyDetail.title}
         backgroundColor={theme.colors.canvas}
         borderColor={theme.colors.border}
         leading={<IconButton icon={ArrowLeft} onPress={() => router.back()} tone="panel" />}
@@ -250,43 +244,124 @@ export default function PropertyDetailScreen() {
                 {property.title}
               </AppText>
               <AppText className="text-right text-[28px] font-cairo-bold" style={{ color: theme.colors.primary }}>
-                {formatCurrency(property.price)}
+                {formatCurrency(property.price, locale)}
               </AppText>
+              <View className="flex-row-reverse flex-wrap" style={{ gap: 10 }}>
+                <Pressable
+                  onPress={() => void account.toggleSavedProperty(property.id)}
+                  className="px-4 py-2.5"
+                  style={{
+                    borderRadius: theme.radii.pill,
+                    borderWidth: 1,
+                    borderColor: isSaved ? theme.colors.primaryMuted : theme.colors.border,
+                    backgroundColor: isSaved ? theme.colors.primarySoft : theme.colors.surfaceMuted,
+                  }}
+                >
+                  <AppText className="text-[13px] font-cairo-bold" style={{ color: isSaved ? theme.colors.primary : theme.colors.inkSoft }}>
+                    {isSaved ? dictionary.property.saved : dictionary.property.save}
+                  </AppText>
+                </Pressable>
+                <Pressable
+                  onPress={() =>
+                    router.push({
+                      pathname: "/finance",
+                      params: {
+                        propertyId: property.id,
+                        ...(threadId ? { threadId } : {}),
+                        ...buildSearchRouteParams(searchContext),
+                      },
+                    })
+                  }
+                  className="px-4 py-2.5"
+                  style={{
+                    borderRadius: theme.radii.pill,
+                    borderWidth: 1,
+                    borderColor: theme.colors.border,
+                    backgroundColor: theme.colors.surfaceMuted,
+                  }}
+                >
+                  <AppText className="text-[13px] font-cairo-bold" style={{ color: theme.colors.inkSoft }}>
+                    {dictionary.propertyDetail.openFinance}
+                  </AppText>
+                </Pressable>
+              </View>
             </View>
 
             <View className="flex-row-reverse flex-wrap gap-x-5 gap-y-3">
-              <InlineFact icon={<BedDouble size={16} color={theme.colors.primary} />} label={`${property.beds} غرف`} />
-              <InlineFact icon={<Bath size={16} color={theme.colors.primary} />} label={`${property.baths} حمامات`} />
+              <InlineFact icon={<BedDouble size={16} color={theme.colors.primary} />} label={formatMobileCopy(dictionary.property.rooms, { count: String(property.beds) })} />
+              <InlineFact icon={<Bath size={16} color={theme.colors.primary} />} label={formatMobileCopy(dictionary.property.baths, { count: String(property.baths) })} />
               <InlineFact
                 icon={<Ruler size={16} color={theme.colors.primary} />}
-                label={property.sqft ? `${property.sqft} م²` : "المساحة غير محددة"}
+                label={property.sqft ? formatMobileCopy(dictionary.property.sqft, { count: String(property.sqft) }) : dictionary.propertyDetail.areaUnknown}
               />
             </View>
 
             <View style={{ borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: 18 }}>
-              <InfoTableRow label="النوع" value={propertyTypeLabel} />
-              <InfoTableRow label="نوع العرض" value={listingTypeLabel} />
-              <InfoTableRow label="الموقع" value={getPropertyLocationLabel(property)} onPress={openMap} />
+              <InfoTableRow label={dictionary.propertyDetail.propertyType} value={propertyTypeLabel} />
+              <InfoTableRow label={dictionary.propertyDetail.listingType} value={listingTypeLabel} />
+              <InfoTableRow label={dictionary.propertyDetail.location} value={getPropertyLocationLabel(property)} onPress={openMap} />
               <InfoTableRow
-                label="الجهة"
-                value={property.owner.name}
-                detail={anyOwner.agencyLabel ?? (owner.type === "broker" ? "وسيط موثق" : "مطور موثق")}
-                onPress={openBrokerProfile}
+                label={dictionary.propertyDetail.verificationStatus}
+                value={
+                  property.compliance?.permitStatus === "verified"
+                    ? dictionary.property.verified
+                    : property.compliance?.permitStatus === "pending_review"
+                      ? dictionary.property.pendingReview
+                      : dictionary.propertyDetail.needsReview
+                }
+                detail={
+                  property.compliance?.adLicenseStatus
+                    ? `${dictionary.propertyDetail.licenseLabel}: ${property.compliance.adLicenseStatus === "approved" ? dictionary.propertyDetail.licenseApproved : property.compliance.adLicenseStatus === "pending" ? dictionary.propertyDetail.licensePending : dictionary.propertyDetail.licenseRejected}`
+                    : undefined
+                }
+              />
+              <InfoTableRow
+                label={dictionary.propertyDetail.starterFinance}
+                value={property.finance ? formatCurrency(property.finance.estimatedMonthlyPayment, locale) : dictionary.propertyDetail.starterFinanceFallback}
+                detail={
+                  property.finance
+                    ? formatMobileCopy(dictionary.propertyDetail.starterFinanceDetail, {
+                        rate: String(property.finance.defaultAnnualRate),
+                        years: String(property.finance.defaultYears),
+                      })
+                    : undefined
+                }
+                onPress={() =>
+                  router.push({
+                    pathname: "/finance",
+                    params: {
+                      propertyId: property.id,
+                      ...(threadId ? { threadId } : {}),
+                      ...buildSearchRouteParams(searchContext),
+                    },
+                  })
+                }
+              />
+            </View>
+
+            <View className="gap-4" style={{ borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: 18 }}>
+              <SectionHeading title={owner.type === "broker" ? dictionary.propertyDetail.publisherBroker : dictionary.propertyDetail.publisherDeveloper} />
+              <OwnerPublisherCard
+                name={property.owner.name}
+                roleLabel={owner.type === "broker" ? dictionary.propertyDetail.verifiedBroker : dictionary.propertyDetail.verifiedDeveloper}
+                agencyLabel={anyOwner.agencyLabel}
+                isVerified={property.owner.isVerified}
               />
             </View>
 
             <View className="gap-3" style={{ borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: 18 }}>
-              <SectionHeading title="الوصف" />
+              <SectionHeading title={dictionary.propertyDetail.descriptionTitle} />
               <AppText className="text-right text-[16px] font-medium leading-8" style={{ color: theme.colors.inkSoft }}>
                 {property.aiSummary ??
-                  "وحدة سكنية جاهزة للعرض داخل تجربة عنان. يمكنك مراجعة التفاصيل ثم العودة للمحادثة لمقارنة العقار أو طلب تمويل أو متابعة مع مستشار."}
+                  dictionary.propertyDetail.descriptionFallback}
               </AppText>
             </View>
 
             <View className="gap-4" style={{ borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: 18 }}>
-              <SectionHeading title="مرتبطة بالنتيجة الحالية" />
+              <SectionHeading title={dictionary.propertyDetail.relatedTitle} />
               <View className="flex-row-reverse flex-wrap">
                 {buildRelatedFacts({
+                  locale,
                   hasSearchContext: Boolean(searchContext),
                   searchSummary: searchContext?.searchSummary,
                   searchArea: searchContext?.area,
@@ -307,12 +382,12 @@ export default function PropertyDetailScreen() {
               <ChevronLeft size={18} color={theme.colors.inkMuted} />
               <View className="flex-1 items-end">
               <AppText className="text-right text-[15px] font-cairo-bold" style={{ color: theme.colors.ink }}>
-                  {searchContext ? "العودة إلى النتائج المرتبطة" : "العودة إلى صفحة المحادثة"}
+                  {searchContext ? dictionary.propertyDetail.backToResults : dictionary.propertyDetail.backToChat}
                 </AppText>
                 <AppText className="mt-1 text-right text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
                   {searchContext
-                    ? searchContext.searchSummary || "نفس النتائج التي جئت منها"
-                    : "افتح نفس الرحلة في المحادثة لمتابعة المقارنة أو طلب المستشار"}
+                    ? searchContext.searchSummary || dictionary.propertyDetail.sameResults
+                    : dictionary.propertyDetail.continueJourney}
                 </AppText>
               </View>
             </Pressable>
@@ -324,7 +399,7 @@ export default function PropertyDetailScreen() {
         onWhatsApp={openWhatsApp}
         onCall={openCall}
         onThirdAction={openThirdAction}
-        thirdActionLabel={anyOwner.contactEmail ? "الإيميل" : "تابع في المحادثة"}
+        thirdActionLabel={anyOwner.contactEmail ? dictionary.propertyDetail.emailAction : dictionary.property.continueInAssistant}
       />
     </View>
   );
@@ -354,9 +429,10 @@ function InfoTableRow({
   onPress?: () => void;
 }) {
   const theme = useAppTheme();
+  const { isRtl } = useMobileLocale();
   const content = (
     <View
-      className="flex-row-reverse items-center justify-between gap-4 py-4"
+      className={`items-center justify-between gap-4 py-4 ${isRtl ? "flex-row-reverse" : "flex-row"}`}
       style={{
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.border,
@@ -392,19 +468,80 @@ function InfoTableRow({
 
 function GridTextItem({ label, value }: { label: string; value: string }) {
   const theme = useAppTheme();
+  const { isRtl } = useMobileLocale();
   return (
     <View className="w-1/2 pb-4 px-1">
-      <AppText className="text-right text-[12px] font-bold" style={{ color: theme.colors.inkMuted }}>
+      <AppText className={`${isRtl ? "text-right" : "text-left"} text-[12px] font-bold`} style={{ color: theme.colors.inkMuted }}>
         {label}
       </AppText>
-      <AppText className="mt-1 text-right text-[15px] font-cairo-bold leading-7" style={{ color: theme.colors.inkSoft }}>
+      <AppText className={`mt-1 ${isRtl ? "text-right" : "text-left"} text-[15px] font-cairo-bold leading-7`} style={{ color: theme.colors.inkSoft }}>
         {value}
       </AppText>
     </View>
   );
 }
 
+function OwnerPublisherCard({
+  name,
+  roleLabel,
+  agencyLabel,
+  isVerified,
+  onPress,
+}: {
+  name: string;
+  roleLabel: string;
+  agencyLabel?: string;
+  isVerified: boolean;
+  onPress?: () => void;
+}) {
+  const theme = useAppTheme();
+  const { dictionary, isRtl } = useMobileLocale();
+  const content = (
+    <View
+      className={`items-center gap-4 rounded-[24px] px-4 py-4 ${isRtl ? "flex-row-reverse" : "flex-row"}`}
+      style={{
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.surface,
+      }}
+    >
+      <View
+        className="items-center justify-center rounded-full"
+        style={{ width: 54, height: 54, backgroundColor: theme.colors.primarySoft }}
+      >
+        <Building2 size={22} color={theme.colors.primary} />
+      </View>
+
+      <View className={`flex-1 ${isRtl ? "items-end" : "items-start"}`}>
+        <AppText className={`${isRtl ? "text-right" : "text-left"} text-[16px] font-cairo-bold`} style={{ color: theme.colors.ink }}>
+          {name}
+        </AppText>
+        <AppText className={`mt-1 ${isRtl ? "text-right" : "text-left"} text-[13px] font-medium`} style={{ color: theme.colors.inkMuted }}>
+          {agencyLabel ?? roleLabel}
+        </AppText>
+        <View className={`mt-2 items-center gap-2 ${isRtl ? "flex-row-reverse" : "flex-row"}`}>
+          <AppText className={`${isRtl ? "text-right" : "text-left"} text-[12px] font-cairo-bold`} style={{ color: theme.colors.primary }}>
+            {roleLabel}
+          </AppText>
+          <AppText className={`${isRtl ? "text-right" : "text-left"} text-[12px] font-medium`} style={{ color: theme.colors.inkMuted }}>
+            {isVerified ? dictionary.propertyDetail.verifiedInAnan : dictionary.property.pendingReview}
+          </AppText>
+        </View>
+      </View>
+
+      {onPress ? <ChevronLeft size={18} color={theme.colors.inkMuted} /> : null}
+    </View>
+  );
+
+  if (!onPress) {
+    return content;
+  }
+
+  return <Pressable onPress={onPress}>{content}</Pressable>;
+}
+
 function buildRelatedFacts({
+  locale,
   hasSearchContext,
   searchSummary,
   searchArea,
@@ -412,6 +549,7 @@ function buildRelatedFacts({
   imageCount,
   ownerType,
 }: {
+  locale: MobileLocale;
   hasSearchContext: boolean;
   searchSummary?: string;
   searchArea?: string;
@@ -419,20 +557,21 @@ function buildRelatedFacts({
   imageCount: number;
   ownerType: MobileProperty["owner"]["type"];
 }) {
+  const copy = getMobileDictionary(locale);
   if (hasSearchContext) {
     return [
-      { label: "ملخص النتائج", value: searchSummary ?? "نتائج مرتبطة" },
-      { label: "منطقة البحث", value: searchArea ?? "الكل" },
-      { label: "نوع الجهة", value: searchOwnerType ?? "الكل" },
-      { label: "الوضع الحالي", value: "ضمن النتائج الحالية" },
+      { label: copy.propertyDetail.relatedSummary, value: searchSummary ?? copy.propertyDetail.relatedResults },
+      { label: copy.propertyDetail.searchArea, value: searchArea ?? copy.assistant.searchAll },
+      { label: copy.propertyDetail.ownerType, value: searchOwnerType === "broker" ? copy.search.ownerBroker : searchOwnerType === "developer" ? copy.search.ownerDeveloper : copy.assistant.searchAll },
+      { label: copy.propertyDetail.currentStatus, value: copy.propertyDetail.inCurrentResults },
     ];
   }
 
   return [
-    { label: "السياق الحالي", value: "داخل المحادثة" },
-    { label: "عدد الصور", value: `${imageCount} صور` },
-    { label: "نوع الجهة", value: ownerType === "broker" ? "وسيط" : "مطور" },
-    { label: "الوضع الحالي", value: "العقار المرجعي الحالي" },
+    { label: copy.propertyDetail.currentContext, value: copy.propertyDetail.insideConversation },
+    { label: locale === "en" ? "Photo count" : "عدد الصور", value: formatMobileCopy(copy.propertyDetail.photosCount, { count: String(imageCount) }) },
+    { label: copy.propertyDetail.ownerType, value: ownerType === "broker" ? copy.search.ownerBroker : copy.search.ownerDeveloper },
+    { label: copy.propertyDetail.currentStatus, value: copy.propertyDetail.currentReference },
   ];
 }
 
@@ -445,22 +584,24 @@ function SectionHeading({ title }: { title: string }) {
   );
 }
 
-function getPropertyTypeLabel(property: MobileProperty) {
+function getPropertyTypeLabel(property: MobileProperty, locale: MobileLocale) {
+  const dictionary = getMobileDictionary(locale);
   const label = property.title.trim();
-  if (label.includes("استوديو")) return "استوديو";
-  if (label.includes("فيلا")) return "فيلا";
-  if (label.includes("دوبلكس")) return "دوبلكس";
-  if (label.includes("شقة")) return "شقة";
-  return "وحدة سكنية";
+  if (label.includes("استوديو") || label.toLowerCase().includes("studio")) return dictionary.propertyDetail.studio;
+  if (label.includes("فيلا") || label.toLowerCase().includes("villa")) return dictionary.property.typeVilla;
+  if (label.includes("دوبلكس") || label.toLowerCase().includes("duplex")) return dictionary.property.typeDuplex;
+  if (label.includes("شقة") || label.toLowerCase().includes("apartment")) return dictionary.property.typeApartment;
+  return dictionary.propertyDetail.residentialUnit;
 }
 
-function getListingTypeLabel(property: MobileProperty) {
+function getListingTypeLabel(property: MobileProperty, locale: "ar" | "en") {
+  const dictionary = getMobileDictionary(locale);
   const searchableText = `${property.title} ${property.aiSummary ?? ""} ${property.status ?? ""}`;
-  if (searchableText.includes("إيجار") || searchableText.includes("للإيجار") || searchableText.includes("شهري")) {
-    return "للإيجار";
+  if (searchableText.includes("إيجار") || searchableText.includes("للإيجار") || searchableText.includes("شهري") || searchableText.toLowerCase().includes("rent")) {
+    return dictionary.propertyDetail.forRent;
   }
-  if (searchableText.includes("بيع") || searchableText.includes("للبيع")) {
-    return "للبيع";
+  if (searchableText.includes("بيع") || searchableText.includes("للبيع") || searchableText.toLowerCase().includes("sale")) {
+    return dictionary.propertyDetail.forSale;
   }
-  return "متاح الآن";
+  return dictionary.propertyDetail.availableNow;
 }

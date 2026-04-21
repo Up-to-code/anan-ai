@@ -8,18 +8,8 @@ const { useRouter } = vi.hoisted(() => ({
     replace: vi.fn(),
   })),
 }));
-const { useAuthActions } = vi.hoisted(() => ({
-  useAuthActions: vi.fn(() => ({
-    signOut: vi.fn(),
-  })),
-}));
-
 vi.mock("next/navigation", () => ({
   useRouter,
-}));
-
-vi.mock("@convex-dev/auth/react", () => ({
-  useAuthActions,
 }));
 
 beforeEach(() => {

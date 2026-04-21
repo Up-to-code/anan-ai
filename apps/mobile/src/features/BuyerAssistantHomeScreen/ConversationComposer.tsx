@@ -1,25 +1,29 @@
 import { ArrowUp, Loader2, Mic, X } from "lucide-react-native";
-import { Platform, Pressable, TextInput, View } from "react-native";
-import { useEffect, useState } from "react";
-import { ActivePropertyComposerCard } from "@/features/BuyerAssistantHomeScreen/ActivePropertyComposerCard";
+import { Animated, Platform, Pressable, TextInput, View } from "react-native";
+import React, { useEffect, useRef } from "react";
 import {
   MobilePromptInputRecordingRow,
   MobilePromptInputShell,
   MobilePromptInputStatus,
 } from "@/components/ui/MobilePromptInput";
-import { useMobileLayout } from "@/lib/mobileLayout";
-import { getMobileShadow, useAppTheme } from "@/lib/mobileTheme";
-import { useVoiceRecording } from "@/hooks/useVoiceRecording";
+import { PropertyPromptCardsRail } from "@/features/BuyerAssistantHomeScreen/PropertyPromptCardsRail";
+import { getMobileShadow } from "@/lib/mobileTheme";
+import { useComposerState } from "@/hooks/useComposerState";
 import type { MobileProperty } from "@/types/mobile";
 
 type ConversationComposerProps = {
   value: string;
   onChange: (value: string) => void;
-  onSend: () => void;
+  onSend: (value: string) => void;
   onSubmitVoiceRecording: (fileUri: string) => Promise<void>;
-  activeProperty?: MobileProperty | null;
-  onApplyActivePropertyPrompt?: (property: MobileProperty) => void;
-  ambientBackgroundColor?: string;
+  selectedProperties?: MobileProperty[];
+  comparePicking?: boolean;
+  maxCompareProperties?: number;
+  onPressPromptProperty?: (property: MobileProperty) => void;
+  onPressComparePrompt?: () => void;
+  onRemoveSelectedProperty?: (propertyId: string) => void;
+  onToggleComparePicking?: () => void;
+  isProcessing?: boolean;
   variant?: "landing" | "thread";
 };
 
@@ -28,87 +32,76 @@ export function ConversationComposer({
   onChange,
   onSend,
   onSubmitVoiceRecording,
-  activeProperty = null,
-  onApplyActivePropertyPrompt,
-  ambientBackgroundColor,
+  selectedProperties = [],
+  comparePicking = false,
+  maxCompareProperties = 3,
+  onPressPromptProperty,
+  onPressComparePrompt,
+  onRemoveSelectedProperty,
+  onToggleComparePicking,
+  isProcessing = false,
   variant = "thread",
 }: ConversationComposerProps) {
-  const layout = useMobileLayout();
-  const theme = useAppTheme();
-  const [voiceError, setVoiceError] = useState<string | null>(null);
-  const [dismissedPropertyId, setDismissedPropertyId] = useState<string | null>(null);
-
   const {
+    layout,
+    theme,
+    locale,
+    voiceError,
     phase,
     durationSeconds,
     waveAnims,
-    startRecording,
-    stopAndSubmit,
+    isRecordingSession,
+    isVoiceBusy,
+    hasText,
+    isTyping,
+    trimmedValue,
+    canSend,
+    textAlign,
+    writingDirection,
+    actionButtonSize,
+    inputMaxHeight,
+    actionButtonColor,
+    actionIconColor,
+    actionButtonBorderWidth,
+    actionButtonBorderColor,
+    inputPillHeight,
+    actionHolderSize,
+    handleChangeText,
+    handlePrimaryActionPress,
     cancelRecording,
-  } = useVoiceRecording({
-    onStateChange: (nextPhase) => {
-      if (nextPhase !== "error") {
-        setVoiceError(null);
-      }
-    },
-    onSubmitRecording: async (uri) => {
-      try {
-        await onSubmitVoiceRecording(uri);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "تعذر إكمال التسجيل الصوتي.";
-        setVoiceError(message);
-        throw error;
-      }
-    },
-  });
-
-  const isRecording = phase === "recording";
-  const isRecordingSession = isRecording;
-  const isVoiceBusy =
-    phase === "waiting_for_permission" || phase === "uploading" || phase === "transcribing" || phase === "sending";
-
-  const trimmedValue = value.trim();
-  const canSend = trimmedValue.length > 0 && !isRecording && !isVoiceBusy;
-  const startsWithLatin = /^[A-Za-z0-9]/.test(trimmedValue);
-  const textAlign = startsWithLatin ? "left" : "right";
-  const writingDirection = startsWithLatin ? "ltr" : "rtl";
+    stopAndSubmit,
+  } = useComposerState({ value, onChange, onSend, onSubmitVoiceRecording });
 
   const isExpanded = value.includes("\n") || trimmedValue.length > 48;
-  const showLandingHint = variant === "landing" && trimmedValue.length === 0 && !isRecording && !isVoiceBusy;
 
-  const actionButtonSize = layout.isCompact ? 40 : 44;
+  const actionButtonSizeCalc = layout.isCompact ? 40 : 44;
   const sendIconSize = layout.isCompact ? 17 : 18;
   const micIconSize = layout.isCompact ? 18 : 20;
-  const inputMaxHeight = layout.isCompact ? 112 : 132;
+  const inputMaxHeightCalc = layout.isCompact ? 112 : 132;
   const inputFontSize = layout.isCompact ? 15 : 16;
   const inputPlaceholder =
-    variant === "landing" ? "اسأل عن عقار، قارن، أو اطلب تمويلاً..." : "اكتب متابعتك هنا...";
+    variant === "landing"
+      ? locale === "en"
+        ? "Ask about a property or request financing..."
+        : "اسأل عن عقار أو اطلب تمويلاً..."
+      : locale === "en"
+        ? "Type your follow-up here..."
+        : "اكتب متابعتك هنا...";
 
-  const actionButtonColor = canSend ? theme.colors.send : theme.colors.composerActionSurface;
-  const actionIconColor = canSend ? theme.colors.sendIcon : theme.colors.composerActionIcon;
-  const actionButtonBorderWidth = !canSend && theme.isDark ? 1.5 : 0;
-  const actionButtonBorderColor = canSend ? "transparent" : theme.colors.composerActionRing;
-  const inputPillHeight = layout.isCompact ? 44 : 48;
-  const actionHolderSize = inputPillHeight;
-  const showActivePropertyCard =
+  const actionButtonBorderWidthCalc = canSend ? 0 : theme.isDark ? 1.5 : 0;
+  const actionButtonBorderColorCalc = canSend ? "transparent" : theme.colors.composerActionRing;
+  const inputPillHeightCalc = layout.isCompact ? 44 : 46;
+  const showProcessingAction = isProcessing || phase === "sending";
+
+  const showPropertyPromptRail =
     variant === "thread" &&
-    activeProperty &&
-    onApplyActivePropertyPrompt &&
-    dismissedPropertyId !== activeProperty.id;
-
-  useEffect(() => {
-    if (!activeProperty) {
-      setDismissedPropertyId(null);
-      return;
-    }
-
-    if (dismissedPropertyId && dismissedPropertyId !== activeProperty.id) {
-      setDismissedPropertyId(null);
-    }
-  }, [activeProperty, dismissedPropertyId]);
+    selectedProperties.length > 0 &&
+    onPressPromptProperty &&
+    onRemoveSelectedProperty;
+  const rowDirectionClassName = locale === "en" ? "flex-row" : "flex-row-reverse";
 
   return (
-    <View className="w-full gap-2.5">
+    <View className="w-full gap-2">
       {voiceError ? (
         <MobilePromptInputStatus label={voiceError} tone="danger" icon={<X size={14} color={theme.colors.danger} />} />
       ) : null}
@@ -117,32 +110,35 @@ export function ConversationComposer({
         <MobilePromptInputStatus
           label={
             phase === "waiting_for_permission"
-              ? "ننتظر إذن الميكروفون"
+              ? (locale === "en" ? "Waiting for microphone permission" : "ننتظر إذن الميكروفون")
               : phase === "uploading"
-                ? "نرفع التسجيل"
+                ? (locale === "en" ? "Uploading recording" : "نرفع التسجيل")
                 : phase === "transcribing"
-                  ? "نحوّل الصوت إلى نص"
-                  : "نرسل الرسالة"
+                  ? (locale === "en" ? "Transcribing voice to text" : "نحوّل الصوت إلى نص")
+                  : (locale === "en" ? "Sending message" : "نرسل الرسالة")
           }
           icon={<Loader2 size={14} color={theme.colors.primary} />}
         />
       ) : null}
 
-      {showActivePropertyCard ? (
-        <ActivePropertyComposerCard
-          property={activeProperty}
-          onPress={onApplyActivePropertyPrompt}
-          onDismiss={() => setDismissedPropertyId(activeProperty.id)}
-          ambientBackgroundColor={ambientBackgroundColor}
+      {showPropertyPromptRail ? (
+        <PropertyPromptCardsRail
+          properties={selectedProperties}
+          comparePicking={comparePicking}
+          maxCompareProperties={maxCompareProperties}
+          onPressProperty={onPressPromptProperty}
+          onPressCompare={onPressComparePrompt}
+          onRemoveProperty={onRemoveSelectedProperty}
+          onToggleComparePicking={onToggleComparePicking}
         />
       ) : null}
 
       <MobilePromptInputShell
-        active={isRecordingSession || canSend}
+        active={isProcessing || isTyping || isRecordingSession || canSend}
         expanded={isExpanded}
-        hint={showLandingHint ? "اكتب بشكل طبيعي وسأتولى البحث والمقارنة والخطوة التالية." : null}
+        hint={null}
       >
-        <View className="flex-row items-center gap-2.5">
+        <View className={`${rowDirectionClassName} items-center gap-2.5`}>
           {isRecordingSession ? (
             <MobilePromptInputRecordingRow
               durationSeconds={durationSeconds}
@@ -159,31 +155,37 @@ export function ConversationComposer({
               <View
                 className="flex-1 justify-center"
                 style={{
-                  minHeight: inputPillHeight,
-                  borderRadius: 22,
+                  minHeight: inputPillHeightCalc,
+                  borderRadius: 24,
                   borderWidth: 1,
                   borderColor: theme.colors.border,
-                  backgroundColor: theme.colors.surface,
+                  backgroundColor: theme.colors.surfaceMuted,
                   paddingHorizontal: 16,
+                  paddingTop: 4,
+                  paddingBottom: 4,
                 }}
               >
                 <TextInput
                   value={value}
-                  onChangeText={onChange}
+                  onChangeText={handleChangeText}
                   multiline
                   blurOnSubmit={false}
                   editable={!isVoiceBusy}
+                  textAlign={textAlign}
                   placeholder={inputPlaceholder}
                   placeholderTextColor={theme.colors.inkMuted}
                   cursorColor={theme.colors.primary}
+                  selectionColor={theme.colors.primary}
                   textAlignVertical="center"
+                  scrollEnabled={isExpanded}
+                  underlineColorAndroid="transparent"
                   style={{
-                    minHeight: layout.isCompact ? 36 : 40,
-                    maxHeight: inputMaxHeight,
+                    minHeight: layout.isCompact ? 36 : 38,
+                    maxHeight: inputMaxHeightCalc,
                     textAlign,
                     writingDirection,
                     fontFamily: trimmedValue.length === 0 ? "Cairo_500Medium" : "Cairo_600SemiBold",
-                    fontSize: inputFontSize + 1,
+                    fontSize: inputFontSize,
                     color: theme.colors.ink,
                     paddingVertical: Platform.OS === "ios" ? 6 : 5,
                     includeFontPadding: false,
@@ -201,29 +203,34 @@ export function ConversationComposer({
                 }}
               >
                 <Pressable
-                  onPress={() => {
-                    if (canSend) {
-                      onSend();
-                      return;
-                    }
-                    setVoiceError(null);
-                    void startRecording();
-                  }}
-                  disabled={isVoiceBusy}
+                  onPress={handlePrimaryActionPress}
+                  disabled={isVoiceBusy || showProcessingAction}
+                  hitSlop={10}
+                  pressRetentionOffset={12}
                   className="items-center justify-center"
                   style={({ pressed }) => ({
-                    borderRadius: actionButtonSize / 2,
-                    width: actionButtonSize,
-                    height: actionButtonSize,
+                    borderRadius: actionButtonSizeCalc / 2,
+                    width: actionButtonSizeCalc,
+                    height: actionButtonSizeCalc,
                     backgroundColor: actionButtonColor,
-                    borderWidth: actionButtonBorderWidth,
-                    borderColor: actionButtonBorderColor,
+                    borderWidth: actionButtonBorderWidthCalc,
+                    borderColor: actionButtonBorderColorCalc,
                     ...getMobileShadow("float"),
-                    opacity: isVoiceBusy ? 0.6 : 1,
+                    opacity: isVoiceBusy || showProcessingAction ? 0.92 : 1,
                     transform: [{ scale: pressed ? 0.94 : 1 }],
                   })}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    showProcessingAction
+                      ? (locale === "en" ? "Processing response" : "نعالج الرد الآن")
+                      : canSend
+                        ? (locale === "en" ? "Send message" : "إرسال الرسالة")
+                        : (locale === "en" ? "Start voice recording" : "بدء التسجيل الصوتي")
+                  }
                 >
-                  {canSend ? (
+                  {showProcessingAction ? (
+                    <ProcessingActionIcon color={actionIconColor} compact={layout.isCompact} />
+                  ) : canSend ? (
                     <ArrowUp size={sendIconSize} color={actionIconColor} strokeWidth={2.35} />
                   ) : (
                     <Mic size={micIconSize} color={actionIconColor} strokeWidth={2.2} />
@@ -235,5 +242,51 @@ export function ConversationComposer({
         </View>
       </MobilePromptInputShell>
     </View>
+  );
+}
+
+function ProcessingActionIcon({
+  color,
+  compact,
+}: {
+  color: string;
+  compact: boolean;
+}) {
+  const pulse = useRef(new Animated.Value(0.86)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 620,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0.86,
+          duration: 620,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => {
+      loop.stop();
+    };
+  }, [pulse]);
+
+  const squareSize = compact ? 11 : 12;
+
+  return (
+    <Animated.View
+      style={{
+        width: squareSize,
+        height: squareSize,
+        borderRadius: compact ? 3 : 4,
+        backgroundColor: color,
+        opacity: pulse,
+        transform: [{ scale: pulse }],
+      }}
+    />
   );
 }

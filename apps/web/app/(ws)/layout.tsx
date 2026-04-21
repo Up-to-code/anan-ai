@@ -1,6 +1,6 @@
-import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import ConvexClientProvider from "../ConvexClientProvider";
 import { WebLocaleProvider } from "../_components/WebLocaleProvider";
+import { getToken } from "@/lib/auth-server";
 import { getWebDictionary } from "@/lib/i18n";
 import { getWorkspaceLocale } from "./ws/_lib/workspaceLocale";
 
@@ -8,20 +8,24 @@ export const dynamic = "force-dynamic";
 
 /**
  * WHY:   Every workspace route depends on the authenticated Convex runtime for live hooks and auth actions.
- * WHAT:  Anchors the Convex auth server/client providers at the stable `(ws)` route-group boundary.
+ * WHAT:  Anchors the Better Auth-backed Convex client provider at the stable `(ws)` route-group boundary.
  * HOW:   Wraps all workspace descendants once so nested zone layouts can stay focused on shell and data loading.
  */
 export default async function WorkspaceGroupLayout({ children }: { children: React.ReactNode }) {
   const locale = await getWorkspaceLocale();
   const dictionary = getWebDictionary(locale);
+  const initialToken = await getToken().catch(() => null);
 
   return (
-    <ConvexAuthNextjsServerProvider>
-      <ConvexClientProvider>
-        <WebLocaleProvider locale={locale} dictionary={dictionary}>
+    <ConvexClientProvider initialToken={initialToken}>
+      <WebLocaleProvider locale={locale} dictionary={dictionary}>
+        <div
+          data-slot="workspace-group-layout"
+          className="flex h-full min-h-screen min-h-dvh min-w-0 w-full flex-1 basis-0 flex-col"
+        >
           {children}
-        </WebLocaleProvider>
-      </ConvexClientProvider>
-    </ConvexAuthNextjsServerProvider>
+        </div>
+      </WebLocaleProvider>
+    </ConvexClientProvider>
   );
 }

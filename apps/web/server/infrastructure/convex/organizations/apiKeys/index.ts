@@ -28,11 +28,15 @@ function withOptionalOrigin<T extends Record<string, unknown>>(payload: T, origi
  */
 export const convexOrganizationApiKeysRepository: OrganizationApiKeysRepository = {
   async listCurrentOrganizationApiKeys(token) {
-    return fetchQuery(agenciesApi.listCurrentOrganizationApiKeys as never, {} as never, { token }) as Promise<OrganizationApiKeySummary[]>;
+    return fetchQuery(agenciesApi.listCurrentOrganizationApiKeys as never, {} as never, { token }) as ReturnType<
+      OrganizationApiKeysRepository["listCurrentOrganizationApiKeys"]
+    >;
   },
 
   async createCurrentOrganizationApiKey(token, input) {
-    return fetchMutation(agenciesApi.createCurrentOrganizationApiKey as never, input as never, { token }) as Promise<OrganizationApiKeySummary>;
+    return fetchMutation(agenciesApi.createCurrentOrganizationApiKey as never, input as never, { token }) as ReturnType<
+      OrganizationApiKeysRepository["createCurrentOrganizationApiKey"]
+    >;
   },
 
   async revokeCurrentOrganizationApiKey(token, keyId, now) {

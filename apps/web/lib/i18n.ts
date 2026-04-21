@@ -93,6 +93,14 @@ export type WebDictionary = {
     title: string;
     description: string;
     create: string;
+    createSelectionEyebrow: string;
+    createSelectionTitle: string;
+    createSelectionSubtitle: string;
+    createProjectType: string;
+    createProjectDesc: string;
+    createUnitType: string;
+    createUnitDesc: string;
+    continueFlow: string;
     all: string;
     linkedClient: string;
     idleBroker: string;
@@ -106,6 +114,88 @@ export type WebDictionary = {
     deleteDescription: string;
     deleteConfirm: string;
     actionFailed: string;
+  };
+  unitCreate: {
+    eyebrow: string;
+    stepIdentity: string;
+    stepSpecs: string;
+    stepPricing: string;
+    stepReadiness: string;
+    stepReview: string;
+    identityTitle: string;
+    identityDescription: string;
+    identityCardTitle: string;
+    specsTitle: string;
+    specsDescription: string;
+    specsCardTitle: string;
+    pricingTitle: string;
+    pricingDescription: string;
+    pricingCardTitle: string;
+    readinessTitle: string;
+    readinessDescription: string;
+    readinessCardTitle: string;
+    reviewTitle: string;
+    reviewDescription: string;
+    reviewCardTitle: string;
+    nameLabel: string;
+    namePlaceholder: string;
+    locationLabel: string;
+    locationPlaceholder: string;
+    unitTypeLabel: string;
+    listingSale: string;
+    listingRent: string;
+    descriptionLabel: string;
+    descriptionPlaceholder: string;
+    priceLabel: string;
+    pricePlaceholder: string;
+    areaLabel: string;
+    areaPlaceholder: string;
+    roomsLabel: string;
+    roomsPlaceholder: string;
+    bathsLabel: string;
+    bathsPlaceholder: string;
+    floorLabel: string;
+    floorPlaceholder: string;
+    viewLabel: string;
+    viewPlaceholder: string;
+    statusLabel: string;
+    statusAvailable: string;
+    statusReserved: string;
+    statusSold: string;
+    statusDraft: string;
+    paymentPlanLabel: string;
+    paymentPlanPlaceholder: string;
+    downPaymentLabel: string;
+    downPaymentPlaceholder: string;
+    handoverLabel: string;
+    handoverPlaceholder: string;
+    parkingLabel: string;
+    parkingPlaceholder: string;
+    priceBelowMarket: string;
+    priceFairMarket: string;
+    priceAboveMarket: string;
+    comparisonNotesLabel: string;
+    comparisonNotesPlaceholder: string;
+    expertNotesLabel: string;
+    expertNotesPlaceholder: string;
+    adLicenseLabel: string;
+    adLicensePlaceholder: string;
+    mediaTitle: string;
+    mediaDescription: string;
+    uploadImagesTitle: string;
+    uploadImagesDescription: string;
+    uploadPermitsTitle: string;
+    uploadPermitsDescription: string;
+    uploadingLabel: string;
+    uploadFailed: string;
+    emptyValue: string;
+    feedbackIdentity: string;
+    feedbackSpecs: string;
+    feedbackPrice: string;
+    cancelLabel: string;
+    previousLabel: string;
+    nextLabel: string;
+    savingLabel: string;
   };
   offers: {
     eyebrow: string;
@@ -276,6 +366,7 @@ export type WebDictionary = {
     organization: string;
     verification: string;
     membersAndInvites: string;
+    apps: string;
     apiKeys: string;
     manager: string;
     viewer: string;
@@ -285,6 +376,20 @@ export type WebDictionary = {
     apiKeysSummaryCreate: string;
     apiKeysSummaryRevoke: string;
     apiKeysSummaryNoAccess: string;
+    connectedAppsSummaryManage: string;
+    connectedAppsSummaryReadonly: string;
+    connectedAppsPageTitle: string;
+    connectedAppsPageDescription: string;
+    connectedAppsLegacyNotice: string;
+    connectedAppsReadonlyNotice: string;
+    connectedAppsEmptyTitle: string;
+    connectedAppsEmptyDescription: string;
+    connectedAppsConnectedAt: string;
+    connectedAppsLastUsed: string;
+    connectedAppsNeverUsed: string;
+    connectedAppsRevoke: string;
+    connectedAppsRevoking: string;
+    connectedAppsRevokeConfirm: string;
     apiKeysNoOrgTitle: string;
     apiKeysNoOrgDescription: string;
     apiKeysRestrictedTitle: string;
@@ -371,6 +476,7 @@ export type WebDictionary = {
     publishingAllowed: string;
     lastSubmission: string;
     filesCount: string;
+    membersCountLabel: string;
     teamSummary: string;
     reviewNotes: string;
     verificationTimeline: string;
@@ -394,6 +500,10 @@ export type WebDictionary = {
     verificationSubmitted: string;
     verificationSubmit: string;
     verificationResubmit: string;
+    accountSettingsTitle: string;
+    accountSettingsDescription: string;
+    logoutAction: string;
+    loggingOut: string;
     organizationSettingsTitle: string;
     organizationSettingsDescription: string;
     organizationIdentityTitle: string;
@@ -495,7 +605,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       switchLanguage: "تغيير اللغة",
       activateLightMode: "تفعيل الوضع الفاتح",
       activateDarkMode: "تفعيل الوضع الداكن",
-      workspaceSettings: "الإعدادات",
+      workspaceSettings: "إعدادات المنظمة",
       notifications: "الإشعارات",
       inbox: "الرسائل",
       overviewTitle: "نظرة عامة",
@@ -576,6 +686,14 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       title: "المشاريع",
       description: "إدارة محفظتك العقارية والمشاريع المسجلة.",
       create: "إنشاء مشروع جديد",
+      createSelectionEyebrow: "إضافة مخزون",
+      createSelectionTitle: "اختر نوع الأصل الذي تريد إضافته",
+      createSelectionSubtitle: "ابدأ بمشروع كامل أو وحدة مستقلة، وسيتم حفظ الاختيار داخل نفس بنية عنان للمخزون والتوزيع.",
+      createProjectType: "مشروع كامل",
+      createProjectDesc: "أضف مشروعاً يحتوي على موقع، ميديا، وحدات، خطط دفع، ومستندات جاهزية.",
+      createUnitType: "وحدة مستقلة",
+      createUnitDesc: "أضف وحدة قابلة للبيع بسرعة مع السعر، المساحة، المواصفات، والجاهزية الأساسية.",
+      continueFlow: "متابعة",
       all: "الكل",
       linkedClient: "مرتبط بعميل",
       idleBroker: "وسيط بدون عميل",
@@ -589,6 +707,88 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       deleteDescription: "سيتم إزالة المشروع من المحفظة بشكل نهائي مع كافة البيانات المرتبطة به.",
       deleteConfirm: "حذف المشروع",
       actionFailed: "تعذر إكمال العملية. حاول مرة أخرى.",
+    },
+    unitCreate: {
+      eyebrow: "وحدة مستقلة",
+      stepIdentity: "الخطوة 1 من 5",
+      stepSpecs: "الخطوة 2 من 5",
+      stepPricing: "الخطوة 3 من 5",
+      stepReadiness: "الخطوة 4 من 5",
+      stepReview: "الخطوة 5 من 5",
+      identityTitle: "عرّف الوحدة من أول نظرة",
+      identityDescription: "سجّل الاسم والموقع والوصف الذي سيظهر للفريق ومسارات المشاركة داخل عنان.",
+      identityCardTitle: "بيانات الوحدة الأساسية",
+      specsTitle: "أضف السعر والمواصفات",
+      specsDescription: "هذه الحقول تجعل الوحدة قابلة للبحث والمقارنة داخل المخزون.",
+      specsCardTitle: "مواصفات البيع",
+      pricingTitle: "قيّم السعر مثل خبير",
+      pricingDescription: "اجمع السعر وخطة الدفع وموقع الوحدة مقارنة بالسوق قبل الجاهزية.",
+      pricingCardTitle: "السعر والمقارنة",
+      readinessTitle: "اضبط الجاهزية القانونية والمالية",
+      readinessDescription: "أضف حالة الوحدة ورقم الرخصة وأي تفاصيل دفع واضحة عند توفرها.",
+      readinessCardTitle: "الجاهزية",
+      reviewTitle: "راجع الوحدة قبل الحفظ",
+      reviewDescription: "سيتم إنشاء سجل مخزون مع وحدة واحدة مرتبطة به داخل نفس مسار المشاريع.",
+      reviewCardTitle: "ملخص الوحدة",
+      nameLabel: "اسم الوحدة",
+      namePlaceholder: "مثال: وحدة A-101",
+      locationLabel: "الموقع",
+      locationPlaceholder: "مثال: الرياض، الملقا",
+      unitTypeLabel: "نوع الوحدة",
+      listingSale: "بيع",
+      listingRent: "إيجار",
+      descriptionLabel: "الوصف",
+      descriptionPlaceholder: "اكتب وصفاً مختصراً يشرح الوحدة ونقاط قوتها.",
+      priceLabel: "السعر",
+      pricePlaceholder: "مثال: 1,250,000 ر.س",
+      areaLabel: "المساحة",
+      areaPlaceholder: "مثال: 145",
+      roomsLabel: "الغرف",
+      roomsPlaceholder: "مثال: 3",
+      bathsLabel: "الحمامات",
+      bathsPlaceholder: "مثال: 2",
+      floorLabel: "الدور",
+      floorPlaceholder: "مثال: الخامس",
+      viewLabel: "الإطلالة",
+      viewPlaceholder: "مثال: حديقة داخلية",
+      statusLabel: "الحالة",
+      statusAvailable: "متاحة",
+      statusReserved: "محجوزة",
+      statusSold: "مباعة",
+      statusDraft: "مسودة",
+      paymentPlanLabel: "خطة الدفع",
+      paymentPlanPlaceholder: "مثال: دفعة أولى وتقسيط 3 سنوات",
+      downPaymentLabel: "الدفعة الأولى",
+      downPaymentPlaceholder: "مثال: 150,000 ر.س",
+      handoverLabel: "تاريخ التسليم",
+      handoverPlaceholder: "مثال: 2026-12-31",
+      parkingLabel: "المواقف",
+      parkingPlaceholder: "مثال: 1",
+      priceBelowMarket: "أقل من السوق",
+      priceFairMarket: "سعر عادل",
+      priceAboveMarket: "أعلى من السوق",
+      comparisonNotesLabel: "ملاحظات المقارنة",
+      comparisonNotesPlaceholder: "اكتب لماذا السعر قوي أو يحتاج تبرير.",
+      expertNotesLabel: "ملاحظات الخبير",
+      expertNotesPlaceholder: "اكتب ملاحظات تساعد فريق البيع أو الوسيط.",
+      adLicenseLabel: "رقم رخصة الإعلان",
+      adLicensePlaceholder: "أدخل الرقم عند توفره",
+      mediaTitle: "الميديا والمستندات",
+      mediaDescription: "أضف صور الوحدة أو ملفات الرخصة عندما تكون جاهزة. يمكن حفظ الوحدة بدونها كمسودة داخلية.",
+      uploadImagesTitle: "رفع صور الوحدة",
+      uploadImagesDescription: "PNG أو JPG أو WebP",
+      uploadPermitsTitle: "رفع ملفات الرخصة",
+      uploadPermitsDescription: "صور أو PDF",
+      uploadingLabel: "جارٍ الرفع...",
+      uploadFailed: "تعذر رفع الملفات حالياً.",
+      emptyValue: "غير محدد",
+      feedbackIdentity: "أدخل اسم الوحدة وموقعها قبل المتابعة.",
+      feedbackSpecs: "أدخل مساحة الوحدة قبل المتابعة.",
+      feedbackPrice: "أدخل سعر الوحدة قبل المتابعة.",
+      cancelLabel: "إلغاء",
+      previousLabel: "السابق",
+      nextLabel: "التالي",
+      savingLabel: "جارٍ الحفظ...",
     },
     offers: {
       eyebrow: "العروض 2.0",
@@ -754,11 +954,12 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
     },
     settings: {
       workspaceLabel: "إعدادات مساحة العمل",
-      title: "الإعدادات",
-      description: "بيانات المنظمة والأعضاء ومفاتيح الربط.",
+      title: "إعدادات المنظمة",
+      description: "إدارة بيانات المنظمة والفريق والتوثيق من مكان واحد.",
       organization: "المنظمة",
       verification: "التوثيق",
       membersAndInvites: "الأعضاء والدعوات",
+      apps: "التطبيقات",
       apiKeys: "مفاتيح API",
       manager: "مدير",
       viewer: "مشاهد",
@@ -768,6 +969,20 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       apiKeysSummaryCreate: "يمكنك إنشاء وإلغاء المفاتيح من هنا.",
       apiKeysSummaryRevoke: "يمكنك مراجعة المفاتيح وإلغاؤها من هنا.",
       apiKeysSummaryNoAccess: "لا تملك صلاحية إدارة هذا القسم.",
+      connectedAppsSummaryManage: "يمكنك مراجعة التطبيقات المرتبطة بالمنظمة وإلغاء أي ربط غير مطلوب.",
+      connectedAppsSummaryReadonly: "يمكنك مراجعة التطبيقات المرتبطة بالمنظمة، بينما يظل الإلغاء متاحاً للمدير فقط.",
+      connectedAppsPageTitle: "تطبيقات المنظمة",
+      connectedAppsPageDescription: "راجع التطبيقات الخارجية المرتبطة بهذه المنظمة والصلاحيات المعتمدة لها.",
+      connectedAppsLegacyNotice: "التطبيقات المرتبطة أصبحت تُدار على مستوى المنظمة. أي ربط قديم على مستوى الحساب الشخصي يحتاج إعادة ربط من جديد لهذه المنظمة.",
+      connectedAppsReadonlyNotice: "يمكن للمدير فقط الموافقة على تطبيق جديد أو إلغاء الربط، لكن يمكنك مراجعة التطبيقات الحالية من هنا.",
+      connectedAppsEmptyTitle: "لا توجد تطبيقات مرتبطة حالياً",
+      connectedAppsEmptyDescription: "ابدأ الربط من شاشة OAuth /authorize الخاصة بالتطبيق الخارجي. ستظهر الموافقات هنا بعد اعتمادها للمنظمة.",
+      connectedAppsConnectedAt: "تم الربط",
+      connectedAppsLastUsed: "آخر استخدام",
+      connectedAppsNeverUsed: "لم يُستخدم",
+      connectedAppsRevoke: "إلغاء الربط",
+      connectedAppsRevoking: "جاري الإلغاء...",
+      connectedAppsRevokeConfirm: "سيتم إلغاء ربط التطبيق عن هذه المنظمة وقطع كل الجلسات الحالية. هل تريد المتابعة؟",
       apiKeysNoOrgTitle: "مفاتيح API",
       apiKeysNoOrgDescription: "أنشئ منظمة أولاً قبل إصدار أي مفاتيح تكامل. ستتمكن من تخصيص صلاحيات محددة لكل مفتاح لضمان أمان بياناتك.",
       apiKeysRestrictedTitle: "مفاتيح API",
@@ -854,6 +1069,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       publishingAllowed: "لا يوجد حظر نشر من توثيق المنظمة",
       lastSubmission: "آخر إرسال",
       filesCount: "عدد الملفات",
+      membersCountLabel: "عدد الأعضاء",
       teamSummary: "{members} أعضاء، {invites} دعوات، وصلاحيتك الحالية: {roleLabel}",
       reviewNotes: "ملاحظات المراجعة",
       verificationTimeline: "الخط الزمني",
@@ -877,7 +1093,11 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       verificationSubmitted: "تم إرسال طلب التوثيق بنجاح. سيتم مراجعته من لوحة الأدمن.",
       verificationSubmit: "إرسال الطلب",
       verificationResubmit: "إعادة إرسال المستندات",
-      organizationSettingsTitle: "بيانات المنظمة",
+      accountSettingsTitle: "الحساب والأمان",
+      accountSettingsDescription: "إدارة بيانات حسابك، اسم المستخدم، والأمان.",
+      logoutAction: "تسجيل الخروج",
+      loggingOut: "جاري تسجيل الخروج...",
+      organizationSettingsTitle: "إعدادات المنظمة",
       organizationSettingsDescription: "لوحة أبسط لتحديث هوية المنظمة وبيانات التواصل الأساسية.",
       organizationIdentityTitle: "هوية المنظمة",
       organizationIdentityDescription: "راجع بيانات المنظمة الحالية ثم حدّث الحقول التي تحتاجها فقط.",
@@ -976,7 +1196,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       switchLanguage: "Switch language",
       activateLightMode: "Activate light mode",
       activateDarkMode: "Activate dark mode",
-      workspaceSettings: "Settings",
+      workspaceSettings: "Organization settings",
       notifications: "Notifications",
       inbox: "Inbox",
       overviewTitle: "Overview",
@@ -1057,6 +1277,14 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       title: "Projects",
       description: "Manage your property portfolio and registered projects.",
       create: "Create new project",
+      createSelectionEyebrow: "Add inventory",
+      createSelectionTitle: "Choose the asset type you want to add",
+      createSelectionSubtitle: "Start with a full project or a standalone unit; both stay inside Anan's inventory and distribution structure.",
+      createProjectType: "Full project",
+      createProjectDesc: "Add a project with location, media, units, payment plans, and readiness documents.",
+      createUnitType: "Standalone unit",
+      createUnitDesc: "Add one saleable unit quickly with price, area, specs, and basic readiness details.",
+      continueFlow: "Continue",
       all: "All",
       linkedClient: "Linked to client",
       idleBroker: "Broker without client",
@@ -1070,6 +1298,88 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       deleteDescription: "This project will be permanently removed from the portfolio along with its related data.",
       deleteConfirm: "Delete project",
       actionFailed: "Could not complete the action. Please try again.",
+    },
+    unitCreate: {
+      eyebrow: "Standalone unit",
+      stepIdentity: "Step 1 of 5",
+      stepSpecs: "Step 2 of 5",
+      stepPricing: "Step 3 of 5",
+      stepReadiness: "Step 4 of 5",
+      stepReview: "Step 5 of 5",
+      identityTitle: "Define the unit clearly",
+      identityDescription: "Capture the name, location, and description used by the team and sharing flows inside Anan.",
+      identityCardTitle: "Unit basics",
+      specsTitle: "Add price and specs",
+      specsDescription: "These fields make the unit searchable and comparable inside inventory.",
+      specsCardTitle: "Sale specs",
+      pricingTitle: "Price it like an expert",
+      pricingDescription: "Capture price, payment plan, and market position before readiness.",
+      pricingCardTitle: "Price and comparison",
+      readinessTitle: "Set legal and payment readiness",
+      readinessDescription: "Add unit status, license number, and payment details when available.",
+      readinessCardTitle: "Readiness",
+      reviewTitle: "Review before saving",
+      reviewDescription: "Anan will create an inventory record with one linked unit in the existing project pipeline.",
+      reviewCardTitle: "Unit summary",
+      nameLabel: "Unit name",
+      namePlaceholder: "Example: Unit A-101",
+      locationLabel: "Location",
+      locationPlaceholder: "Example: Riyadh, Al Malqa",
+      unitTypeLabel: "Unit type",
+      listingSale: "Sale",
+      listingRent: "Rent",
+      descriptionLabel: "Description",
+      descriptionPlaceholder: "Write a concise description of the unit and its strongest selling points.",
+      priceLabel: "Price",
+      pricePlaceholder: "Example: SAR 1,250,000",
+      areaLabel: "Area",
+      areaPlaceholder: "Example: 145",
+      roomsLabel: "Rooms",
+      roomsPlaceholder: "Example: 3",
+      bathsLabel: "Bathrooms",
+      bathsPlaceholder: "Example: 2",
+      floorLabel: "Floor",
+      floorPlaceholder: "Example: 5th",
+      viewLabel: "View",
+      viewPlaceholder: "Example: Internal garden",
+      statusLabel: "Status",
+      statusAvailable: "Available",
+      statusReserved: "Reserved",
+      statusSold: "Sold",
+      statusDraft: "Draft",
+      paymentPlanLabel: "Payment plan",
+      paymentPlanPlaceholder: "Example: Down payment and 3-year installments",
+      downPaymentLabel: "Down payment",
+      downPaymentPlaceholder: "Example: SAR 150,000",
+      handoverLabel: "Handover date",
+      handoverPlaceholder: "Example: 2026-12-31",
+      parkingLabel: "Parking",
+      parkingPlaceholder: "Example: 1",
+      priceBelowMarket: "Below market",
+      priceFairMarket: "Fair market",
+      priceAboveMarket: "Above market",
+      comparisonNotesLabel: "Comparison notes",
+      comparisonNotesPlaceholder: "Explain why the price is strong or needs support.",
+      expertNotesLabel: "Expert notes",
+      expertNotesPlaceholder: "Add notes for the sales team or broker.",
+      adLicenseLabel: "Ad license number",
+      adLicensePlaceholder: "Enter the number when available",
+      mediaTitle: "Media and documents",
+      mediaDescription: "Add unit photos or license files when ready. The unit can still be saved as an internal draft without them.",
+      uploadImagesTitle: "Upload unit photos",
+      uploadImagesDescription: "PNG, JPG, or WebP",
+      uploadPermitsTitle: "Upload license files",
+      uploadPermitsDescription: "Images or PDF",
+      uploadingLabel: "Uploading...",
+      uploadFailed: "Could not upload the files right now.",
+      emptyValue: "Not set",
+      feedbackIdentity: "Enter the unit name and location before continuing.",
+      feedbackSpecs: "Enter the unit area before continuing.",
+      feedbackPrice: "Enter the unit price before continuing.",
+      cancelLabel: "Cancel",
+      previousLabel: "Previous",
+      nextLabel: "Next",
+      savingLabel: "Saving...",
     },
     offers: {
       eyebrow: "Offers 2.0",
@@ -1235,11 +1545,12 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
     },
     settings: {
       workspaceLabel: "Workspace settings",
-      title: "Settings",
-      description: "Organization details, members, and integration keys.",
+      title: "Organization settings",
+      description: "Manage organization details, team access, and verification in one place.",
       organization: "Organization",
       verification: "Verification",
       membersAndInvites: "Members and invites",
+      apps: "Apps",
       apiKeys: "API keys",
       manager: "Manager",
       viewer: "Viewer",
@@ -1249,6 +1560,20 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       apiKeysSummaryCreate: "You can create and revoke keys from here.",
       apiKeysSummaryRevoke: "You can review and revoke keys from here.",
       apiKeysSummaryNoAccess: "You do not have permission to manage this section.",
+      connectedAppsSummaryManage: "Review organization app connections and revoke anything the team no longer needs.",
+      connectedAppsSummaryReadonly: "Review organization app connections here. Only managers can approve new apps or revoke access.",
+      connectedAppsPageTitle: "Organization apps",
+      connectedAppsPageDescription: "Review external apps connected to this organization and the scopes they were approved for.",
+      connectedAppsLegacyNotice: "Connected apps now belong to the organization. Any old personal app authorization must reconnect under the organization before it will appear here.",
+      connectedAppsReadonlyNotice: "Only organization managers can approve a new app or revoke access, but everyone in the org can review the current connections.",
+      connectedAppsEmptyTitle: "No connected apps yet",
+      connectedAppsEmptyDescription: "Start the connection from the external app's OAuth authorize flow. Approved organization connections will appear here.",
+      connectedAppsConnectedAt: "Connected",
+      connectedAppsLastUsed: "Last used",
+      connectedAppsNeverUsed: "Never used",
+      connectedAppsRevoke: "Revoke",
+      connectedAppsRevoking: "Revoking...",
+      connectedAppsRevokeConfirm: "This will revoke the app for the organization and cut off all active sessions. Continue?",
       apiKeysNoOrgTitle: "API keys",
       apiKeysNoOrgDescription: "Create an organization first before issuing integration keys. You will be able to grant narrow permissions for each key to keep your data secure.",
       apiKeysRestrictedTitle: "API keys",
@@ -1335,6 +1660,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       publishingAllowed: "There is no publishing block from organization verification",
       lastSubmission: "Last submission",
       filesCount: "Files count",
+      membersCountLabel: "Members count",
       teamSummary: "{members} members, {invites} invites, and your current role is: {roleLabel}",
       reviewNotes: "Review notes",
       verificationTimeline: "Timeline",
@@ -1358,7 +1684,11 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       verificationSubmitted: "Verification request submitted successfully. It will be reviewed from the admin panel.",
       verificationSubmit: "Submit request",
       verificationResubmit: "Resubmit documents",
-      organizationSettingsTitle: "Organization details",
+      accountSettingsTitle: "Account & security",
+      accountSettingsDescription: "Manage your profile, username, and account security.",
+      logoutAction: "Log out",
+      loggingOut: "Logging out...",
+      organizationSettingsTitle: "Organization settings",
       organizationSettingsDescription: "A simpler panel for updating the organization identity and essential contact details.",
       organizationIdentityTitle: "Organization identity",
       organizationIdentityDescription: "Review the current organization details, then update only the fields you need.",
@@ -1457,7 +1787,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       switchLanguage: "Changer de langue",
       activateLightMode: "Activer le mode clair",
       activateDarkMode: "Activer le mode sombre",
-      workspaceSettings: "Paramètres",
+      workspaceSettings: "Paramètres de l'organisation",
       notifications: "Notifications",
       inbox: "Boîte de réception",
       overviewTitle: "Vue d'ensemble",
@@ -1538,6 +1868,14 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       title: "Projets",
       description: "Gérez votre portefeuille immobilier et vos projets enregistrés.",
       create: "Créer un projet",
+      createSelectionEyebrow: "Ajouter un actif",
+      createSelectionTitle: "Choisissez le type d'actif à ajouter",
+      createSelectionSubtitle: "Commencez avec un projet complet ou une unité autonome; les deux restent dans la structure d'inventaire et de distribution d'Anan.",
+      createProjectType: "Projet complet",
+      createProjectDesc: "Ajoutez un projet avec emplacement, médias, unités, plans de paiement et documents de préparation.",
+      createUnitType: "Unité autonome",
+      createUnitDesc: "Ajoutez rapidement une unité vendable avec prix, surface, caractéristiques et préparation de base.",
+      continueFlow: "Continuer",
       all: "Tous",
       linkedClient: "Lié à un client",
       idleBroker: "Courtier sans client",
@@ -1551,6 +1889,88 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       deleteDescription: "Ce projet sera supprimé définitivement du portefeuille avec toutes les données associées.",
       deleteConfirm: "Supprimer le projet",
       actionFailed: "Impossible d'effectuer l'action. Veuillez réessayer.",
+    },
+    unitCreate: {
+      eyebrow: "Unité autonome",
+      stepIdentity: "Étape 1 sur 5",
+      stepSpecs: "Étape 2 sur 5",
+      stepPricing: "Étape 3 sur 5",
+      stepReadiness: "Étape 4 sur 5",
+      stepReview: "Étape 5 sur 5",
+      identityTitle: "Définir clairement l'unité",
+      identityDescription: "Saisissez le nom, l'emplacement et la description utilisés par l'équipe et les flux de partage dans Anan.",
+      identityCardTitle: "Bases de l'unité",
+      specsTitle: "Ajouter prix et caractéristiques",
+      specsDescription: "Ces champs rendent l'unité recherchable et comparable dans l'inventaire.",
+      specsCardTitle: "Caractéristiques de vente",
+      pricingTitle: "Evaluer le prix comme un expert",
+      pricingDescription: "Saisissez le prix, le plan de paiement et la position marche avant la preparation.",
+      pricingCardTitle: "Prix et comparaison",
+      readinessTitle: "Régler la préparation légale et financière",
+      readinessDescription: "Ajoutez le statut, le numéro de licence et les détails de paiement lorsqu'ils sont disponibles.",
+      readinessCardTitle: "Préparation",
+      reviewTitle: "Vérifier avant l'enregistrement",
+      reviewDescription: "Anan créera un enregistrement d'inventaire avec une unité liée dans le flux projet existant.",
+      reviewCardTitle: "Résumé de l'unité",
+      nameLabel: "Nom de l'unité",
+      namePlaceholder: "Exemple : Unité A-101",
+      locationLabel: "Emplacement",
+      locationPlaceholder: "Exemple : Riyad, Al Malqa",
+      unitTypeLabel: "Type d'unité",
+      listingSale: "Vente",
+      listingRent: "Location",
+      descriptionLabel: "Description",
+      descriptionPlaceholder: "Rédigez une description concise de l'unité et de ses points forts.",
+      priceLabel: "Prix",
+      pricePlaceholder: "Exemple : 1 250 000 SAR",
+      areaLabel: "Surface",
+      areaPlaceholder: "Exemple : 145",
+      roomsLabel: "Pièces",
+      roomsPlaceholder: "Exemple : 3",
+      bathsLabel: "Salles de bain",
+      bathsPlaceholder: "Exemple : 2",
+      floorLabel: "Étage",
+      floorPlaceholder: "Exemple : 5e",
+      viewLabel: "Vue",
+      viewPlaceholder: "Exemple : jardin intérieur",
+      statusLabel: "Statut",
+      statusAvailable: "Disponible",
+      statusReserved: "Réservée",
+      statusSold: "Vendue",
+      statusDraft: "Brouillon",
+      paymentPlanLabel: "Plan de paiement",
+      paymentPlanPlaceholder: "Exemple : acompte et versements sur 3 ans",
+      downPaymentLabel: "Acompte",
+      downPaymentPlaceholder: "Exemple : 150 000 SAR",
+      handoverLabel: "Date de livraison",
+      handoverPlaceholder: "Exemple : 2026-12-31",
+      parkingLabel: "Parking",
+      parkingPlaceholder: "Exemple : 1",
+      priceBelowMarket: "Sous le marché",
+      priceFairMarket: "Prix équilibré",
+      priceAboveMarket: "Au-dessus du marché",
+      comparisonNotesLabel: "Notes de comparaison",
+      comparisonNotesPlaceholder: "Expliquez pourquoi le prix est fort ou demande justification.",
+      expertNotesLabel: "Notes expert",
+      expertNotesPlaceholder: "Ajoutez des notes pour l'équipe commerciale ou le courtier.",
+      adLicenseLabel: "Numéro de licence publicitaire",
+      adLicensePlaceholder: "Saisissez le numéro si disponible",
+      mediaTitle: "Médias et documents",
+      mediaDescription: "Ajoutez des photos ou fichiers de licence lorsque disponibles. L'unité peut être enregistrée en brouillon interne sans eux.",
+      uploadImagesTitle: "Téléverser les photos",
+      uploadImagesDescription: "PNG, JPG ou WebP",
+      uploadPermitsTitle: "Téléverser les fichiers de licence",
+      uploadPermitsDescription: "Images ou PDF",
+      uploadingLabel: "Téléversement...",
+      uploadFailed: "Impossible de téléverser les fichiers pour le moment.",
+      emptyValue: "Non renseigné",
+      feedbackIdentity: "Saisissez le nom et l'emplacement avant de continuer.",
+      feedbackSpecs: "Saisissez la surface de l'unité avant de continuer.",
+      feedbackPrice: "Saisissez le prix de l'unité avant de continuer.",
+      cancelLabel: "Annuler",
+      previousLabel: "Précédent",
+      nextLabel: "Suivant",
+      savingLabel: "Enregistrement...",
     },
     offers: {
       eyebrow: "Offres 2.0",
@@ -1716,11 +2136,12 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
     },
     settings: {
       workspaceLabel: "Paramètres de l'espace",
-      title: "Paramètres",
-      description: "Données de l'organisation, membres et clés d'intégration.",
+      title: "Paramètres de l'organisation",
+      description: "Gérez l'organisation, l'équipe et la vérification depuis un seul espace.",
       organization: "Organisation",
       verification: "Vérification",
       membersAndInvites: "Membres et invitations",
+      apps: "Applications",
       apiKeys: "Clés API",
       manager: "Gestionnaire",
       viewer: "Lecteur",
@@ -1730,6 +2151,20 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       apiKeysSummaryCreate: "Vous pouvez créer et révoquer les clés ici.",
       apiKeysSummaryRevoke: "Vous pouvez consulter et révoquer les clés ici.",
       apiKeysSummaryNoAccess: "Vous n'avez pas l'autorisation de gérer cette section.",
+      connectedAppsSummaryManage: "Consultez les applications connectées à l'organisation et révoquez celles qui ne sont plus nécessaires.",
+      connectedAppsSummaryReadonly: "Consultez ici les applications connectées. Seuls les gestionnaires peuvent approuver une nouvelle application ou révoquer l'accès.",
+      connectedAppsPageTitle: "Applications de l'organisation",
+      connectedAppsPageDescription: "Consultez les applications externes connectées à cette organisation et les permissions qui leur ont été approuvées.",
+      connectedAppsLegacyNotice: "Les applications connectées appartiennent désormais à l'organisation. Toute ancienne autorisation personnelle doit être reconnectée sous l'organisation avant d'apparaître ici.",
+      connectedAppsReadonlyNotice: "Seuls les gestionnaires de l'organisation peuvent approuver une nouvelle application ou révoquer l'accès, mais tous les membres peuvent consulter les connexions en cours.",
+      connectedAppsEmptyTitle: "Aucune application connectée pour le moment",
+      connectedAppsEmptyDescription: "Démarrez la connexion depuis le flux OAuth /authorize de l'application externe. Les connexions approuvées pour l'organisation apparaîtront ici.",
+      connectedAppsConnectedAt: "Connectée",
+      connectedAppsLastUsed: "Dernière utilisation",
+      connectedAppsNeverUsed: "Jamais utilisée",
+      connectedAppsRevoke: "Révoquer",
+      connectedAppsRevoking: "Révocation...",
+      connectedAppsRevokeConfirm: "Cette action révoquera l'application pour l'organisation et coupera toutes les sessions actives. Continuer ?",
       apiKeysNoOrgTitle: "Clés API",
       apiKeysNoOrgDescription: "Créez d'abord une organisation avant d'émettre des clés d'intégration. Vous pourrez attribuer des permissions limitées à chaque clé pour sécuriser vos données.",
       apiKeysRestrictedTitle: "Clés API",
@@ -1816,6 +2251,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       publishingAllowed: "Aucun blocage de publication lié à la vérification de l'organisation",
       lastSubmission: "Dernier envoi",
       filesCount: "Nombre de fichiers",
+      membersCountLabel: "Nombre de membres",
       teamSummary: "{members} membres, {invites} invitations, et votre rôle actuel est : {roleLabel}",
       reviewNotes: "Notes de révision",
       verificationTimeline: "Chronologie",
@@ -1839,7 +2275,11 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       verificationSubmitted: "La demande de vérification a été envoyée avec succès. Elle sera examinée depuis le panneau d'administration.",
       verificationSubmit: "Envoyer la demande",
       verificationResubmit: "Renvoyer les documents",
-      organizationSettingsTitle: "Détails de l'organisation",
+      accountSettingsTitle: "Compte et sécurité",
+      accountSettingsDescription: "Gérez votre profil, votre nom d'utilisateur et la sécurité du compte.",
+      logoutAction: "Se déconnecter",
+      loggingOut: "Déconnexion...",
+      organizationSettingsTitle: "Paramètres de l'organisation",
       organizationSettingsDescription: "Un panneau plus simple pour mettre à jour l'identité de l'organisation et les coordonnées essentielles.",
       organizationIdentityTitle: "Identité de l'organisation",
       organizationIdentityDescription: "Consultez les informations actuelles de l'organisation puis modifiez uniquement les champs nécessaires.",

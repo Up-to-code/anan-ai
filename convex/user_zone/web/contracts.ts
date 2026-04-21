@@ -24,7 +24,7 @@ export const clientWebAssistantResponseValidator = v.object({
   suggestedPrompts: v.array(v.string()),
   activePropertyId: v.optional(v.id("properties")),
   requiresAuthForHandoff: v.boolean(),
-  threadId: v.optional(v.id("assistantThreads")),
+  threadId: v.optional(v.string()),
 });
 
 /**
@@ -33,7 +33,7 @@ export const clientWebAssistantResponseValidator = v.object({
  * HOW:   Keeps the shape compact so the web client can render summaries without loading full transcripts.
  */
 export const clientThreadSummaryValidator = v.object({
-  id: v.id("assistantThreads"),
+  id: v.string(),
   title: v.string(),
   createdAt: v.number(),
   updatedAt: v.number(),
@@ -46,7 +46,7 @@ export const clientThreadSummaryValidator = v.object({
  * HOW:   Reuses the shared property/card validators so live assistant turns match the immediate response shape.
  */
 export const clientThreadMessageValidator = v.object({
-  id: v.id("assistantMessages"),
+  id: v.string(),
   role: v.union(v.literal("assistant"), v.literal("user")),
   text: v.string(),
   createdAt: v.number(),
@@ -55,6 +55,15 @@ export const clientThreadMessageValidator = v.object({
   activePropertyId: v.optional(v.id("properties")),
   requiresAuthForHandoff: v.optional(v.boolean()),
   suggestedPrompts: v.optional(v.array(v.string())),
+  comparisonArtifactId: v.optional(v.id("buyerComparisonArtifacts")),
+  comparisonPropertyIds: v.optional(v.array(v.id("properties"))),
+  selectionSource: v.optional(
+    v.union(
+      v.literal("ui_selected"),
+      v.literal("history_resolved"),
+      v.literal("text_resolved"),
+    ),
+  ),
 });
 
 /**
@@ -70,6 +79,15 @@ export const clientTranscriptSeedMessageValidator = v.object({
   activePropertyId: v.optional(v.id("properties")),
   requiresAuthForHandoff: v.optional(v.boolean()),
   suggestedPrompts: v.optional(v.array(v.string())),
+  comparisonArtifactId: v.optional(v.id("buyerComparisonArtifacts")),
+  comparisonPropertyIds: v.optional(v.array(v.id("properties"))),
+  selectionSource: v.optional(
+    v.union(
+      v.literal("ui_selected"),
+      v.literal("history_resolved"),
+      v.literal("text_resolved"),
+    ),
+  ),
 });
 
 const clientOrderStatusValidator = v.union(

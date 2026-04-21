@@ -25,7 +25,7 @@ const workspacePayloadFixture = {
   },
   profile: {
     role: "broker",
-    roleStatus: "approved",
+    roleApprovalStatus: "approved",
   },
   organizations: [
     {

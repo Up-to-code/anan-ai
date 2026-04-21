@@ -14,6 +14,9 @@ const { getWorkspaceOrganizationTeam } = vi.hoisted(() => ({
 const { listCurrentOrganizationApiKeysForCurrentUser } = vi.hoisted(() => ({
   listCurrentOrganizationApiKeysForCurrentUser: vi.fn(),
 }));
+const { listAuthorizedAppsForCurrentOrganization } = vi.hoisted(() => ({
+  listAuthorizedAppsForCurrentOrganization: vi.fn(),
+}));
 const { getComplianceRulesetForCurrentOrg } = vi.hoisted(() => ({
   getComplianceRulesetForCurrentOrg: vi.fn(),
 }));
@@ -23,6 +26,9 @@ vi.mock("../../_lib/organizationTeam", () => ({
 }));
 vi.mock("@/server/domains/auth/organizationApiKeys/service", () => ({
   listCurrentOrganizationApiKeysForCurrentUser,
+}));
+vi.mock("@/server/domains/auth/oauth/service", () => ({
+  listAuthorizedAppsForCurrentOrganization,
 }));
 vi.mock("@/server/domains/compliance/service", () => ({
   getComplianceRulesetForCurrentOrg,
@@ -40,6 +46,12 @@ vi.mock("./_components/SettingsHeader", () => ({
 vi.mock("./_components/SettingsTabs", () => ({
   default: ({ tabs }: { tabs: Array<{ key: string; label: string }> }) => (
     <div>{`TABS:${tabs.map((tab) => tab.key).join(",")}`}</div>
+  ),
+}));
+
+vi.mock("./_components/SettingsOverviewStrip", () => ({
+  default: ({ currentTabLabel }: { currentTabLabel: string }) => (
+    <div>{`OVERVIEW-STRIP:${currentTabLabel}`}</div>
   ),
 }));
 
@@ -71,19 +83,30 @@ vi.mock("./_components/ApiKeysWorkspace", () => ({
     <div>{`API-KEYS-WORKSPACE:${canCreate}:${canRevoke}:${canView}`}</div>
   ),
 }));
+vi.mock("./_components/OrganizationAppsWorkspace", () => ({
+  default: ({
+    initialApps,
+    canManage,
+    hasOrganization,
+    showLegacyNotice,
+  }: {
+    initialApps: Array<unknown>;
+    canManage: boolean;
+    hasOrganization: boolean;
+    showLegacyNotice: boolean;
+  }) => <div>{`APPS-WORKSPACE:${initialApps.length}:${canManage}:${hasOrganization}:${showLegacyNotice}`}</div>,
+}));
 vi.mock("./_components/OrganizationVerificationWorkspace", () => ({
   default: ({
     organization,
     canManage,
     membersCount,
-    invitesCount,
   }: {
     organization: { verificationSummary?: { currentRequestStatus?: string } } | null;
     canManage: boolean;
     membersCount: number;
-    invitesCount: number;
   }) => (
-    <div>{`VERIFICATION-WORKSPACE:${organization?.verificationSummary?.currentRequestStatus ?? "none"}:${canManage}:${membersCount}:${invitesCount}`}</div>
+    <div>{`VERIFICATION-WORKSPACE:${organization?.verificationSummary?.currentRequestStatus ?? "none"}:${canManage}:${membersCount}`}</div>
   ),
 }));
 
@@ -96,6 +119,7 @@ vi.mock("./actions", async () => {
     cancelOrganizationInviteAction: vi.fn(),
     createOrganizationApiKeyAction: vi.fn(),
     createOrganizationInviteAction: vi.fn(),
+    revokeOrganizationConnectedAppAction: vi.fn(),
     revokeOrganizationApiKeyAction: vi.fn(),
     saveOrganizationSettingsAction: vi.fn(),
     searchOrganizationDirectoryAction: vi.fn(),
@@ -106,6 +130,7 @@ vi.mock("./actions", async () => {
 beforeEach(() => {
   getWorkspaceOrganizationTeam.mockReset();
   listCurrentOrganizationApiKeysForCurrentUser.mockReset();
+  listAuthorizedAppsForCurrentOrganization.mockReset();
   getWorkspaceOrganizationTeam.mockResolvedValue({
     organization: {
       name: "منظمة ألف",
@@ -150,6 +175,21 @@ beforeEach(() => {
     currentTenantRole: "owner",
   });
   listCurrentOrganizationApiKeysForCurrentUser.mockResolvedValue([]);
+  listAuthorizedAppsForCurrentOrganization.mockResolvedValue([
+    {
+      authorizationId: "auth-1",
+      clientId: "client-1",
+      tenantOrgId: "tenant-1",
+      appName: "Partner App",
+      publisherName: "Partner",
+      grantedScopes: ["clients:read_own"],
+      scopeDetails: [{ id: "clients:read_own", label: "Read clients" }],
+      offlineAccess: false,
+      createdAt: 1,
+      updatedAt: 1,
+      lastUsedAt: null,
+    },
+  ]);
   getComplianceRulesetForCurrentOrg.mockResolvedValue(null);
 });
 
@@ -212,8 +252,26 @@ it("renders verification tab content when tab is verification", async () => {
   const element = await WorkspaceSettingsPage({ searchParams: Promise.resolve({ tab: "verification" }) });
   const markup = renderToStaticMarkup(element);
 
-  expect(markup).toContain("VERIFICATION-WORKSPACE:in_review:true:1:1");
+  expect(markup).toContain("VERIFICATION-WORKSPACE:in_review:true:1");
   expect(markup).not.toContain("ORG-WORKSPACE");
   expect(markup).not.toContain("MEMBERS-WORKSPACE");
   expect(getComplianceRulesetForCurrentOrg).toHaveBeenCalled();
+});
+
+it("renders organization apps tab content when tab is apps", async () => {
+  const element = await WorkspaceSettingsPage({ searchParams: Promise.resolve({ tab: "apps" }) });
+  const markup = renderToStaticMarkup(element);
+
+  expect(markup).toContain("APPS-WORKSPACE:1:true:true:false");
+  expect(markup).not.toContain("ORG-WORKSPACE");
+  expect(listAuthorizedAppsForCurrentOrganization).toHaveBeenCalledTimes(1);
+});
+
+it("shows the legacy source notice when arriving from the hidden account apps route", async () => {
+  const element = await WorkspaceSettingsPage({
+    searchParams: Promise.resolve({ tab: "apps", source: "legacy-account-apps" }),
+  });
+  const markup = renderToStaticMarkup(element);
+
+  expect(markup).toContain("APPS-WORKSPACE:1:true:true:true");
 });

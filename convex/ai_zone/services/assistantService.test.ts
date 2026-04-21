@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getLatestThread, handleAssistantMessage, listThreadMessages } from "./assistantService";
 
-const { mockOrchestrateDefault, mockOrchestrateWorkspace, mockResolveWorkspaceAgUiTurn } = vi.hoisted(() => ({
-  mockOrchestrateDefault: vi.fn(async () => ({ output: "default orchestrator output" })),
-  mockOrchestrateWorkspace: vi.fn(async () => ({ output: "workspace orchestrator output" })),
+const { mockRunAssistantSurfaceRuntime, mockResolveWorkspaceAgUiTurn } = vi.hoisted(() => ({
+  mockRunAssistantSurfaceRuntime: vi.fn(async ({ surface }: { surface: "default" | "workspace" }) => ({
+    output:
+      surface === "workspace"
+        ? "workspace orchestrator output"
+        : "default orchestrator output",
+    runtime: "open-multi-agent" as const,
+  })),
   mockResolveWorkspaceAgUiTurn: vi.fn(() => null),
 }));
 
@@ -55,14 +60,26 @@ const mockedApi = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("../agents/anan", () => ({ orchestrate: mockOrchestrateDefault }));
-vi.mock("../agents/anan_workspace", () => ({ orchestrate: mockOrchestrateWorkspace }));
+vi.mock("../openMultiAgent", () => ({ runAssistantSurfaceRuntime: mockRunAssistantSurfaceRuntime }));
 vi.mock("./agUi", () => ({ resolveWorkspaceAgUiTurn: mockResolveWorkspaceAgUiTurn }));
-vi.mock("../../_generated/api", () => mockedApi);
+vi.mock("../../_generated/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../_generated/api")>();
+  return {
+    ...actual,
+    ...mockedApi,
+    api: {
+      ...actual.api,
+      ...mockedApi.api,
+    },
+    internal: {
+      ...actual.internal,
+      ...mockedApi.internal,
+    },
+  };
+});
 
 function resetAssistantMocks() {
-  mockOrchestrateDefault.mockClear();
-  mockOrchestrateWorkspace.mockClear();
+  mockRunAssistantSurfaceRuntime.mockClear();
   mockResolveWorkspaceAgUiTurn.mockClear();
 }
 
@@ -154,7 +171,7 @@ function registerWorkspaceAssistantTest() {
       promptPrefix: "[Anan Workspace Operator]",
     });
 
-    expect(mockOrchestrateWorkspace).toHaveBeenCalledTimes(1);
+    expect(mockRunAssistantSurfaceRuntime).toHaveBeenCalledTimes(1);
     expect(ctx.runQuery).toHaveBeenCalledTimes(1);
     expect(ctx.runMutation).toHaveBeenCalledTimes(1);
 
@@ -183,7 +200,7 @@ function registerDefaultAssistantTest() {
     const ctx = createHandleMessageCtx();
     const result = await handleAssistantMessage(ctx as any, { message: "hello" });
 
-    expect(mockOrchestrateDefault).toHaveBeenCalledTimes(1);
+    expect(mockRunAssistantSurfaceRuntime).toHaveBeenCalledTimes(1);
     expect(ctx.runQuery).toHaveBeenCalledTimes(1);
     expect(ctx.runMutation).toHaveBeenCalledTimes(1);
 
@@ -315,7 +332,7 @@ function registerFreshWorkspaceThreadTest() {
       promptPrefix: "[Anan Workspace Operator]",
     });
 
-    expect(mockOrchestrateWorkspace).toHaveBeenCalledTimes(1);
+    expect(mockRunAssistantSurfaceRuntime).toHaveBeenCalledTimes(1);
     expect(ctx.runQuery).toHaveBeenCalledTimes(1);
     expect(ctx.runMutation).toHaveBeenCalledTimes(2);
 
@@ -409,6 +426,10 @@ function createIndexedQuery(items: Array<Record<string, unknown>>) {
           items.filter((item) =>
             filters.every(({ field, value }) => String(item[field]) === String(value)),
           ),
+        first: async () =>
+          items.find((item) =>
+            filters.every(({ field, value }) => String(item[field]) === String(value)),
+          ) ?? null,
       };
     },
   };
@@ -418,9 +439,12 @@ function createQueryCtx() {
   return {
     db: {
       get: vi.fn(async (id: string) => threadRows.find((thread) => thread._id === id) ?? null),
+      normalizeId: vi.fn((_table: string, id: string) => id),
       query: vi.fn((table: string) => {
         if (table === "assistantThreads") return createIndexedQuery(threadRows as any[]);
         if (table === "assistantMessages") return createIndexedQuery(messageRows as any[]);
+        if (table === "assistantThreadState") return createIndexedQuery([]);
+        if (table === "assistantMessageState") return createIndexedQuery([]);
         throw new Error(`Unexpected table: ${table}`);
       }),
     },

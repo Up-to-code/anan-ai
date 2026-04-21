@@ -6,9 +6,10 @@ import { ArrowLeft, Images } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText } from "@/components/ui/AppText";
 import { IconButton } from "@/components/ui/IconButton";
+import { MobileSurface } from "@/components/ui/MobileChrome";
 import { GalleryViewport } from "@/features/GalleryScreen/GalleryViewport";
 import { usePropertyDetail } from "@/hooks/usePropertyDetail";
-import { mobileTheme } from "@/lib/mobileTheme";
+import { useAppTheme } from "@/lib/mobileTheme";
 
 function clampInitialIndex(rawValue: string | undefined, imageCount: number) {
   const parsed = Number.parseInt(rawValue ?? "0", 10);
@@ -26,6 +27,7 @@ export default function GalleryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
+  const theme = useAppTheme();
   const params = useLocalSearchParams<{
     propertyId?: string;
     initialIndex?: string;
@@ -43,7 +45,7 @@ export default function GalleryScreen() {
     return (
       <View className="flex-1 items-center justify-center" style={{ backgroundColor: "#000000" }}>
         <StatusBar style="light" />
-        <ActivityIndicator size="large" color={mobileTheme.colors.white} />
+        <ActivityIndicator size="large" color={theme.colors.white} />
       </View>
     );
   }
@@ -52,13 +54,15 @@ export default function GalleryScreen() {
     return (
       <View className="flex-1 items-center justify-center px-6" style={{ backgroundColor: "#000000" }}>
         <StatusBar style="light" />
-        <View
-          className="items-center gap-4 rounded-[28px] px-8 py-10"
-          style={{ backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: "rgba(255,255,255,0.12)" }}
+        <MobileSurface
+          className="items-center gap-4 px-8 py-10"
+          radius="hero"
+          padded={false}
+          style={{ backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.12)" }}
         >
           <Images size={28} color="rgba(255,255,255,0.82)" />
           <AppText className="text-center text-[20px] font-cairo-bold text-white">لا توجد صور حالياً</AppText>
-        </View>
+        </MobileSurface>
         <View style={{ position: "absolute", top: insets.top + 12, left: 16 }}>
           <IconButton icon={ArrowLeft} onPress={() => router.back()} tone="inversePanel" />
         </View>
@@ -88,7 +92,7 @@ export default function GalleryScreen() {
         className="absolute self-center px-4 py-2"
         style={{
           top: insets.top + 14,
-          borderRadius: mobileTheme.radii.pill,
+          borderRadius: theme.radii.pill,
           backgroundColor: "rgba(255,255,255,0.12)",
           borderWidth: 1,
           borderColor: "rgba(255,255,255,0.14)",

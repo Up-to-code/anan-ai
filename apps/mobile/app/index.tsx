@@ -1,4 +1,4 @@
-import BuyerAssistantHomeScreen from "@/features/BuyerAssistantHomeScreen";
+import BuyerEntryScreen from "@/features/BuyerEntryScreen/index";
 
 /**
  * WHY:   The new mobile app should open directly into the buyer assistant workspace.
@@ -6,5 +6,5 @@ import BuyerAssistantHomeScreen from "@/features/BuyerAssistantHomeScreen";
  * HOW:   Delegates all state and composition to the buyer assistant feature folder.
  */
 export default function IndexRoute() {
-  return <BuyerAssistantHomeScreen />;
+  return <BuyerEntryScreen />;
 }

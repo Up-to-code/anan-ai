@@ -1,7 +1,5 @@
-import {
-  LayoutDashboard,
-} from "lucide-react";
-import { adminDomainRegistry, getActiveAdminPage, getAdminPagesForDomain } from "./adminPages";
+import { LayoutDashboard } from "lucide-react";
+import { adminPageRegistry, getActiveAdminPage } from "./adminPages";
 
 export type AdminNavItem = {
   href: string;
@@ -9,16 +7,6 @@ export type AdminNavItem = {
   title: string;
   icon: typeof LayoutDashboard;
   sectionKey: string;
-  dataMode: "mock" | "live";
-  available: boolean;
-};
-
-export type AdminNavGroup = {
-  id: string;
-  label: string;
-  defaultOpen: boolean;
-  priority: number;
-  items: AdminNavItem[];
 };
 
 export type RouteTab = {
@@ -27,31 +15,17 @@ export type RouteTab = {
   exact?: boolean;
 };
 
-export const adminNavGroups: AdminNavGroup[] = adminDomainRegistry
-  .map((domain) => ({
-    id: domain.id,
-    label: domain.label,
-    defaultOpen: domain.defaultOpen,
-    priority: domain.priority,
-    items: getAdminPagesForDomain(domain.id)
-      .filter((page) => page.available)
-      .map((page) => ({
-        href: page.href,
-        label: page.label,
-        title: page.title,
-        icon: page.icon,
-        sectionKey: page.sectionKey,
-        dataMode: page.dataMode,
-        available: page.available,
-      })),
-  }))
-  .sort((left, right) => left.priority - right.priority);
-
-export const adminPrimaryNav = adminNavGroups.flatMap((group) => group.items);
+export const adminPrimaryNav: AdminNavItem[] = adminPageRegistry.map((page) => ({
+  href: page.href,
+  label: page.label,
+  title: page.title,
+  icon: page.icon,
+  sectionKey: page.sectionKey,
+}));
 
 /**
- * WHY:   Admin pages need a reliable breadcrumb label for the primary navigation header.
- * WHAT:  Resolves the label for the active primary navigation item.
+ * WHY:   Admin pages need a reliable label for the primary navigation header.
+ * WHAT:  Resolves the title for the active navigation item.
  * HOW:   Finds the first nav item whose href matches or prefixes the pathname.
  */
 export function getPrimaryNavLabel(pathname: string) {

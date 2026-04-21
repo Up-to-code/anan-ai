@@ -47,6 +47,18 @@ const propertiesTables = {
         ),
         adLicenseExpiresAt: v.optional(v.number()),
         adLicenseVerificationRequestId: v.optional(v.id("verificationRequests")),
+        projectDossierId: v.optional(v.id("projectDossiers")),
+        projectReadinessStatus: v.optional(
+            v.union(
+                v.literal("draft"),
+                v.literal("incomplete"),
+                v.literal("data_complete"),
+                v.literal("compliance_pending"),
+                v.literal("approved"),
+                v.literal("blocked"),
+                v.literal("published_ready"),
+            ),
+        ),
         ownerCountryCode: v.optional(v.string()),
         ownerVerified: v.optional(v.boolean()),
         listingVerified: v.optional(v.boolean()),
@@ -62,6 +74,8 @@ const propertiesTables = {
         .index("publicationState", ["publicationState"])
         .index("publicationState_createdAt", ["publicationState", "createdAt"])
         .index("bankId", ["bankId"])
+        .index("projectDossierId", ["projectDossierId"])
+        .index("projectReadinessStatus", ["projectReadinessStatus"])
         .index("REDId", ["REDId"])
         .index("REDId_publicationState_updatedAt", ["REDId", "publicationState", "updatedAt"])
         .index("REDId_status_updatedAt", ["REDId", "status", "updatedAt"])

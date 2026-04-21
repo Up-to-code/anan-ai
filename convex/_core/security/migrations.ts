@@ -1,5 +1,6 @@
 import { mutation } from "../../_generated/server";
 import { v } from "convex/values";
+import { normalizeUserProfileRoleState } from "./profileRoles";
 
 function resolveWorkspaceSecurityUsernameUpdate(profile: {
   email?: string;
@@ -17,9 +18,9 @@ function resolveWorkspaceSecurityUsernameUpdate(profile: {
 }
 
 /**
- * WHY:   One-off migration to normalize legacy roles into the new RBAC model.
- * WHAT:  Maps RED→developer, defaults missing roles to user, and sets roleStatus to approved.
- * HOW:   Iterates all userProfiles and patches records without changing broker/RED links.
+ * WHY:   Dashboard-edited profiles and legacy role docs need one canonical shape.
+ * WHAT:  Backfills canonical user role fields and removes stale legacy aliases.
+ * HOW:   Iterates all userProfiles, normalizes role state, and patches only changed fields.
  */
 export const backfillUserProfilesV3 = mutation({
   args: { dryRun: v.optional(v.boolean()) },
@@ -27,26 +28,16 @@ export const backfillUserProfilesV3 = mutation({
     const profiles = await ctx.db.query("userProfiles").collect();
     let updated = 0;
     for (const profile of profiles) {
-      let nextRole = profile.role;
-      if ((profile.role as string) === "RED") {
-        nextRole = "developer";
-      }
-
-      if (!nextRole) {
-        nextRole = "user";
-      }
-
-      const roleStatus = profile.roleStatus ?? "approved";
-
-      const requestedRole =
-        profile.requestedRole && (profile.requestedRole as string) !== "RED"
-          ? profile.requestedRole
-          : undefined;
+      const normalized = normalizeUserProfileRoleState(profile as any);
 
       const needsUpdate =
-        nextRole !== profile.role ||
-        roleStatus !== profile.roleStatus ||
-        requestedRole !== profile.requestedRole;
+        normalized.role !== (profile as any).role ||
+        normalized.roleApprovalStatus !== (profile as any).roleApprovalStatus ||
+        normalized.requestedRole !== (profile as any).requestedRole ||
+        normalized.brokerId !== (profile as any).brokerId ||
+        normalized.developerId !== ((profile as any).developerId ?? (profile as any).REDId) ||
+        (profile as any).roleStatus !== undefined ||
+        (profile as any).REDId !== undefined;
 
       if (!needsUpdate) continue;
 
@@ -54,9 +45,13 @@ export const backfillUserProfilesV3 = mutation({
       if (args.dryRun) continue;
 
       await ctx.db.patch(profile._id, {
-        role: nextRole,
-        roleStatus,
-        requestedRole,
+        role: normalized.role,
+        roleApprovalStatus: normalized.roleApprovalStatus,
+        requestedRole: normalized.requestedRole,
+        brokerId: normalized.brokerId,
+        developerId: normalized.developerId,
+        roleStatus: undefined,
+        REDId: undefined,
       });
     }
 

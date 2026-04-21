@@ -10,12 +10,20 @@ export type { OAuthRepository } from "./types";
  * HOW:   Delegates to the current thin public Convex OAuth entrypoints with the authenticated session token.
  */
 export const convexOAuthRepository: OAuthRepository = {
-  async getAuthorizationPrompt(token, flowId) {
-    return fetchQuery(oauthApi.getAuthorizationPrompt as never, { flowId: flowId as never } as never, { token }) as ReturnType<OAuthRepository["getAuthorizationPrompt"]>;
+  async getAuthorizationPrompt(token, flowId, tenantOrgId) {
+    return fetchQuery(
+      oauthApi.getAuthorizationPrompt as never,
+      { flowId: flowId as never, tenantOrgId: tenantOrgId as never } as never,
+      { token },
+    ) as ReturnType<OAuthRepository["getAuthorizationPrompt"]>;
   },
 
-  async approveAuthorization(token, flowId) {
-    return fetchAction(oauthApi.approveAuthorization as never, { flowId: flowId as never } as never, { token }) as ReturnType<OAuthRepository["approveAuthorization"]>;
+  async approveAuthorization(token, flowId, tenantOrgId) {
+    return fetchAction(
+      oauthApi.approveAuthorization as never,
+      { flowId: flowId as never, tenantOrgId: tenantOrgId as never } as never,
+      { token },
+    ) as ReturnType<OAuthRepository["approveAuthorization"]>;
   },
 
   async listAuthorizedApps(token) {

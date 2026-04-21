@@ -55,11 +55,11 @@ it("renders manager submission controls without admin-only review actions", () =
       }}
       canManage
       membersCount={3}
-      invitesCount={1}
-      roleLabel="مدير"
     />,
   );
 
+  expect(markup).toContain("عدد الأعضاء");
+  expect(markup).toContain(">3<");
   expect(markup).toContain("إرسال أو إعادة إرسال مستندات التوثيق");
   expect(markup).toContain("لا توجد أي أزرار اعتماد أو إغلاق هنا");
   expect(markup).toContain("إعادة إرسال المستندات");

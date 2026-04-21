@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Id } from "@convex/dataModel";
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { api } from "@/lib/convexApi";
 import type { AnanProInputMode, AnanProStreamStageEvent, AnanProThread } from "@/server/contracts/ananPro";
@@ -248,14 +248,19 @@ export function useWorkspaceAssistant({
   const routeThreadId = pathname === "/ws" ? searchParams.get("threadId") : null;
   const hasLegacyDraftParam = pathname === "/ws" && searchParams.get("newThread") === "1";
   const shouldStartNewThread = !selectedThreadId && pathname === "/ws" && !routeThreadId;
+  const { isAuthenticated, isLoading } = useConvexAuth();
+  const liveThreadArgs =
+    !isLoading && isAuthenticated && selectedThreadId
+      ? { threadId: selectedThreadId as Id<"assistantThreads"> }
+      : "skip";
 
   const liveThreadSummary = useQuery(
     assistantApi.getThreadById,
-    selectedThreadId ? { threadId: selectedThreadId as Id<"assistantThreads"> } : "skip",
+    liveThreadArgs,
   );
   const liveThreadMessages = useQuery(
     assistantApi.listMessages,
-    selectedThreadId ? { threadId: selectedThreadId as Id<"assistantThreads"> } : "skip",
+    liveThreadArgs,
   );
   const liveThread = useMemo(
     () =>

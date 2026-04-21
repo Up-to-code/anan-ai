@@ -2,6 +2,39 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import WorkspaceNotificationsPage from "./page";
 
+vi.mock("../../_lib/workspaceData", () => ({
+  requireWorkspaceData: vi.fn(async () => ({
+    visibleZoneKeys: ["overview", "settings"],
+  })),
+}));
+
+vi.mock("../../_components/NotificationOpenLink", () => ({
+  __esModule: true,
+  default: ({
+    notificationId,
+    href,
+    isRead,
+    className,
+    children,
+  }: {
+    notificationId: string;
+    href: string;
+    isRead: boolean;
+    className?: string;
+    children: React.ReactNode;
+  }) => (
+    <a
+      data-slot="notification-open-link"
+      data-notification-id={notificationId}
+      data-href={href}
+      data-is-read={String(isRead)}
+      className={className}
+    >
+      {children}
+    </a>
+  ),
+}));
+
 vi.mock("next/headers", () => ({
   cookies: vi.fn(async () => ({
     get: () => undefined,
@@ -50,5 +83,8 @@ describe("/ws/notifications page", () => {
     expect(markup).toContain("مركز التنبيهات");
     expect(markup).toContain("تم ربط عميل جديد بمشروع مالقا ريزيدنس");
     expect(markup).toContain("صندوق الربط");
+    expect(markup).toContain("data-slot=\"notification-open-link\"");
+    expect(markup).toContain("data-notification-id=\"notif-1\"");
+    expect(markup).toContain("data-href=\"/ws/inbox/conv-1\"");
   });
 });

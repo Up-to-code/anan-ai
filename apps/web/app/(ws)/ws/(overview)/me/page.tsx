@@ -1,7 +1,7 @@
 import { requireWorkspaceData } from "../../_lib/workspaceData";
+import { getWorkspaceLocaleContext } from "../../_lib/workspaceLocale";
 import { getCurrentProfileForCurrentUser } from "@/server/domains/auth/profiles/service";
 import ProfileWorkspace from "./_components/ProfileWorkspace";
-import ZonePageIntro from "../../_components/ZoneShell/ZonePageIntro";
 import { saveProfileAction } from "./actions";
 
 /**
@@ -10,7 +10,8 @@ import { saveProfileAction } from "./actions";
  * HOW:   Resolves the profile on the server and delegates only the interactive form controls to a small client component.
  */
 export default async function WorkspaceMePage() {
-  const [workspace, profile] = await Promise.all([
+  const [{ dictionary }, workspace, profile] = await Promise.all([
+    getWorkspaceLocaleContext(),
     requireWorkspaceData("/ws/me"),
     getCurrentProfileForCurrentUser(),
   ]);
@@ -29,12 +30,12 @@ export default async function WorkspaceMePage() {
   };
 
   return (
-    <div className="space-y-8 p-6 lg:p-10">
-      <ZonePageIntro
-        eyebrow="مساحة العمل"
-        title="الحساب والأمان"
-        description="إدارة معلومات الحساب، اسم المستخدم، والأدوات المرتبطة بمساحة العمل."
-      />
+    <div className="mx-auto min-h-max w-full max-w-4xl space-y-5 p-6 pb-20 lg:min-h-full lg:p-8 lg:pb-24">
+      <header className="space-y-1 px-1">
+        <div className="text-[11px] font-semibold text-[var(--workspace-muted)]">{dictionary.settings.workspaceLabel}</div>
+        <h1 className="text-[28px] font-bold tracking-tight text-foreground">{dictionary.settings.accountSettingsTitle}</h1>
+        <p className="max-w-2xl text-sm font-medium leading-7 text-muted-foreground">{dictionary.settings.accountSettingsDescription}</p>
+      </header>
 
       <ProfileWorkspace
         initialProfile={resolvedProfile}

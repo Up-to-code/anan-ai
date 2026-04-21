@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { CheckCircle2, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PersonBadge, PersonCardType, PersonRelation } from "../../_lib/entities";
@@ -8,7 +9,7 @@ import type { BrokerPresence } from "./BrokerPresenceChip";
  * WHAT:  Renders a compact broker/client card with badges, stage, and linked project or unit context.
  * HOW:   Accepts a serializable person payload so both server pages and client boards can reuse the same card shell.
  */
-export default function PersonCard({
+const PersonCardComponent = function PersonCard({
   person,
   footer,
   compact = true,
@@ -126,3 +127,5 @@ export function brokerPresenceToPersonCard(broker: BrokerPresence) {
       },
   };
 }
+
+export default memo(PersonCardComponent);

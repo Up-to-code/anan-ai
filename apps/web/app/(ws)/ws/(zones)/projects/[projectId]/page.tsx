@@ -7,7 +7,7 @@ import { requireSessionContext } from "@/server/auth/session";
 import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizations/assets";
 import { convexProjectAccessRepository } from "@/server/infrastructure/convex/properties/access";
 import { normalizeDomainError } from "@/server/contracts/errors";
-import { getWorkspacePropertyZone } from "@/server/ws/zones";
+import { getWorkspaceProjectZone, getWorkspacePropertyZone } from "@/server/ws/zones";
 import type {
   ProjectAnalyticsEventType,
 } from "@/server/contracts/properties";
@@ -39,8 +39,11 @@ export default async function WorkspaceProjectDetailRoute({
       ? convexProjectAccessRepository.listPropertyViewers(session.token, projectId).catch(() => [])
       : Promise.resolve([]),
   ]);
+  const dossier = resolved
+    ? await getWorkspaceProjectZone(workspace.audience, workspace.ownerContext).getProjectDossier({ propertyId: projectId }).catch(() => null)
+    : null;
   const project = resolved
-    ? mapPropertyToWorkspaceProjectDetail(resolved.property, resolved.accessMode, { viewers, assets })
+    ? mapPropertyToWorkspaceProjectDetail(resolved.property, resolved.accessMode, { viewers, assets, dossier })
     : null;
 
   if (!project) {

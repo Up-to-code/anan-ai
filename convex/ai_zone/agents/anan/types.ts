@@ -8,7 +8,6 @@
  */
 
 import type { ActionCtx } from "../../../_generated/server";
-import type { Id } from "../../../_generated/dataModel";
 import type { AnanAgentResult } from "../AnanAgent";
 
 // Re-export for convenience
@@ -30,7 +29,7 @@ export interface OrchestrateInput {
     /** User ID for memory/knowledge lookup */
     userId: string;
     /** Optional thread ID for per-thread caching */
-    threadId?: Id<"assistantThreads">;
+    threadId?: string;
     /** Channel (app, whatsapp, web) */
     channel?: "app" | "whatsapp" | "web";
     /** Optional RAG context already retrieved */

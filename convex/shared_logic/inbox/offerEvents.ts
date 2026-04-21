@@ -19,7 +19,7 @@ async function resolveOfferStarterRecipientProfile(
 
   return getProfileByOrganizationTarget(ctx, {
     brokerId: args.recipientBrokerId,
-    REDId: args.recipientREDId,
+    developerId: args.recipientREDId,
   });
 }
 

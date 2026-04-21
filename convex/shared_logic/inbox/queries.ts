@@ -124,7 +124,7 @@ async function searchTargetsAsUser(ctx: any, access: any, normalizedQuery: strin
 
   const organizationName = await getOrganizationNameByOwner(ctx, {
     brokerId: profile.brokerId ?? undefined,
-    REDId: profile.REDId ?? undefined,
+    developerId: profile.developerId ?? undefined,
   });
 
   const userImage = await getUserImageByEmail(ctx, profile.email);
@@ -135,11 +135,11 @@ async function searchTargetsAsUser(ctx: any, access: any, normalizedQuery: strin
       email: profile.email ?? null,
       username: profile.username ?? null,
       image: userImage,
-      role: profile.role === "RED" ? "developer" : profile.role ?? "user",
+      role: profile.role ?? "user",
       brokerId: profile.brokerId ?? null,
-      redId: profile.REDId ?? null,
+      redId: profile.developerId ?? null,
       organizationName,
-      organizationType: profile.brokerId ? "broker" : profile.REDId ? "developer" : null,
+      organizationType: profile.brokerId ? "broker" : profile.developerId ? "developer" : null,
       membershipState: null,
       conversationId: null,
     },
@@ -198,15 +198,15 @@ function isEligibleCollaboratorProfile(profile: any, access: any) {
   if (profile.authUserId === access.authUserId || profile.isActive === false) {
     return false;
   }
-  return Boolean(profile.brokerId || profile.REDId);
+  return Boolean(profile.brokerId || profile.developerId);
 }
 
 function resolveCollaboratorRole(profile: any) {
-  return profile.role === "RED" ? "developer" : profile.role ?? "user";
+  return profile.role ?? "user";
 }
 
 function resolveOrganizationType(profile: any) {
-  return profile.brokerId ? "broker" : profile.REDId ? "developer" : null;
+  return profile.brokerId ? "broker" : profile.developerId ? "developer" : null;
 }
 
 function buildCollaboratorTarget(args: {
@@ -226,7 +226,7 @@ function buildCollaboratorTarget(args: {
     image: userImage,
     role,
     brokerId: profile.brokerId ?? null,
-    redId: profile.REDId ?? null,
+    redId: profile.developerId ?? null,
     organizationName,
     organizationType: resolveOrganizationType(profile),
     membershipState,
@@ -245,7 +245,7 @@ async function hydrateCollaboratorTarget(params: { ctx: any; access: any; profil
   if (!matchesNormalizedQuery(baseHaystack, normalizedQuery)) {
     const organizationName = await getOrganizationNameByOwner(ctx, {
       brokerId: profile.brokerId ?? undefined,
-      REDId: profile.REDId ?? undefined,
+      developerId: profile.developerId ?? undefined,
     });
     const fullHaystack = buildHaystack(profile, organizationName, role);
     if (!matchesNormalizedQuery(fullHaystack, normalizedQuery)) {
@@ -263,7 +263,7 @@ async function hydrateCollaboratorTarget(params: { ctx: any; access: any; profil
   const [organizationName, membershipState, conversationId, userImage] = await Promise.all([
     getOrganizationNameByOwner(ctx, {
       brokerId: profile.brokerId ?? undefined,
-      REDId: profile.REDId ?? undefined,
+      developerId: profile.developerId ?? undefined,
     }),
     resolveMembershipState({ ctx, invites, profile, tenantOrgId }),
     resolveConversationId(ctx, access, profile),
@@ -280,10 +280,10 @@ function resolveWorkspaceOwner(access: any) {
       authUserId: access.authUserId,
     });
   }
-  if (access.REDId) {
+  if (access.developerId) {
     return buildOwnerContext({
       ownerType: "RED",
-      ownerREDId: access.REDId,
+      ownerREDId: access.developerId,
       authUserId: access.authUserId,
     });
   }
@@ -318,7 +318,7 @@ export const searchConversationTargets = query({
     while (scannedProfiles < maxProfilesToScan) {
       const page = await ctx.db
         .query("userProfiles")
-        .withIndex("roleStatus", (q) => q.eq("roleStatus", "approved"))
+        .withIndex("roleApprovalStatus", (q) => q.eq("roleApprovalStatus", "approved"))
         .paginate({ numItems: pageSize, cursor });
 
       scannedProfiles += page.page.length;

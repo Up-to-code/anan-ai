@@ -1,6 +1,7 @@
 import { defineApp } from "convex/server";
 import agent from "@convex-dev/agent/convex.config";
 import actionCache from "@convex-dev/action-cache/convex.config";
+import betterAuth from "./betterAuth/convex.config";
 import rateLimiter from "@convex-dev/rate-limiter/convex.config";
 import rag from "@convex-dev/rag/convex.config";
 import stagehand from "@browserbasehq/convex-stagehand/convex.config";
@@ -17,6 +18,7 @@ import llmCache from "@mzedstudio/llm-cache/convex.config.js";
 const app = defineApp();
 app.use(agent);
 app.use(actionCache);
+app.use(betterAuth);
 app.use(rateLimiter);
 app.use(rag);
 app.use(stagehand, { name: "stagehand" });

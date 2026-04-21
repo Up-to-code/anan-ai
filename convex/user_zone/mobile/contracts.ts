@@ -21,6 +21,45 @@ export const mobileOwnerValidator = v.object({
   completedProjects: v.optional(v.number()),
 });
 
+export const mobilePropertyFinanceValidator = v.object({
+  defaultDownPayment: v.number(),
+  defaultYears: v.number(),
+  defaultAnnualRate: v.number(),
+  estimatedLoanAmount: v.number(),
+  estimatedMonthlyPayment: v.number(),
+  bankOfferCount: v.number(),
+});
+
+export const mobilePropertyContactValidator = v.object({
+  hasPhone: v.boolean(),
+  hasEmail: v.boolean(),
+  hasWhatsApp: v.boolean(),
+  mapQuery: v.string(),
+});
+
+export const mobilePropertyComplianceValidator = v.object({
+  adLicenseStatus: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"))),
+  countryCode: v.optional(v.string()),
+  jurisdiction: v.optional(v.string()),
+  permitType: v.optional(v.string()),
+  permitNumber: v.optional(v.string()),
+  permitQrOrUrl: v.optional(v.string()),
+  permitExpiresAt: v.optional(v.number()),
+  sourceAuthority: v.optional(v.string()),
+  permitStatus: v.union(v.literal("verified"), v.literal("pending_review"), v.literal("not_available")),
+  ownerVerified: v.boolean(),
+  listingVerified: v.boolean(),
+});
+
+export const mobilePropertyProjectSummaryValidator = v.object({
+  readinessStatus: v.optional(v.string()),
+  countryCode: v.optional(v.string()),
+  jurisdiction: v.optional(v.string()),
+  availableUnitCount: v.number(),
+  startingPrice: v.optional(v.number()),
+  activePaymentPlanTitle: v.optional(v.string()),
+});
+
 /**
  * WHY:   The swipe feed should receive a compact, media-first property shape.
  * WHAT:  Validates the property payload rendered by the mobile full-screen feed.
@@ -41,6 +80,10 @@ export const mobilePropertyFeedItemValidator = v.object({
   media: v.array(v.string()),
   owner: mobileOwnerValidator,
   aiSummary: v.optional(v.string()),
+  finance: v.optional(mobilePropertyFinanceValidator),
+  contact: v.optional(mobilePropertyContactValidator),
+  compliance: v.optional(mobilePropertyComplianceValidator),
+  project: v.optional(mobilePropertyProjectSummaryValidator),
 });
 
 /**
@@ -173,4 +216,167 @@ export const mobileAssistantResponseValidator = v.object({
   message: v.string(),
   cards: v.array(mobileAssistantResultCardValidator),
   suggestedPrompts: v.array(v.string()),
+});
+
+export const mobileLocaleValidator = v.union(v.literal("ar"), v.literal("en"));
+
+export const mobileBuyerProfileValidator = v.object({
+  displayName: v.optional(v.string()),
+  phone: v.optional(v.string()),
+  email: v.optional(v.string()),
+});
+
+export const mobileBuyerConsentsValidator = v.object({
+  privacyAcceptedAt: v.optional(v.number()),
+  termsAcceptedAt: v.optional(v.number()),
+  microphoneAcceptedAt: v.optional(v.number()),
+  supportAcceptedAt: v.optional(v.number()),
+});
+
+export const mobileFinanceDefaultsValidator = v.object({
+  downPaymentPercent: v.number(),
+  preferredYears: v.number(),
+  annualRate: v.number(),
+});
+
+export const mobileFinanceDefaultsPatchValidator = v.object({
+  downPaymentPercent: v.optional(v.number()),
+  preferredYears: v.optional(v.number()),
+  annualRate: v.optional(v.number()),
+});
+
+export const mobileBuyerPreferencesValidator = v.object({
+  locale: mobileLocaleValidator,
+  onboardingCompletedAt: v.optional(v.number()),
+  authEntryDismissedAt: v.optional(v.number()),
+  financeDefaults: mobileFinanceDefaultsValidator,
+});
+
+export const mobileBuyerViewerValidator = v.object({
+  id: v.optional(v.string()),
+  authUserId: v.optional(v.string()),
+  displayName: v.string(),
+  email: v.optional(v.string()),
+  phone: v.optional(v.string()),
+  role: v.union(
+    v.literal("guest"),
+    v.literal("user"),
+    v.literal("broker"),
+    v.literal("developer"),
+    v.literal("RED"),
+    v.literal("admin"),
+  ),
+  isAuthenticated: v.boolean(),
+  qualifiedOrdersCount: v.number(),
+  savedPropertyIds: v.array(v.string()),
+  consents: mobileBuyerConsentsValidator,
+  preferences: mobileBuyerPreferencesValidator,
+});
+
+export const mobileGuestBuyerLocalStateValidator = v.object({
+  profile: mobileBuyerProfileValidator,
+  savedPropertyIds: v.array(v.string()),
+  consents: mobileBuyerConsentsValidator,
+  preferences: mobileBuyerPreferencesValidator,
+});
+
+export const mobileAssistantThreadSummaryValidator = v.object({
+  id: v.string(),
+  title: v.string(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+  preview: v.optional(v.string()),
+});
+
+export const mobileAssistantMessageValidator = v.object({
+  id: v.string(),
+  role: v.union(v.literal("assistant"), v.literal("user")),
+  text: v.string(),
+  createdAt: v.number(),
+  properties: v.optional(v.array(mobilePropertyFeedItemValidator)),
+  cards: v.optional(v.array(mobileAssistantResultCardValidator)),
+  activePropertyId: v.optional(v.string()),
+  requiresAuthForHandoff: v.optional(v.boolean()),
+  suggestedPrompts: v.optional(v.array(v.string())),
+  comparisonArtifactId: v.optional(v.id("buyerComparisonArtifacts")),
+  comparisonPropertyIds: v.optional(v.array(v.id("properties"))),
+  selectionSource: v.optional(
+    v.union(v.literal("ui_selected"), v.literal("history_resolved"), v.literal("text_resolved")),
+  ),
+});
+
+export const mobileAssistantStateValidator = v.object({
+  activeThreadId: v.optional(v.string()),
+  recentThreads: v.array(mobileAssistantThreadSummaryValidator),
+  activeMessages: v.array(mobileAssistantMessageValidator),
+});
+
+export const mobileFinanceBankOfferValidator = v.object({
+  bankName: v.string(),
+  rateLabel: v.string(),
+  downPaymentPercent: v.number(),
+  monthlyEstimate: v.number(),
+  summary: v.string(),
+});
+
+export const mobileFinanceEstimateValidator = v.object({
+  propertyId: v.optional(v.id("properties")),
+  propertyTitle: v.optional(v.string()),
+  propertyPrice: v.number(),
+  downPayment: v.number(),
+  downPaymentPercent: v.number(),
+  loanAmount: v.number(),
+  annualRate: v.number(),
+  years: v.number(),
+  monthlyPayment: v.number(),
+  totalPaid: v.number(),
+  totalInterest: v.number(),
+  affordabilityStatus: v.union(v.literal("comfortable"), v.literal("review"), v.literal("stretch")),
+  recommendedBudget: v.optional(v.number()),
+  bankOffers: v.array(mobileFinanceBankOfferValidator),
+  summary: v.string(),
+});
+
+const mobileAnalyticsMetricBlockValidator = v.object({
+  visits: v.string(),
+  seriousJourneys: v.string(),
+  conversion: v.string(),
+  followUps: v.string(),
+});
+
+const mobileAnalyticsTrendPointValidator = v.object({
+  label: v.string(),
+  visits: v.number(),
+  qualified: v.number(),
+  conversion: v.number(),
+});
+
+const mobileAnalyticsAreaSignalValidator = v.object({
+  name: v.string(),
+  story: v.string(),
+  growth: v.string(),
+  signalScore: v.number(),
+  budget: v.string(),
+  response: v.string(),
+});
+
+const mobileAnalyticsJourneyStageValidator = v.object({
+  label: v.string(),
+  count: v.string(),
+  helper: v.string(),
+  progress: v.number(),
+});
+
+export const mobileBuyerAnalyticsSummaryValidator = v.object({
+  headline: v.string(),
+  headlineBody: v.string(),
+  updatedAtLabel: v.string(),
+  topSignalLabel: v.string(),
+  qualifiedLeadLabel: v.string(),
+  averageResponseLabel: v.string(),
+  metrics: mobileAnalyticsMetricBlockValidator,
+  trendPoints: v.array(mobileAnalyticsTrendPointValidator),
+  areaSignals: v.array(mobileAnalyticsAreaSignalValidator),
+  journeyStages: v.array(mobileAnalyticsJourneyStageValidator),
+  nextSteps: v.array(v.string()),
 });

@@ -38,7 +38,7 @@ export async function listAdminUserVerificationHandler(
         name: profile.name ?? profile.email ?? "مستخدم عنان",
         email: profile.email ?? null,
         role: profile.role ?? null,
-        roleStatus: profile.roleStatus ?? null,
+        roleApprovalStatus: profile.roleApprovalStatus ?? null,
         latestRequestId: latestRequest ? String(latestRequest._id) : null,
         latestRequestStatus: latestRequest?.currentStatus ?? null,
         latestRequestSubmittedAt: latestRequest?.submittedAt ?? null,

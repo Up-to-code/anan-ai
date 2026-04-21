@@ -44,9 +44,27 @@ export const getVerificationRequest = query({
     await requireRole(ctx, ["admin"]);
     const [request, lookups] = await Promise.all([ctx.db.get(id), loadVerificationLookups(ctx)]);
     if (!request) return null;
+    const dossier =
+      request.subjectPropertyId
+        ? await ctx.db
+            .query("projectDossiers")
+            .withIndex("propertyId", (q: any) => q.eq("propertyId", request.subjectPropertyId))
+            .first()
+        : null;
+    const projectContext = dossier
+      ? {
+          dossier,
+          documents: await ctx.db.query("projectComplianceDocuments").withIndex("dossierId", (q: any) => q.eq("dossierId", dossier._id)).collect(),
+          adLicenses: await ctx.db.query("projectAdLicenses").withIndex("dossierId", (q: any) => q.eq("dossierId", dossier._id)).collect(),
+          brokerAuthorizations: await ctx.db.query("projectBrokerAuthorizations").withIndex("dossierId", (q: any) => q.eq("dossierId", dossier._id)).collect(),
+          blockers: dossier.readinessBlockers ?? [],
+          warnings: dossier.readinessWarnings ?? [],
+        }
+      : null;
     return {
       ...request,
       subject: buildVerificationSubjectDetail(request, lookups),
+      projectContext,
       documentsCount: request.attachedDocuments.length,
       decisionHistory: buildVerificationDecisionHistory(request),
     };

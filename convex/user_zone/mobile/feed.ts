@@ -1,8 +1,12 @@
 import { paginationOptsValidator } from "convex/server";
-import { v } from "convex/values";
+import { v, type Infer } from "convex/values";
 import { internalQuery, query } from "../../_generated/server";
 import { mobilePropertyFeedItemValidator } from "./contracts";
 import { DEFAULT_COMPLIANCE_COUNTRY, findActiveComplianceRuleset } from "../../shared_logic/compliance/utils";
+import { isPropertyDistributionReady } from "../../shared_logic/projects/readiness";
+
+type MobilePropertyFeedItem = Infer<typeof mobilePropertyFeedItemValidator>;
+type PropertyAdLicenseStatus = "pending" | "approved" | "rejected";
 
 type PropertyDoc = {
   _id: any;
@@ -21,6 +25,12 @@ type PropertyDoc = {
   heroImage?: { url: string };
   media?: Array<{ url: string }>;
   bankId?: any;
+  publicationState?: "draft" | "published" | "archived";
+  adLicenseStatus?: PropertyAdLicenseStatus;
+  listingVerified?: boolean;
+  isPublicSearchable?: boolean;
+  projectReadinessStatus?: string;
+  projectDossierId?: any;
 };
 
 type PropertyOwner = {
@@ -37,6 +47,27 @@ type PropertyOwner = {
 
 const FALLBACK_FEED_IMAGE =
   "https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1200&q=80";
+
+function calculateMortgagePreview(args: {
+  price: number;
+  downPayment: number;
+  annualRate: number;
+  years: number;
+}) {
+  const loanAmount = Math.max(0, args.price - args.downPayment);
+  const monthlyRate = args.annualRate / 100 / 12;
+  const installments = Math.max(args.years * 12, 1);
+  const factor = Math.pow(1 + monthlyRate, installments);
+  const monthlyPayment =
+    monthlyRate > 0
+      ? Math.round((loanAmount * monthlyRate * factor) / Math.max(factor - 1, 1))
+      : Math.round(loanAmount / installments);
+
+  return {
+    loanAmount,
+    monthlyPayment,
+  };
+}
 
 async function resolvePropertyOwner(ctx: any, property: PropertyDoc) {
   if (property.brokerId) {
@@ -113,6 +144,101 @@ function toOwnerPreview(owner: PropertyOwner, ownerType: "broker" | "RED") {
   };
 }
 
+async function buildFinancePreview(ctx: any, property: PropertyDoc) {
+  const defaultDownPayment = Math.round(property.price * 0.1);
+  const defaultYears = 20;
+  const defaultAnnualRate = 4.75;
+  const mortgagePreview = calculateMortgagePreview({
+    price: property.price,
+    downPayment: defaultDownPayment,
+    annualRate: defaultAnnualRate,
+    years: defaultYears,
+  });
+  const bank = property.bankId ? await ctx.db.get(property.bankId) : null;
+
+  return {
+    defaultDownPayment,
+    defaultYears,
+    defaultAnnualRate,
+    estimatedLoanAmount: mortgagePreview.loanAmount,
+    estimatedMonthlyPayment: mortgagePreview.monthlyPayment,
+    bankOfferCount: bank?.products?.length ?? 0,
+  };
+}
+
+function buildContactPreview(property: PropertyDoc, owner: PropertyOwner) {
+  const phone = owner.phone?.trim();
+  const email = owner.contactEmail?.trim();
+  return {
+    hasPhone: Boolean(phone),
+    hasEmail: Boolean(email),
+    hasWhatsApp: Boolean(phone),
+    mapQuery: property.address,
+  };
+}
+
+function buildCompliancePreview(args: {
+  owner: PropertyOwner;
+  adLicenseStatus?: PropertyAdLicenseStatus;
+  listingVerified?: boolean;
+  permit?: any;
+  dossier?: any;
+}) {
+  const ownerVerified = args.owner.isVerified === true;
+  const permitVerified = args.permit?.status === "approved" || args.permit?.verificationStatus === "verified";
+  const listingVerified = args.listingVerified === true || args.adLicenseStatus === "approved" || permitVerified;
+  return {
+    adLicenseStatus:
+      args.adLicenseStatus === "pending" || args.adLicenseStatus === "approved" || args.adLicenseStatus === "rejected"
+        ? args.adLicenseStatus
+        : undefined,
+    countryCode: args.permit?.countryCode ?? args.dossier?.location?.countryCode,
+    jurisdiction: args.permit?.jurisdiction ?? args.dossier?.location?.city,
+    permitType: args.permit?.permitType,
+    permitNumber: args.permit?.permitNumber ?? args.permit?.licenseNumber,
+    permitQrOrUrl: args.permit?.permitQrOrUrl,
+    permitExpiresAt: args.permit?.expiresAt,
+    sourceAuthority: args.permit?.sourceAuthority,
+    permitStatus: ownerVerified && listingVerified ? ("verified" as const) : ownerVerified ? ("pending_review" as const) : ("not_available" as const),
+    ownerVerified,
+    listingVerified,
+  };
+}
+
+async function buildProjectSummary(ctx: any, property: PropertyDoc) {
+  const dossier = property.projectDossierId
+    ? await ctx.db.get(property.projectDossierId)
+    : await ctx.db
+        .query("projectDossiers")
+        .withIndex("propertyId", (q: any) => q.eq("propertyId", property._id))
+        .first();
+  if (!dossier) return { dossier: null, permit: null, project: undefined };
+
+  const [units, paymentPlans, permit] = await Promise.all([
+    ctx.db.query("projectUnits").withIndex("dossierId", (q: any) => q.eq("dossierId", dossier._id)).collect(),
+    ctx.db.query("projectPaymentPlans").withIndex("dossierId", (q: any) => q.eq("dossierId", dossier._id)).collect(),
+    ctx.db.query("projectAdLicenses").withIndex("dossierId", (q: any) => q.eq("dossierId", dossier._id)).first(),
+  ]);
+  const activePaymentPlan = paymentPlans.find((plan: any) => plan.status === "active") ?? paymentPlans[0];
+  const availableUnits = units.filter((unit: any) => unit.status === "available");
+  const unitPrices = availableUnits.map((unit: any) => unit.price).filter((price: any): price is number => typeof price === "number");
+  const planPrice = activePaymentPlan?.startingPrice ?? activePaymentPlan?.cashPrice;
+  const startingPrice = typeof planPrice === "number" ? planPrice : unitPrices.length > 0 ? Math.min(...unitPrices) : undefined;
+
+  return {
+    dossier,
+    permit,
+    project: {
+      readinessStatus: dossier.readinessStatus,
+      countryCode: dossier.location?.countryCode,
+      jurisdiction: dossier.location?.city,
+      availableUnitCount: availableUnits.length,
+      startingPrice,
+      activePaymentPlanTitle: activePaymentPlan?.title,
+    },
+  };
+}
+
 /**
  * WHY:   The mobile swipe feed needs one compact read surface optimized for media-first discovery.
  * WHAT:  Returns paginated published properties enriched with verified owner data and AI summary text.
@@ -130,7 +256,9 @@ export const listFeed = query({
       .paginate(paginationOpts);
 
     const pageItems = await Promise.all(
-      results.page.map((property) => buildMobilePropertyFeedItem(ctx, property as PropertyDoc)),
+      results.page
+        .filter((property) => isPropertyDistributionReady(property as any))
+        .map((property) => buildMobilePropertyFeedItem(ctx, property as PropertyDoc)),
     );
     const page = pageItems.filter(Boolean);
 
@@ -154,7 +282,7 @@ export const getPropertyContext = internalQuery({
   handler: async (ctx, { propertyId }) => {
     const property = await ctx.db.get(propertyId);
     if (!property) return null;
-    if (property.publicationState && property.publicationState !== "published") return null;
+    if (!isPropertyDistributionReady(property as any)) return null;
     return buildMobilePropertyFeedItem(ctx, property as PropertyDoc);
   },
 });
@@ -172,7 +300,7 @@ export const getPropertyDetail = query({
   handler: async (ctx, { propertyId }) => {
     const property = await ctx.db.get(propertyId);
     if (!property) return null;
-    if (property.publicationState && property.publicationState !== "published") return null;
+    if (!isPropertyDistributionReady(property as any)) return null;
     return buildMobilePropertyFeedItem(ctx, property as PropertyDoc);
   },
 });
@@ -185,23 +313,37 @@ export const getPropertyDetail = query({
 export async function buildMobilePropertyFeedItem(
   ctx: any,
   property: PropertyDoc,
-) {
-  const adLicenseStatus = (property as { adLicenseStatus?: string }).adLicenseStatus;
+): Promise<MobilePropertyFeedItem | null> {
+  if (!isPropertyDistributionReady(property)) return null;
+  const adLicenseStatus = property.adLicenseStatus;
+  const listingVerified = property.listingVerified;
   const ownerContext = await resolvePropertyOwner(ctx, property);
   if (!ownerContext) return null;
   const { owner, ownerType, orgType } = ownerContext;
   const countryCode = owner.countryCode ?? DEFAULT_COMPLIANCE_COUNTRY;
   const ruleset = await findActiveComplianceRuleset(ctx, { countryCode, orgType });
   if (!ruleset) return null;
+  const projectSummary = await buildProjectSummary(ctx, property);
   const enforcement = ruleset.enforcement;
   if (enforcement.hideUnverified) {
     if (enforcement.requireOrgVerification && owner.isVerified !== true) return null;
-    if (enforcement.requireListingVerification && adLicenseStatus !== "approved") return null;
+    if (enforcement.requireListingVerification && listingVerified !== true && adLicenseStatus !== "approved") return null;
   }
 
   const media = resolveFeedMedia(property);
   const activeListings = await countActiveListingsForOwner(ctx, property);
   const ownerPreview = toOwnerPreview(owner, ownerType);
+  const [finance, contact] = await Promise.all([
+    buildFinancePreview(ctx, property),
+    Promise.resolve(buildContactPreview(property, owner)),
+  ]);
+  const compliance = buildCompliancePreview({
+    owner,
+    adLicenseStatus,
+    listingVerified,
+    permit: projectSummary.permit,
+    dossier: projectSummary.dossier,
+  });
 
   return {
     id: property._id,
@@ -221,6 +363,10 @@ export async function buildMobilePropertyFeedItem(
       activeListings,
     },
     aiSummary: buildAiSummary(property),
+    finance,
+    contact,
+    compliance,
+    project: projectSummary.project,
   };
 }
 

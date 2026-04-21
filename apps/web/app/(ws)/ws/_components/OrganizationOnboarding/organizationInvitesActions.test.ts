@@ -11,7 +11,7 @@ describe("organizationInvitesActions", () => {
       ok: true,
     } as Response);
 
-    const result = await acceptIncomingInvite("token-1");
+    const result = await acceptIncomingInvite({ token: "token-1", acceptUrl: null });
 
     expect(result).toBe(true);
     expect(fetchSpy).toHaveBeenCalledWith("/api/workspace/incoming-invites/accept", {
@@ -19,6 +19,25 @@ describe("organizationInvitesActions", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: "token-1" }),
     });
+  });
+
+  it("redirects to provider invitation urls when present", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const assignSpy = vi.fn();
+    vi.stubGlobal("window", {
+      location: {
+        assign: assignSpy,
+      },
+    });
+
+    const result = await acceptIncomingInvite({
+      token: "orginv_123",
+      acceptUrl: "https://auth.test/invitations/accept",
+    });
+
+    expect(result).toBe(true);
+    expect(assignSpy).toHaveBeenCalledWith("https://auth.test/invitations/accept");
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("deletes incoming invites by id", async () => {

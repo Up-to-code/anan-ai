@@ -88,7 +88,7 @@ export function buildVerificationSubjectDetail(
           name: entities.profile.name ?? entities.profile.email ?? "مستخدم عنان",
           email: entities.profile.email ?? null,
           role: entities.profile.role ?? null,
-          roleStatus: entities.profile.roleStatus ?? null,
+          roleApprovalStatus: entities.profile.roleApprovalStatus ?? null,
         }
       : null,
     broker: entities.broker

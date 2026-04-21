@@ -82,7 +82,7 @@ export const developerAnalytics = query({
           name: developer.name,
           status: developer.status ?? "pending",
           isVerified: developer.isVerified === true,
-          linkedProfilesCount: profiles.filter((profile) => profile.REDId === developer._id).length,
+          linkedProfilesCount: profiles.filter((profile) => profile.developerId === developer._id).length,
           membersCount: members.filter((member) => (member.status ?? "active") === "active").length,
           inventoryCount: inventoryByRedId.get(String(developer._id)) ?? 0,
         };

@@ -1,9 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, it, vi } from "vitest";
 
-const { usePathname, useSearchParams, useQuery } = vi.hoisted(() => ({
+const { usePathname, useSearchParams, useConvexAuth, useQuery } = vi.hoisted(() => ({
   usePathname: vi.fn(),
   useSearchParams: vi.fn(),
+  useConvexAuth: vi.fn(),
   useQuery: vi.fn(),
 }));
 
@@ -13,6 +14,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("convex/react", () => ({
+  useConvexAuth,
   useQuery,
 }));
 
@@ -62,8 +64,13 @@ vi.mock("../../_components/AIMotion", () => ({
 import WorkspaceDashboard from "./WorkspaceDashboard";
 
 beforeEach(() => {
+  usePathname.mockReset();
   usePathname.mockReturnValue("/ws");
+  useSearchParams.mockReset();
   useSearchParams.mockReturnValue(new URLSearchParams());
+  useConvexAuth.mockReset();
+  useConvexAuth.mockReturnValue({ isLoading: false, isAuthenticated: true });
+  useQuery.mockReset();
   useQuery.mockReturnValue(undefined);
 });
 
@@ -82,9 +89,9 @@ it("renders a chat-first landing state before the first message", () => {
   expect(markup).toContain("data-slot=\"chat-input\"");
   expect(markup).toContain("data-layout=\"landing\"");
   expect(markup).toContain("data-slot=\"landing-composer-dock\"");
-  expect(markup).toContain("relative flex min-h-0 flex-1 basis-0 flex-col overflow-hidden bg-background text-foreground");
-  expect(markup).toContain("relative flex min-h-0 min-w-0 flex-1 basis-0 flex-col overflow-hidden");
-  expect(markup).toContain("flex min-h-0 min-w-0 flex-1 items-center justify-center bg-background");
+  expect(markup).toContain("relative flex h-full min-h-0 min-w-0 w-full flex-1 basis-0 flex-col overflow-hidden bg-background text-foreground");
+  expect(markup).toContain("relative flex h-full min-h-0 min-w-0 w-full flex-1 basis-0 flex-col overflow-hidden");
+  expect(markup).toContain("flex h-full min-h-0 min-w-0 w-full flex-1 basis-0 items-center justify-center bg-background");
   expect(markup).toContain("كيف يمكنني مساعدتك اليوم؟");
   expect(markup).toContain("حلّل حركة السوق العقاري في الرياض هذا الأسبوع");
   expect(markup).not.toContain("opacity:0");
@@ -144,7 +151,7 @@ it("renders the conversation stream inline when messages exist", () => {
   expect(markup).toContain("data-slot=\"ag-ui-turn\"");
   expect(markup).toContain("data-layout=\"thread\"");
   expect(markup).toContain("data-slot=\"assistant-surface\"");
-  expect(markup).toContain("assistant-composer-dock-safe-area relative grid min-h-0 min-w-0 flex-1 basis-0 grid-rows-[minmax(0,1fr)_auto] overflow-hidden");
+  expect(markup).toContain("assistant-composer-dock-safe-area relative grid h-full min-h-0 min-w-0 w-full flex-1 basis-0 grid-rows-[minmax(0,1fr)_auto] overflow-hidden");
   expect(markup).toContain("relative z-0 min-h-0 px-4");
   expect(markup).toContain("data-slot=\"thread-composer-dock\"");
   expect(markup).toContain("data-slot=\"thread-composer-shell\"");

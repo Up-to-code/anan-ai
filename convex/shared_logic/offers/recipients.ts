@@ -60,8 +60,8 @@ async function findRecipientByAuthUser(ctx: MutationCtx, recipientAuthUserId: st
   if (profile?.brokerId) {
     return toResolvedRecipient({ toBrokerId: profile.brokerId });
   }
-  if (profile?.REDId) {
-    return toResolvedRecipient({ toREDId: profile.REDId });
+  if ((profile as any)?.developerId) {
+    return toResolvedRecipient({ toREDId: (profile as any).developerId });
   }
   return toResolvedRecipient({});
 }

@@ -1,9 +1,11 @@
+import { memo } from "react"
+
 /**
  * WHY:   Workspace relation gaps should still feel intentional and branded instead of plain dashed placeholders.
  * WHAT:  Renders a neutral empty-state panel with optional description.
  * HOW:   Uses the same border, spacing, and blue accent cues as the rest of the workspace brand layer.
  */
-export default function BrandEmptyState({
+const BrandEmptyStateComponent = function BrandEmptyState({
   title,
   description,
 }: {
@@ -24,3 +26,5 @@ export default function BrandEmptyState({
     </section>
   );
 }
+
+export default memo(BrandEmptyStateComponent)

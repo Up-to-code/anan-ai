@@ -60,6 +60,8 @@ The assistant is a task partner for property discovery and qualification. It is 
 - Keep the primary input surface calm and compact at rest.
 - Prefer one main prompt field with dynamic mic/send behavior over multiple permanent buttons.
 - Show mode or processing banners only when the state changes user expectations.
+- If chat is anchored to selected properties, keep that context lightweight: use a short horizontal prompt-tab rail above the composer with circular thumbnails and compact inline labels rather than a large dock, full helper card, or extra content sections.
+- Support one focused property or a small mobile-safe comparison set of up to three properties; once comparison starts, keep detail opening separate from compare selection.
 - If a task outgrows normal chat, move the user into a dedicated workspace rather than overloading the composer itself.
 - In recording mode, keep the waveform and elapsed time on the same centered row inside one capsule; avoid dropping the timer or helper text onto a second line.
 

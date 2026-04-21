@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Text, TextProps } from "react-native";
 import { cn } from "@/lib/cn";
 import { getResponsiveTextStyle, type ResponsiveTextRole, useMobileLayout } from "@/lib/mobileLayout";
@@ -20,7 +21,7 @@ const TONE_CLASS_NAMES: Record<NonNullable<AppTextProps["tone"]>, string> = {
  * WHY:   The Unified Rounded logic relies on natural typography rather than forced aggressive capitalization.
  * WHAT:  Renders generic typography correctly mapped to the Zinc/Blue scale.
  */
-export function AppText({ tone = "body", responsiveRole, uppercase, className, style, ...props }: AppTextProps) {
+export const AppText = memo(function AppText({ tone = "body", responsiveRole, uppercase, className, style, ...props }: AppTextProps) {
   const layout = useMobileLayout();
   const theme = useAppTheme();
   const toneClassName = TONE_CLASS_NAMES[tone];
@@ -42,4 +43,4 @@ export function AppText({ tone = "body", responsiveRole, uppercase, className, s
       ]}
     />
   );
-}
+});

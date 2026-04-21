@@ -93,19 +93,16 @@ export function listOrganizationApiKeyAllowedActions(resource: OrganizationApiKe
 }
 
 export const OAUTH_SCOPE_CATALOG = [
-  { id: "openid", label: "Confirm your Anan identity" },
-  { id: "profile", label: "Read your basic profile information" },
-  { id: "email", label: "Read your verified email address" },
-  { id: "offline_access", label: "Stay connected when you are not actively using Anan" },
-  { id: "clients:read", label: "Read client records you can access" },
-  { id: "clients:create", label: "Create clients on your behalf" },
-  { id: "clients:update_own", label: "Update clients that belong to your account" },
-  { id: "clients:read_own", label: "Read clients that belong to your account" },
-  { id: "properties:read", label: "Read properties you can access" },
-  { id: "properties:create_own", label: "Create properties that belong to your account" },
-  { id: "properties:update_own", label: "Update properties that belong to your account" },
-  { id: "properties:delete_own", label: "Delete properties that belong to your account" },
-  { id: "properties:read_own", label: "Read properties that belong to your account" },
+  { id: "offline_access", label: "Keep the organization connected when nobody is actively using Anan" },
+  { id: "clients:read", label: "Read client records available to the connected organization" },
+  { id: "clients:create", label: "Create clients for the connected organization" },
+  { id: "clients:update_own", label: "Update clients that belong to the connected organization" },
+  { id: "clients:read_own", label: "Read clients that belong to the connected organization" },
+  { id: "properties:read", label: "Read properties available to the connected organization" },
+  { id: "properties:create_own", label: "Create properties for the connected organization" },
+  { id: "properties:update_own", label: "Update properties that belong to the connected organization" },
+  { id: "properties:delete_own", label: "Delete properties that belong to the connected organization" },
+  { id: "properties:read_own", label: "Read properties that belong to the connected organization" },
 ] as const;
 
 export type OrganizationOAuthScopeId = (typeof OAUTH_SCOPE_CATALOG)[number]["id"];

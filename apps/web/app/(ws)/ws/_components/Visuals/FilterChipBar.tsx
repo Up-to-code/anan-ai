@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { cn } from "@/lib/utils";
 
 export type FilterChip = {
@@ -12,7 +13,7 @@ export type FilterChip = {
  * WHAT:  Renders a horizontal row of selectable filter chips.
  * HOW:   Delegates the active state to the parent and only emits the selected chip key on click.
  */
-export default function FilterChipBar({
+const FilterChipBarComponent = function FilterChipBar({
   chips,
   activeKey,
   onChange,
@@ -41,3 +42,5 @@ export default function FilterChipBar({
     </div>
   );
 }
+
+export default memo(FilterChipBarComponent);

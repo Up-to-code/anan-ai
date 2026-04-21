@@ -11,6 +11,7 @@ export {
   listTeamMembersByOwner,
   listTeamMembersByOwnerInternal,
   listCurrentTeamMembers,
+  requireManagerAccessForCurrentUser,
   updateMembershipRoleForCurrentUser,
 } from "./membership";
 export {

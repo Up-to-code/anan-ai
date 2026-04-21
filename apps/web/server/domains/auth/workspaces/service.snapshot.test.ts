@@ -19,7 +19,7 @@ function createRequireSessionMock() {
     },
     profile: {
       role: "broker",
-      roleStatus: "approved",
+      roleApprovalStatus: "approved",
       brokerId: "broker-1",
     },
   }));

@@ -1,3 +1,5 @@
+import { memo } from "react"
+
 type BrandStatItem = {
   label: string
   value: string | number
@@ -9,7 +11,7 @@ type BrandStatItem = {
  * WHAT:  Renders a responsive stat strip with a shared frame and emphasized values.
  * HOW:   Accepts serializable label/value pairs and varies only the value tone for emphasis.
  */
-export default function BrandStatStrip({
+const BrandStatStripComponent = function BrandStatStrip({
   items,
 }: {
   items: BrandStatItem[]
@@ -33,3 +35,5 @@ export default function BrandStatStrip({
     </section>
   )
 }
+
+export default memo(BrandStatStripComponent)

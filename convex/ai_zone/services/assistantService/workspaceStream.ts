@@ -1,6 +1,5 @@
 import { ConvexError } from "convex/values";
 import type { ActionCtx } from "../../../_generated/server";
-import type { Id } from "../../../_generated/dataModel";
 import { api, internal } from "../../../_generated/api";
 import type {
   WorkspaceStreamPhase,
@@ -15,7 +14,7 @@ type StreamEvent = {
   teamId?: string;
   agentName?: string;
   delta?: string;
-  threadId?: Id<"assistantThreads">;
+  threadId?: string;
   title?: string;
   meta?: unknown;
   message?: string;
@@ -25,7 +24,7 @@ type StreamEvent = {
 
 export type WorkspaceStreamControls = {
   emitLifecycle: (status: WorkspaceStreamStatus | "cancelled", details?: Record<string, unknown>) => Promise<void>;
-  emitThread: (threadId: Id<"assistantThreads">) => Promise<void>;
+  emitThread: (threadId: string) => Promise<void>;
   emitStage: (
     phase: WorkspaceStreamPhase,
     extra?: { status?: WorkspaceStreamStatus; teamId?: string; agentName?: string; details?: Record<string, unknown> }

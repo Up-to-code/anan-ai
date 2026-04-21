@@ -16,7 +16,7 @@ describe("profiles domain service", () => {
       },
       profile: {
         role: "broker",
-        roleStatus: "approved",
+        roleApprovalStatus: "approved",
         brokerId: "broker-1",
       },
     }));
@@ -25,7 +25,7 @@ describe("profiles domain service", () => {
 
     expect(profile).toEqual({
       role: "broker",
-      roleStatus: "approved",
+      roleApprovalStatus: "approved",
       brokerId: "broker-1",
     });
   });

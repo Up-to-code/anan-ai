@@ -46,14 +46,12 @@ export function getRequestFingerprint(request: Request) {
 
 type IssueTokenSetParams = {
   clientId: string;
-  userId: string;
-  pairwiseSubject: string;
+  subject: string;
+  tenantOrgId: string;
+  ownerType: "broker" | "RED";
+  ownerId: string;
   scopes: string[];
   accessTokenJti: string;
-  email?: string | null;
-  name?: string | null;
-  image?: string | null;
-  nonce?: string | null;
 };
 
 export async function issueTokenSet(params: IssueTokenSetParams) {
@@ -62,31 +60,15 @@ export async function issueTokenSet(params: IssueTokenSetParams) {
   const accessToken = await signJwt({
     iss: getOAuthIssuer(),
     aud: params.clientId,
-    sub: params.pairwiseSubject,
-    user_id: params.userId,
+    sub: params.subject,
+    tenant_org_id: params.tenantOrgId,
+    owner_type: params.ownerType,
+    owner_id: params.ownerId,
     jti: params.accessTokenJti,
     scope: formatScopeString(params.scopes),
-    email: params.email ?? undefined,
-    name: params.name ?? undefined,
-    avatar: params.image ?? undefined,
     iat: nowSeconds,
     exp: expiresAt,
     azp: params.clientId,
   });
-  const idToken = params.scopes.includes("openid")
-    ? await signJwt({
-        iss: getOAuthIssuer(),
-        aud: params.clientId,
-        sub: params.pairwiseSubject,
-        iat: nowSeconds,
-        exp: expiresAt,
-        auth_time: nowSeconds,
-        nonce: params.nonce ?? undefined,
-        email: params.scopes.includes("email") ? params.email ?? undefined : undefined,
-        email_verified: params.scopes.includes("email") ? Boolean(params.email) : undefined,
-        name: params.scopes.includes("profile") ? params.name ?? undefined : undefined,
-        picture: params.scopes.includes("profile") ? params.image ?? undefined : undefined,
-      })
-    : undefined;
-  return { accessToken, idToken };
+  return { accessToken, idToken: undefined };
 }

@@ -5,19 +5,20 @@ export const oauthAuthorizationCodePkcePage: DocsPageDefinition = {
     title: "Authorization Code + PKCE",
     description: "Complete browser authorization flow and token exchange examples.",
     summary:
-      "Use Authorization Code + PKCE for user-granted delegated access. Include `state`, enforce callback validation, and store refresh tokens securely.",
+      "Use Authorization Code + PKCE for manager-approved organization app access. Include `state`, enforce callback validation, and store refresh tokens securely.",
     sections: [
       {
         id: "authorize-request",
         title: "Step 1: Redirect to `/authorize`",
         paragraphs: [
           "Request authorization code with PKCE (`code_challenge_method=S256`). Include only the scopes your feature needs.",
+          "The consent screen will ask the signed-in user to choose one organization. A manager must approve the app the first time or whenever scopes expand.",
         ],
         codeExamples: [
           {
             title: "Authorize URL example",
             language: "text",
-            code: `$ANAN_ISSUER/authorize?response_type=code&client_id=$ANAN_CLIENT_ID&redirect_uri=$ANAN_REDIRECT_URI&scope=openid%20profile%20offline_access%20clients:read_own&state=<opaque-state>&code_challenge=<pkce-challenge>&code_challenge_method=S256`,
+            code: `$ANAN_ISSUER/authorize?response_type=code&client_id=$ANAN_CLIENT_ID&redirect_uri=$ANAN_REDIRECT_URI&scope=offline_access%20clients:read_own&state=<opaque-state>&code_challenge=<pkce-challenge>&code_challenge_method=S256`,
           },
         ],
       },
@@ -58,7 +59,7 @@ export const oauthAuthorizationCodePkcePage: DocsPageDefinition = {
   "access_token": "<jwt>",
   "token_type": "Bearer",
   "expires_in": 900,
-  "scope": "openid profile offline_access clients:read_own",
+  "scope": "offline_access clients:read_own",
   "refresh_token": "<refresh-token>"
 }`,
           },
@@ -83,17 +84,11 @@ export const oauthAuthorizationCodePkcePage: DocsPageDefinition = {
         ],
       },
       {
-        id: "userinfo",
-        title: "Optional: Query `/userinfo`",
+        id: "organization-subject",
+        title: "Organization Subject Notes",
         paragraphs: [
-          "Use `/userinfo` for identity claims that match granted scopes (`profile`, `email`).",
-        ],
-        codeExamples: [
-          {
-            title: "Userinfo request",
-            language: "bash",
-            code: "curl -sS -H \"Authorization: Bearer $ACCESS_TOKEN\" \"$ANAN_ISSUER/userinfo\"",
-          },
+          "OAuth access tokens identify the organization authorization, not an end-user identity. The token `sub` is pairwise per organization and client.",
+          "Do not request `openid`, `profile`, or `email`. Those scopes are not supported in the organization-owned OAuth model.",
         ],
       },
     ],

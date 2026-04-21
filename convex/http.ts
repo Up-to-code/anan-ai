@@ -5,8 +5,8 @@ import {
   handleWhatsAppWebhookGet,
   handleWhatsAppWebhookPost,
 } from "./ai_zone/channels/whatsapp/webhook";
-import { auth } from "./auth";
 import { components } from "./_generated/api";
+import { authComponent, createAuth } from "./betterAuth/auth";
 import {
   handleAuthorize,
   handleDelegatedClients,
@@ -17,10 +17,11 @@ import {
   handleToken,
   handleUserInfo,
 } from "./_core/oauth/http";
+import { handleMobileAssistantStream } from "./ai_zone/assistantPublicHttp";
 
 const http = httpRouter();
 
-auth.addHttpRoutes(http);
+authComponent.registerRoutes(http, createAuth, { cors: true });
 registerRoutes(http, components.uploadthingFileTracker);
 
 http.route({
@@ -44,6 +45,12 @@ http.route({
   path: "/api/whatsapp/webhook",
   method: "POST",
   handler: handleWhatsAppWebhookPost,
+});
+
+http.route({
+  path: "/api/mobile/assistant/stream/chat/completions",
+  method: "POST",
+  handler: httpAction(handleMobileAssistantStream),
 });
 
 http.route({

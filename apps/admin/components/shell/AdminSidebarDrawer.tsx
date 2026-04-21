@@ -43,7 +43,7 @@ export default function AdminSidebarDrawer({ user }: AdminSidebarDrawerProps) {
         aria-expanded={open}
         aria-controls={drawerId}
         data-slot="admin-sidebar-trigger"
-        className="inline-flex h-10 w-10 items-center justify-center rounded-[8px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-[var(--workspace-muted)] shadow-sm transition-all hover:bg-[var(--workspace-accent-soft)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] active:scale-95"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-sm border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-[var(--workspace-muted)] transition-all hover:bg-[var(--workspace-accent-soft)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--workspace-highlight-border)] active:scale-95"
         onClick={() => setOpen(true)}
       >
         <Menu className="h-5 w-5" />
@@ -54,14 +54,14 @@ export default function AdminSidebarDrawer({ user }: AdminSidebarDrawerProps) {
           <button
             type="button"
             aria-label="إغلاق التنقل"
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-950/58"
             onClick={() => setOpen(false)}
           />
 
           <div
             id={drawerId}
             data-slot="admin-sidebar-mobile-drawer"
-            className="absolute inset-y-0 w-[min(22rem,100vw)] max-w-full shadow-2xl shadow-black/45"
+            className="absolute inset-y-0 w-[min(22rem,100vw)] max-w-full border-s border-[color:color-mix(in_srgb,var(--workspace-border)_94%,transparent)]"
             style={isRtl ? { right: 0 } : { left: 0 }}
           >
             <div className="relative flex h-full w-full">
@@ -70,7 +70,7 @@ export default function AdminSidebarDrawer({ user }: AdminSidebarDrawerProps) {
               <button
                 type="button"
                 aria-label="إغلاق التنقل"
-                className="absolute top-3 inline-flex h-9 w-9 items-center justify-center rounded-[8px] border border-white/10 bg-black/20 text-white/75 backdrop-blur-sm transition-all hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_30%,transparent)] hover:bg-black/35 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] active:scale-95"
+                className="absolute top-3 inline-flex h-9 w-9 items-center justify-center rounded-sm border border-white/12 bg-black/22 text-white/75 transition-all hover:border-[color:var(--workspace-highlight-border)] hover:bg-black/35 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--workspace-highlight-border)] active:scale-95"
                 style={isRtl ? { left: "0.75rem" } : { right: "0.75rem" }}
                 onClick={() => setOpen(false)}
               >

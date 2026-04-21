@@ -1,7 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { authClient } from "@/lib/auth-client";
 import type { WorkspaceAudience } from "@/server/contracts/workspace";
+
+function slugifyOrganizationName(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
 
 type OrganizationDetailsStepProps = {
   suggestedOrganizationType: "broker" | "red";
@@ -41,10 +51,46 @@ export default function OrganizationDetailsStep({
     setIsSubmitting(true);
 
     try {
+      const trimmedName = name.trim();
+      const fallbackSlug = slugifyOrganizationName(trimmedName);
+      const createdResult = await authClient.organization.create({
+        name: trimmedName,
+        slug: fallbackSlug,
+        metadata: {
+          organizationType: type === "red" ? "developer" : "broker",
+        },
+      } as never);
+      if (createdResult.error) {
+        throw new Error(createdResult.error.message ?? "تعذر إنشاء الجهة.");
+      }
+      const createdOrganization = createdResult.data as Record<string, unknown> | null;
+      const organizationId =
+        typeof createdOrganization?.id === "string" ? createdOrganization.id : null;
+      const organizationSlug =
+        typeof createdOrganization?.slug === "string" && createdOrganization.slug.trim().length > 0
+          ? createdOrganization.slug
+          : fallbackSlug;
+
+      if (!organizationId) {
+        throw new Error("تم إنشاء الجهة لكن تعذر قراءة بياناتها.");
+      }
+
+      const activeResult = await authClient.organization.setActive({
+        organizationId,
+      } as never);
+      if (activeResult.error) {
+        throw new Error(activeResult.error.message ?? "تعذر تفعيل الجهة.");
+      }
+
       const response = await fetch("/api/organizations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, type }),
+        body: JSON.stringify({
+          organizationId,
+          name: trimmedName,
+          slug: organizationSlug,
+          type,
+        }),
       });
 
       if (!response.ok) {

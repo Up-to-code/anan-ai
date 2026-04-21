@@ -6,11 +6,17 @@ import {
   Activity,
   ArrowLeft,
   BarChart3,
+  Building2,
   CheckCircle2,
   Clock3,
   Eye,
   Gauge,
+  Layers3,
+  MapPin,
   Phone,
+  Sparkles,
+  Target,
+  TrendingUp,
   UserRound,
   Users,
 } from "lucide-react";
@@ -35,202 +41,24 @@ import type {
   WorkspaceProjectAnalyticsDeveloperStageKey,
 } from "@/server/contracts/properties";
 import type { WorkspaceProject } from "../../types/projectTypes";
-
-type DeveloperTabKey = "overview" | "brokers" | "activity";
-type EngagementMetricKey = "views" | "clicks" | "clickRate";
-
-const DEVELOPER_TABS: { key: DeveloperTabKey; label: string; description: string }[] = [
-  {
-    key: "overview",
-    label: "Overview",
-    description: "نظرة تنفيذية سريعة على العملاء، المراحل، وحركة المشروع.",
-  },
-  {
-    key: "brokers",
-    label: "Broker Tracking",
-    description: "تعقب الوسطاء العاملين على المشروع وافتح تفاصيل كل وسيط بسرعة.",
-  },
-  {
-    key: "activity",
-    label: "Activity",
-    description: "سجل الأعمال الفعلي حول المشروع: متى تحرك العملاء ومتى أغلقت الحالات.",
-  },
-];
-
-const ENGAGEMENT_METRICS = {
-  views: {
-    label: "المشاهدات",
-    color: "#2563eb",
-  },
-  clicks: {
-    label: "النقرات",
-    color: "#0f766e",
-  },
-  clickRate: {
-    label: "معدل التفاعل",
-    color: "#ea580c",
-  },
-} as const;
-
-const BROKER_STATE_STYLES: Record<
-  WorkspaceProjectAnalyticsBrokerState,
-  {
-    card: string;
-    badge: string;
-    soft: string;
-  }
-> = {
-  viewer_only: {
-    card: "border-slate-300 bg-slate-50/80",
-    badge: "border-slate-300 bg-slate-100 text-slate-700",
-    soft: "bg-slate-100 text-slate-700",
-  },
-  offer_active: {
-    card: "border-sky-300 bg-sky-50/80",
-    badge: "border-sky-300 bg-sky-100 text-sky-700",
-    soft: "bg-sky-100 text-sky-700",
-  },
-  client_linked: {
-    card: "border-amber-300 bg-amber-50/80",
-    badge: "border-amber-300 bg-amber-100 text-amber-800",
-    soft: "bg-amber-100 text-amber-800",
-  },
-  closed_won: {
-    card: "border-emerald-300 bg-emerald-50/80",
-    badge: "border-emerald-300 bg-emerald-100 text-emerald-800",
-    soft: "bg-emerald-100 text-emerald-800",
-  },
-  closed_lost: {
-    card: "border-rose-300 bg-rose-50/80",
-    badge: "border-rose-300 bg-rose-100 text-rose-800",
-    soft: "bg-rose-100 text-rose-800",
-  },
-};
-
-const BROKER_ACTIVITY_STYLES: Record<WorkspaceProjectAnalyticsBrokerActivityKey, string> = {
-  new_client: "border-slate-300 bg-slate-100 text-slate-700",
-  in_call: "border-sky-300 bg-sky-100 text-sky-700",
-  in_stage: "border-amber-300 bg-amber-100 text-amber-800",
-  permit_review: "border-orange-300 bg-orange-100 text-orange-800",
-  closed_won: "border-emerald-300 bg-emerald-100 text-emerald-800",
-  closed_lost: "border-rose-300 bg-rose-100 text-rose-800",
-};
-
-const PRIMARY_STAGE_BADGES: Record<WorkspaceProjectAnalyticsDeveloperStageKey, string> = {
-  new: "border-slate-300 bg-slate-100 text-slate-700",
-  contacted: "border-sky-300 bg-sky-100 text-sky-700",
-  negotiation: "border-amber-300 bg-amber-100 text-amber-800",
-  won: "border-emerald-300 bg-emerald-100 text-emerald-800",
-  lost: "border-rose-300 bg-rose-100 text-rose-800",
-};
-
-const BROKER_STATE_SEQUENCE: WorkspaceProjectAnalyticsBrokerState[] = [
-  "viewer_only",
-  "offer_active",
-  "client_linked",
-  "closed_won",
-  "closed_lost",
-];
-
-const BROKER_STATE_COPY: Record<
-  WorkspaceProjectAnalyticsBrokerState,
-  {
-    label: string;
-    developerLine: string;
-  }
-> = {
-  viewer_only: {
-    label: "فتح المشروع فقط",
-    developerLine: "الوسيط دخل المشروع وشاهده، لكنه لم يربط عميلاً بعد.",
-  },
-  offer_active: {
-    label: "يعمل على عرض",
-    developerLine: "الوسيط يتحرك على عرض نشط لهذا المشروع ويحتاج متابعة قريبة.",
-  },
-  client_linked: {
-    label: "جلب عميلاً",
-    developerLine: "الوسيط نجح في ربط عميل فعلي بهذا المشروع داخل مسار العمل.",
-  },
-  closed_won: {
-    label: "أغلق بنجاح",
-    developerLine: "الوسيط وصل بعميل إلى إغلاق ناجح على هذا المشروع.",
-  },
-  closed_lost: {
-    label: "إغلاق غير مكتمل",
-    developerLine: "كان لدى الوسيط عميل على المشروع لكن الرحلة لم تكتمل حتى الإغلاق.",
-  },
-};
-
-const BROKER_ACTIVITY_COPY: Record<
-  WorkspaceProjectAnalyticsBrokerActivityKey,
-  {
-    short: string;
-    developerLine: string;
-  }
-> = {
-  new_client: {
-    short: "عميل جديد",
-    developerLine: "لدى الوسيط عميل جديد مرتبط بهذا المشروع الآن.",
-  },
-  in_call: {
-    short: "في مكالمة",
-    developerLine: "الوسيط يتابع العميل حالياً في مكالمة أو تواصل مباشر.",
-  },
-  in_stage: {
-    short: "داخل مرحلة",
-    developerLine: "العميل يتحرك الآن داخل مرحلة تجارية فعلية على المشروع.",
-  },
-  permit_review: {
-    short: "مراجعة تصريح",
-    developerLine: "هناك خطوة تشغيلية أو مراجعة تصريح تؤثر على تقدم هذا العميل.",
-  },
-  closed_won: {
-    short: "إغلاق ناجح",
-    developerLine: "الوسيط أنهى الرحلة بإغلاق ناجح على المشروع.",
-  },
-  closed_lost: {
-    short: "إغلاق غير مكتمل",
-    developerLine: "الرحلة وصلت لنهاية غير مكتملة ويحتاج المطور معرفة السبب.",
-  },
-};
-
-function formatNumber(value: number) {
-  return new Intl.NumberFormat("en-US").format(value);
-}
-
-function formatPercent(value: number) {
-  return `${value.toFixed(1)}%`;
-}
-
-function formatDateTime(value: number | null) {
-  if (!value) return "بدون نشاط";
-  return new Intl.DateTimeFormat("ar-SA", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-
-function computeClickRate(clicks: number, views: number) {
-  if (views <= 0) return 0;
-  return (clicks / views) * 100;
-}
-
-function classNames(...values: Array<string | false | null | undefined>) {
-  return values.filter(Boolean).join(" ");
-}
-
-function getBrokerStateNarrative(state: WorkspaceProjectAnalyticsBrokerState, count?: number) {
-  const meta = BROKER_STATE_COPY[state];
-  if (typeof count === "number") {
-    return count > 0 ? `${formatNumber(count)} وسيط: ${meta.developerLine}` : `لا يوجد وسطاء في حالة "${meta.label}" حالياً.`;
-  }
-  return meta.developerLine;
-}
-
-function getBrokerActivityNarrative(activityKey: WorkspaceProjectAnalyticsBrokerActivityKey | null, fallbackLabel?: string | null) {
-  if (!activityKey) return fallbackLabel ?? "لا توجد حركة تشغيلية واضحة بعد.";
-  return BROKER_ACTIVITY_COPY[activityKey]?.developerLine ?? fallbackLabel ?? "لا توجد حركة تشغيلية واضحة بعد.";
-}
+import {
+  BROKER_ACTIVITY_STYLES,
+  BROKER_STATE_SEQUENCE,
+  BROKER_STATE_STYLES,
+  classNames,
+  computeClickRate,
+  DEVELOPER_TABS,
+  ENGAGEMENT_METRICS,
+  formatDateTime,
+  formatNumber,
+  formatPercent,
+  getBrokerActivityNarrative,
+  getBrokerStateLabel,
+  getBrokerStateNarrative,
+  PRIMARY_STAGE_BADGES,
+  type DeveloperTabKey,
+  type EngagementMetricKey,
+} from "./DeveloperProjectAnalyticsPage.shared";
 
 function CustomerSecondaryBadge({
   label,
@@ -315,6 +143,98 @@ function SurfacePanel({
   );
 }
 
+function HeaderPill({
+  icon: Icon,
+  label,
+}: {
+  icon: typeof MapPin;
+  label: string;
+}) {
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/35 px-3 py-1.5 text-[12px] font-bold text-white backdrop-blur-sm">
+      <Icon className="h-4 w-4 text-white/80" />
+      {label}
+    </span>
+  );
+}
+
+function ExecutiveMetricCard({
+  icon: Icon,
+  label,
+  value,
+  helper,
+  tone = "default",
+}: {
+  icon: typeof Users;
+  label: string;
+  value: string | number;
+  helper: string;
+  tone?: "default" | "highlight";
+}) {
+  return (
+    <div
+      className={
+        tone === "highlight"
+          ? "rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_6%,var(--workspace-panel))] p-5 text-right shadow-sm"
+          : "rounded-[24px] border border-border/60 bg-card p-5 text-right shadow-sm"
+      }
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="text-right">
+          <div className="text-[11px] font-bold tracking-[0.16em] text-muted-foreground">{label}</div>
+          <div className="mt-3 text-3xl font-black tracking-tight text-foreground">
+            {typeof value === "number" ? formatNumber(value) : value}
+          </div>
+        </div>
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background/75 text-[var(--workspace-highlight)]">
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+      <div className="mt-3 text-[13px] leading-6 text-muted-foreground">{helper}</div>
+    </div>
+  );
+}
+
+function DeveloperTabRail({
+  activeTab,
+  onChange,
+}: {
+  activeTab: DeveloperTabKey;
+  onChange: (tab: DeveloperTabKey) => void;
+}) {
+  const active = DEVELOPER_TABS.find((tab) => tab.key === activeTab) ?? DEVELOPER_TABS[0];
+
+  return (
+    <section className="rounded-[28px] border border-border/60 bg-card p-3 shadow-sm">
+      <div className="grid gap-3 lg:grid-cols-3">
+        {DEVELOPER_TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => onChange(tab.key)}
+              className={
+                isActive
+                  ? "rounded-[22px] border border-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,var(--workspace-panel))] p-5 text-right shadow-sm"
+                  : "rounded-[22px] border border-border/60 bg-background/60 p-5 text-right transition hover:border-foreground/15 hover:bg-muted/20"
+              }
+            >
+              <div className="text-sm font-black text-foreground">{tab.label}</div>
+              <div className="mt-2 text-[13px] leading-6 text-muted-foreground">{tab.description}</div>
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-4 rounded-[22px] border border-border/60 bg-background/60 px-4 py-3 text-right text-[13px] leading-6 text-muted-foreground">
+        <span className="font-black text-foreground">{active.label}</span>
+        {" · "}
+        {active.description}
+      </div>
+    </section>
+  );
+}
+
 function ChartSurface({
   fallback,
   children,
@@ -341,7 +261,7 @@ function BrokerStateColumns({
     return {
       key: stateKey,
       count: matchingRow?.count ?? 0,
-      label: matchingRow?.label ?? BROKER_STATE_COPY[stateKey].label,
+      label: matchingRow?.label ?? getBrokerStateLabel(stateKey),
       styles: BROKER_STATE_STYLES[stateKey],
     };
   });
@@ -976,6 +896,11 @@ export default function DeveloperProjectAnalyticsPage({
   const brokerListLimit = 5;
   const hasMoreBrokers = analytics.brokerTracking.length > visibleBrokerCount;
   const canCollapseBrokerList = visibleBrokerCount > brokerListLimit;
+  const stageNewCount = analytics.developerStageSummary.find((entry) => entry.key === "new")?.count ?? 0;
+  const stageContactedCount = analytics.developerStageSummary.find((entry) => entry.key === "contacted")?.count ?? 0;
+  const stageNegotiationCount = analytics.developerStageSummary.find((entry) => entry.key === "negotiation")?.count ?? 0;
+  const engagementRate = computeClickRate(analytics.kpis.totalClicks, analytics.kpis.totalViews);
+  const readinessLabel = project.readiness?.label ?? "جاهز";
 
   return (
     <div className="min-h-full bg-background/60 pb-24">
@@ -995,106 +920,153 @@ export default function DeveloperProjectAnalyticsPage({
         </nav>
 
         <section className="overflow-hidden rounded-[32px] border border-border/60 bg-card shadow-sm">
-          <div className="grid gap-0 xl:grid-cols-[360px_minmax(0,1fr)]">
-            <div className="relative min-h-[260px] bg-muted/20">
+          <div className="grid gap-0 xl:grid-cols-[380px_minmax(0,1fr)]">
+            <div className="relative min-h-[320px] bg-muted/20">
               <img
                 src={project.image}
                 alt={project.title}
                 className="absolute inset-0 h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-5">
+                <div className="grid gap-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <HeaderPill icon={MapPin} label={project.location} />
+                    <HeaderPill icon={Gauge} label={project.priceLabel} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <HeaderPill icon={UserRound} label={project.specs.rooms} />
+                    <HeaderPill icon={Building2} label={project.specs.area} />
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="p-6 lg:p-8">
-          <div className="space-y-6 text-right">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-              <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,var(--workspace-panel))] px-3 py-1.5 text-[11px] font-bold text-[var(--workspace-highlight)]">
-                  <BarChart3 className="h-4 w-4" />
+              <div className="space-y-6 text-right">
+                <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="space-y-4">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,var(--workspace-panel))] px-3 py-1.5 text-[11px] font-bold text-[var(--workspace-highlight)]">
+                      <BarChart3 className="h-4 w-4" />
                       تحليل المطور للمشروع
                     </div>
                     <div>
                       <h1 className="text-3xl font-black tracking-tight text-foreground">{project.title}</h1>
-                      <p className="mt-3 max-w-3xl text-[14px] leading-7 text-muted-foreground">{project.shortDescription}</p>
+                      <p className="mt-3 max-w-3xl text-[14px] leading-7 text-muted-foreground">
+                        {project.shortDescription || project.summary}
+                      </p>
                     </div>
                   </div>
-
                   <div className="grid gap-2 sm:grid-cols-2">
                     <span className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-bold text-foreground">
-                      <Users className="h-4 w-4" />
-                      {project.location}
+                      <Sparkles className="h-4 w-4 text-[var(--workspace-highlight)]" />
+                      {readinessLabel}
                     </span>
                     <span className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-bold text-foreground">
-                      <Gauge className="h-4 w-4" />
-                      {project.priceLabel}
+                      <Layers3 className="h-4 w-4 text-[var(--workspace-highlight)]" />
+                      {project.units.length} وحدة
                     </span>
                     <span className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-bold text-foreground">
-                      <UserRound className="h-4 w-4" />
-                      {project.specs.rooms}
+                      <Users className="h-4 w-4 text-[var(--workspace-highlight)]" />
+                      {analytics.developerSummary.activeBrokers} وسطاء نشطون
                     </span>
                     <span className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-bold text-foreground">
-                    <CheckCircle2 className="h-4 w-4" />
-                      {project.specs.area}
+                      <TrendingUp className="h-4 w-4 text-[var(--workspace-highlight)]" />
+                      {formatPercent(engagementRate)} تفاعل
                     </span>
                   </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <ExecutiveMetricCard
+                    icon={Users}
+                    label="إجمالي العملاء"
+                    value={analytics.developerSummary.totalCustomers}
+                    helper="كم عميل وصل فعلياً إلى هذا المشروع."
+                    tone="highlight"
+                  />
+                  <ExecutiveMetricCard
+                    icon={Target}
+                    label="داخل النظام"
+                    value={analytics.developerSummary.trackedCustomers}
+                    helper="العملاء الحقيقيون الذين يمكن متابعتهم الآن."
+                  />
+                  <ExecutiveMetricCard
+                    icon={CheckCircle2}
+                    label="إغلاق ناجح"
+                    value={analytics.developerSummary.closedWonCustomers}
+                    helper="العملاء الذين وصلوا إلى إغلاق ناجح."
+                    tone="highlight"
+                  />
+                  <ExecutiveMetricCard
+                    icon={Clock3}
+                    label="في مرحلة"
+                    value={stageContactedCount + stageNegotiationCount}
+                    helper="العملاء الموجودون في الاتصال أو التفاوض حالياً."
+                  />
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <div className="grid gap-3 lg:grid-cols-3">
-          {DEVELOPER_TABS.map((tab) => {
-            const isActive = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
-                className={
-                  isActive
-                    ? "rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_6%,var(--workspace-panel))] p-5 text-right shadow-sm"
-                    : "rounded-[24px] border border-border/60 bg-card p-5 text-right shadow-sm transition hover:border-foreground/15 hover:bg-muted/20"
-                }
-              >
-                <div className="text-sm font-black text-foreground">{tab.label}</div>
-                <div className="mt-2 text-[13px] leading-6 text-muted-foreground">{tab.description}</div>
-              </button>
-            );
-          })}
-        </div>
+        <DeveloperTabRail activeTab={activeTab} onChange={setActiveTab} />
 
         {activeTab === "overview" ? (
           <div className="space-y-6">
-            <SurfacePanel
-              title="Business Overview"
-              description="هذه هي الشاشة التي تهم المطور أولاً: كم عميل دخل، كم عميل حقيقي دخل النظام، وأين يقف الآن."
-            >
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <StatCard label="إجمالي العملاء" value={analytics.developerSummary.totalCustomers} tone="highlight" />
-                <StatCard label="العملاء الحقيقيون في النظام" value={analytics.developerSummary.trackedCustomers} />
-                <StatCard label="عملاء عبر وسيط" value={analytics.developerSummary.brokerManagedCustomers} />
-                <StatCard label="عملاء داخليون" value={analytics.developerSummary.internalCustomers} />
-                <StatCard label="في الإغلاق الناجح" value={analytics.developerSummary.closedWonCustomers} tone="highlight" />
-                <StatCard label="في الإغلاق غير المكتمل" value={analytics.developerSummary.closedLostCustomers} />
-                <StatCard label="الوسطاء النشطون" value={analytics.developerSummary.activeBrokers} />
-                <StatCard label="العملاء الجدد" value={analytics.developerStageSummary.find((entry) => entry.key === "new")?.count ?? 0} />
-              </div>
-            </SurfacePanel>
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
+              <SurfacePanel
+                title="Business Overview"
+                description="هذه هي الشاشة التي تهم المطور أولاً: كم عميل دخل، كم عميل حقيقي دخل النظام، وأين يقف الآن."
+              >
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <StatCard label="إجمالي العملاء" value={analytics.developerSummary.totalCustomers} tone="highlight" />
+                  <StatCard label="العملاء الحقيقيون في النظام" value={analytics.developerSummary.trackedCustomers} />
+                  <StatCard label="عملاء عبر وسيط" value={analytics.developerSummary.brokerManagedCustomers} />
+                  <StatCard label="عملاء داخليون" value={analytics.developerSummary.internalCustomers} />
+                  <StatCard label="في الإغلاق الناجح" value={analytics.developerSummary.closedWonCustomers} tone="highlight" />
+                  <StatCard label="في الإغلاق غير المكتمل" value={analytics.developerSummary.closedLostCustomers} />
+                  <StatCard label="الوسطاء النشطون" value={analytics.developerSummary.activeBrokers} />
+                  <StatCard label="العملاء الجدد" value={stageNewCount} />
+                </div>
+              </SurfacePanel>
+
+              <SurfacePanel
+                title="قراءة سريعة"
+                description="لوحة قصيرة قبل النزول إلى بقية الصفحة."
+              >
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <StatCard label="مرحلة الاتصال" value={stageContactedCount} tone="highlight" />
+                  <StatCard label="مرحلة التفاوض" value={stageNegotiationCount} />
+                  <StatCard label="المشاهدات" value={analytics.kpis.totalViews} />
+                  <StatCard label="النقرات" value={analytics.kpis.totalClicks} />
+                </div>
+                <div className="mt-4 rounded-[22px] border border-border/60 bg-background/70 px-4 py-4 text-right">
+                  <div className="text-[12px] font-black text-foreground">الملخص التنفيذي</div>
+                  <p className="mt-2 text-[13px] leading-7 text-muted-foreground">
+                    لدى المشروع {formatNumber(analytics.developerSummary.totalCustomers)} عميل، منهم{" "}
+                    {formatNumber(analytics.developerSummary.trackedCustomers)} داخل النظام، بينما يقود{" "}
+                    {formatNumber(analytics.developerSummary.activeBrokers)} وسطاء الحركة الحالية.
+                  </p>
+                </div>
+              </SurfacePanel>
+            </div>
 
             <BrokerStateColumns analytics={analytics} />
 
-            <SurfacePanel
-              title="توزيع العملاء على المراحل"
-              description="الرحلة الرئيسية هنا هي رحلة العملاء داخل الفَنَل التجاري، وليس مجرد الضغطات والمشاهدات."
-            >
-              <StageChart rows={analytics.developerStageSummary} color="#111827" />
-            </SurfacePanel>
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <SurfacePanel
+                title="توزيع العملاء على المراحل"
+                description="الرحلة الرئيسية هنا هي رحلة العملاء داخل الفَنَل التجاري، وليس مجرد الضغطات والمشاهدات."
+              >
+                <StageChart rows={analytics.developerStageSummary} color="#111827" />
+              </SurfacePanel>
 
-            <EngagementChart
-              analytics={analytics}
-              activeMetric={activeMetric}
-              onMetricChange={setActiveMetric}
-            />
+              <EngagementChart
+                analytics={analytics}
+                activeMetric={activeMetric}
+                onMetricChange={setActiveMetric}
+              />
+            </div>
 
             {topBrokers.length ? (
               <SurfacePanel
@@ -1121,67 +1093,71 @@ export default function DeveloperProjectAnalyticsPage({
 
         {activeTab === "brokers" ? (
           <div className="space-y-6">
-            <SurfacePanel
-              title="الوسطاء على هذا المشروع"
-              description="اختر وسيطاً لترى قصته على هذا المشروع: هل فتح المشروع فقط، جلب عميلاً، أم وصل إلى إغلاق."
-            >
-              {analytics.brokerTracking.length ? (
-                <div className="space-y-4">
-                  {visibleBrokers.map((broker) => (
-                    <BrokerCard
-                      key={broker.brokerId}
-                      broker={broker}
-                      isSelected={selectedBrokerId === broker.brokerId}
-                      onSelect={() => setSelectedBrokerId(broker.brokerId)}
-                    />
-                  ))}
-                  {(hasMoreBrokers || canCollapseBrokerList) ? (
-                    <div className="rounded-[24px] border border-border/60 bg-muted/10 p-4 text-right">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <div className="text-[13px] font-black text-foreground">قائمة الوسطاء</div>
-                          <div className="mt-1 text-[12px] text-muted-foreground">
-                            يعرض {Math.min(visibleBrokerCount, analytics.brokerTracking.length)} من {analytics.brokerTracking.length} وسطاء.
+            <div className="grid gap-6 xl:grid-cols-[minmax(340px,0.9fr)_minmax(0,1.1fr)]">
+              <div className="space-y-6">
+                <SurfacePanel
+                  title="الوسطاء على هذا المشروع"
+                  description="اختر وسيطاً لترى قصته على هذا المشروع: هل فتح المشروع فقط، جلب عميلاً، أم وصل إلى إغلاق."
+                >
+                  {analytics.brokerTracking.length ? (
+                    <div className="space-y-4">
+                      {visibleBrokers.map((broker) => (
+                        <BrokerCard
+                          key={broker.brokerId}
+                          broker={broker}
+                          isSelected={selectedBrokerId === broker.brokerId}
+                          onSelect={() => setSelectedBrokerId(broker.brokerId)}
+                        />
+                      ))}
+                      {(hasMoreBrokers || canCollapseBrokerList) ? (
+                        <div className="rounded-[24px] border border-border/60 bg-muted/10 p-4 text-right">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                              <div className="text-[13px] font-black text-foreground">قائمة الوسطاء</div>
+                              <div className="mt-1 text-[12px] text-muted-foreground">
+                                يعرض {Math.min(visibleBrokerCount, analytics.brokerTracking.length)} من {analytics.brokerTracking.length} وسطاء.
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {hasMoreBrokers ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setVisibleBrokerCount((current) =>
+                                      Math.min(current + 5, analytics.brokerTracking.length),
+                                    )
+                                  }
+                                  className="inline-flex items-center rounded-full border border-[color:color-mix(in_srgb,var(--workspace-highlight)_22%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,var(--workspace-panel))] px-4 py-2 text-[12px] font-bold text-foreground transition hover:bg-[color:color-mix(in_srgb,var(--workspace-highlight)_12%,var(--workspace-panel))]"
+                                >
+                                  عرض المزيد
+                                </button>
+                              ) : null}
+                              {canCollapseBrokerList ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setVisibleBrokerCount(brokerListLimit)}
+                                  className="inline-flex items-center rounded-full border border-border/60 bg-background px-4 py-2 text-[12px] font-bold text-muted-foreground transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] hover:text-foreground"
+                                >
+                                  عرض أقل
+                                </button>
+                              ) : null}
+                            </div>
                           </div>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                        {hasMoreBrokers ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setVisibleBrokerCount((current) =>
-                                Math.min(current + 5, analytics.brokerTracking.length),
-                              )
-                            }
-                            className="inline-flex items-center rounded-full border border-[color:color-mix(in_srgb,var(--workspace-highlight)_22%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,var(--workspace-panel))] px-4 py-2 text-[12px] font-bold text-foreground transition hover:bg-[color:color-mix(in_srgb,var(--workspace-highlight)_12%,var(--workspace-panel))]"
-                          >
-                            عرض المزيد
-                          </button>
-                        ) : null}
-                        {canCollapseBrokerList ? (
-                          <button
-                            type="button"
-                            onClick={() => setVisibleBrokerCount(brokerListLimit)}
-                            className="inline-flex items-center rounded-full border border-border/60 bg-background px-4 py-2 text-[12px] font-bold text-muted-foreground transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] hover:text-foreground"
-                          >
-                            عرض أقل
-                          </button>
-                        ) : null}
-                        </div>
-                      </div>
+                      ) : null}
                     </div>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="rounded-[22px] border border-dashed border-border/70 bg-muted/15 px-4 py-12 text-center text-[13px] font-semibold text-muted-foreground">
-                  لا يوجد وسطاء مرتبطون بهذا المشروع حتى الآن.
-                </div>
-              )}
-            </SurfacePanel>
+                  ) : (
+                    <div className="rounded-[22px] border border-dashed border-border/70 bg-muted/15 px-4 py-12 text-center text-[13px] font-semibold text-muted-foreground">
+                      لا يوجد وسطاء مرتبطون بهذا المشروع حتى الآن.
+                    </div>
+                  )}
+                </SurfacePanel>
 
-            <BrokerStateColumns analytics={analytics} />
+                <BrokerStateColumns analytics={analytics} />
+              </div>
 
-            <SelectedBrokerPanel broker={selectedBroker} />
+              <SelectedBrokerPanel broker={selectedBroker} />
+            </div>
           </div>
         ) : null}
 

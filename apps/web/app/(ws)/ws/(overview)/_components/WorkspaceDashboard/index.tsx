@@ -32,7 +32,7 @@ export default function WorkspaceDashboard({
   });
 
   return (
-    <div className="relative flex min-h-0 flex-1 basis-0 flex-col overflow-hidden bg-background text-foreground">
+    <div className="relative flex h-full min-h-0 min-w-0 w-full flex-1 basis-0 flex-col overflow-hidden bg-background text-foreground">
       <WorkspaceAssistantCanvas
         audience={audience}
         user={user}

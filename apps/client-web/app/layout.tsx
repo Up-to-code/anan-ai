@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { cookies } from "next/headers";
-import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { RootFontFaces, rootFontClassName } from "@/lib/rootFonts";
 import { getDictionary } from "@/lib/i18n";
@@ -27,7 +27,7 @@ export default async function RootLayout({
   return (
     <html lang={locale} dir={isRtlLocale(locale) ? "rtl" : "ltr"} suppressHydrationWarning>
       <body className={`${rootFontClassName} bg-background text-foreground antialiased`}>
-        <ConvexAuthNextjsServerProvider>
+        <ClerkProvider>
           <ConvexClientProvider>
             <ThemeProvider>
               <Suspense fallback={null}>
@@ -40,7 +40,7 @@ export default async function RootLayout({
               </Suspense>
             </ThemeProvider>
           </ConvexClientProvider>
-        </ConvexAuthNextjsServerProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

@@ -20,18 +20,24 @@ import {
 } from "@/server/contracts/organizations";
 import { resolveSuggestedOrganizationType } from "@/server/contracts/workspace";
 import {
-  convexOrganizationsRepository,
   type OrganizationsRepository,
 } from "@/server/infrastructure/convex/organizations";
+import { betterAuthOrganizationsRepository } from "@/server/infrastructure/betterAuth/organizations";
+import {
+  convexOrganizationProfilesRepository,
+  type BootstrapOrganizationProfileInput,
+} from "@/server/infrastructure/convex/organizationProfiles";
 
 type OrganizationsServiceDependencies = {
   requireSession: () => Promise<ResolvedSession>;
   organizationsRepository: OrganizationsRepository;
+  organizationProfilesRepository: typeof convexOrganizationProfilesRepository;
 };
 
 const defaultDependencies: OrganizationsServiceDependencies = {
   requireSession: requireSessionContext,
-  organizationsRepository: convexOrganizationsRepository,
+  organizationsRepository: betterAuthOrganizationsRepository,
+  organizationProfilesRepository: convexOrganizationProfilesRepository,
 };
 
 export async function listOrganizationsForCurrentUser(
@@ -78,6 +84,43 @@ export async function createOrganizationForCurrentUser(
   } catch (error) {
     throw normalizeDomainError(error);
   }
+}
+
+/**
+ * WHY:   Custom Better Auth org creation flows still need to bootstrap app-owned metadata and the legacy owner bridge.
+ * WHAT:  Upserts the current active organization's local Convex profile after Better Auth creates and activates it.
+ * HOW:   Validates the payload against the existing create schema, then delegates to the org-profile bridge repository.
+ */
+export async function bootstrapCurrentOrganizationFromBetterAuth(
+  input: BootstrapOrganizationProfileInput,
+  dependencies: OrganizationsServiceDependencies = defaultDependencies,
+): Promise<OrganizationSummary> {
+  const parsed = createOrganizationInputSchema.safeParse({
+    name: input.name,
+    type: input.type,
+  });
+  if (!parsed.success) {
+    throw new DomainError({
+      code: "INVALID_ARGUMENT",
+      message: parsed.error.issues[0]?.message ?? "Invalid organization payload",
+      status: 400,
+    });
+  }
+
+  const session = await dependencies.requireSession();
+  return dependencies.organizationProfilesRepository.bootstrapCurrent(session.token, input);
+}
+
+/**
+ * WHY:   Switching the active Better Auth organization should immediately rebind the legacy workspace owner context.
+ * WHAT:  Syncs the current Convex org-profile bridge from the active Better Auth organization claim.
+ * HOW:   Resolves the current authenticated session and delegates to the org-profile repository mutation.
+ */
+export async function syncCurrentOrganizationFromBetterAuth(
+  dependencies: OrganizationsServiceDependencies = defaultDependencies,
+) {
+  const session = await dependencies.requireSession();
+  return dependencies.organizationProfilesRepository.syncCurrent(session.token);
 }
 
 export async function getCurrentOrganizationForCurrentUser(

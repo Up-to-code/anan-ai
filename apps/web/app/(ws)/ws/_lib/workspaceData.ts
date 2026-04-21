@@ -31,6 +31,17 @@ export async function getLayoutSidebarData(returnTo: string) {
   try {
     // Resolve session/sidebar first so auth failures short-circuit before extra protected queries.
     const sidebar = await getWorkspaceSidebarDataForCurrentUser();
+    if (sidebar.organizations.length === 0) {
+      return {
+        ...sidebar,
+        recentAssistantThreads: [],
+        allAssistantThreads: [],
+        signalCounts: {
+          notificationCount: 0,
+          inboxCount: 0,
+        },
+      };
+    }
     const [notifications, inboxSummary, assistantThreads] = await Promise.all([
       getWorkspaceNotificationSummary(),
       getInboxUnreadSummaryForCurrentUser(),

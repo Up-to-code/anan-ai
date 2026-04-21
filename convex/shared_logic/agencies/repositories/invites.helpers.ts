@@ -85,7 +85,7 @@ function buildInviteEventMetadata(args: {
     actor: {
       authUserId: args.inviterProfile.authUserId,
       name: args.inviterProfile.name ?? args.inviterProfile.email ?? "عضو الفريق",
-      role: args.inviterProfile.role === "RED" ? "developer" : args.inviterProfile.role ?? "user",
+      role: args.inviterProfile.role ?? "user",
       organizationId: args.ownerDisplay.organizationId,
       organizationType: args.ownerDisplay.organizationType,
       organizationName: args.ownerDisplay.organizationName,

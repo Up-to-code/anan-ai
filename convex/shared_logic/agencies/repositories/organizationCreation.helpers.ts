@@ -88,8 +88,8 @@ export async function createOrganizationForAuthUserRecord(
     }
   }
 
-  if (profile?.REDId) {
-    const existingRed = await ctx.db.get(profile.REDId);
+  if ((profile as any)?.developerId) {
+    const existingRed = await ctx.db.get((profile as any).developerId);
     if (existingRed) {
       throw new ConvexError({
         code: "ORGANIZATION_EXISTS",
@@ -107,7 +107,7 @@ export async function createOrganizationForAuthUserRecord(
       username: usernameBase ?? undefined,
       usernameLower: usernameBase?.toLowerCase() ?? undefined,
       role: "user",
-      roleStatus: "pending",
+      roleApprovalStatus: "pending",
       isActive: true,
       createdAt: now,
       updatedAt: now,
@@ -149,11 +149,13 @@ export async function createOrganizationForAuthUserRecord(
 
     await ctx.db.patch(profile._id, {
       brokerId,
+      developerId: undefined,
       REDId: undefined,
       currentTenantOrgId: tenantOrgId,
       role: "broker",
       requestedRole: "broker",
-      roleStatus: "approved",
+      roleApprovalStatus: "approved",
+      roleStatus: undefined,
       isActive: true,
       updatedAt: now,
     });
@@ -225,12 +227,14 @@ export async function createOrganizationForAuthUserRecord(
   });
 
   await ctx.db.patch(profile._id, {
-    REDId: redId,
+    developerId: redId,
+    REDId: undefined,
     brokerId: undefined,
     currentTenantOrgId: tenantOrgId,
     role: "developer",
     requestedRole: "developer",
-    roleStatus: "approved",
+    roleApprovalStatus: "approved",
+    roleStatus: undefined,
     isActive: true,
     updatedAt: now,
   });

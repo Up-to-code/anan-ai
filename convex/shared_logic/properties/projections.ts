@@ -13,6 +13,7 @@ type PropertyProjectionArgs = {
   ownerId: GenericId<"brokers"> | GenericId<"RED">;
   publicationState?: "draft" | "published" | "archived";
   adLicenseStatus?: "pending" | "approved" | "rejected";
+  projectReadinessStatus?: string;
 };
 
 type OrganizationSummary = {
@@ -64,7 +65,9 @@ export async function buildPropertyProjectionFields(
     ? await findActiveComplianceRuleset(ctx, { countryCode: ownerCountryCode, orgType })
     : null;
 
-  let isPublicSearchable = args.publicationState === "published";
+  let isPublicSearchable =
+    args.publicationState === "published" &&
+    args.projectReadinessStatus === "published_ready";
   if (ruleset?.enforcement.hideUnverified) {
     if (ruleset.enforcement.requireOrgVerification && !ownerVerified) {
       isPublicSearchable = false;

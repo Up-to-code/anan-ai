@@ -5,7 +5,7 @@ export const apiClientsPage: DocsPageDefinition = {
     title: "Delegated Clients API",
     description: "Read and create CRM clients with delegated OAuth access.",
     summary:
-      "Use `/api/oauth/clients` for delegated client operations. Scope requirements are enforced per method and caller identity.",
+      "Use `/api/oauth/clients` for delegated client operations. Scope requirements are enforced per method and the connected organization boundary.",
     sections: [
       {
         id: "clients-get",
@@ -20,7 +20,7 @@ export const apiClientsPage: DocsPageDefinition = {
             notes: [
               "Requires bearer token in Authorization header.",
               "At least one of these scopes is required: `clients:read_own` or `clients:read`.",
-              "Caller identity comes from access token context.",
+              "Access is limited to the organization connected to the OAuth grant.",
             ],
             responseExample: {
               title: "Example response",
@@ -47,7 +47,7 @@ export const apiClientsPage: DocsPageDefinition = {
             title: "Create client",
             method: "POST",
             path: "/api/oauth/clients",
-            description: "Creates a CRM client on behalf of the delegated user.",
+            description: "Creates a CRM client for the connected organization.",
             requiredScopes: ["clients:create"],
             requestExample: {
               title: "Request body",

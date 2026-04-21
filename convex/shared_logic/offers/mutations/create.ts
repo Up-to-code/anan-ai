@@ -5,6 +5,7 @@ import { requireSender } from "../access";
 import { resolveOfferRecipient } from "../recipients";
 import { notifyOfferRecipient, type OfferDeliveryResult } from "./sideEffects";
 import type { CreateOfferArgs } from "./types";
+import { isPropertyDistributionReady } from "../../projects/readiness";
 
 function assertPrivateRecipientIsResolved(args: {
   visibility: "public" | "private";
@@ -30,6 +31,12 @@ async function loadCreateOfferContext(ctx: MutationCtx, args: CreateOfferArgs) {
     });
   }
   const visibility = args.visibility ?? "private";
+  if (visibility === "public" && !isPropertyDistributionReady(property as any)) {
+    throw new ConvexError({
+      code: "PROJECT_READINESS_REQUIRED",
+      message: "Open offers require a Saudi-ready published project dossier",
+    });
+  }
   const recipient = await resolveOfferRecipient(ctx, {
     visibility,
     toBrokerId: args.toBrokerId,

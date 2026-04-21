@@ -2,6 +2,7 @@ import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import { requireRole } from "../_core/security/accessPolicy";
+import { normalizeUserProfileRoleState } from "../_core/security/profileRoles";
 import {
   getUserAgentMemoryService,
   getUserKnowledgeResearchService,
@@ -112,3 +113,37 @@ export const updateUser = mutation({
   },
 });
 
+/**
+ * WHY:   Direct Convex dashboard edits can leave user role/profile fields inconsistent.
+ * WHAT:  Normalizes a single user profile into the canonical editable role schema.
+ * HOW:   Recomputes role approval and organization link fields, then patches the profile in place.
+ */
+export const normalizeUserProfileRoleStateById = mutation({
+  args: {
+    profileId: v.id("userProfiles"),
+  },
+  handler: async (ctx, { profileId }) => {
+    await requireRole(ctx, ["admin"]);
+    const profile = await ctx.db.get(profileId);
+    if (!profile) {
+      return null;
+    }
+
+    const normalized = normalizeUserProfileRoleState(profile);
+    await ctx.db.patch(profileId, {
+      role: normalized.role,
+      roleApprovalStatus: normalized.roleApprovalStatus,
+      requestedRole: normalized.requestedRole,
+      brokerId: normalized.brokerId,
+      developerId: normalized.developerId,
+      roleStatus: undefined,
+      REDId: undefined,
+      updatedAt: Date.now(),
+    });
+
+    return {
+      id: String(profileId),
+      ...normalized,
+    };
+  },
+});

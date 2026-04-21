@@ -23,11 +23,12 @@ const defaultDependencies: OAuthServiceDependencies = {
 
 export async function getAuthorizationPromptForCurrentUser(
   flowId: string,
+  tenantOrgId?: string,
   dependencies: OAuthServiceDependencies = defaultDependencies,
 ): Promise<OAuthAuthorizationPrompt> {
   const session = await dependencies.requireSession();
   try {
-    return await dependencies.repository.getAuthorizationPrompt(session.token, flowId);
+    return await dependencies.repository.getAuthorizationPrompt(session.token, flowId, tenantOrgId);
   } catch (error) {
     throw normalizeDomainError(error);
   }
@@ -35,17 +36,18 @@ export async function getAuthorizationPromptForCurrentUser(
 
 export async function approveAuthorizationForCurrentUser(
   flowId: string,
+  tenantOrgId: string,
   dependencies: OAuthServiceDependencies = defaultDependencies,
 ): Promise<OAuthApprovalResult> {
   const session = await dependencies.requireSession();
   try {
-    return await dependencies.repository.approveAuthorization(session.token, flowId);
+    return await dependencies.repository.approveAuthorization(session.token, flowId, tenantOrgId);
   } catch (error) {
     throw normalizeDomainError(error);
   }
 }
 
-export async function listAuthorizedAppsForCurrentUser(
+export async function listAuthorizedAppsForCurrentOrganization(
   dependencies: OAuthServiceDependencies = defaultDependencies,
 ): Promise<OAuthAuthorizedAppSummary[]> {
   const session = await dependencies.requireSession();
@@ -56,7 +58,7 @@ export async function listAuthorizedAppsForCurrentUser(
   }
 }
 
-export async function getAuthorizedAppDetailForCurrentUser(
+export async function getAuthorizedAppDetailForCurrentOrganization(
   clientId: string,
   dependencies: OAuthServiceDependencies = defaultDependencies,
 ): Promise<OAuthAuthorizedAppDetail | null> {
@@ -68,7 +70,7 @@ export async function getAuthorizedAppDetailForCurrentUser(
   }
 }
 
-export async function revokeAuthorizedAppForCurrentUser(
+export async function revokeAuthorizedAppForCurrentOrganization(
   clientId: string,
   dependencies: OAuthServiceDependencies = defaultDependencies,
 ): Promise<void> {

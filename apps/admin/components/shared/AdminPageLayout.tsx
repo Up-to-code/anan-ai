@@ -5,7 +5,7 @@ import {
 } from "@/components/shell/lib";
 import { cn } from "@/lib/utils";
 
-export type AdminPageLayoutVariant = "dashboard" | "analytics" | "detail" | "form";
+export type AdminPageLayoutVariant = "dashboard" | "analytics" | "list" | "detail" | "form";
 
 type AdminPageLayoutProps = {
   main: ReactNode;
@@ -16,6 +16,8 @@ type AdminPageLayoutProps = {
   railClassName?: string;
   railSticky?: boolean;
   railScroll?: boolean;
+  contentWidth?: "full" | "contained";
+  railBehavior?: "sticky" | "static";
 };
 
 type AdminMetricGridProps = {
@@ -30,17 +32,11 @@ type AdminSectionStackProps = {
 };
 
 const layoutVariantClasses: Record<AdminPageLayoutVariant, string> = {
-  dashboard: "xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,380px)]",
-  analytics: "xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,380px)]",
+  dashboard: "xl:grid-cols-[minmax(0,1.9fr)_minmax(280px,340px)]",
+  analytics: "xl:grid-cols-[minmax(0,1.75fr)_minmax(280px,336px)]",
+  list: "xl:grid-cols-[minmax(0,1.85fr)_minmax(260px,320px)]",
   detail: "xl:grid-cols-[minmax(0,1.35fr)_minmax(300px,360px)]",
   form: "xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,360px)]",
-};
-
-const layoutWidthClasses: Record<AdminPageLayoutVariant, string> = {
-  dashboard: "w-full",
-  analytics: "w-full",
-  detail: "mx-auto w-full max-w-[1440px]",
-  form: "mx-auto w-full max-w-[1380px]",
 };
 
 /**
@@ -57,10 +53,18 @@ export default function AdminPageLayout({
   railClassName,
   railSticky = true,
   railScroll = true,
+  contentWidth,
+  railBehavior,
 }: AdminPageLayoutProps) {
+  const resolvedContentWidth = contentWidth ?? (variant === "dashboard" || variant === "analytics" ? "full" : "contained");
+  const resolvedRailBehavior = railBehavior ?? (variant === "dashboard" || variant === "analytics" ? "sticky" : "static");
+  const stickyRail = railSticky && resolvedRailBehavior === "sticky";
+  const widthClassName =
+    resolvedContentWidth === "full" ? "w-full" : "mx-auto w-full max-w-[1420px]";
+
   if (!rail) {
     return (
-      <div className={cn("grid min-w-0 max-w-full content-start gap-4 xl:gap-5", layoutWidthClasses[variant], className)}>
+      <div className={cn("grid min-w-0 max-w-full content-start gap-4 xl:gap-[1.125rem]", widthClassName, className)}>
         {main}
       </div>
     );
@@ -69,19 +73,19 @@ export default function AdminPageLayout({
   return (
     <div
       className={cn(
-        "grid min-w-0 max-w-full items-start gap-4 xl:gap-5",
-        layoutWidthClasses[variant],
+        "grid min-w-0 max-w-full items-start gap-4 xl:gap-4",
+        widthClassName,
         layoutVariantClasses[variant],
         className,
       )}
     >
-      <div className={cn("grid min-w-0 content-start gap-4 xl:gap-5", mainClassName)}>{main}</div>
+      <div className={cn("grid min-w-0 content-start gap-4 xl:gap-4", mainClassName)}>{main}</div>
       <aside
         className={cn(
-          "grid min-w-0 content-start gap-4 xl:gap-5",
-          railSticky && ADMIN_STICKY_RAIL_TOP_CLASS,
-          railSticky && railScroll && ADMIN_STICKY_RAIL_MAX_HEIGHT_CLASS,
-          railSticky && railScroll && "xl:overflow-y-auto xl:pr-1",
+          "grid min-w-0 content-start gap-4 xl:gap-4",
+          stickyRail && ADMIN_STICKY_RAIL_TOP_CLASS,
+          stickyRail && railScroll && ADMIN_STICKY_RAIL_MAX_HEIGHT_CLASS,
+          stickyRail && railScroll && "xl:overflow-y-auto xl:pr-1",
           railClassName,
         )}
       >
@@ -116,5 +120,5 @@ export function AdminMetricGrid({ children, className, minItemWidth = 240 }: Adm
  * HOW:   Uses a one-column grid with consistent gaps so nested layouts remain predictable inside larger canvases.
  */
 export function AdminSectionStack({ children, className }: AdminSectionStackProps) {
-  return <div className={cn("grid min-w-0 max-w-full content-start gap-4 xl:gap-5", className)}>{children}</div>;
+  return <div className={cn("grid min-w-0 max-w-full content-start gap-4 xl:gap-4", className)}>{children}</div>;
 }

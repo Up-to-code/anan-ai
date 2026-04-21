@@ -1,29 +1,32 @@
-import Svg, { Circle, Path, Rect } from "react-native-svg";
+import { memo } from "react";
+import Svg, { Circle, Path } from "react-native-svg";
 
 type AnanMarkProps = {
   size?: number;
 };
 
 /**
- * WHY:   The assistant header needs a compact brand mark that feels native to the Anan system.
- * WHAT:  Renders a simplified mobile-sized version of the Anan mark.
- * HOW:   Uses the same navy and blue relationship present in the shared brand assets.
+ * WHY:   Mobile should use the real Anan brand mark instead of a temporary bundled glyph.
+ * WHAT:  Renders the icon portion of the shared Anan logo asset.
+ * HOW:   Rebuilds the production brand geometry from `apps/marketing/public/brand-logo.svg` using `react-native-svg`.
  */
-export function AnanMark({ size = 28 }: AnanMarkProps) {
+export const AnanMark = memo(function AnanMark({ size = 28 }: AnanMarkProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 96 96" fill="none">
-      <Circle cx="48" cy="48" r="34" stroke="#D7E3F4" strokeWidth="2.5" />
-      <Path d="M48 22V35" stroke="#2563EB" strokeWidth="3.5" strokeLinecap="round" />
-      <Path d="M74 48H61" stroke="#2563EB" strokeWidth="3.5" strokeLinecap="round" />
-      <Path d="M48 74V61" stroke="#2563EB" strokeWidth="3.5" strokeLinecap="round" />
-      <Path d="M22 48H35" stroke="#2563EB" strokeWidth="3.5" strokeLinecap="round" />
-      <Circle cx="48" cy="22" r="4.25" fill="#0F172A" />
-      <Circle cx="74" cy="48" r="4.25" fill="#0F172A" />
-      <Circle cx="48" cy="74" r="4.25" fill="#0F172A" />
-      <Circle cx="22" cy="48" r="4.25" fill="#0F172A" />
-      <Rect x="37" y="37" width="22" height="22" rx="4.5" fill="#0F172A" />
-      <Path d="M42.5 56L48 42.5L53.5 56" stroke="white" strokeWidth="3.25" strokeLinecap="round" strokeLinejoin="round" />
-      <Path d="M45.5 50.3H50.5" stroke="white" strokeWidth="3.25" strokeLinecap="round" />
+    <Svg width={size} height={size} viewBox="110 70 180 200" fill="none">
+      <Path d="M200 250L200 110" stroke="#2A7DBD" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M200 110L225 85" stroke="#2A7DBD" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M200 170L175 145L175 120" stroke="#2A7DBD" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M200 210L165 175L130 175" stroke="#2A7DBD" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M200 210L235 175L235 145" stroke="#2A7DBD" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M235 175L275 175" stroke="#2A7DBD" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+
+      <Circle cx="200" cy="250" r="12" fill="#0C2D54" />
+      <Circle cx="225" cy="85" r="12" fill="#0C2D54" />
+      <Circle cx="175" cy="120" r="12" fill="#0C2D54" />
+      <Circle cx="130" cy="175" r="12" fill="#0C2D54" />
+      <Circle cx="235" cy="145" r="12" fill="#0C2D54" />
+      <Circle cx="275" cy="175" r="12" fill="#0C2D54" />
+      <Circle cx="242" cy="223" r="12" fill="#0C2D54" />
     </Svg>
   );
-}
+});

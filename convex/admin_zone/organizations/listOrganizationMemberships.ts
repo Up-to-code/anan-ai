@@ -41,7 +41,7 @@ function buildMembershipRow(args: {
           name: profile.name ?? profile.email ?? "مستخدم عنان",
           email: profile.email ?? null,
           role: profile.role ?? null,
-          roleStatus: profile.roleStatus ?? null,
+          roleApprovalStatus: profile.roleApprovalStatus ?? null,
         }
       : null,
   };

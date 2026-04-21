@@ -3,6 +3,7 @@ import { Pressable, View } from "react-native";
 import { Mail, MessageCircle, Phone } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText } from "@/components/ui/AppText";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import { useAppTheme } from "@/lib/mobileTheme";
 
 type StickyJourneyBarProps = {
@@ -25,8 +26,9 @@ export function StickyJourneyBar({
 }: StickyJourneyBarProps) {
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
+  const { dictionary, isRtl } = useMobileLocale();
   const ThirdIcon =
-    thirdActionLabel.includes("بريد") || thirdActionLabel.includes("إيميل") || thirdActionLabel.includes("ايميل")
+    thirdActionLabel.toLowerCase().includes(dictionary.common.email.toLowerCase())
       ? Mail
       : MessageCircle;
 
@@ -41,15 +43,16 @@ export function StickyJourneyBar({
         backgroundColor: theme.colors.canvas,
       }}
     >
-      <View className="flex-row-reverse gap-3">
-        <ActionButton label="واتساب" icon={<MessageCircle size={18} color="#16A34A" />} onPress={onWhatsApp} tone="success" theme={theme} />
-        <ActionButton label="اتصال" icon={<Phone size={18} color={theme.colors.primary} />} onPress={onCall} tone="neutral" theme={theme} />
+      <View className={`gap-3 ${isRtl ? "flex-row-reverse" : "flex-row"}`}>
+        <ActionButton label={dictionary.common.whatsapp} icon={<MessageCircle size={18} color="#16A34A" />} onPress={onWhatsApp} tone="success" theme={theme} isRtl={isRtl} />
+        <ActionButton label={dictionary.common.call} icon={<Phone size={18} color={theme.colors.primary} />} onPress={onCall} tone="neutral" theme={theme} isRtl={isRtl} />
         <ActionButton
           label={thirdActionLabel}
           icon={<ThirdIcon size={18} color={theme.colors.primary} />}
           onPress={onThirdAction}
           tone="neutral"
           theme={theme}
+          isRtl={isRtl}
         />
       </View>
     </View>
@@ -62,17 +65,19 @@ function ActionButton({
   onPress,
   tone,
   theme,
+  isRtl,
 }: {
   label: string;
   icon: ReactNode;
   onPress: () => void;
   tone: "success" | "neutral";
   theme: any;
+  isRtl: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      className="h-14 flex-1 flex-row-reverse items-center justify-center gap-2 border px-3 active:opacity-90"
+      className={`h-14 flex-1 items-center justify-center gap-2 border px-3 active:opacity-90 ${isRtl ? "flex-row-reverse" : "flex-row"}`}
       style={{
         borderRadius: theme.radii.panel,
         borderColor: tone === "success" ? "#CDEFD8" : theme.colors.border,

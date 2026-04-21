@@ -33,11 +33,15 @@ export default function OrganizationInvitesStep({
   const handleAcceptInvite = async (invite: IncomingOrganizationInvite) => {
     setErrorMessage(null);
     setPendingInviteId(invite.id);
-    const ok = await acceptIncomingInvite(invite.token);
+    const ok = await acceptIncomingInvite(invite);
 
     if (!ok) {
       setErrorMessage("تعذر قبول الدعوة حالياً.");
       setPendingInviteId(null);
+      return;
+    }
+
+    if (invite.acceptUrl) {
       return;
     }
 

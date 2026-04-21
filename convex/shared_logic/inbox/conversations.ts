@@ -230,7 +230,7 @@ async function loadConversationPreview(
   const [otherOrganizationName, otherUserImage] = await Promise.all([
     getOrganizationNameByOwner(ctx, {
       brokerId: otherProfile?.brokerId ?? undefined,
-      REDId: otherProfile?.REDId ?? undefined,
+      developerId: (otherProfile as any)?.developerId ?? undefined,
     }),
     getUserImageByEmail(ctx, otherProfile?.email),
   ]);
@@ -247,7 +247,7 @@ async function loadConversationPreview(
 
 function resolveOrganizationType(otherProfile: Awaited<ReturnType<typeof getProfileByAuthUserId>>) {
   if (otherProfile?.brokerId) return "broker" as const;
-  return otherProfile?.REDId ? ("developer" as const) : null;
+  return (otherProfile as any)?.developerId ? ("developer" as const) : null;
 }
 
 export async function mapConversationSummary(
@@ -266,9 +266,9 @@ export async function mapConversationSummary(
       email: otherProfile?.email ?? null,
       username: otherProfile?.username ?? null,
       image: otherUserImage,
-      role: otherProfile?.role === "RED" ? "developer" : otherProfile?.role ?? "user",
+      role: otherProfile?.role ?? "user",
       brokerId: otherProfile?.brokerId ?? null,
-      redId: otherProfile?.REDId ?? null,
+      redId: (otherProfile as any)?.developerId ?? null,
       organizationName: otherOrganizationName,
       organizationType: resolveOrganizationType(otherProfile),
       membershipState: null,

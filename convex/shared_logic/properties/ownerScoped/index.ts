@@ -6,6 +6,12 @@ import {
   applyOrganizationProjectSummaryDelta,
   buildPropertyProjectionFields,
 } from "../projections";
+import {
+  ensureProjectDossierForProperty,
+} from "../../projects/migrations";
+import {
+  recomputeProjectReadinessForProperty,
+} from "../../projects/readiness";
 import type {
   OwnerScopedOwnerField,
   OwnerScopedOwnerId,
@@ -100,14 +106,16 @@ export async function createOwnerScopedProperty(
   } & OwnerScopedPropertyWriteFields,
 ) {
   const { ownerField, ownerId, ...rest } = args;
+  const requestedVisibility = rest.publicationState === "published" ? "public" : "private";
   const heroImage = rest.media?.[0];
   const searchText = buildPropertySearchText(rest);
   const now = Date.now();
   const projections = await buildPropertyProjectionFields(ctx, {
     ownerField,
     ownerId,
-    publicationState: rest.publicationState ?? "draft",
+    publicationState: "draft",
     adLicenseStatus: (rest as any).adLicenseStatus,
+    projectReadinessStatus: "incomplete",
   });
 
   const propertyId = await ctx.db.insert("properties", {
@@ -116,14 +124,19 @@ export async function createOwnerScopedProperty(
     searchText,
     ...projections,
     [ownerField]: ownerId,
-    publicationState: rest.publicationState ?? "draft",
+    publicationState: "draft",
+    projectReadinessStatus: "incomplete",
     createdAt: now,
     updatedAt: now,
   } as any);
+  await ensureProjectDossierForProperty(ctx, propertyId, {
+    includeLegacyUnitAndPaymentPlan: true,
+    requestedVisibility,
+  });
   await applyOrganizationProjectSummaryDelta(ctx, {
     ownerField,
     ownerId,
-    nextPublicationState: (rest.publicationState ?? "draft") as any,
+    nextPublicationState: "draft" as any,
     createdAt: now,
     delta: 1,
   });
@@ -140,8 +153,13 @@ export async function updateOwnerScopedProperty(
   { id, ...patch }: OwnerScopedPropertyUpdateArgs,
 ) {
   const existing = await requirePropertyRecord(ctx, id);
-  const heroImage = patch.media?.[0] ?? existing.heroImage;
-  const merged = { ...existing, ...patch, heroImage };
+  const requestedVisibility = patch.publicationState === "published" ? "public" : undefined;
+  const normalizedPatch =
+    patch.publicationState === "published"
+      ? ({ ...patch, publicationState: "draft" } as typeof patch)
+      : patch;
+  const heroImage = normalizedPatch.media?.[0] ?? existing.heroImage;
+  const merged = { ...existing, ...normalizedPatch, heroImage };
   const searchText = buildPropertySearchText(merged);
   const owner = resolveOwnerState(existing as any);
   const projections = await buildPropertyProjectionFields(ctx, {
@@ -152,12 +170,17 @@ export async function updateOwnerScopedProperty(
   });
 
   await ctx.db.patch(id, {
-    ...patch,
+    ...normalizedPatch,
     heroImage,
     searchText,
     ...projections,
     updatedAt: Date.now(),
   });
+  await ensureProjectDossierForProperty(ctx, id, {
+    includeLegacyUnitAndPaymentPlan: false,
+    requestedVisibility,
+  });
+  await recomputeProjectReadinessForProperty(ctx, id);
   if (existing.publicationState !== merged.publicationState) {
     await applyOrganizationProjectSummaryDelta(ctx, {
       ownerField: owner.ownerField,
@@ -199,14 +222,28 @@ export async function publishOwnerScopedProperty(
 ) {
   const existing = await requirePropertyRecord(ctx, args.id);
   const owner = resolveOwnerState(existing as any);
+  await ensureProjectDossierForProperty(ctx, args.id, {
+    includeLegacyUnitAndPaymentPlan: false,
+    requestedVisibility: "public",
+  });
+  const readiness = await recomputeProjectReadinessForProperty(ctx, args.id);
+  if (!readiness.canPublish) {
+    throw new ConvexError({
+      code: "PROJECT_READINESS_REQUIRED",
+      message: readiness.blockers[0]?.label ?? "Project readiness approval is required before publishing",
+      details: readiness.blockers,
+    } as any);
+  }
   const projections = await buildPropertyProjectionFields(ctx, {
     ownerField: owner.ownerField,
     ownerId: owner.ownerId,
     publicationState: "published",
     adLicenseStatus: existing.adLicenseStatus,
+    projectReadinessStatus: readiness.status,
   });
   await ctx.db.patch(args.id, {
     publicationState: "published",
+    projectReadinessStatus: readiness.status,
     ...projections,
     updatedAt: Date.now(),
   });

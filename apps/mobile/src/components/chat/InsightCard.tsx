@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import {
   Building2,
   ChevronLeft,
@@ -16,6 +16,7 @@ import { Pressable, View } from "react-native";
 import { AppText } from "@/components/ui/AppText";
 import { MobilePill, MobileSectionHeading, MobileSurface } from "@/components/ui/MobileChrome";
 import { formatCurrency, formatPercent } from "@/lib/formatters";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import { useAppTheme } from "@/lib/mobileTheme";
 import type { MobileAssistantCard } from "@/types/mobile";
 
@@ -27,14 +28,15 @@ type CardTone = "default" | "muted" | "highlight" | "success" | "danger";
 
 export function InsightCard({ card }: InsightCardProps) {
   const theme = useAppTheme();
+  const { dictionary, locale } = useMobileLocale();
 
   if (card.type === "broker_profile") {
     return (
       <CardShell title={card.title} icon={<User size={18} color={theme.colors.primary} />}>
-        <MetricRow label="الوسيط" value={card.brokerName} emphasized />
-        <MetricRow label="الوكالة أو الشركة" value={card.brokerAgency} />
-        <MetricRow label="التقييم العام" value={`${card.rating} / 5`} />
-        <MetricRow label="وحدات نشطة" value={`${card.activeListings}`} last />
+        <MetricRow label={dictionary.cards.broker} value={card.brokerName} emphasized />
+        <MetricRow label={dictionary.cards.agency} value={card.brokerAgency} />
+        <MetricRow label={dictionary.cards.rating} value={`${card.rating} / 5`} />
+        <MetricRow label={dictionary.cards.activeListings} value={`${card.activeListings}`} last />
         <SummaryText>{card.summary}</SummaryText>
       </CardShell>
     );
@@ -43,9 +45,9 @@ export function InsightCard({ card }: InsightCardProps) {
   if (card.type === "developer_profile") {
     return (
       <CardShell title={card.title} icon={<Building2 size={18} color={theme.colors.primary} />}>
-        <MetricRow label="المطور العقاري" value={card.developerName} emphasized />
-        <MetricRow label="سنة التأسيس" value={`${card.establishedYear}`} />
-        <MetricRow label="مشاريع منجزة" value={`${card.completedProjects}`} last />
+        <MetricRow label={dictionary.cards.developer} value={card.developerName} emphasized />
+        <MetricRow label={dictionary.cards.establishedYear} value={`${card.establishedYear}`} />
+        <MetricRow label={dictionary.cards.completedProjects} value={`${card.completedProjects}`} last />
         <SummaryText>{card.summary}</SummaryText>
       </CardShell>
     );
@@ -55,9 +57,9 @@ export function InsightCard({ card }: InsightCardProps) {
     const trendDirection = card.priceTrend === "up" ? "▲" : card.priceTrend === "down" ? "▼" : "•";
     return (
       <CardShell title={card.title} icon={<TrendingUp size={18} color={theme.colors.primary} />} tone="highlight">
-        <MetricRow label="المنطقة" value={card.location} emphasized />
-        <MetricRow label="متوسط سعر المتر" value={formatCurrency(card.averagePrice)} />
-        <MetricRow label="اتجاه السوق (سنوي)" value={`${trendDirection} ${card.trendPercentage}%`} emphasized last />
+        <MetricRow label={dictionary.cards.location} value={card.location} emphasized />
+        <MetricRow label={dictionary.cards.averageSqmPrice} value={formatCurrency(card.averagePrice, locale)} />
+        <MetricRow label={dictionary.cards.marketTrend} value={`${trendDirection} ${card.trendPercentage}%`} emphasized last />
         <SummaryText>{card.summary}</SummaryText>
       </CardShell>
     );
@@ -83,9 +85,9 @@ export function InsightCard({ card }: InsightCardProps) {
   if (card.type === "roi_summary") {
     return (
       <CardShell title={card.title} icon={<Percent size={18} color={theme.colors.primary} />}>
-        <MetricRow label="سعر الشراء" value={formatCurrency(card.purchasePrice)} />
-        <MetricRow label="الإيجار السنوي التقديري" value={formatCurrency(card.estimatedAnnualRent)} />
-        <MetricRow label="العائد الإجمالي" value={formatPercent(card.grossYieldPercent)} emphasized last />
+        <MetricRow label={dictionary.cards.purchasePrice} value={formatCurrency(card.purchasePrice, locale)} />
+        <MetricRow label={dictionary.cards.annualRentEstimate} value={formatCurrency(card.estimatedAnnualRent, locale)} />
+        <MetricRow label={dictionary.cards.grossYield} value={formatPercent(card.grossYieldPercent)} emphasized last />
         <SummaryText compact>{card.summary}</SummaryText>
       </CardShell>
     );
@@ -98,9 +100,9 @@ export function InsightCard({ card }: InsightCardProps) {
   if (card.type === "payment_plan") {
     return (
       <CardShell title={card.title} icon={<Wallet size={18} color={theme.colors.primary} />} tone="muted">
-        <MetricRow label="الدفعة الأولى" value={formatCurrency(card.downPayment)} />
-        <MetricRow label="القسط الشهري" value={formatCurrency(card.monthlyInstallment)} emphasized />
-        <MetricRow label="مدة السداد" value={`${card.durationMonths} شهر`} last />
+        <MetricRow label={dictionary.cards.downPayment} value={formatCurrency(card.downPayment, locale)} />
+        <MetricRow label={dictionary.cards.monthlyInstallment} value={formatCurrency(card.monthlyInstallment, locale)} emphasized />
+        <MetricRow label={dictionary.cards.repaymentPeriodMonths} value={locale === "en" ? `${card.durationMonths} mo` : `${card.durationMonths} شهر`} last />
         <SummaryText compact>{card.summary}</SummaryText>
       </CardShell>
     );
@@ -109,12 +111,12 @@ export function InsightCard({ card }: InsightCardProps) {
   if (card.type === "mortgage_check") {
     return (
       <CardShell title={card.title} icon={<Wallet size={18} color={theme.colors.primary} />} tone="highlight">
-        <MetricRow label="الحالة" value={eligibilityLabel(card.estimatedEligibility)} emphasized />
-        {card.recommendedBudget ? <MetricRow label="ميزانية مقترحة" value={formatCurrency(card.recommendedBudget)} /> : null}
+        <MetricRow label={dictionary.cards.status} value={eligibilityLabel(card.estimatedEligibility, locale)} emphasized />
+        {card.recommendedBudget ? <MetricRow label={dictionary.cards.suggestedBudget} value={formatCurrency(card.recommendedBudget, locale)} /> : null}
         {card.monthlyInstallmentEstimate ? (
           <MetricRow
-            label="قسط تقريبي"
-            value={formatCurrency(card.monthlyInstallmentEstimate)}
+            label={dictionary.cards.estimatedInstallment}
+            value={formatCurrency(card.monthlyInstallmentEstimate, locale)}
             last={!card.recommendedBudget}
           />
         ) : null}
@@ -131,7 +133,7 @@ export function InsightCard({ card }: InsightCardProps) {
         icon={<ShieldCheck size={18} color={verified ? theme.colors.success : theme.colors.primary} />}
         tone={verified ? "success" : "muted"}
       >
-        <MetricRow label="التحقق" value={permitLabel(card.permitStatus)} emphasized last />
+        <MetricRow label={dictionary.cards.verification} value={permitLabel(card.permitStatus, locale)} emphasized last />
         <SummaryText compact>{card.summary}</SummaryText>
       </CardShell>
     );
@@ -140,10 +142,10 @@ export function InsightCard({ card }: InsightCardProps) {
   if (card.type === "bank_offer") {
     return (
       <CardShell title={card.title} icon={<Wallet size={18} color={theme.colors.primary} />} tone="muted">
-        <MetricRow label="البنك" value={card.bankName} emphasized />
-        <MetricRow label="البرنامج" value={card.rateLabel} />
-        <MetricRow label="الدفعة الأولى" value={`${card.downPaymentPercent}%`} />
-        <MetricRow label="القسط الشهري التقريبي" value={formatCurrency(card.monthlyEstimate)} last />
+        <MetricRow label={dictionary.cards.bank} value={card.bankName} emphasized />
+        <MetricRow label={dictionary.cards.program} value={card.rateLabel} />
+        <MetricRow label={dictionary.cards.downPayment} value={`${card.downPaymentPercent}%`} />
+        <MetricRow label={dictionary.cards.approximateMonthlyInstallment} value={formatCurrency(card.monthlyEstimate, locale)} last />
         <SummaryText compact>{card.summary}</SummaryText>
       </CardShell>
     );
@@ -165,8 +167,8 @@ export function InsightCard({ card }: InsightCardProps) {
     return (
       <CardShell title={card.title} icon={<CircleCheckBig size={18} color={theme.colors.primary} />} tone={tone}>
         <MetricRow
-          label="الحالة"
-          value={card.tone === "success" ? "إيجابي" : card.tone === "warning" ? "تنبيه" : "معلومة"}
+          label={dictionary.cards.status}
+          value={card.tone === "success" ? dictionary.cards.positive : card.tone === "warning" ? dictionary.cards.warning : dictionary.cards.info}
           emphasized
           last
         />
@@ -177,11 +179,13 @@ export function InsightCard({ card }: InsightCardProps) {
 
   return (
     <CardShell title={card.title} icon={<CircleCheckBig size={18} color={theme.colors.primary} />}>
-      <MetricRow label="حالة التحويل" value={card.handoffStatus === "qualified" ? "جاهز" : "يحتاج تفاصيل"} emphasized last />
+      <MetricRow label={dictionary.cards.handoffStatus} value={card.handoffStatus === "qualified" ? dictionary.cards.qualified : dictionary.cards.needsMoreInfo} emphasized last />
       <SummaryText compact>{card.summary}</SummaryText>
     </CardShell>
   );
 }
+
+export default memo(InsightCard);
 
 function ComparisonRow({ row, rowIndex, isLast }: { row: string[]; rowIndex: number; isLast: boolean }) {
   const theme = useAppTheme();
@@ -218,6 +222,7 @@ function ComparisonRow({ row, rowIndex, isLast }: { row: string[]; rowIndex: num
 
 function InteractiveLoanCalculator({ card }: { card: any }) {
   const theme = useAppTheme();
+  const { dictionary, locale } = useMobileLocale();
   const [downPaymentPercent, setDownPaymentPercent] = useState(() =>
     Math.round((card.downPayment / card.propertyPrice) * 100) || 10,
   );
@@ -234,24 +239,24 @@ function InteractiveLoanCalculator({ card }: { card: any }) {
 
   return (
     <CardShell title={card.title} icon={<Wallet size={18} color={theme.colors.primary} />} tone="muted">
-      <MetricRow label="قيمة العقار" value={formatCurrency(card.propertyPrice)} last />
+      <MetricRow label={dictionary.cards.propertyValue} value={formatCurrency(card.propertyPrice, locale)} last />
 
       <ControlBlock
-        label="الدفعة المقدمة"
-        value={`${downPaymentPercent}% (${formatCurrency(downPaymentAmount)})`}
+        label={dictionary.cards.upfrontPayment}
+        value={`${downPaymentPercent}% (${formatCurrency(downPaymentAmount, locale)})`}
         onDecrement={() => setDownPaymentPercent((current: number) => Math.max(10, current - 5))}
         onIncrement={() => setDownPaymentPercent((current: number) => Math.min(90, current + 5))}
       />
 
       <ControlBlock
-        label="مدة التمويل"
-        value={`${years} سنة`}
+        label={dictionary.cards.financeDuration}
+        value={locale === "en" ? `${years} yrs` : `${years} سنة`}
         onDecrement={() => setYears((current: number) => Math.max(5, current - 5))}
         onIncrement={() => setYears((current: number) => Math.min(30, current + 5))}
       />
 
       <MobileSurface tone="highlight" radius="card" shadow="none" className="px-4 py-4">
-        <MetricRow label="القسط الشهري المتوقع" value={formatCurrency(emi)} emphasized last />
+        <MetricRow label={dictionary.cards.expectedMonthlyInstallment} value={formatCurrency(emi, locale)} emphasized last />
       </MobileSurface>
       <SummaryText compact>{card.summary}</SummaryText>
     </CardShell>
@@ -260,6 +265,7 @@ function InteractiveLoanCalculator({ card }: { card: any }) {
 
 function InteractiveRoiCalculator({ card }: { card: any }) {
   const theme = useAppTheme();
+  const { dictionary, locale, isRtl } = useMobileLocale();
   const [growthScenario, setGrowthScenario] = useState<"conservative" | "expected" | "aggressive">("expected");
 
   const growthRates = { conservative: 0.05, expected: 0.15, aggressive: 0.25 };
@@ -267,32 +273,32 @@ function InteractiveRoiCalculator({ card }: { card: any }) {
 
   return (
     <CardShell title={card.title} icon={<Percent size={18} color={theme.colors.primary} />} tone="muted">
-      <MetricRow label="سعر الشراء" value={formatCurrency(card.purchasePrice)} />
-      <MetricRow label="الإيجار السنوي" value={formatCurrency(card.annualRent)} />
-      <MetricRow label="عائد الإيجار السنوي" value={formatPercent(card.yieldPercent)} emphasized last />
+      <MetricRow label={dictionary.cards.purchasePrice} value={formatCurrency(card.purchasePrice, locale)} />
+      <MetricRow label={dictionary.cards.annualRent} value={formatCurrency(card.annualRent, locale)} />
+      <MetricRow label={dictionary.cards.annualRentalYield} value={formatPercent(card.yieldPercent)} emphasized last />
 
       <MobileSurface tone="default" radius="card" shadow="none" className="px-4 py-4">
         <MobileSectionHeading
-          eyebrow="SCENARIO"
-          title="نمو القيمة خلال 5 سنوات"
-          description="اختر السيناريو الأقرب لتوقعك حتى نعيد تقدير قيمة العقار المستقبلية."
+          eyebrow={dictionary.cards.scenarioEyebrow}
+          title={dictionary.cards.valueGrowth5Years}
+          description={dictionary.cards.valueGrowth5YearsBody}
         />
 
-        <View className="mt-4 flex-row-reverse gap-2">
+        <View className={`mt-4 gap-2 ${isRtl ? "flex-row-reverse" : "flex-row"}`}>
           <ScenarioOption
-            label="تحفظ"
+            label={dictionary.cards.conservative}
             value="5%"
             active={growthScenario === "conservative"}
             onPress={() => setGrowthScenario("conservative")}
           />
           <ScenarioOption
-            label="أساسي"
+            label={dictionary.cards.base}
             value="15%"
             active={growthScenario === "expected"}
             onPress={() => setGrowthScenario("expected")}
           />
           <ScenarioOption
-            label="متفائل"
+            label={dictionary.cards.optimistic}
             value="25%"
             active={growthScenario === "aggressive"}
             onPress={() => setGrowthScenario("aggressive")}
@@ -301,7 +307,7 @@ function InteractiveRoiCalculator({ card }: { card: any }) {
       </MobileSurface>
 
       <MobileSurface tone="highlight" radius="card" shadow="none" className="px-4 py-4">
-        <MetricRow label="القيمة المتوقعة بعد 5 سنوات" value={formatCurrency(projectedValue)} emphasized last />
+        <MetricRow label={dictionary.cards.expectedValue5Years} value={formatCurrency(projectedValue, locale)} emphasized last />
       </MobileSurface>
       <SummaryText compact>{card.summary}</SummaryText>
     </CardShell>
@@ -490,14 +496,14 @@ function ScenarioOption({
   );
 }
 
-function eligibilityLabel(value: "eligible" | "review" | "insufficient_data") {
-  if (value === "eligible") return "مؤهل مبدئياً";
-  if (value === "review") return "بحاجة مراجعة";
-  return "نحتاج بيانات إضافية";
+function eligibilityLabel(value: "eligible" | "review" | "insufficient_data", locale: "ar" | "en") {
+  if (value === "eligible") return locale === "en" ? "Initially eligible" : "مؤهل مبدئياً";
+  if (value === "review") return locale === "en" ? "Needs review" : "بحاجة مراجعة";
+  return locale === "en" ? "We need more information" : "نحتاج بيانات إضافية";
 }
 
-function permitLabel(value: "verified" | "pending_review" | "not_available") {
-  if (value === "verified") return "موثق";
-  if (value === "pending_review") return "مراجعة معلقة";
-  return "غير متاح";
+function permitLabel(value: "verified" | "pending_review" | "not_available", locale: "ar" | "en") {
+  if (value === "verified") return locale === "en" ? "Verified" : "موثق";
+  if (value === "pending_review") return locale === "en" ? "Pending review" : "مراجعة معلقة";
+  return locale === "en" ? "Unavailable" : "غير متاح";
 }

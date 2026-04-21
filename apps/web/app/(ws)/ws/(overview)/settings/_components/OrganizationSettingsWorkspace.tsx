@@ -49,7 +49,7 @@ export default function OrganizationSettingsWorkspace({
 
   if (!organization) {
     return (
-      <section className="rounded-3xl border border-border bg-card p-6 shadow-sm" dir={direction}>
+      <section className="rounded-[24px] bg-[var(--workspace-panel)] p-5 sm:p-6" dir={direction}>
         <h2 className="text-lg font-bold text-foreground">{dictionary.settings.organizationSettingsTitle}</h2>
         <p className="mt-2 text-sm text-muted-foreground">{dictionary.settings.organizationNoOrganization}</p>
       </section>
@@ -70,31 +70,23 @@ export default function OrganizationSettingsWorkspace({
   ];
 
   return (
-    <section className="space-y-6 pb-12" dir={direction}>
-      <div className="grid gap-5 xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.2fr)]">
-        <div className="rounded-[28px] border border-border/70 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--workspace-panel)_95%,transparent)_0%,color-mix(in_srgb,var(--workspace-elevated)_98%,transparent)_100%)] p-6 shadow-sm xl:sticky xl:top-6 xl:self-start">
-          <div className={cn("space-y-1.5", isRtl ? "text-right" : "text-left")}>
-            <h2 className="text-lg font-bold text-foreground">{dictionary.settings.organizationIdentityTitle}</h2>
-            <p className="text-sm text-muted-foreground">{dictionary.settings.organizationIdentityDescription}</p>
-          </div>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-            {summaryItems.map((item) => (
-              <div key={item.label} className="rounded-[22px] border border-border/70 bg-background/80 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">{item.label}</div>
-                <div className="mt-2 text-sm font-black tracking-tight text-foreground" dir={item.valueDir ?? direction}>
-                  {item.value}
-                </div>
-              </div>
-            ))}
-          </div>
+    <section className="space-y-5 pb-12" dir={direction}>
+      <div className="rounded-[24px] bg-[var(--workspace-panel)] p-5 sm:p-6">
+        <div className={cn("space-y-1", isRtl ? "text-right" : "text-left")}>
+          <h2 className="text-lg font-bold text-foreground">{dictionary.settings.organizationSettingsTitle}</h2>
+          <p className="text-sm text-muted-foreground">{dictionary.settings.organizationSettingsDescription}</p>
         </div>
 
-        <div className="rounded-[28px] border border-border/70 bg-card p-6 shadow-sm sm:p-7">
-          <div className={cn("space-y-1.5", isRtl ? "text-right" : "text-left")}>
-            <h3 className="text-lg font-bold text-foreground">{dictionary.settings.organizationSettingsTitle}</h3>
-            <p className="text-sm text-muted-foreground">{dictionary.settings.organizationSettingsDescription}</p>
-          </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {summaryItems.map((item) => (
+            <div key={item.label} className="rounded-[18px] bg-background/65 px-4 py-3">
+              <div className="text-[11px] font-semibold text-muted-foreground">{item.label}</div>
+              <div className="mt-1 text-[13px] font-bold text-foreground" dir={item.valueDir ?? direction}>
+                {item.value}
+              </div>
+            </div>
+          ))}
+        </div>
 
           <form
             className="mt-6 space-y-6"
@@ -127,7 +119,7 @@ export default function OrganizationSettingsWorkspace({
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   disabled={!canManage || isSaving}
-                  className="w-full rounded-[18px] border border-border/70 bg-background/80 px-4 py-3 text-[14px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-[16px] border border-border/60 bg-background/70 px-4 py-3 text-[14px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
 
@@ -139,7 +131,7 @@ export default function OrganizationSettingsWorkspace({
                   onChange={(event) => setDescription(event.target.value)}
                   disabled={!canManage || isSaving}
                   rows={4}
-                  className="w-full rounded-[18px] border border-border/70 bg-background/80 px-4 py-3 text-[14px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-[16px] border border-border/60 bg-background/70 px-4 py-3 text-[14px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <p className="text-[12px] font-medium text-muted-foreground">{dictionary.settings.organizationDescriptionHint}</p>
               </div>
@@ -156,7 +148,7 @@ export default function OrganizationSettingsWorkspace({
                   disabled={!canManage || isSaving}
                   placeholder="https://example.com"
                   dir="ltr"
-                  className="w-full rounded-[18px] border border-border/70 bg-background/80 px-4 py-3 text-[14px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-[16px] border border-border/60 bg-background/70 px-4 py-3 text-[14px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
 
@@ -172,7 +164,7 @@ export default function OrganizationSettingsWorkspace({
                   disabled={!canManage || isSaving}
                   placeholder="contact@example.com"
                   dir="ltr"
-                  className="w-full rounded-[18px] border border-border/70 bg-background/80 px-4 py-3 text-[14px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-[16px] border border-border/60 bg-background/70 px-4 py-3 text-[14px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
 
@@ -187,25 +179,24 @@ export default function OrganizationSettingsWorkspace({
                   disabled={!canManage || isSaving}
                   placeholder="+966500000000"
                   dir="ltr"
-                  className="w-full rounded-[18px] border border-border/70 bg-background/80 px-4 py-3 text-[14px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-[16px] border border-border/60 bg-background/70 px-4 py-3 text-[14px] font-medium text-foreground transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border/70 pt-5">
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
               <div aria-live="polite" className="min-h-[20px] text-[13px] font-medium text-muted-foreground">
                 {status}
               </div>
               <button
                 type="submit"
                 disabled={!canManage || isSaving}
-                className="inline-flex items-center justify-center rounded-[18px] bg-[var(--workspace-highlight)] px-5 py-3 text-[13px] font-bold text-white shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center justify-center rounded-[16px] bg-[var(--workspace-highlight)] px-5 py-3 text-[13px] font-bold text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSaving ? dictionary.settings.organizationSaving : dictionary.settings.organizationSave}
               </button>
             </div>
           </form>
-        </div>
       </div>
     </section>
   );

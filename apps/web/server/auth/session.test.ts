@@ -1,14 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { DomainError } from "@/server/contracts/errors";
 
-const { convexAuthNextjsToken } = vi.hoisted(() => ({
-  convexAuthNextjsToken: vi.fn(),
-}));
-
-vi.mock("@convex-dev/auth/nextjs/server", () => ({
-  convexAuthNextjsToken,
-}));
-
 import { getOptionalSessionContext } from "./session";
 
 function createJwtWithExp(expSeconds: number) {
@@ -21,6 +13,7 @@ it("treats clearly expired NoAuthProvider tokens as logged out", async () => {
   const expiredToken = createJwtWithExp(Math.floor((Date.now() - (60 * 1000)) / 1000));
   const dependencies = {
     getToken: vi.fn(async () => expiredToken),
+    getOrganizationContext: vi.fn(async () => ({})),
     sessionsRepository: {
       getCurrent: vi.fn(async () => {
         throw new Error(JSON.stringify({
@@ -41,6 +34,7 @@ it("surfaces provider mismatches for active tokens as AUTH_CONFIGURATION_ERROR",
   const activeToken = createJwtWithExp(Math.floor((Date.now() + (60 * 60 * 1000)) / 1000));
   const dependencies = {
     getToken: vi.fn(async () => activeToken),
+    getOrganizationContext: vi.fn(async () => ({})),
     sessionsRepository: {
       getCurrent: vi.fn(async () => {
         throw new Error(JSON.stringify({
@@ -57,5 +51,54 @@ it("surfaces provider mismatches for active tokens as AUTH_CONFIGURATION_ERROR",
   await expect(getOptionalSessionContext(dependencies as never)).rejects.toMatchObject<Partial<DomainError>>({
     code: "AUTH_CONFIGURATION_ERROR",
     status: 503,
+  });
+});
+
+it("surfaces missing auth provider token configuration as AUTH_CONFIGURATION_ERROR", async () => {
+  const dependencies = {
+    getToken: vi.fn(async () => {
+      throw {
+        status: 404,
+        message: "Not Found",
+        errors: [{ code: "resource_not_found", message: "JWT template not found" }],
+      };
+    }),
+    getOrganizationContext: vi.fn(async () => ({})),
+    sessionsRepository: {
+      getCurrent: vi.fn(async () => null),
+    },
+    profilesRepository: {
+      getCurrent: vi.fn(async () => null),
+    },
+  };
+
+  await expect(getOptionalSessionContext(dependencies as never)).rejects.toMatchObject<Partial<DomainError>>({
+    code: "AUTH_CONFIGURATION_ERROR",
+    status: 503,
+  });
+});
+
+it("surfaces upstream auth bridge configuration errors as AUTH_CONFIGURATION_ERROR", async () => {
+  const dependencies = {
+    getToken: vi.fn(async () => {
+      throw {
+        code: "AUTH_CONFIGURATION_ERROR",
+        message: "Production auth bridge is missing hosted Convex auth URLs.",
+        status: 503,
+      };
+    }),
+    getOrganizationContext: vi.fn(async () => ({})),
+    sessionsRepository: {
+      getCurrent: vi.fn(async () => null),
+    },
+    profilesRepository: {
+      getCurrent: vi.fn(async () => null),
+    },
+  };
+
+  await expect(getOptionalSessionContext(dependencies as never)).rejects.toMatchObject<Partial<DomainError>>({
+    code: "AUTH_CONFIGURATION_ERROR",
+    status: 503,
+    message: "Production auth bridge is missing hosted Convex auth URLs.",
   });
 });

@@ -8,6 +8,7 @@ import type { RouteTab } from "@/lib/adminNavigation";
 type RouteTabsProps = {
   tabs: RouteTab[];
   className?: string;
+  mode?: "segmented" | "subnav";
 };
 
 /**
@@ -15,7 +16,7 @@ type RouteTabsProps = {
  * WHAT:  Renders the shared section tabs using token-driven pill styles.
  * HOW:   Highlights the active route with the workspace accent and keeps inactive tabs calm but discoverable.
  */
-export default function RouteTabs({ tabs, className }: RouteTabsProps) {
+export default function RouteTabs({ tabs, className, mode = "segmented" }: RouteTabsProps) {
   const pathname = usePathname();
 
   if (tabs.length === 0) {
@@ -25,7 +26,9 @@ export default function RouteTabs({ tabs, className }: RouteTabsProps) {
   return (
     <nav
       className={cn(
-        "flex flex-wrap items-center gap-2 border-b border-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)] pb-2",
+        mode === "segmented"
+          ? "flex flex-wrap items-center gap-2 border-b border-[color:color-mix(in_srgb,var(--workspace-border)_86%,transparent)] pb-3"
+          : "flex flex-wrap items-center gap-2 border-b border-[color:color-mix(in_srgb,var(--workspace-border)_86%,transparent)] pb-2",
         className,
       )}
       aria-label="section tabs"
@@ -37,11 +40,18 @@ export default function RouteTabs({ tabs, className }: RouteTabsProps) {
           <Link
             key={tab.href}
             href={tab.href}
+            aria-current={active ? "page" : undefined}
             className={cn(
-              "rounded-2xl border px-4 py-2.5 text-[12px] font-black uppercase tracking-[0.16em] transition-all",
+              mode === "segmented"
+                ? "rounded-sm border px-4 py-2.5 text-[12px] font-black uppercase tracking-[0.16em] transition-all"
+                : "rounded-sm border border-transparent px-3 py-2 text-[12px] font-black tracking-[0.08em] transition-all",
               active
-                ? "border-[color:color-mix(in_srgb,var(--workspace-highlight)_32%,transparent)] bg-[var(--workspace-highlight)] text-white shadow-sm"
-                : "border-transparent text-[var(--workspace-muted)] hover:border-[color:color-mix(in_srgb,var(--workspace-border)_80%,transparent)] hover:bg-[var(--workspace-panel)] hover:text-[var(--workspace-bubble-other-foreground)]",
+                ? mode === "segmented"
+                  ? "border-[color:var(--workspace-highlight-border)] bg-[var(--workspace-highlight)] text-white"
+                  : "border-[color:var(--workspace-highlight-border)] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,var(--workspace-panel))] text-[var(--workspace-bubble-other-foreground)]"
+                : mode === "segmented"
+                  ? "border-transparent text-[var(--workspace-muted)] hover:border-[color:color-mix(in_srgb,var(--workspace-border)_88%,transparent)] hover:bg-[var(--workspace-panel)] hover:text-[var(--workspace-bubble-other-foreground)]"
+                  : "text-[var(--workspace-muted)] hover:border-[color:color-mix(in_srgb,var(--workspace-border)_88%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] hover:text-[var(--workspace-bubble-other-foreground)]",
             )}
           >
             {tab.label}

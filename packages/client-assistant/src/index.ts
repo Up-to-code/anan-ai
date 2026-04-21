@@ -183,6 +183,9 @@ export type BuyerAssistantMessage = {
   suggestedPrompts?: string[];
   activePropertyId?: string;
   requiresAuthForHandoff?: boolean;
+  comparisonArtifactId?: string;
+  comparisonPropertyIds?: string[];
+  selectionSource?: "ui_selected" | "history_resolved" | "text_resolved";
 };
 
 export type BuyerThreadKind = "welcome" | "demo" | "live";

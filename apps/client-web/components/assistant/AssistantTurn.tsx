@@ -21,9 +21,9 @@ export function AssistantTurn({ message }: AssistantTurnProps) {
   const { locale } = useLocale();
 
   return (
-    <div className="mb-6 flex flex-col gap-4 animate-zone-page-enter">
+    <div className="mb-5 flex flex-col gap-3 animate-zone-page-enter">
       {message.text ? (
-        <div className="max-w-[90%] rounded-2xl rounded-tl-none bg-muted p-4 text-sm text-foreground">
+        <div className="max-w-[88%] rounded-[24px] rounded-tl-none bg-muted px-4 py-3.5 text-sm text-foreground">
           <MarkdownContent content={message.text} />
         </div>
       ) : null}

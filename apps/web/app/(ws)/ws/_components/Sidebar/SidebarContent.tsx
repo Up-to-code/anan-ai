@@ -11,10 +11,10 @@ import type { AnanProThreadSummary } from "@/server/contracts/ananPro";
 import type { SidebarProps } from "./types";
 import { ChevronLeft, ChevronRight, MessageSquareText, PenSquare, Search, X } from "lucide-react";
 import { getWorkspaceZonesForKeys } from "../../_lib/zones";
-import { useAssistantThreads } from "./useAssistantThreads";
+import { matchesWorkspacePath } from "../../_lib/workspaceChrome";
 
 const SIDEBAR_SHELL_CLASS_NAME =
-  "bg-[var(--workspace-sidebar)] text-[var(--workspace-bubble-other-foreground)]";
+  "bg-[var(--workspace-chrome-sidebar-bg)] text-[var(--workspace-bubble-other-foreground)]";
 const SIDEBAR_PANEL_CLASS_NAME =
   "border border-[color:color-mix(in_srgb,var(--workspace-border)_78%,transparent)] bg-[var(--workspace-panel)]";
 const SIDEBAR_SUBTLE_PANEL_CLASS_NAME =
@@ -22,7 +22,7 @@ const SIDEBAR_SUBTLE_PANEL_CLASS_NAME =
 const NAV_ITEM_BASE_CLASS_NAME =
   "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-bold transition-all";
 const NAV_ITEM_ACTIVE_CLASS_NAME =
-  "border border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] bg-[var(--workspace-highlight)] text-white shadow-sm";
+  "border border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] bg-[var(--workspace-highlight)] text-white";
 const NAV_ITEM_IDLE_CLASS_NAME =
   "border border-transparent text-[var(--workspace-muted)] hover:border-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)] hover:bg-[var(--workspace-panel)] hover:text-[var(--workspace-bubble-other-foreground)] active:scale-[0.98]";
 
@@ -50,22 +50,22 @@ export default function SidebarContent({
   recentAssistantThreads = [],
   allAssistantThreads = [],
   mode = "desktop",
+  variant = "default",
+  headerAction,
   onNavigate,
-}: Pick<SidebarProps, "user" | "organization" | "visibleZoneKeys" | "recentAssistantThreads" | "allAssistantThreads" | "mode" | "onNavigate" | "titleId">) {
+}: Pick<SidebarProps, "user" | "organization" | "visibleZoneKeys" | "recentAssistantThreads" | "allAssistantThreads" | "mode" | "variant" | "headerAction" | "onNavigate" | "titleId">) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { locale, dictionary, direction, isRtl } = useWebLocale();
+  const isAssistantVariant = variant === "assistant";
   const [threadPickerOpen, setThreadPickerOpen] = useState(false);
   const [threadQuery, setThreadQuery] = useState("");
   const [threadPage, setThreadPage] = useState(1);
   const allItems = getWorkspaceZonesForKeys(visibleZoneKeys ?? ["overview"], locale);
   const mainItems = allItems.filter((item) => item.href !== "/ws/settings");
   const settingsItems = allItems.filter((item) => item.href === "/ws/settings");
-  const { threads: assistantThreads } = useAssistantThreads({
-    serverThreads: allAssistantThreads,
-    limit: Math.max(allAssistantThreads.length, 12),
-  });
-  const requestedThreadId = pathname === "/ws" ? searchParams.get("threadId") : null;
+  const assistantThreads = allAssistantThreads;
+  const requestedThreadId = matchesWorkspacePath(pathname, "/ws", "exact") ? searchParams.get("threadId") : null;
   const activeAssistantThreadId =
     requestedThreadId && assistantThreads.some((thread) => thread.id === requestedThreadId)
       ? requestedThreadId
@@ -135,31 +135,43 @@ export default function SidebarContent({
       )}
     >
       {/* ── Header utility row ───────────────────────────── */}
-      <div className="flex h-16 shrink-0 items-center justify-end border-b border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)] px-6">
-        <Link
-          href="/ws"
-          prefetch={false}
-          onClick={(event) => handleAssistantLinkClick(event, "/ws")}
-          className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-[8px] border text-[var(--workspace-muted)] transition-all active:scale-95",
-            SIDEBAR_PANEL_CLASS_NAME,
-            "hover:bg-[var(--workspace-elevated)] hover:text-[var(--workspace-bubble-other-foreground)]",
-          )}
-          aria-label={dictionary.nav.newChat}
-          title={dictionary.nav.newChat}
-        >
-          <PenSquare className="h-4 w-4" />
-        </Link>
+      <div
+        className={cn(
+          "flex shrink-0 items-center justify-between border-b border-[color:color-mix(in_srgb,var(--workspace-border)_70%,transparent)] px-6",
+          isAssistantVariant ? "h-14" : "h-16",
+        )}
+      >
+        <div className="flex items-center gap-2">
+          {mode === "desktop" ? headerAction : null}
+          <Link
+            href="/ws"
+            prefetch={false}
+            onClick={(event) => handleAssistantLinkClick(event, "/ws")}
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-[8px] border text-[var(--workspace-muted)] transition-all active:scale-95",
+              SIDEBAR_PANEL_CLASS_NAME,
+              "hover:bg-[var(--workspace-elevated)] hover:text-[var(--workspace-bubble-other-foreground)]",
+            )}
+            aria-label={dictionary.nav.newChat}
+            title={dictionary.nav.newChat}
+          >
+            <PenSquare className="h-4 w-4" />
+          </Link>
+        </div>
       </div>
 
       {/* ── Navigation ────────────────────────────────────── */}
-      <nav aria-label="Workspace navigation" className="flex-1 overflow-y-auto px-3 pt-4 pb-4">
+      <nav
+        aria-label="Workspace navigation"
+        className={cn(
+          "flex-1 overflow-y-auto px-3 pb-4",
+          isAssistantVariant ? "pt-3" : "pt-4",
+        )}
+      >
         <ul className="space-y-1">
           {mainItems.map((item) => {
             const Icon = item.icon;
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/ws" && pathname.startsWith(`${item.href}/`));
+            const isActive = matchesWorkspacePath(pathname, item.href);
 
             return (
               <li key={item.href}>
@@ -184,8 +196,7 @@ export default function SidebarContent({
 
           {settingsItems.map((item) => {
             const Icon = item.icon;
-            const isActive =
-              pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const isActive = matchesWorkspacePath(pathname, item.href);
 
             return (
               <li key={item.href}>

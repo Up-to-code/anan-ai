@@ -45,12 +45,12 @@ export function assertBrokerSession(session: ResolvedSession): ResolvedSession {
 
 /**
  * WHY:   Developer server functions should validate injected sessions as well as default auth lookups.
- * WHAT:  Validates an already-resolved developer or RED session object.
- * HOW:   Reuses the shared role/link assertion helper with both supported role labels.
+ * WHAT:  Validates an already-resolved developer session object.
+ * HOW:   Reuses the shared role/link assertion helper and enforces a linked developer owner id.
  */
 export function assertDeveloperSession(session: ResolvedSession): ResolvedSession {
   return requireRoleSession(session, {
-    allowedRoles: ["developer", "RED"],
+    allowedRoles: ["developer"],
     requiredOwnerKey: "redId",
     message: "Developer profile required",
   });
@@ -79,9 +79,9 @@ export async function requireBrokerSession(): Promise<ResolvedSession> {
 }
 
 /**
- * WHY:   Developer and RED flows currently use two role labels during migration.
+ * WHY:   Developer workspace flows need one consistent role guard.
  * WHAT:  Resolves and validates the current developer session.
- * HOW:   Accepts `developer` or `RED`, then enforces a linked `redId`.
+ * HOW:   Requires an authenticated developer session and enforces a linked `redId`.
  */
 export async function requireDeveloperSession(): Promise<ResolvedSession> {
   const session = await requireSessionContext();

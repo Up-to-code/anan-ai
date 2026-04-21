@@ -7,13 +7,26 @@
     "userInterfaceStyle": "automatic",
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      "expo-apple-authentication",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
+        }
+      ]
     ],
     "ios": {
+      "bundleIdentifier": "com.anan.mobile",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "يستخدم عنان الميكروفون لتسجيل الرسائل الصوتية داخل المحادثة وتحويلها إلى نص عندما تختار ذلك.",
         "ITSAppUsesNonExemptEncryption": false
       }
+    },
+    "android": {
+      "package": "com.anan.mobile"
     },
     "experiments": {
       "typedRoutes": true

@@ -42,6 +42,7 @@ describe("accessPolicy", () => {
       profile: {
         role: "broker",
         brokerId: "broker-2",
+        roleApprovalStatus: "approved",
         isActive: true,
       },
     });
@@ -51,5 +52,52 @@ describe("accessPolicy", () => {
     expect(access.sessionId).toBe("session-2");
     expect(access.role).toBe("broker");
     expect(access.brokerId).toBe("broker-2");
+  });
+
+  it("blocks pending roles", async () => {
+    const ctx = makeCtx({
+      identity: { subject: "auth-user-3", tokenIdentifier: "session-3" },
+      profile: {
+        role: "broker",
+        brokerId: "broker-3",
+        roleApprovalStatus: "pending",
+        isActive: true,
+      },
+    });
+
+    await expect(requireRole(ctx, ["broker"])).rejects.toMatchObject({
+      data: { code: "ROLE_PENDING" },
+    });
+  });
+
+  it("blocks rejected roles", async () => {
+    const ctx = makeCtx({
+      identity: { subject: "auth-user-4", tokenIdentifier: "session-4" },
+      profile: {
+        role: "broker",
+        brokerId: "broker-4",
+        roleApprovalStatus: "rejected",
+        isActive: true,
+      },
+    });
+
+    await expect(requireRole(ctx, ["broker"])).rejects.toMatchObject({
+      data: { code: "ROLE_REJECTED" },
+    });
+  });
+
+  it("rejects developer roles without a linked developer organization", async () => {
+    const ctx = makeCtx({
+      identity: { subject: "auth-user-5", tokenIdentifier: "session-5" },
+      profile: {
+        role: "developer",
+        roleApprovalStatus: "approved",
+        isActive: true,
+      },
+    });
+
+    await expect(requireRole(ctx, ["developer"])).rejects.toMatchObject({
+      data: { code: "FORBIDDEN" },
+    });
   });
 });

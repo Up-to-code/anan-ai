@@ -28,6 +28,8 @@ export function toBuyerStateRecord(doc: BuyerStateRecordInput) {
     state: doc.state,
     selectedPropertyId: doc.selectedPropertyId as any,
     lastResultPropertyIds: doc.lastResultPropertyIds as any,
+    comparisonPropertyIds: doc.comparisonPropertyIds as any,
+    lastComparisonArtifactId: doc.lastComparisonArtifactId as any,
     lastSearchQuery: doc.lastSearchQuery,
     qualification: doc.qualification,
     createdAt: doc.createdAt,

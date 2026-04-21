@@ -9,7 +9,9 @@ import { IconButton } from "@/components/ui/IconButton";
 import { MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
 import { SearchResultCard } from "@/features/SearchScreen/SearchResultCard";
 import { usePropertySearch } from "@/hooks/usePropertySearch";
+import { cn } from "@/lib/cn";
 import { buildSearchRouteParams, parseSearchRouteParams } from "@/lib/mobileSearch";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import { useAppTheme } from "@/lib/mobileTheme";
 import type { MobileProperty } from "@/types/mobile";
 
@@ -17,6 +19,7 @@ export default function SearchScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
+  const { dictionary, isRtl } = useMobileLocale();
   const params = useLocalSearchParams<{
     threadId?: string;
     sourcePropertyId?: string;
@@ -37,6 +40,7 @@ export default function SearchScreen() {
       params: {
         area: search.selectedArea,
         ownerType: search.selectedOwnerType,
+        ...buildSearchRouteParams(searchContext),
       },
     });
   }
@@ -83,10 +87,10 @@ export default function SearchScreen() {
             <TextInput
               value={search.query}
               onChangeText={search.setQuery}
-              placeholder="ابحث ذكياً أو اكتب طلبك..."
+              placeholder={dictionary.search.smartPlaceholder}
               placeholderTextColor={theme.colors.inkMuted}
               cursorColor={theme.colors.primary}
-              className="h-11 w-full px-10 text-right font-cairo-bold text-[14px]"
+              className={cn("h-11 w-full px-10 font-cairo-bold text-[14px]", isRtl ? "text-right" : "text-left")}
               style={{
                 borderRadius: theme.radii.pill,
                 borderWidth: 1,
@@ -95,7 +99,7 @@ export default function SearchScreen() {
                 color: theme.colors.ink,
               }}
             />
-            <View className="absolute left-3 top-0 h-full items-center justify-center">
+            <View className={cn("absolute top-0 h-full items-center justify-center", isRtl ? "left-3" : "right-3")}>
               {search.query.startsWith("/") ? (
                 <Sparkles size={16} color={theme.colors.primary} />
               ) : (
@@ -105,7 +109,7 @@ export default function SearchScreen() {
             {search.query.length > 0 ? (
               <Pressable
                 onPress={() => search.setQuery("")}
-                className="absolute right-3 top-0 h-full items-center justify-center"
+                className={cn("absolute top-0 h-full items-center justify-center", isRtl ? "right-3" : "left-3")}
               >
                 <X size={16} color={theme.colors.inkMuted} />
               </Pressable>
@@ -116,10 +120,10 @@ export default function SearchScreen() {
       />
 
       <View className="flex-1 px-5 pt-6">
-        <View className="mb-4 flex-row-reverse items-center justify-between">
-          <View className="flex-row-reverse items-center gap-2">
-            <AppText className="text-right text-[22px] font-cairo-bold" style={{ color: theme.colors.ink }}>
-              {searchContext ? "النتائج المقترحة" : "نتائج البحث"}
+        <View className={cn("mb-4 items-center justify-between", isRtl ? "flex-row-reverse" : "flex-row")}>
+          <View className={cn("items-center gap-2", isRtl ? "flex-row-reverse" : "flex-row")}>
+            <AppText className={cn("text-[22px] font-cairo-bold", isRtl ? "text-right" : "text-left")} style={{ color: theme.colors.ink }}>
+              {searchContext ? dictionary.search.suggestedResultsTitle : dictionary.search.resultsTitle}
             </AppText>
             <View 
               className="px-2 py-0.5 rounded-full" 
@@ -132,9 +136,9 @@ export default function SearchScreen() {
           </View>
           
           {searchContext ? (
-            <Pressable onPress={continueToAssistant} className="flex-row-reverse items-center gap-1.5 opacity-80">
+            <Pressable onPress={continueToAssistant} className={cn("items-center gap-1.5 opacity-80", isRtl ? "flex-row-reverse" : "flex-row")}>
               <Sparkles size={14} color={theme.colors.primary} />
-              <AppText className="text-[13px] font-cairo-bold" style={{ color: theme.colors.primary }}>تابع في المحادثة</AppText>
+              <AppText className="text-[13px] font-cairo-bold" style={{ color: theme.colors.primary }}>{dictionary.search.continueInChat}</AppText>
             </Pressable>
           ) : null}
         </View>
@@ -170,10 +174,10 @@ export default function SearchScreen() {
                   <Search size={24} color={theme.colors.inkSoft} />
                 </View>
                 <AppText className="text-center text-xl font-cairo-bold" style={{ color: theme.colors.ink }}>
-                  لا توجد نتائج
+                  {dictionary.search.noResultsTitle}
                 </AppText>
                 <AppText className="mt-2 text-center text-[14px] font-medium" style={{ color: theme.colors.inkSoft }}>
-                  جرب البحث عن منطقة أخرى أو تغيير الفلاتر.
+                  {dictionary.search.noResultsBody}
                 </AppText>
               </MobileSurface>
             }

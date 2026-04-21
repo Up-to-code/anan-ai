@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { useBuyerAccount } from "@/hooks/useBuyerAccount";
 import { getPropertyLocationLabel } from "@/lib/mobileData";
 import { filterPropertiesForSearch } from "@/lib/mobileSearch";
 import { usePropertyFeed } from "@/hooks/usePropertyFeed";
+import { getMobileDictionary } from "@/lib/i18n";
 import type { MobileSearchContext } from "@/types/mobile";
-
-const ALL_FILTER = "الكل";
 
 /**
  * WHY:   Direct property search still needs one focused state source even after mobile moves to the live feed contract.
@@ -12,23 +12,27 @@ const ALL_FILTER = "الكل";
  * HOW:   Reuses the shared live feed hook and filters by text, location label, and owner type on the client.
  */
 export function usePropertySearch(searchContext?: MobileSearchContext | null) {
+  const account = useBuyerAccount();
+  const locale = account.viewer.preferences.locale;
+  const dictionary = getMobileDictionary(locale);
   const feed = usePropertyFeed();
+  const allFilterLabel = dictionary.assistant.searchAll;
   const [query, setQuery] = useState(searchContext?.query ?? "");
-  const [selectedArea, setSelectedArea] = useState(searchContext?.area ?? ALL_FILTER);
-  const [selectedOwnerType, setSelectedOwnerType] = useState(searchContext?.ownerType ?? ALL_FILTER);
+  const [selectedArea, setSelectedArea] = useState(searchContext?.area ?? allFilterLabel);
+  const [selectedOwnerType, setSelectedOwnerType] = useState(searchContext?.ownerType ?? allFilterLabel);
 
   const allProperties = feed.properties;
   const areas = useMemo(
-    () => [ALL_FILTER, ...new Set(allProperties.map((property) => getPropertyLocationLabel(property)))],
-    [allProperties],
+    () => [allFilterLabel, ...new Set(allProperties.map((property) => getPropertyLocationLabel(property)))],
+    [allFilterLabel, allProperties],
   );
-  const ownerTypes = [ALL_FILTER, "وسيط", "مطور"];
+  const ownerTypes = [allFilterLabel, "broker", "developer"];
 
   useEffect(() => {
     setQuery(searchContext?.query ?? "");
-    setSelectedArea(searchContext?.area ?? ALL_FILTER);
-    setSelectedOwnerType(searchContext?.ownerType ?? ALL_FILTER);
-  }, [searchContext?.area, searchContext?.ownerType, searchContext?.query, searchContext?.searchSummary]);
+    setSelectedArea(searchContext?.area ?? allFilterLabel);
+    setSelectedOwnerType(searchContext?.ownerType ?? allFilterLabel);
+  }, [allFilterLabel, searchContext?.area, searchContext?.ownerType, searchContext?.query, searchContext?.searchSummary]);
 
   const results = useMemo(
     () =>
@@ -36,14 +40,14 @@ export function usePropertySearch(searchContext?: MobileSearchContext | null) {
         query,
         selectedArea,
         selectedOwnerType,
-        allFilterLabel: ALL_FILTER,
+        allFilterLabel,
       }),
-    [allProperties, query, selectedArea, selectedOwnerType],
+    [allFilterLabel, allProperties, query, selectedArea, selectedOwnerType],
   );
 
   return {
     ...feed,
-    allFilterLabel: ALL_FILTER,
+    allFilterLabel,
     searchContext,
     query,
     selectedArea,

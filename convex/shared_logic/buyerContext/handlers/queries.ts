@@ -118,7 +118,7 @@ export const getCompiledBuyerContextReadOnlyInternal = internalQuery({
     channel: buyerChannelValidator,
     userId: v.string(),
     message: v.string(),
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
   },
   returns: compiledBuyerContextValidator,
   handler: async (ctx, args): Promise<any> =>

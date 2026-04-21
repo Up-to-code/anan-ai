@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import schema from "../schema";
 import { api } from "../_generated/api";
 import { modules } from "../test.setup";
+import { ensureProjectDossierForProperty } from "../shared_logic/projects/migrations";
+import { recomputeProjectReadinessForProperty } from "../shared_logic/projects/readiness";
 
 async function insertComplianceRuleset(ctx: any, orgType: "broker" | "red" = "broker") {
   const now = Date.now();
@@ -53,7 +55,7 @@ async function seedWebFixtures(t: ReturnType<typeof convexTest>) {
       ],
     });
 
-    await ctx.db.insert("properties", {
+    const propertyId = await ctx.db.insert("properties", {
       title: "Riyadh Garden Apartment",
       address: "Al Yasmin",
       brokerId,
@@ -66,9 +68,29 @@ async function seedWebFixtures(t: ReturnType<typeof convexTest>) {
       description: "Verified apartment close to schools and retail.",
       publicationState: "published",
       adLicenseStatus: "approved",
+      ownerVerified: true,
+      listingVerified: true,
       media: [{ key: "1", url: "https://example.com/1.jpg", name: "1.jpg" }],
       searchText: "riyadh garden apartment الياسمين الرياض",
     });
+    const { dossierId } = await ensureProjectDossierForProperty(ctx, propertyId, {
+      includeLegacyUnitAndPaymentPlan: true,
+      requestedVisibility: "public",
+    });
+    await ctx.db.insert("projectBrokerAuthorizations", {
+      dossierId,
+      propertyId,
+      brokerId,
+      channels: ["website", "whatsapp"],
+      status: "active",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    } as any);
+    await recomputeProjectReadinessForProperty(ctx, propertyId);
+    await ctx.db.patch(propertyId, {
+      publicationState: "published",
+      isPublicSearchable: true,
+    } as any);
   });
 }
 

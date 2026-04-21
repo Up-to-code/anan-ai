@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useUploadThing } from "@/lib/uploadthing";
 import type {
   OrganizationSummary,
@@ -24,8 +24,6 @@ type OrganizationVerificationWorkspaceProps = {
   ruleset: ComplianceRuleset | null;
   canManage: boolean;
   membersCount: number;
-  invitesCount: number;
-  roleLabel: string;
 };
 
 const emptyVerificationSummary: OrganizationVerificationSummary = {
@@ -77,6 +75,21 @@ function verificationStatusTone(status: OrganizationVerificationSummary["current
   if (status === "closed") return "border-border bg-muted text-muted-foreground";
   if (status === "new") return "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300";
   return "border-border bg-muted/50 text-muted-foreground";
+}
+
+function SummaryCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: ReactNode;
+}) {
+  return (
+    <div className="rounded-[18px] bg-background/65 px-4 py-3">
+      <div className="text-[11px] font-semibold text-muted-foreground">{label}</div>
+      <div className="mt-2 text-sm font-bold text-foreground">{value}</div>
+    </div>
+  );
 }
 
 function buildLocalizedTimeline(summary: OrganizationVerificationSummary, locale: "ar" | "en" | "fr") {
@@ -161,8 +174,6 @@ export default function OrganizationVerificationWorkspace({
   ruleset,
   canManage,
   membersCount,
-  invitesCount,
-  roleLabel,
 }: OrganizationVerificationWorkspaceProps) {
   const { locale, dictionary, direction } = useWebLocale();
   const [summary, setSummary] = useState(verificationSummary);
@@ -201,7 +212,7 @@ export default function OrganizationVerificationWorkspace({
 
   if (!organization) {
     return (
-      <section className="rounded-2xl border border-border bg-card p-6">
+      <section className="rounded-[24px] bg-[var(--workspace-panel)] p-5 sm:p-6">
         <h2 className="text-lg font-bold text-foreground">{dictionary.settings.verificationTitle}</h2>
         <p className="mt-2 text-sm text-muted-foreground">{dictionary.settings.verificationEmptyOrganization}</p>
       </section>
@@ -209,67 +220,88 @@ export default function OrganizationVerificationWorkspace({
   }
 
   return (
-    <section className="space-y-6 pb-12" dir={direction}>
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-        <div className="space-y-5">
-          <div className="rounded-[28px] border border-border/70 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--workspace-panel)_95%,transparent)_0%,color-mix(in_srgb,var(--workspace-elevated)_98%,transparent)_100%)] p-6 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="space-y-2">
-              <h2 className="text-lg font-bold text-foreground">{dictionary.settings.verificationTitle}</h2>
-              <p className="max-w-2xl text-sm font-medium leading-7 text-muted-foreground">
-                {formatWebCopy(dictionary.settings.verificationSubmitDescription, { organizationType: organizationTypeLabel })}
-              </p>
-            </div>
-            <span className={`rounded-full border px-3 py-1 text-[11px] font-black ${verificationStatusTone(summary.currentRequestStatus)}`}>
-              {verificationStatusLabel(summary.currentRequestStatus, locale)}
-            </span>
+    <section className="space-y-5 pb-12" dir={direction}>
+      <div className="rounded-[24px] bg-[var(--workspace-panel)] p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-2">
+            <div className="text-[11px] font-semibold text-muted-foreground">{dictionary.settings.verificationCurrentStatus}</div>
+            <h2 className="text-lg font-bold text-foreground">{dictionary.settings.verificationTitle}</h2>
+            <p className="max-w-2xl text-sm font-medium leading-7 text-muted-foreground">
+              {formatWebCopy(dictionary.settings.verificationSubmitDescription, { organizationType: organizationTypeLabel })}
+            </p>
           </div>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-[22px] border border-border/70 bg-background/80 p-4">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">{dictionary.settings.publishingStatus}</div>
-              <div className="mt-2 text-sm font-bold text-foreground">
-                {summary.publishingBlocked ? dictionary.settings.publishingBlocked : dictionary.settings.publishingAllowed}
-              </div>
-            </div>
-            <div className="rounded-[22px] border border-border/70 bg-background/80 p-4">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">{dictionary.settings.lastSubmission}</div>
-              <div className="mt-2 text-sm font-bold text-foreground">{formatDateLabel(summary.lastSubmittedAt)}</div>
-            </div>
-            <div className="rounded-[22px] border border-border/70 bg-background/80 p-4">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">{dictionary.settings.filesCount}</div>
-              <div className="mt-2 text-sm font-bold text-foreground">{summary.documentsCount}</div>
-            </div>
-            <div className="rounded-[22px] border border-border/70 bg-background/80 p-4">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">{dictionary.settings.teamSummary}</div>
-              <div className="mt-2 text-sm font-bold text-foreground">
-                {formatWebCopy(dictionary.settings.teamSummary, { members: membersCount, invites: invitesCount, roleLabel })}
-              </div>
-            </div>
-          </div>
-
-          {summary.reviewerNotes ? (
-            <div className="mt-4 rounded-[22px] border border-border/70 bg-muted/20 p-4">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">{dictionary.settings.reviewNotes}</div>
-              <p className="mt-2 text-sm font-medium leading-relaxed text-foreground">{summary.reviewerNotes}</p>
-            </div>
-          ) : null}
-        </div>
+          <span className={`rounded-full border px-3 py-1 text-[11px] font-black ${verificationStatusTone(summary.currentRequestStatus)}`}>
+            {verificationStatusLabel(summary.currentRequestStatus, locale)}
+          </span>
         </div>
 
-        <div className="rounded-[28px] border border-border/70 bg-card p-6 shadow-sm">
-          <h3 className="text-sm font-black uppercase tracking-[0.22em] text-muted-foreground">{dictionary.settings.verificationTimeline}</h3>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <SummaryCard
+            label={dictionary.settings.publishingStatus}
+            value={summary.publishingBlocked ? dictionary.settings.publishingBlocked : dictionary.settings.publishingAllowed}
+          />
+          <SummaryCard
+            label={dictionary.settings.lastSubmission}
+            value={formatDateLabel(summary.lastSubmittedAt)}
+          />
+          <SummaryCard
+            label={dictionary.settings.filesCount}
+            value={summary.documentsCount}
+          />
+          <SummaryCard
+            label={dictionary.settings.membersCountLabel}
+            value={membersCount}
+          />
+        </div>
+
+        {summary.reviewerNotes ? (
+          <div className="mt-4 rounded-[18px] bg-background/65 p-4">
+            <div className="text-[11px] font-semibold text-muted-foreground">{dictionary.settings.reviewNotes}</div>
+            <p className="mt-2 text-sm font-medium leading-relaxed text-foreground">{summary.reviewerNotes}</p>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+        <div className="rounded-[24px] bg-[var(--workspace-panel)] p-5 sm:p-6">
+          <h3 className="text-sm font-bold text-foreground">{dictionary.settings.verificationTimeline}</h3>
           <div className="mt-4 space-y-3">
             {timeline.length > 0 ? (
               timeline.map((item) => (
-                <div key={item.id} className="rounded-[22px] border border-border/70 bg-background/80 p-4">
+                <div key={item.id} className="rounded-[18px] bg-background/65 p-4">
                   <div className="text-sm font-bold text-foreground">{item.label}</div>
                   <div className="mt-1 text-xs font-medium text-muted-foreground">{formatDateLabel(item.at)}</div>
                   {item.note ? <p className="mt-2 text-sm font-medium leading-relaxed text-muted-foreground">{item.note}</p> : null}
                 </div>
               ))
             ) : (
-                <div className="rounded-[22px] border border-dashed border-border/70 bg-muted/20 p-6 text-sm font-medium text-muted-foreground">
+              <div className="rounded-[18px] bg-background/65 p-5 text-sm font-medium text-muted-foreground">
+                {dictionary.settings.verificationNoTimeline}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-[24px] bg-[var(--workspace-panel)] p-5 sm:p-6">
+          <h3 className="text-sm font-bold text-foreground">{dictionary.settings.latestDocuments}</h3>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {summary.attachedDocuments.length > 0 ? (
+              summary.attachedDocuments.map((document) => (
+                <a
+                  key={document.key}
+                  href={document.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-[18px] bg-background/65 p-4 transition hover:bg-background/85"
+                >
+                  <div className="text-sm font-bold text-foreground">{document.name}</div>
+                  <div className="mt-1 text-xs font-medium text-muted-foreground">
+                    {document.mime ?? dictionary.settings.unknownDocumentType}{document.size ? ` • ${Math.ceil(document.size / 1024)} KB` : ""}
+                  </div>
+                </a>
+              ))
+            ) : (
+              <div className="rounded-[18px] bg-background/65 p-5 text-sm font-medium text-muted-foreground md:col-span-2">
                 {dictionary.settings.verificationNoTimeline}
               </div>
             )}
@@ -277,29 +309,7 @@ export default function OrganizationVerificationWorkspace({
         </div>
       </div>
 
-      {summary.attachedDocuments.length > 0 ? (
-        <div className="rounded-[28px] border border-border/70 bg-card p-6 shadow-sm">
-          <h3 className="text-sm font-black uppercase tracking-[0.22em] text-muted-foreground">{dictionary.settings.latestDocuments}</h3>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            {summary.attachedDocuments.map((document) => (
-              <a
-                key={document.key}
-                href={document.url}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-[22px] border border-border/70 bg-background/80 p-4 transition hover:border-ring/40 hover:bg-muted/20"
-              >
-                <div className="text-sm font-bold text-foreground">{document.name}</div>
-                <div className="mt-1 text-xs font-medium text-muted-foreground">
-                  {document.mime ?? dictionary.settings.unknownDocumentType}{document.size ? ` • ${Math.ceil(document.size / 1024)} KB` : ""}
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      <div className="space-y-4 rounded-[28px] border border-border/70 bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-[24px] bg-[var(--workspace-panel)] p-5 sm:p-6">
         <div className="space-y-2">
           <h3 className="text-lg font-bold text-foreground">{dictionary.settings.verificationSubmitTitle}</h3>
           <p className="max-w-2xl text-sm font-medium leading-7 text-muted-foreground">
@@ -360,17 +370,17 @@ export default function OrganizationVerificationWorkspace({
         </div>
 
         {errorMessage ? (
-          <div className="rounded-[22px] border border-red-500/20 bg-red-500/10 p-4 text-sm font-bold text-red-700 dark:text-red-300">
+          <div className="rounded-[18px] bg-red-500/10 p-4 text-sm font-bold text-red-700 dark:text-red-300">
             {errorMessage}
           </div>
         ) : null}
         {statusMessage ? (
-          <div className="rounded-[22px] border border-border/70 bg-muted/20 p-4 text-sm font-bold text-foreground">
+          <div className="rounded-[18px] bg-background/65 p-4 text-sm font-bold text-foreground">
             {statusMessage}
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
           <p className="text-xs font-medium text-muted-foreground">
             {canManage
               ? dictionary.settings.managerOnlySubmissionHint
@@ -420,7 +430,7 @@ export default function OrganizationVerificationWorkspace({
                 setIsSubmitting(false);
               }
             }}
-            className="rounded-full bg-[var(--workspace-highlight)] px-6 py-3 text-xs font-black uppercase tracking-[0.18em] text-white shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-[18px] bg-[var(--workspace-highlight)] px-5 py-3 text-[13px] font-bold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting
               ? dictionary.settings.verificationSubmitting

@@ -5,6 +5,15 @@ import { uploadedFileReferenceSchema } from "@/server/contracts/files";
 export const propertyStatusSchema = z.enum(["available", "sold", "reserved"]);
 export const publicationStateSchema = z.enum(["draft", "published", "archived"]);
 export const buyerVisibilitySchema = z.enum(["private", "public"]);
+export const projectReadinessStatusSchema = z.enum([
+  "draft",
+  "incomplete",
+  "data_complete",
+  "compliance_pending",
+  "approved",
+  "blocked",
+  "published_ready",
+]);
 export const projectAnalyticsEventTypeSchema = z.enum([
   "project_detail_view",
   "project_analytics_view",
@@ -40,6 +49,18 @@ export const propertyListFiltersSchema = z.object({
 export const propertyPresentationSchema = z.object({
   descriptionShort: z.string().trim().min(1).max(280).optional(),
   amenities: z.array(z.string().trim().min(1)).optional(),
+    expertMetadata: z.object({
+      assetType: z.string().trim().min(1).optional(),
+      listingType: z.string().trim().min(1).optional(),
+      projectScale: z.string().trim().min(1).optional(),
+    productMix: z.string().trim().min(1).optional(),
+    primaryUnitType: z.string().trim().min(1).optional(),
+    sizeRange: z.string().trim().min(1).optional(),
+    priceComparison: z.enum(["below_market", "fair_market", "above_market", "unknown"]).optional(),
+    comparisonNotes: z.string().trim().min(1).optional(),
+    expertNotes: z.string().trim().min(1).optional(),
+    services: z.array(z.string().trim().min(1)).optional(),
+  }).optional(),
   parkingSpaces: z.number().int().nonnegative().optional(),
   hasParking: z.boolean().optional(),
   slides: z.array(uploadedFileReferenceSchema).optional(),
@@ -130,6 +151,8 @@ export type PropertyDetail = {
   adLicenseNumber?: string;
   adLicenseStatus?: "pending" | "approved" | "rejected";
   adLicenseVerificationRequestId?: string;
+  projectDossierId?: string;
+  projectReadinessStatus?: z.infer<typeof projectReadinessStatusSchema>;
 };
 
 export const propertyViewerSummarySchema = z.object({

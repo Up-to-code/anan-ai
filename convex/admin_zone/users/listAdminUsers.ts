@@ -16,8 +16,7 @@ export const listAdminUsersArgs = {
       v.literal("admin"),
       v.literal("broker"),
       v.literal("developer"),
-      v.literal("user"),
-      v.literal("RED")
+      v.literal("user")
     )
   ),
 };
@@ -60,8 +59,8 @@ function buildProfileRows(args: {
     const linkedBroker = profile.brokerId
       ? args.brokers.find((item: any) => item._id === profile.brokerId)
       : null;
-    const linkedDeveloper = profile.REDId
-      ? args.developers.find((item: any) => item._id === profile.REDId)
+    const linkedDeveloper = profile.developerId
+      ? args.developers.find((item: any) => item._id === profile.developerId)
       : null;
     return {
       userKey: buildUserKey({
@@ -75,13 +74,13 @@ function buildProfileRows(args: {
       email: profile.email ?? null,
       channel: null,
       role: profile.role ?? null,
-      roleStatus: profile.roleStatus ?? null,
+      roleApprovalStatus: profile.roleApprovalStatus ?? null,
       requestedRole: profile.requestedRole ?? null,
       isActive: profile.isActive ?? true,
       organizationName: linkedBroker?.name ?? linkedDeveloper?.name ?? null,
       organizationType: linkedBroker ? "broker" : linkedDeveloper ? "red" : null,
       membershipsCount: args.membershipCountByAuthUserId.get(profile.authUserId) ?? 0,
-      verificationStatus: resolveVerificationStatus(latestRequest?.currentStatus, profile.roleStatus),
+      verificationStatus: resolveVerificationStatus(latestRequest?.currentStatus, profile.roleApprovalStatus),
     };
   });
 }
@@ -101,7 +100,7 @@ function buildChannelRows(users: any[], matchedEmails: Set<string>) {
       email: user.email ?? null,
       channel: user.channel ?? null,
       role: null,
-      roleStatus: null,
+      roleApprovalStatus: null,
       requestedRole: null,
       isActive: true,
       organizationName: null,

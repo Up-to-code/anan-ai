@@ -7,10 +7,18 @@
 export type UnitReference = {
   id: string;
   label: string;
+  unitKind?: "unit_type" | "unit";
+  status?: "available" | "reserved" | "sold" | "draft";
   bedrooms?: number;
   bathrooms?: number;
   area?: string;
+  sizeSqm?: number;
+  floor?: string;
+  view?: string;
+  price?: number;
   priceLabel?: string;
+  handoverAt?: number;
+  floorPlanMedia?: import("@/server/contracts/files").UploadedFileReference[];
 };
 
 export type ProjectReference = {

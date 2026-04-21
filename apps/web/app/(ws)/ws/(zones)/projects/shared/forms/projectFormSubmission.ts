@@ -35,11 +35,10 @@ export type ProjectFormSaveResult =
   | { ok: false; feedback: ProjectFormSubmissionFeedback };
 
 const STEP_FIELD_ORDER: Array<readonly ProjectFormFieldName[]> = [
-  ["name", "price", "location"],
-  ["description", "shortDescription", "amenitiesText"],
-  ["images"],
-  ["rooms", "baths", "area", "parkingSpaces", "adLicenseNumber"],
-  ["privatePermitSummary", "privatePermitFiles"],
+  ["name", "location"],
+  ["rooms", "baths", "area", "parkingSpaces"],
+  ["price"],
+  ["description", "shortDescription", "amenitiesText", "images", "adLicenseNumber", "privatePermitSummary", "privatePermitFiles"],
   [],
 ] as const;
 

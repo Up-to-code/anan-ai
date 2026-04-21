@@ -30,10 +30,10 @@ async function getSubscriptionForProfile(ctx: any, profile: any) {
       .withIndex("ownerBrokerId", (q: any) => q.eq("ownerBrokerId", profile.brokerId))
       .first();
   }
-  if (profile.REDId) {
+  if (profile.developerId) {
     return ctx.db
       .query("subscriptions")
-      .withIndex("ownerREDId", (q: any) => q.eq("ownerREDId", profile.REDId))
+      .withIndex("ownerREDId", (q: any) => q.eq("ownerREDId", profile.developerId))
       .first();
   }
   return null;
@@ -43,8 +43,8 @@ async function resolveVerifiedState(ctx: any, profile: any) {
   if (profile.brokerId) {
     return (await ctx.db.get(profile.brokerId))?.isVerified === true;
   }
-  if (profile.REDId) {
-    return (await ctx.db.get(profile.REDId))?.isVerified === true;
+  if (profile.developerId) {
+    return (await ctx.db.get(profile.developerId))?.isVerified === true;
   }
   return true;
 }

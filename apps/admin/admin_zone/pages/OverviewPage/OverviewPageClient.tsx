@@ -7,7 +7,7 @@ import SectionScaffold from "@/components/shared/SectionScaffold";
 import StatCard from "@/components/shared/StatCard";
 import StatusBadge from "@/components/shared/StatusBadge";
 import WorkspacePanel from "@/components/shared/WorkspacePanel";
-import { analyticsTabs } from "@/lib/adminSectionTabs";
+import { overviewTabs } from "@/lib/adminSectionTabs";
 import type { CommandCenterOverviewViewModel } from "@/admin_zone/viewModels/commandCenter";
 
 type OverviewPageClientProps = {
@@ -20,31 +20,35 @@ type OverviewPageClientProps = {
  * HOW:   Uses the shared grid-first scaffold so the hero canvas scrolls independently from the fixed rail and large datasets stay bounded inside their own panels.
  */
 export default function OverviewPageClient({ viewModel }: OverviewPageClientProps) {
+  const primaryInsight = viewModel.insights[0] ?? null;
+  const secondaryInsights = viewModel.insights.slice(1);
+
   return (
     <SectionScaffold
       eyebrow="مركز القيادة"
       title="لوحة التحكم"
       description="قراءة قيادية حية تربط الطلب، القنوات، سعة الشركاء، الخط التجاري، والمخاطر التشغيلية داخل منصة أنان."
-      tabs={analyticsTabs}
+      tabs={overviewTabs}
       actions={<AdminRangeControl />}
       layout="dashboard"
+      headerVariant="compact"
       rail={
         <AdminSectionStack className="min-h-0">
           <WorkspacePanel
             tone="dark"
-            fullHeight
+            density="compact"
             header={
               <div className="space-y-2">
                 <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/60">Operator Focus</div>
-                <h2 className="text-2xl font-black tracking-tight text-white">ما الذي يجب فعله الآن؟</h2>
+                <h2 className="text-xl font-black tracking-tight text-white">المتابعة الآن</h2>
               </div>
             }
             bodyClassName="grid gap-4"
             scrollBody
-            maxBodyHeightClassName="max-h-[360px]"
+            maxBodyHeightClassName="max-h-[300px]"
           >
-            {viewModel.insights.map((insight) => (
-              <div key={insight.id} className="rounded-[24px] border border-white/10 bg-white/6 p-5">
+            {secondaryInsights.map((insight) => (
+              <div key={insight.id} className="rounded-lg border border-white/12 bg-white/5 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-base font-black text-white">{insight.title}</div>
                   <StatusBadge
@@ -63,37 +67,10 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
           </WorkspacePanel>
 
           <WorkspacePanel
-            fullHeight
+            density="compact"
             header={
               <div className="space-y-2">
-                <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--workspace-muted)]">
-                  API Risk
-                </div>
-                <h2 className="text-xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
-                  نبض التكامل
-                </h2>
-              </div>
-            }
-            bodyClassName="grid gap-3"
-          >
-            {viewModel.apiRisk.map((item) => (
-              <div
-                key={item.id}
-                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[20px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_52%,transparent)] px-4 py-3"
-              >
-                <span className="text-sm font-bold text-[var(--workspace-muted)]">{item.label}</span>
-                <span className="text-lg font-black text-[var(--workspace-bubble-other-foreground)]">{item.value}</span>
-              </div>
-            ))}
-          </WorkspacePanel>
-
-          <WorkspacePanel
-            fullHeight
-            header={
-              <div className="space-y-2">
-                <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
-                  أقوى الجهات
-                </h2>
+                <h2 className="text-xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">أقوى الجهات</h2>
                 <p className="text-sm font-medium text-[var(--workspace-muted)]">
                   الجهات الأكثر قدرة على استقبال الطلب وتحويله.
                 </p>
@@ -106,7 +83,7 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
             {viewModel.topOrganizations.map((organization) => (
               <div
                 key={organization.id}
-                className="rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] p-4"
+                className="rounded-lg border border-[color:color-mix(in_srgb,var(--workspace-border)_90%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_98%,transparent)] p-4"
               >
                 <div className="grid gap-3">
                   <div className="flex items-start justify-between gap-3">
@@ -124,19 +101,19 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
                     </div>
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-center">
-                    <div className="rounded-[18px] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_58%,transparent)] px-2 py-3">
+                    <div className="rounded-sm border border-[color:color-mix(in_srgb,var(--workspace-border)_84%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_72%,transparent)] px-2 py-3">
                       <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--workspace-muted)]">Score</div>
                       <div className="mt-1 text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{organization.score}</div>
                     </div>
-                    <div className="rounded-[18px] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_58%,transparent)] px-2 py-3">
+                    <div className="rounded-sm border border-[color:color-mix(in_srgb,var(--workspace-border)_84%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_72%,transparent)] px-2 py-3">
                       <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--workspace-muted)]">Inventory</div>
                       <div className="mt-1 text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{organization.inventory}</div>
                     </div>
-                    <div className="rounded-[18px] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_58%,transparent)] px-2 py-3">
+                    <div className="rounded-sm border border-[color:color-mix(in_srgb,var(--workspace-border)_84%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_72%,transparent)] px-2 py-3">
                       <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--workspace-muted)]">Offers</div>
                       <div className="mt-1 text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{organization.offers}</div>
                     </div>
-                    <div className="rounded-[18px] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_58%,transparent)] px-2 py-3">
+                    <div className="rounded-sm border border-[color:color-mix(in_srgb,var(--workspace-border)_84%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_72%,transparent)] px-2 py-3">
                       <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--workspace-muted)]">Members</div>
                       <div className="mt-1 text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{organization.members}</div>
                     </div>
@@ -145,41 +122,47 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
               </div>
             ))}
           </WorkspacePanel>
-
-          <WorkspacePanel
-            fullHeight
-            header={
-              <div className="space-y-2">
-                <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
-                  صحة البيانات
-                </h2>
-                <p className="text-sm font-medium text-[var(--workspace-muted)]">
-                  آخر حالة لتجميعات البيانات ومؤشرات الثبات.
-                </p>
-              </div>
-            }
-            bodyClassName="grid gap-3"
-          >
-            {viewModel.dataHealth.map((item) => (
-              <div
-                key={item.id}
-                className="rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_52%,transparent)] p-4"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-base font-black text-[var(--workspace-bubble-other-foreground)]">{item.label}</div>
-                  <StatusBadge value={item.status} />
-                </div>
-                <div className="mt-3 text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
-                  {item.value}
-                </div>
-                <p className="mt-2 text-sm leading-6 text-[var(--workspace-muted)]">{item.note}</p>
-              </div>
-            ))}
-          </WorkspacePanel>
         </AdminSectionStack>
       }
     >
-      <AdminMetricGrid minItemWidth={220}>
+      {primaryInsight ? (
+        <WorkspacePanel
+          tone="dark"
+          density="hero"
+          className="border-[color:color-mix(in_srgb,var(--workspace-highlight)_42%,transparent)]"
+          header={
+            <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+              <div className="space-y-2">
+                <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/60">Live Priority</div>
+                <h2 className="text-3xl font-black tracking-[-0.05em] text-white">{primaryInsight.title}</h2>
+                <p className="max-w-2xl text-sm leading-7 text-white/72">{primaryInsight.body}</p>
+              </div>
+              <StatusBadge
+                value={
+                  primaryInsight.tone === "warn"
+                    ? "warning"
+                    : primaryInsight.tone === "positive"
+                      ? "success"
+                      : "info"
+                }
+              />
+            </div>
+          }
+          bodyClassName="grid gap-3 md:grid-cols-3"
+        >
+          {viewModel.apiRisk.slice(0, 3).map((item) => (
+            <div
+              key={item.id}
+              className="rounded-lg border border-white/12 bg-white/5 px-4 py-4"
+            >
+              <div className="text-[11px] font-black uppercase tracking-[0.16em] text-white/58">{item.label}</div>
+              <div className="mt-2 text-2xl font-black tracking-tight text-white">{item.value}</div>
+            </div>
+          ))}
+        </WorkspacePanel>
+      ) : null}
+
+      <AdminMetricGrid minItemWidth={205}>
         {viewModel.metrics.map((metric) => (
           <StatCard
             key={metric.key}
@@ -187,21 +170,22 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
             value={metric.value}
             delta={metric.delta}
             hint={metric.hint}
+            className="min-h-[12rem]"
           />
         ))}
       </AdminMetricGrid>
 
       <WorkspacePanel
-        fullHeight
+        density="hero"
         header={
           <div className="space-y-2">
             <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--workspace-muted)]">
               Network Flow
             </div>
-            <h2 className="text-3xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
+            <h2 className="text-3xl font-black tracking-[-0.05em] text-[var(--workspace-bubble-other-foreground)]">
               شبكة القيادة التشغيلية
             </h2>
-            <p className="max-w-3xl text-sm font-medium leading-7 text-[var(--workspace-muted)]">
+            <p className="max-w-3xl text-sm font-bold leading-7 text-[var(--workspace-muted)]">
               هذا الرسم يوضح كيف يدخل الطلب إلى النظام، كيف يمر عبر القنوات والشركاء، وأين يتعطل قبل أن يتحول إلى صفقات رابحة.
             </p>
           </div>
@@ -212,7 +196,7 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
 
       <section className="grid gap-6 2xl:grid-cols-2">
         <WorkspacePanel
-          fullHeight
+          density="default"
           header={
             <div className="space-y-2">
               <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
@@ -236,7 +220,7 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
         </WorkspacePanel>
 
         <WorkspacePanel
-          fullHeight
+          density="default"
           header={
             <div className="space-y-2">
               <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
@@ -262,7 +246,7 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
 
       <section className="grid gap-6 2xl:grid-cols-[minmax(280px,0.92fr)_minmax(280px,1.08fr)]">
         <WorkspacePanel
-          fullHeight
+          density="default"
           header={
             <div className="space-y-2">
               <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
@@ -278,7 +262,7 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
         </WorkspacePanel>
 
         <WorkspacePanel
-          fullHeight
+          density="compact"
           header={
             <div className="space-y-2">
               <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
@@ -296,7 +280,7 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
           {viewModel.queueFocus.map((item) => (
             <div
               key={item.id}
-              className="rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_52%,transparent)] p-4"
+              className="rounded-lg border border-[color:color-mix(in_srgb,var(--workspace-border)_88%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_72%,transparent)] p-4"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="text-sm font-black text-[var(--workspace-bubble-other-foreground)]">{item.label}</div>
@@ -307,12 +291,70 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
               </div>
               <p className="mt-2 text-sm leading-6 text-[var(--workspace-muted)]">{item.note}</p>
             </div>
+            ))}
+        </WorkspacePanel>
+      </section>
+
+      <section className="grid gap-6 2xl:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)]">
+        <WorkspacePanel
+          density="compact"
+          header={
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
+                صحة البيانات
+              </h2>
+              <p className="text-sm font-medium text-[var(--workspace-muted)]">
+                آخر حالة لتجميعات البيانات ومؤشرات الثبات.
+              </p>
+            </div>
+          }
+          bodyClassName="grid gap-3 md:grid-cols-2"
+        >
+          {viewModel.dataHealth.map((item) => (
+            <div
+              key={item.id}
+              className="rounded-lg border border-[color:color-mix(in_srgb,var(--workspace-border)_88%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_72%,transparent)] p-4"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-base font-black text-[var(--workspace-bubble-other-foreground)]">{item.label}</div>
+                <StatusBadge value={item.status} />
+              </div>
+              <div className="mt-3 text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
+                {item.value}
+              </div>
+              <p className="mt-2 text-sm leading-6 text-[var(--workspace-muted)]">{item.note}</p>
+            </div>
+          ))}
+        </WorkspacePanel>
+
+        <WorkspacePanel
+          density="compact"
+          header={
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
+                نبض التكامل
+              </h2>
+              <p className="text-sm font-medium text-[var(--workspace-muted)]">
+                قراءة سريعة لمواطن التعطل في الربط والاعتماد.
+              </p>
+            </div>
+          }
+          bodyClassName="grid gap-3"
+        >
+          {viewModel.apiRisk.map((item) => (
+            <div
+              key={item.id}
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-sm border border-[color:color-mix(in_srgb,var(--workspace-border)_88%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-elevated)_72%,transparent)] px-4 py-3"
+            >
+              <span className="text-sm font-bold text-[var(--workspace-muted)]">{item.label}</span>
+              <span className="text-lg font-black text-[var(--workspace-bubble-other-foreground)]">{item.value}</span>
+            </div>
           ))}
         </WorkspacePanel>
       </section>
 
       <WorkspacePanel
-        fullHeight
+        density="compact"
         header={
           <div className="space-y-2">
             <h2 className="text-2xl font-black tracking-tight text-[var(--workspace-bubble-other-foreground)]">
@@ -330,7 +372,7 @@ export default function OverviewPageClient({ viewModel }: OverviewPageClientProp
         {viewModel.alerts.map((alert) => (
           <div
             key={alert.id}
-            className="rounded-[24px] border border-[color:color-mix(in_srgb,var(--workspace-border)_76%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_96%,transparent)] p-4"
+            className="rounded-lg border border-[color:color-mix(in_srgb,var(--workspace-border)_90%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_98%,transparent)] p-4"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-2">

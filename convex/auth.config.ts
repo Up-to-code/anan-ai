@@ -1,16 +1,11 @@
 import type { AuthConfig } from "convex/server";
-import { resolveConvexAuthIssuer } from "./_core/security/authIssuer";
+import { getAuthConfigProvider } from "@convex-dev/better-auth/auth-config";
 
 /**
- * WHY:   Convex still needs an auth config so deployed functions can verify JWTs issued by Convex Auth.
- * WHAT:  Registers the local Convex deployment itself as the auth issuer.
- * HOW:   Uses the current `CONVEX_SITE_URL` as issuer domain and the default `convex` audience.
+ * WHY:   Convex must validate Better Auth JWTs before authenticated queries and mutations trust the caller.
+ * WHAT:  Registers the Better Auth Convex provider as the issuer for app sessions.
+ * HOW:   Uses the official Convex Better Auth component auth config provider.
  */
 export default {
-  providers: [
-    {
-      domain: resolveConvexAuthIssuer(),
-      applicationID: "convex",
-    },
-  ],
+  providers: [getAuthConfigProvider()],
 } satisfies AuthConfig;

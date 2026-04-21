@@ -42,15 +42,15 @@ function resolveOrganizations(profile: any, brokers: any[], developers: any[]) {
     ...(profile?.brokerId
       ? [buildOrganizationProjection({ brokerId: String(profile.brokerId) }, brokers, developers)].filter(Boolean)
       : []),
-    ...(profile?.REDId
-      ? [buildOrganizationProjection({ redId: String(profile.REDId) }, brokers, developers)].filter(Boolean)
+    ...(profile?.developerId
+      ? [buildOrganizationProjection({ redId: String(profile.developerId) }, brokers, developers)].filter(Boolean)
       : []),
   ];
 }
 
 function resolveSubscription(profile: any, subscriptions: any[]) {
   const currentBrokerId = profile?.brokerId ? String(profile.brokerId) : null;
-  const currentRedId = profile?.REDId ? String(profile.REDId) : null;
+  const currentRedId = profile?.developerId ? String(profile.developerId) : null;
   const subscription = currentBrokerId
     ? subscriptions.find((item) => String(item.ownerBrokerId ?? "") === currentBrokerId) ?? null
     : currentRedId
@@ -63,7 +63,7 @@ function resolveVerificationRequests(profile: any, verificationRequests: any[]) 
   const requests = verificationRequests.filter((request) =>
     (profile && request.subjectProfileId === profile._id) ||
     (profile?.brokerId && request.subjectBrokerId === profile.brokerId) ||
-    (profile?.REDId && request.subjectREDId === profile.REDId),
+    (profile?.developerId && request.subjectREDId === profile.developerId),
   );
   const latest = profile ? requests.sort((left, right) => right.submittedAt - left.submittedAt)[0] : null;
   return { requests, latest };
@@ -90,7 +90,7 @@ function buildIdentityResult(args: {
   const verified =
     args.organizations.length > 0
       ? args.organizations.some((item) => item && item.isVerified)
-      : args.profile?.roleStatus !== "rejected";
+      : args.profile?.roleApprovalStatus !== "rejected";
   const hasActiveSubscription =
     !!args.subscription && (args.subscription.status === "active" || args.subscription.status === "trial");
   const actionModeEnabled =
@@ -108,7 +108,7 @@ function buildIdentityResult(args: {
     subscription: args.subscription,
     userVerificationRequests: args.userVerificationRequests,
     verified,
-    verificationStatus: resolveVerificationStatus(args.latestRequest?.currentStatus, args.profile?.roleStatus),
+    verificationStatus: resolveVerificationStatus(args.latestRequest?.currentStatus, args.profile?.roleApprovalStatus),
   };
 }
 

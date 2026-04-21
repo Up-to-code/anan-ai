@@ -259,7 +259,7 @@ export const _appendStreamEvent = internalMutation({
       teamId: v.optional(v.string()),
       agentName: v.optional(v.string()),
       delta: v.optional(v.string()),
-      threadId: v.optional(v.id("assistantThreads")),
+      threadId: v.optional(v.string()),
       title: v.optional(v.string()),
       meta: v.optional(v.any()),
       message: v.optional(v.string()),

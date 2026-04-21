@@ -3,6 +3,8 @@ import Link from "next/link";
 import ZonePageIntro from "../../_components/ZoneShell/ZonePageIntro";
 import { getLocaleDateFormat } from "@/lib/locale";
 import { getWorkspaceLocaleContext } from "../../_lib/workspaceLocale";
+import { requireWorkspaceData } from "../../_lib/workspaceData";
+import NotificationOpenLink from "../../_components/NotificationOpenLink";
 import {
   getWorkspaceNotificationSummary,
   listWorkspaceNotifications,
@@ -30,8 +32,9 @@ function formatNotificationTimestamp(timestamp: number, locale: string) {
  */
 export default async function WorkspaceNotificationsPage({ searchParams }: WorkspaceNotificationsPageProps) {
   const { locale, dictionary } = await getWorkspaceLocaleContext();
-  const [{ filter }, notifications, summary] = await Promise.all([
+  const [{ filter }, _workspace, notifications, summary] = await Promise.all([
     searchParams,
+    requireWorkspaceData("/ws/notifications"),
     listWorkspaceNotifications(30),
     getWorkspaceNotificationSummary(),
   ]);
@@ -88,9 +91,11 @@ export default async function WorkspaceNotificationsPage({ searchParams }: Works
             </div>
           ) : (
             filteredNotifications.map((item) => (
-              <Link
+              <NotificationOpenLink
                 key={item.id}
+                notificationId={item.id}
                 href={item.href}
+                isRead={item.isRead}
                 className="group relative block rounded-2xl border border-border bg-card p-5 transition-all hover:border-foreground/20 hover:shadow-lg hover:shadow-black/[0.02]"
               >
                 <div className="flex items-start justify-between gap-6">
@@ -123,7 +128,7 @@ export default async function WorkspaceNotificationsPage({ searchParams }: Works
                     {item.isRead ? dictionary.notifications.read : dictionary.notifications.new}
                   </div>
                 </div>
-              </Link>
+              </NotificationOpenLink>
             ))
           )}
         </div>

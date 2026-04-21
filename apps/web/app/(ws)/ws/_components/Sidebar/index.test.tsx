@@ -3,9 +3,10 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { WebLocaleProvider } from "@/app/_components/WebLocaleProvider";
 import { getWebDictionary } from "@/lib/i18n";
 
-const { usePathname, useSearchParams, useQuery } = vi.hoisted(() => ({
+const { usePathname, useSearchParams, useConvexAuth, useQuery } = vi.hoisted(() => ({
   usePathname: vi.fn(),
   useSearchParams: vi.fn(),
+  useConvexAuth: vi.fn(),
   useQuery: vi.fn(),
 }));
 
@@ -15,6 +16,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("convex/react", () => ({
+  useConvexAuth,
   useQuery,
 }));
 
@@ -51,6 +53,8 @@ beforeEach(() => {
   usePathname.mockReturnValue("/ws");
   useSearchParams.mockReset();
   useSearchParams.mockReturnValue(new URLSearchParams());
+  useConvexAuth.mockReset();
+  useConvexAuth.mockReturnValue({ isLoading: false, isAuthenticated: true });
   useQuery.mockReset();
   useQuery.mockReturnValue(undefined);
 });

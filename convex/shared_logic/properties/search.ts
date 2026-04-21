@@ -7,6 +7,7 @@ import { query } from "../../_generated/server";
 import { v } from "convex/values";
 import type { Id } from "../../_generated/dataModel";
 import { DEFAULT_COMPLIANCE_COUNTRY, findActiveComplianceRuleset } from "../compliance/utils";
+import { isPropertyDistributionReady } from "../projects/readiness";
 
 /**
  * WHY:   Search indexes need consistent normalized strings to match user intent.
@@ -189,6 +190,7 @@ function toPublicSearchResult(property: any): PublicSearchResult {
 }
 
 async function mapPublicResult(ctx: any, property: any): Promise<PublicSearchResult | null> {
+  if (!isPropertyDistributionReady(property)) return null;
   const publicationState = property.publicationState as string | undefined;
   if (publicationState === "draft" || publicationState === "archived") return null;
   if (property.isPublicSearchable === true) {

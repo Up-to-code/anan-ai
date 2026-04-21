@@ -1,4 +1,4 @@
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getAuthUserId } from "../_core/security/authIdentity";
 import { ConvexError, v } from "convex/values";
 import type { Doc, Id } from "../_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation, query } from "../_generated/server";
@@ -12,11 +12,20 @@ import {
   saveConversationStep,
   type AssistantOwner,
 } from "./services/assistantService";
+import type {
+  AssistantMessageRecord,
+  AssistantThreadRecord,
+} from "./services/assistantService/types";
+import {
+  getAssistantMessageStateByMessageId,
+  rewriteCanonicalAssistantMessage,
+} from "./services/assistantService/runtime";
 import { transcribeStoredVoiceNote } from "./services/voiceTranscriptionService";
 import { compactAssistantResponse } from "./services/publicAssistantResponse";
 import { synthesizeAssistantVoice as synthesizeAssistantVoiceAudio } from "./services/voiceSynthesisService";
 import { issueChannelSession } from "../_core/security/channelAuth";
 import { buildStructuredBuyerResponse } from "./services/publicBuyerResponse";
+import { buildBuyerComparisonSnapshot } from "../shared_logic/buyerComparisons";
 import {
   buildCompiledBuyerContextPayload,
   buyerQualificationValidator,
@@ -27,6 +36,7 @@ import { resolveAssistantEntitlementForCurrentProfile } from "../shared_logic/su
 const ASSISTANT_KIND = "anan_main_public" as const;
 const ORCHESTRATOR_NAME = "anan_main_public_orchestrator";
 const PUBLIC_CHANNEL = "main_assistant_web" as const;
+const buyerComparisonsInternal = (internal as Record<string, any>)["shared_logic/buyerComparisons"];
 const PROMPT_PREFIX = [
   "[Etijah Main Assistant System Prompt]",
   "Identity and purpose:",
@@ -70,13 +80,13 @@ type PublicSession = {
   guestId: string;
   authUserId: string;
   owner: AssistantOwner;
-  thread: Doc<"assistantThreads"> | null;
+  thread: AssistantThreadRecord | null;
   sessionToken: string;
   expiresAt: number;
 };
 
 type StoredBuyerMessage = {
-  id: Id<"assistantMessages">;
+  id: string;
   role: "assistant" | "user";
   text: string;
   createdAt: number;
@@ -85,6 +95,9 @@ type StoredBuyerMessage = {
   activePropertyId?: Id<"properties">;
   requiresAuthForHandoff?: boolean;
   suggestedPrompts?: string[];
+  comparisonArtifactId?: Id<"buyerComparisonArtifacts">;
+  comparisonPropertyIds?: Array<Id<"properties">>;
+  selectionSource?: "ui_selected" | "history_resolved" | "text_resolved";
   buyerContext?: unknown;
 };
 
@@ -119,7 +132,7 @@ function readOptionalArray(value: unknown) {
 }
 
 function mapStoredMessage(message: {
-  _id: Id<"assistantMessages">;
+  _id: string;
   role: "assistant" | "user";
   content: string;
   createdAt: number;
@@ -142,8 +155,100 @@ function mapStoredMessage(message: {
         ? metadata.requiresAuthForHandoff
         : undefined,
     suggestedPrompts: readOptionalArray(metadata.suggestedPrompts) as string[] | undefined,
+    comparisonArtifactId:
+      typeof metadata.comparisonArtifactId === "string"
+        ? (metadata.comparisonArtifactId as Id<"buyerComparisonArtifacts">)
+        : undefined,
+    comparisonPropertyIds: readOptionalArray(metadata.comparisonPropertyIds) as
+      | Array<Id<"properties">>
+      | undefined,
+    selectionSource:
+      metadata.selectionSource === "ui_selected" ||
+      metadata.selectionSource === "history_resolved" ||
+      metadata.selectionSource === "text_resolved"
+        ? metadata.selectionSource
+        : undefined,
     buyerContext: metadata.buyerContext,
   };
+}
+
+async function hydrateStoredMessages(args: {
+  ctx: any;
+  threadId?: string;
+  messages: Array<{
+    _id: string;
+    role: "assistant" | "user";
+    content: string;
+    createdAt: number;
+    metadata?: unknown;
+  }>;
+}) {
+  const artifactCache = new Map<string, Promise<any>>();
+  const propertyCache = new Map<string, Promise<any>>();
+
+  const loadArtifact = async (artifactId: Id<"buyerComparisonArtifacts">) => {
+    const key = String(artifactId);
+    if (!artifactCache.has(key)) {
+      artifactCache.set(
+        key,
+        args.ctx.runQuery(
+          buyerComparisonsInternal.getBuyerComparisonArtifactInternal,
+          {
+            artifactId,
+            threadId: args.threadId,
+          },
+        ),
+      );
+    }
+    return artifactCache.get(key);
+  };
+
+  const loadProperty = async (propertyId: Id<"properties">) => {
+    const key = String(propertyId);
+    if (!propertyCache.has(key)) {
+      propertyCache.set(
+        key,
+        args.ctx.runQuery(
+          (api as any)["user_zone/web/properties"].getPropertyDetail,
+          { propertyId },
+        ),
+      );
+    }
+    return propertyCache.get(key);
+  };
+
+  return Promise.all(
+    args.messages.map(async (message) => {
+      const mapped = mapStoredMessage(message);
+      if (!mapped.comparisonArtifactId) return mapped;
+
+      const artifact = await loadArtifact(mapped.comparisonArtifactId);
+      if (!artifact) return mapped;
+
+      const liveProperties = await Promise.all(
+        (artifact.propertyIds as Array<Id<"properties">>).map((propertyId) =>
+          loadProperty(propertyId),
+        ),
+      );
+      const snapshot =
+        liveProperties.every(Boolean) && liveProperties.length >= 2
+          ? buildBuyerComparisonSnapshot({
+              locale: artifact.locale,
+              properties: liveProperties as any,
+              selectionSource: artifact.selectionSource,
+            }).snapshot
+          : artifact.snapshot;
+
+      return {
+        ...mapped,
+        text: snapshot.message,
+        properties: snapshot.properties,
+        cards: snapshot.cards,
+        activePropertyId: snapshot.activePropertyId,
+        suggestedPrompts: snapshot.suggestedPrompts,
+      };
+    }),
+  );
 }
 
 function sanitizeBuyerContext(value: unknown) {
@@ -189,7 +294,12 @@ async function ensureGuestUser(ctx: { db: any }, guestId: string) {
 
 async function resolvePublicSessionForRead(
   ctx: { db: any },
-  args: { guestId: string; channelSessionToken: string; threadId?: Id<"assistantThreads"> },
+  args: {
+    guestId: string;
+    channelSessionToken: string;
+    threadId?: string;
+    startFresh?: boolean;
+  },
 ): Promise<PublicSession> {
   const authUserId = buildGuestAuthUserId(args.guestId);
   const session = await ctx.db
@@ -218,7 +328,9 @@ async function resolvePublicSessionForRead(
 
   const thread = args.threadId
     ? await getThreadById(ctx as any, owner, args.threadId, ASSISTANT_KIND)
-    : await getLatestThread(ctx as any, owner, ASSISTANT_KIND);
+    : args.startFresh
+      ? null
+      : await getLatestThread(ctx as any, owner, ASSISTANT_KIND);
 
   return {
     guestId: args.guestId,
@@ -232,7 +344,7 @@ async function resolvePublicSessionForRead(
 
 async function resolveAuthenticatedSessionForRead(
   ctx: any,
-  args: { threadId?: Id<"assistantThreads"> },
+  args: { threadId?: string; startFresh?: boolean },
 ) {
   const authUserId = await getAuthUserId(ctx as any);
   if (!authUserId) {
@@ -249,7 +361,9 @@ async function resolveAuthenticatedSessionForRead(
 
   const thread = args.threadId
     ? await getThreadById(ctx as any, owner, args.threadId, ASSISTANT_KIND)
-    : await getLatestThread(ctx as any, owner, ASSISTANT_KIND);
+    : args.startFresh
+      ? null
+      : await getLatestThread(ctx as any, owner, ASSISTANT_KIND);
 
   return {
     authUserId,
@@ -263,7 +377,8 @@ async function resolveAssistantPublicSession(
   args: {
     guestId?: string;
     channelSessionToken?: string;
-    threadId?: Id<"assistantThreads">;
+    threadId?: string;
+    startFresh?: boolean;
   },
 ) {
   if (args.guestId && args.channelSessionToken) {
@@ -271,11 +386,13 @@ async function resolveAssistantPublicSession(
       guestId: args.guestId,
       channelSessionToken: args.channelSessionToken,
       threadId: args.threadId,
+      startFresh: args.startFresh,
     });
   }
 
   const authenticated = await resolveAuthenticatedSessionForRead(ctx, {
     threadId: args.threadId,
+    startFresh: args.startFresh,
   });
 
   return {
@@ -299,7 +416,7 @@ export const bootstrapSession = mutation({
     guestId: v.string(),
     channelSessionToken: v.string(),
     expiresAt: v.number(),
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
     const guestId = args.guestId?.trim() || crypto.randomUUID();
@@ -329,7 +446,7 @@ export const _resolvePublicSession = internalQuery({
   args: {
     guestId: v.string(),
     channelSessionToken: v.string(),
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
   },
   returns: v.any(),
   handler: async (ctx, args) => resolvePublicSessionForRead(ctx, args),
@@ -338,7 +455,7 @@ export const _resolvePublicSession = internalQuery({
 export const _listMessagesForOwner = internalQuery({
   args: {
     userId: v.string(),
-    threadId: v.id("assistantThreads"),
+    threadId: v.string(),
   },
   returns: v.any(),
   handler: async (ctx, args) => {
@@ -359,7 +476,7 @@ export const getThreadSafe = query({
   args: {
     guestId: v.string(),
     channelSessionToken: v.string(),
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
   },
   returns: v.any(),
   handler: async (ctx, args): Promise<any> => {
@@ -390,7 +507,7 @@ export const listMessages = query({
   args: {
     guestId: v.string(),
     channelSessionToken: v.string(),
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
   },
   returns: v.any(),
   handler: async (ctx, args) => {
@@ -402,7 +519,11 @@ export const listMessages = query({
       resolvedThreadId,
       ASSISTANT_KIND,
     );
-    return messages.map(mapStoredMessage);
+    return hydrateStoredMessages({
+      ctx,
+      threadId: resolvedThreadId,
+      messages,
+    });
   },
 });
 
@@ -413,7 +534,7 @@ export const listMessages = query({
  */
 export const getAuthenticatedThread = query({
   args: {
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
   },
   returns: v.any(),
   handler: async (ctx, args): Promise<any> => {
@@ -440,7 +561,7 @@ export const getAuthenticatedThread = query({
  */
 export const listAuthenticatedMessages = query({
   args: {
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
   },
   returns: v.any(),
   handler: async (ctx, args) => {
@@ -452,7 +573,11 @@ export const listAuthenticatedMessages = query({
       resolvedThreadId,
       ASSISTANT_KIND,
     );
-    return messages.map(mapStoredMessage);
+    return hydrateStoredMessages({
+      ctx,
+      threadId: resolvedThreadId,
+      messages,
+    });
   },
 });
 
@@ -465,7 +590,7 @@ export const getThreadState = query({
   args: {
     guestId: v.optional(v.string()),
     channelSessionToken: v.optional(v.string()),
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
   },
   returns: v.any(),
   handler: async (ctx, args): Promise<any> => {
@@ -489,7 +614,11 @@ export const getThreadState = query({
       owner: session.owner,
       guestId: session.guestId,
       expiresAt: session.expiresAt,
-      messages: messages.map(mapStoredMessage),
+      messages: await hydrateStoredMessages({
+        ctx,
+        threadId: resolvedThreadId,
+        messages,
+      }),
       buyerContext: sanitizeBuyerContext(buyerContext),
     };
   },
@@ -504,7 +633,8 @@ export const getRuntimeContextBundle = query({
   args: {
     guestId: v.optional(v.string()),
     channelSessionToken: v.optional(v.string()),
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
+    startFresh: v.optional(v.boolean()),
     message: v.string(),
     regenerate: v.optional(v.boolean()),
     regenerateMessageId: v.optional(v.string()),
@@ -536,6 +666,7 @@ export const getRuntimeContextBundle = query({
         message: effectiveUserMessage,
         threadId: resolvedThreadId,
         persistCompiledCache: false,
+        startFresh: args.startFresh,
       }),
     ]);
 
@@ -565,7 +696,7 @@ export const createThread = mutation({
     title: v.optional(v.string()),
   },
   returns: v.object({
-    threadId: v.id("assistantThreads"),
+    threadId: v.string(),
   }),
   handler: async (ctx, args) => {
     const session = await resolvePublicSessionForRead(ctx, args);
@@ -598,8 +729,9 @@ export const generateVoiceUploadUrl = mutation({
 async function buildStructuredTurn(args: {
   ctx: any;
   owner: AssistantOwner;
-  initialThread: Doc<"assistantThreads"> | null;
+  initialThread: AssistantThreadRecord | null;
   message: string;
+  startFresh?: boolean;
   inputMode?: "text" | "voice";
   locale?: "ar" | "en" | "fr";
   qualification?: {
@@ -610,12 +742,13 @@ async function buildStructuredTurn(args: {
     notes?: string;
   };
   selectedPropertyId?: Id<"properties">;
+  selectedPropertyIds?: Id<"properties">[];
   runtimeContextOverride?: {
-    thread?: Doc<"assistantThreads"> | null;
+    thread?: AssistantThreadRecord | null;
     owner: AssistantOwner;
     entitlement?: { mode: "qa" | "action" };
-    existingMessages?: Array<Doc<"assistantMessages">>;
-    regenerateSource?: Doc<"assistantMessages"> | null;
+    existingMessages?: Array<AssistantMessageRecord>;
+    regenerateSource?: AssistantMessageRecord | null;
     effectiveUserMessage?: string;
     compiledBuyerContext?: {
       compiledPromptContext: string;
@@ -627,6 +760,11 @@ async function buildStructuredTurn(args: {
     message: args.message,
     threadId: args.initialThread?._id,
     inputMode: args.inputMode,
+    userMessageMetadata: {
+      locale: args.locale,
+      selectedPropertyId: args.selectedPropertyId,
+      selectedPropertyIds: args.selectedPropertyIds,
+    },
     assistantKind: ASSISTANT_KIND,
     orchestratorName: ORCHESTRATOR_NAME,
     promptPrefix: PROMPT_PREFIX,
@@ -642,7 +780,7 @@ async function buildStructuredTurn(args: {
     await args.ctx.runMutation(
       internal.ai_zone.assistantPublic._rewriteAssistantMessage,
       {
-        messageId: result.messageId as Id<"assistantMessages">,
+        messageId: result.messageId,
         content: compacted.text,
       },
     );
@@ -655,24 +793,45 @@ async function buildStructuredTurn(args: {
     locale: args.locale ?? "ar",
     message: args.message,
     assistantText: compacted.text,
-    threadId: result.threadId as Id<"assistantThreads">,
+    threadId: result.threadId,
+    startFresh: args.startFresh,
     selectedPropertyId: args.selectedPropertyId,
+    selectedPropertyIds: args.selectedPropertyIds,
+    triggerMessageId: result.userMessageId,
     qualification: args.qualification,
     promptBudgetMeta: result.promptBudgetMeta as any,
   });
 
+  if (structured.message !== compacted.text) {
+    await args.ctx.runMutation(
+      internal.ai_zone.assistantPublic._rewriteAssistantMessage,
+      {
+        messageId: result.messageId,
+        content: structured.message,
+      },
+    );
+  }
+
   await args.ctx.runMutation(
     internal.ai_zone.assistantPublic._patchAssistantMessageMetadata,
     {
-      messageId: result.messageId as Id<"assistantMessages">,
-      metadata: {
-        properties: structured.properties,
-        cards: structured.cards,
-        suggestedPrompts: structured.suggestedPrompts,
-        activePropertyId: structured.activePropertyId,
-        requiresAuthForHandoff: structured.requiresAuthForHandoff,
-        buyerContext: structured.buyerContext,
-      },
+      messageId: result.messageId,
+      metadata: structured.comparisonArtifactId
+        ? {
+            requiresAuthForHandoff: structured.requiresAuthForHandoff,
+            comparisonArtifactId: structured.comparisonArtifactId,
+            comparisonPropertyIds: structured.comparisonPropertyIds,
+            selectionSource: structured.selectionSource,
+            buyerContext: structured.buyerContext,
+          }
+        : {
+            properties: structured.properties,
+            cards: structured.cards,
+            suggestedPrompts: structured.suggestedPrompts,
+            activePropertyId: structured.activePropertyId,
+            requiresAuthForHandoff: structured.requiresAuthForHandoff,
+            buyerContext: structured.buyerContext,
+          },
     },
   );
 
@@ -696,11 +855,13 @@ export const sendMessage = action({
     guestId: v.string(),
     channelSessionToken: v.string(),
     message: v.string(),
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
+    startFresh: v.optional(v.boolean()),
     inputMode: v.optional(v.union(v.literal("text"), v.literal("voice"))),
     locale: v.optional(v.union(v.literal("ar"), v.literal("en"), v.literal("fr"))),
     qualification: v.optional(buyerQualificationValidator),
     selectedPropertyId: v.optional(v.id("properties")),
+    selectedPropertyIds: v.optional(v.array(v.id("properties"))),
   },
   returns: v.any(),
   handler: async (ctx, args) => {
@@ -710,6 +871,7 @@ export const sendMessage = action({
         guestId: args.guestId,
         channelSessionToken: args.channelSessionToken,
         threadId: args.threadId,
+        startFresh: args.startFresh,
         message: args.message,
       } as never,
     ) as any;
@@ -719,10 +881,12 @@ export const sendMessage = action({
       owner: runtimeContext.owner,
       initialThread: runtimeContext.thread ?? null,
       message: args.message,
+      startFresh: args.startFresh,
       inputMode: args.inputMode,
       locale: args.locale,
       qualification: args.qualification,
       selectedPropertyId: args.selectedPropertyId,
+      selectedPropertyIds: args.selectedPropertyIds,
       runtimeContextOverride: runtimeContext,
     });
   },
@@ -736,11 +900,13 @@ export const sendMessage = action({
 export const sendAuthenticatedMessage = action({
   args: {
     message: v.string(),
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
+    startFresh: v.optional(v.boolean()),
     inputMode: v.optional(v.union(v.literal("text"), v.literal("voice"))),
     locale: v.optional(v.union(v.literal("ar"), v.literal("en"), v.literal("fr"))),
     qualification: v.optional(buyerQualificationValidator),
     selectedPropertyId: v.optional(v.id("properties")),
+    selectedPropertyIds: v.optional(v.array(v.id("properties"))),
   },
   returns: v.any(),
   handler: async (ctx, args) => {
@@ -748,6 +914,7 @@ export const sendAuthenticatedMessage = action({
       api.ai_zone.assistantPublic.getRuntimeContextBundle,
       {
         threadId: args.threadId,
+        startFresh: args.startFresh,
         message: args.message,
       } as never,
     ) as any;
@@ -757,10 +924,12 @@ export const sendAuthenticatedMessage = action({
       owner: runtimeContext.owner,
       initialThread: runtimeContext.thread ?? null,
       message: args.message,
+      startFresh: args.startFresh,
       inputMode: args.inputMode,
       locale: args.locale,
       qualification: args.qualification,
       selectedPropertyId: args.selectedPropertyId,
+      selectedPropertyIds: args.selectedPropertyIds,
       runtimeContextOverride: runtimeContext,
     });
   },
@@ -777,8 +946,8 @@ export const promoteGuestToAuthenticatedBuyer = mutation({
     channelSessionToken: v.string(),
   },
   returns: v.object({
-    threadId: v.optional(v.id("assistantThreads")),
-    movedThreadIds: v.array(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
+    movedThreadIds: v.array(v.string()),
   }),
   handler: async (ctx, args): Promise<any> => {
     const session = await resolvePublicSessionForRead(ctx, args);
@@ -802,8 +971,8 @@ export const promoteGuestToAuthenticatedBuyer = mutation({
     );
 
     return {
-      threadId: promoted.activeThreadId ?? session.thread?._id,
-      movedThreadIds: promoted.movedThreadIds,
+      threadId: promoted.activeThreadId ? String(promoted.activeThreadId) : session.thread?._id,
+      movedThreadIds: promoted.movedThreadIds.map((threadId) => String(threadId)),
     };
   },
 });
@@ -912,7 +1081,7 @@ export const synthesizeAssistantVoice = action({
 
 export const _saveConversationStep = internalMutation({
   args: {
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
     userId: v.string(),
     ownerType: v.union(v.literal("broker"), v.literal("RED"), v.literal("user")),
     ownerBrokerId: v.optional(v.id("brokers")),
@@ -934,29 +1103,72 @@ export const _saveConversationStep = internalMutation({
 
 export const _rewriteAssistantMessage = internalMutation({
   args: {
-    messageId: v.id("assistantMessages"),
+    messageId: v.string(),
     content: v.string(),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.messageId, {
-      content: args.content,
-    });
+    const messageState = await getAssistantMessageStateByMessageId(ctx, args.messageId);
+    if (messageState) {
+      await rewriteCanonicalAssistantMessage(ctx, args);
+      if (messageState.legacyMessageId) {
+        await ctx.db.patch(messageState.legacyMessageId, {
+          content: args.content,
+        });
+      }
+      return null;
+    }
+
+    const legacyMessageId = ctx.db.normalizeId("assistantMessages", args.messageId);
+    if (legacyMessageId) {
+      await ctx.db.patch(legacyMessageId, {
+        content: args.content,
+      });
+    }
     return null;
   },
 });
 
 export const _patchAssistantMessageMetadata = internalMutation({
   args: {
-    messageId: v.id("assistantMessages"),
+    messageId: v.string(),
     metadata: v.any(),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const existing = await ctx.db.get(args.messageId);
-    if (!existing) return null;
+    const messageState = await getAssistantMessageStateByMessageId(ctx, args.messageId);
+    if (messageState) {
+      await ctx.db.patch(messageState._id, {
+        metadata: {
+          ...(typeof messageState.metadata === "object" && messageState.metadata
+            ? messageState.metadata
+            : {}),
+          ...(typeof args.metadata === "object" && args.metadata ? args.metadata : {}),
+        },
+      });
+      if (messageState.legacyMessageId) {
+        const existingLegacy = (await ctx.db.get(
+          messageState.legacyMessageId,
+        )) as Doc<"assistantMessages"> | null;
+        if (existingLegacy) {
+          await ctx.db.patch(messageState.legacyMessageId, {
+            metadata: {
+              ...(typeof existingLegacy.metadata === "object" && existingLegacy.metadata
+                ? existingLegacy.metadata
+                : {}),
+              ...(typeof args.metadata === "object" && args.metadata ? args.metadata : {}),
+            },
+          });
+        }
+      }
+      return null;
+    }
 
-    await ctx.db.patch(args.messageId, {
+    const legacyMessageId = ctx.db.normalizeId("assistantMessages", args.messageId);
+    if (!legacyMessageId) return null;
+    const existing = await ctx.db.get(legacyMessageId);
+    if (!existing) return null;
+    await ctx.db.patch(legacyMessageId, {
       metadata: {
         ...(typeof existing.metadata === "object" && existing.metadata ? existing.metadata : {}),
         ...(typeof args.metadata === "object" && args.metadata ? args.metadata : {}),

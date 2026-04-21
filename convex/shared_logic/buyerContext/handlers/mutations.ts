@@ -26,6 +26,12 @@ function toSummarySnapshot(state: ReturnType<typeof toBuyerStateRecord>) {
     lastResultPropertyIds: state.lastResultPropertyIds.map((id: any) =>
       String(id),
     ),
+    comparisonPropertyIds: state.comparisonPropertyIds?.map((id: any) =>
+      String(id),
+    ),
+    lastComparisonArtifactId: state.lastComparisonArtifactId
+      ? String(state.lastComparisonArtifactId)
+      : undefined,
     qualification: state.qualification,
   };
 }
@@ -38,6 +44,8 @@ async function persistBuyerChannelState(args: {
   state: "idle" | "search_results" | "property_selected" | "handoff_ready";
   selectedPropertyId?: any;
   lastResultPropertyIds: any[];
+  comparisonPropertyIds?: any[];
+  lastComparisonArtifactId?: any;
   lastSearchQuery?: string;
   qualification?: {
     monthlySalary?: number;
@@ -62,6 +70,8 @@ async function persistBuyerChannelState(args: {
     state: args.state,
     selectedPropertyId: args.selectedPropertyId,
     lastResultPropertyIds: args.lastResultPropertyIds,
+    comparisonPropertyIds: args.comparisonPropertyIds,
+    lastComparisonArtifactId: args.lastComparisonArtifactId,
     lastSearchQuery: args.lastSearchQuery,
     qualification: args.qualification,
     createdAt: existing?.createdAt ?? now,
@@ -90,10 +100,12 @@ export const upsertBuyerChannelStateInternal = internalMutation({
   args: {
     channel: buyerChannelValidator,
     userId: v.string(),
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
     state: buyerChannelStateValidator,
     selectedPropertyId: v.optional(v.id("properties")),
     lastResultPropertyIds: v.array(v.id("properties")),
+    comparisonPropertyIds: v.optional(v.array(v.id("properties"))),
+    lastComparisonArtifactId: v.optional(v.id("buyerComparisonArtifacts")),
     lastSearchQuery: v.optional(v.string()),
     qualification: v.optional(buyerQualificationValidator),
   },
@@ -107,6 +119,8 @@ export const upsertBuyerChannelStateInternal = internalMutation({
       state: args.state,
       selectedPropertyId: args.selectedPropertyId,
       lastResultPropertyIds: args.lastResultPropertyIds,
+      comparisonPropertyIds: args.comparisonPropertyIds,
+      lastComparisonArtifactId: args.lastComparisonArtifactId,
       lastSearchQuery: args.lastSearchQuery,
       qualification: args.qualification,
     }),
@@ -137,7 +151,7 @@ export const getCompiledBuyerContextInternal = internalMutation({
     channel: buyerChannelValidator,
     userId: v.string(),
     message: v.string(),
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
   },
   returns: compiledBuyerContextValidator,
   handler: async (ctx, args): Promise<any> =>

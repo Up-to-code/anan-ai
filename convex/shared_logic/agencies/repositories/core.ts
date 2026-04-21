@@ -117,7 +117,7 @@ export function buildOwnerContext(args: {
 /**
  * WHY:   Current-user organization flows should infer ownership directly from the persisted profile record.
  * WHAT:  Converts a profile's broker/developer linkage into an owner context.
- * HOW:   Prefers `brokerId`, falls back to `REDId`, and throws when no organization link exists.
+ * HOW:   Prefers `brokerId`, falls back to `developerId`, and throws when no organization link exists.
  */
 export function buildOwnerContextFromProfile(profile: UserProfileRecord): OwnerContext {
   if (profile.brokerId) {
@@ -129,10 +129,10 @@ export function buildOwnerContextFromProfile(profile: UserProfileRecord): OwnerC
     };
   }
 
-  if (profile.REDId) {
+  if ((profile as any).developerId) {
     return {
       ownerType: "RED",
-      ownerREDId: profile.REDId,
+      ownerREDId: (profile as any).developerId,
       authUserId: profile.authUserId,
       tenantOrgId: profile.currentTenantOrgId,
     };
@@ -201,7 +201,7 @@ async function resolveTenantOrgIdFromProfileOwner(
   ctx: AgenciesRepositoryCtx,
   profile: UserProfileRecord
 ) {
-  if (!profile.brokerId && !profile.REDId) return null;
+  if (!profile.brokerId && !(profile as any).developerId) return null;
   const owner = buildOwnerContextFromProfile(profile);
   const link = await findTenantOrgLinkByOwner(ctx, owner);
   if (!link) return null;

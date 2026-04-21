@@ -36,7 +36,12 @@ export const setAdminByEmail = mutation({
     if (profile) {
       await ctx.db.patch(profile._id, {
         role: "admin",
-        roleStatus: "approved",
+        roleApprovalStatus: "approved",
+        requestedRole: undefined,
+        brokerId: undefined,
+        developerId: undefined,
+        REDId: undefined,
+        roleStatus: undefined,
         updatedAt: Date.now(),
       });
     } else {
@@ -45,7 +50,7 @@ export const setAdminByEmail = mutation({
         email,
         name: user.name ?? user.displayName ?? "Admin",
         role: "admin",
-        roleStatus: "approved",
+        roleApprovalStatus: "approved",
         isActive: true,
         createdAt: Date.now(),
         updatedAt: Date.now(),

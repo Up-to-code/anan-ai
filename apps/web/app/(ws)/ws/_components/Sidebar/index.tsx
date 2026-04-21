@@ -14,6 +14,8 @@ export default function Sidebar({
   recentAssistantThreads,
   allAssistantThreads,
   mode = "desktop",
+  variant = "default",
+  headerAction,
   className,
   titleId,
   onNavigate,
@@ -33,6 +35,8 @@ export default function Sidebar({
         recentAssistantThreads={recentAssistantThreads}
         allAssistantThreads={allAssistantThreads}
         mode={mode}
+        variant={variant}
+        headerAction={headerAction}
         titleId={titleId}
         onNavigate={onNavigate}
       />

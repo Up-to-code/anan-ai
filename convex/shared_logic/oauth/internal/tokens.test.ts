@@ -12,19 +12,21 @@ type SeededOAuthData = {
   clientId: string;
   refreshTokenHash: string;
   familyId: string;
-  userId: any;
+  actorUserId: any;
+  ownerBrokerId: any;
+  tenantOrgId: string;
   authorizationId: any;
   refreshTokenId: any;
 };
 
-async function insertOAuthClientArtifacts(ctx: any, now: number, clientId: string, userId: any) {
+async function insertOAuthClientArtifacts(ctx: any, now: number, clientId: string, args: { ownerBrokerId: any; tenantOrgId: string }) {
   await ctx.db.insert("oauthClients", {
     clientId,
     name: "Client One",
     publisherName: "Anan",
     clientType: "public",
     redirectUris: ["https://client.example.com/callback"],
-    allowedScopes: ["profile", "offline_access"],
+    allowedScopes: ["clients:read_own", "offline_access"],
     trusted: false,
     isActive: true,
     createdAt: now - 10_000,
@@ -32,7 +34,9 @@ async function insertOAuthClientArtifacts(ctx: any, now: number, clientId: strin
   } as any);
   await ctx.db.insert("oauthSubjectMappings", {
     clientId,
-    userId,
+    tenantOrgId: args.tenantOrgId,
+    ownerType: "broker",
+    ownerBrokerId: args.ownerBrokerId,
     pairwiseSubject: "pairwise-subject-1",
     createdAt: now - 10_000,
   } as any);
@@ -45,31 +49,43 @@ async function seedOAuthData(t: ReturnType<typeof convexTest>, options: SeedOpti
   const familyId = "family-1";
 
   const seeded = await t.run(async (ctx) => {
-    const userId = await ctx.db.insert("users", { email: "oauth-user@example.com", name: "OAuth User" } as any);
+    const actorUserId = await ctx.db.insert("users", { email: "oauth-user@example.com", name: "OAuth User" } as any);
+    const ownerBrokerId = await ctx.db.insert("brokers", {
+      name: "OAuth Broker",
+      slug: "oauth-broker",
+      status: "active",
+    } as any);
+    const tenantOrgId = "tenant-org-oauth-1";
     const authorizationId = await ctx.db.insert("oauthAuthorizations", {
-      userId,
+      tenantOrgId,
+      ownerType: "broker",
+      ownerBrokerId,
       clientId,
-      grantedScopes: ["profile", "offline_access"],
+      grantedScopes: ["clients:read_own", "offline_access"],
       offlineAccess: true,
       consentVersion: OAUTH_CONSENT_VERSION,
       createdAt: now - 5_000,
       updatedAt: now - 5_000,
       lastUsedAt: now - 5_000,
+      approvedByUserId: actorUserId,
     } as any);
-    await insertOAuthClientArtifacts(ctx, now, clientId, userId);
+    await insertOAuthClientArtifacts(ctx, now, clientId, { ownerBrokerId, tenantOrgId });
     const refreshTokenId = await ctx.db.insert("oauthRefreshTokens", {
       tokenHash: refreshTokenHash,
       familyId,
       clientId,
-      userId,
+      tenantOrgId,
+      ownerType: "broker",
+      ownerBrokerId,
+      approvedByUserId: actorUserId,
       authorizationId,
-      scopes: ["profile", "offline_access"],
+      scopes: ["clients:read_own", "offline_access"],
       expiresAt: options.refreshExpiresAt ?? now + 30 * 60 * 1000,
       usedAt: options.refreshUsedAt,
       revokedAt: options.refreshRevokedAt,
       createdAt: now - 1_000,
     } as any);
-    return { userId, authorizationId, refreshTokenId };
+    return { actorUserId, ownerBrokerId, tenantOrgId, authorizationId, refreshTokenId };
   });
 
   return { ...seeded, now, clientId, refreshTokenHash, familyId };
@@ -94,26 +110,32 @@ async function runRotateMutation(t: ReturnType<typeof convexTest>, seeded: Seede
 }
 
 async function seedReplayTokens(t: ReturnType<typeof convexTest>, seeded: SeededOAuthData) {
-  await t.run(async (ctx) => {
-    await ctx.db.insert("oauthRefreshTokens", {
-      tokenHash: "refresh-sibling-hash",
-      familyId: seeded.familyId,
-      clientId: seeded.clientId,
-      userId: seeded.userId,
-      authorizationId: seeded.authorizationId,
-      scopes: ["profile", "offline_access"],
-      expiresAt: seeded.now + 30 * 60 * 1000,
-      createdAt: seeded.now - 1_000,
-    } as any);
-    await ctx.db.insert("oauthAccessTokens", {
-      jti: "access-jti-replay-1",
-      clientId: seeded.clientId,
-      userId: seeded.userId,
-      authorizationId: seeded.authorizationId,
-      scopes: ["profile", "offline_access"],
-      expiresAt: seeded.now + 15 * 60 * 1000,
-      createdAt: seeded.now - 1_000,
-    } as any);
+    await t.run(async (ctx) => {
+      await ctx.db.insert("oauthRefreshTokens", {
+        tokenHash: "refresh-sibling-hash",
+        familyId: seeded.familyId,
+        clientId: seeded.clientId,
+        tenantOrgId: seeded.tenantOrgId,
+        ownerType: "broker",
+        ownerBrokerId: seeded.ownerBrokerId,
+        approvedByUserId: seeded.actorUserId,
+        authorizationId: seeded.authorizationId,
+        scopes: ["clients:read_own", "offline_access"],
+        expiresAt: seeded.now + 30 * 60 * 1000,
+        createdAt: seeded.now - 1_000,
+      } as any);
+      await ctx.db.insert("oauthAccessTokens", {
+        jti: "access-jti-replay-1",
+        clientId: seeded.clientId,
+        tenantOrgId: seeded.tenantOrgId,
+        ownerType: "broker",
+        ownerBrokerId: seeded.ownerBrokerId,
+        approvedByUserId: seeded.actorUserId,
+        authorizationId: seeded.authorizationId,
+        scopes: ["clients:read_own", "offline_access"],
+        expiresAt: seeded.now + 15 * 60 * 1000,
+        createdAt: seeded.now - 1_000,
+      } as any);
   });
 }
 
@@ -162,9 +184,12 @@ function registerRevokeFamilyTest() {
       await ctx.db.insert("oauthAccessTokens", {
         jti: "access-jti-revoke-1",
         clientId: seeded.clientId,
-        userId: seeded.userId,
+        tenantOrgId: seeded.tenantOrgId,
+        ownerType: "broker",
+        ownerBrokerId: seeded.ownerBrokerId,
+        approvedByUserId: seeded.actorUserId,
         authorizationId: seeded.authorizationId,
-        scopes: ["profile"],
+        scopes: ["clients:read_own"],
         expiresAt: seeded.now + 15 * 60 * 1000,
         createdAt: seeded.now - 1_000,
       } as any);

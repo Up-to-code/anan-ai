@@ -221,6 +221,11 @@ function emptyBrokerActivityCounts() {
     permit_review: 0,
     closed_won: 0,
     closed_lost: 0,
+    trackedCustomers: 0,
+    brokerManagedCustomers: 0,
+    internalCustomers: 0,
+    closedWonCustomers: 0,
+    closedLostCustomers: 0,
   };
 }
 
@@ -234,6 +239,17 @@ function incrementBrokerActivityCount(
   if (activityKey === "permit_review") counts.permit_review += 1;
   if (activityKey === "closed_won") counts.closed_won += 1;
   if (activityKey === "closed_lost") counts.closed_lost += 1;
+}
+
+function incrementCustomerCounts(
+  counts: ReturnType<typeof emptyBrokerActivityCounts>,
+  customer: { isTrackedCustomer: boolean; relationType: string; stageKey: string },
+) {
+  if (customer.isTrackedCustomer) counts.trackedCustomers += 1;
+  if (customer.relationType === "broker_managed") counts.brokerManagedCustomers += 1;
+  if (customer.relationType === "internal_client") counts.internalCustomers += 1;
+  if (customer.stageKey === "won") counts.closedWonCustomers += 1;
+  if (customer.stageKey === "lost") counts.closedLostCustomers += 1;
 }
 
 function buildTrendWindow(totalDays: number) {
@@ -259,9 +275,6 @@ function buildTrendWindow(totalDays: number) {
 function actorAudience(role: string | undefined) {
   if (role === "admin" || role === "broker" || role === "developer" || role === "user") {
     return role;
-  }
-  if (role === "RED") {
-    return "developer";
   }
   return undefined;
 }
@@ -621,6 +634,7 @@ async function buildAnalytics(args: {
       const activityCounts = emptyBrokerActivityCounts();
       for (const customer of customers) {
         incrementBrokerActivityCount(activityCounts, customer.activityKey);
+        incrementCustomerCounts(activityCounts, customer);
       }
 
       const timeline = [
@@ -698,11 +712,11 @@ async function buildAnalytics(args: {
         views: rollup?.views ?? views,
         clicks: rollup?.clicks ?? clicks,
         totalCustomers: customers.length,
-        trackedCustomers: customers.filter((entry) => entry.isTrackedCustomer).length,
-        brokerManagedCustomers: customers.filter((entry) => entry.relationType === "broker_managed").length,
-        internalCustomers: customers.filter((entry) => entry.relationType === "internal_client").length,
-        closedWonCustomers: customers.filter((entry) => entry.stageKey === "won").length,
-        closedLostCustomers: customers.filter((entry) => entry.stageKey === "lost").length,
+        trackedCustomers: activityCounts.trackedCustomers,
+        brokerManagedCustomers: activityCounts.brokerManagedCustomers,
+        internalCustomers: activityCounts.internalCustomers,
+        closedWonCustomers: activityCounts.closedWonCustomers,
+        closedLostCustomers: activityCounts.closedLostCustomers,
         activityCounts,
         customers,
         timeline,

@@ -18,25 +18,30 @@ import AgTargetSummary from "../AgTargetSummary";
 import AgThreadUpdateCard from "../AgThreadUpdateCard";
 import type { AgUiComponentId } from "./types";
 
+const asRegistryComponent = (
+  component: unknown,
+): ComponentType<Record<string, unknown>> =>
+  component as ComponentType<Record<string, unknown>>;
+
 export const AG_UI_COMPONENT_REGISTRY: Record<
   AgUiComponentId,
   ComponentType<Record<string, unknown>>
 > = {
-  project_create_draft: AgProjectCreateDraft as ComponentType<Record<string, unknown>>,
-  offer_publish_draft: AgOfferPublishDraft as ComponentType<Record<string, unknown>>,
-  offer_send_draft: AgOfferSendDraft as ComponentType<Record<string, unknown>>,
-  thread_update: AgThreadUpdateCard as ComponentType<Record<string, unknown>>,
-  project_unit_selector: AgProjectUnitSelector as ComponentType<Record<string, unknown>>,
-  person_relation: AgPersonRelationCard as ComponentType<Record<string, unknown>>,
-  approval_footer: AgApprovalFooter as ComponentType<Record<string, unknown>>,
-  execution_result: AgExecutionResultCard as ComponentType<Record<string, unknown>>,
-  field_request_list: AgFieldRequestList as ComponentType<Record<string, unknown>>,
-  latest_update: AgLatestUpdateCard as ComponentType<Record<string, unknown>>,
-  market_insight: AgMarketInsightCard as ComponentType<Record<string, unknown>>,
-  area_heat: AgAreaHeatCard as ComponentType<Record<string, unknown>>,
-  constraint_summary: AgConstraintSummary as ComponentType<Record<string, unknown>>,
-  missing_data_prompt: AgMissingDataPrompt as ComponentType<Record<string, unknown>>,
-  data_list: AgDataList as ComponentType<Record<string, unknown>>,
-  filter_summary: AgFilterSummary as ComponentType<Record<string, unknown>>,
-  target_summary: AgTargetSummary as ComponentType<Record<string, unknown>>,
+  project_create_draft: asRegistryComponent(AgProjectCreateDraft),
+  offer_publish_draft: asRegistryComponent(AgOfferPublishDraft),
+  offer_send_draft: asRegistryComponent(AgOfferSendDraft),
+  thread_update: asRegistryComponent(AgThreadUpdateCard),
+  project_unit_selector: asRegistryComponent(AgProjectUnitSelector),
+  person_relation: asRegistryComponent(AgPersonRelationCard),
+  approval_footer: asRegistryComponent(AgApprovalFooter),
+  execution_result: asRegistryComponent(AgExecutionResultCard),
+  field_request_list: asRegistryComponent(AgFieldRequestList),
+  latest_update: asRegistryComponent(AgLatestUpdateCard),
+  market_insight: asRegistryComponent(AgMarketInsightCard),
+  area_heat: asRegistryComponent(AgAreaHeatCard),
+  constraint_summary: asRegistryComponent(AgConstraintSummary),
+  missing_data_prompt: asRegistryComponent(AgMissingDataPrompt),
+  data_list: asRegistryComponent(AgDataList),
+  filter_summary: asRegistryComponent(AgFilterSummary),
+  target_summary: asRegistryComponent(AgTargetSummary),
 };

@@ -10,6 +10,16 @@ export type OAuthScopeDetail = {
   newlyRequested?: boolean;
 };
 
+export type OAuthEligibleOrganization = {
+  tenantOrgId: string;
+  ownerType: "broker" | "RED";
+  ownerId: string;
+  organizationType: "broker" | "red";
+  organizationName: string;
+  organizationSlug?: string;
+  role: "manager" | "member" | "viewer";
+};
+
 export type OAuthAuthorizationPrompt = {
   flowId: string;
   client: {
@@ -28,8 +38,17 @@ export type OAuthAuthorizationPrompt = {
   redirectUri: string;
   requestedScopes: OAuthScopeDetail[];
   offlineAccess: boolean;
+  organizations: OAuthEligibleOrganization[];
+  selectedTenantOrgId: string | null;
+  selectedOrganization: OAuthEligibleOrganization | null;
+  requiresOrganizationSelection: boolean;
+  canApproveSelectedOrganization: boolean;
+  managerApprovalRequired: boolean;
+  approvalDisabledReason?: string | null;
   requiresConsent: boolean;
   existingAuthorization: {
+    organizationName: string;
+    tenantOrgId: string;
     grantedScopes: string[];
     createdAt: number;
     updatedAt: number;
@@ -40,6 +59,7 @@ export type OAuthAuthorizationPrompt = {
 export type OAuthAuthorizedAppSummary = {
   authorizationId: string;
   clientId: string;
+  tenantOrgId: string;
   appName: string;
   publisherName: string;
   logoUrl?: string | null;

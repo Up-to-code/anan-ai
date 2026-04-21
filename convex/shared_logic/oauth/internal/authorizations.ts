@@ -1,92 +1,98 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "../../../_generated/server";
 import { OAUTH_SCOPE_LABELS } from "../../../_core/oauth/constants";
-import { getAuthorizationRecord, getClientOrThrow } from "./helpers";
+import { buildOAuthOwnerContext, getAuthorizationRecordForOwner, getClientOrThrow } from "./helpers";
+
+function mapAuthorizationSummary(authorization: any, client: any) {
+  return {
+    authorizationId: authorization._id,
+    clientId: authorization.clientId,
+    tenantOrgId: authorization.tenantOrgId ?? "",
+    appName: client.name,
+    publisherName: client.publisherName,
+    logoUrl: client.logoUrl ?? null,
+    grantedScopes: authorization.grantedScopes,
+    scopeDetails: authorization.grantedScopes.map((scope: string) => ({
+      id: scope,
+      label: OAUTH_SCOPE_LABELS[scope as keyof typeof OAUTH_SCOPE_LABELS] ?? scope,
+    })),
+    offlineAccess: authorization.offlineAccess,
+    createdAt: authorization.createdAt,
+    updatedAt: authorization.updatedAt,
+    lastUsedAt: authorization.lastUsedAt ?? null,
+  };
+}
 
 /**
- * WHY:   The security center needs a per-user list of active delegated app grants.
- * WHAT:  Returns connected apps with permission and last-used metadata for the given user.
- * HOW:   Joins authorizations against client records and filters out revoked apps or grants.
+ * WHY:   Organization settings need a list of active OAuth app grants for the current org instead of per-user connections.
+ * WHAT:  Returns connected apps with permission and last-used metadata for the given organization owner.
+ * HOW:   Filters authorizations by broker/RED owner, joins client display data, and omits revoked legacy grants.
  */
-export const listAuthorizationsForUser = internalQuery({
+export const listAuthorizationsForOwner = internalQuery({
   args: {
-    userId: v.id("users"),
+    ownerType: v.union(v.literal("broker"), v.literal("RED")),
+    ownerBrokerId: v.optional(v.id("brokers")),
+    ownerREDId: v.optional(v.id("RED")),
   },
   handler: async (ctx, args) => {
-    const authorizations = await ctx.db
-      .query("oauthAuthorizations")
-      .withIndex("userId", (q) => q.eq("userId", args.userId))
-      .collect();
-    const active = authorizations.filter((authorization) => !authorization.revokedAt);
+    const owner = buildOAuthOwnerContext(args);
+    const authorizations = owner.ownerType === "broker"
+      ? await ctx.db.query("oauthAuthorizations").withIndex("ownerBrokerId", (q: any) => q.eq("ownerBrokerId", owner.ownerBrokerId)).collect()
+      : await ctx.db.query("oauthAuthorizations").withIndex("ownerREDId", (q: any) => q.eq("ownerREDId", owner.ownerREDId)).collect();
+
+    const active = authorizations.filter(
+      (authorization) => !authorization.revokedAt && Boolean(authorization.ownerType && authorization.tenantOrgId),
+    );
     const clients = await Promise.all(active.map((authorization) => getClientOrThrow(ctx, authorization.clientId)));
     return active
-      .map((authorization, index) => ({
-        authorizationId: authorization._id,
-        clientId: authorization.clientId,
-        appName: clients[index]!.name,
-        publisherName: clients[index]!.publisherName,
-        logoUrl: clients[index]!.logoUrl ?? null,
-        grantedScopes: authorization.grantedScopes,
-        scopeDetails: authorization.grantedScopes.map((scope: string) => ({
-          id: scope,
-          label: OAUTH_SCOPE_LABELS[scope as keyof typeof OAUTH_SCOPE_LABELS] ?? scope,
-        })),
-        offlineAccess: authorization.offlineAccess,
-        createdAt: authorization.createdAt,
-        updatedAt: authorization.updatedAt,
-        lastUsedAt: authorization.lastUsedAt ?? null,
-      }))
+      .map((authorization, index) => mapAuthorizationSummary(authorization, clients[index]!))
       .sort((left, right) => (right.lastUsedAt ?? right.updatedAt) - (left.lastUsedAt ?? left.updatedAt));
   },
 });
 
 /**
- * WHY:   Security UI needs an app-specific detail view with all current grant metadata.
- * WHAT:  Returns one connected app authorization for the given user and client.
- * HOW:   Loads the authorization by `(userId, clientId)` and joins the client display fields.
+ * WHY:   Hidden compatibility routes may still need to resolve a single org-owned app grant.
+ * WHAT:  Returns one connected app authorization for the given org owner and client id.
+ * HOW:   Looks up the org grant by owner/client and joins redirect URIs from the OAuth client record.
  */
-export const getAuthorizationDetailForUser = internalQuery({
+export const getAuthorizationDetailForOwner = internalQuery({
   args: {
-    userId: v.id("users"),
+    ownerType: v.union(v.literal("broker"), v.literal("RED")),
+    ownerBrokerId: v.optional(v.id("brokers")),
+    ownerREDId: v.optional(v.id("RED")),
     clientId: v.string(),
   },
   handler: async (ctx, args) => {
-    const authorization = await getAuthorizationRecord(ctx, args.userId, args.clientId);
-    if (!authorization || authorization.revokedAt) return null;
+    const owner = buildOAuthOwnerContext(args);
+    const authorization = await getAuthorizationRecordForOwner(ctx, owner, args.clientId);
+    if (!authorization || authorization.revokedAt || !authorization.ownerType || !authorization.tenantOrgId) {
+      return null;
+    }
     const client = await getClientOrThrow(ctx, args.clientId);
     return {
-      authorizationId: authorization._id,
-      clientId: authorization.clientId,
-      appName: client.name,
-      publisherName: client.publisherName,
-      logoUrl: client.logoUrl ?? null,
-      grantedScopes: authorization.grantedScopes,
-      scopeDetails: authorization.grantedScopes.map((scope: string) => ({
-        id: scope,
-        label: OAUTH_SCOPE_LABELS[scope as keyof typeof OAUTH_SCOPE_LABELS] ?? scope,
-      })),
-      offlineAccess: authorization.offlineAccess,
-      createdAt: authorization.createdAt,
-      updatedAt: authorization.updatedAt,
-      lastUsedAt: authorization.lastUsedAt ?? null,
+      ...mapAuthorizationSummary(authorization, client),
       redirectUris: client.redirectUris,
     };
   },
 });
 
 /**
- * WHY:   Users need a self-service way to disconnect an app from their Anan account.
- * WHAT:  Revokes the user's authorization and all refresh tokens for the target client.
- * HOW:   Finds the grant, revokes its token family rows, and records an audit event.
+ * WHY:   Organization managers need one emergency disconnect path for compromised or outdated app grants.
+ * WHAT:  Revokes the org's authorization and all refresh tokens for the target client.
+ * HOW:   Finds the org grant, revokes its token family rows, and records an organization-scoped audit event.
  */
-export const revokeAuthorizationForUser = internalMutation({
+export const revokeAuthorizationForOwner = internalMutation({
   args: {
-    userId: v.id("users"),
+    ownerType: v.union(v.literal("broker"), v.literal("RED")),
+    ownerBrokerId: v.optional(v.id("brokers")),
+    ownerREDId: v.optional(v.id("RED")),
     clientId: v.string(),
+    actorUserId: v.id("users"),
     now: v.number(),
   },
   handler: async (ctx, args) => {
-    const authorization = await getAuthorizationRecord(ctx, args.userId, args.clientId);
+    const owner = buildOAuthOwnerContext(args);
+    const authorization = await getAuthorizationRecordForOwner(ctx, owner, args.clientId);
     if (!authorization || authorization.revokedAt) {
       return { revoked: false } as const;
     }
@@ -101,14 +107,28 @@ export const revokeAuthorizationForUser = internalMutation({
         .map((token) => ctx.db.patch(token._id, { revokedAt: args.now })),
     );
 
+    const accessTokens = await ctx.db
+      .query("oauthAccessTokens")
+      .withIndex("clientId", (q) => q.eq("clientId", args.clientId))
+      .collect();
+    await Promise.all(
+      accessTokens
+        .filter((token) => token.authorizationId === authorization._id)
+        .map((token) => ctx.db.patch(token._id, { revokedAt: args.now })),
+    );
+
     await ctx.db.patch(authorization._id, {
       revokedAt: args.now,
       updatedAt: args.now,
     });
     await ctx.db.insert("oauthAuditLogs", {
-      eventType: "authorization.revoked_by_user",
+      eventType: "authorization.revoked_by_org_manager",
+      tenantOrgId: authorization.tenantOrgId,
+      ownerType: authorization.ownerType,
+      ownerBrokerId: authorization.ownerBrokerId,
+      ownerREDId: authorization.ownerREDId,
       clientId: args.clientId,
-      userId: args.userId,
+      userId: args.actorUserId,
       authorizationId: authorization._id,
       createdAt: args.now,
     });

@@ -28,6 +28,8 @@ describe("organizationDisplay", () => {
       navbarSubtitle: "مطور · نشط",
       logoUrl: null,
       isVerified: false,
+      typeKey: "developer",
+      typeLabel: "مطور",
     });
 
     expect(
@@ -45,6 +47,8 @@ describe("organizationDisplay", () => {
       navbarSubtitle: "Developer · Active",
       logoUrl: "https://example.com/logo.png",
       isVerified: true,
+      typeKey: "developer",
+      typeLabel: "Developer",
     });
   });
 });

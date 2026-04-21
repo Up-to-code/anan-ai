@@ -4,6 +4,7 @@ import type { AnanProThreadSummary } from "@/server/contracts/ananPro";
 import type { WorkspaceOrganizationDisplay } from "../../_lib/organizationDisplay";
 
 export type SidebarMode = "desktop" | "drawer";
+export type SidebarVariant = "default" | "assistant";
 
 export type SidebarUser = Pick<SessionUser, "name" | "email" | "image">;
 
@@ -14,6 +15,8 @@ export type SidebarProps = {
   recentAssistantThreads?: AnanProThreadSummary[];
   allAssistantThreads?: AnanProThreadSummary[];
   mode?: SidebarMode;
+  variant?: SidebarVariant;
+  headerAction?: React.ReactNode;
   className?: string;
   titleId?: string;
   onNavigate?: () => void;

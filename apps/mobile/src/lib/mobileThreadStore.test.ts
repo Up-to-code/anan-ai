@@ -47,9 +47,11 @@ describe("mobileThreadStore", () => {
   it("keeps previous local threads when a fresh thread is created later", () => {
     const firstThread = buildStoredThreadRecord({
       id: "thread-1",
+      assistantThreadId: "assistant-thread-1",
       draft: "",
       activeThreadKind: "live",
       activeProperty: sampleProperty,
+      selectedProperties: [sampleProperty],
       messages: sampleMessages,
       updatedAt: 200,
     });
@@ -58,6 +60,7 @@ describe("mobileThreadStore", () => {
       draft: "",
       activeThreadKind: "live",
       activeProperty: null,
+      selectedProperties: [],
       messages: [
         {
           id: "user-2",
@@ -85,9 +88,11 @@ describe("mobileThreadStore", () => {
   it("restores thread summaries from the stored transcript", () => {
     const storedThread = buildStoredThreadRecord({
       id: "thread-1",
+      assistantThreadId: "assistant-thread-1",
       draft: "",
       activeThreadKind: "live",
       activeProperty: sampleProperty,
+      selectedProperties: [sampleProperty],
       messages: sampleMessages,
       updatedAt: 200,
     });
@@ -99,18 +104,37 @@ describe("mobileThreadStore", () => {
     expect(summary.title.length).toBeGreaterThan(0);
   });
 
+  it("preserves the backend assistant thread id separately from the local guest thread id", () => {
+    const storedThread = buildStoredThreadRecord({
+      id: "guest-local-thread-1",
+      assistantThreadId: "assistant-thread-1",
+      draft: "",
+      activeThreadKind: "live",
+      activeProperty: sampleProperty,
+      selectedProperties: [sampleProperty],
+      messages: sampleMessages,
+      updatedAt: 200,
+    });
+
+    expect(storedThread?.id).toBe("guest-local-thread-1");
+    expect(storedThread?.assistantThreadId).toBe("assistant-thread-1");
+  });
+
   it("migrates the legacy single-thread snapshot into the new store format", () => {
     const migrated = migrateLegacyGuestSnapshot({
       draft: "",
       activeThreadId: "legacy-thread",
+      assistantThreadId: "assistant-thread-legacy",
       activeThreadKind: "live",
       activeProperty: sampleProperty,
       messages: sampleMessages,
       updatedAt: 200,
     });
 
-    expect(migrated?.version).toBe(2);
+    expect(migrated?.version).toBe(3);
     expect(migrated?.activeThreadId).toBe("legacy-thread");
     expect(migrated?.threads[0]?.messages).toHaveLength(2);
+    expect(migrated?.threads[0]?.assistantThreadId).toBe("assistant-thread-legacy");
+    expect(migrated?.threads[0]?.selectedProperties).toEqual([sampleProperty]);
   });
 });

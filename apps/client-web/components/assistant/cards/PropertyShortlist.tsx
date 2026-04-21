@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
+import { Bath, BedDouble, MapPin, Ruler } from "lucide-react";
 import { useLocale } from "@/app/_components/LocaleProvider";
 import { formatLocaleNumber } from "@/lib/locale";
 import type { BuyerProperty } from "@/client_zone/shared/types";
@@ -16,48 +16,61 @@ export function PropertyShortlist({ properties }: PropertyShortlistProps) {
   return (
     <div
       data-testid="client-ag-ui-card-property_shortlist"
-      className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-4 scrollbar-hide"
+      className="-mx-4 flex gap-5 overflow-x-auto px-4 pb-4 scrollbar-hide"
     >
       {properties.map((property) => (
-        <Card key={String(property.id)} className="max-w-[280px] min-w-[280px] shrink-0 border-primary/10 shadow-lg">
-          <div className="aspect-video relative overflow-hidden">
+        <article key={String(property.id)} className="min-w-[300px] max-w-[300px] shrink-0">
+          <Link
+            data-testid="client-property-result-link"
+            href={`/app/property/${property.id}`}
+            className="group block"
+          >
+            <div className="relative aspect-[1.34] overflow-hidden rounded-[6px] bg-[var(--workspace-elevated)]">
+              <span className="absolute right-3 top-3 z-10 rounded-full bg-white/92 px-3 py-1 text-[10px] font-black text-slate-950 shadow-sm dark:bg-slate-950/86 dark:text-slate-50">
+                {formatLocaleNumber(locale, property.price, { style: "currency", currency: "SAR", maximumFractionDigits: 0 })}
+              </span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={property.media[0] || "/placeholder-property.jpg"}
-              alt={property.title}
-              className="object-cover w-full h-full"
-            />
-            <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter">
-              {formatLocaleNumber(locale, property.price, { style: "currency", currency: "SAR", maximumFractionDigits: 0 })}
+              <img
+                src={property.media[0] || "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=80"}
+                alt={property.title}
+                className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+              />
             </div>
-          </div>
-          <CardContent className="p-4">
-            <h4 className="font-black text-sm line-clamp-1 mb-1">{property.title}</h4>
-            <p className="text-[10px] text-muted-foreground line-clamp-1 mb-3">{property.address}</p>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-muted p-2 rounded-lg text-center">
-                <div className="text-[10px] font-black">{property.beds}</div>
-                <div className="text-[8px] text-muted-foreground uppercase">{dictionary.property.beds}</div>
+
+            <div className="pt-4">
+              <h4 className="line-clamp-1 text-[22px] font-semibold leading-tight text-slate-950 dark:text-slate-50">{property.title}</h4>
+              <div className="mt-3 flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400">
+                <MapPin className="h-3.5 w-3.5" />
+                <span className="line-clamp-1">{property.area ?? property.location ?? property.address}</span>
               </div>
-              <div className="bg-muted p-2 rounded-lg text-center">
-                <div className="text-[10px] font-black">{property.baths}</div>
-                <div className="text-[8px] text-muted-foreground uppercase">{dictionary.property.baths}</div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-[var(--workspace-border)] pb-4 text-[12px] font-medium text-slate-600 dark:text-slate-300">
+                <PropertyFact icon={BedDouble} label={`${property.beds} ${dictionary.property.beds}`} />
+                <PropertyFact icon={Bath} label={`${property.baths} ${dictionary.property.baths}`} />
+                <PropertyFact icon={Ruler} label={`${property.sqft ?? "—"} ${dictionary.property.sqft}`} />
               </div>
-              <div className="bg-muted p-2 rounded-lg text-center">
-                <div className="text-[10px] font-black">{property.sqft ?? "—"}</div>
-                <div className="text-[8px] text-muted-foreground uppercase">{dictionary.property.sqft}</div>
+
+              <div className="mt-4 flex items-center justify-between">
+                <span className="text-[20px] font-semibold text-slate-950 dark:text-slate-50">
+                  {formatLocaleNumber(locale, property.price, { style: "currency", currency: "SAR", maximumFractionDigits: 0 })}
+                </span>
+                <span className="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--workspace-highlight)]">
+                  {dictionary.property.viewDetails}
+                </span>
               </div>
             </div>
-            <Link
-              data-testid="client-property-result-link"
-              href={`/app/property/${property.id}`}
-              className="mt-4 inline-flex rounded-full border border-[var(--workspace-border)] px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[var(--workspace-highlight)] transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--workspace-highlight)_6%,white)]"
-            >
-              {dictionary.property.viewDetails}
             </Link>
-          </CardContent>
-        </Card>
+        </article>
       ))}
     </div>
+  );
+}
+
+function PropertyFact({ icon: Icon, label }: { icon: typeof BedDouble; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <Icon className="h-3.5 w-3.5 text-slate-400" />
+      {label}
+    </span>
   );
 }

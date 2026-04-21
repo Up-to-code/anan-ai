@@ -30,24 +30,26 @@ const searchSetQuery = vi.fn();
 
 vi.mock("react-native", () => {
   const React = require("react");
+  const host = (name: string, props?: Record<string, unknown>, children?: unknown) =>
+    React.createElement(name, props, children);
 
   return {
-    ActivityIndicator: (props: any) => React.createElement("activity-indicator", props),
+    ActivityIndicator: (props: any) => host("activity-indicator", props),
     Alert: {
       alert: mockState.alertSpy,
     },
     Pressable: (props: any) => {
-      const element = React.createElement("Pressable", props, props.children);
+      const element = host("rn-pressable", props, props.children);
       mockState.renderLog.pressables.push(element);
       return element;
     },
-    ScrollView: (props: any) => React.createElement("ScrollView", props, props.children),
+    ScrollView: (props: any) => host("rn-scroll-view", props, props.children),
     TextInput: (props: any) => {
-      const element = React.createElement("TextInput", props);
+      const element = host("rn-text-input", props);
       mockState.renderLog.textInputs.push(element);
       return element;
     },
-    View: (props: any) => React.createElement("View", props, props.children),
+    View: (props: any) => host("rn-view", props, props.children),
   };
 });
 
@@ -57,9 +59,9 @@ vi.mock("@shopify/flash-list", () => {
   return {
     FlashList: ({ data, ListEmptyComponent, renderItem }: any) =>
       React.createElement(
-        React.Fragment,
+        "flash-list",
         null,
-        [...(data ?? []).map((item: any, index: number) => renderItem({ item, index })), ListEmptyComponent].filter(Boolean),
+        (data ?? []).length > 0 ? null : ListEmptyComponent ?? null,
       ),
   };
 });
@@ -72,7 +74,7 @@ vi.mock("expo-router", () => ({
 vi.mock("expo-image", () => {
   const React = require("react");
   return {
-    Image: (props: any) => React.createElement("Image", props),
+    Image: (props: any) => React.createElement("expo-image", props),
   };
 });
 
@@ -88,36 +90,36 @@ vi.mock("lucide-react-native", () => {
   const icon = (name: string) => (props: any) => React.createElement(name, props);
 
   return {
-    ArrowLeft: icon("ArrowLeft"),
-    Bath: icon("Bath"),
-    BedDouble: icon("BedDouble"),
-    Building2: icon("Building2"),
-    ChevronLeft: icon("ChevronLeft"),
-    Mail: icon("Mail"),
-    MapPin: icon("MapPin"),
-    MessageCircle: icon("MessageCircle"),
-    Phone: icon("Phone"),
-    Ruler: icon("Ruler"),
-    Search: icon("Search"),
-    ShieldCheck: icon("ShieldCheck"),
-    SlidersHorizontal: icon("SlidersHorizontal"),
-    Sparkles: icon("Sparkles"),
-    Star: icon("Star"),
-    X: icon("X"),
+    ArrowLeft: icon("icon-arrow-left"),
+    Bath: icon("icon-bath"),
+    BedDouble: icon("icon-bed-double"),
+    Building2: icon("icon-building-2"),
+    ChevronLeft: icon("icon-chevron-left"),
+    Mail: icon("icon-mail"),
+    MapPin: icon("icon-map-pin"),
+    MessageCircle: icon("icon-message-circle"),
+    Phone: icon("icon-phone"),
+    Ruler: icon("icon-ruler"),
+    Search: icon("icon-search"),
+    ShieldCheck: icon("icon-shield-check"),
+    SlidersHorizontal: icon("icon-sliders-horizontal"),
+    Sparkles: icon("icon-sparkles"),
+    Star: icon("icon-star"),
+    X: icon("icon-x"),
   };
 });
 
 vi.mock("@/components/ui/AppText", () => {
   const React = require("react");
   return {
-    AppText: (props: any) => React.createElement("AppText", props, props.children),
+    AppText: (props: any) => React.createElement("app-text", props, props.children),
   };
 });
 
 vi.mock("@/components/ui/IconButton", () => {
   const React = require("react");
   return {
-    IconButton: (props: any) => React.createElement("IconButton", props, props.children),
+    IconButton: (props: any) => React.createElement("icon-button", props, props.children),
   };
 });
 
@@ -125,24 +127,24 @@ vi.mock("@/components/ui/MobileChrome", () => {
   const React = require("react");
 
   return {
-    MobilePill: (props: any) => React.createElement("MobilePill", props, props.children),
-    MobileSurface: (props: any) => React.createElement("MobileSurface", props, props.children),
-    MobileTopBar: (props: any) =>
-      React.createElement("MobileTopBar", props, [props.leading, props.centerSlot, props.trailing].filter(Boolean)),
+    MobilePill: (props: any) => React.createElement("mobile-pill", props, props.children),
+    MobileSectionHeading: (props: any) => React.createElement("mobile-section-heading", props, props.children),
+    MobileSurface: (props: any) => React.createElement("mobile-surface", props, props.children),
+    MobileTopBar: (props: any) => React.createElement("mobile-top-bar", null, props.centerSlot ?? null),
   };
 });
 
 vi.mock("@/features/SearchScreen/SearchResultCard", () => {
   const React = require("react");
   return {
-    SearchResultCard: (props: any) => React.createElement("SearchResultCard", props),
+    SearchResultCard: (props: any) => React.createElement("search-result-card", props),
   };
 });
 
 vi.mock("@/features/GalleryScreen/GalleryViewport", () => {
   const React = require("react");
   return {
-    GalleryViewport: (props: any) => React.createElement("GalleryViewport", props),
+    GalleryViewport: (props: any) => React.createElement("gallery-viewport", props),
   };
 });
 
@@ -151,7 +153,7 @@ vi.mock("@/features/PropertyDetailScreen/StickyJourneyBar", () => {
 
   return {
     StickyJourneyBar: (props: any) => {
-      const element = React.createElement("StickyJourneyBar", props);
+      const element = React.createElement("sticky-journey-bar", props);
       mockState.renderLog.stickyBars.push(element);
       return element;
     },
@@ -161,7 +163,7 @@ vi.mock("@/features/PropertyDetailScreen/StickyJourneyBar", () => {
 vi.mock("@/components/property/MobilePropertyCard", () => {
   const React = require("react");
   return {
-    MobilePropertyCard: (props: any) => React.createElement("MobilePropertyCard", props),
+    MobilePropertyCard: (props: any) => React.createElement("mobile-property-card", props),
   };
 });
 
@@ -171,6 +173,13 @@ vi.mock("@/hooks/usePropertySearch", () => ({
 
 vi.mock("@/hooks/usePropertyDetail", () => ({
   usePropertyDetail: () => mockState.propertyDetailState,
+}));
+
+vi.mock("@/hooks/useBuyerAccount", () => ({
+  useBuyerAccount: () => ({
+    isPropertySaved: () => false,
+    toggleSavedProperty: vi.fn(),
+  }),
 }));
 
 vi.mock("@/lib/mobileSearch", () => ({

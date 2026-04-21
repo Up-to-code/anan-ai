@@ -3,13 +3,30 @@ import { toSessionUser } from "@/server/contracts/session";
 
 export type { SessionUser } from "@/server/contracts/session";
 
+function isAuthConfigurationError(error: unknown) {
+  return Boolean(
+    error
+    && typeof error === "object"
+    && "code" in error
+    && error.code === "AUTH_CONFIGURATION_ERROR",
+  );
+}
+
 /**
  * WHY:   Workspace and public layouts need one lightweight auth lookup for chrome-level decisions.
  * WHAT:  Returns the current token, projected user, and resolved role when a session exists.
  * HOW:   Reuses the optional session resolver and narrows the payload for UI callers.
  */
 export async function getAuthenticatedSession() {
-  const session = await getOptionalSessionContext();
+  let session;
+  try {
+    session = await getOptionalSessionContext();
+  } catch (error) {
+    if (isAuthConfigurationError(error)) {
+      return { token: null, user: null, role: null };
+    }
+    throw error;
+  }
   if (!session) {
     return { token: null, user: null, role: null };
   }
@@ -40,4 +57,12 @@ export function sanitizeInternalReturnTo(returnTo?: string | null, fallback = "/
 export function buildWorkspaceSecurityAppsPath(clientId?: string) {
   const base = "/ws/me/security/apps";
   return clientId ? `${base}/${encodeURIComponent(clientId)}` : base;
+}
+
+export function buildWorkspaceOrganizationAppsPath(source?: "legacy-account-apps") {
+  const params = new URLSearchParams({ tab: "apps" });
+  if (source) {
+    params.set("source", source);
+  }
+  return `/ws/settings?${params.toString()}`;
 }

@@ -87,7 +87,7 @@ export async function getAdminUserDetailHandler(ctx: any, { userKey }: { userKey
       email: identity.profile?.email ?? identity.channelUser?.email ?? null,
       channel: identity.channelUser?.channel ?? null,
       role: identity.profile?.role ?? null,
-      roleStatus: identity.profile?.roleStatus ?? null,
+      roleApprovalStatus: identity.profile?.roleApprovalStatus ?? null,
       requestedRole: identity.profile?.requestedRole ?? null,
       isActive: identity.profile?.isActive ?? true,
     },
@@ -95,7 +95,7 @@ export async function getAdminUserDetailHandler(ctx: any, { userKey }: { userKey
       ? {
           id: String(identity.profile._id),
           brokerId: identity.profile.brokerId ? String(identity.profile.brokerId) : null,
-          redId: identity.profile.REDId ? String(identity.profile.REDId) : null,
+          developerId: identity.profile.developerId ? String(identity.profile.developerId) : null,
           showInOffersDirectory: identity.profile.showInOffersDirectory ?? true,
         }
       : null,
@@ -118,9 +118,9 @@ export async function getAdminUserDetailHandler(ctx: any, { userKey }: { userKey
     metrics: {
       organizationsCount: identity.organizations.length,
       membershipsCount: identity.profileMemberships.length,
-      sentOffersCount: offerRows.filter((item) => item.role === "sender").length,
-      receivedOffersCount: offerRows.filter((item) => item.role === "recipient").length,
-      publicAppliedOffersCount: offerRows.filter((item) => item.visibility === "public" && item.role === "recipient").length,
+      sentOffersCount: 0,
+      receivedOffersCount: 0,
+      publicAppliedOffersCount: 0,
       conversationsCount: conversationSummaries.length,
       assistantThreadsCount: relevant.threadRows.length,
       assistantMessagesCount: relevant.relevantAssistantMessages.length,
@@ -130,26 +130,37 @@ export async function getAdminUserDetailHandler(ctx: any, { userKey }: { userKey
       dealsCount: relevant.relevantDeals.length,
       verificationCount: identity.userVerificationRequests.length,
     },
-    offers: {
-      summary: {
-        sent: offerRows.filter((item) => item.role === "sender").length,
-        received: offerRows.filter((item) => item.role === "recipient").length,
-        publicApplied: offerRows.filter((item) => item.visibility === "public" && item.role === "recipient").length,
-        pending: offerRows.filter((item) => item.status === "pending").length,
-        accepted: offerRows.filter((item) => item.status === "accepted").length,
-        rejected: offerRows.filter((item) => item.status === "rejected").length,
-      },
-      statusBreakdown: {
-        pending: offerRows.filter((item) => item.status === "pending").length,
-        accepted: offerRows.filter((item) => item.status === "accepted").length,
-        rejected: offerRows.filter((item) => item.status === "rejected").length,
-      },
-      visibilityBreakdown: {
-        public: offerRows.filter((item) => item.visibility === "public").length,
-        private: offerRows.filter((item) => item.visibility !== "public").length,
-      },
-      recent: offerRows.slice(0, 10),
-    },
+    offers: (() => {
+      const roleCounts: Record<string, number> = {};
+      const statusCounts: Record<string, number> = {};
+      const visibilityCounts: Record<string, number> = {};
+      for (const item of offerRows) {
+        roleCounts[item.role] = (roleCounts[item.role] ?? 0) + 1;
+        statusCounts[item.status] = (statusCounts[item.status] ?? 0) + 1;
+        if (item.visibility === "public") visibilityCounts.public = (visibilityCounts.public ?? 0) + 1;
+        else visibilityCounts.private = (visibilityCounts.private ?? 0) + 1;
+      }
+      return {
+        summary: {
+          sent: roleCounts.sender ?? 0,
+          received: roleCounts.recipient ?? 0,
+          publicApplied: offerRows.filter((item) => item.visibility === "public" && item.role === "recipient").length,
+          pending: statusCounts.pending ?? 0,
+          accepted: statusCounts.accepted ?? 0,
+          rejected: statusCounts.rejected ?? 0,
+        },
+        statusBreakdown: {
+          pending: statusCounts.pending ?? 0,
+          accepted: statusCounts.accepted ?? 0,
+          rejected: statusCounts.rejected ?? 0,
+        },
+        visibilityBreakdown: {
+          public: visibilityCounts.public ?? 0,
+          private: visibilityCounts.private ?? 0,
+        },
+        recent: offerRows.slice(0, 10),
+      };
+    })(),
     connections: {
       counterparts: Array.from(counterpartStats.values())
         .sort((left, right) => right.offersCount - left.offersCount)
@@ -194,30 +205,42 @@ export async function getAdminUserDetailHandler(ctx: any, { userKey }: { userKey
       unreadCount: relevant.relevantNotifications.filter((item) => !item.readAt).length,
       recent: notificationRows,
     },
-    orders: {
-      count: relevant.relevantOrders.length,
-      statusBreakdown: {
-        new_lead: relevant.relevantOrders.filter((item) => item.status === "new_lead").length,
-        contacted: relevant.relevantOrders.filter((item) => item.status === "contacted").length,
-        qualified: relevant.relevantOrders.filter((item) => item.status === "qualified").length,
-        offer_made: relevant.relevantOrders.filter((item) => item.status === "offer_made").length,
-        under_contract: relevant.relevantOrders.filter((item) => item.status === "under_contract").length,
-        closed_won: relevant.relevantOrders.filter((item) => item.status === "closed_won").length,
-        closed_lost: relevant.relevantOrders.filter((item) => item.status === "closed_lost").length,
-      },
-      recent: orderRows,
-    },
-    deals: {
-      count: relevant.relevantDeals.length,
-      stageBreakdown: {
-        new: relevant.relevantDeals.filter((item) => item.stage === "new").length,
-        contacted: relevant.relevantDeals.filter((item) => item.stage === "contacted").length,
-        negotiation: relevant.relevantDeals.filter((item) => item.stage === "negotiation").length,
-        won: relevant.relevantDeals.filter((item) => item.stage === "won").length,
-        lost: relevant.relevantDeals.filter((item) => item.stage === "lost").length,
-      },
-      recent: dealRows,
-    },
+    orders: (() => {
+      const statusCounts: Record<string, number> = {};
+      for (const item of relevant.relevantOrders) {
+        statusCounts[item.status] = (statusCounts[item.status] ?? 0) + 1;
+      }
+      return {
+        count: relevant.relevantOrders.length,
+        statusBreakdown: {
+          new_lead: statusCounts.new_lead ?? 0,
+          contacted: statusCounts.contacted ?? 0,
+          qualified: statusCounts.qualified ?? 0,
+          offer_made: statusCounts.offer_made ?? 0,
+          under_contract: statusCounts.under_contract ?? 0,
+          closed_won: statusCounts.closed_won ?? 0,
+          closed_lost: statusCounts.closed_lost ?? 0,
+        },
+        recent: orderRows,
+      };
+    })(),
+    deals: (() => {
+      const stageCounts: Record<string, number> = {};
+      for (const item of relevant.relevantDeals) {
+        stageCounts[item.stage] = (stageCounts[item.stage] ?? 0) + 1;
+      }
+      return {
+        count: relevant.relevantDeals.length,
+        stageBreakdown: {
+          new: stageCounts.new ?? 0,
+          contacted: stageCounts.contacted ?? 0,
+          negotiation: stageCounts.negotiation ?? 0,
+          won: stageCounts.won ?? 0,
+          lost: stageCounts.lost ?? 0,
+        },
+        recent: dealRows,
+      };
+    })(),
     activity: {
       knowledgeResearchCount: relevant.relevantResearch.length,
       searchLogsCount: relevant.relevantSearchLogs.length,
@@ -234,7 +257,7 @@ export async function getAdminUserDetailHandler(ctx: any, { userKey }: { userKey
     },
     access: {
       role: identity.profile?.role ?? null,
-      roleStatus: identity.profile?.roleStatus ?? null,
+      roleApprovalStatus: identity.profile?.roleApprovalStatus ?? null,
       requestedRole: identity.profile?.requestedRole ?? null,
       showInOffersDirectory: identity.profile?.showInOffersDirectory ?? true,
       verified: identity.verified,

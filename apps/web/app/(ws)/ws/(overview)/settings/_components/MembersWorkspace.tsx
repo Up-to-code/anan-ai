@@ -23,7 +23,7 @@ function StatusNotice({ status }: { status: string | null }) {
   const { direction } = useWebLocale();
   if (!status) return null;
   return (
-    <div className="rounded-xl border border-border bg-muted/50 px-4 py-3 text-[13px] font-bold text-foreground" dir={direction}>
+    <div className="rounded-xl border border-border/70 bg-background/60 px-4 py-3 text-[13px] font-bold text-foreground" dir={direction}>
       {status}
     </div>
   );
@@ -191,7 +191,7 @@ export default function MembersWorkspace({
               <Dialog.Portal>
                 <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-all duration-300 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
                 <Dialog.Popup className="pointer-events-none fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 outline-none transition-all duration-300 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
-                  <div className="pointer-events-auto flex flex-col overflow-hidden rounded-2xl bg-background shadow-xl overscroll-contain">
+                  <div className="pointer-events-auto flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-background overscroll-contain">
                     <div className="flex items-center justify-between border-b border-border p-5" dir={direction}>
                       <Dialog.Title className="text-base font-bold text-foreground">{dictionary.settings.inviteMemberTitle}</Dialog.Title>
                       <Dialog.Close className="flex rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground">
@@ -237,7 +237,7 @@ export default function MembersWorkspace({
           <h2 className="text-base font-bold text-foreground">
             {formatWebCopy(dictionary.settings.pendingInvitesTitle, { count: pendingInvites.length })}
           </h2>
-          <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="overflow-hidden rounded-xl border border-border/70 bg-background/50">
             {pendingInvites.map((invite) => (
               <InviteRow key={invite.id} invite={invite} canManage={canManage} onCancelInvite={handleCancelInvite} />
             ))}

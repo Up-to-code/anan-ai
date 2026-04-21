@@ -4,8 +4,8 @@ import schema from "../../schema";
 import { api } from "../../_generated/api";
 import { modules } from "../../test.setup";
 
-vi.mock("@convex-dev/auth/server", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@convex-dev/auth/server")>();
+vi.mock("../../_core/security/authIdentity", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../_core/security/authIdentity")>();
   return {
     ...actual,
     getAuthUserId: vi.fn(async (_ctx: unknown) => null),

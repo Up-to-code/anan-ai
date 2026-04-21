@@ -17,6 +17,9 @@ type SectionScaffoldProps = {
   className?: string;
   bodyClassName?: string;
   railClassName?: string;
+  headerVariant?: "compact" | "hero";
+  tabMode?: "auto" | "segmented" | "subnav";
+  contentWidth?: "full" | "contained";
 };
 
 /**
@@ -36,17 +39,24 @@ export default function SectionScaffold({
   className,
   bodyClassName,
   railClassName,
+  headerVariant = "compact",
+  tabMode = "auto",
+  contentWidth,
 }: SectionScaffoldProps) {
+  const resolvedTabMode = tabMode === "auto" ? (tabs && tabs.length <= 4 ? "segmented" : "subnav") : tabMode;
+  const resolvedContentWidth = contentWidth ?? (layout === "dashboard" || layout === "analytics" ? "full" : "contained");
+
   return (
     <div className={cn("grid min-w-0 max-w-full content-start gap-4 overflow-x-clip xl:gap-5", className)}>
-      <PageHeader eyebrow={eyebrow} title={title} description={description} actions={actions} />
-      {tabs && tabs.length > 0 ? <RouteTabs tabs={tabs} /> : null}
+      <PageHeader eyebrow={eyebrow} title={title} description={description} actions={actions} variant={headerVariant} />
+      {tabs && tabs.length > 0 ? <RouteTabs tabs={tabs} mode={resolvedTabMode} /> : null}
       <AdminPageLayout
         main={children}
         rail={rail}
         variant={layout}
         className={bodyClassName}
         railClassName={railClassName}
+        contentWidth={resolvedContentWidth}
       />
     </div>
   );

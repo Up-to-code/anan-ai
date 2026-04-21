@@ -1,4 +1,4 @@
-import HandoffScreen from "@/features/HandoffScreen";
+import HandoffScreen from "@/features/HandoffScreen/index";
 
 /**
  * WHY:   Advisor handoff should return into the native buyer product instead of a generic account page.

@@ -61,7 +61,7 @@ async function listTenantLinkedOrganizations(ctx: AgenciesRepositoryCtx, profile
 }
 
 async function getProfileOwnerFallbackOrganization(ctx: AgenciesRepositoryCtx, profile: UserProfileRecord) {
-  if (!profile.brokerId && !profile.REDId) {
+  if (!profile.brokerId && !(profile as any).developerId) {
     return [];
   }
   const owner = buildOwnerContextFromProfile(profile);

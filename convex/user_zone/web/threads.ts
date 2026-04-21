@@ -1,5 +1,6 @@
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getAuthUserId } from "../../_core/security/authIdentity";
 import { ConvexError, type Infer, v } from "convex/values";
+import { api, internal } from "../../_generated/api";
 import { internalMutation, mutation, query } from "../../_generated/server";
 import {
   createAssistantThread,
@@ -9,6 +10,11 @@ import {
   saveConversationStep,
 } from "../../ai_zone/services/assistantService";
 import {
+  getAssistantThreadStateByThreadId,
+  saveCanonicalMessage,
+} from "../../ai_zone/services/assistantService/runtime";
+import { buildBuyerComparisonSnapshot } from "../../shared_logic/buyerComparisons";
+import {
   clientThreadMessageValidator,
   clientThreadSummaryValidator,
   clientTranscriptSeedMessageValidator,
@@ -16,6 +22,7 @@ import {
 
 const CLIENT_ASSISTANT_KIND = "anan_main_public" as const;
 const CLIENT_ORCHESTRATOR_NAME = "client_web";
+const buyerComparisonsInternal = (internal as Record<string, any>)["shared_logic/buyerComparisons"];
 
 type StoredClientMessage = Infer<typeof clientThreadMessageValidator>;
 type TranscriptSeedMessage = Infer<typeof clientTranscriptSeedMessageValidator>;
@@ -33,6 +40,10 @@ function readOptionalStringArray(value: unknown) {
 
 function readOptionalProperties(value: unknown) {
   return Array.isArray(value) ? (value as StoredClientMessage["properties"]) : undefined;
+}
+
+function readOptionalPropertyIds(value: unknown) {
+  return Array.isArray(value) ? (value as StoredClientMessage["comparisonPropertyIds"]) : undefined;
 }
 
 function readOptionalCards(value: unknown) {
@@ -58,6 +69,15 @@ function mapStoredMessage(message: {
     requiresAuthForHandoff:
       typeof metadata.requiresAuthForHandoff === "boolean" ? metadata.requiresAuthForHandoff : undefined,
     suggestedPrompts: readOptionalStringArray(metadata.suggestedPrompts),
+    comparisonArtifactId:
+      typeof metadata.comparisonArtifactId === "string" ? (metadata.comparisonArtifactId as never) : undefined,
+    comparisonPropertyIds: readOptionalPropertyIds(metadata.comparisonPropertyIds),
+    selectionSource:
+      metadata.selectionSource === "ui_selected" ||
+      metadata.selectionSource === "history_resolved" ||
+      metadata.selectionSource === "text_resolved"
+        ? metadata.selectionSource
+        : undefined,
   };
 }
 
@@ -69,7 +89,85 @@ function buildAssistantMetadata(message: TranscriptSeedMessage) {
     activePropertyId: message.activePropertyId,
     requiresAuthForHandoff: message.requiresAuthForHandoff,
     suggestedPrompts: message.suggestedPrompts,
+    comparisonArtifactId: message.comparisonArtifactId,
+    comparisonPropertyIds: message.comparisonPropertyIds,
+    selectionSource: message.selectionSource,
   };
+}
+
+async function hydrateStoredMessages(args: {
+  ctx: any;
+  threadId?: string;
+  messages: Array<{
+    _id: string;
+    role: "assistant" | "user";
+    content: string;
+    createdAt: number;
+    metadata?: unknown;
+  }>;
+}) {
+  const artifactCache = new Map<string, Promise<any>>();
+  const propertyCache = new Map<string, Promise<any>>();
+
+  const loadArtifact = async (artifactId: string) => {
+    if (!artifactCache.has(artifactId)) {
+      artifactCache.set(
+        artifactId,
+        args.ctx.runQuery(
+          buyerComparisonsInternal.getBuyerComparisonArtifactInternal,
+          {
+            artifactId,
+            threadId: args.threadId,
+          },
+        ),
+      );
+    }
+    return artifactCache.get(artifactId);
+  };
+
+  const loadProperty = async (propertyId: string) => {
+    if (!propertyCache.has(propertyId)) {
+      propertyCache.set(
+        propertyId,
+        args.ctx.runQuery(
+          api.user_zone.web.properties.getPropertyDetail,
+          { propertyId },
+        ),
+      );
+    }
+    return propertyCache.get(propertyId);
+  };
+
+  return Promise.all(
+    args.messages.map(async (message) => {
+      const mapped = mapStoredMessage(message);
+      if (!mapped.comparisonArtifactId) return mapped;
+
+      const artifact = await loadArtifact(String(mapped.comparisonArtifactId));
+      if (!artifact) return mapped;
+
+      const liveProperties = await Promise.all(
+        (artifact.propertyIds as string[]).map((propertyId) => loadProperty(propertyId)),
+      );
+      const snapshot =
+        liveProperties.every(Boolean) && liveProperties.length >= 2
+          ? buildBuyerComparisonSnapshot({
+              locale: artifact.locale,
+              properties: liveProperties as any,
+              selectionSource: artifact.selectionSource,
+            }).snapshot
+          : artifact.snapshot;
+
+      return {
+        ...mapped,
+        text: snapshot.message,
+        properties: snapshot.properties,
+        cards: snapshot.cards,
+        activePropertyId: snapshot.activePropertyId,
+        suggestedPrompts: snapshot.suggestedPrompts,
+      } satisfies StoredClientMessage;
+    }),
+  );
 }
 
 async function requireAuthenticatedBuyer(ctx: { auth: unknown }, authReader: () => Promise<string | null>) {
@@ -129,7 +227,7 @@ export const listClientThreads = query({
  */
 export const getClientThreadMessages = query({
   args: {
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
   },
   returns: v.array(clientThreadMessageValidator),
   handler: async (ctx, args) => {
@@ -143,7 +241,11 @@ export const getClientThreadMessages = query({
       CLIENT_ASSISTANT_KIND,
     );
 
-    return messages.map(mapStoredMessage);
+    return hydrateStoredMessages({
+      ctx,
+      threadId: args.threadId ? String(args.threadId) : undefined,
+      messages: messages as any,
+    });
   },
 });
 
@@ -154,7 +256,7 @@ export const getClientThreadMessages = query({
  */
 export const getClientAssistantState = query({
   args: {
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
     limit: v.optional(v.number()),
   },
   returns: v.object({
@@ -188,7 +290,11 @@ export const getClientAssistantState = query({
 
     return {
       recentThreads: await buildClientThreadSummaries(ctx, threads as any),
-      activeMessages: messages.map(mapStoredMessage),
+      activeMessages: await hydrateStoredMessages({
+        ctx,
+        threadId: args.threadId ? String(args.threadId) : undefined,
+        messages: messages as any,
+      }),
     };
   },
 });
@@ -203,7 +309,7 @@ export const createClientThread = mutation({
     title: v.optional(v.string()),
   },
   returns: v.object({
-    threadId: v.id("assistantThreads"),
+    threadId: v.string(),
   }),
   handler: async (ctx, args) => {
     const userId = await requireAuthenticatedBuyer(ctx, () => getAuthUserId(ctx));
@@ -228,7 +334,7 @@ export const seedClientThreadFromTranscript = mutation({
     messages: v.array(clientTranscriptSeedMessageValidator),
   },
   returns: v.object({
-    threadId: v.id("assistantThreads"),
+    threadId: v.string(),
   }),
   handler: async (ctx, args) => {
     const userId = await requireAuthenticatedBuyer(ctx, () => getAuthUserId(ctx));
@@ -247,23 +353,52 @@ export const seedClientThreadFromTranscript = mutation({
 
     const now = Date.now();
     for (const [index, message] of args.messages.entries()) {
-      await ctx.db.insert("assistantMessages", {
+      const createdAt = now + index;
+      const legacyMessageId = created.legacyThreadId
+        ? await ctx.db.insert("assistantMessages", {
+            threadId: created.legacyThreadId,
+            role: message.role,
+            content: message.text,
+            mode: "qa",
+            metadata: buildAssistantMetadata(message),
+            createdAt,
+          })
+        : undefined;
+      const canonicalMessage = await saveCanonicalMessage(ctx as never, {
         threadId: created.threadId,
         role: message.role,
         content: message.text,
+      });
+      await ctx.db.insert("assistantMessageState", {
+        messageId: canonicalMessage.messageId,
+        threadId: created.threadId,
+        role: message.role,
         mode: "qa",
         metadata: buildAssistantMetadata(message),
-        createdAt: now + index,
+        legacyMessageId,
+        createdAt,
       });
     }
 
-    await ctx.db.patch(created.threadId, {
-      title: resolvedTitle,
-      updatedAt: now + args.messages.length,
-      mode: "qa",
-      assistantKind: CLIENT_ASSISTANT_KIND,
-      orchestratorName: CLIENT_ORCHESTRATOR_NAME,
-    });
+    const threadState = await getAssistantThreadStateByThreadId(ctx, created.threadId);
+    if (threadState) {
+      await ctx.db.patch(threadState._id, {
+        title: resolvedTitle,
+        updatedAt: now + args.messages.length,
+        mode: "qa",
+        assistantKind: CLIENT_ASSISTANT_KIND,
+        orchestratorName: CLIENT_ORCHESTRATOR_NAME,
+      });
+    }
+    if (created.legacyThreadId) {
+      await ctx.db.patch(created.legacyThreadId, {
+        title: resolvedTitle,
+        updatedAt: now + args.messages.length,
+        mode: "qa",
+        assistantKind: CLIENT_ASSISTANT_KIND,
+        orchestratorName: CLIENT_ORCHESTRATOR_NAME,
+      });
+    }
 
     return created;
   },
@@ -276,7 +411,7 @@ export const seedClientThreadFromTranscript = mutation({
  */
 export const persistClientConversationTurn = internalMutation({
   args: {
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
     userId: v.string(),
     userMessage: v.string(),
     userMessageMetadata: v.optional(v.any()),
@@ -284,9 +419,9 @@ export const persistClientConversationTurn = internalMutation({
     assistantMetadata: v.optional(v.any()),
   },
   returns: v.object({
-    threadId: v.id("assistantThreads"),
-    userMessageId: v.optional(v.id("assistantMessages")),
-    assistantMessageId: v.id("assistantMessages"),
+    threadId: v.string(),
+    userMessageId: v.optional(v.string()),
+    assistantMessageId: v.string(),
   }),
   handler: async (ctx, args) => {
     const saved = await saveConversationStep(ctx as never, {

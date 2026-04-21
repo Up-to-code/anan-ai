@@ -18,6 +18,12 @@ config.resolver.extraNodeModules = {
   react: path.resolve(projectRoot, "node_modules/react"),
   "react-dom": path.resolve(projectRoot, "node_modules/react-dom"),
   "react-native": path.resolve(projectRoot, "node_modules/react-native"),
+  "expo-auth-session": path.resolve(projectRoot, "node_modules/expo-auth-session"),
+  "expo-web-browser": path.resolve(projectRoot, "node_modules/expo-web-browser"),
+  "expo-apple-authentication": path.resolve(projectRoot, "node_modules/expo-apple-authentication"),
+  "expo-secure-store": path.resolve(projectRoot, "node_modules/expo-secure-store"),
+  "expo-network": path.resolve(projectRoot, "node_modules/expo-network"),
+  convex: path.resolve(projectRoot, "node_modules/convex"),
 };
 
 module.exports = withNativeWind(config, { input: "./global.css" });

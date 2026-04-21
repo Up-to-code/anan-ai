@@ -26,12 +26,12 @@ export async function getOptionalProfile(ctx: QueryCtx) {
 }
 
 /**
- * WHY:   Offer mutations should accept only broker or RED senders.
+ * WHY:   Offer mutations should accept only broker or developer senders.
  * WHAT:  Resolves and validates the current sender role.
  * HOW:   Reuses the shared access policy and rejects inactive accounts.
  */
 export async function requireSender(ctx: OffersCtx) {
-  const access = await requireRole(ctx, ["broker", "RED"]);
+  const access = await requireRole(ctx, ["broker", "developer"]);
   if (access.profile?.isActive === false) {
     throw new ConvexError({
       code: "ACCOUNT_INACTIVE",

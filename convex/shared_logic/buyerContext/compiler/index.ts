@@ -1,9 +1,10 @@
-import type { Id } from "../../../_generated/dataModel";
 import { getCompiledContextKey } from "../constants";
 import { upsertSummaryMemory } from "../storage";
 import {
   buildBuyerCompilationFingerprint,
   buildBuyerPromptBlocks,
+  buildEmptyBuyerMemoryContext,
+  buildEmptyBuyerSummaries,
   buildEffectiveBuyerStateSnapshot,
   compileBuyerPromptContext,
   loadBuyerStateAndMemory,
@@ -18,28 +19,38 @@ export async function buildCompiledBuyerContextPayload(args: {
   channel: BuyerChannel;
   userId: string;
   message: string;
-  threadId?: Id<"assistantThreads">;
+  threadId?: string;
   persistCompiledCache: boolean;
+  startFresh?: boolean;
 }) {
-  const { state, memory } = await loadBuyerStateAndMemory({
-    ctx: args.ctx,
-    channel: args.channel,
-    userId: args.userId,
-  });
+  const shouldBypassPersistedContext = args.startFresh === true;
+  const { state, memory } = shouldBypassPersistedContext
+    ? {
+        state: null,
+        memory: buildEmptyBuyerMemoryContext(),
+      }
+    : await loadBuyerStateAndMemory({
+        ctx: args.ctx,
+        channel: args.channel,
+        userId: args.userId,
+      });
   const threadId = String(args.threadId ?? state?.threadId ?? "");
   const effectiveState = buildEffectiveBuyerStateSnapshot(state);
 
-  const summaries = await resolveBuyerSummaries({
-    ctx: args.ctx,
-    channel: args.channel,
-    userId: args.userId,
-    threadId: threadId || undefined,
-    effectiveState,
-    persistCompiledCache: args.persistCompiledCache,
-  });
+  const summaries = shouldBypassPersistedContext
+    ? buildEmptyBuyerSummaries()
+    : await resolveBuyerSummaries({
+        ctx: args.ctx,
+        channel: args.channel,
+        userId: args.userId,
+        threadId: threadId || undefined,
+        effectiveState,
+        persistCompiledCache: args.persistCompiledCache,
+      });
   const {
     intent,
     recentThreadRecap,
+    recentPropertyRefIds,
     buyerSummarySnippets,
     rawMemoryFallback,
     companyKnowledgeSnippets,
@@ -57,6 +68,7 @@ export async function buildCompiledBuyerContextPayload(args: {
     memory,
     summaries,
     recentThreadRecap,
+    recentPropertyRefIds,
     buyerSummarySnippets,
     rawMemoryFallback,
     companyKnowledgeSnippets,
@@ -70,6 +82,7 @@ export async function buildCompiledBuyerContextPayload(args: {
     memory,
     summaries,
     recentThreadRecap,
+    recentPropertyRefIds,
     companyKnowledgeSnippets,
   });
 
@@ -86,10 +99,12 @@ export async function buildCompiledBuyerContextPayload(args: {
       memory,
       summaries,
       recentThreadRecap,
+      recentPropertyRefIds,
       buyerSummarySnippets,
       rawMemoryFallback,
       companyKnowledgeSnippets,
       alreadyShownPropertyIds: state?.lastResultPropertyIds ?? [],
+      activeComparisonPropertyIds: state?.comparisonPropertyIds ?? [],
       compiledPromptContext: cachedCompilation.compiledPromptContext,
       promptBudgetMeta: {
         ...cachedCompilation.promptBudgetMeta,
@@ -127,10 +142,12 @@ export async function buildCompiledBuyerContextPayload(args: {
     memory,
     summaries,
     recentThreadRecap,
+    recentPropertyRefIds,
     buyerSummarySnippets,
     rawMemoryFallback,
     companyKnowledgeSnippets,
     alreadyShownPropertyIds: state?.lastResultPropertyIds ?? [],
+    activeComparisonPropertyIds: state?.comparisonPropertyIds ?? [],
     compiledPromptContext,
     promptBudgetMeta,
   };

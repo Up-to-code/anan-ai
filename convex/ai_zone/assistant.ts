@@ -74,7 +74,7 @@ export const getThreadSafe = query({
 
 export const listMessages = query({
   args: {
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const owner = await resolveAssistantOwner(ctx);
@@ -84,7 +84,7 @@ export const listMessages = query({
 
 export const listMessagesSafe = query({
   args: {
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const owner = await resolveAssistantOwnerSafe(ctx);
@@ -110,7 +110,7 @@ export const listThreads = query({
  */
 export const getRuntimeContextBundle = query({
   args: {
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
     message: v.string(),
     regenerate: v.optional(v.boolean()),
     regenerateMessageId: v.optional(v.string()),
@@ -152,7 +152,7 @@ export const getRuntimeContextBundle = query({
 export const sendMessage = action({
   args: {
     message: v.string(),
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
     inputMode: v.optional(v.union(v.literal("text"), v.literal("voice"))),
     regenerate: v.optional(v.boolean()),
     regenerateMessageId: v.optional(v.string()),
@@ -165,7 +165,7 @@ export const sendMessage = action({
 export const streamMessage = action({
   args: {
     message: v.string(),
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
     inputMode: v.optional(v.union(v.literal("text"), v.literal("voice"))),
     regenerate: v.optional(v.boolean()),
     regenerateMessageId: v.optional(v.string()),
@@ -180,7 +180,7 @@ export const streamMessage = action({
 
 export const _saveConversationStep = internalMutation({
   args: {
-    threadId: v.optional(v.id("assistantThreads")),
+    threadId: v.optional(v.string()),
     userId: v.string(),
     ownerType: v.union(v.literal("broker"), v.literal("RED"), v.literal("user")),
     ownerBrokerId: v.optional(v.id("brokers")),
@@ -198,15 +198,8 @@ export const _saveConversationStep = internalMutation({
 });
 
 export const _getMessageContent = internalQuery({
-  args: { messageId: v.id("assistantMessages") },
+  args: { messageId: v.string() },
   handler: async (ctx, args) => {
     return getMessageContent(ctx, args.messageId);
-  },
-});
-
-export const _getLatestThreadByUserId = internalQuery({
-  args: { userId: v.string() },
-  handler: async (ctx, args) => {
-    return getLatestThread(ctx, args.userId);
   },
 });

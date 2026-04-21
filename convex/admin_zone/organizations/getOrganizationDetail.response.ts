@@ -79,7 +79,7 @@ function buildLinkedProfiles(profiles: any[]) {
     name: profile.name ?? profile.email ?? "مستخدم عنان",
     email: profile.email ?? null,
     role: profile.role ?? null,
-    roleStatus: profile.roleStatus ?? null,
+    roleApprovalStatus: profile.roleApprovalStatus ?? null,
     showInOffersDirectory: profile.showInOffersDirectory ?? true,
   }));
 }
@@ -153,17 +153,21 @@ function buildSubscriptionSection(organizationSubscription: any | null) {
     expiresAt: organizationSubscription.expiresAt ?? null,
   };
 }
-function buildOrdersSection(organizationOrders: any[]) {
+export function buildOrdersSection(organizationOrders: any[]) {
+  const statusCounts: Record<string, number> = {};
+  for (const item of organizationOrders) {
+    statusCounts[item.status] = (statusCounts[item.status] ?? 0) + 1;
+  }
   return {
     count: organizationOrders.length,
     statusBreakdown: {
-      new_lead: organizationOrders.filter((item) => item.status === "new_lead").length,
-      contacted: organizationOrders.filter((item) => item.status === "contacted").length,
-      qualified: organizationOrders.filter((item) => item.status === "qualified").length,
-      offer_made: organizationOrders.filter((item) => item.status === "offer_made").length,
-      under_contract: organizationOrders.filter((item) => item.status === "under_contract").length,
-      closed_won: organizationOrders.filter((item) => item.status === "closed_won").length,
-      closed_lost: organizationOrders.filter((item) => item.status === "closed_lost").length,
+      new_lead: statusCounts.new_lead ?? 0,
+      contacted: statusCounts.contacted ?? 0,
+      qualified: statusCounts.qualified ?? 0,
+      offer_made: statusCounts.offer_made ?? 0,
+      under_contract: statusCounts.under_contract ?? 0,
+      closed_won: statusCounts.closed_won ?? 0,
+      closed_lost: statusCounts.closed_lost ?? 0,
     },
     recent: sortByCreatedAtDescending(organizationOrders)
       .slice(0, 10)
@@ -176,15 +180,19 @@ function buildOrdersSection(organizationOrders: any[]) {
       })),
   };
 }
-function buildDealsSection(organizationDeals: any[]) {
+export function buildDealsSection(organizationDeals: any[]) {
+  const stageCounts: Record<string, number> = {};
+  for (const item of organizationDeals) {
+    stageCounts[item.stage] = (stageCounts[item.stage] ?? 0) + 1;
+  }
   return {
     count: organizationDeals.length,
     stageBreakdown: {
-      new: organizationDeals.filter((item) => item.stage === "new").length,
-      contacted: organizationDeals.filter((item) => item.stage === "contacted").length,
-      negotiation: organizationDeals.filter((item) => item.stage === "negotiation").length,
-      won: organizationDeals.filter((item) => item.stage === "won").length,
-      lost: organizationDeals.filter((item) => item.stage === "lost").length,
+      new: stageCounts.new ?? 0,
+      contacted: stageCounts.contacted ?? 0,
+      negotiation: stageCounts.negotiation ?? 0,
+      won: stageCounts.won ?? 0,
+      lost: stageCounts.lost ?? 0,
     },
     recent: sortByCreatedAtDescending(organizationDeals)
       .slice(0, 10)

@@ -1,51 +1,116 @@
-import { Pressable, ScrollView, View, Alert, Appearance } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import {
-  ArrowLeft,
-  Bookmark,
-  FileText,
-  Globe,
-  HelpCircle,
-  LogOut,
-  MessageSquare,
-  Moon,
-  Monitor,
-  ShieldCheck,
-  Sun,
-  Trash2,
-  User as UserIcon,
-} from "lucide-react-native";
+import React, { useMemo } from "react";
+import { Alert, Image, ScrollView, View } from "react-native";
+import { useRouter } from "expo-router";
+import { ArrowLeft, Bookmark, Clock3, LogOut, SlidersHorizontal, User as UserIcon } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText } from "@/components/ui/AppText";
 import { IconButton } from "@/components/ui/IconButton";
-import { MobileSectionHeading, MobileTopBar } from "@/components/ui/MobileChrome";
-import { clearGuestThreadSnapshot, clearGuestThreadStore } from "@/lib/mobilePersistence";
+import { MobileTopBar } from "@/components/ui/MobileChrome";
+import { useBuyerAccount } from "@/hooks/useBuyerAccount";
+import { useBuyerAuth } from "@/hooks/useBuyerAuth";
+import { usePropertyFeed } from "@/hooks/usePropertyFeed";
+import { cn } from "@/lib/cn";
+import { formatMobileCopy } from "@/lib/i18n";
+import { useMobileLocale } from "@/lib/mobileLocale";
 import { useAppTheme } from "@/lib/mobileTheme";
-import { getThemePreference, setThemePreference, type ThemeOverrideMode } from "@/lib/themeStore";
+import { AccountActionList, AccountActionRow, AccountPageIntro, AccountSection } from "./shared";
 
+function resolveIdentityLabel(args: {
+  displayName?: string | null;
+  email?: string | null;
+  fallback: string;
+}) {
+  const displayName = args.displayName?.trim();
+  if (displayName && displayName !== "ضيف عنان") return displayName;
+
+  const emailPrefix = args.email?.trim().split("@")[0]?.replace(/[^a-zA-Z0-9]/g, "")?.slice(0, 5);
+  if (emailPrefix) return emailPrefix;
+
+  return args.fallback;
+}
+
+/**
+ * WHY:   Buyers need a calm personal hub that feels close to the assistant shell without becoming a dashboard.
+ * WHAT:  Renders the account home around identity first, then a quiet list of return paths and controls.
+ * HOW:   Reads the shared buyer account and feed state, trims down badges/stats, and keeps saved/history continuity visible through light metadata.
+ */
 export default function AccountScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ threadId?: string; orderId?: string }>();
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
+  const account = useBuyerAccount();
+  const auth = useBuyerAuth();
+  const feed = usePropertyFeed();
+  const { locale, dictionary, isRtl } = useMobileLocale();
+  const accountCopy = dictionary.account;
+  const navigationCopy = dictionary.navigation;
+  const settingsCopy = dictionary.settings;
 
-  const [themeMode, setThemeMode] = useState<ThemeOverrideMode>("system");
+  const savedProperties = useMemo(
+    () =>
+      account.viewer.savedPropertyIds
+        .map((propertyId) => feed.findPropertyById(propertyId))
+        .filter(Boolean),
+    [account.viewer.savedPropertyIds, feed],
+  );
+  const featuredSavedProperty = savedProperties[0] ?? null;
+  const latestThread = account.recentThreads[0];
+  const viewerMeta = account.viewer.phone ?? account.viewer.email;
+  const profileStatus = account.viewer.isAuthenticated ? viewerMeta : accountCopy.guestMode;
+  const localeLabel = locale === "ar" ? dictionary.locale.arabic : dictionary.locale.english;
+  const guestSummary = [
+    formatMobileCopy(accountCopy.savedCount, { count: account.viewer.savedPropertyIds.length }),
+    formatMobileCopy(accountCopy.chatsCount, { count: account.viewer.threadCount }),
+  ].join(" · ");
+  const heroTitle = account.viewer.isAuthenticated
+    ? resolveIdentityLabel({
+        displayName: account.authSources.auth?.displayName ?? account.viewer.displayName,
+        email: account.authSources.auth?.email ?? account.viewer.email,
+        fallback: accountCopy.linkedAccount,
+      })
+    : accountCopy.guestMode;
+  const heroImageUrl = account.authSources.auth?.imageUrl;
+  const heroSubline = account.viewer.isAuthenticated ? viewerMeta ?? accountCopy.linkedAccount : guestSummary;
+  const heroFootnote = account.viewer.isAuthenticated
+    ? [
+        formatMobileCopy(accountCopy.savedCount, { count: account.viewer.savedPropertyIds.length }),
+        formatMobileCopy(accountCopy.chatsCount, { count: account.viewer.threadCount }),
+      ].join(" · ")
+    : featuredSavedProperty?.title ?? latestThread?.title ?? localeLabel;
+  const sessionLabel = account.viewer.isAuthenticated ? settingsCopy.signOut : settingsCopy.connectAccount;
+  const verificationLabel = account.viewer.isAuthenticated ? dictionary.common.verified : accountCopy.guestMode;
 
-  useEffect(() => {
-    if (!params.threadId && !params.orderId) return;
-    void clearGuestThreadSnapshot();
-  }, [params.orderId, params.threadId]);
+  function openSettings() {
+    router.push("/account/settings");
+  }
 
-  useEffect(() => {
-    getThemePreference().then(setThemeMode);
-  }, []);
+  function confirmSessionAction() {
+    Alert.alert(
+      account.viewer.isAuthenticated ? settingsCopy.signOutTitle : settingsCopy.connectAccountTitle,
+      account.viewer.isAuthenticated ? settingsCopy.signOutBody : settingsCopy.connectAccountBody,
+      [
+        { text: dictionary.common.cancel, style: "cancel" },
+        {
+          text: account.viewer.isAuthenticated ? settingsCopy.signOut : settingsCopy.openSignIn,
+          style: account.viewer.isAuthenticated ? "destructive" : "default",
+          onPress: async () => {
+            if (account.viewer.isAuthenticated) {
+              const nextPath = await auth.signOutToGuest();
+              if (nextPath) router.replace(nextPath);
+              return;
+            }
 
-  const handleThemeChange = async (mode: ThemeOverrideMode) => {
-    setThemeMode(mode);
-    await setThemePreference(mode);
-    Appearance.setColorScheme(mode === "system" ? null : mode);
-  };
+            router.push({
+              pathname: "/auth",
+              params: {
+                returnTo: "/account",
+              },
+            });
+          },
+        },
+      ],
+    );
+  }
 
   return (
     <View className="flex-1" style={{ backgroundColor: theme.colors.canvas }}>
@@ -53,269 +118,125 @@ export default function AccountScreen() {
         insetTop={insets.top}
         backgroundColor={theme.colors.canvas}
         borderColor={theme.colors.border}
-        title="حسابي"
-        subtitle="الإعدادات والسجل"
+        title={navigationCopy.accountTitle}
         leading={<IconButton icon={ArrowLeft} onPress={() => router.back()} tone="panel" />}
         trailing={<View style={{ width: 44, height: 44 }} />}
       />
 
-      <ScrollView 
-        className="flex-1 px-5 pt-8" 
+      <ScrollView
+        className="flex-1 px-5 pt-5"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 40) + 40 }}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 36) + 24 }}
       >
-        {/* Profile Card */}
-        <View
-          className="px-5 py-6"
-          style={{
-            borderRadius: theme.radii.card, 
-            borderWidth: 1, 
-            borderColor: theme.colors.border,
-            backgroundColor: theme.colors.surfaceMuted,
-          }}
-        >
-          <View className="items-center">
-            <View
-              className="mb-4 items-center justify-center"
-              style={{
-                width: 80,
-                height: 80,
-                borderRadius: theme.radii.card,
-                backgroundColor: theme.colors.surface,
-                borderWidth: 1,
-                borderColor: theme.colors.primary,
-              }}
-            >
-              <UserIcon size={32} color={theme.colors.primary} />
+        <View className="gap-5">
+          <AccountPageIntro title={heroTitle} description={heroSubline ?? undefined} tone="muted">
+            <View className="items-center gap-3 py-4">
+              {heroImageUrl ? (
+                <Image
+                  source={{ uri: heroImageUrl }}
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 36,
+                    backgroundColor: theme.colors.surfaceMuted,
+                  }}
+                />
+              ) : (
+                <View
+                  className="items-center justify-center"
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 36,
+                    backgroundColor: theme.colors.primarySoft,
+                  }}
+                >
+                  <UserIcon size={30} color={theme.colors.primary} />
+                </View>
+              )}
+              <View className="items-center gap-1">
+                <AppText className="text-center text-[22px] font-cairo-bold" style={{ color: theme.colors.ink }}>
+                  {heroTitle}
+                </AppText>
+                {heroSubline ? (
+                  <AppText className="text-center text-[13px] font-medium" style={{ color: theme.colors.inkMuted }}>
+                    {heroSubline}
+                  </AppText>
+                ) : null}
+              </View>
+              <View
+                className="px-3 py-1"
+                style={{
+                  borderRadius: 999,
+                  backgroundColor: account.viewer.isAuthenticated ? "#E8F7EE" : theme.colors.surfaceMuted,
+                }}
+              >
+                <AppText
+                  className="text-[12px] font-cairo-bold"
+                  style={{ color: account.viewer.isAuthenticated ? "#1F7A45" : theme.colors.inkMuted }}
+                >
+                  {verificationLabel}
+                </AppText>
+              </View>
+              {heroFootnote ? (
+                <AppText className="text-center text-[12px] font-medium" style={{ color: theme.colors.inkSoft }}>
+                  {heroFootnote}
+                </AppText>
+              ) : null}
             </View>
-            <MobileSectionHeading
-              align="center"
-              title="أحمد منصور"
-              description="+966 50 123 4567"
-            />
-          </View>
-        </View>
+          </AccountPageIntro>
 
-        {/* Theme Preferences */}
-        <View className="mt-6 gap-3">
-          <AppText className="text-[14px] font-cairo-bold text-right mx-1" style={{ color: theme.colors.inkMuted }}>
-            مظهر التطبيق
-          </AppText>
-          <View
-            className="flex-row-reverse p-1"
-            style={{
-              borderRadius: theme.radii.card,
-              borderWidth: 1,
-              borderColor: theme.colors.border,
-              backgroundColor: theme.colors.surfaceMuted,
-            }}
-          >
-            <ThemeToggleButton
-              active={themeMode === "system"}
-              icon={Monitor}
-              label="تلقائي"
-              onPress={() => handleThemeChange("system")}
-            />
-            <ThemeToggleButton
-              active={themeMode === "dark"}
-              icon={Moon}
-              label="داكن"
-              onPress={() => handleThemeChange("dark")}
-            />
-            <ThemeToggleButton
-              active={themeMode === "light"}
-              icon={Sun}
-              label="فاتح"
-              onPress={() => handleThemeChange("light")}
-            />
-          </View>
-        </View>
+          <AccountSection>
+            <AccountActionList>
+              <AccountActionRow
+                icon={UserIcon}
+                label={accountCopy.profile}
+                description={profileStatus}
+                testID="account-hub-profile"
+                onPress={() => router.push("/account/profile")}
+                withBorder
+              />
+              <AccountActionRow
+                icon={Bookmark}
+                label={accountCopy.savedProperties}
+                description={featuredSavedProperty?.title ?? accountCopy.savedProperties}
+                status={String(account.viewer.savedPropertyIds.length)}
+                testID="account-hub-saved"
+                onPress={() => router.push("/account/saved")}
+                withBorder
+              />
+              <AccountActionRow
+                icon={Clock3}
+                label={accountCopy.history}
+                description={latestThread?.title ?? latestThread?.preview}
+                status={String(account.viewer.threadCount)}
+                testID="account-hub-history"
+                onPress={() => router.push("/account/history")}
+                withBorder
+              />
+              <AccountActionRow
+                icon={SlidersHorizontal}
+                label={accountCopy.settings}
+                status={localeLabel}
+                testID="account-hub-settings"
+                onPress={openSettings}
+              />
+            </AccountActionList>
+          </AccountSection>
 
-        {/* Thread Status */}
-        <View
-          className="mt-6 px-5 py-5"
-          style={{
-            borderRadius: theme.radii.card,
-            borderWidth: 1,
-            borderColor: theme.colors.border,
-            backgroundColor: theme.colors.surface,
-          }}
-        >
-          <MobileSectionHeading
-            eyebrow="حالة المحادثة"
-            title={params.threadId || params.orderId ? "تم التنفيذ من داخل الرحلة" : "الحساب مرتبط بجهازك"}
-            description={
-              params.threadId || params.orderId
-                ? "يمكنك العودة الآن إلى نفس المحادثة ومتابعة الخطوات بدون فقدان السياق."
-                : "السجل محفوظ محلياً على هذا الجهاز حالياً، ويمكنك دائماً الرجوع إلى شاشة المساعد."
-            }
-          />
-        </View>
-
-        {/* Menu Items */}
-        <View
-          className="mt-6 overflow-hidden"
-          style={{
-            borderRadius: theme.radii.card,
-            borderWidth: 1,
-            borderColor: theme.colors.border,
-            backgroundColor: theme.colors.surface,
-          }}
-        >
-          <AccountRow icon={Bookmark} label="العقارات المحفوظة" onPress={() => {}} withBorder />
-          <AccountRow
-            icon={MessageSquare}
-            label="السجل المحفوظ"
-            onPress={() =>
-              Alert.alert(
-                "السجل المحلي فقط",
-                "سجل المحادثات الحالي متاح من شاشة المساعد داخل هذا الجهاز.",
-              )
-            }
-            withBorder
-          />
-          <AccountRow icon={Globe} label="لغة التطبيق - العربية" onPress={() => {}} withBorder />
-          <AccountRow
-            icon={ShieldCheck}
-            label="الخصوصية والبيانات"
-            onPress={() => router.push("/legal")}
-            withBorder
-          />
-          <AccountRow icon={FileText} label="الشروط والاستخدام" onPress={() => router.push("/legal")} withBorder />
-          <AccountRow
-            icon={HelpCircle}
-            label="الدعم ومراجعة المتجر"
-            onPress={() => router.push("/legal")}
-            withBorder
-          />
-          <AccountRow
-            icon={Trash2}
-            label="حذف البيانات المحلية"
-            onPress={() =>
-              Alert.alert(
-                "حذف البيانات المحلية",
-                "سيتم حذف السجل المحلي المحفوظ على هذا الجهاز فقط.",
-                [
-                  { text: "إلغاء", style: "cancel" },
-                  {
-                    text: "حذف",
-                    style: "destructive",
-                    onPress: async () => {
-                      await clearGuestThreadStore();
-                      Alert.alert("تم الحذف", "تم حذف البيانات المحلية.");
-                    },
-                  },
-                ],
-              )
-            }
-            destructive
-          />
-        </View>
-
-        {/* Logout */}
-        <View
-          className="mt-6 overflow-hidden"
-          style={{
-            borderRadius: theme.radii.card,
-            borderWidth: 1,
-            borderColor: theme.colors.border,
-            backgroundColor: theme.colors.surface,
-          }}
-        >
-          <AccountRow
-            icon={LogOut}
-            label="تسجيل الخروج"
-            onPress={() => router.replace("/welcome")}
-            destructive
-          />
+          <AccountSection>
+            <AccountActionList>
+              <AccountActionRow
+                icon={LogOut}
+                label={sessionLabel}
+                destructive={account.viewer.isAuthenticated}
+                testID="account-hub-session"
+                onPress={confirmSessionAction}
+              />
+            </AccountActionList>
+          </AccountSection>
         </View>
       </ScrollView>
     </View>
-  );
-}
-
-function ThemeToggleButton({
-  active,
-  icon: Icon,
-  label,
-  onPress,
-}: {
-  active: boolean;
-  icon: typeof Monitor;
-  label: string;
-  onPress: () => void;
-}) {
-  const theme = useAppTheme();
-  
-  return (
-    <Pressable
-      onPress={onPress}
-      className="flex-1 flex-row-reverse items-center justify-center gap-2 py-3"
-      style={{
-        borderRadius: theme.radii.card - 4, // Inner pill 
-        backgroundColor: active ? theme.colors.surface : "transparent",
-        ...(active
-          ? {
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-              elevation: 2,
-              borderWidth: 1,
-              borderColor: theme.colors.border,
-            }
-          : {}),
-      }}
-    >
-      <Icon size={16} color={active ? theme.colors.primary : theme.colors.inkMuted} />
-      <AppText
-        className={`text-[14px] ${active ? "font-cairo-bold" : "font-cairo-medium"}`}
-        style={{ color: active ? theme.colors.primary : theme.colors.inkMuted }}
-      >
-        {label}
-      </AppText>
-    </Pressable>
-  );
-}
-
-function AccountRow({
-  icon: Icon,
-  label,
-  onPress,
-  destructive,
-  withBorder,
-}: {
-  icon: typeof Bookmark;
-  label: string;
-  onPress: () => void;
-  destructive?: boolean;
-  withBorder?: boolean;
-}) {
-  const theme = useAppTheme();
-
-  return (
-    <Pressable
-      onPress={onPress}
-      className="flex-row-reverse items-center gap-4 px-5 py-4 active:opacity-60"
-      style={withBorder ? { borderBottomWidth: 1, borderBottomColor: theme.colors.border } : undefined}
-    >
-      <View
-        className="items-center justify-center"
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: theme.radii.card,
-          backgroundColor: destructive ? theme.colors.dangerSoft : theme.colors.surfaceMuted,
-        }}
-      >
-        <Icon size={20} color={destructive ? theme.colors.danger : theme.colors.inkMuted} />
-      </View>
-      <AppText
-        className="flex-1 text-right text-[15px] font-cairo-bold"
-        style={{ color: destructive ? theme.colors.danger : theme.colors.ink }}
-      >
-        {label}
-      </AppText>
-    </Pressable>
   );
 }

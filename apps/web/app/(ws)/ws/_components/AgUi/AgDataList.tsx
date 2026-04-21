@@ -1,3 +1,4 @@
+import { memo } from "react"
 import { AgCardShell, agInnerPanelClassName } from "./AgCardShell";
 
 /**
@@ -5,7 +6,7 @@ import { AgCardShell, agInnerPanelClassName } from "./AgCardShell";
  * WHAT:  Renders a numbered list of real workspace records with optional subtitle and meta text.
  * HOW:   Uses simple stacked rows so clients, projects, and offers can share one honest presentation shape.
  */
-export default function AgDataList({
+const AgDataListComponent = function AgDataList({
   title,
   items,
   emptyLabel = "لا توجد نتائج.",
@@ -49,3 +50,5 @@ export default function AgDataList({
     </AgCardShell>
   );
 }
+
+export default memo(AgDataListComponent)

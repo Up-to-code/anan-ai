@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react"
 import { ArrowUpLeft } from "lucide-react";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { formatLocaleNumber } from "@/lib/locale";
@@ -55,7 +56,7 @@ function getMetaDetails(metadata: CollaborationMetadata, locale: ReturnType<type
   }
 }
 
-export default function InboxCollaborationCard({
+const InboxCollaborationCardComponent = function InboxCollaborationCard({
   isMe,
   metadata,
 }: {
@@ -111,3 +112,5 @@ export default function InboxCollaborationCard({
     </div>
   );
 }
+
+export default memo(InboxCollaborationCardComponent)

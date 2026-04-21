@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { internalMutation } from "../../../_generated/server";
 import { getClientOrThrow } from "./helpers";
-import { loadUserBundle } from "./subjects";
+import { loadOrganizationBundle } from "./subjects";
 import { revokeAuthorizationAccessTokens } from "./tokens/common";
 export {
   getAccessTokenContext,
@@ -14,6 +14,34 @@ function assertClientCredentials(client: any, clientSecretHash: string | undefin
   if (!client.clientSecretHash || client.clientSecretHash !== clientSecretHash) {
     throw new ConvexError({ code: "INVALID_CLIENT", message: "Invalid client credentials" });
   }
+}
+
+function requireOrganizationOwner(args: {
+  ownerType?: "broker" | "RED";
+  ownerBrokerId?: any;
+  ownerREDId?: any;
+  tenantOrgId?: string;
+}) {
+  if (!args.ownerType || !args.tenantOrgId) {
+    throw new ConvexError({ code: "INVALID_GRANT", message: "Legacy user authorization requires reconnect" });
+  }
+  if (args.ownerType === "broker" && args.ownerBrokerId) {
+    return {
+      ownerType: "broker" as const,
+      ownerBrokerId: args.ownerBrokerId,
+      authUserId: "",
+      tenantOrgId: args.tenantOrgId,
+    };
+  }
+  if (args.ownerType === "RED" && args.ownerREDId) {
+    return {
+      ownerType: "RED" as const,
+      ownerREDId: args.ownerREDId,
+      authUserId: "",
+      tenantOrgId: args.tenantOrgId,
+    };
+  }
+  throw new ConvexError({ code: "INVALID_GRANT", message: "Organization authorization is malformed" });
 }
 
 async function getAuthorizationCodeOrThrow(ctx: any, args: any) {
@@ -45,7 +73,11 @@ async function insertAccessToken(ctx: any, args: any, tokenArgs: any) {
   await ctx.db.insert("oauthAccessTokens", {
     jti: tokenArgs.jti,
     clientId: args.clientId,
-    userId: tokenArgs.userId,
+    tenantOrgId: tokenArgs.tenantOrgId,
+    ownerType: tokenArgs.ownerType,
+    ownerBrokerId: tokenArgs.ownerBrokerId,
+    ownerREDId: tokenArgs.ownerREDId,
+    approvedByUserId: tokenArgs.approvedByUserId,
     authorizationId: tokenArgs.authorizationId,
     sessionId: tokenArgs.sessionId,
     scopes: tokenArgs.scopes,
@@ -62,7 +94,11 @@ async function insertRefreshTokenFromCode(ctx: any, args: any, code: any) {
     tokenHash: args.refreshTokenHash,
     familyId: args.refreshFamilyId,
     clientId: args.clientId,
-    userId: code.userId,
+    tenantOrgId: code.tenantOrgId,
+    ownerType: code.ownerType,
+    ownerBrokerId: code.ownerBrokerId,
+    ownerREDId: code.ownerREDId,
+    approvedByUserId: code.approvedByUserId,
     authorizationId: code.authorizationId,
     scopes: code.scopes,
     expiresAt: args.refreshTokenExpiresAt,
@@ -73,8 +109,12 @@ async function insertRefreshTokenFromCode(ctx: any, args: any, code: any) {
 async function logCodeExchangeAudit(ctx: any, args: any, code: any) {
   await ctx.db.insert("oauthAuditLogs", {
     eventType: "token.code_exchanged",
+    tenantOrgId: code.tenantOrgId,
+    ownerType: code.ownerType,
+    ownerBrokerId: code.ownerBrokerId,
+    ownerREDId: code.ownerREDId,
     clientId: args.clientId,
-    userId: code.userId,
+    userId: code.approvedByUserId,
     authorizationId: code.authorizationId,
     accessTokenJti: args.accessTokenJti,
     refreshFamilyId: args.refreshFamilyId,
@@ -86,13 +126,16 @@ async function logCodeExchangeAudit(ctx: any, args: any, code: any) {
 function buildExchangeResponse(args: any, code: any, bundle: any) {
   return {
     clientId: args.clientId,
-    userId: code.userId,
+    tenantOrgId: code.tenantOrgId,
+    ownerType: code.ownerType,
+    ownerBrokerId: code.ownerBrokerId,
+    ownerREDId: code.ownerREDId,
+    approvedByUserId: code.approvedByUserId,
     authorizationId: code.authorizationId,
     scopes: code.scopes,
     nonce: code.nonce ?? null,
     pairwiseSubject: bundle.subjectMapping.pairwiseSubject,
-    user: bundle.user,
-    profile: bundle.profile,
+    organization: bundle.organization,
   };
 }
 
@@ -128,8 +171,12 @@ async function handleRefreshReplay(ctx: any, args: any, refresh: any) {
   });
   await ctx.db.insert("oauthAuditLogs", {
     eventType: "token.refresh_replay_detected",
+    tenantOrgId: refresh.tenantOrgId,
+    ownerType: refresh.ownerType,
+    ownerBrokerId: refresh.ownerBrokerId,
+    ownerREDId: refresh.ownerREDId,
     clientId: args.clientId,
-    userId: refresh.userId,
+    userId: refresh.approvedByUserId,
     authorizationId: refresh.authorizationId,
     refreshFamilyId: refresh.familyId,
     metadata: { revokedRefreshTokenCount: family.length, revokedAccessTokenCount },
@@ -142,7 +189,11 @@ async function rotateTokenRows(ctx: any, args: any, refresh: any, authorization:
   await ctx.db.patch(refresh._id, { usedAt: args.now });
   await insertAccessToken(ctx, args, {
     jti: args.accessTokenJti,
-    userId: refresh.userId,
+    tenantOrgId: refresh.tenantOrgId,
+    ownerType: refresh.ownerType,
+    ownerBrokerId: refresh.ownerBrokerId,
+    ownerREDId: refresh.ownerREDId,
+    approvedByUserId: refresh.approvedByUserId,
     authorizationId: refresh.authorizationId,
     scopes: refresh.scopes,
     expiresAt: args.accessTokenExpiresAt,
@@ -152,7 +203,11 @@ async function rotateTokenRows(ctx: any, args: any, refresh: any, authorization:
     familyId: refresh.familyId,
     parentTokenId: refresh._id,
     clientId: args.clientId,
-    userId: refresh.userId,
+    tenantOrgId: refresh.tenantOrgId,
+    ownerType: refresh.ownerType,
+    ownerBrokerId: refresh.ownerBrokerId,
+    ownerREDId: refresh.ownerREDId,
+    approvedByUserId: refresh.approvedByUserId,
     authorizationId: refresh.authorizationId,
     scopes: refresh.scopes,
     expiresAt: args.nextRefreshTokenExpiresAt,
@@ -164,8 +219,12 @@ async function rotateTokenRows(ctx: any, args: any, refresh: any, authorization:
 async function logRefreshRotationAudit(ctx: any, args: any, refresh: any) {
   await ctx.db.insert("oauthAuditLogs", {
     eventType: "token.refresh_rotated",
+    tenantOrgId: refresh.tenantOrgId,
+    ownerType: refresh.ownerType,
+    ownerBrokerId: refresh.ownerBrokerId,
+    ownerREDId: refresh.ownerREDId,
     clientId: args.clientId,
-    userId: refresh.userId,
+    userId: refresh.approvedByUserId,
     authorizationId: refresh.authorizationId,
     accessTokenJti: args.accessTokenJti,
     refreshFamilyId: refresh.familyId,
@@ -177,20 +236,23 @@ function buildRefreshRotationResponse(args: any, refresh: any, bundle: any) {
   return {
     replayDetected: false as const,
     clientId: args.clientId,
-    userId: refresh.userId,
+    tenantOrgId: refresh.tenantOrgId,
+    ownerType: refresh.ownerType,
+    ownerBrokerId: refresh.ownerBrokerId,
+    ownerREDId: refresh.ownerREDId,
+    approvedByUserId: refresh.approvedByUserId,
     authorizationId: refresh.authorizationId,
     scopes: refresh.scopes,
     pairwiseSubject: bundle.subjectMapping.pairwiseSubject,
-    user: bundle.user,
-    profile: bundle.profile,
+    organization: bundle.organization,
     refreshFamilyId: refresh.familyId,
   };
 }
 
 /**
- * WHY:   Token issuance must atomically consume auth codes and persist new token records.
+ * WHY:   Token issuance must atomically consume auth codes and persist new org-bound token records.
  * WHAT:  Validates a code exchange and stores the resulting access/refresh token rows.
- * HOW:   Checks client auth, PKCE, grant status, and one-time code usage before writing token state.
+ * HOW:   Checks client auth, PKCE, grant status, and one-time code usage before writing org-scoped token state.
  */
 export const exchangeAuthorizationCode = internalMutation({
   args: {
@@ -215,7 +277,11 @@ export const exchangeAuthorizationCode = internalMutation({
     await ctx.db.patch(code._id, { usedAt: args.now });
     await insertAccessToken(ctx, args, {
       jti: args.accessTokenJti,
-      userId: code.userId,
+      tenantOrgId: code.tenantOrgId,
+      ownerType: code.ownerType,
+      ownerBrokerId: code.ownerBrokerId,
+      ownerREDId: code.ownerREDId,
+      approvedByUserId: code.approvedByUserId,
       authorizationId: code.authorizationId,
       sessionId: args.sessionId,
       scopes: code.scopes,
@@ -224,14 +290,15 @@ export const exchangeAuthorizationCode = internalMutation({
     await insertRefreshTokenFromCode(ctx, args, code);
     await ctx.db.patch(authorization._id, { lastUsedAt: args.now, updatedAt: args.now });
     await logCodeExchangeAudit(ctx, args, code);
-    const bundle = await loadUserBundle(ctx, code.userId, args.clientId);
+    const owner = requireOrganizationOwner(code);
+    const bundle = await loadOrganizationBundle(ctx, owner, args.clientId);
     return buildExchangeResponse(args, code, bundle);
   },
 });
 
 /**
- * WHY:   Refresh-token replay must invalidate the whole token family instead of silently reissuing tokens.
- * WHAT:  Rotates a refresh token, detects replay, and writes replacement token rows.
+ * WHY:   Refresh-token replay must invalidate the whole token family instead of silently reissuing org tokens.
+ * WHAT:  Rotates a refresh token, detects replay, and writes replacement org-bound token rows.
  * HOW:   Marks the current token used, inserts successor records, and revokes the family on suspicious reuse.
  */
 export const rotateRefreshToken = internalMutation({
@@ -255,7 +322,8 @@ export const rotateRefreshToken = internalMutation({
     const authorization = await getActiveAuthorizationOrThrow(ctx, refresh.authorizationId);
     await rotateTokenRows(ctx, args, refresh, authorization);
     await logRefreshRotationAudit(ctx, args, refresh);
-    const bundle = await loadUserBundle(ctx, refresh.userId, args.clientId);
+    const owner = requireOrganizationOwner(refresh);
+    const bundle = await loadOrganizationBundle(ctx, owner, args.clientId);
     return buildRefreshRotationResponse(args, refresh, bundle);
   },
 });

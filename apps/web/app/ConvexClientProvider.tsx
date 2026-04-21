@@ -1,26 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { ConvexAuthNextjsProvider } from "@convex-dev/auth/nextjs";
+import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 import { ConvexReactClient } from "convex/react";
+import { authClient } from "@/lib/auth-client";
 
 /**
  * WHY:   Client workspace surfaces need authenticated Convex hooks for live queries and mutations.
- * WHAT:  Provides one browser-stable Convex React client under the existing Next.js auth provider.
- * HOW:   Lazily creates the client once per browser session and bridges auth through Convex Auth Next.js.
+ * WHAT:  Provides one browser-stable Convex React client bridged through Better Auth.
+ * HOW:   Lazily creates the client once per browser session and passes the SSR token into the Better Auth provider.
  */
 export default function ConvexClientProvider({
   children,
+  initialToken,
 }: {
   children: React.ReactNode;
+  initialToken?: string | null;
 }) {
-  type ProviderClient = React.ComponentProps<typeof ConvexAuthNextjsProvider>["client"];
-  const [client] = useState<ProviderClient>(
+  const [client] = useState(
     () =>
       new ConvexReactClient(
         process.env.NEXT_PUBLIC_CONVEX_URL as string,
-      ) as unknown as ProviderClient,
+      ),
   );
 
-  return <ConvexAuthNextjsProvider client={client}>{children}</ConvexAuthNextjsProvider>;
+  return (
+    <ConvexBetterAuthProvider client={client} authClient={authClient} initialToken={initialToken}>
+      {children}
+    </ConvexBetterAuthProvider>
+  );
 }

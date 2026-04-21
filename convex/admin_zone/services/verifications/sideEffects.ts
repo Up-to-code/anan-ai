@@ -3,6 +3,8 @@ import type {
   ReviewStatus,
   VerificationRequestRecord,
 } from "../../../shared_logic/verifications/types";
+import { normalizeUserProfileRoleState } from "../../../_core/security/profileRoles";
+import { getProjectDossierByPropertyId, recomputeProjectReadinessForProperty } from "../../../shared_logic/projects/readiness";
 
 async function syncUserVerification(
   ctx: MutationCtx,
@@ -14,14 +16,28 @@ async function syncUserVerification(
   const profile = await ctx.db.get(request.subjectProfileId);
   if (!profile) return;
 
-  const patch: Record<string, unknown> = {
-    roleStatus:
-      status === "approved" ? "approved" : status === "rejected" ? "rejected" : "pending",
-    updatedAt: now,
-  };
+  const normalized = normalizeUserProfileRoleState(profile);
+  const patch: Record<string, unknown> = { updatedAt: now };
 
-  if (status === "approved" && profile.requestedRole) {
-    patch.role = profile.requestedRole;
+  if (status === "approved") {
+    const approvedRole = normalized.requestedRole ?? normalized.role;
+    const approvedState = normalizeUserProfileRoleState({
+      ...profile,
+      role: approvedRole,
+      requestedRole: undefined,
+      roleApprovalStatus: "approved",
+    });
+    patch.role = approvedState.role;
+    patch.requestedRole = approvedState.requestedRole;
+    patch.roleApprovalStatus = approvedState.roleApprovalStatus;
+    patch.brokerId = approvedState.brokerId;
+    patch.developerId = approvedState.developerId;
+  } else {
+    patch.role = normalized.role;
+    patch.requestedRole = normalized.requestedRole;
+    patch.roleApprovalStatus = status === "rejected" ? "rejected" : "pending";
+    patch.brokerId = normalized.brokerId;
+    patch.developerId = normalized.developerId;
   }
 
   await ctx.db.patch(profile._id, patch);
@@ -76,6 +92,39 @@ async function syncPropertyVerification(
     adLicenseNumber: submittedLicense ?? property.adLicenseNumber,
     adLicenseVerificationRequestId: request._id,
   });
+
+  const dossier = await getProjectDossierByPropertyId(ctx, property._id);
+  if (dossier && submittedLicense) {
+    const existingLicense = await ctx.db
+      .query("projectAdLicenses")
+      .withIndex("verificationRequestId", (q: any) => q.eq("verificationRequestId", request._id))
+      .first();
+    const now = Date.now();
+    if (existingLicense) {
+      await ctx.db.patch(existingLicense._id, {
+        status: nextStatus === "approved" ? "approved" : nextStatus,
+        licenseNumber: submittedLicense,
+        updatedAt: now,
+        lastCheckedAt: now,
+      });
+    } else {
+      await ctx.db.insert("projectAdLicenses", {
+        dossierId: dossier._id,
+        propertyId: property._id,
+        licenseNumber: submittedLicense,
+        status: nextStatus === "approved" ? "approved" : nextStatus,
+        channels: [],
+        verificationRequestId: request._id,
+        lastCheckedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      } as any);
+    }
+  }
+
+  if (dossier) {
+    await recomputeProjectReadinessForProperty(ctx, property._id);
+  }
 }
 
 /**

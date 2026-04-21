@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { memo } from "react";
 import { cn } from "@/lib/utils";
 
 type PropertyCardSpec = {
@@ -11,7 +12,7 @@ type PropertyCardSpec = {
  * WHAT:  Renders a clean, minimal property card with image, key info, specs, and optional footer.
  * HOW:   Uses a simple photo hero with a tighter layout that keeps attention on the item itself.
  */
-export default function PropertyCard({
+const PropertyCardComponent = function PropertyCard({
   href,
   image,
   title,
@@ -78,3 +79,5 @@ export default function PropertyCard({
   if (!href) return content;
   return <Link href={href} className="block">{content}</Link>;
 }
+
+export default memo(PropertyCardComponent);

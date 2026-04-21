@@ -92,6 +92,41 @@ export function TextArea({
   );
 }
 
+export function SelectInput<TValue extends string>({
+  value,
+  onChange,
+  options,
+  disabled = false,
+  error,
+}: {
+  value: TValue;
+  onChange: (value: TValue) => void;
+  options: ReadonlyArray<{ value: TValue; label: string }>;
+  disabled?: boolean;
+  error?: string;
+}) {
+  return (
+    <div className="grid gap-2">
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value as TValue)}
+        disabled={disabled}
+        aria-invalid={Boolean(error)}
+        className={`h-14 w-full rounded-[18px] border bg-[var(--workspace-panel)] px-5 text-[15px] font-bold text-foreground outline-none transition-all focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,var(--workspace-border))] focus:bg-[var(--workspace-elevated)] disabled:cursor-not-allowed disabled:opacity-50 ${
+          error ? "border-rose-300 focus:border-rose-400" : "border-[color:var(--workspace-border)]"
+        }`}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      {error ? <p className="text-sm font-semibold text-rose-700">{error}</p> : null}
+    </div>
+  );
+}
+
 export function UploadTile({
   title,
   subtitle,

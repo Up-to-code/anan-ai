@@ -23,7 +23,7 @@ export function resolveOwnerKeyFromInvite(invite: Doc<"teamInvites">): OwnerKey 
 
 export function resolveOwnerKeyFromProfile(profile: Doc<"userProfiles">): OwnerKey | null {
   if (profile.brokerId) return buildOwnerKey("broker", String(profile.brokerId));
-  if (profile.REDId) return buildOwnerKey("red", String(profile.REDId));
+  if ((profile as any).developerId) return buildOwnerKey("red", String((profile as any).developerId));
   return null;
 }
 

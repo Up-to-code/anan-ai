@@ -9,7 +9,7 @@ const { mockAuditLog } = vi.hoisted(() => ({
     logChange: vi.fn(async () => undefined),
   },
 }));
-vi.mock("@convex-dev/auth/server", () => ({
+vi.mock("../../_core/security/authIdentity", () => ({
   getAuthUserId: vi.fn(async () => null),
   getAuthSessionId: vi.fn(async () => null),
 }));

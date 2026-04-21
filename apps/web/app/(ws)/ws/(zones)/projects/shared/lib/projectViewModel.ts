@@ -1,6 +1,16 @@
 import type { UploadedFileReference } from "@/server/contracts/files";
 import { parsePropertyBody, type PropertyDetail } from "@/server/contracts/properties";
-import type { WorkspaceProject } from "../../types/projectTypes";
+import type {
+  ProjectAdLicenseInput,
+  ProjectBrokerAuthorizationInput,
+  ProjectComplianceDocumentInput,
+  ProjectDossierDetail,
+  ProjectDossierInput,
+  ProjectPaymentPlanInput,
+  ProjectUnitInput,
+} from "@/server/contracts/projects";
+import type { UnitReference } from "../../../../_lib/entities";
+import type { WorkspaceProject, WorkspaceProjectUnitDetail } from "../../types/projectTypes";
 import type { WorkspaceProjectDetailAccessMode } from "@/server/domains/workspace/properties/detail";
 
 function formatCurrency(value: number) {
@@ -23,6 +33,15 @@ function resolvePermitStatusLabel(status: PropertyDetail["adLicenseStatus"]) {
   if (status === "approved") return "موثق";
   if (status === "rejected") return "مرفوض";
   if (status === "pending") return "قيد المراجعة";
+  return "غير مكتمل";
+}
+
+function resolveReadinessLabel(status: PropertyDetail["projectReadinessStatus"]) {
+  if (status === "published_ready") return "جاهز للنشر";
+  if (status === "approved") return "معتمد داخلياً";
+  if (status === "compliance_pending") return "قيد المراجعة";
+  if (status === "blocked") return "محظور للنشر";
+  if (status === "data_complete") return "البيانات مكتملة";
   return "غير مكتمل";
 }
 
@@ -66,6 +85,7 @@ function resolveGalleryImages(property: PropertyDetail) {
  */
 export function mapPropertyToWorkspaceProject(property: PropertyDetail): WorkspaceProject {
   const presentation = parsePropertyBody(property.body)?.presentation;
+  const expertMetadata = presentation?.expertMetadata;
   const galleryImages = resolveGalleryImages(property);
   const parkingSpaces = presentation?.parkingSpaces ?? null;
   const hasParking = presentation?.hasParking ?? Boolean(parkingSpaces && parkingSpaces > 0);
@@ -90,6 +110,18 @@ export function mapPropertyToWorkspaceProject(property: PropertyDetail): Workspa
       spaces: parkingSpaces,
       label: hasParking ? (parkingSpaces ? `${parkingSpaces} مواقف` : "متوفر") : "غير متوفر",
     },
+    expert: {
+      assetType: expertMetadata?.assetType ?? null,
+      listingType: expertMetadata?.listingType ?? null,
+      projectScale: expertMetadata?.projectScale ?? null,
+      productMix: expertMetadata?.productMix ?? null,
+      primaryUnitType: expertMetadata?.primaryUnitType ?? null,
+      sizeRange: expertMetadata?.sizeRange ?? null,
+      priceComparison: expertMetadata?.priceComparison ?? null,
+      comparisonNotes: expertMetadata?.comparisonNotes ?? null,
+      expertNotes: expertMetadata?.expertNotes ?? null,
+      services: expertMetadata?.services ?? [],
+    },
     permit: {
       statusLabel: resolvePermitStatusLabel(property.adLicenseStatus),
       privateSummary: presentation?.privatePermitSummary ?? null,
@@ -104,6 +136,11 @@ export function mapPropertyToWorkspaceProject(property: PropertyDetail): Workspa
       status: property.status ?? "available",
     },
     publicationState: formatPublicationState(property.publicationState),
+    readiness: {
+      status: property.projectReadinessStatus ?? "incomplete",
+      label: resolveReadinessLabel(property.projectReadinessStatus),
+      canPublish: property.projectReadinessStatus === "published_ready",
+    },
     accessMode: "owner",
     canEdit: true,
     visibility: {
@@ -112,6 +149,7 @@ export function mapPropertyToWorkspaceProject(property: PropertyDetail): Workspa
     },
     assets: [],
     units: [],
+    dossier: null,
     brokers: [],
   };
 }
@@ -127,9 +165,11 @@ export function mapPropertyToWorkspaceProjectDetail(
   options?: {
     viewers?: WorkspaceProject["visibility"]["viewers"];
     assets?: WorkspaceProject["assets"];
+    dossier?: ProjectDossierDetail | null;
   },
 ): WorkspaceProject {
   const project = mapPropertyToWorkspaceProject(property);
+  const dossier = options?.dossier ?? null;
   return {
     ...project,
     accessMode,
@@ -139,6 +179,8 @@ export function mapPropertyToWorkspaceProjectDetail(
       viewers: options?.viewers ?? [],
     },
     assets: options?.assets ?? [],
+    units: mapProjectDossierUnitsToUnitReferences(dossier),
+    dossier,
     permit: {
       ...project.permit,
       canShowPrivatePanel:
@@ -146,6 +188,59 @@ export function mapPropertyToWorkspaceProjectDetail(
         project.permit.visibility === "conversation_only" &&
         (Boolean(project.permit.privateSummary) || project.permit.privateFiles.length > 0),
     },
+  };
+}
+
+/**
+ * WHY:   Project detail needs dossier-backed inventory cards without exposing raw project unit records.
+ * WHAT:  Converts saved project dossier units into the shared `UnitReference` UI model.
+ * HOW:   Keeps canonical numeric fields while adding display labels for area and price.
+ */
+export function mapProjectDossierUnitsToUnitReferences(
+  dossier: ProjectDossierDetail | null | undefined,
+): UnitReference[] {
+  return (dossier?.units ?? []).map((unit) => ({
+    id: unit._id,
+    label: unit.label,
+    unitKind: unit.unitKind,
+    status: unit.status,
+    bedrooms: unit.bedrooms,
+    bathrooms: unit.bathrooms,
+    area: formatUnitArea(unit.sizeSqm),
+    sizeSqm: unit.sizeSqm,
+    floor: unit.floor,
+    view: unit.view,
+    price: unit.price,
+    priceLabel: formatUnitPrice(unit.price),
+    handoverAt: unit.handoverAt,
+    floorPlanMedia: unit.floorPlanMedia,
+  }));
+}
+
+/**
+ * WHY:   Unit detail routes need one focused, serializable view model without leaking dossier records into the component.
+ * WHAT:  Finds a unit in a mapped workspace project and enriches it with parent project, media, payment, and compliance context.
+ * HOW:   Prefers unit floor-plan media, then falls back to the parent project gallery so the detail page always has a visual anchor.
+ */
+export function mapWorkspaceProjectUnitDetail(
+  project: WorkspaceProject,
+  unitId: string,
+): WorkspaceProjectUnitDetail | null {
+  const unit = project.units.find((candidate) => candidate.id === unitId);
+  if (!unit) return null;
+
+  return {
+    ...unit,
+    projectId: project.id,
+    projectTitle: project.title,
+    projectLocation: project.location,
+    projectImage: project.image,
+    summary: project.shortDescription || project.summary,
+    paymentPlanLabel: formatPaymentPlanLabel(project.dossier),
+    complianceLabel: formatComplianceLabel(project.dossier),
+    adLicenseLabel: formatAdLicenseLabel(project.dossier),
+    readinessLabel: project.readiness.label,
+    galleryImages: unit.floorPlanMedia?.length ? unit.floorPlanMedia : project.galleryImages,
   };
 }
 
@@ -165,6 +260,15 @@ export function mapWorkspaceProjectToPropertyInput(project: {
   parkingSpaces?: string;
   privatePermitSummary?: string;
   privatePermitFiles?: UploadedFileReference[];
+  expertProjectType?: import("@/app/(ws)/ws/public").ProjectFormData["expertProjectType"];
+  projectScale?: string;
+  productMix?: string;
+  primaryUnitType?: string;
+  sizeRange?: string;
+  priceComparison?: import("@/app/(ws)/ws/public").ProjectFormData["priceComparison"];
+  comparisonNotes?: string;
+  expertNotes?: string;
+  services?: string[];
   coverImageKey?: string | null;
   galleryDisplayMode?: "cover" | "fit";
   galleryAspectRatio?: "auto" | "landscape" | "square" | "portrait";
@@ -175,6 +279,11 @@ export function mapWorkspaceProjectToPropertyInput(project: {
   clientVisibility: "private" | "public";
   images: PropertyDetail["media"];
   adLicenseNumber?: string;
+  dossier?: import("@/app/(ws)/ws/public").ProjectFormData["dossier"];
+  units?: import("@/app/(ws)/ws/public").ProjectFormData["units"];
+  paymentPlans?: import("@/app/(ws)/ws/public").ProjectFormData["paymentPlans"];
+  complianceDocuments?: import("@/app/(ws)/ws/public").ProjectFormData["complianceDocuments"];
+  brokerAuthorization?: import("@/app/(ws)/ws/public").ProjectFormData["brokerAuthorization"];
 }) {
   const numericPrice = Number(project.price.replace(/[^\d.]/g, "")) || 0;
   const numericArea = Number(project.area.replace(/[^\d.]/g, "")) || undefined;
@@ -185,6 +294,20 @@ export function mapWorkspaceProjectToPropertyInput(project: {
     .filter(Boolean);
   const hasPrivatePermitMaterial = Boolean(project.privatePermitSummary?.trim()) || Boolean(project.privatePermitFiles?.length);
   const orderedImages = orderGalleryImages(project.images ?? [], project.coverImageKey);
+  const expertMetadata = {
+    assetType: project.expertProjectType || project.dossier?.projectType,
+    projectScale: project.projectScale?.trim() || undefined,
+    productMix: project.productMix?.trim() || undefined,
+    primaryUnitType: project.primaryUnitType?.trim() || undefined,
+    sizeRange: project.sizeRange?.trim() || undefined,
+    priceComparison: project.priceComparison,
+    comparisonNotes: project.comparisonNotes?.trim() || undefined,
+    expertNotes: project.expertNotes?.trim() || undefined,
+    services: project.services?.length ? project.services : undefined,
+  };
+  const hasExpertMetadata = Object.values(expertMetadata).some((value) =>
+    Array.isArray(value) ? value.length > 0 : Boolean(value),
+  );
 
   return {
     title: project.name.trim(),
@@ -213,11 +336,212 @@ export function mapWorkspaceProjectToPropertyInput(project: {
         coverImageKey: project.coverImageKey ?? orderedImages[0]?.key ?? undefined,
         galleryDisplayMode: project.galleryDisplayMode ?? ("cover" as const),
         galleryAspectRatio: project.galleryAspectRatio ?? ("landscape" as const),
+        expertMetadata: hasExpertMetadata ? expertMetadata : undefined,
         privatePermitSummary: project.privatePermitSummary?.trim() || undefined,
         privatePermitFiles: project.privatePermitFiles?.length ? project.privatePermitFiles : undefined,
         privatePermitVisibility: hasPrivatePermitMaterial ? ("conversation_only" as const) : undefined,
       },
     },
     adLicenseNumber: project.adLicenseNumber?.trim() || undefined,
+  };
+}
+
+type WorkspaceProjectFormPayload = Parameters<typeof mapWorkspaceProjectToPropertyInput>[0];
+
+function parseProjectNumber(value?: string) {
+  return Number((value ?? "").replace(/[^\d.]/g, "")) || undefined;
+}
+
+function parseOptionalDate(value?: string) {
+  if (!value?.trim()) return undefined;
+  const time = Date.parse(value);
+  return Number.isFinite(time) ? time : undefined;
+}
+
+function splitSaudiLocation(value: string) {
+  const [city, district] = value
+    .split(/[,،]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return {
+    city: city || value.trim() || undefined,
+    district: district || city || value.trim() || undefined,
+  };
+}
+
+function formatUnitArea(value?: number) {
+  return typeof value === "number" && Number.isFinite(value) ? `${formatCurrency(value)} م²` : undefined;
+}
+
+function formatUnitPrice(value?: number) {
+  return typeof value === "number" && Number.isFinite(value) ? `${formatCurrency(value)} ر.س` : undefined;
+}
+
+function formatPaymentPlanLabel(dossier: ProjectDossierDetail | null) {
+  const plan = dossier?.paymentPlans?.[0];
+  if (!plan) return null;
+  if (typeof plan.downPayment === "number") return `${plan.title} · دفعة أولى ${formatCurrency(plan.downPayment)} ر.س`;
+  if (typeof plan.startingPrice === "number") return `${plan.title} · يبدأ من ${formatCurrency(plan.startingPrice)} ر.س`;
+  return plan.title;
+}
+
+function formatComplianceLabel(dossier: ProjectDossierDetail | null) {
+  const documents = dossier?.documents ?? [];
+  if (!documents.length) return null;
+  const approvedCount = documents.filter((document) => document.status === "approved").length;
+  return approvedCount > 0 ? `${approvedCount} ملفات معتمدة من ${documents.length}` : `${documents.length} ملفات قيد التجهيز`;
+}
+
+function formatAdLicenseLabel(dossier: ProjectDossierDetail | null) {
+  const license = dossier?.adLicenses?.[0];
+  if (!license) return null;
+  if (license.status === "approved") return "رخصة الإعلان معتمدة";
+  if (license.status === "rejected") return "رخصة الإعلان مرفوضة";
+  if (license.status === "expired") return "رخصة الإعلان منتهية";
+  return "رخصة الإعلان قيد المراجعة";
+}
+
+/**
+ * WHY:   Workspace project saves now need a Saudi dossier write beside the legacy property projection.
+ * WHAT:  Converts form identity fields into the project dossier draft contract.
+ * HOW:   Preserves public visibility as a request and derives city/district from the current location string.
+ */
+export function mapWorkspaceProjectToDossierInput(
+  propertyId: string,
+  project: WorkspaceProjectFormPayload,
+): ProjectDossierInput {
+  return {
+    propertyId,
+    projectType: project.dossier?.projectType ?? "ready_property",
+    salesMode: project.dossier?.salesMode ?? "developer_direct",
+    requestedVisibility: project.clientVisibility,
+    title: project.name.trim(),
+    summary: project.description.trim(),
+    location: {
+      countryCode: "SA",
+      ...splitSaudiLocation(project.location),
+      city: project.dossier?.city || splitSaudiLocation(project.location).city,
+      district: project.dossier?.district || splitSaudiLocation(project.location).district,
+      neighborhood: project.dossier?.neighborhood || undefined,
+      street: project.dossier?.street || undefined,
+      nationalAddress: project.dossier?.nationalAddress || undefined,
+      latitude: parseProjectNumber(project.dossier?.latitude),
+      longitude: parseProjectNumber(project.dossier?.longitude),
+    },
+  };
+}
+
+export function mapWorkspaceProjectToUnitInputs(project: WorkspaceProjectFormPayload): ProjectUnitInput[] {
+  const units = project.units?.length ? project.units : [{
+    label: "Primary unit type",
+    unitKind: "unit_type" as const,
+    status: "available" as const,
+    bedrooms: project.rooms,
+    bathrooms: project.baths,
+    sizeSqm: project.area,
+    floor: "",
+    view: "",
+    price: project.price,
+    handoverAt: "",
+    floorPlanMedia: [],
+  }];
+  return units.map((unit) => ({
+    dossierId: "server-owned",
+    label: unit.label || "Primary unit type",
+    unitKind: unit.unitKind,
+    status: unit.status,
+    bedrooms: parseProjectNumber(unit.bedrooms) ?? parseProjectNumber(project.rooms) ?? 0,
+    bathrooms: parseProjectNumber(unit.bathrooms) ?? parseProjectNumber(project.baths) ?? 0,
+    sizeSqm: parseProjectNumber(unit.sizeSqm) ?? parseProjectNumber(project.area),
+    floor: unit.floor || undefined,
+    view: unit.view || undefined,
+    price: parseProjectNumber(unit.price) ?? parseProjectNumber(project.price),
+    handoverAt: parseOptionalDate(unit.handoverAt),
+    floorPlanMedia: unit.floorPlanMedia?.length ? unit.floorPlanMedia : undefined,
+  }));
+}
+
+export function mapWorkspaceProjectToPaymentPlanInputs(project: WorkspaceProjectFormPayload): ProjectPaymentPlanInput[] {
+  const price = parseProjectNumber(project.price);
+  const plans = project.paymentPlans?.length ? project.paymentPlans : [{
+    title: "Primary payment plan",
+    cashPrice: project.price,
+    startingPrice: project.price,
+    downPayment: "",
+    escrowReference: "",
+    feesAndTaxNotes: "",
+    bankAndSubsidyNotes: "",
+    milestones: [],
+  }];
+  return plans.map((plan) => ({
+    dossierId: "server-owned",
+    title: plan.title || "Primary payment plan",
+    cashPrice: parseProjectNumber(plan.cashPrice) ?? price,
+    startingPrice: parseProjectNumber(plan.startingPrice) ?? price,
+    downPayment: parseProjectNumber(plan.downPayment),
+    escrowReference: plan.escrowReference || undefined,
+    feesAndTaxNotes: plan.feesAndTaxNotes || undefined,
+    bankAndSubsidyNotes: plan.bankAndSubsidyNotes || undefined,
+    milestones: plan.milestones?.map((milestone) => ({
+      label: milestone.label,
+      amount: parseProjectNumber(milestone.amount),
+      percentage: parseProjectNumber(milestone.percentage),
+      dueType: ["booking", "contract", "construction", "handover", "custom"].includes(milestone.dueType)
+        ? milestone.dueType as "booking" | "contract" | "construction" | "handover" | "custom"
+        : undefined,
+      dueDate: parseOptionalDate(milestone.dueDate),
+    })) ?? [],
+    status: "active",
+  }));
+}
+
+export function mapWorkspaceProjectToComplianceDocumentInputs(project: WorkspaceProjectFormPayload): ProjectComplianceDocumentInput[] {
+  const documents: ProjectComplianceDocumentInput[] = project.complianceDocuments?.map((document) => ({
+    dossierId: "server-owned",
+    documentType: document.documentType,
+    title: document.title || "Compliance evidence",
+    licenseOrReferenceNumber: document.licenseOrReferenceNumber || undefined,
+    files: document.files ?? [],
+    notes: document.notes || undefined,
+  })) ?? [];
+  if ((project.adLicenseNumber?.trim() || project.privatePermitFiles?.length) && !documents.some((document) => document.documentType === "ad_license")) {
+    documents.push({
+      dossierId: "server-owned",
+      documentType: "ad_license",
+      title: "Advertisement license evidence",
+      licenseOrReferenceNumber: project.adLicenseNumber?.trim() || undefined,
+      files: project.privatePermitFiles ?? [],
+      notes: project.privatePermitSummary?.trim() || undefined,
+    });
+  }
+  return documents;
+}
+
+export function mapWorkspaceProjectToAdLicenseInput(project: WorkspaceProjectFormPayload): ProjectAdLicenseInput | undefined {
+  const licenseNumber = project.adLicenseNumber?.trim();
+  if (!licenseNumber) return undefined;
+  return {
+    dossierId: "server-owned",
+    licenseNumber,
+    channels: ["anan_workspace", "ai_distribution"],
+    evidenceFiles: project.privatePermitFiles,
+  };
+}
+
+export function mapWorkspaceProjectToBrokerAuthorizationInput(
+  project: WorkspaceProjectFormPayload,
+): ProjectBrokerAuthorizationInput | undefined {
+  if (project.clientVisibility !== "public") return undefined;
+  return {
+    dossierId: "server-owned",
+    contractNumber: project.brokerAuthorization?.contractNumber || undefined,
+    marketingScope: project.brokerAuthorization?.marketingScope || "Public Anan distribution requested from workspace.",
+    channels: project.brokerAuthorization?.channelsText
+      ? project.brokerAuthorization.channelsText.split(/[\n,،]/).map((item) => item.trim()).filter(Boolean)
+      : ["anan_workspace", "broker_marketplace", "ai_distribution"],
+    commissionTerms: project.brokerAuthorization?.commissionTerms || undefined,
+    validFrom: parseOptionalDate(project.brokerAuthorization?.validFrom),
+    validUntil: parseOptionalDate(project.brokerAuthorization?.validUntil),
+    evidenceFiles: project.brokerAuthorization?.evidenceFiles,
   };
 }

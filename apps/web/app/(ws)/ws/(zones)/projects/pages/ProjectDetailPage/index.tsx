@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
   Building2,
@@ -16,6 +17,7 @@ import {
   PlusCircle,
   Ruler,
   ShieldCheck,
+  Tag,
   Trash2,
   UploadCloud,
   Users,
@@ -33,10 +35,33 @@ const publicationLabels: Record<WorkspaceProject["publicationState"], string> = 
 };
 
 const publicationTone: Record<WorkspaceProject["publicationState"], string> = {
-  draft: "border-amber-200 bg-amber-50 text-amber-800",
-  published: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  archived: "border-border bg-muted/60 text-muted-foreground",
+  draft: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  published: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  archived: "border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] text-[var(--workspace-muted)]",
 };
+
+const priceComparisonLabels: Record<string, string> = {
+  below_market: "أقل من السوق",
+  fair_market: "سعر عادل",
+  above_market: "أعلى من السوق",
+  unknown: "غير محدد",
+};
+
+const unitStatusLabels: Record<string, string> = {
+  available: "متاحة",
+  reserved: "محجوزة",
+  sold: "مباعة",
+  draft: "مسودة",
+};
+
+const unitStatusTone: Record<string, string> = {
+  available: "border-emerald-500/30 bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
+  reserved: "border-amber-500/30 bg-amber-500/12 text-amber-700 dark:text-amber-300",
+  sold: "border-rose-500/30 bg-rose-500/12 text-rose-700 dark:text-rose-300",
+  draft: "border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] text-[var(--workspace-muted)]",
+};
+
+type ProjectDetailMode = "project" | "units";
 
 function buildHeroFacts(project: WorkspaceProject) {
   return [
@@ -66,10 +91,10 @@ function DetailBadge({
 }) {
   const className =
     tone === "emphasis"
-      ? "border-sky-200 bg-sky-50 text-sky-800"
+      ? "border-[color:color-mix(in_srgb,var(--workspace-highlight)_26%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,var(--workspace-panel))] text-foreground"
       : tone === "warning"
-        ? "border-amber-200 bg-amber-50 text-amber-800"
-        : "border-border bg-background text-foreground";
+        ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+        : "border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-foreground";
 
   return (
     <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold ${className}`}>
@@ -88,7 +113,7 @@ function SurfaceCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[24px] border border-border/60 bg-card p-5 shadow-sm lg:p-6">
+    <section className="rounded-[24px] border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-5 shadow-sm lg:p-6">
       <div className="text-right">
         <h2 className="text-lg font-black text-foreground">{title}</h2>
         {description ? <p className="mt-2 text-[13px] leading-6 text-muted-foreground">{description}</p> : null}
@@ -108,7 +133,7 @@ function HeroFact({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-background/70 p-4 text-right">
+    <div className="rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-4 text-right">
       <div className="inline-flex items-center gap-2 text-[11px] font-bold text-muted-foreground">
         <Icon className="h-4 w-4" />
         {label}
@@ -128,12 +153,12 @@ function FactRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl border border-border bg-background/70 px-4 py-3">
+    <div className="flex items-center justify-between rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-4 py-3">
       <div className="text-right">
         <div className="text-[11px] font-bold text-muted-foreground">{label}</div>
         <div className="mt-1 text-[14px] font-black text-foreground">{value}</div>
       </div>
-      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted/40 text-muted-foreground">
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--workspace-elevated)] text-[var(--workspace-muted)]">
         <Icon className="h-4 w-4" />
       </div>
     </div>
@@ -159,8 +184,8 @@ function ActionButton({
     variant === "primary"
       ? "inline-flex items-center justify-center gap-2 rounded-2xl bg-foreground px-4 py-3 text-[13px] font-bold text-background transition hover:bg-foreground/90 disabled:opacity-60"
       : variant === "danger"
-        ? "inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60"
-        : "inline-flex items-center justify-center gap-2 rounded-2xl border border-border bg-background px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-muted disabled:opacity-60";
+        ? "inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-[13px] font-bold text-rose-700 transition hover:bg-rose-500/15 disabled:opacity-60"
+        : "inline-flex items-center justify-center gap-2 rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-4 py-3 text-[13px] font-bold text-foreground transition hover:bg-[var(--workspace-accent-soft)] disabled:opacity-60";
 
   if (href) {
     return (
@@ -202,9 +227,9 @@ function ProjectSpecCard({
   helper?: string;
 }) {
   return (
-    <div className="rounded-[22px] border border-border/60 bg-card p-4 text-right shadow-sm">
+    <div className="rounded-[22px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-4 text-right shadow-sm">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted/30 text-muted-foreground">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--workspace-elevated)] text-[var(--workspace-muted)]">
           <Icon className="h-4 w-4" />
         </div>
         <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
@@ -216,44 +241,101 @@ function ProjectSpecCard({
 }
 
 function ProjectUnitCard({
+  projectId,
+  id,
   label,
+  status,
+  unitKind,
   bedrooms,
   bathrooms,
   area,
+  floor,
+  view,
   priceLabel,
 }: {
+  projectId: string;
+  id: string;
   label: string;
+  status?: string;
+  unitKind?: string;
   bedrooms?: number;
   bathrooms?: number;
   area?: string;
+  floor?: string;
+  view?: string;
   priceLabel?: string;
 }) {
+  const statusLabel = status ? unitStatusLabels[status] ?? status : "غير مصنفة";
+  const tone = unitStatusTone[status ?? "draft"] ?? unitStatusTone.draft;
+  const metaChips = [
+    typeof bedrooms === "number" ? `${bedrooms} غرف` : null,
+    typeof bathrooms === "number" ? `${bathrooms} حمامات` : null,
+    area ?? null,
+  ].filter(Boolean) as string[];
+
   return (
-    <div className="rounded-[22px] border border-border/60 bg-background/60 p-4 text-right">
-      <div className="text-[15px] font-black text-foreground">{label}</div>
-      <div className="mt-3 flex flex-wrap justify-end gap-2">
-        {typeof bedrooms === "number" ? (
-          <span className="rounded-full border border-border bg-background px-3 py-1.5 text-[12px] font-bold text-foreground">
-            {bedrooms} غرف
+    <Link
+      href={`/ws/projects/${projectId}/units/${id}`}
+      className="group block overflow-hidden rounded-[24px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-right transition hover:-translate-y-0.5 hover:border-foreground/30 hover:shadow-lg"
+    >
+      <div className="border-b border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-[var(--workspace-muted)] transition group-hover:text-foreground">
+            <Building2 className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-[15px] font-black text-foreground">{label}</div>
+            <div className="mt-1 text-[11px] font-bold text-[var(--workspace-muted)]">
+              {unitKind === "unit_type" ? "نموذج وحدة" : "وحدة مستقلة"}
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-black ${tone}`}>
+            {statusLabel}
           </span>
-        ) : null}
-        {typeof bathrooms === "number" ? (
-          <span className="rounded-full border border-border bg-background px-3 py-1.5 text-[12px] font-bold text-foreground">
-            {bathrooms} حمامات
-          </span>
-        ) : null}
-        {area ? (
-          <span className="rounded-full border border-border bg-background px-3 py-1.5 text-[12px] font-bold text-foreground">
-            {area}
-          </span>
-        ) : null}
-        {priceLabel ? (
-          <span className="rounded-full border border-border bg-background px-3 py-1.5 text-[12px] font-bold text-foreground">
-            {priceLabel}
-          </span>
-        ) : null}
+          <div className="text-[18px] font-black text-foreground">{priceLabel ?? "السعر غير مضاف"}</div>
+        </div>
       </div>
-    </div>
+
+      <div className="space-y-4 p-4">
+        {metaChips.length > 0 ? (
+          <div className="flex flex-wrap justify-end gap-2">
+            {metaChips.map((chip) => (
+              <span
+                key={chip}
+                className="rounded-full border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-3 py-1.5 text-[12px] font-bold text-foreground"
+              >
+                {chip}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-[18px] border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-3">
+            <div className="text-[11px] font-bold text-[var(--workspace-muted)]">الدور</div>
+            <div className="mt-1 text-[13px] font-black text-foreground">{floor ? `الدور ${floor}` : "غير محدد"}</div>
+          </div>
+          <div className="rounded-[18px] border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-3">
+            <div className="text-[11px] font-bold text-[var(--workspace-muted)]">الإطلالة</div>
+            <div className="mt-1 inline-flex items-center gap-1 text-[13px] font-black text-foreground">
+              <Tag className="h-3.5 w-3.5 text-[var(--workspace-muted)]" />
+              {view ?? "غير محددة"}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 border-t border-[color:var(--workspace-border)] pt-3">
+          <span className="text-[11px] font-bold text-[var(--workspace-muted)]">
+            افتح البطاقة لمراجعة الملفات والتسليم والتفاصيل الفنية
+          </span>
+          <span className="inline-flex items-center rounded-full border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-3 py-1 text-[11px] font-black text-foreground">
+            فتح الوحدة
+          </span>
+        </div>
+      </div>
+    </Link>
   );
 }
 
@@ -275,6 +357,81 @@ function ProjectBrokerCard({
       {clientName ? <div className="mt-3 text-[13px] font-bold text-foreground">العميل المرتبط: {clientName}</div> : null}
       {summary ? <div className="mt-2 text-[13px] leading-6 text-muted-foreground">{summary}</div> : null}
     </div>
+  );
+}
+
+function ProjectViewSelector({
+  activeMode,
+  onChange,
+  projectCount,
+  unitCount,
+}: {
+  activeMode: ProjectDetailMode;
+  onChange: (mode: ProjectDetailMode) => void;
+  projectCount: number;
+  unitCount: number;
+}) {
+  const options: Array<{
+    mode: ProjectDetailMode;
+    title: string;
+    description: string;
+    count: number;
+    icon: typeof Building2;
+  }> = [
+    {
+      mode: "project",
+      title: "بطاقات المشروع",
+      description: "الهوية، السعر، الجاهزية، الملفات، والخدمات.",
+      count: projectCount,
+      icon: Building2,
+    },
+    {
+      mode: "units",
+      title: "بطاقات الوحدات",
+      description: "المخزون، الأسعار، المساحات، الأدوار، والإطلالات.",
+      count: unitCount,
+      icon: Ruler,
+    },
+  ];
+
+  return (
+    <section className="rounded-[28px] border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-3 shadow-sm">
+      <div className="grid gap-3 md:grid-cols-2">
+        {options.map((option) => {
+          const Icon = option.icon;
+          const active = activeMode === option.mode;
+          return (
+            <motion.button
+              key={option.mode}
+              type="button"
+              onClick={() => onChange(option.mode)}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className={`relative overflow-hidden rounded-[22px] border p-5 text-right transition ${
+                active
+                  ? "border-foreground bg-foreground text-background shadow-lg"
+                  : "border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-foreground hover:border-foreground/30"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${active ? "bg-background text-foreground" : "bg-[var(--workspace-elevated)] text-[var(--workspace-muted)]"}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="text-[15px] font-black">{option.title}</div>
+                  <p className={`mt-2 text-[12px] font-semibold leading-6 ${active ? "text-background/75" : "text-muted-foreground"}`}>
+                    {option.description}
+                  </p>
+                </div>
+              </div>
+              <div className={`mt-4 inline-flex rounded-full border px-3 py-1 text-[11px] font-black ${active ? "border-background/25 text-background" : "border-[color:var(--workspace-border)] text-[var(--workspace-muted)]"}`}>
+                {option.count}
+              </div>
+            </motion.button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -300,6 +457,7 @@ export default function ProjectDetailPage({
   const router = useRouter();
   const [actionError, setActionError] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [activeMode, setActiveMode] = useState<ProjectDetailMode>("project");
   const [isPending, startTransition] = useTransition();
   const isSharedReadOnly = project.accessMode === "shared";
   const heroFacts = buildHeroFacts(project);
@@ -322,6 +480,14 @@ export default function ProjectDetailPage({
       : "لا توجد جهات مضافة";
   const overviewSpecs = buildHeroFacts(project);
   const detailSpecs = buildFactRows(project);
+  const expertSignals = [
+    project.expert.assetType ? { label: "نوع الأصل", value: project.expert.assetType } : null,
+    project.expert.projectScale ? { label: "حجم المشروع", value: project.expert.projectScale } : null,
+    project.expert.productMix ? { label: "مزيج المنتجات", value: project.expert.productMix } : null,
+    project.expert.primaryUnitType ? { label: "الوحدة الرئيسية", value: project.expert.primaryUnitType } : null,
+    project.expert.sizeRange ? { label: "نطاق المساحات", value: project.expert.sizeRange } : null,
+    project.expert.priceComparison ? { label: "موقع السعر", value: priceComparisonLabels[project.expert.priceComparison] ?? project.expert.priceComparison } : null,
+  ].filter(Boolean) as Array<{ label: string; value: string }>;
   const projectSignals = [
     {
       icon: Eye,
@@ -375,7 +541,7 @@ export default function ProjectDetailPage({
 
   return (
     <div className="min-h-full bg-background/60 pb-24">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-6 lg:px-8 lg:py-8">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-6 lg:px-8 lg:py-8">
         <nav className="flex flex-wrap items-center justify-between gap-4">
           <Link
             href="/ws/projects"
@@ -390,6 +556,7 @@ export default function ProjectDetailPage({
               {publicationLabels[project.publicationState]}
             </span>
             <DetailBadge tone="emphasis">{visibilityLabel}</DetailBadge>
+            <DetailBadge tone={project.readiness.canPublish ? "default" : "warning"}>{project.readiness.label}</DetailBadge>
             <DetailBadge tone={isSharedReadOnly ? "warning" : "default"}>{accessLabel}</DetailBadge>
           </div>
         </nav>
@@ -400,11 +567,17 @@ export default function ProjectDetailPage({
           </div>
         ) : null}
 
-        <section data-slot="project-detail-hero" className="rounded-[28px] border border-border/60 bg-card p-6 shadow-sm lg:p-8">
+        {!project.readiness.canPublish ? (
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-5 py-4 text-right text-[13px] font-bold text-amber-700 dark:text-amber-300">
+            حالة الجاهزية: {project.readiness.label}. لن يظهر المشروع في البحث العام أو قنوات الذكاء الاصطناعي حتى تكتمل متطلبات السوق السعودي.
+          </div>
+        ) : null}
+
+        <section data-slot="project-detail-hero" className="rounded-[28px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-6 shadow-sm lg:p-8">
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
             <div className="space-y-6 text-right">
               <div>
-                <div className="text-[12px] font-semibold text-muted-foreground">تفاصيل المشروع</div>
+                <div className="text-[12px] font-semibold text-[var(--workspace-muted)]">تفاصيل المشروع</div>
                 <h1 className="mt-2 text-3xl font-black tracking-tight text-foreground">{project.title}</h1>
                 <p className="mt-3 max-w-3xl text-[15px] leading-8 text-muted-foreground">{summary}</p>
               </div>
@@ -414,6 +587,7 @@ export default function ProjectDetailPage({
                   {publicationLabels[project.publicationState]}
                 </span>
                 <DetailBadge tone="emphasis">{visibilityLabel}</DetailBadge>
+                <DetailBadge tone={project.readiness.canPublish ? "default" : "warning"}>{project.readiness.label}</DetailBadge>
                 <DetailBadge tone={isSharedReadOnly ? "warning" : "default"}>{accessLabel}</DetailBadge>
                 <DetailBadge>{project.specs.status}</DetailBadge>
                 <DetailBadge>{project.parking.label}</DetailBadge>
@@ -424,11 +598,30 @@ export default function ProjectDetailPage({
                   <HeroFact key={fact.label} icon={fact.icon} label={fact.label} value={fact.value} />
                 ))}
               </div>
+
+              {expertSignals.length > 0 ? (
+                <div className="rounded-[24px] border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-4">
+                  <div className="text-right text-[12px] font-black text-[var(--workspace-muted)]">قراءة الخبير العقاري</div>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {expertSignals.map((signal) => (
+                      <div key={signal.label} className="rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-4 py-3 text-right">
+                        <div className="text-[11px] font-bold text-[var(--workspace-muted)]">{signal.label}</div>
+                        <div className="mt-1 text-[13px] font-black text-foreground">{signal.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {project.expert.comparisonNotes || project.expert.expertNotes ? (
+                    <p className="mt-3 text-right text-[13px] leading-6 text-[var(--workspace-muted)]">
+                      {project.expert.comparisonNotes || project.expert.expertNotes}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
-            <div className="rounded-[24px] border border-border/60 bg-background/50 p-5">
+            <div className="rounded-[24px] border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-5">
               <div className="text-right">
-                <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Quick Actions</div>
+                <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--workspace-muted)]">Quick Actions</div>
                 <h2 className="mt-2 text-lg font-black text-foreground">إجراءات المشروع</h2>
               </div>
               <div className="mt-5 grid gap-3">
@@ -521,85 +714,84 @@ export default function ProjectDetailPage({
           </div>
         </section>
 
-        <div data-slot="project-detail-main" className="grid gap-6 lg:grid-cols-[minmax(0,1.22fr)_minmax(280px,0.78fr)]">
-          <div className="space-y-6">
-            <ProjectMediaGallery images={project.galleryImages} title={project.title} />
+        <ProjectViewSelector
+          activeMode={activeMode}
+          onChange={setActiveMode}
+          projectCount={projectSignals.length}
+          unitCount={project.units.length}
+        />
 
-            <SurfaceCard title="بيانات المشروع الأساسية" description="ترتيب واضح للبيانات التي يعود لها الفريق باستمرار أثناء المراجعة أو الإرسال.">
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {detailSpecs.map((fact) => (
-                  <ProjectSpecCard
-                    key={fact.label}
-                    icon={fact.icon}
-                    label={fact.label}
-                    value={fact.value}
-                    helper={fact.label === "المواقف" ? "حالة المواقف أو عددها وفق إعدادات المشروع." : undefined}
-                  />
-                ))}
-                <ProjectSpecCard
-                  icon={Eye}
-                  label="حالة النشر"
-                  value={publicationLabels[project.publicationState]}
-                  helper="الوضع الحالي للمشروع داخل مساحة العمل والقنوات المرتبطة."
-                />
-              </div>
-            </SurfaceCard>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeMode}
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {activeMode === "project" ? (
+              <div data-slot="project-detail-main" className="grid gap-6 lg:grid-cols-[minmax(0,1.22fr)_minmax(280px,0.78fr)]">
+                <div className="space-y-6">
+                  <ProjectMediaGallery images={project.galleryImages} title={project.title} />
 
-            {project.units.length > 0 ? (
-              <SurfaceCard title="الوحدات المرتبطة" description="الوحدات المتاحة أو المرتبطة بالمشروع كما تظهر للفريق داخل مساحة العمل.">
-                <div className="grid gap-3 md:grid-cols-2">
-                  {project.units.map((unit) => (
-                    <ProjectUnitCard
-                      key={unit.id}
-                      label={unit.label}
-                      bedrooms={unit.bedrooms}
-                      bathrooms={unit.bathrooms}
-                      area={unit.area}
-                      priceLabel={unit.priceLabel}
-                    />
-                  ))}
-                </div>
-              </SurfaceCard>
-            ) : null}
+                  <SurfaceCard title="بيانات المشروع الأساسية" description="ترتيب واضح للبيانات التي يعود لها الفريق باستمرار أثناء المراجعة أو الإرسال.">
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                      {detailSpecs.map((fact) => (
+                        <ProjectSpecCard
+                          key={fact.label}
+                          icon={fact.icon}
+                          label={fact.label}
+                          value={fact.value}
+                          helper={fact.label === "المواقف" ? "حالة المواقف أو عددها وفق إعدادات المشروع." : undefined}
+                        />
+                      ))}
+                      <ProjectSpecCard
+                        icon={Eye}
+                        label="حالة النشر"
+                        value={publicationLabels[project.publicationState]}
+                        helper="الوضع الحالي للمشروع داخل مساحة العمل والقنوات المرتبطة."
+                      />
+                    </div>
+                  </SurfaceCard>
 
-            {project.brokers.length > 0 ? (
-              <SurfaceCard title="الوسطاء المرتبطون" description="الجهات أو الوسطاء الذين يتحركون حالياً على المشروع أو لديهم علاقة مباشرة به.">
-                <div className="grid gap-3 md:grid-cols-2">
-                  {project.brokers.map((broker) => (
-                    <ProjectBrokerCard
-                      key={broker.id}
-                      name={broker.name}
-                      title={broker.title}
-                      clientName={broker.clientName}
-                      summary={broker.summary}
-                    />
-                  ))}
-                </div>
-              </SurfaceCard>
-            ) : null}
+                  {project.brokers.length > 0 ? (
+                    <SurfaceCard title="الوسطاء المرتبطون" description="الجهات أو الوسطاء الذين يتحركون حالياً على المشروع أو لديهم علاقة مباشرة به.">
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {project.brokers.map((broker) => (
+                          <ProjectBrokerCard
+                            key={broker.id}
+                            name={broker.name}
+                            title={broker.title}
+                            clientName={broker.clientName}
+                            summary={broker.summary}
+                          />
+                        ))}
+                      </div>
+                    </SurfaceCard>
+                  ) : null}
 
-            <SurfaceCard title="الملخص التنفيذي" description="القراءة السريعة التي تشرح المشروع قبل الدخول إلى التفاصيل التشغيلية.">
-              <p className="text-[14px] leading-7 text-foreground">{summary}</p>
-            </SurfaceCard>
+                  <SurfaceCard title="الملخص التنفيذي" description="القراءة السريعة التي تشرح المشروع قبل الدخول إلى التفاصيل التشغيلية.">
+                    <p className="text-[14px] leading-7 text-foreground">{summary}</p>
+                  </SurfaceCard>
 
-            {project.amenities.length > 0 ? (
-              <SurfaceCard title="المزايا والخدمات" description="أهم العناصر التي ترفع قيمة العرض وتسهّل تمييز المشروع.">
-                <div className="flex flex-wrap gap-2">
-                  {project.amenities.map((amenity) => (
-                    <span
-                      key={amenity}
-                      className="rounded-xl border border-border bg-muted/20 px-3 py-2 text-[12px] font-bold text-foreground"
-                    >
-                      {amenity}
-                    </span>
-                  ))}
-                </div>
-              </SurfaceCard>
-            ) : null}
+                  {project.amenities.length > 0 ? (
+                    <SurfaceCard title="المزايا والخدمات" description="أهم العناصر التي ترفع قيمة العرض وتسهّل تمييز المشروع.">
+                      <div className="flex flex-wrap gap-2">
+                        {project.amenities.map((amenity) => (
+                          <span
+                            key={amenity}
+                            className="rounded-xl border border-border bg-muted/20 px-3 py-2 text-[12px] font-bold text-foreground"
+                          >
+                            {amenity}
+                          </span>
+                        ))}
+                      </div>
+                    </SurfaceCard>
+                  ) : null}
 
-            <SurfaceCard title="الوصف الكامل" description="الوصف المرجعي الذي يمكن الاعتماد عليه عند المراجعة أو الإرسال.">
-              <p className="whitespace-pre-wrap text-[14px] leading-7 text-muted-foreground">{project.summary}</p>
-            </SurfaceCard>
+                  <SurfaceCard title="الوصف الكامل" description="الوصف المرجعي الذي يمكن الاعتماد عليه عند المراجعة أو الإرسال.">
+                    <p className="whitespace-pre-wrap text-[14px] leading-7 text-muted-foreground">{project.summary}</p>
+                  </SurfaceCard>
 
             {hasAccessSection ? (
               <SurfaceCard title="الملفات والوصول" description="الملفات المتاحة وسياق الوصول الحالي لهذا المشروع.">
@@ -729,9 +921,57 @@ export default function ProjectDetailPage({
                 <FactRow icon={Building2} label="الوحدات" value={project.units.length > 0 ? `${project.units.length} وحدة` : "بدون وحدات"} />
               </div>
             </SurfaceCard>
-          </div>
+                </div>
+              </div>
+              ) : (
+                <div data-slot="project-detail-units" className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+                  <div className="space-y-6">
+                    <SurfaceCard
+                      title="كتالوج الوحدات"
+                      description="اختر وحدة لفتح صفحة التفاصيل الكاملة، أو راجع السعر والمساحة والحالة من نفس الشاشة."
+                    >
+                      {project.units.length > 0 ? (
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                          {project.units.map((unit) => (
+                            <ProjectUnitCard
+                              key={unit.id}
+                              projectId={project.id}
+                              id={unit.id}
+                              label={unit.label}
+                              status={unit.status}
+                              unitKind={unit.unitKind}
+                              bedrooms={unit.bedrooms}
+                              bathrooms={unit.bathrooms}
+                              area={unit.area}
+                              floor={unit.floor}
+                              view={unit.view}
+                              priceLabel={unit.priceLabel}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="rounded-[24px] border border-dashed border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-5 py-12 text-center text-[13px] font-bold text-muted-foreground">
+                          لا توجد وحدات مرتبطة بهذا المشروع حتى الآن.
+                        </div>
+                      )}
+                    </SurfaceCard>
+                  </div>
+
+                  <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+                    <SurfaceCard title="قراءة المخزون" description="ملخص سريع لحالة بطاقات الوحدات داخل هذا المشروع.">
+                      <div className="space-y-3">
+                        <FactRow icon={Building2} label="عدد الوحدات" value={project.units.length > 0 ? `${project.units.length} وحدة` : "بدون وحدات"} />
+                        <FactRow icon={Ruler} label="نطاق السعر" value={project.priceLabel} />
+                        <FactRow icon={ShieldCheck} label="جاهزية المشروع" value={project.readiness.label} />
+                        <FactRow icon={Eye} label="الظهور" value={visibilityLabel} />
+                      </div>
+                    </SurfaceCard>
+                  </aside>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
-      </div>
 
       <AgDeleteConfirmModal
         open={deleteOpen}

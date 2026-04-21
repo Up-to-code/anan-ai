@@ -12,26 +12,37 @@ function getFlowId(boundFlowId: string, formData: FormData) {
   return String(formData.get("flowId") ?? boundFlowId);
 }
 
-async function requireAuthorizationSession(flowId: string) {
+function getTenantOrgId(formData: FormData) {
+  const tenantOrgId = formData.get("tenantOrgId");
+  return typeof tenantOrgId === "string" && tenantOrgId.trim().length > 0 ? tenantOrgId.trim() : undefined;
+}
+
+async function requireAuthorizationSession(flowId: string, tenantOrgId?: string) {
   if (!flowId) {
     redirect("/signin");
   }
 
   if (!await getOptionalSessionContext()) {
-    redirect(buildSigninRedirectForFlow(flowId));
+    redirect(buildSigninRedirectForFlow(flowId, tenantOrgId));
   }
 }
 
 export async function approveAuthorizationAction(boundFlowId: string, formData: FormData) {
   const flowId = getFlowId(boundFlowId, formData);
-  await requireAuthorizationSession(flowId);
-  redirect((await approveAuthorizationForCurrentUser(flowId)).redirectUrl);
+  const tenantOrgId = getTenantOrgId(formData);
+  await requireAuthorizationSession(flowId, tenantOrgId);
+  const prompt = await getAuthorizationPromptForCurrentUser(flowId, tenantOrgId);
+  if (!prompt.selectedTenantOrgId) {
+    throw new Error("Organization selection is required");
+  }
+  redirect((await approveAuthorizationForCurrentUser(flowId, prompt.selectedTenantOrgId)).redirectUrl);
 }
 
 export async function denyAuthorizationAction(boundFlowId: string, formData: FormData) {
   const flowId = getFlowId(boundFlowId, formData);
-  await requireAuthorizationSession(flowId);
-  const prompt = await getAuthorizationPromptForCurrentUser(flowId);
+  const tenantOrgId = getTenantOrgId(formData);
+  await requireAuthorizationSession(flowId, tenantOrgId);
+  const prompt = await getAuthorizationPromptForCurrentUser(flowId, tenantOrgId);
   const destination = new URL(prompt.redirectUri);
 
   destination.searchParams.set("error", "access_denied");

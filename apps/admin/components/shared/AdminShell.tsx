@@ -58,7 +58,7 @@ export default function AdminShell({ children, user }: AdminShellProps) {
 
       <div
         data-slot="admin-shell"
-        className="app-shell-height app-shell-fixed-height grid h-full min-h-0 w-full grid-rows-[1fr] overflow-hidden bg-[var(--workspace-shell)] font-cairo text-foreground lg:grid-cols-[auto_minmax(0,1fr)]"
+        className="workspace-root-chrome app-shell-height app-shell-fixed-height grid h-full min-h-0 w-full grid-rows-[1fr] overflow-hidden bg-[var(--workspace-shell)] font-cairo text-foreground lg:grid-cols-[auto_minmax(0,1fr)]"
       >
         <div
           className={cn(
@@ -81,7 +81,7 @@ export default function AdminShell({ children, user }: AdminShellProps) {
             type="button"
             onClick={toggleDesktopSidebar}
             className={cn(
-              "absolute top-5 z-10 inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-2 text-[var(--workspace-muted)] shadow-sm transition-[background-color,color,box-shadow,transform] hover:bg-[var(--workspace-elevated)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--workspace-highlight)_30%,transparent)]",
+              "absolute top-5 z-10 inline-flex h-9 min-w-9 items-center justify-center rounded-sm border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-2 text-[var(--workspace-muted)] transition-[background-color,color,box-shadow,transform] hover:bg-[var(--workspace-elevated)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--workspace-highlight-border)]",
               sidebarCollapsed ? "left-1/2 -translate-x-1/2" : "left-6",
             )}
             aria-label={sidebarCollapsed ? "إظهار الشريط الجانبي" : "طي الشريط الجانبي"}
@@ -114,7 +114,7 @@ export default function AdminShell({ children, user }: AdminShellProps) {
           >
             <div
               data-slot="admin-content"
-              className="grid min-h-full w-full min-w-0 content-start gap-4 px-4 py-5 sm:px-6 lg:px-8 lg:py-6"
+              className="grid min-h-full w-full min-w-0 content-start gap-4 px-4 py-4 sm:px-6 lg:px-8 lg:gap-5 lg:py-5"
             >
               {children}
             </div>

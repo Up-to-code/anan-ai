@@ -59,7 +59,7 @@ export type WorkspaceBehavior = {
 };
 
 /**
- * WHY:   Legacy role labels (`RED`, `developer`) and organization types (`red`) should resolve to one behavior model.
+ * WHY:   Session roles and organization types should resolve to one behavior model.
  * WHAT:  Returns the normalized workspace audience for the current session and optional linked organization.
  * HOW:   Prefers the linked organization type when present, then falls back to normalized session/profile role hints.
  */
@@ -75,9 +75,9 @@ export function resolveWorkspaceAudience(args: {
   const normalizedRequestedRole = (args.requestedRole ?? "").toLowerCase();
 
   if (normalizedRole === "broker") return "broker";
-  if (normalizedRole === "developer" || normalizedRole === "red") return "developer";
+  if (normalizedRole === "developer") return "developer";
   if (normalizedRequestedRole === "broker") return "broker";
-  if (normalizedRequestedRole === "developer" || normalizedRequestedRole === "red") return "developer";
+  if (normalizedRequestedRole === "developer") return "developer";
   return "none";
 }
 
@@ -100,15 +100,19 @@ export function resolveSuggestedOrganizationType(args: {
  * HOW:   Converts `red` organizations to `RED` ownerType while preserving the existing organization id.
  */
 export function getOrganizationOwnerContext(
-  organization: Pick<OrganizationSummary, "id" | "type"> | null | undefined,
+  organization: Pick<OrganizationSummary, "id" | "type" | "legacyOwnerId" | "legacyOwnerType"> | null | undefined,
 ): WorkspaceOwnerContext {
   if (!organization) {
     return null;
   }
 
-  return organization.type === "broker"
-    ? { ownerType: "broker", ownerId: organization.id }
-    : { ownerType: "RED", ownerId: organization.id };
+  if (organization.legacyOwnerId && organization.legacyOwnerType) {
+    return organization.legacyOwnerType === "broker"
+      ? { ownerType: "broker", ownerId: organization.legacyOwnerId }
+      : { ownerType: "RED", ownerId: organization.legacyOwnerId };
+  }
+
+  return null;
 }
 
 /**

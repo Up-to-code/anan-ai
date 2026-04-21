@@ -7,7 +7,6 @@
  */
 
 import type { ActionCtx } from "../../../_generated/server";
-import type { Id } from "../../../_generated/dataModel";
 import type { AnanAgentResult } from "../AnanAgent";
 
 export type { AnanAgentResult };
@@ -133,7 +132,7 @@ export interface OrchestrateInput {
   prompt: string;
   role: "user" | "broker" | "RED" | "admin";
   userId: string;
-  threadId?: Id<"assistantThreads">;
+  threadId?: string;
   channel?: "app" | "whatsapp" | "web";
   ragContext?: string;
   modelOverride?: string;

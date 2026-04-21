@@ -35,7 +35,7 @@ async function handleDelegatedClientsGet(ctx: any, context: any) {
     return insufficientScope();
   }
   const clients = await ctx.runQuery(oauthInternal.listDelegatedClients, {
-    authUserId: String(context.accessToken.userId),
+    tenantOrgId: String(context.authorization.tenantOrgId),
   });
   return jsonResponse({ clients });
 }
@@ -46,9 +46,10 @@ async function handleDelegatedClientsPost(ctx: any, request: Request, context: a
   }
   const body = await request.json();
   const created = await ctx.runMutation(oauthInternal.createDelegatedClient, {
-    authUserId: String(context.accessToken.userId),
-    brokerId: context.profile?.brokerId,
-    REDId: context.profile?.REDId,
+    ownerAuthUserId: String(context.authorization.approvedByUserId ?? context.authorization.tenantOrgId),
+    tenantOrgId: String(context.authorization.tenantOrgId),
+    brokerId: context.authorization.ownerType === "broker" ? context.authorization.ownerBrokerId : undefined,
+    REDId: context.authorization.ownerType === "RED" ? context.authorization.ownerREDId : undefined,
     sourceClientId: String(claims.aud),
     name: String(body.name ?? ""),
     phone: typeof body.phone === "string" ? body.phone : undefined,
@@ -64,8 +65,7 @@ async function handleDelegatedPropertiesGet(ctx: any, context: any) {
     return insufficientScope();
   }
   const properties = await ctx.runQuery(oauthInternal.listDelegatedProperties, {
-    brokerId: context.profile?.brokerId,
-    REDId: context.profile?.REDId,
+    tenantOrgId: String(context.authorization.tenantOrgId),
   });
   return jsonResponse({ properties });
 }
@@ -76,8 +76,9 @@ async function handleDelegatedPropertiesPost(ctx: any, request: Request, context
   }
   const body = await request.json();
   const property = await ctx.runMutation(oauthInternal.createDelegatedProperty, {
-    brokerId: context.profile?.brokerId,
-    REDId: context.profile?.REDId,
+    tenantOrgId: String(context.authorization.tenantOrgId),
+    brokerId: context.authorization.ownerType === "broker" ? context.authorization.ownerBrokerId : undefined,
+    REDId: context.authorization.ownerType === "RED" ? context.authorization.ownerREDId : undefined,
     title: String(body.title ?? ""),
     address: String(body.address ?? ""),
     price: Number(body.price ?? 0),

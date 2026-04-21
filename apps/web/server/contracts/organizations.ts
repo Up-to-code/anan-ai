@@ -35,6 +35,7 @@ export type OrganizationVerificationSummary = {
  */
 export type OrganizationSummary = {
   id: string;
+  organizationId?: string;
   type: "broker" | "red";
   name: string;
   slug: string;
@@ -46,6 +47,9 @@ export type OrganizationSummary = {
   contactEmail?: string;
   phone?: string;
   verificationSummary?: OrganizationVerificationSummary;
+  legacyOwnerType?: "broker" | "RED" | null;
+  legacyOwnerId?: string | null;
+  legacyTenantOrgId?: string | null;
 };
 
 /**
@@ -61,16 +65,16 @@ export type OrganizationTeamMember = {
   email: string;
   username?: string;
   role: "manager" | "member" | "viewer";
-  roleStatus?: string;
+  roleApprovalStatus?: string;
   isActive?: boolean;
 };
 
 export type OrganizationMembershipSummary = {
   id: string;
-  ownerType: "broker" | "RED";
-  ownerId: string;
+  ownerType?: "broker" | "RED";
+  ownerId?: string;
   authUserId: string;
-  profileId: string;
+  profileId?: string;
   role: "manager" | "member" | "viewer";
   tenantRole?: string;
   status: "active" | "inactive";
@@ -175,6 +179,7 @@ export type OffersDirectoryProfile = {
 export type IncomingOrganizationInvite = {
   id: string;
   token: string;
+  acceptUrl?: string | null;
   email: string;
   role: "manager" | "member" | "viewer";
   organizationName: string;

@@ -1,14 +1,16 @@
 import { useQuery } from "convex/react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { View, useColorScheme } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, CheckCircle2 } from "lucide-react-native";
 import { Button } from "@/components/ui/Button";
 import { AppText } from "@/components/ui/AppText";
 import { IconButton } from "@/components/ui/IconButton";
-import { MobileSectionHeading, MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
+import { MobilePill, MobileSectionHeading, MobileSurface, MobileTopBar } from "@/components/ui/MobileChrome";
 import { api } from "@/lib/convexApi";
-import { mobileTheme } from "@/lib/mobileTheme";
+import { formatMobileCopy } from "@/lib/i18n";
+import { useMobileLocale } from "@/lib/mobileLocale";
+import { useAppTheme } from "@/lib/mobileTheme";
 
 const LIVE_BACKEND_ENABLED = Boolean(process.env.EXPO_PUBLIC_CONVEX_URL);
 
@@ -40,53 +42,80 @@ function useOrderDetail(orderId?: string) {
 export default function HandoffScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const isDark = useColorScheme() === "dark";
+  const theme = useAppTheme();
+  const { dictionary, isRtl } = useMobileLocale();
   const params = useLocalSearchParams<{ orderId?: string; threadId?: string }>();
   const order = useOrderDetail(params.orderId);
-  const screenBackground = isDark ? "#0B0C10" : mobileTheme.colors.canvas;
-  const sectionBackground = isDark ? "#151821" : "#FFFFFF";
-  const mutedSectionBackground = isDark ? "#111318" : "#F3F4F6";
+  const screenBackground = theme.colors.canvas;
+  const sectionBackground = theme.colors.surface;
+  const mutedSectionBackground = theme.colors.surfaceMuted;
+
+  if (LIVE_BACKEND_ENABLED && order === undefined) {
+    return (
+      <View className="flex-1 items-center justify-center" style={{ backgroundColor: screenBackground }}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 px-5" style={{ backgroundColor: screenBackground, paddingBottom: Math.max(insets.bottom, 20) }}>
       <MobileTopBar
         insetTop={insets.top}
-        title="طلب المستشار"
-        subtitle="تأكيد داخل نفس الرحلة"
+        title={dictionary.handoff.title}
+        subtitle={dictionary.handoff.subtitle}
         leading={<IconButton icon={ArrowLeft} onPress={() => router.replace("/")} tone="panel" />}
         trailing={<View style={{ width: 44, height: 44 }} />}
       />
 
       <View className="flex-1 justify-center">
-        <View className="rounded-[34px] px-6 py-8" style={{ borderWidth: 1, borderColor: isDark ? "rgba(255,255,255,0.08)" : mobileTheme.colors.border, backgroundColor: mutedSectionBackground }}>
+        <MobileSurface tone="muted" radius="hero" className="gap-6" shadow="none">
           <View className="items-center">
             <View
               className="items-center justify-center rounded-full"
-              style={{ width: 64, height: 64, backgroundColor: mobileTheme.colors.successSoft }}
+              style={{ width: 64, height: 64, backgroundColor: theme.colors.successSoft }}
             >
-              <CheckCircle2 size={32} color={mobileTheme.colors.success} />
+              <CheckCircle2 size={32} color={theme.colors.success} />
             </View>
             <MobileSectionHeading
               align="center"
               className="mt-5"
-              title="تم تجهيز طلبك"
+              title={order === null && params.orderId ? dictionary.handoff.savedLocallyTitle : dictionary.handoff.preparedTitle}
               description={
                 order?.property?.title
-                  ? `تم حفظ طلب المستشار المرتبط بـ ${order.property.title}.`
-                  : "تم حفظ الطلب وربطه بالمحادثة الحالية قدر الإمكان."
+                  ? formatMobileCopy(dictionary.handoff.savedForProperty, { title: order.property.title })
+                  : order === null && params.orderId
+                    ? dictionary.handoff.liveUnavailable
+                    : dictionary.handoff.savedBestEffort
               }
             />
           </View>
 
-          <View className="mt-6 overflow-hidden rounded-[28px]" style={{ borderWidth: 1, borderColor: isDark ? "rgba(255,255,255,0.08)" : mobileTheme.colors.border, backgroundColor: sectionBackground }}>
-            <SummaryRow label="رقم الطلب" value={order?.orderId ?? params.orderId ?? "—"} withBorder />
-            <SummaryRow label="الحالة" value={order?.status ?? "qualified"} withBorder />
-            <SummaryRow label="المصدر" value={order?.sourceChannel ?? "app"} />
+          <View className={`${isRtl ? "flex-row-reverse" : "flex-row"} flex-wrap justify-center`} style={{ gap: 8 }}>
+            <MobilePill label={order?.status ?? "qualified"} tone="primary" active />
+            <MobilePill label={order?.sourceChannel ?? "app"} />
           </View>
 
-          <View className="mt-6 gap-3">
+          <View className="overflow-hidden rounded-[28px]" style={{ borderWidth: 1, borderColor: theme.colors.border, backgroundColor: sectionBackground }}>
+            <SummaryRow label={dictionary.handoff.orderId} value={order?.orderId ?? params.orderId ?? "—"} withBorder />
+            <SummaryRow label={dictionary.handoff.status} value={order?.status ?? "qualified"} withBorder />
+            <SummaryRow label={dictionary.handoff.source} value={order?.sourceChannel ?? "app"} />
+          </View>
+
+          {params.threadId ? (
+            <MobileSurface tone="default" radius="card" className="gap-2" shadow="none">
+              <AppText className={`${isRtl ? "text-right" : "text-left"} text-[14px] font-cairo-bold`} style={{ color: theme.colors.ink }}>
+                {dictionary.handoff.returnToConversationTitle}
+              </AppText>
+              <AppText className={`${isRtl ? "text-right" : "text-left"} text-[13px] font-medium`} style={{ color: theme.colors.inkMuted }}>
+                {dictionary.handoff.returnToConversationBody}
+              </AppText>
+            </MobileSurface>
+          ) : null}
+
+          <View className="gap-3">
             <Button
-              label="العودة إلى المساعد"
+              label={dictionary.handoff.returnToAssistant}
               onPress={() =>
                 router.replace({
                   pathname: "/",
@@ -96,13 +125,13 @@ export default function HandoffScreen() {
               className="rounded-[18px] bg-slate-900"
             />
             <Button
-              label="افتح البحث"
+              label={dictionary.handoff.openSearch}
               variant="secondary"
               onPress={() => router.replace("/search")}
               className="rounded-[18px]"
             />
           </View>
-        </View>
+        </MobileSurface>
       </View>
     </View>
   );
@@ -117,13 +146,15 @@ function SummaryRow({
   value: string;
   withBorder?: boolean;
 }) {
+  const theme = useAppTheme();
+  const { isRtl } = useMobileLocale();
   return (
     <View
-      className={`flex-row-reverse items-center justify-between px-5 py-4 ${withBorder ? "border-b" : ""}`}
-      style={withBorder ? { borderBottomColor: mobileTheme.colors.border } : undefined}
+      className={`items-center justify-between px-5 py-4 ${isRtl ? "flex-row-reverse" : "flex-row"} ${withBorder ? "border-b" : ""}`}
+      style={withBorder ? { borderBottomColor: theme.colors.border } : undefined}
     >
-      <AppText className="text-right text-[15px] font-bold text-slate-500">{label}</AppText>
-      <AppText className="text-right text-[17px] font-cairo-black text-slate-900">{value}</AppText>
+      <AppText className={`${isRtl ? "text-right" : "text-left"} text-[15px] font-bold`} style={{ color: theme.colors.inkMuted }}>{label}</AppText>
+      <AppText className={`${isRtl ? "text-right" : "text-left"} text-[17px] font-cairo-black`} style={{ color: theme.colors.ink }}>{value}</AppText>
     </View>
   );
 }

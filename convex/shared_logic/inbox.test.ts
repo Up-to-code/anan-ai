@@ -32,10 +32,10 @@ async function seedUserProfile(t: ReturnType<typeof convexTest>, args: {
   authUserId: string;
   email: string;
   name: string;
-  role?: "user" | "broker" | "developer" | "RED";
+  role?: "user" | "broker" | "developer";
   brokerId?: string;
-  REDId?: string;
-  roleStatus?: "approved" | "pending";
+  developerId?: string;
+  roleApprovalStatus?: "approved" | "pending";
 }) {
   await t.run(async (ctx) => {
     await ctx.db.insert("userProfiles", {
@@ -46,9 +46,9 @@ async function seedUserProfile(t: ReturnType<typeof convexTest>, args: {
       usernameLower: args.name.toLowerCase().replace(/\s+/g, "-"),
       role: args.role ?? "user",
       brokerId: args.brokerId,
-      REDId: args.REDId,
+      developerId: args.developerId,
       isActive: true,
-      roleStatus: args.roleStatus ?? "approved",
+      roleApprovalStatus: args.roleApprovalStatus ?? "approved",
     } as any);
   });
 }
@@ -61,7 +61,7 @@ async function seedDeveloperTargets(t: ReturnType<typeof convexTest>, redId: str
         email: `dev-${index}@example.com`,
         name: `Target Developer ${index}`,
         role: "developer",
-        REDId: redId as any,
+        developerId: redId as any,
       }),
     ),
   );

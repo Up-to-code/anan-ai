@@ -76,7 +76,19 @@ export default function ProjectsWorkspace({
           onChange={setFilterKey}
         />
 
-        <div className="grid gap-8 xl:grid-cols-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-5 py-4">
+          <div className="text-right">
+            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--workspace-muted)]">Portfolio</div>
+            <div className="mt-1 text-[15px] font-black text-foreground">
+              {filteredProjects.length > 0 ? `${filteredProjects.length} بطاقة مشروع` : "لا توجد بطاقات ضمن هذا الفلتر"}
+            </div>
+          </div>
+          <div className="text-right text-[12px] font-semibold leading-6 text-muted-foreground">
+            تعرض البطاقات الجاهزية والمخزون والظهور والملفات قبل فتح صفحة المشروع.
+          </div>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-2 2xl:grid-cols-3">
           {filteredProjects.map((project) => (
             <ProjectPortfolioCard
               key={project.id}

@@ -27,7 +27,7 @@ export default function AdminRangeControl({ className }: AdminRangeControlProps)
   return (
     <nav
       className={cn(
-        "flex items-center gap-1 rounded-[18px] border border-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_94%,transparent)] p-1 shadow-sm",
+        "flex items-center gap-1 rounded-sm border border-[color:color-mix(in_srgb,var(--workspace-border)_90%,transparent)] bg-[var(--workspace-panel)] p-1",
         className,
       )}
       aria-label="time range"
@@ -40,10 +40,10 @@ export default function AdminRangeControl({ className }: AdminRangeControlProps)
           key={item.value}
           href={buildHref(item.value)}
           className={cn(
-            "rounded-[14px] px-3 py-1.5 text-sm font-black tracking-[0.08em] transition-colors",
+            "rounded-sm border border-transparent px-3 py-1.5 text-sm font-black tracking-[0.1em] transition-colors",
             currentRange === item.value
-              ? "bg-[var(--workspace-highlight)] text-white"
-              : "text-[var(--workspace-muted)] hover:bg-[var(--workspace-elevated)] hover:text-[var(--workspace-bubble-other-foreground)]",
+              ? "border-[color:var(--workspace-highlight-border)] bg-[var(--workspace-highlight)] text-white"
+              : "text-[var(--workspace-muted)] hover:border-[color:color-mix(in_srgb,var(--workspace-border)_88%,transparent)] hover:bg-[var(--workspace-elevated)] hover:text-[var(--workspace-bubble-other-foreground)]",
           )}
         >
           {item.label}

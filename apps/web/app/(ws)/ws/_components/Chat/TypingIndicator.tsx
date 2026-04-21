@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { motion } from "framer-motion";
 import { AIMotionLogo, type AIMotionState } from "../AIMotion";
 import {
@@ -13,7 +14,7 @@ import {
  * WHAT:  Renders the Anan AI motion avatar with animated typing dots and an optional stage label.
  * HOW:   Uses the compact logo variant, three bouncing dots, and a soft muted label below.
  */
-export default function TypingIndicator({
+const TypingIndicatorComponent = function TypingIndicator({
   state,
   text,
   activeTeamId,
@@ -67,3 +68,5 @@ export default function TypingIndicator({
     </div>
   );
 }
+
+export default memo(TypingIndicatorComponent);
