@@ -5,6 +5,7 @@ export type WorkspaceProjectInternalRefs = {
   getProjectReadiness: unknown;
   saveProjectDossierDraft: unknown;
   saveProjectUnits: unknown;
+  applyProjectUnitBulkActions: unknown;
   saveProjectPaymentPlans: unknown;
   saveProjectComplianceDocuments: unknown;
   saveProjectAdLicense: unknown;

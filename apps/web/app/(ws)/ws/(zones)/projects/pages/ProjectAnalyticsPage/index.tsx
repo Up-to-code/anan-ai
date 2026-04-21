@@ -126,7 +126,7 @@ function KpiCard({
   const cardClassName =
     tone === "highlight"
       ? "rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-highlight)_20%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_4%,var(--workspace-panel))] p-4 text-right"
-      : "rounded-2xl border border-border/50 bg-card/70 p-4 text-right";
+      : "rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-4 text-right";
 
   return (
     <div className={cardClassName}>
@@ -168,7 +168,7 @@ function AnalyticsPanel({
   const panelClassName =
     tone === "highlight"
       ? "rounded-[28px] border border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] bg-card/80 p-5 shadow-sm lg:p-6"
-      : "rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-sm lg:p-6";
+      : "rounded-[28px] border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-5 shadow-sm lg:p-6";
 
   return (
     <section className={panelClassName}>
@@ -195,7 +195,7 @@ function AnalyticsTabs({
 
   return (
     <section
-      className="rounded-[26px] border border-border/60 bg-card/80 p-3 shadow-sm lg:p-4"
+      className="rounded-[26px] border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-3 shadow-sm lg:p-4"
       aria-label="Project analytics tabs"
     >
       <div className="flex flex-wrap justify-end gap-2">

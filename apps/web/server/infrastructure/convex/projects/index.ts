@@ -16,6 +16,9 @@ function buildRepository(api: WorkspaceProjectInternalRefs): WorkspaceProjectRep
     async saveProjectUnits(token, propertyId, units) {
       return fetchMutation(api.saveProjectUnits as never, { propertyId, units } as never, { token }) as ReturnType<WorkspaceProjectRepository["saveProjectUnits"]>;
     },
+    async applyProjectUnitBulkActions(token, propertyId, actions) {
+      return fetchMutation(api.applyProjectUnitBulkActions as never, { propertyId, actions } as never, { token }) as ReturnType<WorkspaceProjectRepository["applyProjectUnitBulkActions"]>;
+    },
     async saveProjectPaymentPlans(token, propertyId, paymentPlans) {
       return fetchMutation(api.saveProjectPaymentPlans as never, { propertyId, paymentPlans } as never, { token }) as ReturnType<WorkspaceProjectRepository["saveProjectPaymentPlans"]>;
     },

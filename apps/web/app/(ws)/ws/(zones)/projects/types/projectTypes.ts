@@ -2,6 +2,20 @@ import type { BrokerPresence } from "../../../_components/Visuals/BrokerPresence
 import type { UnitReference } from "../../../_lib/entities";
 import type { UploadedFileReference } from "@/server/contracts/files";
 import type { OrganizationAsset, PropertyViewerSummary } from "@/server/contracts/properties";
+import type { ProjectDossierDetail } from "@/server/contracts/projects";
+
+export type WorkspaceProjectUnitDetail = UnitReference & {
+  projectId: string;
+  projectTitle: string;
+  projectLocation: string;
+  projectImage: string;
+  summary: string;
+  paymentPlanLabel: string | null;
+  complianceLabel: string | null;
+  adLicenseLabel: string | null;
+  readinessLabel: string;
+  galleryImages: UploadedFileReference[];
+};
 
 export type WorkspaceProject = {
   id: string;
@@ -62,5 +76,6 @@ export type WorkspaceProject = {
   };
   assets: OrganizationAsset[];
   units: UnitReference[];
+  dossier: ProjectDossierDetail | null;
   brokers: BrokerPresence[];
 };

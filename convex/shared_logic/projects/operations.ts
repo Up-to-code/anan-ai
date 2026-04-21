@@ -40,6 +40,28 @@ type DossierRecord = {
   };
 };
 
+type ProjectUnitPatch = Partial<{
+  label: string;
+  unitKind: "unit_type" | "unit";
+  status: "available" | "reserved" | "sold" | "draft";
+  bedrooms: number;
+  bathrooms: number;
+  sizeSqm: number;
+  floor: string;
+  view: string;
+  price: number;
+  handoverAt: number;
+  floorPlanMedia: unknown[];
+}>;
+
+type ProjectUnitBulkAction =
+  | { type: "create"; unit: any }
+  | { type: "update"; unitId: GenericId<"projectUnits">; patch: ProjectUnitPatch }
+  | { type: "delete"; unitId: GenericId<"projectUnits"> }
+  | { type: "duplicate"; unitId: GenericId<"projectUnits">; label?: string }
+  | { type: "mark_status"; unitIds: GenericId<"projectUnits">[]; status: "available" | "reserved" | "sold" | "draft" }
+  | { type: "import"; units: any[] };
+
 function assertOwner(property: any, access: OwnerAccess) {
   if (access.brokerId && property.brokerId === access.brokerId) return;
   if (access.REDId && property.REDId === access.REDId) return;
@@ -152,6 +174,27 @@ async function regeneratePropertyProjection(ctx: MutationCtx, propertyId: Generi
   await ctx.db.patch(propertyId, patch);
 }
 
+async function requireOwnedUnit(
+  ctx: MutationCtx,
+  dossierId: GenericId<"projectDossiers">,
+  unitId: GenericId<"projectUnits">,
+) {
+  const unit = await ctx.db.get(unitId);
+  if (!unit || (unit as any).dossierId !== dossierId) {
+    throw new ConvexError({ code: "NOT_FOUND", message: "Project unit not found for this dossier" });
+  }
+  return unit as any;
+}
+
+function normalizeUnitPatch(patch: ProjectUnitPatch) {
+  const next: any = { ...patch };
+  delete next.dossierId;
+  delete next.propertyId;
+  delete next.createdAt;
+  delete next.updatedAt;
+  return next;
+}
+
 /**
  * WHY:   Dossier draft saves must update project truth first and keep the search projection synchronized.
  * WHAT:  Patches the dossier identity/location/visibility and mirrors safe legacy fields to `properties`.
@@ -202,6 +245,81 @@ export async function saveOwnedProjectUnits(ctx: MutationCtx, propertyId: Generi
   return { ok: true as const, propertyId, dossierId: dossier._id, readiness: await recomputeProjectReadinessForProperty(ctx, propertyId) };
 }
 
+/**
+ * WHY:   Workspace unit inventory needs granular bulk actions without replacing the entire dossier inventory each time.
+ * WHAT:  Applies create, update, delete, duplicate, import, and status-mark actions to owner-scoped project units.
+ * HOW:   Enforces ownership through the parent property/dossier, verifies every unit belongs to that dossier, then recomputes readiness.
+ */
+export async function applyOwnedProjectUnitBulkActions(
+  ctx: MutationCtx,
+  propertyId: GenericId<"properties">,
+  actions: ProjectUnitBulkAction[],
+  access: OwnerAccess,
+) {
+  const { dossier } = await requireOwnedDossier(ctx, propertyId, access);
+  if (!dossier) throw new ConvexError({ code: "NOT_FOUND", message: "Project dossier not found" });
+  const now = Date.now();
+
+  for (const action of actions) {
+    if (action.type === "create") {
+      await ctx.db.insert("projectUnits", {
+        ...action.unit,
+        dossierId: dossier._id,
+        propertyId,
+        createdAt: now,
+        updatedAt: now,
+      } as any);
+      continue;
+    }
+
+    if (action.type === "import") {
+      for (const unit of action.units) {
+        await ctx.db.insert("projectUnits", {
+          ...unit,
+          dossierId: dossier._id,
+          propertyId,
+          createdAt: now,
+          updatedAt: now,
+        } as any);
+      }
+      continue;
+    }
+
+    if (action.type === "update") {
+      await requireOwnedUnit(ctx, dossier._id, action.unitId);
+      await ctx.db.patch(action.unitId, { ...normalizeUnitPatch(action.patch), updatedAt: now } as any);
+      continue;
+    }
+
+    if (action.type === "delete") {
+      await requireOwnedUnit(ctx, dossier._id, action.unitId);
+      await ctx.db.delete(action.unitId);
+      continue;
+    }
+
+    if (action.type === "duplicate") {
+      const source = await requireOwnedUnit(ctx, dossier._id, action.unitId);
+      const { _id, _creationTime, createdAt, updatedAt, ...copy } = source;
+      await ctx.db.insert("projectUnits", {
+        ...copy,
+        label: action.label?.trim() || `${source.label} copy`,
+        status: source.status === "sold" ? "draft" : source.status,
+        createdAt: now,
+        updatedAt: now,
+      } as any);
+      continue;
+    }
+
+    for (const unitId of action.unitIds) {
+      await requireOwnedUnit(ctx, dossier._id, unitId);
+      await ctx.db.patch(unitId, { status: action.status, updatedAt: now } as any);
+    }
+  }
+
+  await regeneratePropertyProjection(ctx, propertyId);
+  return { ok: true as const, propertyId, dossierId: dossier._id, readiness: await recomputeProjectReadinessForProperty(ctx, propertyId) };
+}
+
 export async function saveOwnedProjectPaymentPlans(ctx: MutationCtx, propertyId: GenericId<"properties">, paymentPlans: any[], access: OwnerAccess) {
   const { dossier } = await requireOwnedDossier(ctx, propertyId, access);
   if (!dossier) throw new ConvexError({ code: "NOT_FOUND", message: "Project dossier not found" });
@@ -222,10 +340,25 @@ export async function saveOwnedProjectComplianceDocuments(ctx: MutationCtx, prop
 export async function saveOwnedProjectAdLicense(ctx: MutationCtx, propertyId: GenericId<"properties">, adLicense: any, access: OwnerAccess) {
   const { dossier } = await requireOwnedDossier(ctx, propertyId, access);
   if (!dossier) throw new ConvexError({ code: "NOT_FOUND", message: "Project dossier not found" });
-  await replaceRows(ctx, "projectAdLicenses", dossier._id, adLicense ? [adLicense] : [], (license) => ({ ...license, channels: license.channels ?? [], status: license.status ?? "pending", dossierId: dossier._id, propertyId }));
+  await replaceRows(ctx, "projectAdLicenses", dossier._id, adLicense ? [adLicense] : [], (license) => ({
+    ...license,
+    countryCode: license.countryCode ?? dossier.location?.countryCode,
+    jurisdiction: license.jurisdiction ?? dossier.location?.city,
+    permitNumber: license.permitNumber ?? license.licenseNumber,
+    requiredForChannels: license.requiredForChannels ?? license.channels ?? [],
+    channels: license.channels ?? license.requiredForChannels ?? [],
+    verificationStatus:
+      license.verificationStatus ??
+      (license.status === "approved" ? "verified" : license.status === "expired" ? "expired" : license.status === "rejected" ? "rejected" : "submitted"),
+    status: license.status ?? (license.verificationStatus === "verified" ? "approved" : "pending"),
+    dossierId: dossier._id,
+    propertyId,
+  }));
   await ctx.db.patch(propertyId, {
     adLicenseNumber: adLicense?.licenseNumber,
-    adLicenseStatus: adLicense?.status ?? "pending",
+    adLicenseStatus:
+      adLicense?.status ??
+      (adLicense?.verificationStatus === "verified" ? "approved" : adLicense ? "pending" : undefined),
     updatedAt: Date.now(),
   } as any);
   const readiness = await recomputeProjectReadinessForProperty(ctx, propertyId);

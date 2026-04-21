@@ -25,6 +25,7 @@ import type * as _core_schema_auth from "../_core/schema/auth.js";
 import type * as _core_schema_contact from "../_core/schema/contact.js";
 import type * as _core_schema_crm from "../_core/schema/crm.js";
 import type * as _core_schema_forms from "../_core/schema/forms.js";
+import type * as _core_schema_gccCompliance from "../_core/schema/gccCompliance.js";
 import type * as _core_schema_knowledge from "../_core/schema/knowledge.js";
 import type * as _core_schema_offers from "../_core/schema/offers.js";
 import type * as _core_schema_organizations from "../_core/schema/organizations.js";
@@ -275,6 +276,7 @@ import type * as shared_logic_buyerContext_storage_index from "../shared_logic/b
 import type * as shared_logic_buyerContext_summaries from "../shared_logic/buyerContext/summaries.js";
 import type * as shared_logic_buyerContext_summaries_index from "../shared_logic/buyerContext/summaries/index.js";
 import type * as shared_logic_buyerContext_types from "../shared_logic/buyerContext/types.js";
+import type * as shared_logic_compliance_contracts from "../shared_logic/compliance/contracts.js";
 import type * as shared_logic_compliance_index from "../shared_logic/compliance/index.js";
 import type * as shared_logic_compliance_utils from "../shared_logic/compliance/utils.js";
 import type * as shared_logic_content_queries from "../shared_logic/content/queries.js";
@@ -443,6 +445,7 @@ declare const fullApi: ApiFromModules<{
   "_core/schema/contact": typeof _core_schema_contact;
   "_core/schema/crm": typeof _core_schema_crm;
   "_core/schema/forms": typeof _core_schema_forms;
+  "_core/schema/gccCompliance": typeof _core_schema_gccCompliance;
   "_core/schema/knowledge": typeof _core_schema_knowledge;
   "_core/schema/offers": typeof _core_schema_offers;
   "_core/schema/organizations": typeof _core_schema_organizations;
@@ -693,6 +696,7 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/buyerContext/summaries": typeof shared_logic_buyerContext_summaries;
   "shared_logic/buyerContext/summaries/index": typeof shared_logic_buyerContext_summaries_index;
   "shared_logic/buyerContext/types": typeof shared_logic_buyerContext_types;
+  "shared_logic/compliance/contracts": typeof shared_logic_compliance_contracts;
   "shared_logic/compliance/index": typeof shared_logic_compliance_index;
   "shared_logic/compliance/utils": typeof shared_logic_compliance_utils;
   "shared_logic/content/queries": typeof shared_logic_content_queries;

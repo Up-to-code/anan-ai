@@ -4,8 +4,10 @@ import schema from "../../schema";
 import { modules } from "../../test.setup";
 import { ensureProjectDossierForProperty } from "./migrations";
 import {
+  applyOwnedProjectUnitBulkActions,
   getOwnedProjectDossierDetail,
   requestOwnedProjectPublication,
+  saveOwnedProjectAdLicense,
   saveOwnedProjectComplianceDocuments,
   saveOwnedProjectDossierDraft,
   saveOwnedProjectPaymentPlans,
@@ -47,6 +49,137 @@ it("creates exactly one dossier for a legacy property and blocks public readines
     expect(first.readiness.canPublish).toBe(false);
     expect(first.readiness.status).toBe("incomplete");
     expect(first.readiness.blockers.map((item) => item.code)).toContain("AD_LICENSE_REQUIRED");
+  });
+});
+
+it("accepts a verified GCC advertising permit as listing compliance evidence", async () => {
+  const t = convexTest(schema, modules);
+
+  await t.run(async (ctx: any) => {
+    const redId = await ctx.db.insert("RED", {
+      name: "Dubai Developer",
+      slug: "dubai-developer",
+    } as any);
+    const propertyId = await ctx.db.insert("properties", {
+      title: "Dubai Creek Project",
+      address: "Dubai Creek",
+      location: "Dubai",
+      area: "Creek Harbour",
+      description: "GCC ready property",
+      price: 2_000_000,
+      beds: 2,
+      baths: 3,
+      publicationState: "draft",
+      ownerType: "RED",
+      REDId: redId,
+      ownerVerified: true,
+      searchText: "Dubai Creek Project",
+    } as any);
+    const access = { REDId: redId, role: "developer", authUserId: "gcc-test" };
+
+    await saveOwnedProjectDossierDraft(ctx, {
+      propertyId,
+      title: "Dubai Creek Project",
+      summary: "GCC source of truth",
+      projectType: "ready_property",
+      salesMode: "developer_direct",
+      requestedVisibility: "public",
+      location: { countryCode: "AE", city: "Dubai", district: "Creek Harbour" },
+    }, access);
+    await saveOwnedProjectUnits(ctx, propertyId, [{
+      label: "2BR-A",
+      unitKind: "unit_type",
+      status: "available",
+      bedrooms: 2,
+      bathrooms: 3,
+      price: 2_000_000,
+    }], access);
+    await saveOwnedProjectPaymentPlans(ctx, propertyId, [{
+      title: "Dubai launch plan",
+      startingPrice: 2_000_000,
+      status: "active",
+    }], access);
+    await saveOwnedProjectAdLicense(ctx, propertyId, {
+      licenseNumber: "TRK-1234567890",
+      countryCode: "AE",
+      jurisdiction: "Dubai",
+      permitType: "trakheesi",
+      permitNumber: "TRK-1234567890",
+      permitQrOrUrl: "https://dubailand.gov.ae/permits/TRK-1234567890",
+      verificationStatus: "verified",
+      sourceAuthority: "DLD_RERA",
+      requiredForChannels: ["web", "mobile"],
+      channels: ["web", "mobile"],
+    }, access);
+
+    const readiness = await recomputeProjectReadinessForProperty(ctx, propertyId);
+    const property = await ctx.db.get(propertyId);
+
+    expect(readiness.status).toBe("published_ready");
+    expect(readiness.completedRequirements).toContain("gcc_ad_permit_verified");
+    expect(property?.listingVerified).toBe(true);
+  });
+});
+
+it("applies owner-scoped bulk unit actions and recomputes readiness", async () => {
+  const t = convexTest(schema, modules);
+
+  await t.run(async (ctx: any) => {
+    const redId = await ctx.db.insert("RED", {
+      name: "Bulk Unit Developer",
+      slug: "bulk-unit-developer",
+    } as any);
+    const propertyId = await ctx.db.insert("properties", {
+      title: "Bulk Project",
+      address: "Riyadh",
+      location: "Riyadh",
+      area: "Al Narjis",
+      description: "Bulk unit project",
+      price: 1_000_000,
+      beds: 2,
+      baths: 2,
+      publicationState: "draft",
+      ownerType: "RED",
+      REDId: redId,
+      ownerVerified: true,
+      adLicenseStatus: "approved",
+      searchText: "Bulk Project Riyadh",
+    } as any);
+    const access = { REDId: redId, role: "developer", authUserId: "bulk-test" };
+
+    await saveOwnedProjectDossierDraft(ctx, {
+      propertyId,
+      title: "Bulk Project",
+      projectType: "ready_property",
+      salesMode: "developer_direct",
+      requestedVisibility: "public",
+      location: { countryCode: "SA", city: "Riyadh", district: "Al Narjis" },
+    }, access);
+    await saveOwnedProjectPaymentPlans(ctx, propertyId, [{
+      title: "Cash",
+      startingPrice: 1_000_000,
+      status: "active",
+    }], access);
+
+    await applyOwnedProjectUnitBulkActions(ctx, propertyId, [
+      { type: "create", unit: { label: "A1", unitKind: "unit", status: "draft", bedrooms: 2, bathrooms: 2, price: 1_000_000 } },
+      { type: "import", units: [{ label: "B1", unitKind: "unit", status: "available", bedrooms: 3, bathrooms: 3, price: 1_300_000 }] },
+    ], access);
+    const detailAfterCreate = await getOwnedProjectDossierDetail(ctx, propertyId, access) as any;
+    const draftUnit = detailAfterCreate.units.find((unit: any) => unit.label === "A1");
+    const availableUnit = detailAfterCreate.units.find((unit: any) => unit.label === "B1");
+
+    await applyOwnedProjectUnitBulkActions(ctx, propertyId, [
+      { type: "mark_status", unitIds: [draftUnit._id], status: "available" },
+      { type: "update", unitId: availableUnit._id, patch: { price: 1_250_000 } },
+      { type: "duplicate", unitId: availableUnit._id, label: "B1 copy" },
+      { type: "delete", unitId: draftUnit._id },
+    ], access);
+
+    const detail = await getOwnedProjectDossierDetail(ctx, propertyId, access) as any;
+    expect(detail.units.map((unit: any) => unit.label).sort()).toEqual(["B1", "B1 copy"]);
+    expect(detail.units.find((unit: any) => unit.label === "B1")?.price).toBe(1_250_000);
+    expect(detail.readiness.status).toBe("published_ready");
   });
 });
 

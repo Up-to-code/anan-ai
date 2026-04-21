@@ -4,11 +4,13 @@ import type {
   ProjectAdLicenseInput,
   ProjectBrokerAuthorizationInput,
   ProjectComplianceDocumentInput,
+  ProjectDossierDetail,
   ProjectDossierInput,
   ProjectPaymentPlanInput,
   ProjectUnitInput,
 } from "@/server/contracts/projects";
-import type { WorkspaceProject } from "../../types/projectTypes";
+import type { UnitReference } from "../../../../_lib/entities";
+import type { WorkspaceProject, WorkspaceProjectUnitDetail } from "../../types/projectTypes";
 import type { WorkspaceProjectDetailAccessMode } from "@/server/domains/workspace/properties/detail";
 
 function formatCurrency(value: number) {
@@ -147,6 +149,7 @@ export function mapPropertyToWorkspaceProject(property: PropertyDetail): Workspa
     },
     assets: [],
     units: [],
+    dossier: null,
     brokers: [],
   };
 }
@@ -162,9 +165,11 @@ export function mapPropertyToWorkspaceProjectDetail(
   options?: {
     viewers?: WorkspaceProject["visibility"]["viewers"];
     assets?: WorkspaceProject["assets"];
+    dossier?: ProjectDossierDetail | null;
   },
 ): WorkspaceProject {
   const project = mapPropertyToWorkspaceProject(property);
+  const dossier = options?.dossier ?? null;
   return {
     ...project,
     accessMode,
@@ -174,6 +179,8 @@ export function mapPropertyToWorkspaceProjectDetail(
       viewers: options?.viewers ?? [],
     },
     assets: options?.assets ?? [],
+    units: mapProjectDossierUnitsToUnitReferences(dossier),
+    dossier,
     permit: {
       ...project.permit,
       canShowPrivatePanel:
@@ -181,6 +188,59 @@ export function mapPropertyToWorkspaceProjectDetail(
         project.permit.visibility === "conversation_only" &&
         (Boolean(project.permit.privateSummary) || project.permit.privateFiles.length > 0),
     },
+  };
+}
+
+/**
+ * WHY:   Project detail needs dossier-backed inventory cards without exposing raw project unit records.
+ * WHAT:  Converts saved project dossier units into the shared `UnitReference` UI model.
+ * HOW:   Keeps canonical numeric fields while adding display labels for area and price.
+ */
+export function mapProjectDossierUnitsToUnitReferences(
+  dossier: ProjectDossierDetail | null | undefined,
+): UnitReference[] {
+  return (dossier?.units ?? []).map((unit) => ({
+    id: unit._id,
+    label: unit.label,
+    unitKind: unit.unitKind,
+    status: unit.status,
+    bedrooms: unit.bedrooms,
+    bathrooms: unit.bathrooms,
+    area: formatUnitArea(unit.sizeSqm),
+    sizeSqm: unit.sizeSqm,
+    floor: unit.floor,
+    view: unit.view,
+    price: unit.price,
+    priceLabel: formatUnitPrice(unit.price),
+    handoverAt: unit.handoverAt,
+    floorPlanMedia: unit.floorPlanMedia,
+  }));
+}
+
+/**
+ * WHY:   Unit detail routes need one focused, serializable view model without leaking dossier records into the component.
+ * WHAT:  Finds a unit in a mapped workspace project and enriches it with parent project, media, payment, and compliance context.
+ * HOW:   Prefers unit floor-plan media, then falls back to the parent project gallery so the detail page always has a visual anchor.
+ */
+export function mapWorkspaceProjectUnitDetail(
+  project: WorkspaceProject,
+  unitId: string,
+): WorkspaceProjectUnitDetail | null {
+  const unit = project.units.find((candidate) => candidate.id === unitId);
+  if (!unit) return null;
+
+  return {
+    ...unit,
+    projectId: project.id,
+    projectTitle: project.title,
+    projectLocation: project.location,
+    projectImage: project.image,
+    summary: project.shortDescription || project.summary,
+    paymentPlanLabel: formatPaymentPlanLabel(project.dossier),
+    complianceLabel: formatComplianceLabel(project.dossier),
+    adLicenseLabel: formatAdLicenseLabel(project.dossier),
+    readinessLabel: project.readiness.label,
+    galleryImages: unit.floorPlanMedia?.length ? unit.floorPlanMedia : project.galleryImages,
   };
 }
 
@@ -234,6 +294,20 @@ export function mapWorkspaceProjectToPropertyInput(project: {
     .filter(Boolean);
   const hasPrivatePermitMaterial = Boolean(project.privatePermitSummary?.trim()) || Boolean(project.privatePermitFiles?.length);
   const orderedImages = orderGalleryImages(project.images ?? [], project.coverImageKey);
+  const expertMetadata = {
+    assetType: project.expertProjectType || project.dossier?.projectType,
+    projectScale: project.projectScale?.trim() || undefined,
+    productMix: project.productMix?.trim() || undefined,
+    primaryUnitType: project.primaryUnitType?.trim() || undefined,
+    sizeRange: project.sizeRange?.trim() || undefined,
+    priceComparison: project.priceComparison,
+    comparisonNotes: project.comparisonNotes?.trim() || undefined,
+    expertNotes: project.expertNotes?.trim() || undefined,
+    services: project.services?.length ? project.services : undefined,
+  };
+  const hasExpertMetadata = Object.values(expertMetadata).some((value) =>
+    Array.isArray(value) ? value.length > 0 : Boolean(value),
+  );
 
   return {
     title: project.name.trim(),
@@ -262,17 +336,7 @@ export function mapWorkspaceProjectToPropertyInput(project: {
         coverImageKey: project.coverImageKey ?? orderedImages[0]?.key ?? undefined,
         galleryDisplayMode: project.galleryDisplayMode ?? ("cover" as const),
         galleryAspectRatio: project.galleryAspectRatio ?? ("landscape" as const),
-        expertMetadata: {
-          assetType: project.expertProjectType || project.dossier?.projectType,
-          projectScale: project.projectScale?.trim() || undefined,
-          productMix: project.productMix?.trim() || undefined,
-          primaryUnitType: project.primaryUnitType?.trim() || undefined,
-          sizeRange: project.sizeRange?.trim() || undefined,
-          priceComparison: project.priceComparison ?? "unknown",
-          comparisonNotes: project.comparisonNotes?.trim() || undefined,
-          expertNotes: project.expertNotes?.trim() || undefined,
-          services: project.services?.length ? project.services : undefined,
-        },
+        expertMetadata: hasExpertMetadata ? expertMetadata : undefined,
         privatePermitSummary: project.privatePermitSummary?.trim() || undefined,
         privatePermitFiles: project.privatePermitFiles?.length ? project.privatePermitFiles : undefined,
         privatePermitVisibility: hasPrivatePermitMaterial ? ("conversation_only" as const) : undefined,
@@ -303,6 +367,38 @@ function splitSaudiLocation(value: string) {
     city: city || value.trim() || undefined,
     district: district || city || value.trim() || undefined,
   };
+}
+
+function formatUnitArea(value?: number) {
+  return typeof value === "number" && Number.isFinite(value) ? `${formatCurrency(value)} م²` : undefined;
+}
+
+function formatUnitPrice(value?: number) {
+  return typeof value === "number" && Number.isFinite(value) ? `${formatCurrency(value)} ر.س` : undefined;
+}
+
+function formatPaymentPlanLabel(dossier: ProjectDossierDetail | null) {
+  const plan = dossier?.paymentPlans?.[0];
+  if (!plan) return null;
+  if (typeof plan.downPayment === "number") return `${plan.title} · دفعة أولى ${formatCurrency(plan.downPayment)} ر.س`;
+  if (typeof plan.startingPrice === "number") return `${plan.title} · يبدأ من ${formatCurrency(plan.startingPrice)} ر.س`;
+  return plan.title;
+}
+
+function formatComplianceLabel(dossier: ProjectDossierDetail | null) {
+  const documents = dossier?.documents ?? [];
+  if (!documents.length) return null;
+  const approvedCount = documents.filter((document) => document.status === "approved").length;
+  return approvedCount > 0 ? `${approvedCount} ملفات معتمدة من ${documents.length}` : `${documents.length} ملفات قيد التجهيز`;
+}
+
+function formatAdLicenseLabel(dossier: ProjectDossierDetail | null) {
+  const license = dossier?.adLicenses?.[0];
+  if (!license) return null;
+  if (license.status === "approved") return "رخصة الإعلان معتمدة";
+  if (license.status === "rejected") return "رخصة الإعلان مرفوضة";
+  if (license.status === "expired") return "رخصة الإعلان منتهية";
+  return "رخصة الإعلان قيد المراجعة";
 }
 
 /**

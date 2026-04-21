@@ -39,13 +39,13 @@ const knowledgeTables = {
     agentMemory: defineTable({
         userId: v.string(),
         threadId: v.optional(v.string()),
-        memoryType: v.union(
+        memoryType: v.optional(v.union(
             v.literal("preference"),
             v.literal("fact"),
             v.literal("interaction"),
             v.literal("constraint"),
             v.literal("feedback"),
-        ),
+        )),
         entityType: v.optional(
             v.union(
                 v.literal("property"),
@@ -62,6 +62,8 @@ const knowledgeTables = {
         source: v.optional(v.string()),
         expiresAt: v.optional(v.number()),
         metadata: v.optional(v.any()), // dynamic agent state objects
+        createdAt: v.optional(v.number()),
+        updatedAt: v.optional(v.number()),
     })
         .index("userId", ["userId"])
         .index("userId_and_memoryType", ["userId", "memoryType"])

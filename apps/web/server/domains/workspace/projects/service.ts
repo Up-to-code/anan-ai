@@ -7,12 +7,14 @@ import {
   projectComplianceDocumentInputSchema,
   projectDossierInputSchema,
   projectPaymentPlanInputSchema,
+  projectUnitBulkActionSchema,
   projectUnitInputSchema,
   type ProjectAdLicenseInput,
   type ProjectBrokerAuthorizationInput,
   type ProjectComplianceDocumentInput,
   type ProjectDossierInput,
   type ProjectPaymentPlanInput,
+  type ProjectUnitBulkAction,
   type ProjectUnitInput,
 } from "@/server/contracts/projects";
 import {
@@ -70,6 +72,11 @@ export function buildWorkspaceProjectService(
       const units = input.units.map((unit) => parseOrThrow(projectUnitInputSchema.safeParse(unit), "Invalid project unit payload"));
       const session = await requireWorkspaceSession(dependencies);
       return dependencies.repository.saveProjectUnits(session.token, input.propertyId, units);
+    },
+    async applyProjectUnitBulkActions(input: { propertyId: string; actions: ProjectUnitBulkAction[] }) {
+      const actions = input.actions.map((action) => parseOrThrow(projectUnitBulkActionSchema.safeParse(action), "Invalid project unit bulk action"));
+      const session = await requireWorkspaceSession(dependencies);
+      return dependencies.repository.applyProjectUnitBulkActions(session.token, input.propertyId, actions);
     },
     async saveProjectPaymentPlans(input: { propertyId: string; paymentPlans: ProjectPaymentPlanInput[] }) {
       const paymentPlans = input.paymentPlans.map((plan) => parseOrThrow(projectPaymentPlanInputSchema.safeParse(plan), "Invalid payment plan payload"));

@@ -122,12 +122,46 @@ export const projectComplianceDocumentInputSchema = z.object({
 export const projectAdLicenseInputSchema = z.object({
   dossierId: z.string().min(1),
   licenseNumber: z.string().min(1),
+  countryCode: z.string().optional(),
+  jurisdiction: z.string().optional(),
+  permitType: z.enum([
+    "rega_ad_license",
+    "fal_platform_license",
+    "trakheesi",
+    "madmoun",
+    "adgm_advertising_permit",
+    "bahrain_rera_advertising_guideline",
+    "qatar_broker_license",
+    "generic_ad_permit",
+  ]).optional(),
+  permitNumber: z.string().optional(),
+  permitQrOrUrl: z.string().optional(),
+  verificationStatus: z.enum(["missing", "submitted", "in_review", "verified", "rejected", "expired"]).optional(),
+  requiredForChannels: z.array(z.string()).optional(),
+  sourceAuthority: z.enum(["REGA", "DLD_RERA", "ADREC", "ADGM", "BAHRAIN_RERA", "QATAR_MOJ", "OTHER"]).optional(),
   purpose: z.string().optional(),
   channels: z.array(z.string()),
   brokerageContractNumber: z.string().optional(),
   expiresAt: z.number().optional(),
   evidenceFiles: z.array(uploadedFileReferenceSchema).optional(),
 });
+
+export const projectUnitBulkActionSchema = z.union([
+  z.object({ type: z.literal("create"), unit: projectUnitInputSchema }),
+  z.object({
+    type: z.literal("update"),
+    unitId: z.string().min(1),
+    patch: projectUnitInputSchema.partial().omit({ dossierId: true }),
+  }),
+  z.object({ type: z.literal("delete"), unitId: z.string().min(1) }),
+  z.object({ type: z.literal("duplicate"), unitId: z.string().min(1), label: z.string().optional() }),
+  z.object({
+    type: z.literal("mark_status"),
+    unitIds: z.array(z.string().min(1)),
+    status: z.enum(["available", "reserved", "sold", "draft"]),
+  }),
+  z.object({ type: z.literal("import"), units: z.array(projectUnitInputSchema) }),
+]);
 
 export const projectBrokerAuthorizationInputSchema = z.object({
   dossierId: z.string().min(1),
@@ -287,6 +321,7 @@ export const adminProjectReviewActionInputSchema = z.object({
 
 export type ProjectDossierInput = z.infer<typeof projectDossierInputSchema>;
 export type ProjectUnitInput = z.infer<typeof projectUnitInputSchema>;
+export type ProjectUnitBulkAction = z.infer<typeof projectUnitBulkActionSchema>;
 export type ProjectPaymentPlanInput = z.infer<typeof projectPaymentPlanInputSchema>;
 export type ProjectComplianceDocumentInput = z.infer<typeof projectComplianceDocumentInputSchema>;
 export type ProjectAdLicenseInput = z.infer<typeof projectAdLicenseInputSchema>;

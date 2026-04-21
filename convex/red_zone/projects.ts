@@ -2,6 +2,7 @@ import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { requireRole } from "../_core/security/accessPolicy";
 import {
+  applyOwnedProjectUnitBulkActions,
   getOwnedProjectDossierDetail,
   requestOwnedProjectPublication,
   saveOwnedProjectAdLicense,
@@ -17,6 +18,7 @@ import {
   projectComplianceDocumentInputValidator,
   projectDossierDraftInputValidator,
   projectPaymentPlanInputValidator,
+  projectUnitBulkActionValidator,
   projectUnitInputValidator,
 } from "../shared_logic/projects/validation";
 
@@ -51,6 +53,11 @@ export const saveProjectDossierDraft = mutation({
 export const saveProjectUnits = mutation({
   args: { propertyId: v.id("properties"), units: v.array(projectUnitInputValidator) },
   handler: async (ctx, { propertyId, units }) => saveOwnedProjectUnits(ctx, propertyId, units, await requireDeveloperAccess(ctx)),
+});
+
+export const applyProjectUnitBulkActions = mutation({
+  args: { propertyId: v.id("properties"), actions: v.array(projectUnitBulkActionValidator) },
+  handler: async (ctx, { propertyId, actions }) => applyOwnedProjectUnitBulkActions(ctx, propertyId, actions as any, await requireDeveloperAccess(ctx)),
 });
 
 export const saveProjectPaymentPlans = mutation({

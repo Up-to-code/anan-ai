@@ -39,9 +39,25 @@ export const mobilePropertyContactValidator = v.object({
 
 export const mobilePropertyComplianceValidator = v.object({
   adLicenseStatus: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"))),
+  countryCode: v.optional(v.string()),
+  jurisdiction: v.optional(v.string()),
+  permitType: v.optional(v.string()),
+  permitNumber: v.optional(v.string()),
+  permitQrOrUrl: v.optional(v.string()),
+  permitExpiresAt: v.optional(v.number()),
+  sourceAuthority: v.optional(v.string()),
   permitStatus: v.union(v.literal("verified"), v.literal("pending_review"), v.literal("not_available")),
   ownerVerified: v.boolean(),
   listingVerified: v.boolean(),
+});
+
+export const mobilePropertyProjectSummaryValidator = v.object({
+  readinessStatus: v.optional(v.string()),
+  countryCode: v.optional(v.string()),
+  jurisdiction: v.optional(v.string()),
+  availableUnitCount: v.number(),
+  startingPrice: v.optional(v.number()),
+  activePaymentPlanTitle: v.optional(v.string()),
 });
 
 /**
@@ -67,6 +83,7 @@ export const mobilePropertyFeedItemValidator = v.object({
   finance: v.optional(mobilePropertyFinanceValidator),
   contact: v.optional(mobilePropertyContactValidator),
   compliance: v.optional(mobilePropertyComplianceValidator),
+  project: v.optional(mobilePropertyProjectSummaryValidator),
 });
 
 /**

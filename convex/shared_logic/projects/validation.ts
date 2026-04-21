@@ -1,4 +1,9 @@
 import { v } from "convex/values";
+import {
+  gccPermitTypeValidator,
+  gccPermitVerificationStatusValidator,
+  gccSourceAuthorityValidator,
+} from "../../_core/schema/gccCompliance";
 import { uploadedFileReferenceListValidator } from "../../_core/schema/uploadedFiles";
 
 export const projectReadinessStatusValidator = v.union(
@@ -95,6 +100,14 @@ export const projectComplianceDocumentInputValidator = v.object({
 export const projectAdLicenseInputValidator = v.object({
   dossierId: v.optional(v.string()),
   licenseNumber: v.string(),
+  countryCode: v.optional(v.string()),
+  jurisdiction: v.optional(v.string()),
+  permitType: v.optional(gccPermitTypeValidator),
+  permitNumber: v.optional(v.string()),
+  permitQrOrUrl: v.optional(v.string()),
+  verificationStatus: v.optional(gccPermitVerificationStatusValidator),
+  requiredForChannels: v.optional(v.array(v.string())),
+  sourceAuthority: v.optional(gccSourceAuthorityValidator),
   status: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"), v.literal("expired"))),
   purpose: v.optional(v.string()),
   channels: v.optional(v.array(v.string())),
@@ -117,3 +130,45 @@ export const projectBrokerAuthorizationInputValidator = v.object({
   status: v.optional(v.union(v.literal("draft"), v.literal("active"), v.literal("expired"), v.literal("revoked"))),
   evidenceFiles: v.optional(uploadedFileReferenceListValidator),
 });
+
+export const projectUnitBulkActionValidator = v.union(
+  v.object({
+    type: v.literal("create"),
+    unit: projectUnitInputValidator,
+  }),
+  v.object({
+    type: v.literal("update"),
+    unitId: v.id("projectUnits"),
+    patch: v.object({
+      label: v.optional(v.string()),
+      unitKind: v.optional(v.union(v.literal("unit_type"), v.literal("unit"))),
+      status: v.optional(v.union(v.literal("available"), v.literal("reserved"), v.literal("sold"), v.literal("draft"))),
+      bedrooms: v.optional(v.number()),
+      bathrooms: v.optional(v.number()),
+      sizeSqm: v.optional(v.number()),
+      floor: v.optional(v.string()),
+      view: v.optional(v.string()),
+      price: v.optional(v.number()),
+      handoverAt: v.optional(v.number()),
+      floorPlanMedia: v.optional(uploadedFileReferenceListValidator),
+    }),
+  }),
+  v.object({
+    type: v.literal("delete"),
+    unitId: v.id("projectUnits"),
+  }),
+  v.object({
+    type: v.literal("duplicate"),
+    unitId: v.id("projectUnits"),
+    label: v.optional(v.string()),
+  }),
+  v.object({
+    type: v.literal("mark_status"),
+    unitIds: v.array(v.id("projectUnits")),
+    status: v.union(v.literal("available"), v.literal("reserved"), v.literal("sold"), v.literal("draft")),
+  }),
+  v.object({
+    type: v.literal("import"),
+    units: v.array(projectUnitInputValidator),
+  }),
+);

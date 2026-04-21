@@ -36,7 +36,7 @@ type DossierRecord = {
   ownerType: "broker" | "RED";
   salesMode: "developer_direct" | "broker_mediated" | "broker_owned";
   projectType: "ready_property" | "off_plan" | "land" | "mixed_use";
-  location?: { city?: string; district?: string };
+  location?: { countryCode?: string; city?: string; district?: string };
   readinessStatus?: ProjectReadinessStatus;
   adminBlockedReason?: string;
 };
@@ -94,6 +94,19 @@ function hasApprovedDocument(documents: any[], documentType: string) {
   return documents.some((document) => document.documentType === documentType && document.status === "approved");
 }
 
+function isVerifiedPermit(license: any, now: number) {
+  const verified = license.status === "approved" || license.verificationStatus === "verified";
+  const notExpired = typeof license.expiresAt !== "number" || license.expiresAt > now;
+  return verified && notExpired;
+}
+
+function resolvePermitBlockerLabel(countryCode?: string) {
+  if (countryCode === "AE") return "Approved UAE advertising permit or QR evidence is required";
+  if (countryCode === "BH") return "Bahrain RERA advertising compliance evidence is required";
+  if (countryCode === "QA") return "Qatar licensed broker or advertising evidence is required";
+  return "Approved real-estate advertisement license is required";
+}
+
 function resolveReadinessStatus(
   dossier: DossierRecord,
   blockers: ProjectReadinessBlocker[],
@@ -140,6 +153,8 @@ export async function computeProjectReadiness(
 
   const { units, paymentPlans, documents, adLicenses, brokerAuthorizations } =
     await collectReadinessInputs(ctx, dossier);
+  const now = Date.now();
+  const countryCode = dossier.location?.countryCode ?? "SA";
   const blockers: ProjectReadinessBlocker[] = [];
   const warnings: ProjectReadinessBlocker[] = [];
   const completedRequirements: string[] = [];
@@ -180,16 +195,16 @@ export async function computeProjectReadiness(
 
   const approvedAdLicense =
     property.adLicenseStatus === "approved" ||
-    adLicenses.some((license) => license.status === "approved");
+    adLicenses.some((license) => isVerifiedPermit(license, now));
   if (approvedAdLicense) {
-    completedRequirements.push("ad_license_approved");
+    completedRequirements.push(countryCode === "SA" ? "ad_license_approved" : "gcc_ad_permit_verified");
   } else {
     blockers.push(blocker({
       code: "AD_LICENSE_REQUIRED",
-      label: "Approved real-estate advertisement license is required",
+      label: resolvePermitBlockerLabel(countryCode),
       severity: "critical",
       area: "compliance",
-      nextAction: "Submit and approve the ad-license verification.",
+      nextAction: "Submit and approve the jurisdiction-specific advertising permit before distribution.",
     }));
   }
 
@@ -328,12 +343,14 @@ export async function recomputeProjectReadinessForProperty(
   await ctx.db.patch(propertyId, {
     projectDossierId: dossier?._id,
     projectReadinessStatus: result.status,
-    listingVerified: property.adLicenseStatus === "approved",
+    listingVerified:
+      property.adLicenseStatus === "approved" ||
+      result.completedRequirements.includes("gcc_ad_permit_verified"),
     isPublicSearchable:
       property.publicationState === "published" &&
       result.status === "published_ready" &&
       property.ownerVerified === true &&
-      property.adLicenseStatus === "approved",
+      (property.adLicenseStatus === "approved" || result.completedRequirements.includes("gcc_ad_permit_verified")),
     updatedAt: now,
   } as any);
   return result;
@@ -348,10 +365,19 @@ export function isPropertyDistributionReady(property: {
   publicationState?: string;
   isPublicSearchable?: boolean;
   projectReadinessStatus?: string;
+  projectDossierId?: unknown;
 }) {
-  return (
+  const isLegacyPublishedProjection =
     property.publicationState === "published" &&
-    property.isPublicSearchable === true &&
-    property.projectReadinessStatus === "published_ready"
+    property.projectDossierId === undefined &&
+    property.projectReadinessStatus === undefined &&
+    property.isPublicSearchable !== false;
+  return (
+    isLegacyPublishedProjection ||
+    (
+      property.publicationState === "published" &&
+      property.isPublicSearchable === true &&
+      property.projectReadinessStatus === "published_ready"
+    )
   );
 }

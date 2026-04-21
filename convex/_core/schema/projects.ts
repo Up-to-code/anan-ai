@@ -1,5 +1,10 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import {
+  gccPermitTypeValidator,
+  gccPermitVerificationStatusValidator,
+  gccSourceAuthorityValidator,
+} from "./gccCompliance";
 import { uploadedFileReferenceListValidator } from "./uploadedFiles";
 
 const projectReadinessStatusValidator = v.union(
@@ -173,6 +178,14 @@ const projectsTables = {
     dossierId: v.id("projectDossiers"),
     propertyId: v.id("properties"),
     licenseNumber: v.string(),
+    countryCode: v.optional(v.string()),
+    jurisdiction: v.optional(v.string()),
+    permitType: v.optional(gccPermitTypeValidator),
+    permitNumber: v.optional(v.string()),
+    permitQrOrUrl: v.optional(v.string()),
+    verificationStatus: v.optional(gccPermitVerificationStatusValidator),
+    requiredForChannels: v.optional(v.array(v.string())),
+    sourceAuthority: v.optional(gccSourceAuthorityValidator),
     status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"), v.literal("expired")),
     purpose: v.optional(v.string()),
     channels: v.array(v.string()),
@@ -187,6 +200,8 @@ const projectsTables = {
     .index("dossierId", ["dossierId"])
     .index("propertyId", ["propertyId"])
     .index("licenseNumber", ["licenseNumber"])
+    .index("countryCode_verificationStatus", ["countryCode", "verificationStatus"])
+    .index("sourceAuthority_verificationStatus", ["sourceAuthority", "verificationStatus"])
     .index("verificationRequestId", ["verificationRequestId"]),
 
   projectBrokerAuthorizations: defineTable({

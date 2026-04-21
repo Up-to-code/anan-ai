@@ -30,6 +30,7 @@ type PropertyDoc = {
   listingVerified?: boolean;
   isPublicSearchable?: boolean;
   projectReadinessStatus?: string;
+  projectDossierId?: any;
 };
 
 type PropertyOwner = {
@@ -180,17 +181,61 @@ function buildCompliancePreview(args: {
   owner: PropertyOwner;
   adLicenseStatus?: PropertyAdLicenseStatus;
   listingVerified?: boolean;
+  permit?: any;
+  dossier?: any;
 }) {
   const ownerVerified = args.owner.isVerified === true;
-  const listingVerified = args.listingVerified === true || args.adLicenseStatus === "approved";
+  const permitVerified = args.permit?.status === "approved" || args.permit?.verificationStatus === "verified";
+  const listingVerified = args.listingVerified === true || args.adLicenseStatus === "approved" || permitVerified;
   return {
     adLicenseStatus:
       args.adLicenseStatus === "pending" || args.adLicenseStatus === "approved" || args.adLicenseStatus === "rejected"
         ? args.adLicenseStatus
         : undefined,
+    countryCode: args.permit?.countryCode ?? args.dossier?.location?.countryCode,
+    jurisdiction: args.permit?.jurisdiction ?? args.dossier?.location?.city,
+    permitType: args.permit?.permitType,
+    permitNumber: args.permit?.permitNumber ?? args.permit?.licenseNumber,
+    permitQrOrUrl: args.permit?.permitQrOrUrl,
+    permitExpiresAt: args.permit?.expiresAt,
+    sourceAuthority: args.permit?.sourceAuthority,
     permitStatus: ownerVerified && listingVerified ? ("verified" as const) : ownerVerified ? ("pending_review" as const) : ("not_available" as const),
     ownerVerified,
     listingVerified,
+  };
+}
+
+async function buildProjectSummary(ctx: any, property: PropertyDoc) {
+  const dossier = property.projectDossierId
+    ? await ctx.db.get(property.projectDossierId)
+    : await ctx.db
+        .query("projectDossiers")
+        .withIndex("propertyId", (q: any) => q.eq("propertyId", property._id))
+        .first();
+  if (!dossier) return { dossier: null, permit: null, project: undefined };
+
+  const [units, paymentPlans, permit] = await Promise.all([
+    ctx.db.query("projectUnits").withIndex("dossierId", (q: any) => q.eq("dossierId", dossier._id)).collect(),
+    ctx.db.query("projectPaymentPlans").withIndex("dossierId", (q: any) => q.eq("dossierId", dossier._id)).collect(),
+    ctx.db.query("projectAdLicenses").withIndex("dossierId", (q: any) => q.eq("dossierId", dossier._id)).first(),
+  ]);
+  const activePaymentPlan = paymentPlans.find((plan: any) => plan.status === "active") ?? paymentPlans[0];
+  const availableUnits = units.filter((unit: any) => unit.status === "available");
+  const unitPrices = availableUnits.map((unit: any) => unit.price).filter((price: any): price is number => typeof price === "number");
+  const planPrice = activePaymentPlan?.startingPrice ?? activePaymentPlan?.cashPrice;
+  const startingPrice = typeof planPrice === "number" ? planPrice : unitPrices.length > 0 ? Math.min(...unitPrices) : undefined;
+
+  return {
+    dossier,
+    permit,
+    project: {
+      readinessStatus: dossier.readinessStatus,
+      countryCode: dossier.location?.countryCode,
+      jurisdiction: dossier.location?.city,
+      availableUnitCount: availableUnits.length,
+      startingPrice,
+      activePaymentPlanTitle: activePaymentPlan?.title,
+    },
   };
 }
 
@@ -278,10 +323,11 @@ export async function buildMobilePropertyFeedItem(
   const countryCode = owner.countryCode ?? DEFAULT_COMPLIANCE_COUNTRY;
   const ruleset = await findActiveComplianceRuleset(ctx, { countryCode, orgType });
   if (!ruleset) return null;
+  const projectSummary = await buildProjectSummary(ctx, property);
   const enforcement = ruleset.enforcement;
   if (enforcement.hideUnverified) {
     if (enforcement.requireOrgVerification && owner.isVerified !== true) return null;
-    if (enforcement.requireListingVerification && adLicenseStatus !== "approved") return null;
+    if (enforcement.requireListingVerification && listingVerified !== true && adLicenseStatus !== "approved") return null;
   }
 
   const media = resolveFeedMedia(property);
@@ -291,7 +337,13 @@ export async function buildMobilePropertyFeedItem(
     buildFinancePreview(ctx, property),
     Promise.resolve(buildContactPreview(property, owner)),
   ]);
-  const compliance = buildCompliancePreview({ owner, adLicenseStatus, listingVerified });
+  const compliance = buildCompliancePreview({
+    owner,
+    adLicenseStatus,
+    listingVerified,
+    permit: projectSummary.permit,
+    dossier: projectSummary.dossier,
+  });
 
   return {
     id: property._id,
@@ -314,6 +366,7 @@ export async function buildMobilePropertyFeedItem(
     finance,
     contact,
     compliance,
+    project: projectSummary.project,
   };
 }
 
