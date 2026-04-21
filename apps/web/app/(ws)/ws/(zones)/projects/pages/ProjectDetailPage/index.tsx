@@ -390,6 +390,7 @@ export default function ProjectDetailPage({
               {publicationLabels[project.publicationState]}
             </span>
             <DetailBadge tone="emphasis">{visibilityLabel}</DetailBadge>
+            <DetailBadge tone={project.readiness.canPublish ? "default" : "warning"}>{project.readiness.label}</DetailBadge>
             <DetailBadge tone={isSharedReadOnly ? "warning" : "default"}>{accessLabel}</DetailBadge>
           </div>
         </nav>
@@ -397,6 +398,12 @@ export default function ProjectDetailPage({
         {actionError ? (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-right text-[13px] font-bold text-rose-700">
             {actionError}
+          </div>
+        ) : null}
+
+        {!project.readiness.canPublish ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-right text-[13px] font-bold text-amber-800">
+            حالة الجاهزية: {project.readiness.label}. لن يظهر المشروع في البحث العام أو قنوات الذكاء الاصطناعي حتى تكتمل متطلبات السوق السعودي.
           </div>
         ) : null}
 
@@ -414,6 +421,7 @@ export default function ProjectDetailPage({
                   {publicationLabels[project.publicationState]}
                 </span>
                 <DetailBadge tone="emphasis">{visibilityLabel}</DetailBadge>
+                <DetailBadge tone={project.readiness.canPublish ? "default" : "warning"}>{project.readiness.label}</DetailBadge>
                 <DetailBadge tone={isSharedReadOnly ? "warning" : "default"}>{accessLabel}</DetailBadge>
                 <DetailBadge>{project.specs.status}</DetailBadge>
                 <DetailBadge>{project.parking.label}</DetailBadge>

@@ -3,6 +3,7 @@ import type { Doc, Id } from "../../../_generated/dataModel";
 import type { MutationCtx } from "../../../_generated/server";
 import { requireSender, requireVerifiedSender } from "../access";
 import { attachOrganizationAssetsForTenant } from "../../organizationAssets";
+import { isPropertyDistributionReady } from "../../projects/readiness";
 import { resolveOfferRecipient } from "../recipients";
 import { insertActivity, listParticipantsForCase, loadPropertySummary, participantMatchesAccess, setCaseStage } from "./repositories";
 import { assert, resolveCaseType, resolveStageForDraft, resolveStageForPublish, resolveVisibility } from "./shared";
@@ -65,6 +66,9 @@ async function createOfferCase(
   }
   if (caseType === "collaboration_case") {
     assert(args.clientContext?.clientName && args.clientContext.clientNeed, "Client context is required for collaboration cases");
+  }
+  if (caseType === "open_offer") {
+    assert(property && isPropertyDistributionReady(property), "Open offers require a Saudi-ready published project dossier", "PROJECT_READINESS_REQUIRED");
   }
   if (caseType !== "open_offer") {
     const recipient = await resolveOfferRecipient(ctx, {

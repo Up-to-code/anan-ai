@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { query } from "../../_generated/server";
 import { buildMobilePropertyFeedItem } from "../mobile/feed";
 import { clientOrderDetailValidator } from "./contracts";
+import { isPropertyDistributionReady } from "../../shared_logic/projects/readiness";
 
 /**
  * WHY:   The buyer handoff confirmation page should read the real CRM order instead of local browser state.
@@ -36,7 +37,7 @@ export const getClientOrderDetail = query({
       threadId: order.threadId,
       sourceChannel: order.sourceChannel,
       property:
-        property && (!property.publicationState || property.publicationState === "published")
+        property && isPropertyDistributionReady(property)
           ? await buildMobilePropertyFeedItem(ctx as never, property as never)
           : null,
     };

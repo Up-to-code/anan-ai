@@ -1,4 +1,4 @@
-import { Building2, LayoutDashboard } from "lucide-react";
+import { Building2, FileCheck2, LayoutDashboard } from "lucide-react";
 
 export type AdminPageRouteDefinition = {
   list: string;
@@ -8,7 +8,7 @@ export type AdminPageRouteDefinition = {
 export type AdminPageOperation = "list" | "detail";
 
 export type AdminPageDefinition = {
-  id: "overview" | "verifications";
+  id: "overview" | "verifications" | "projects";
   label: string;
   eyebrow: string;
   title: string;
@@ -46,6 +46,21 @@ export const adminPageRegistry: AdminPageDefinition[] = [
     routes: {
       list: "/verifications",
       detailPattern: "/verifications/[requestId]",
+    },
+  },
+  {
+    id: "projects",
+    label: "جاهزية المشاريع",
+    eyebrow: "الامتثال",
+    title: "جاهزية المشاريع",
+    sectionKey: "projects",
+    href: "/projects",
+    icon: FileCheck2,
+    matchPrefixes: ["/projects"],
+    priority: 30,
+    routes: {
+      list: "/projects",
+      detailPattern: "/projects/[dossierId]",
     },
   },
 ];

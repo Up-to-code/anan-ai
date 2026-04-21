@@ -138,6 +138,49 @@ export function BasicStep({
               </button>
             </div>
           </div>
+
+          <div className="grid gap-5 rounded-[20px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-5">
+            <div>
+              <h4 className="text-sm font-black text-foreground">الموقع السعودي المنظم</h4>
+              <p className="mt-1 text-xs font-semibold leading-6 text-muted-foreground">
+                هذه الحقول هي أساس الجاهزية: المدينة والحي مطلوبة قبل أي توزيع عام أو توصية ذكاء اصطناعي.
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-2">
+                <FieldLabel>المدينة</FieldLabel>
+                <TextInput
+                  value={formState.dossier.city}
+                  onChange={(value) => setFormState((prev) => ({ ...prev, dossier: { ...prev.dossier, city: value } }))}
+                  placeholder="مثال: الرياض"
+                />
+              </div>
+              <div className="grid gap-2">
+                <FieldLabel>الحي</FieldLabel>
+                <TextInput
+                  value={formState.dossier.district}
+                  onChange={(value) => setFormState((prev) => ({ ...prev, dossier: { ...prev.dossier, district: value } }))}
+                  placeholder="مثال: الملقا"
+                />
+              </div>
+              <div className="grid gap-2">
+                <FieldLabel>الشارع</FieldLabel>
+                <TextInput
+                  value={formState.dossier.street}
+                  onChange={(value) => setFormState((prev) => ({ ...prev, dossier: { ...prev.dossier, street: value } }))}
+                  placeholder="اسم الشارع عند توفره"
+                />
+              </div>
+              <div className="grid gap-2">
+                <FieldLabel>العنوان الوطني</FieldLabel>
+                <TextInput
+                  value={formState.dossier.nationalAddress}
+                  onChange={(value) => setFormState((prev) => ({ ...prev, dossier: { ...prev.dossier, nationalAddress: value } }))}
+                  placeholder="العنوان الوطني أو مرجع الموقع"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </SectionCard>
     </StepShell>
@@ -484,6 +527,54 @@ export function SpecsStep(props: {
               error={props.fieldErrors.parkingSpaces}
             />
           </div>
+
+          <div className="rounded-2xl border border-border bg-muted/20 p-4">
+            <div className="mb-4 text-right">
+              <div className="text-sm font-black text-foreground">مخزون الوحدات</div>
+              <p className="mt-1 text-xs font-semibold leading-6 text-muted-foreground">
+                النسخة الحالية تحفظ نوع وحدة رئيسي، ويمكن توسيع القائمة لاحقاً لكل وحدة مفردة.
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-2">
+                <FieldLabel>اسم نوع الوحدة</FieldLabel>
+                <TextInput
+                  value={props.formState.units[0]?.label ?? ""}
+                  onChange={(value) => props.setFormState((prev) => ({ ...prev, units: [{ ...prev.units[0], label: value }] }))}
+                  placeholder="مثال: شقق ثلاث غرف"
+                />
+              </div>
+              <div className="grid gap-2">
+                <FieldLabel>الإتاحة</FieldLabel>
+                <select
+                  value={props.formState.units[0]?.status ?? "available"}
+                  onChange={(event) => props.setFormState((prev) => ({ ...prev, units: [{ ...prev.units[0], status: event.target.value as AgPropertyFormState["units"][number]["status"] }] }))}
+                  className="min-h-[54px] w-full rounded-2xl border border-border bg-muted/20 px-4 py-3 text-base font-semibold text-foreground outline-none transition focus:border-ring focus:bg-card"
+                >
+                  <option value="available">متاح</option>
+                  <option value="reserved">محجوز</option>
+                  <option value="sold">مباع</option>
+                  <option value="draft">مسودة</option>
+                </select>
+              </div>
+              <div className="grid gap-2">
+                <FieldLabel>الدور</FieldLabel>
+                <TextInput
+                  value={props.formState.units[0]?.floor ?? ""}
+                  onChange={(value) => props.setFormState((prev) => ({ ...prev, units: [{ ...prev.units[0], floor: value }] }))}
+                  placeholder="مثال: 4-12"
+                />
+              </div>
+              <div className="grid gap-2">
+                <FieldLabel>الإطلالة</FieldLabel>
+                <TextInput
+                  value={props.formState.units[0]?.view ?? ""}
+                  onChange={(value) => props.setFormState((prev) => ({ ...prev, units: [{ ...prev.units[0], view: value }] }))}
+                  placeholder="مثال: شارع رئيسي / حديقة"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </SectionCard>
 
@@ -793,6 +884,165 @@ export function SharingStep(props: {
             )}
           </div>
         )}
+      </SectionCard>
+
+      <SectionCard title="تفويض التسويق والوساطة" description="هذه البيانات لا تعني اعتماداً قانونياً؛ هي تجهيز تشغيلي لمراجعة الأدمن قبل التوزيع العام.">
+        <div className="grid gap-5">
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-2">
+              <FieldLabel>رقم العقد أو التفويض</FieldLabel>
+              <TextInput
+                value={props.formState.brokerAuthorization.contractNumber}
+                onChange={(value) => props.setFormState((prev) => ({ ...prev, brokerAuthorization: { ...prev.brokerAuthorization, contractNumber: value } }))}
+                placeholder="مثال: AUTH-2026-001"
+              />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>قنوات التسويق</FieldLabel>
+              <TextInput
+                value={props.formState.brokerAuthorization.channelsText}
+                onChange={(value) => props.setFormState((prev) => ({ ...prev, brokerAuthorization: { ...prev.brokerAuthorization, channelsText: value } }))}
+                placeholder="منصة عنان، الوسطاء، الذكاء الاصطناعي"
+              />
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <FieldLabel>نطاق التسويق</FieldLabel>
+            <TextArea
+              rows={3}
+              value={props.formState.brokerAuthorization.marketingScope}
+              onChange={(value) => props.setFormState((prev) => ({ ...prev, brokerAuthorization: { ...prev.brokerAuthorization, marketingScope: value } }))}
+              placeholder="حدد هل التفويض يغطي الإعلان العام، شبكة الوسطاء، واتصالات العملاء."
+            />
+          </div>
+          <div className="grid gap-2">
+            <FieldLabel>شروط العمولة</FieldLabel>
+            <TextArea
+              rows={3}
+              value={props.formState.brokerAuthorization.commissionTerms}
+              onChange={(value) => props.setFormState((prev) => ({ ...prev, brokerAuthorization: { ...prev.brokerAuthorization, commissionTerms: value } }))}
+              placeholder="اكتب النسبة أو الشروط التجارية المسموحة للوسيط."
+            />
+          </div>
+        </div>
+      </SectionCard>
+    </StepShell>
+  );
+}
+
+export function PaymentStep({
+  formState,
+  setFormState,
+}: {
+  formState: AgPropertyFormState;
+  setFormState: React.Dispatch<React.SetStateAction<AgPropertyFormState>>;
+}) {
+  const plan = formState.paymentPlans[0];
+  return (
+    <StepShell
+      badge="الخطوة 4"
+      title="وثّق خطة الدفع قبل العرض"
+      description="السعر وحده لا يكفي للسوق السعودي. أضف خطة الدفع والحسابات التي يحتاجها المراجع وفريق المبيعات."
+      checklist={["سعر بداية واضح", "دفعة أولى", "حساب ضمان أو ملاحظات مالية"]}
+    >
+      <SectionCard title="خطة الدفع الرئيسية" description="هذه البيانات تغذي ملف المشروع ولا تعني اعتماداً مالياً أو قانونياً نهائياً.">
+        <div className="grid gap-5">
+          <div className="grid gap-5 md:grid-cols-3">
+            <div className="grid gap-2">
+              <FieldLabel>سعر البداية</FieldLabel>
+              <TextInput value={plan?.startingPrice ?? ""} onChange={(value) => setFormState((prev) => ({ ...prev, price: value, paymentPlans: [{ ...prev.paymentPlans[0], startingPrice: value }] }))} placeholder="مثال: 1,200,000" />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>السعر النقدي</FieldLabel>
+              <TextInput value={plan?.cashPrice ?? ""} onChange={(value) => setFormState((prev) => ({ ...prev, paymentPlans: [{ ...prev.paymentPlans[0], cashPrice: value }] }))} placeholder="السعر النقدي الكامل" />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>الدفعة الأولى</FieldLabel>
+              <TextInput value={plan?.downPayment ?? ""} onChange={(value) => setFormState((prev) => ({ ...prev, paymentPlans: [{ ...prev.paymentPlans[0], downPayment: value }] }))} placeholder="مثال: 10%" />
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <FieldLabel>مرجع الضمان أو الحساب</FieldLabel>
+            <TextInput value={plan?.escrowReference ?? ""} onChange={(value) => setFormState((prev) => ({ ...prev, paymentPlans: [{ ...prev.paymentPlans[0], escrowReference: value }] }))} placeholder="مرجع حساب الضمان أو ملاحظة التحصيل" />
+          </div>
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-2">
+              <FieldLabel>الرسوم والضريبة</FieldLabel>
+              <TextArea rows={4} value={plan?.feesAndTaxNotes ?? ""} onChange={(value) => setFormState((prev) => ({ ...prev, paymentPlans: [{ ...prev.paymentPlans[0], feesAndTaxNotes: value }] }))} placeholder="اكتب ملاحظات ضريبة التصرفات العقارية، الرسوم، أو أي تكاليف إضافية." />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>البنوك والدعم</FieldLabel>
+              <TextArea rows={4} value={plan?.bankAndSubsidyNotes ?? ""} onChange={(value) => setFormState((prev) => ({ ...prev, paymentPlans: [{ ...prev.paymentPlans[0], bankAndSubsidyNotes: value }] }))} placeholder="اكتب البنوك المتاحة أو ملاحظات الدعم والتمويل." />
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+    </StepShell>
+  );
+}
+
+export function ComplianceStep(props: {
+  adLicenseLabel: string;
+  adLicenseTone: string;
+  fieldErrors: ProjectFormFieldErrors;
+  formState: AgPropertyFormState;
+  handleLicenseFiles: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
+  handleLicenseSubmit: () => Promise<void>;
+  isLicenseUploading: boolean;
+  licenseDocs: UploadedFileReference[];
+  licenseError: string | null;
+  licenseInputRef: React.MutableRefObject<HTMLInputElement | null>;
+  licenseSubmitted: boolean;
+  licenseSubmitting: boolean;
+  propertyId?: string;
+  setFormState: React.Dispatch<React.SetStateAction<AgPropertyFormState>>;
+  setLicenseDocs: React.Dispatch<React.SetStateAction<UploadedFileReference[]>>;
+}) {
+  const documentTypes = [
+    ["wafi_license", "رخصة وافي / بيع على الخارطة"],
+    ["commercial_registration", "السجل التجاري"],
+    ["chamber_certificate", "شهادة الغرفة التجارية"],
+    ["land_title", "صك أو إثبات ملكية الأرض"],
+    ["brokerage_contract", "عقد الوساطة"],
+    ["architectural_plan", "المخططات المعمارية"],
+    ["consultant_contract", "عقد الاستشاري"],
+    ["escrow_or_cpa", "إثبات الضمان أو CPA"],
+  ] as const;
+
+  return (
+    <StepShell
+      badge="الخطوة 5"
+      title="جهّز ملف الامتثال السعودي"
+      description="هذه حقول تشغيلية للمراجعة وليست فتوى قانونية. النشر العام يبقى محجوباً حتى تكتمل الجاهزية."
+      checklist={["رخصة إعلان", "مستندات نظامية", "مراجعة قانونية موصى بها"]}
+    >
+      <SpecsStep {...props} />
+      <SectionCard title="مستندات الامتثال المطلوبة" description="اختر المستندات التي لديك الآن. الأدمن يستطيع اعتمادها أو رفضها لاحقاً.">
+        <div className="grid gap-3 md:grid-cols-2">
+          {documentTypes.map(([documentType, label]) => {
+            const checked = props.formState.complianceDocuments.some((doc) => doc.documentType === documentType);
+            return (
+              <button
+                key={documentType}
+                type="button"
+                onClick={() =>
+                  props.setFormState((prev) => ({
+                    ...prev,
+                    complianceDocuments: checked
+                      ? prev.complianceDocuments.filter((doc) => doc.documentType !== documentType)
+                      : [
+                          ...prev.complianceDocuments,
+                          { documentType, title: label, licenseOrReferenceNumber: "", expiresAt: "", files: [], notes: "" },
+                        ],
+                  }))
+                }
+                className={`rounded-2xl border px-4 py-4 text-right text-sm font-black transition ${checked ? "border-emerald-500 bg-emerald-500/10 text-foreground" : "border-border bg-muted/10 text-muted-foreground hover:bg-muted/20"}`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </SectionCard>
     </StepShell>
   );

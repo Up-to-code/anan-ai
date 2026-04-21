@@ -32,7 +32,7 @@ type SessionDependencies = {
 };
 
 const defaultDependencies: SessionDependencies = {
-  getToken,
+  getToken: async () => (await getToken()) ?? null,
   getOrganizationContext: async () => ({}),
   sessionsRepository: convexSessionsRepository,
   profilesRepository: convexProfilesRepository,

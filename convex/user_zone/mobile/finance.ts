@@ -1,6 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { query } from "../../_generated/server";
 import { mobileFinanceEstimateValidator } from "./contracts";
+import { isPropertyDistributionReady } from "../../shared_logic/projects/readiness";
 
 function getNumericRule(rule: unknown, keys: string[]) {
   if (!rule || typeof rule !== "object") return undefined;
@@ -60,7 +61,8 @@ export const getEstimate = query({
   },
   returns: mobileFinanceEstimateValidator,
   handler: async (ctx, args) => {
-    const property = args.propertyId ? await ctx.db.get(args.propertyId) : null;
+    const loadedProperty = args.propertyId ? await ctx.db.get(args.propertyId) : null;
+    const property = loadedProperty && isPropertyDistributionReady(loadedProperty) ? loadedProperty : null;
     const propertyPrice = args.propertyPrice ?? property?.price;
     if (!propertyPrice || propertyPrice <= 0) {
       throw new ConvexError({ code: "INVALID_INPUT", message: "Property price is required for finance estimates" });
@@ -141,4 +143,3 @@ export const getEstimate = query({
     };
   },
 });
-

@@ -3,6 +3,7 @@ import { v, type Infer } from "convex/values";
 import { internalQuery, query } from "../../_generated/server";
 import { mobilePropertyFeedItemValidator } from "./contracts";
 import { DEFAULT_COMPLIANCE_COUNTRY, findActiveComplianceRuleset } from "../../shared_logic/compliance/utils";
+import { isPropertyDistributionReady } from "../../shared_logic/projects/readiness";
 
 type MobilePropertyFeedItem = Infer<typeof mobilePropertyFeedItemValidator>;
 type PropertyAdLicenseStatus = "pending" | "approved" | "rejected";
@@ -27,6 +28,8 @@ type PropertyDoc = {
   publicationState?: "draft" | "published" | "archived";
   adLicenseStatus?: PropertyAdLicenseStatus;
   listingVerified?: boolean;
+  isPublicSearchable?: boolean;
+  projectReadinessStatus?: string;
 };
 
 type PropertyOwner = {
@@ -208,7 +211,9 @@ export const listFeed = query({
       .paginate(paginationOpts);
 
     const pageItems = await Promise.all(
-      results.page.map((property) => buildMobilePropertyFeedItem(ctx, property as PropertyDoc)),
+      results.page
+        .filter((property) => isPropertyDistributionReady(property as any))
+        .map((property) => buildMobilePropertyFeedItem(ctx, property as PropertyDoc)),
     );
     const page = pageItems.filter(Boolean);
 
@@ -232,7 +237,7 @@ export const getPropertyContext = internalQuery({
   handler: async (ctx, { propertyId }) => {
     const property = await ctx.db.get(propertyId);
     if (!property) return null;
-    if (property.publicationState && property.publicationState !== "published") return null;
+    if (!isPropertyDistributionReady(property as any)) return null;
     return buildMobilePropertyFeedItem(ctx, property as PropertyDoc);
   },
 });
@@ -250,7 +255,7 @@ export const getPropertyDetail = query({
   handler: async (ctx, { propertyId }) => {
     const property = await ctx.db.get(propertyId);
     if (!property) return null;
-    if (property.publicationState && property.publicationState !== "published") return null;
+    if (!isPropertyDistributionReady(property as any)) return null;
     return buildMobilePropertyFeedItem(ctx, property as PropertyDoc);
   },
 });
@@ -264,6 +269,7 @@ export async function buildMobilePropertyFeedItem(
   ctx: any,
   property: PropertyDoc,
 ): Promise<MobilePropertyFeedItem | null> {
+  if (!isPropertyDistributionReady(property)) return null;
   const adLicenseStatus = property.adLicenseStatus;
   const listingVerified = property.listingVerified;
   const ownerContext = await resolvePropertyOwner(ctx, property);

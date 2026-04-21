@@ -2,6 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { internalMutation } from "../../_generated/server";
 import { buildQualificationNotes } from "../mobile/assistant";
 import { mobileQualificationContextValidator } from "../mobile/contracts";
+import { isPropertyDistributionReady } from "../../shared_logic/projects/readiness";
 
 /**
  * WHY:   WhatsApp-qualified buyers must land in the same CRM pipeline used by the rest of the buyer surfaces.
@@ -22,7 +23,7 @@ export const createQualifiedWhatsAppHandoff = internalMutation({
   }),
   handler: async (ctx, args) => {
     const property = await ctx.db.get(args.propertyId);
-    if (!property) {
+    if (!property || !isPropertyDistributionReady(property)) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Property not found for WhatsApp handoff" });
     }
 

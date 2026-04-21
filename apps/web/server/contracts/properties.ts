@@ -5,6 +5,15 @@ import { uploadedFileReferenceSchema } from "@/server/contracts/files";
 export const propertyStatusSchema = z.enum(["available", "sold", "reserved"]);
 export const publicationStateSchema = z.enum(["draft", "published", "archived"]);
 export const buyerVisibilitySchema = z.enum(["private", "public"]);
+export const projectReadinessStatusSchema = z.enum([
+  "draft",
+  "incomplete",
+  "data_complete",
+  "compliance_pending",
+  "approved",
+  "blocked",
+  "published_ready",
+]);
 export const projectAnalyticsEventTypeSchema = z.enum([
   "project_detail_view",
   "project_analytics_view",
@@ -130,6 +139,8 @@ export type PropertyDetail = {
   adLicenseNumber?: string;
   adLicenseStatus?: "pending" | "approved" | "rejected";
   adLicenseVerificationRequestId?: string;
+  projectDossierId?: string;
+  projectReadinessStatus?: z.infer<typeof projectReadinessStatusSchema>;
 };
 
 export const propertyViewerSummarySchema = z.object({

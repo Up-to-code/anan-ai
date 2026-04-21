@@ -9,6 +9,7 @@ import {
   mobileQualificationContextValidator,
 } from "./contracts";
 import { buildBuyerComparisonSnapshot } from "../../shared_logic/buyerComparisons";
+import { isPropertyDistributionReady } from "../../shared_logic/projects/readiness";
 
 type MobilePropertyFeedItem = Infer<typeof mobilePropertyFeedItemValidator>;
 type MobileFinanceEstimate = Infer<typeof mobileFinanceEstimateValidator>;
@@ -75,7 +76,7 @@ export const createQualifiedHandoff = mutation({
 
     try {
       const property = await ctx.db.get(args.propertyId);
-      if (!property) {
+      if (!property || !isPropertyDistributionReady(property)) {
         throw new ConvexError({ code: "NOT_FOUND", message: "Property not found for qualified handoff" });
       }
 

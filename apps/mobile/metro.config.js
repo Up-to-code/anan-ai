@@ -22,6 +22,8 @@ config.resolver.extraNodeModules = {
   "expo-web-browser": path.resolve(projectRoot, "node_modules/expo-web-browser"),
   "expo-apple-authentication": path.resolve(projectRoot, "node_modules/expo-apple-authentication"),
   "expo-secure-store": path.resolve(projectRoot, "node_modules/expo-secure-store"),
+  "expo-network": path.resolve(projectRoot, "node_modules/expo-network"),
+  convex: path.resolve(projectRoot, "node_modules/convex"),
 };
 
 module.exports = withNativeWind(config, { input: "./global.css" });

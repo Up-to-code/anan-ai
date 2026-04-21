@@ -1,8 +1,16 @@
 import ProjectFormScreen from "../shared/forms/ProjectFormScreen";
 import { requireWorkspaceData } from "../../../_lib/workspaceData";
 import { getWorkspaceLocale } from "../../../_lib/workspaceLocale";
-import { getWorkspacePropertyZone } from "@/server/ws/zones";
-import { mapWorkspaceProjectToPropertyInput } from "../shared/lib/projectViewModel";
+import { getWorkspaceProjectZone, getWorkspacePropertyZone } from "@/server/ws/zones";
+import {
+  mapWorkspaceProjectToAdLicenseInput,
+  mapWorkspaceProjectToBrokerAuthorizationInput,
+  mapWorkspaceProjectToComplianceDocumentInputs,
+  mapWorkspaceProjectToDossierInput,
+  mapWorkspaceProjectToPaymentPlanInputs,
+  mapWorkspaceProjectToPropertyInput,
+  mapWorkspaceProjectToUnitInputs,
+} from "../shared/lib/projectViewModel";
 import { requireSessionContext } from "@/server/auth/session";
 import { convexOrganizationAssetsRepository } from "@/server/infrastructure/convex/organizations/assets";
 import { type AppLocale } from "@/lib/locale";
@@ -41,7 +49,14 @@ export default async function CreateProjectPage() {
 
     try {
       const propertiesZone = getWorkspacePropertyZone(audience, ownerContext);
+      const projectsZone = getWorkspaceProjectZone(audience, ownerContext);
       const id = await propertiesZone.createProperty(mapWorkspaceProjectToPropertyInput(data));
+      await projectsZone.saveProjectDossierDraft(mapWorkspaceProjectToDossierInput(id, data));
+      await projectsZone.saveProjectUnits({ propertyId: id, units: mapWorkspaceProjectToUnitInputs(data) });
+      await projectsZone.saveProjectPaymentPlans({ propertyId: id, paymentPlans: mapWorkspaceProjectToPaymentPlanInputs(data) });
+      await projectsZone.saveProjectComplianceDocuments({ propertyId: id, documents: mapWorkspaceProjectToComplianceDocumentInputs(data) });
+      await projectsZone.saveProjectAdLicense({ propertyId: id, adLicense: mapWorkspaceProjectToAdLicenseInput(data) });
+      await projectsZone.saveProjectBrokerAuthorization({ propertyId: id, authorization: mapWorkspaceProjectToBrokerAuthorizationInput(data) });
       const session = await requireSessionContext();
       const imageKeys = data.images.map((image) => image.key);
       const permitKeys = data.privatePermitFiles.map((file) => file.key);

@@ -37,7 +37,10 @@ export default function ProjectPortfolioCard({
       ]}
       density="flexible"
       footer={
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-800">
+            {project.readiness.label}
+          </span>
           <Link
             href={`/ws/projects/${project.id}/analytics`}
             onClick={() => {

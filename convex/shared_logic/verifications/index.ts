@@ -12,6 +12,8 @@ import {
   organizationVerificationRequestFields,
   propertyVerificationRequestFields,
 } from "./types/validation";
+import { ensureProjectDossierForProperty } from "../projects/migrations";
+import { recomputeProjectReadinessForProperty } from "../projects/readiness";
 
 export const createVerificationRequestForCurrentOrg = mutation({
   args: organizationVerificationRequestFields,
@@ -95,6 +97,21 @@ export const createPropertyVerificationRequestForCurrentOrg = mutation({
       adLicenseStatus: "pending",
       adLicenseVerificationRequestId: requestId,
     });
+    const { dossierId } = await ensureProjectDossierForProperty(ctx, args.propertyId, {
+      includeLegacyUnitAndPaymentPlan: false,
+    });
+    await ctx.db.insert("projectAdLicenses", {
+      dossierId,
+      propertyId: args.propertyId,
+      licenseNumber: args.adLicenseNumber,
+      status: "pending",
+      channels: [],
+      evidenceFiles: attachedDocuments,
+      verificationRequestId: requestId,
+      createdAt: now,
+      updatedAt: now,
+    } as any);
+    await recomputeProjectReadinessForProperty(ctx, args.propertyId);
 
     return { requestId };
   },

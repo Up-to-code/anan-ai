@@ -10,6 +10,7 @@ import {
   publishOwnerScopedProperty,
   updateOwnerScopedProperty,
 } from "./index";
+import { recomputeProjectReadinessForProperty } from "../../projects/readiness";
 
 it("keeps broker and RED property counts isolated in the shared owner-scoped helper", async () => {
   const t = convexTest(schema, modules);
@@ -96,6 +97,23 @@ it("rebuilds search text and publication state through the shared owner-scoped h
       id: propertyId,
       description: "Updated description",
     });
+    const property = await ctx.db.get(propertyId);
+    const dossier = property?.projectDossierId ? await ctx.db.get(property.projectDossierId) : null;
+    await ctx.db.patch(propertyId, {
+      ownerVerified: true,
+      adLicenseStatus: "approved",
+      listingVerified: true,
+    } as any);
+    await ctx.db.insert("projectBrokerAuthorizations", {
+      dossierId: dossier?._id,
+      propertyId,
+      brokerId,
+      channels: ["broker_network"],
+      status: "active",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    } as any);
+    await recomputeProjectReadinessForProperty(ctx, propertyId);
     await publishOwnerScopedProperty(ctx, { id: propertyId });
 
     const published = await ctx.db.get(propertyId);

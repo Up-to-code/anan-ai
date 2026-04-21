@@ -37,6 +37,11 @@ export type WorkspaceProject = {
     status: string;
   };
   publicationState: "published" | "draft" | "archived";
+  readiness: {
+    status: string;
+    label: string;
+    canPublish: boolean;
+  };
   accessMode: "owner" | "shared";
   canEdit: boolean;
   visibility: {

@@ -4,6 +4,7 @@ import type {
   VerificationRequestRecord,
 } from "../../../shared_logic/verifications/types";
 import { normalizeUserProfileRoleState } from "../../../_core/security/profileRoles";
+import { getProjectDossierByPropertyId, recomputeProjectReadinessForProperty } from "../../../shared_logic/projects/readiness";
 
 async function syncUserVerification(
   ctx: MutationCtx,
@@ -91,6 +92,39 @@ async function syncPropertyVerification(
     adLicenseNumber: submittedLicense ?? property.adLicenseNumber,
     adLicenseVerificationRequestId: request._id,
   });
+
+  const dossier = await getProjectDossierByPropertyId(ctx, property._id);
+  if (dossier && submittedLicense) {
+    const existingLicense = await ctx.db
+      .query("projectAdLicenses")
+      .withIndex("verificationRequestId", (q: any) => q.eq("verificationRequestId", request._id))
+      .first();
+    const now = Date.now();
+    if (existingLicense) {
+      await ctx.db.patch(existingLicense._id, {
+        status: nextStatus === "approved" ? "approved" : nextStatus,
+        licenseNumber: submittedLicense,
+        updatedAt: now,
+        lastCheckedAt: now,
+      });
+    } else {
+      await ctx.db.insert("projectAdLicenses", {
+        dossierId: dossier._id,
+        propertyId: property._id,
+        licenseNumber: submittedLicense,
+        status: nextStatus === "approved" ? "approved" : nextStatus,
+        channels: [],
+        verificationRequestId: request._id,
+        lastCheckedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      } as any);
+    }
+  }
+
+  if (dossier) {
+    await recomputeProjectReadinessForProperty(ctx, property._id);
+  }
 }
 
 /**

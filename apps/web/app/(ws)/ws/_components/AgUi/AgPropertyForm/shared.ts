@@ -1,7 +1,17 @@
 import type { UploadedFileReference } from "@/server/contracts/files";
 import type { PropertyViewerSummary } from "@/server/contracts/properties";
 import type { AppLocale } from "@/lib/locale";
-import type { GalleryAspectRatio, GalleryDisplayMode, ProjectFormData, StepDefinition } from "./types";
+import type {
+  GalleryAspectRatio,
+  GalleryDisplayMode,
+  ProjectBrokerAuthorizationFormData,
+  ProjectComplianceDocumentFormData,
+  ProjectDossierFormData,
+  ProjectFormData,
+  ProjectPaymentPlanFormData,
+  ProjectUnitFormData,
+  StepDefinition,
+} from "./types";
 
 export type AgPropertyFormState = {
   name: string;
@@ -26,6 +36,11 @@ export type AgPropertyFormState = {
   video: string | null;
   adLicenseNumber: string;
   visibilityMembers: PropertyViewerSummary[];
+  dossier: ProjectDossierFormData;
+  units: ProjectUnitFormData[];
+  paymentPlans: ProjectPaymentPlanFormData[];
+  complianceDocuments: ProjectComplianceDocumentFormData[];
+  brokerAuthorization: ProjectBrokerAuthorizationFormData;
 };
 
 const LICENSE_STATUS_LABELS: Record<
@@ -65,33 +80,36 @@ export function getLicenseStatusUi(locale: AppLocale) {
 export function getStepDefinitions(locale: AppLocale): StepDefinition[] {
   if (locale === "en") {
     return [
-      { key: "basic", title: "Basics", summary: "Project name, price, and location" },
-      { key: "content", title: "Content", summary: "Full description, short copy, and highlights" },
-      { key: "gallery", title: "Gallery", summary: "Uploads, ordering, and cover image" },
-      { key: "specs", title: "Specs", summary: "Rooms, status, parking, and license" },
-      { key: "sharing", title: "Sharing", summary: "Private access, permit files, and broker link" },
-      { key: "review", title: "Review", summary: "Final review before saving" },
+      { key: "basic", title: "Identity", summary: "Project name and structured Saudi location" },
+      { key: "sharing", title: "Ownership", summary: "Owner, authorization, and distribution scope" },
+      { key: "specs", title: "Units", summary: "Unit inventory, size, rooms, and availability" },
+      { key: "payment", title: "Payment", summary: "Starting price, payment plan, and finance notes" },
+      { key: "compliance", title: "Compliance", summary: "Ad license, WAFI evidence, and legal files" },
+      { key: "gallery", title: "Media", summary: "Uploads, ordering, cover image, and presentation" },
+      { key: "review", title: "Readiness", summary: "Blockers and publish request review" },
     ];
   }
 
   if (locale === "fr") {
     return [
-      { key: "basic", title: "Base", summary: "Nom du projet, prix et emplacement" },
-      { key: "content", title: "Contenu", summary: "Description complete, resume et points forts" },
-      { key: "gallery", title: "Galerie", summary: "Televersements, ordre et image de couverture" },
-      { key: "specs", title: "Details", summary: "Pieces, statut, parking et licence" },
-      { key: "sharing", title: "Partage", summary: "Acces prive, fichiers et courtier" },
-      { key: "review", title: "Revision", summary: "Revision finale avant l'enregistrement" },
+      { key: "basic", title: "Identite", summary: "Nom du projet et adresse saoudienne structuree" },
+      { key: "sharing", title: "Propriete", summary: "Proprietaire, autorisation et portee marketing" },
+      { key: "specs", title: "Unites", summary: "Inventaire, surfaces, pieces et disponibilite" },
+      { key: "payment", title: "Paiement", summary: "Prix, plan de paiement et notes finance" },
+      { key: "compliance", title: "Conformite", summary: "Licence publicitaire, WAFI et documents" },
+      { key: "gallery", title: "Media", summary: "Images, ordre, couverture et presentation" },
+      { key: "review", title: "Pret", summary: "Blocages et demande de publication" },
     ];
   }
 
   return [
-    { key: "basic", title: "تعريف المشروع", summary: "الاسم والسعر والموقع وطريقة الظهور" },
-    { key: "content", title: "الرسالة التسويقية", summary: "الوصف الكامل والملخص السريع والمزايا" },
-    { key: "gallery", title: "المعرض البصري", summary: "رفع الصور وترتيبها واختيار الغلاف" },
-    { key: "specs", title: "المواصفات والتوثيق", summary: "الحالة والغرف والمواقف والرخصة" },
-    { key: "sharing", title: "المشاركة والوصول", summary: "الوصول الخاص والملفات وتكليف الوسيط" },
-    { key: "review", title: "المراجعة قبل الحفظ", summary: "مراجعة نهائية قبل اعتماد المشروع" },
+    { key: "basic", title: "هوية المشروع", summary: "الاسم والموقع السعودي المنظم" },
+    { key: "sharing", title: "المالك والتفويض", summary: "الملكية والتفويض ونطاق التسويق" },
+    { key: "specs", title: "الوحدات", summary: "المخزون والمساحات والغرف والتوفر" },
+    { key: "payment", title: "خطة الدفع", summary: "السعر والدفعات والتمويل والحسابات" },
+    { key: "compliance", title: "الامتثال السعودي", summary: "الرخصة الإعلانية ووافي والمستندات" },
+    { key: "gallery", title: "الميديا والعرض", summary: "الصور والغلاف والوصف والمزايا" },
+    { key: "review", title: "الجاهزية للنشر", summary: "مراجعة العوائق وطلب النشر" },
   ];
 }
 
@@ -152,6 +170,54 @@ export const PDF_MIME_TYPE = "application/pdf";
 export const MAX_IMAGE_SIZE_BYTES = 8 * 1024 * 1024;
 export const MAX_PDF_SIZE_BYTES = 20 * 1024 * 1024;
 
+const defaultDossier: ProjectDossierFormData = {
+  projectType: "ready_property",
+  lifecycleStage: "draft",
+  salesMode: "developer_direct",
+  city: "",
+  district: "",
+  neighborhood: "",
+  street: "",
+  nationalAddress: "",
+  latitude: "",
+  longitude: "",
+};
+
+const defaultUnit: ProjectUnitFormData = {
+  label: "Primary unit type",
+  unitKind: "unit_type",
+  status: "available",
+  bedrooms: "",
+  bathrooms: "",
+  sizeSqm: "",
+  floor: "",
+  view: "",
+  price: "",
+  handoverAt: "",
+  floorPlanMedia: [],
+};
+
+const defaultPaymentPlan: ProjectPaymentPlanFormData = {
+  title: "Primary payment plan",
+  cashPrice: "",
+  startingPrice: "",
+  downPayment: "",
+  escrowReference: "",
+  feesAndTaxNotes: "",
+  bankAndSubsidyNotes: "",
+  milestones: [],
+};
+
+const defaultBrokerAuthorization: ProjectBrokerAuthorizationFormData = {
+  contractNumber: "",
+  marketingScope: "",
+  channelsText: "",
+  commissionTerms: "",
+  validFrom: "",
+  validUntil: "",
+  evidenceFiles: [],
+};
+
 export function createInitialFormState(initialData?: Partial<ProjectFormData>, coverImageKey?: string | null): AgPropertyFormState {
   return {
     name: initialData?.name ?? "",
@@ -176,5 +242,10 @@ export function createInitialFormState(initialData?: Partial<ProjectFormData>, c
     video: initialData?.video ?? null,
     adLicenseNumber: initialData?.adLicenseNumber ?? "",
     visibilityMembers: initialData?.visibilityMembers ?? [],
+    dossier: { ...defaultDossier, ...initialData?.dossier },
+    units: initialData?.units?.length ? initialData.units : [{ ...defaultUnit }],
+    paymentPlans: initialData?.paymentPlans?.length ? initialData.paymentPlans : [{ ...defaultPaymentPlan }],
+    complianceDocuments: initialData?.complianceDocuments ?? [],
+    brokerAuthorization: { ...defaultBrokerAuthorization, ...initialData?.brokerAuthorization },
   };
 }

@@ -1,6 +1,6 @@
 import ProjectsPage from "./pages/ProjectsPage";
 import { requireWorkspaceData } from "../../_lib/workspaceData";
-import { getWorkspacePropertyZone } from "@/server/ws/zones";
+import { getWorkspaceProjectZone, getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapPropertyToWorkspaceProject } from "./shared/lib/projectViewModel";
 import { normalizeDomainError } from "@/server/contracts/errors";
 import type { ProjectMutationActionResult } from "./pages/ProjectsPage/actionTypes";
@@ -36,7 +36,7 @@ export default async function WorkspaceProjectsRoute() {
     "use server";
 
     try {
-      await getWorkspacePropertyZone(audience, ownerContext).publishProperty({ id: projectId });
+      await getWorkspaceProjectZone(audience, ownerContext).requestProjectPublication({ propertyId: projectId });
       return { ok: true };
     } catch (error) {
       const domainError = normalizeDomainError(error);

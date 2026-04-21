@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import schema from "../../../schema";
 import { api } from "../../../_generated/api";
 import { modules } from "../../../test.setup";
+import { recomputeProjectReadinessForProperty } from "../../projects/readiness";
 
 const mockRequireRole = vi.fn();
 const mockRequireOrganizationMembership = vi.fn();
@@ -43,19 +44,79 @@ async function seedBrokerProperty(t: ReturnType<typeof convexTest>) {
   const brokerId = await t.run((ctx) =>
     ctx.db.insert("brokers", { name: "Broker One", slug: "broker-one", isVerified: true }),
   );
-  const propertyId = await t.run((ctx) =>
-    ctx.db.insert("properties", {
+  const propertyId = await t.run(async (ctx) => {
+    const id = await ctx.db.insert("properties", {
       title: "Offer Property",
       address: "Riyadh",
+      location: "Riyadh",
+      area: "Al Malqa",
       description: "Offer test",
       price: 100,
       beds: 2,
       baths: 1,
       brokerId,
-      publicationState: "draft",
+      publicationState: "published",
+      ownerVerified: true,
+      adLicenseStatus: "approved",
+      listingVerified: true,
       searchText: "Offer Property Riyadh Offer test",
-    } as any),
-  );
+    } as any);
+    const now = Date.now();
+    const dossierId = await ctx.db.insert("projectDossiers", {
+      propertyId: id,
+      ownerType: "broker",
+      ownerBrokerId: brokerId,
+      projectType: "ready_property",
+      salesMode: "broker_owned",
+      lifecycleStage: "draft",
+      requestedVisibility: "public",
+      readinessStatus: "incomplete",
+      readinessBlockers: [],
+      readinessWarnings: [],
+      completedRequirements: [],
+      location: { countryCode: "SA", city: "Riyadh", district: "Al Malqa", confidence: "legacy" },
+      title: "Offer Property",
+      legacyPublicationState: "published",
+      createdAt: now,
+      updatedAt: now,
+    } as any);
+    await ctx.db.insert("projectUnits", {
+      dossierId,
+      propertyId: id,
+      label: "Primary unit type",
+      unitKind: "unit_type",
+      status: "available",
+      bedrooms: 2,
+      bathrooms: 1,
+      price: 100,
+      createdAt: now,
+      updatedAt: now,
+    } as any);
+    await ctx.db.insert("projectPaymentPlans", {
+      dossierId,
+      propertyId: id,
+      title: "Default cash price",
+      cashPrice: 100,
+      startingPrice: 100,
+      milestones: [],
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    } as any);
+    await ctx.db.insert("projectBrokerAuthorizations", {
+      dossierId,
+      propertyId: id,
+      brokerId,
+      channels: ["broker_network"],
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    } as any);
+    await ctx.db.patch(id, { projectDossierId: dossierId } as any);
+    await recomputeProjectReadinessForProperty(ctx, id);
+    await ctx.db.patch(id, { publicationState: "published", isPublicSearchable: true } as any);
+    return id;
+  });
   return { brokerId, propertyId };
 }
 

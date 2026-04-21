@@ -8,8 +8,9 @@ import { useAgPropertyForm } from "./useAgPropertyForm";
 import type { AgPropertyFormProps } from "./types";
 import {
   BasicStep,
-  ContentStep,
+  ComplianceStep,
   GalleryStep,
+  PaymentStep,
   ReviewStep,
   SharingStep,
   SpecsStep,
@@ -18,7 +19,7 @@ import {
 
 /**
  * WHY:   Project create and edit need one simplified, Safari-safe flow instead of long split-column forms.
- * WHAT:  Renders a six-step one-column wizard for project data, media, sharing, and final review.
+ * WHAT:  Renders a seven-step Saudi dossier wizard for identity, ownership, units, payment, compliance, media, and readiness review.
  * HOW:   Keeps all form state local, delegates wizard side effects to a local hook, and splits step rendering into focused local modules.
  */
 export default function AgPropertyForm({
@@ -74,8 +75,8 @@ export default function AgPropertyForm({
     if (form.activeStep.key === "basic") {
       return <BasicStep formState={form.formState} fieldErrors={form.submissionFeedback?.fieldErrors ?? {}} setFormState={form.setFormState} />;
     }
-    if (form.activeStep.key === "content") {
-      return <ContentStep formState={form.formState} fieldErrors={form.submissionFeedback?.fieldErrors ?? {}} setFormState={form.setFormState} />;
+    if (form.activeStep.key === "payment") {
+      return <PaymentStep formState={form.formState} setFormState={form.setFormState} />;
     }
     if (form.activeStep.key === "gallery") {
       return (
@@ -99,6 +100,27 @@ export default function AgPropertyForm({
     if (form.activeStep.key === "specs") {
       return (
         <SpecsStep
+          adLicenseLabel={form.adLicenseLabel}
+          adLicenseTone={form.adLicenseTone}
+          fieldErrors={form.submissionFeedback?.fieldErrors ?? {}}
+          formState={form.formState}
+          handleLicenseFiles={form.handleLicenseFiles}
+          handleLicenseSubmit={form.handleLicenseSubmit}
+          isLicenseUploading={form.isLicenseUploading}
+          licenseDocs={form.licenseDocs}
+          licenseError={form.licenseError}
+          licenseInputRef={form.licenseInputRef}
+          licenseSubmitted={form.licenseSubmitted}
+          licenseSubmitting={form.licenseSubmitting}
+          propertyId={propertyId}
+          setFormState={form.setFormState}
+          setLicenseDocs={form.setLicenseDocs}
+        />
+      );
+    }
+    if (form.activeStep.key === "compliance") {
+      return (
+        <ComplianceStep
           adLicenseLabel={form.adLicenseLabel}
           adLicenseTone={form.adLicenseTone}
           fieldErrors={form.submissionFeedback?.fieldErrors ?? {}}
