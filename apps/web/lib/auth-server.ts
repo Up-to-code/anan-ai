@@ -1,4 +1,7 @@
 import { convexBetterAuthNextJs } from "@convex-dev/better-auth/nextjs";
+import type { Preloaded } from "convex/react";
+import type { FunctionReference, FunctionReturnType } from "convex/server";
+import type { EmptyObject } from "convex-helpers";
 import {
   isLoopbackOrigin,
   isProductionLikeEnv,
@@ -18,6 +21,9 @@ type AuthConfigurationError = Error & {
   code: "AUTH_CONFIGURATION_ERROR";
   status: 503;
 };
+
+type OptionalArgs<FuncRef extends FunctionReference<any, any>> =
+  FuncRef["_args"] extends EmptyObject ? [args?: EmptyObject] : [args: FuncRef["_args"]];
 
 function normalizeUrl(value?: string | null) {
   const normalized = normalizeBaseUrl(value);
@@ -145,11 +151,12 @@ export async function getToken(...args: Parameters<typeof configuredBridge.bridg
   return configuredBridge.bridge.getToken(...args);
 }
 
-export async function preloadAuthQuery(
-  ...args: Parameters<typeof configuredBridge.bridge.preloadAuthQuery>
-) {
+export async function preloadAuthQuery<Query extends FunctionReference<"query">>(
+  query: Query,
+  ...args: OptionalArgs<Query>
+): Promise<Preloaded<Query>> {
   ensureAuthBridgeConfigured();
-  return configuredBridge.bridge.preloadAuthQuery(...args);
+  return configuredBridge.bridge.preloadAuthQuery(query, ...args);
 }
 
 export async function isAuthenticated(
@@ -159,23 +166,26 @@ export async function isAuthenticated(
   return configuredBridge.bridge.isAuthenticated(...args);
 }
 
-export async function fetchAuthQuery(
-  ...args: Parameters<typeof configuredBridge.bridge.fetchAuthQuery>
-) {
+export async function fetchAuthQuery<Query extends FunctionReference<"query">>(
+  query: Query,
+  ...args: OptionalArgs<Query>
+): Promise<FunctionReturnType<Query>> {
   ensureAuthBridgeConfigured();
-  return configuredBridge.bridge.fetchAuthQuery(...args);
+  return configuredBridge.bridge.fetchAuthQuery(query, ...args);
 }
 
-export async function fetchAuthMutation(
-  ...args: Parameters<typeof configuredBridge.bridge.fetchAuthMutation>
-) {
+export async function fetchAuthMutation<Mutation extends FunctionReference<"mutation">>(
+  mutation: Mutation,
+  ...args: OptionalArgs<Mutation>
+): Promise<FunctionReturnType<Mutation>> {
   ensureAuthBridgeConfigured();
-  return configuredBridge.bridge.fetchAuthMutation(...args);
+  return configuredBridge.bridge.fetchAuthMutation(mutation, ...args);
 }
 
-export async function fetchAuthAction(
-  ...args: Parameters<typeof configuredBridge.bridge.fetchAuthAction>
-) {
+export async function fetchAuthAction<Action extends FunctionReference<"action">>(
+  action: Action,
+  ...args: OptionalArgs<Action>
+): Promise<FunctionReturnType<Action>> {
   ensureAuthBridgeConfigured();
-  return configuredBridge.bridge.fetchAuthAction(...args);
+  return configuredBridge.bridge.fetchAuthAction(action, ...args);
 }
