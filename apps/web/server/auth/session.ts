@@ -31,6 +31,15 @@ type SessionDependencies = {
   profilesRepository: ProfilesRepository;
 };
 
+function isAuthConfigurationError(error: unknown) {
+  return Boolean(
+    error
+    && typeof error === "object"
+    && "code" in error
+    && error.code === "AUTH_CONFIGURATION_ERROR",
+  );
+}
+
 const defaultDependencies: SessionDependencies = {
   getToken: async () => (await getToken()) ?? null,
   getOrganizationContext: async () => ({}),
@@ -105,10 +114,14 @@ async function resolveOptionalSessionContext(
       dependencies.getOrganizationContext(),
     ]);
   } catch (error) {
-    if (isMissingAuthTokenConfigurationError(error)) {
+    if (isMissingAuthTokenConfigurationError(error) || isAuthConfigurationError(error)) {
+      const message =
+        error && typeof error === "object" && "message" in error && typeof error.message === "string"
+          ? error.message
+          : "Better Auth token configuration is missing or unreachable.";
       throw new DomainError({
         code: "AUTH_CONFIGURATION_ERROR",
-        message: "Better Auth token configuration is missing or unreachable.",
+        message,
         status: 503,
       });
     }

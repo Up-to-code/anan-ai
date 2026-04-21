@@ -5,6 +5,12 @@ import { betterAuth, type BetterAuthOptions } from "better-auth";
 import { emailOTP, organization } from "better-auth/plugins";
 import { components } from "../_generated/api";
 import type { DataModel } from "../_generated/dataModel";
+import {
+  isLoopbackOrigin,
+  isProductionLikeEnv,
+  normalizeBaseUrl,
+  resolveAllowedOrigins,
+} from "../_core/security/authRedirects";
 import authConfig from "../auth.config";
 import schema from "./schema";
 
@@ -20,24 +26,49 @@ function readCsvEnv(name: string) {
     .filter(Boolean);
 }
 
-function getTrustedOrigins() {
-  return [
+function getAuthBaseUrl() {
+  const isProduction = isProductionLikeEnv(process.env.NODE_ENV, process.env.VERCEL_ENV);
+  const candidates = [
     process.env.SITE_URL,
     process.env.ANAN_WEB_URL,
     process.env.NEXT_PUBLIC_SITE_URL,
-    process.env.EXPO_PUBLIC_CLIENT_WEB_URL,
-    process.env.EXPO_PUBLIC_CONVEX_SITE_URL,
-    process.env.NEXT_PUBLIC_CONVEX_SITE_URL,
     process.env.BETTER_AUTH_URL,
-    ...readCsvEnv("ANAN_AUTH_ALLOWED_ORIGINS"),
-    ...readCsvEnv("BETTER_AUTH_TRUSTED_ORIGINS"),
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:3001",
-    "anan://",
-    "exp://",
-  ].filter((origin): origin is string => Boolean(origin?.trim()));
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeBaseUrl(candidate);
+    if (!normalized) {
+      continue;
+    }
+
+    if (isProduction && isLoopbackOrigin(normalized)) {
+      continue;
+    }
+
+    return normalized;
+  }
+
+  return undefined;
+}
+
+function getTrustedOrigins() {
+  const allowedOrigins = resolveAllowedOrigins({
+    webBaseUrl: getAuthBaseUrl() ?? null,
+    allowedOriginsEnv: [
+      ...readCsvEnv("ANAN_AUTH_ALLOWED_ORIGINS"),
+      ...readCsvEnv("BETTER_AUTH_TRUSTED_ORIGINS"),
+    ].join(","),
+    extraOrigins: [
+      process.env.EXPO_PUBLIC_CLIENT_WEB_URL,
+      process.env.EXPO_PUBLIC_CONVEX_SITE_URL,
+      process.env.NEXT_PUBLIC_CONVEX_SITE_URL,
+      process.env.BETTER_AUTH_URL,
+    ],
+    nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
+  });
+
+  return [...allowedOrigins, "anan://", "exp://"];
 }
 
 function buildSocialProviders() {
@@ -77,7 +108,7 @@ export const authComponent = createClient<DataModel, typeof schema>(
 export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
   ({
     appName: "Anan",
-    baseURL: process.env.SITE_URL ?? process.env.ANAN_WEB_URL ?? process.env.BETTER_AUTH_URL,
+    baseURL: getAuthBaseUrl(),
     secret: process.env.BETTER_AUTH_SECRET,
     trustedOrigins: getTrustedOrigins(),
     database: authComponent.adapter(ctx),

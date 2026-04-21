@@ -77,3 +77,28 @@ it("surfaces missing auth provider token configuration as AUTH_CONFIGURATION_ERR
     status: 503,
   });
 });
+
+it("surfaces upstream auth bridge configuration errors as AUTH_CONFIGURATION_ERROR", async () => {
+  const dependencies = {
+    getToken: vi.fn(async () => {
+      throw {
+        code: "AUTH_CONFIGURATION_ERROR",
+        message: "Production auth bridge is missing hosted Convex auth URLs.",
+        status: 503,
+      };
+    }),
+    getOrganizationContext: vi.fn(async () => ({})),
+    sessionsRepository: {
+      getCurrent: vi.fn(async () => null),
+    },
+    profilesRepository: {
+      getCurrent: vi.fn(async () => null),
+    },
+  };
+
+  await expect(getOptionalSessionContext(dependencies as never)).rejects.toMatchObject<Partial<DomainError>>({
+    code: "AUTH_CONFIGURATION_ERROR",
+    status: 503,
+    message: "Production auth bridge is missing hosted Convex auth URLs.",
+  });
+});

@@ -13,6 +13,34 @@ export type AllowedOriginsOptions = {
 };
 
 /**
+ * WHY:   Auth redirect safety depends on knowing when the app is running in a hosted production environment.
+ * WHAT:  Returns true when runtime env markers indicate a production deployment.
+ * HOW:   Treats either `NODE_ENV=production` or `VERCEL_ENV=production` as production-like execution.
+ */
+export function isProductionLikeEnv(nodeEnv?: string | null, vercelEnv?: string | null) {
+  return nodeEnv === "production" || vercelEnv === "production";
+}
+
+/**
+ * WHY:   Production auth config should ignore loopback hosts that are only valid during local development.
+ * WHAT:  Returns true when a URL points at localhost or another loopback hostname.
+ * HOW:   Normalizes the URL first, then checks the parsed hostname against local-only hostnames.
+ */
+export function isLoopbackOrigin(value?: string | null) {
+  const normalized = normalizeBaseUrl(value);
+  if (!normalized) {
+    return false;
+  }
+
+  try {
+    const url = new URL(normalized);
+    return url.hostname === "localhost" || url.hostname === "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
+/**
  * WHY:   Redirect origin comparison needs consistent URL shapes.
  * WHAT:  Normalizes a base URL by trimming, stripping trailing slashes, and ensuring a protocol.
  * HOW:   Treats bare domains as HTTPS and returns null for empty values.
@@ -33,8 +61,7 @@ export function normalizeBaseUrl(value?: string | null) {
  */
 export function resolveAllowedOrigins(options: AllowedOriginsOptions): string[] {
   const origins = new Set<string>();
-  const isProduction =
-    options.nodeEnv === "production" || options.vercelEnv === "production";
+  const isProduction = isProductionLikeEnv(options.nodeEnv, options.vercelEnv);
 
   if (options.webBaseUrl) {
     origins.add(options.webBaseUrl);

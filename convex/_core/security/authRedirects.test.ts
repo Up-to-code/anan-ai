@@ -1,5 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { resolveAllowedOrigins } from "./authRedirects";
+import { isLoopbackOrigin, isProductionLikeEnv, resolveAllowedOrigins } from "./authRedirects";
+
+describe("isProductionLikeEnv", () => {
+  it("treats vercel production deployments as production-like", () => {
+    expect(isProductionLikeEnv("development", "production")).toBe(true);
+  });
+
+  it("keeps local development false", () => {
+    expect(isProductionLikeEnv("development", "preview")).toBe(false);
+  });
+});
+
+describe("isLoopbackOrigin", () => {
+  it("recognizes localhost urls", () => {
+    expect(isLoopbackOrigin("http://localhost:3000")).toBe(true);
+    expect(isLoopbackOrigin("http://127.0.0.1:3000")).toBe(true);
+  });
+
+  it("does not flag hosted origins", () => {
+    expect(isLoopbackOrigin("https://anan-lit-web.vercel.app")).toBe(false);
+  });
+});
 
 describe("resolveAllowedOrigins", () => {
   it("adds localhost defaults outside production", () => {
