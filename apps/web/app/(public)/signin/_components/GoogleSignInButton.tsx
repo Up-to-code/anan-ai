@@ -7,6 +7,23 @@ import Button from "@/components/ui/institutional-button";
 import { authClient } from "@/lib/auth-client";
 import { capturePostHogEvent } from "@/lib/posthog";
 
+/**
+ * WHY:   Better Auth completes OAuth on the Convex site domain, so relative callbacks would resolve against the wrong host.
+ * WHAT:  Converts app-relative callback paths into absolute browser URLs while preserving already-absolute targets.
+ * HOW:   Uses the current window origin as the base for internal routes and falls back to the raw value when URL parsing fails.
+ */
+export function resolveBrowserCallbackUrl(path: string) {
+  if (typeof window === "undefined") {
+    return path;
+  }
+
+  try {
+    return new URL(path, window.location.origin).toString();
+  } catch {
+    return path;
+  }
+}
+
 export default function GoogleSignInButton({
   redirectTo,
   className,
@@ -45,12 +62,16 @@ export default function GoogleSignInButton({
       disabled={isLoading}
       onClick={async () => {
         setIsLoading(true);
+        const callbackURL = resolveBrowserCallbackUrl(redirectTo);
+        const errorCallbackURL = resolveBrowserCallbackUrl(`/signin?returnTo=${encodeURIComponent(redirectTo)}`);
         capturePostHogEvent("web_better_auth_sign_in_started", {
           redirectTo,
+          callbackURL,
         });
         const { error } = await authClient.signIn.social({
           provider: "google",
-          callbackURL: redirectTo,
+          callbackURL,
+          errorCallbackURL,
         });
         if (error) {
           setIsLoading(false);
