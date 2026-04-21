@@ -1,7 +1,6 @@
 import { convexBetterAuthNextJs } from "@convex-dev/better-auth/nextjs";
 import type { Preloaded } from "convex/react";
 import type { FunctionReference, FunctionReturnType } from "convex/server";
-import type { EmptyObject } from "convex-helpers";
 import {
   isLoopbackOrigin,
   isProductionLikeEnv,
@@ -21,6 +20,8 @@ type AuthConfigurationError = Error & {
   code: "AUTH_CONFIGURATION_ERROR";
   status: 503;
 };
+
+type EmptyObject = Record<string, never>;
 
 type OptionalArgs<FuncRef extends FunctionReference<any, any>> =
   FuncRef["_args"] extends EmptyObject ? [args?: EmptyObject] : [args: FuncRef["_args"]];
