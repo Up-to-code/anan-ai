@@ -9,6 +9,7 @@ const mockRequireRole = vi.fn(async () => ({ authUserId: "admin-auth" }));
 
 vi.mock("../_core/security/accessPolicy", () => ({
   requireRole: mockRequireRole,
+  requireAdminAccess: mockRequireRole,
 }));
 
 beforeEach(() => {

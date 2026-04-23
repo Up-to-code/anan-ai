@@ -3,6 +3,7 @@ import { apiUnsafe } from "@/lib/convexApi";
 export type OrganizationProfilesApiRefs = {
   listOrganizationProfilesByIds: unknown;
   getCurrentOrganizationProfile: unknown;
+  getOrganizationProfileById: unknown;
   bootstrapCurrentOrganizationProfile: unknown;
   syncCurrentOrganizationProfile: unknown;
   updateCurrentOrganizationProfile: unknown;

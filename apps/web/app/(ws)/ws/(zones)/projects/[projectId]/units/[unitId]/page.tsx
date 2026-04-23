@@ -22,8 +22,11 @@ export default async function WorkspaceUnitDetailRoute({
 }: WorkspaceUnitDetailRouteProps) {
   const { projectId, unitId } = await params;
   const workspace = await requireWorkspaceData(`/ws/projects/${projectId}/units/${unitId}`);
+  const projectsZone = getWorkspaceProjectZone(workspace.audience, workspace.ownerContext);
+  const canonicalDossier = await projectsZone.getProjectDossierByProjectId({ projectId }).catch(() => null);
+  const propertyId = canonicalDossier?.property?._id ?? projectId;
   const resolved = await resolveWorkspaceProjectDetail({
-    projectId,
+    projectId: propertyId,
     audience: workspace.audience,
     ownerContext: workspace.ownerContext,
   });
@@ -32,9 +35,7 @@ export default async function WorkspaceUnitDetailRoute({
     notFound();
   }
 
-  const dossier = await getWorkspaceProjectZone(workspace.audience, workspace.ownerContext)
-    .getProjectDossier({ propertyId: projectId })
-    .catch(() => null);
+  const dossier = canonicalDossier ?? await projectsZone.getProjectDossier({ propertyId }).catch(() => null);
   const project = mapPropertyToWorkspaceProjectDetail(resolved.property, resolved.accessMode, { dossier });
   const unit = mapWorkspaceProjectUnitDetail(project, unitId);
 

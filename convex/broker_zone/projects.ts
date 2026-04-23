@@ -4,6 +4,7 @@ import { requireRole } from "../_core/security/accessPolicy";
 import {
   applyOwnedProjectUnitBulkActions,
   getOwnedProjectDossierDetail,
+  getOwnedProjectDossierDetailByProjectId,
   requestOwnedProjectPublication,
   saveOwnedProjectAdLicense,
   saveOwnedProjectBrokerAuthorization,
@@ -35,6 +36,11 @@ async function requireBrokerAccess(ctx: any) {
 export const getProjectDossier = query({
   args: { propertyId: v.id("properties") },
   handler: async (ctx, { propertyId }) => getOwnedProjectDossierDetail(ctx, propertyId, await requireBrokerAccess(ctx)),
+});
+
+export const getProjectDossierByProjectId = query({
+  args: { projectId: v.id("projectDossiers") },
+  handler: async (ctx, { projectId }) => getOwnedProjectDossierDetailByProjectId(ctx, projectId, await requireBrokerAccess(ctx)),
 });
 
 export const getProjectReadiness = query({

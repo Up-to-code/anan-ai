@@ -2,7 +2,6 @@ import { v } from "convex/values";
 import type { Id } from "../../_generated/dataModel";
 
 export const userRoleValidator = v.union(
-  v.literal("admin"),
   v.literal("broker"),
   v.literal("developer"),
   v.literal("user"),
@@ -14,7 +13,7 @@ export const userRoleApprovalStatusValidator = v.union(
   v.literal("rejected"),
 );
 
-export type UserRole = "admin" | "broker" | "developer" | "user";
+export type UserRole = "broker" | "developer" | "user";
 export type UserRoleApprovalStatus = "pending" | "approved" | "rejected";
 
 type ProfileRoleStateShape = {
@@ -29,9 +28,10 @@ type ProfileRoleStateShape = {
 
 export function normalizeUserRole(value: unknown): UserRole | undefined {
   if (value === "RED") return "developer";
-  if (value === "admin" || value === "broker" || value === "developer" || value === "user") {
+  if (value === "broker" || value === "developer" || value === "user") {
     return value;
   }
+  if (value === "admin") return "user";
   return undefined;
 }
 

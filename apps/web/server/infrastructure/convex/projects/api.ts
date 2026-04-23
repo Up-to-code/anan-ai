@@ -2,6 +2,7 @@ import { apiUnsafe } from "@/lib/convexApi";
 
 export type WorkspaceProjectInternalRefs = {
   getProjectDossier: unknown;
+  getProjectDossierByProjectId: unknown;
   getProjectReadiness: unknown;
   saveProjectDossierDraft: unknown;
   saveProjectUnits: unknown;

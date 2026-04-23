@@ -269,6 +269,7 @@ export default function AgUnitCreateForm({
                           placeholder={copy.namePlaceholder}
                           icon={<Building2 className="h-4 w-4" />}
                           error={fieldErrors.name}
+                          testId="unit-name-input"
                         />
                       </div>
                       <div className="grid gap-2">
@@ -279,6 +280,7 @@ export default function AgUnitCreateForm({
                           placeholder={copy.locationPlaceholder}
                           icon={<MapPin className="h-4 w-4" />}
                           error={fieldErrors.location}
+                          testId="unit-location-input"
                         />
                       </div>
                       <div className="grid gap-2">
@@ -326,6 +328,7 @@ export default function AgUnitCreateForm({
                           onChange={(value) => setField("description", value)}
                           placeholder={copy.descriptionPlaceholder}
                           error={fieldErrors.description}
+                          testId="unit-description-input"
                         />
                       </div>
                     </div>
@@ -352,11 +355,11 @@ export default function AgUnitCreateForm({
                     <div className="grid gap-5 md:grid-cols-2">
                       <div className="grid gap-2">
                         <FieldLabel>{copy.areaLabel}</FieldLabel>
-                        <TextInput value={formData.area} onChange={(value) => setField("area", value)} placeholder={copy.areaPlaceholder} icon={<Ruler className="h-4 w-4" />} error={fieldErrors.area} />
+                        <TextInput value={formData.area} onChange={(value) => setField("area", value)} placeholder={copy.areaPlaceholder} icon={<Ruler className="h-4 w-4" />} error={fieldErrors.area} testId="unit-area-input" />
                       </div>
                       <div className="grid gap-2">
                         <FieldLabel>{copy.roomsLabel}</FieldLabel>
-                        <TextInput value={formData.rooms} onChange={(value) => setField("rooms", value)} placeholder={copy.roomsPlaceholder} icon={<BedDouble className="h-4 w-4" />} error={fieldErrors.rooms} />
+                        <TextInput value={formData.rooms} onChange={(value) => setField("rooms", value)} placeholder={copy.roomsPlaceholder} icon={<BedDouble className="h-4 w-4" />} error={fieldErrors.rooms} testId="unit-rooms-input" />
                         <div className="flex flex-wrap justify-end gap-2">
                           {["1", "2", "3", "4", "5"].map((value) => (
                             <button
@@ -374,7 +377,7 @@ export default function AgUnitCreateForm({
                       </div>
                       <div className="grid gap-2">
                         <FieldLabel>{copy.bathsLabel}</FieldLabel>
-                        <TextInput value={formData.baths} onChange={(value) => setField("baths", value)} placeholder={copy.bathsPlaceholder} icon={<Bath className="h-4 w-4" />} error={fieldErrors.baths} />
+                        <TextInput value={formData.baths} onChange={(value) => setField("baths", value)} placeholder={copy.bathsPlaceholder} icon={<Bath className="h-4 w-4" />} error={fieldErrors.baths} testId="unit-baths-input" />
                         <div className="flex flex-wrap justify-end gap-2">
                           {["1", "2", "3", "4"].map((value) => (
                             <button
@@ -445,7 +448,7 @@ export default function AgUnitCreateForm({
                       <div className="grid gap-5 md:grid-cols-2">
                         <div className="grid gap-2">
                           <FieldLabel>{copy.priceLabel}</FieldLabel>
-                          <TextInput value={formData.price} onChange={(value) => setField("price", value)} placeholder={copy.pricePlaceholder} error={fieldErrors.price} />
+                          <TextInput value={formData.price} onChange={(value) => setField("price", value)} placeholder={copy.pricePlaceholder} error={fieldErrors.price} testId="unit-price-input" />
                         </div>
                         <div className="grid gap-2">
                           <FieldLabel>{copy.paymentPlanLabel}</FieldLabel>

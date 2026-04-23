@@ -81,7 +81,7 @@ export async function requirePropertyReadAccess(
   property: PropertyDoc;
   reason: PropertyAccessReason;
 }> {
-  const access = await requireRole(ctx, ["broker", "developer", "user", "admin"]);
+  const access = await requireRole(ctx, ["broker", "developer", "user"]);
   const property = await ctx.db.get(args.propertyId);
   if (!property) {
     throw new ConvexError({ code: "NOT_FOUND", message: "Property not found" });

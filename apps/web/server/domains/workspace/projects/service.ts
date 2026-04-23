@@ -59,6 +59,10 @@ export function buildWorkspaceProjectService(
       const session = await requireWorkspaceSession(dependencies);
       return dependencies.repository.getProjectDossier(session.token, input.propertyId);
     },
+    async getProjectDossierByProjectId(input: { projectId: string }) {
+      const session = await requireWorkspaceSession(dependencies);
+      return dependencies.repository.getProjectDossierByProjectId(session.token, input.projectId);
+    },
     async getProjectReadiness(input: { propertyId: string }) {
       const session = await requireWorkspaceSession(dependencies);
       return dependencies.repository.getProjectReadiness(session.token, input.propertyId);

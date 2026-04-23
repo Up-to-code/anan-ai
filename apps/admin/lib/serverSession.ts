@@ -36,6 +36,7 @@ export async function getAuthenticatedSession() {
     token: session.token,
     user: toSessionUser(session.context),
     role: session.context.role ?? null,
+    isAdmin: session.context.isAdmin ?? false,
   };
 }
 
@@ -47,7 +48,7 @@ export async function getAuthenticatedSession() {
 export async function requireAdminPageSession(returnTo = "/overview") {
   const session = await getAuthenticatedSession();
 
-  if (!session.token || !session.user || session.role !== "admin") {
+  if (!session.token || !session.user || !session.isAdmin) {
     redirect(`/signin?returnTo=${encodeURIComponent(returnTo)}`);
   }
 

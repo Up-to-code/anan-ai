@@ -1,14 +1,21 @@
 import { createClient, type GenericCtx } from "@convex-dev/better-auth";
 import { convex } from "@convex-dev/better-auth/plugins";
 import { expo } from "@better-auth/expo";
-import { betterAuth, type BetterAuthOptions } from "better-auth";
+import {
+  betterAuth,
+  type BetterAuthOptions,
+  type BetterAuthPlugin,
+} from "better-auth";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { emailOTP, organization } from "better-auth/plugins";
 import { components } from "../_generated/api";
 import type { DataModel } from "../_generated/dataModel";
 import {
+  buildAuthErrorRedirectUrl,
   isLoopbackOrigin,
   isProductionLikeEnv,
   normalizeBaseUrl,
+  resolveAppRedirectBaseUrl,
   resolveAllowedOrigins,
 } from "../_core/security/authRedirects";
 import authConfig from "../auth.config";
@@ -26,8 +33,20 @@ function readCsvEnv(name: string) {
     .filter(Boolean);
 }
 
+function getWebAppBaseUrl() {
+  return resolveAppRedirectBaseUrl({
+    ananWebUrl: process.env.ANAN_WEB_URL,
+    siteUrl: process.env.SITE_URL,
+    nextPublicSiteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+    vercelUrl: process.env.VERCEL_URL,
+    fallbackOrigin: process.env.BETTER_AUTH_URL,
+    nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
+  });
+}
+
 function getAuthBaseUrl() {
-  const isProduction = isProductionLikeEnv(process.env.NODE_ENV, process.env.VERCEL_ENV);
+  const isProduction = process.env.VERCEL_ENV === "production";
   const candidates = [
     process.env.SITE_URL,
     process.env.ANAN_WEB_URL,
@@ -52,8 +71,9 @@ function getAuthBaseUrl() {
 }
 
 function getTrustedOrigins() {
+  const webAppBaseUrl = getWebAppBaseUrl();
   const allowedOrigins = resolveAllowedOrigins({
-    webBaseUrl: getAuthBaseUrl() ?? null,
+    webBaseUrl: webAppBaseUrl ?? getAuthBaseUrl() ?? null,
     allowedOriginsEnv: [
       ...readCsvEnv("ANAN_AUTH_ALLOWED_ORIGINS"),
       ...readCsvEnv("BETTER_AUTH_TRUSTED_ORIGINS"),
@@ -69,6 +89,12 @@ function getTrustedOrigins() {
   });
 
   return [...allowedOrigins, "anan://", "exp://"];
+}
+
+function getAuthErrorUrl() {
+  const webAppBaseUrl = getWebAppBaseUrl();
+  if (!webAppBaseUrl) return undefined;
+  return buildAuthErrorRedirectUrl(webAppBaseUrl, { returnTo: "/ws" });
 }
 
 function buildSocialProviders() {
@@ -97,6 +123,32 @@ function buildSocialProviders() {
   } satisfies BetterAuthOptions["socialProviders"];
 }
 
+function isAdminPasswordSignUpEnabled() {
+  return Boolean(readOptionalEnv("ADMIN_SIGNUP_BRIDGE_SECRET") || readOptionalEnv("ANAN_ADMIN_PASSWORD_SIGNUP_ENABLED"));
+}
+
+function adminSignupGatePlugin(): BetterAuthPlugin {
+  return {
+    id: "anan-admin-signup-gate",
+    hooks: {
+      before: [
+        {
+          matcher: (context) => context.path === "/sign-up/email",
+          handler: createAuthMiddleware(async (ctx) => {
+            const expected = readOptionalEnv("ADMIN_SIGNUP_BRIDGE_SECRET");
+            const provided = ctx.headers?.get("x-anan-admin-signup-secret");
+            if (!expected || provided !== expected) {
+              throw new APIError("FORBIDDEN", {
+                message: "Admin signup requires a trusted invite flow.",
+              });
+            }
+          }),
+        },
+      ],
+    },
+  };
+}
+
 export const authComponent = createClient<DataModel, typeof schema>(
   components.betterAuth,
   {
@@ -109,10 +161,19 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
   ({
     appName: "Anan",
     baseURL: getAuthBaseUrl(),
+    onAPIError: {
+      errorURL: getAuthErrorUrl(),
+    },
     secret: process.env.BETTER_AUTH_SECRET,
     trustedOrigins: getTrustedOrigins(),
     database: authComponent.adapter(ctx),
     socialProviders: buildSocialProviders(),
+    emailAndPassword: {
+      enabled: true,
+      disableSignUp: !isAdminPasswordSignUpEnabled(),
+      minPasswordLength: 12,
+      maxPasswordLength: 128,
+    },
     plugins: [
       expo(),
       organization({
@@ -124,6 +185,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
           throw new Error("Email OTP delivery is not configured for this Anan deployment.");
         },
       }),
+      adminSignupGatePlugin(),
       convex({ authConfig }),
     ],
   }) satisfies BetterAuthOptions;

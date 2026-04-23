@@ -35,6 +35,13 @@ export const projectDossierDraftInputValidator = v.object({
   lifecycleStage: v.optional(v.union(v.literal("rough_draft"), v.literal("draft"), v.literal("review"), v.literal("active"), v.literal("suspended"), v.literal("archived"))),
   title: v.optional(v.string()),
   summary: v.optional(v.string()),
+  targetAudience: v.optional(v.string()),
+  expectedUnitCountLabel: v.optional(v.string()),
+  unitTypeMix: v.optional(v.array(v.string())),
+  primaryUnitType: v.optional(v.string()),
+  averagePrice: v.optional(v.number()),
+  options: v.optional(v.array(v.string())),
+  services: v.optional(v.array(v.string())),
   location: v.optional(projectLocationInputValidator),
 });
 

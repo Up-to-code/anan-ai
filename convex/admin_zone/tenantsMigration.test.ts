@@ -16,7 +16,8 @@ const mockTenants = {
 const mockRequireRole = vi.fn(async () => ({ authUserId: "admin-auth" }));
 
 vi.mock("../tenants", () => ({ tenants: mockTenants }));
-vi.mock("../_core/security/accessPolicy", () => ({ requireRole: mockRequireRole }));
+vi.mock("../_core/security/accessPolicy", () => ({ requireRole: mockRequireRole,
+  requireAdminAccess: mockRequireRole }));
 
 function stubRandomUUID() {
   const original = globalThis.crypto?.randomUUID;

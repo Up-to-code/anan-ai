@@ -1223,6 +1223,7 @@ async function ensurePlaygroundOrganization(ctx: MutationCtx, args: { playground
       displayName: existingProfile?.name ?? PLAYGROUND_NAME,
       name: PLAYGROUND_NAME,
       type: "red",
+      countryCode: "SA",
       actorAuthUserId: authUserId,
     });
     const profile = (await findProfileByAuthUserId(ctx, authUserId)) ?? (await findProfileByEmail(ctx, normalizedEmail));
@@ -1342,6 +1343,7 @@ async function ensureSyntheticOrganization(args: {
       displayName: ownerIdentity.displayName,
       name: organizationName,
       type: args.ownerType,
+      countryCode: "SA",
       actorAuthUserId: ownerIdentity.authUserId,
     });
     if (args.ownerType === "broker") {

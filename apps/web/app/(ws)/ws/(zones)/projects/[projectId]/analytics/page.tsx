@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { requireWorkspaceData } from "../../../../_lib/workspaceData";
 import { resolveWorkspaceProjectDetail } from "@/server/domains/workspace/properties/detail";
 import { mapPropertyToWorkspaceProjectDetail } from "../../shared/lib/projectViewModel";
-import { getWorkspacePropertyZone } from "@/server/ws/zones";
+import { getWorkspaceProjectZone, getWorkspacePropertyZone } from "@/server/ws/zones";
 import ProjectAnalyticsPage from "../../pages/ProjectAnalyticsPage";
 import { normalizeDomainError } from "@/server/contracts/errors";
 import type { ProjectAnalyticsEventType } from "@/server/contracts/properties";
@@ -19,8 +19,11 @@ export default async function WorkspaceProjectAnalyticsRoute({
 }) {
   const { projectId } = await params;
   const workspace = await requireWorkspaceData(`/ws/projects/${projectId}/analytics`);
+  const projectsZone = getWorkspaceProjectZone(workspace.audience, workspace.ownerContext);
+  const canonicalDossier = await projectsZone.getProjectDossierByProjectId({ projectId }).catch(() => null);
+  const propertyId = canonicalDossier?.property?._id ?? projectId;
   const resolved = await resolveWorkspaceProjectDetail({
-    projectId,
+    projectId: propertyId,
     audience: workspace.audience,
     ownerContext: workspace.ownerContext,
   });
@@ -29,9 +32,10 @@ export default async function WorkspaceProjectAnalyticsRoute({
     notFound();
   }
 
-  const project = mapPropertyToWorkspaceProjectDetail(resolved.property, "owner");
+  const dossier = canonicalDossier ?? await projectsZone.getProjectDossier({ propertyId }).catch(() => null);
+  const project = mapPropertyToWorkspaceProjectDetail(resolved.property, "owner", { dossier });
   const analytics = await getWorkspacePropertyZone(workspace.audience, workspace.ownerContext)
-    .getProjectAnalytics({ id: projectId })
+    .getProjectAnalytics({ id: propertyId })
     .catch((error) => {
       const domainError = normalizeDomainError(error);
       if (domainError.code === "NOT_FOUND" || domainError.code === "FORBIDDEN") {
@@ -47,7 +51,7 @@ export default async function WorkspaceProjectAnalyticsRoute({
     "use server";
 
     await getWorkspacePropertyZone(workspace.audience, workspace.ownerContext).recordProjectAnalyticsEvent({
-      id: projectId,
+      id: propertyId,
       eventType: input.eventType,
       source: input.source,
     });

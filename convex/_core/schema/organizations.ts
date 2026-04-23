@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { transitionalGlobalSecurityFields } from "./securityFields";
 
 const organizationTypeValidator = v.union(v.literal("broker"), v.literal("red"));
 const legacyOwnerTypeValidator = v.union(v.literal("broker"), v.literal("RED"));
@@ -13,10 +14,14 @@ const legacyOwnerTypeValidator = v.union(v.literal("broker"), v.literal("RED"));
  */
 const organizationTables = {
   organizationProfiles: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     organizationId: v.string(),
     slug: v.string(),
     name: v.string(),
     type: organizationTypeValidator,
+    countryCode: v.optional(v.string()),
+    countryLabel: v.optional(v.string()),
     status: v.optional(v.union(v.literal("active"), v.literal("pending"))),
     isVerified: v.optional(v.boolean()),
     logoUrl: v.optional(v.string()),
@@ -39,12 +44,17 @@ const organizationTables = {
     createdAt: v.number(),
     updatedAt: v.number(),
   })
+    .index("by_orgId", ["orgId"])
     .index("organizationId", ["organizationId"])
     .index("slug", ["slug"])
     .index("type", ["type"])
-    .index("legacyTenantOrgId", ["legacyTenantOrgId"]),
+    .index("countryCode", ["countryCode"])
+    .index("legacyTenantOrgId", ["legacyTenantOrgId"])
+    .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
 
   organizationFiles: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     organizationId: v.string(),
     key: v.string(),
     url: v.string(),
@@ -58,9 +68,12 @@ const organizationTables = {
   })
     .index("organizationId", ["organizationId"])
     .index("organizationId_createdAt", ["organizationId", "createdAt"])
-    .index("key", ["key"]),
+    .index("key", ["key"])
+    .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
 
   organizationEntityFiles: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     organizationId: v.string(),
     fileId: v.id("organizationFiles"),
     entityType: v.string(),
@@ -69,9 +82,12 @@ const organizationTables = {
     createdAt: v.number(),
   })
     .index("organizationId_entityType_entityId", ["organizationId", "entityType", "entityId"])
-    .index("fileId", ["fileId"]),
+    .index("fileId", ["fileId"])
+    .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
 
   organizationAssistantSessions: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     organizationId: v.string(),
     threadId: v.optional(v.id("assistantThreads")),
     actorUserId: v.string(),
@@ -88,9 +104,12 @@ const organizationTables = {
   })
     .index("organizationId_createdAt", ["organizationId", "createdAt"])
     .index("organizationId_status_updatedAt", ["organizationId", "status", "updatedAt"])
-    .index("threadId", ["threadId"]),
+    .index("threadId", ["threadId"])
+    .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
 
   organizationAssistantEvents: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     organizationId: v.string(),
     sessionId: v.id("organizationAssistantSessions"),
     actorUserId: v.string(),
@@ -107,9 +126,12 @@ const organizationTables = {
     createdAt: v.number(),
   })
     .index("organizationId_sessionId_createdAt", ["organizationId", "sessionId", "createdAt"])
-    .index("organizationId_visibility_createdAt", ["organizationId", "visibility", "createdAt"]),
+    .index("organizationId_visibility_createdAt", ["organizationId", "visibility", "createdAt"])
+    .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
 
   organizationMemories: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     organizationId: v.string(),
     actorUserId: v.optional(v.string()),
     scope: v.union(v.literal("workspace"), v.literal("assistant"), v.literal("crm"), v.literal("market")),
@@ -123,7 +145,8 @@ const organizationTables = {
   })
     .index("organizationId", ["organizationId"])
     .index("organizationId_scope_updatedAt", ["organizationId", "scope", "updatedAt"])
-    .index("organizationId_key", ["organizationId", "key"]),
+    .index("organizationId_key", ["organizationId", "key"])
+    .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
 };
 
 export default organizationTables;

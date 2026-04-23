@@ -1,11 +1,11 @@
-import { requireRole } from "../../_core/security/accessPolicy";
+import { requireAdminAccess } from "../../_core/security/accessPolicy";
 import { tenants } from "../../tenants";
 import { buildOrganizationKey } from "./helpers";
 
 export const listOrganizationInvitesArgs = {};
 
 export async function listOrganizationInvitesHandler(ctx: any) {
-  await requireRole(ctx, ["admin"]);
+  await requireAdminAccess(ctx);
   const [tenantLinks, brokers, developers] = await Promise.all([
     ctx.db.query("tenantOrgLinks").collect(),
     ctx.db.query("brokers").collect(),

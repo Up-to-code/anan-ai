@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { isLoopbackOrigin, isProductionLikeEnv, resolveAllowedOrigins } from "./authRedirects";
+import {
+  buildAuthErrorRedirectUrl,
+  isLoopbackOrigin,
+  isProductionLikeEnv,
+  resolveAllowedOrigins,
+  resolveAppRedirectBaseUrl,
+} from "./authRedirects";
 
 describe("isProductionLikeEnv", () => {
   it("treats vercel production deployments as production-like", () => {
@@ -58,5 +64,40 @@ describe("resolveAllowedOrigins", () => {
 
     expect(origins).toContain("https://web.example.com");
     expect(origins).toContain("https://admin.example.com");
+  });
+});
+
+describe("resolveAppRedirectBaseUrl", () => {
+  it("preserves localhost web origins for dev Convex deployments even when NODE_ENV is production", () => {
+    expect(resolveAppRedirectBaseUrl({
+      ananWebUrl: "http://localhost:3000",
+      nodeEnv: "production",
+      vercelEnv: "preview",
+    })).toBe("http://localhost:3000");
+  });
+
+  it("uses the hosted Vercel URL in production and ignores localhost", () => {
+    expect(resolveAppRedirectBaseUrl({
+      ananWebUrl: "http://localhost:3000",
+      vercelUrl: "anan-lit-web.vercel.app",
+      nodeEnv: "production",
+      vercelEnv: "production",
+    })).toBe("https://anan-lit-web.vercel.app");
+  });
+
+  it("falls back to localhost when no app URL is configured outside production", () => {
+    expect(resolveAppRedirectBaseUrl({
+      nodeEnv: "production",
+      vercelEnv: "preview",
+    })).toBe("http://localhost:3000");
+  });
+});
+
+describe("buildAuthErrorRedirectUrl", () => {
+  it("returns auth errors to the workspace sign-in target", () => {
+    expect(buildAuthErrorRedirectUrl("http://localhost:3000", {
+      error: "state_mismatch",
+      returnTo: "/ws",
+    })).toBe("http://localhost:3000/signin?returnTo=%2Fws&error=state_mismatch");
   });
 });

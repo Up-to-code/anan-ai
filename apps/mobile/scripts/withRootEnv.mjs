@@ -32,10 +32,28 @@ function parseEnvFile(source) {
   return parsed;
 }
 
-function loadRootEnv() {
-  const rootEnvPath = path.resolve(process.cwd(), "../../.env.local");
-  if (!fs.existsSync(rootEnvPath)) return {};
-  const parsed = parseEnvFile(fs.readFileSync(rootEnvPath, "utf8"));
+const DEFAULT_ENV_PATH = "../../.env.local";
+const EXTERNAL_ENV_FILE_VAR = "ANAN_MOBILE_ENV_FILE";
+
+function resolveEnvPath() {
+  const explicitEnvPath = process.env[EXTERNAL_ENV_FILE_VAR]?.trim();
+  if (!explicitEnvPath) return path.resolve(process.cwd(), DEFAULT_ENV_PATH);
+
+  return path.resolve(explicitEnvPath);
+}
+
+function loadMobileEnv() {
+  const envPath = resolveEnvPath();
+  if (!fs.existsSync(envPath)) {
+    if (process.env[EXTERNAL_ENV_FILE_VAR]?.trim()) {
+      console.error(`${EXTERNAL_ENV_FILE_VAR} points to a missing file: ${envPath}`);
+      process.exit(1);
+    }
+
+    return {};
+  }
+
+  const parsed = parseEnvFile(fs.readFileSync(envPath, "utf8"));
 
   if (!parsed.EXPO_PUBLIC_CONVEX_URL && parsed.CONVEX_URL) {
     parsed.EXPO_PUBLIC_CONVEX_URL = parsed.CONVEX_URL;
@@ -54,11 +72,11 @@ if (!args.length) {
   process.exit(1);
 }
 
-const rootEnv = loadRootEnv();
+const mobileEnv = loadMobileEnv();
 const child = spawn(args[0], args.slice(1), {
   stdio: "inherit",
   env: {
-    ...rootEnv,
+    ...mobileEnv,
     ...process.env,
   },
 });

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { UploadedFileReference } from "@/server/contracts/files";
+import { GCC_COUNTRY_CODES } from "@/server/contracts/gccCountries";
 
 export type OrganizationVerificationRequestStatus =
   | "not_submitted"
@@ -39,6 +40,8 @@ export type OrganizationSummary = {
   type: "broker" | "red";
   name: string;
   slug: string;
+  countryCode?: string;
+  countryLabel?: string | null;
   status: "active" | "pending" | null;
   isVerified: boolean;
   logoUrl?: string | null;
@@ -105,6 +108,7 @@ export type OrganizationInviteSummary = {
 export const createOrganizationInputSchema = z.object({
   name: z.string().trim().min(2, "Organization name must be at least 2 characters").max(120),
   type: z.enum(["broker", "red"]).optional(),
+  countryCode: z.enum(GCC_COUNTRY_CODES).default("SA"),
 });
 
 /**

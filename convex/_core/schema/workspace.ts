@@ -1,8 +1,16 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { transitionalGlobalSecurityFields } from "./securityFields";
 
 const workspaceTables = {
     inboxConversations: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
+        propertyId: v.optional(v.id("properties")),
+        buyerAccountId: v.optional(v.id("buyerAccounts")),
+        channel: v.optional(v.union(v.literal("platform"), v.literal("whatsapp"), v.literal("email"))),
+        status: v.optional(v.union(v.literal("open"), v.literal("resolved"), v.literal("archived"))),
+        assignedToProfileId: v.optional(v.id("userProfiles")),
         directKey: v.string(),
         firstParticipantUserId: v.string(),
         secondParticipantUserId: v.string(),
@@ -13,12 +21,20 @@ const workspaceTables = {
         lastMessagePreview: v.optional(v.string()),
         lastMessageSenderId: v.optional(v.string()),
     })
+        .index("by_orgId", ["orgId"])
+        .index("by_buyerAccountId", ["buyerAccountId"])
+        .index("by_orgId_and_status", ["orgId", "status"])
+        .index("by_orgId_and_lastMessageAt", ["orgId", "lastMessageAt"])
+        .index("by_org_status_lastMessageAt", ["orgId", "status", "lastMessageAt"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"])
         .index("directKey", ["directKey"])
         .index("updatedAt", ["updatedAt"])
         .index("firstParticipantUserId", ["firstParticipantUserId"])
         .index("secondParticipantUserId", ["secondParticipantUserId"]),
 
     inboxConversationParticipants: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         conversationId: v.id("inboxConversations"),
         userId: v.string(),
         otherUserId: v.string(),
@@ -34,10 +50,23 @@ const workspaceTables = {
         .index("conversationId", ["conversationId"])
         .index("userId", ["userId"])
         .index("userId_conversationId", ["userId", "conversationId"])
-        .index("userId_archivedAt_conversationUpdatedAt", ["userId", "archivedAt", "conversationUpdatedAt"]),
+        .index("userId_archivedAt_conversationUpdatedAt", ["userId", "archivedAt", "conversationUpdatedAt"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
 
     inboxMessages: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         conversationId: v.id("inboxConversations"),
+        senderAuthUserId: v.optional(v.id("authUsers")),
+        contentType: v.optional(v.union(
+            v.literal("text"),
+            v.literal("image"),
+            v.literal("document"),
+            v.literal("system"),
+        )),
+        mediaStorageId: v.optional(v.id("_storage")),
+        isRead: v.optional(v.boolean()),
+        sentAt: v.optional(v.number()),
         senderUserId: v.string(),
         recipientUserId: v.string(),
         type: v.union(
@@ -53,12 +82,17 @@ const workspaceTables = {
         metadata: v.optional(v.any()),
         createdAt: v.number(),
     })
+        .index("by_conversationId", ["conversationId", "sentAt"])
         .index("conversationId", ["conversationId"])
         .index("conversationId_createdAt", ["conversationId", "createdAt"])
         .index("senderUserId", ["senderUserId"])
-        .index("recipientUserId", ["recipientUserId"]),
+        .index("recipientUserId", ["recipientUserId"])
+        .index("by_org_active_createdAt", ["orgId", "deletedAt", "createdAt"]),
 
     workspaceNotifications: defineTable({
+    ...transitionalGlobalSecurityFields,
+        recipientProfileId: v.optional(v.id("userProfiles")),
+        orgId: v.optional(v.id("organizations")),
         userId: v.string(),
         type: v.union(
             v.literal("message"),
@@ -72,6 +106,13 @@ const workspaceTables = {
             v.literal("approval_request"),
         ),
         title: v.string(),
+        payload: v.optional(v.object({
+            title: v.string(),
+            body: v.string(),
+            linkType: v.string(),
+            linkId: v.string(),
+        })),
+        isRead: v.optional(v.boolean()),
         summary: v.string(),
         href: v.string(),
         source: v.string(),
@@ -87,17 +128,28 @@ const workspaceTables = {
         ),
         pushError: v.optional(v.string()),
     })
+        .index("by_orgId", ["orgId"])
+        .index("by_recipientProfileId", ["recipientProfileId"])
+        .index("by_recipientProfileId_and_isRead", ["recipientProfileId", "isRead"])
+        .index("by_recipient_read_createdAt", ["recipientProfileId", "isRead", "createdAt"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"])
         .index("userId", ["userId"])
         .index("userId_createdAt", ["userId", "createdAt"])
         .index("userId_readAt", ["userId", "readAt"]),
 
     workspaceNotificationPreferences: defineTable({
+    ...transitionalGlobalSecurityFields,
+        authUserId: v.optional(v.id("authUsers")),
         userId: v.string(),
         browserPushEnabled: v.boolean(),
         updatedAt: v.number(),
-    }).index("userId", ["userId"]),
+    })
+        .index("userId", ["userId"])
+        .index("by_authUserId", ["authUserId"]),
 
     workspacePushSubscriptions: defineTable({
+    ...transitionalGlobalSecurityFields,
+        authUserId: v.optional(v.id("authUsers")),
         userId: v.string(),
         endpoint: v.string(),
         keysAuth: v.string(),
@@ -112,7 +164,9 @@ const workspaceTables = {
     })
         .index("userId", ["userId"])
         .index("endpoint", ["endpoint"])
-        .index("userId_isActive", ["userId", "isActive"]),
+        .index("userId_isActive", ["userId", "isActive"])
+        .index("by_authUserId", ["authUserId"])
+        .index("by_authUser_active", ["authUserId", "isActive"]),
 };
 
 export default workspaceTables;

@@ -18,11 +18,8 @@ import { useAgPropertyForm } from "./useAgPropertyForm";
 import type { AgPropertyFormProps } from "./types";
 import {
   BasicStep,
-  ComplianceStep,
   GalleryStep,
-  PaymentStep,
   ReviewStep,
-  SharingStep,
   SpecsStep,
 } from "./steps";
 
@@ -124,58 +121,23 @@ export default function AgPropertyForm({
         />
       );
     }
-    if (form.activeStep.key === "pricing") {
-      return <PaymentStep formState={form.formState} setFormState={form.setFormState} />;
-    }
     if (form.activeStep.key === "services") {
       return (
-        <div className="space-y-6">
-          <GalleryStep
-            fieldErrors={form.submissionFeedback?.fieldErrors ?? {}}
-            formState={form.formState}
-            handleImageSelection={form.handleImageSelection}
-            inputRef={form.inputRef}
-            isUploading={form.isUploading}
-            mockDataEnabled={form.mockDataEnabled}
-            moveImage={form.moveImage}
-            previewAspectClass={form.previewAspectClass}
-            previewObjectClass={form.previewObjectClass}
-            removeImage={form.removeImage}
-            setCoverImageKey={form.setCoverImageKey}
-            setFormState={form.setFormState}
-            uploadError={form.uploadError}
-          />
-          <ComplianceStep
-            adLicenseLabel={form.adLicenseLabel}
-            adLicenseTone={form.adLicenseTone}
-            fieldErrors={form.submissionFeedback?.fieldErrors ?? {}}
-            formState={form.formState}
-            handleLicenseFiles={form.handleLicenseFiles}
-            handleLicenseSubmit={form.handleLicenseSubmit}
-            isLicenseUploading={form.isLicenseUploading}
-            licenseDocs={form.licenseDocs}
-            licenseError={form.licenseError}
-            licenseInputRef={form.licenseInputRef}
-            licenseSubmitted={form.licenseSubmitted}
-            licenseSubmitting={form.licenseSubmitting}
-            propertyId={propertyId}
-            setFormState={form.setFormState}
-            setLicenseDocs={form.setLicenseDocs}
-          />
-          <SharingStep
-            brokerSearch={form.brokerSearch}
-            fieldErrors={form.submissionFeedback?.fieldErrors ?? {}}
-            filteredBrokers={form.filteredBrokers}
-            formState={form.formState}
-            handlePermitFiles={form.handlePermitFiles}
-            onRevokeViewer={onRevokeViewer}
-            permitInputRef={form.permitInputRef}
-            selectedBroker={form.selectedBroker}
-            setBrokerSearch={form.setBrokerSearch}
-            setFormState={form.setFormState}
-            setSelectedBrokerId={form.setSelectedBrokerId}
-          />
-        </div>
+        <GalleryStep
+          fieldErrors={form.submissionFeedback?.fieldErrors ?? {}}
+          formState={form.formState}
+          handleImageSelection={form.handleImageSelection}
+          inputRef={form.inputRef}
+          isUploading={form.isUploading}
+          mockDataEnabled={form.mockDataEnabled}
+          moveImage={form.moveImage}
+          previewAspectClass={form.previewAspectClass}
+          previewObjectClass={form.previewObjectClass}
+          removeImage={form.removeImage}
+          setCoverImageKey={form.setCoverImageKey}
+          setFormState={form.setFormState}
+          uploadError={form.uploadError}
+        />
       );
     }
     return (
@@ -221,7 +183,7 @@ export default function AgPropertyForm({
         actions={form.isEditMode ? <AgPropertyFormHeaderActions onCancel={onCancel} cancelHref={cancelHref} onDelete={onDelete} /> : undefined}
       />
 
-      <div className="mx-auto mt-4 w-full max-w-3xl">
+      <div className="mx-auto mt-4 w-full max-w-4xl px-4 sm:px-6">
         <CreationFlowProgress
           steps={form.stepDefinitions}
           currentStepIndex={form.currentStepIndex}
@@ -229,7 +191,7 @@ export default function AgPropertyForm({
         />
       </div>
 
-      <div className="mx-auto mt-8 w-full max-w-3xl overflow-visible pb-24">
+      <div className="mx-auto mt-8 w-full max-w-4xl overflow-visible px-4 pb-24 sm:px-6">
         {form.submissionFeedback ? (
           <div className="mb-7 rounded-[20px] bg-rose-500/10 px-5 py-4 text-right text-[14px] font-bold text-rose-600">
             {form.submissionFeedback.message}

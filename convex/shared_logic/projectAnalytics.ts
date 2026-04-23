@@ -273,7 +273,7 @@ function buildTrendWindow(totalDays: number) {
 }
 
 function actorAudience(role: string | undefined) {
-  if (role === "admin" || role === "broker" || role === "developer" || role === "user") {
+  if (role === "broker" || role === "developer" || role === "user") {
     return role;
   }
   return undefined;

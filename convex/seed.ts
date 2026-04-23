@@ -8,6 +8,11 @@
 import { action, internalMutation, mutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
+import {
+  ADMIN_OWNER_PERMISSIONS,
+  buildAdminPlatformAccess,
+  mergeProfileAdminAccessMetadata,
+} from "./_core/security/adminAccess";
 import { buildPropertySearchText } from "./shared_logic/properties/searchText";
 import {
   buildSaudiSeedSummary,
@@ -35,13 +40,21 @@ export const setAdminByEmail = mutation({
 
     if (profile) {
       await ctx.db.patch(profile._id, {
-        role: "admin",
+        role: "user",
         roleApprovalStatus: "approved",
         requestedRole: undefined,
         brokerId: undefined,
         developerId: undefined,
         REDId: undefined,
         roleStatus: undefined,
+        metadata: mergeProfileAdminAccessMetadata(
+          profile.metadata,
+          buildAdminPlatformAccess({
+            level: "owner",
+            permissions: ADMIN_OWNER_PERMISSIONS,
+            reason: "seed_set_admin_by_email",
+          }),
+        ),
         updatedAt: Date.now(),
       });
     } else {
@@ -49,8 +62,16 @@ export const setAdminByEmail = mutation({
         authUserId: String(user._id),
         email,
         name: user.name ?? user.displayName ?? "Admin",
-        role: "admin",
+        role: "user",
         roleApprovalStatus: "approved",
+        metadata: mergeProfileAdminAccessMetadata(
+          undefined,
+          buildAdminPlatformAccess({
+            level: "owner",
+            permissions: ADMIN_OWNER_PERMISSIONS,
+            reason: "seed_set_admin_by_email",
+          }),
+        ),
         isActive: true,
         createdAt: Date.now(),
         updatedAt: Date.now(),

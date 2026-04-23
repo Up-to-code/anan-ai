@@ -40,6 +40,7 @@ function MemberRoleButtons(args: {
         <button
           key={role}
           type="button"
+          data-testid={`member-role-${args.member.id}-${role}`}
           disabled={!args.canManage}
           onClick={() => args.onRoleChange(args.member, role)}
           className={cn(
@@ -98,6 +99,7 @@ function InviteRow(args: {
         {args.canManage ? (
           <button
             type="button"
+            data-testid={`pending-invite-cancel-${args.invite.email}`}
             onClick={() => args.onCancelInvite(args.invite)}
             className="rounded-lg px-3 py-1.5 text-[11px] font-bold text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
           >
@@ -184,7 +186,7 @@ export default function MembersWorkspace({
           </h2>
           {canManage ? (
             <Dialog.Root open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-              <Dialog.Trigger className="inline-flex h-9 items-center gap-2 rounded-xl bg-foreground px-4 text-[12px] font-bold text-background transition hover:opacity-90 active:scale-[0.98]">
+              <Dialog.Trigger data-testid="members-invite-open" className="inline-flex h-9 items-center gap-2 rounded-xl bg-foreground px-4 text-[12px] font-bold text-background transition hover:opacity-90 active:scale-[0.98]">
                 <Plus className="h-3.5 w-3.5" />
                 {dictionary.settings.inviteMember}
               </Dialog.Trigger>
@@ -194,7 +196,7 @@ export default function MembersWorkspace({
                   <div className="pointer-events-auto flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-background overscroll-contain">
                     <div className="flex items-center justify-between border-b border-border p-5" dir={direction}>
                       <Dialog.Title className="text-base font-bold text-foreground">{dictionary.settings.inviteMemberTitle}</Dialog.Title>
-                      <Dialog.Close className="flex rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground">
+                      <Dialog.Close data-testid="invite-member-dialog-close" className="flex rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground">
                         <X className="h-4 w-4" />
                       </Dialog.Close>
                     </div>

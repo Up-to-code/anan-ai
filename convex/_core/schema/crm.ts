@@ -1,6 +1,7 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { uploadedFileReferenceListValidator } from "./uploadedFiles";
+import { transitionalGlobalSecurityFields } from "./securityFields";
 
 /**
  * CRM Schema
@@ -12,6 +13,8 @@ import { uploadedFileReferenceListValidator } from "./uploadedFiles";
 
 const crmTables = {
     crmClients: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         ownerAuthUserId: v.string(),
         tenantOrgId: v.optional(v.string()),
         brokerId: v.optional(v.id("brokers")),
@@ -29,11 +32,15 @@ const crmTables = {
     })
         .index("tenantOrgId", ["tenantOrgId"])
         .index("tenantOrgId_updatedAt", ["tenantOrgId", "updatedAt"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"])
         .index("ownerAuthUserId", ["ownerAuthUserId"])
         .index("brokerId", ["brokerId"])
         .index("REDId", ["REDId"]),
     deals: defineTable({
+    ...transitionalGlobalSecurityFields,
         title: v.string(),
+        orgId: v.optional(v.id("organizations")),
+        contactId: v.optional(v.id("crmContacts")),
         tenantOrgId: v.optional(v.string()),
         description: v.optional(v.string()),
         value: v.optional(v.number()),
@@ -45,10 +52,18 @@ const crmTables = {
         stage: v.union(
             v.literal("new"),        // فرصة جديدة
             v.literal("contacted"),  // تواصل أولي
+            v.literal("viewing"),
+            v.literal("offer"),
+            v.literal("contract"),
             v.literal("negotiation"),// مفاوضات
             v.literal("won"),        // منجزة
             v.literal("lost")
         ),
+        pipeline: v.optional(v.string()),
+        dealValue: v.optional(v.number()),
+        currency: v.optional(v.string()),
+        lostReason: v.optional(v.string()),
+        closedAt: v.optional(v.number()),
         relationType: v.optional(
             v.union(v.literal("internal_client"), v.literal("broker_managed"))
         ),
@@ -57,9 +72,11 @@ const crmTables = {
         REDId: v.optional(v.id("RED")),
         brokerId: v.optional(v.id("brokers")),
         assignedTo: v.optional(v.id("userProfiles")),
+        assignedToProfileId: v.optional(v.id("userProfiles")),
         contactName: v.optional(v.string()),
         contactPhone: v.optional(v.string()),
         propertyId: v.optional(v.id("properties")),
+        unitId: v.optional(v.id("projectUnits")),
         // Phase 1 additions
         offerId: v.optional(v.id("offers")),
         offerCaseId: v.optional(v.id("offerCases")),
@@ -73,8 +90,15 @@ const crmTables = {
         archivedAt: v.optional(v.number()),
         archivedBy: v.optional(v.string()),
     })
+        .index("by_orgId", ["orgId"])
+        .index("by_orgId_and_stage", ["orgId", "stage"])
+        .index("by_assignedToProfileId", ["assignedToProfileId"])
+        .index("by_contactId", ["contactId"])
         .index("tenantOrgId", ["tenantOrgId"])
         .index("tenantOrgId_stage_updatedAt", ["tenantOrgId", "stage", "updatedAt"])
+        .index("by_org_stage_updatedAt", ["orgId", "stage", "updatedAt"])
+        .index("by_org_assignedTo_updatedAt", ["orgId", "assignedToProfileId", "updatedAt"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"])
         .index("REDId", ["REDId"])
         .index("REDId_stage_updatedAt", ["REDId", "stage", "updatedAt"])
         .index("brokerId", ["brokerId"])

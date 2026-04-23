@@ -23,6 +23,15 @@ This chapter documents:
 ### Environment variable
 
 - `EXPO_PUBLIC_CONVEX_URL` — Convex deployment URL for the mobile app.
+- `EXPO_PUBLIC_CONVEX_SITE_URL` — Convex HTTP/site URL used by Better Auth's Expo session bridge.
+
+The mobile app loads exactly one env file through `apps/mobile/scripts/withRootEnv.mjs`.
+By default that file is the repo root `.env.local`. For a private env file outside the
+repo, copy `apps/mobile/.env.example` somewhere safe, edit it there, then run:
+
+```bash
+ANAN_MOBILE_ENV_FILE=/absolute/path/to/anan-mobile.env pnpm mobile:dev
+```
 
 ### Provider behavior (repo pattern)
 

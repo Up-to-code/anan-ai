@@ -32,14 +32,14 @@ it("returns field-level feedback for invalid project input", () => {
   const feedback = validateProjectFormSubmission({
     ...validFormData,
     name: "",
-    images: [],
+    location: "",
   });
 
   expect(feedback).toEqual(
     expect.objectContaining({
       fieldErrors: expect.objectContaining({
         name: "اسم المشروع مطلوب.",
-        images: "أضف صورة واحدة على الأقل للمشروع.",
+        location: "الموقع مطلوب.",
       }),
     }),
   );
@@ -54,4 +54,17 @@ it("flags the specs step when parking is enabled without spaces", () => {
 
   expect(feedback?.fieldErrors.parkingSpaces).toBe("أدخل عدد المواقف عندما تكون المواقف متاحة.");
   expect(getFirstProjectFormErrorStep(feedback?.fieldErrors ?? {})).toBe(1);
+});
+
+it("allows saving a project shell before unit specs are added", () => {
+  const feedback = validateProjectFormSubmission({
+    ...validFormData,
+    price: "",
+    rooms: "",
+    baths: "",
+    area: "",
+    units: [],
+  });
+
+  expect(feedback).toBeNull();
 });

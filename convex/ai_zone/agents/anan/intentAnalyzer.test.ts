@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldIncludePlatformTeam } from "./intentAnalyzer";
+import { resolveDeterministicIntentTeams, shouldIncludePlatformTeam } from "./intentAnalyzer";
 
 describe("intentAnalyzer platform gating", () => {
   it("detects platform/backend questions (english)", () => {
@@ -19,3 +19,20 @@ describe("intentAnalyzer platform gating", () => {
   });
 });
 
+describe("intentAnalyzer deterministic routing", () => {
+  const availableTeams = ["team_search", "team_property", "team_finance", "team_knowledge"];
+
+  it("routes simple greetings to knowledge without classifier fanout", () => {
+    expect(resolveDeterministicIntentTeams("hi", availableTeams)).toEqual(["team_knowledge"]);
+    expect(resolveDeterministicIntentTeams("مرحبا", availableTeams)).toEqual(["team_knowledge"]);
+  });
+
+  it("routes clear search and finance terms without classifier dependency", () => {
+    expect(resolveDeterministicIntentTeams("ابحث عن شقة بتمويل", availableTeams)).toEqual([
+      "team_search",
+      "team_property",
+      "team_finance",
+      "team_knowledge",
+    ]);
+  });
+});

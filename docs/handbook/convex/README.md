@@ -91,4 +91,5 @@ flowchart LR
 - Zone boundaries: `convex/*/ZONE_README.md`
 - High-level architecture: `ARCHITECTURE.md`
 - Best practices: `docs/handbook/convex/best-practices.md`
+- Schema authority redesign: `docs/handbook/convex/schema-authority-redesign.md`
 - Search: `docs/handbook/convex/search.md`

@@ -14,7 +14,8 @@ import type { AgentRuntimeContext } from "../../types";
 
 export function storeInteraction(ctx: ActionCtx, runtime: AgentRuntimeContext): Tool {
   return tool({
-    description: "Store a user interaction event for memory.",
+    description:
+      "Store a user interaction event for memory, including momentary persona signals such as urgency, confusion, frustration, positive feedback, or handoff readiness.",
     inputSchema: zodSchema(z.object({
       action: z.string(),
       entityType: z.enum(["property", "location", "bank", "product", "neighborhood"]).optional(),

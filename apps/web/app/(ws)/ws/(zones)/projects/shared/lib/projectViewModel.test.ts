@@ -125,3 +125,45 @@ it("maps invalid numeric fields to safe defaults", () => {
     },
   });
 });
+
+it("derives the legacy projection numbers from unit inventory first", () => {
+  const mapped = mapWorkspaceProjectToPropertyInput({
+    name: "Project shell",
+    price: "",
+    location: "Riyadh",
+    description: "Parent project data",
+    shortDescription: "",
+    amenitiesText: "",
+    hasParking: false,
+    parkingSpaces: "",
+    coverImageKey: null,
+    galleryDisplayMode: "cover",
+    galleryAspectRatio: "landscape",
+    privatePermitSummary: "",
+    privatePermitFiles: [],
+    rooms: "",
+    baths: "",
+    area: "",
+    status: "active",
+    clientVisibility: "private",
+    images: [],
+    units: [{
+      label: "1BR Type A",
+      unitKind: "unit_type",
+      status: "available",
+      bedrooms: "1",
+      bathrooms: "2",
+      sizeSqm: "84",
+      floor: "",
+      view: "",
+      price: "980,000",
+      handoverAt: "",
+      floorPlanMedia: [],
+    }],
+  });
+
+  expect(mapped.price).toBe(980000);
+  expect(mapped.beds).toBe(1);
+  expect(mapped.baths).toBe(2);
+  expect(mapped.sqft).toBe(84);
+});

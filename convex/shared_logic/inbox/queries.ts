@@ -23,7 +23,7 @@ export const listConversations = query({
     archived: v.optional(v.boolean()),
   },
   handler: async (ctx, { archived }) => {
-    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    const access = await requireRole(ctx, ["user", "broker", "developer"]);
     const memberships = await ctx.db
       .query("inboxConversationParticipants")
       .withIndex("userId", (q) => q.eq("userId", access.authUserId))
@@ -48,7 +48,7 @@ export const getConversation = query({
     conversationId: v.id("inboxConversations"),
   },
   handler: async (ctx, { conversationId }) => {
-    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    const access = await requireRole(ctx, ["user", "broker", "developer"]);
     const membership = await getConversationParticipant(
       ctx,
       conversationId,
@@ -83,7 +83,7 @@ export const getConversation = query({
 export const getInboxUnreadSummary = query({
   args: {},
   handler: async (ctx) => {
-    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    const access = await requireRole(ctx, ["user", "broker", "developer"]);
     const memberships = await ctx.db
       .query("inboxConversationParticipants")
       .withIndex("userId", (q) => q.eq("userId", access.authUserId))
@@ -100,7 +100,7 @@ export const hasProjectShareAccess = query({
     propertyId: v.id("properties"),
   },
   handler: async (ctx, { propertyId }) => {
-    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    const access = await requireRole(ctx, ["user", "broker", "developer"]);
     return hasInboxProjectShareAccess(ctx, access.authUserId, propertyId);
   },
 });
@@ -295,7 +295,7 @@ export const searchConversationTargets = query({
     query: v.string(),
   },
   handler: async (ctx, { query: searchQuery }) => {
-    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    const access = await requireRole(ctx, ["user", "broker", "developer"]);
     const normalizedQuery = normalizeSearchQuery(searchQuery);
     if (!normalizedQuery) {
       return [];

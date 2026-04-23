@@ -1,6 +1,6 @@
 import { ConvexError } from "convex/values";
 import type { Doc } from "../../../_generated/dataModel";
-import type { CreateOfferCaseArgs, LegacyOfferStatus, LegacyPublicationState, LegacyOfferVisibility, OfferCaseStage, OfferCaseType, OfferPackageVisibility } from "./types";
+import type { CreateOfferCaseArgs, LegacyOfferStatus, LegacyPublicationState, LegacyOfferVisibility, OfferCaseStage, OfferCaseType, OfferPackageVisibility, StoredOfferPackageVisibility } from "./types";
 
 export function assert(condition: unknown, message: string, code = "INVALID_STATE"): asserts condition {
   if (!condition) {
@@ -20,8 +20,8 @@ export function legacyPublicationStateFromStage(stage: OfferCaseStage): LegacyPu
   return "published";
 }
 
-export function legacyVisibilityFromPackage(visibility: OfferPackageVisibility): LegacyOfferVisibility {
-  return visibility === "open" ? "public" : "private";
+export function legacyVisibilityFromPackage(visibility: StoredOfferPackageVisibility): LegacyOfferVisibility {
+  return visibility === "open" || visibility === "public" ? "public" : "private";
 }
 
 export function isClosedStage(stage: OfferCaseStage) {
@@ -53,5 +53,5 @@ export function isPresent<T>(value: T | null | undefined): value is T {
 }
 
 export function isOpenlyVisible(offerCase: Doc<"offerCases">, offerPackage: Doc<"offerPackages">) {
-  return offerCase.stage === "open" && offerPackage.visibility === "open";
+  return offerCase.stage === "open" && (offerPackage.visibility === "open" || offerPackage.visibility === "public");
 }

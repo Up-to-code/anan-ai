@@ -1,6 +1,6 @@
 import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 import { cascadingDelete } from "../cascading";
 import { api } from "../_generated/api";
 import { auditLog } from "../auditLog";
@@ -43,7 +43,7 @@ export const getOrganizationDetail = query({
 export const deleteBrokerOrganization = mutation({
   args: { brokerId: v.id("brokers") },
   handler: async (ctx, args) => {
-    const access = await requireRole(ctx, ["admin"]);
+    const access = await requireAdminAccess(ctx);
     const broker = await ctx.db.get(args.brokerId);
     const result = await cascadingDelete.deleteWithCascadeBatched(ctx, "brokers", args.brokerId, {
       batchHandlerRef: api.cascading._cascadeBatchHandler,
@@ -74,7 +74,7 @@ export const deleteBrokerOrganization = mutation({
 export const deleteDeveloperOrganization = mutation({
   args: { redId: v.id("RED") },
   handler: async (ctx, args) => {
-    const access = await requireRole(ctx, ["admin"]);
+    const access = await requireAdminAccess(ctx);
     const red = await ctx.db.get(args.redId);
     const result = await cascadingDelete.deleteWithCascadeBatched(ctx, "RED", args.redId, {
       batchHandlerRef: api.cascading._cascadeBatchHandler,

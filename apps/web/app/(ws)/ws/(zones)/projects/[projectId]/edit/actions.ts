@@ -36,7 +36,7 @@ export async function saveProjectAction(args: WorkspaceActionArgs, data: Project
       id: args.projectId,
       patch: mapWorkspaceProjectToPropertyInput(data),
     });
-    await projectZone.saveProjectDossierDraft(mapWorkspaceProjectToDossierInput(args.projectId, data));
+    const dossierResult = await projectZone.saveProjectDossierDraft(mapWorkspaceProjectToDossierInput(args.projectId, data));
     await projectZone.saveProjectUnits({ propertyId: args.projectId, units: mapWorkspaceProjectToUnitInputs(data) });
     await projectZone.saveProjectPaymentPlans({ propertyId: args.projectId, paymentPlans: mapWorkspaceProjectToPaymentPlanInputs(data) });
     await projectZone.saveProjectComplianceDocuments({ propertyId: args.projectId, documents: mapWorkspaceProjectToComplianceDocumentInputs(data) });
@@ -64,7 +64,7 @@ export async function saveProjectAction(args: WorkspaceActionArgs, data: Project
       });
     }
 
-    return { ok: true, redirectTo: `/ws/projects/${args.projectId}` } as const;
+    return { ok: true, redirectTo: `/ws/projects/${dossierResult.dossierId ?? args.projectId}` } as const;
   } catch (error) {
     return toProjectFormActionFailure(error);
   }

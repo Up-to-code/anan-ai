@@ -14,6 +14,7 @@ import type {
 
 export type WorkspaceProjectRepository = {
   getProjectDossier(token: string, propertyId: string): Promise<ProjectDossierDetail | null>;
+  getProjectDossierByProjectId(token: string, projectId: string): Promise<ProjectDossierDetail | null>;
   getProjectReadiness(token: string, propertyId: string): Promise<ProjectReadinessResult | null>;
   saveProjectDossierDraft(token: string, input: ProjectDossierInput): Promise<ProjectDraftSaveResult>;
   saveProjectUnits(token: string, propertyId: string, units: ProjectUnitInput[]): Promise<ProjectDraftSaveResult>;

@@ -19,7 +19,7 @@ describe("profileRoles", () => {
     });
   });
 
-  it("clears unrelated organization links for non-owner roles", () => {
+  it("maps legacy admin roles into business user state", () => {
     const result = normalizeUserProfileRoleState({
       role: "admin",
       roleApprovalStatus: "approved",
@@ -27,6 +27,7 @@ describe("profileRoles", () => {
       developerId: "red-1" as never,
     });
 
+    expect(result.role).toBe("user");
     expect(result.brokerId).toBeUndefined();
     expect(result.developerId).toBeUndefined();
   });

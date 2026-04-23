@@ -5,6 +5,7 @@ import type { ProjectMutationActionResult } from "./pages/ProjectsPage/actionTyp
 
 const {
   listProperties,
+  requestProjectPublication,
   publishProperty,
   deleteProperty,
   getCapturedProps,
@@ -18,6 +19,7 @@ const {
       isDone: true,
       continueCursor: "",
     })),
+    requestProjectPublication: vi.fn(async () => ({ ok: true as const })),
     publishProperty: vi.fn(async () => ({ ok: true as const })),
     deleteProperty: vi.fn(async () => undefined),
     getCapturedProps: () => capturedProps,
@@ -40,6 +42,9 @@ vi.mock("@/server/ws/zones", () => ({
     publishProperty,
     deleteProperty,
   })),
+  getWorkspaceProjectZone: vi.fn(() => ({
+    requestProjectPublication,
+  })),
 }));
 
 vi.mock("./pages/ProjectsPage", () => ({
@@ -58,15 +63,17 @@ type CapturedProps = {
 
 beforeEach(() => {
   listProperties.mockClear();
+  requestProjectPublication.mockClear();
   publishProperty.mockClear();
   deleteProperty.mockClear();
+  requestProjectPublication.mockResolvedValue({ ok: true });
   publishProperty.mockResolvedValue({ ok: true });
   deleteProperty.mockResolvedValue(undefined);
   setCapturedProps(null);
 });
 
 it("returns a stable domain result when publishing is blocked by verification", async () => {
-  publishProperty.mockRejectedValue(
+  requestProjectPublication.mockRejectedValue(
     new DomainError({
       code: "VERIFICATION_REQUIRED",
       message: "Organization verification is required before publishing",

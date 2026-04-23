@@ -24,8 +24,8 @@ it("renders the stepper and the first step content", () => {
       audience="broker"
       incomingInvites={[]}
       canCreateOrganization
-      brokerRuleset={null}
-      redRuleset={null}
+      brokerRulesetsByCountry={{ SA: null }}
+      redRulesetsByCountry={{ SA: null }}
     />,
   );
 
@@ -44,8 +44,8 @@ it("shows the create-org warning when creation is disabled", () => {
       audience="broker"
       incomingInvites={[]}
       canCreateOrganization={false}
-      brokerRuleset={null}
-      redRuleset={null}
+      brokerRulesetsByCountry={{ SA: null }}
+      redRulesetsByCountry={{ SA: null }}
     />,
   );
 
@@ -62,12 +62,31 @@ it("renders the first step when initial step is details but creation is disabled
       incomingInvites={[]}
       canCreateOrganization={false}
       initialStep={2}
-      brokerRuleset={null}
-      redRuleset={null}
+      brokerRulesetsByCountry={{ SA: null }}
+      redRulesetsByCountry={{ SA: null }}
     />,
   );
 
   expect(markup).toContain("الدعوات والمسار");
   expect(markup).not.toContain("مثال: مؤسسة عنان العقارية");
   expect(markup).toContain("لا يمكن إنشاء جهة جديدة");
+});
+
+it("renders the GCC country selector in the details step", () => {
+  const markup = renderToStaticMarkup(
+    <OrganizationOnboardingJourney
+      user={{ name: "Ahmed", email: "ahmed@example.com" }}
+      suggestedOrganizationType="broker"
+      audience="broker"
+      incomingInvites={[]}
+      canCreateOrganization
+      initialStep={2}
+      brokerRulesetsByCountry={{ SA: null, AE: null }}
+      redRulesetsByCountry={{ SA: null, AE: null }}
+    />,
+  );
+
+  expect(markup).toContain("دولة التشغيل");
+  expect(markup).toContain("المملكة العربية السعودية");
+  expect(markup).toContain("الإمارات العربية المتحدة");
 });

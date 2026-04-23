@@ -92,6 +92,7 @@ export function mapPropertyToWorkspaceProject(property: PropertyDetail): Workspa
 
   return {
     id: property._id,
+    propertyId: property._id,
     title: property.title,
     location: property.location ?? property.address,
     priceLabel: `${formatCurrency(property.price)} ر.س`,
@@ -170,8 +171,22 @@ export function mapPropertyToWorkspaceProjectDetail(
 ): WorkspaceProject {
   const project = mapPropertyToWorkspaceProject(property);
   const dossier = options?.dossier ?? null;
+  const units = mapProjectDossierUnitsToUnitReferences(dossier);
+  const unitStats = buildUnitDerivedStats(units, dossier, project);
   return {
     ...project,
+    id: dossier?.dossier?._id ?? project.id,
+    propertyId: project.propertyId,
+    priceLabel: unitStats.priceLabel,
+    specs: unitStats.specs,
+    expert: {
+      ...project.expert,
+      projectScale: dossier?.dossier?.expectedUnitCountLabel ?? project.expert.projectScale,
+      productMix: dossier?.dossier?.unitTypeMix?.join("، ") ?? project.expert.productMix,
+      primaryUnitType: dossier?.dossier?.primaryUnitType ?? project.expert.primaryUnitType,
+      expertNotes: dossier?.dossier?.targetAudience ?? project.expert.expertNotes,
+      services: dossier?.dossier?.services?.length ? dossier.dossier.services : project.expert.services,
+    },
     accessMode,
     canEdit: accessMode === "owner",
     visibility: {
@@ -179,7 +194,7 @@ export function mapPropertyToWorkspaceProjectDetail(
       viewers: options?.viewers ?? [],
     },
     assets: options?.assets ?? [],
-    units: mapProjectDossierUnitsToUnitReferences(dossier),
+    units,
     dossier,
     permit: {
       ...project.permit,
@@ -215,6 +230,43 @@ export function mapProjectDossierUnitsToUnitReferences(
     handoverAt: unit.handoverAt,
     floorPlanMedia: unit.floorPlanMedia,
   }));
+}
+
+function formatRange(values: number[], suffix: string) {
+  const unique = [...new Set(values.filter((value) => Number.isFinite(value)).sort((a, b) => a - b))];
+  if (unique.length === 0) return "غير محدد";
+  if (unique.length === 1) return `${formatCurrency(unique[0])} ${suffix}`;
+  return `${formatCurrency(unique[0])}-${formatCurrency(unique[unique.length - 1])} ${suffix}`;
+}
+
+function buildUnitDerivedStats(
+  units: UnitReference[],
+  dossier: ProjectDossierDetail | null,
+  fallback: WorkspaceProject,
+) {
+  const sellableUnits = units.filter((unit) => unit.status !== "sold");
+  const statsUnits = sellableUnits.length > 0 ? sellableUnits : units;
+  const unitPrices = statsUnits
+    .map((unit) => unit.price)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0);
+  const planPrices = (dossier?.paymentPlans ?? [])
+    .flatMap((plan) => [plan.startingPrice, plan.cashPrice])
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0);
+  const dossierAveragePrices = typeof dossier?.dossier?.averagePrice === "number" ? [dossier.dossier.averagePrice] : [];
+  const startingPrice = Math.min(...[...unitPrices, ...planPrices, ...dossierAveragePrices]);
+  const priceLabel = Number.isFinite(startingPrice)
+    ? `يبدأ من ${formatCurrency(startingPrice)} ر.س`
+    : fallback.priceLabel;
+
+  return {
+    priceLabel,
+    specs: {
+      rooms: formatRange(statsUnits.map((unit) => unit.bedrooms ?? Number.NaN), "غرف"),
+      baths: formatRange(statsUnits.map((unit) => unit.bathrooms ?? Number.NaN), "حمامات"),
+      area: formatRange(statsUnits.map((unit) => unit.sizeSqm ?? Number.NaN), "م²"),
+      status: fallback.specs.status,
+    },
+  };
 }
 
 /**
@@ -272,9 +324,9 @@ export function mapWorkspaceProjectToPropertyInput(project: {
   coverImageKey?: string | null;
   galleryDisplayMode?: "cover" | "fit";
   galleryAspectRatio?: "auto" | "landscape" | "square" | "portrait";
-  rooms: string;
-  baths: string;
-  area: string;
+  rooms?: string;
+  baths?: string;
+  area?: string;
   status: string;
   clientVisibility: "private" | "public";
   images: PropertyDetail["media"];
@@ -285,8 +337,15 @@ export function mapWorkspaceProjectToPropertyInput(project: {
   complianceDocuments?: import("@/app/(ws)/ws/public").ProjectFormData["complianceDocuments"];
   brokerAuthorization?: import("@/app/(ws)/ws/public").ProjectFormData["brokerAuthorization"];
 }) {
-  const numericPrice = Number(project.price.replace(/[^\d.]/g, "")) || 0;
-  const numericArea = Number(project.area.replace(/[^\d.]/g, "")) || undefined;
+  const primaryUnit = project.units?.find((unit) => unit.status === "available") ?? project.units?.[0];
+  const primaryPlan = project.paymentPlans?.[0];
+  const numericPrice =
+    parseProjectNumber(primaryUnit?.price) ??
+    parseProjectNumber(primaryPlan?.startingPrice) ??
+    parseProjectNumber(primaryPlan?.cashPrice) ??
+    parseProjectNumber(project.price) ??
+    0;
+  const numericArea = parseProjectNumber(primaryUnit?.sizeSqm) ?? parseProjectNumber(project.area);
   const numericParkingSpaces = Number(project.parkingSpaces?.replace(/[^\d]/g, "")) || undefined;
   const amenities = (project.amenitiesText ?? "")
     .split(/[\n,،]/)
@@ -315,8 +374,8 @@ export function mapWorkspaceProjectToPropertyInput(project: {
     location: project.location.trim(),
     description: project.description.trim(),
     price: numericPrice,
-    beds: Number(project.rooms) || 0,
-    baths: Number(project.baths) || 0,
+    beds: parseProjectNumber(primaryUnit?.bedrooms) ?? parseProjectNumber(project.rooms) ?? 0,
+    baths: parseProjectNumber(primaryUnit?.bathrooms) ?? parseProjectNumber(project.baths) ?? 0,
     sqft: numericArea,
     status:
       project.status === "maintenance"
@@ -369,6 +428,13 @@ function splitSaudiLocation(value: string) {
   };
 }
 
+function splitProjectChoices(value?: string) {
+  return (value ?? "")
+    .split(/[\n,،]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function formatUnitArea(value?: number) {
   return typeof value === "number" && Number.isFinite(value) ? `${formatCurrency(value)} م²` : undefined;
 }
@@ -417,6 +483,13 @@ export function mapWorkspaceProjectToDossierInput(
     requestedVisibility: project.clientVisibility,
     title: project.name.trim(),
     summary: project.description.trim(),
+    targetAudience: project.expertNotes?.trim() || undefined,
+    expectedUnitCountLabel: project.projectScale?.trim() || undefined,
+    unitTypeMix: splitProjectChoices(project.productMix),
+    primaryUnitType: project.primaryUnitType?.trim() || undefined,
+    averagePrice: parseProjectNumber(project.paymentPlans?.[0]?.startingPrice) ?? parseProjectNumber(project.price),
+    options: project.services?.length ? project.services : splitProjectChoices(project.amenitiesText),
+    services: project.services?.length ? project.services : splitProjectChoices(project.amenitiesText),
     location: {
       countryCode: "SA",
       ...splitSaudiLocation(project.location),
@@ -432,19 +505,20 @@ export function mapWorkspaceProjectToDossierInput(
 }
 
 export function mapWorkspaceProjectToUnitInputs(project: WorkspaceProjectFormPayload): ProjectUnitInput[] {
-  const units = project.units?.length ? project.units : [{
-    label: "Primary unit type",
-    unitKind: "unit_type" as const,
-    status: "available" as const,
-    bedrooms: project.rooms,
-    bathrooms: project.baths,
-    sizeSqm: project.area,
-    floor: "",
-    view: "",
-    price: project.price,
-    handoverAt: "",
-    floorPlanMedia: [],
-  }];
+  const units = project.units?.filter((unit) => {
+    const changedDefaultLabel = unit.label.trim() && unit.label.trim() !== "Primary unit type";
+    return Boolean(
+      changedDefaultLabel ||
+      unit.bedrooms.trim() ||
+      unit.bathrooms.trim() ||
+      unit.sizeSqm.trim() ||
+      unit.floor.trim() ||
+      unit.view.trim() ||
+      unit.price.trim() ||
+      unit.handoverAt.trim() ||
+      unit.floorPlanMedia.length,
+    );
+  }) ?? [];
   return units.map((unit) => ({
     dossierId: "server-owned",
     label: unit.label || "Primary unit type",
@@ -462,17 +536,18 @@ export function mapWorkspaceProjectToUnitInputs(project: WorkspaceProjectFormPay
 }
 
 export function mapWorkspaceProjectToPaymentPlanInputs(project: WorkspaceProjectFormPayload): ProjectPaymentPlanInput[] {
-  const price = parseProjectNumber(project.price);
-  const plans = project.paymentPlans?.length ? project.paymentPlans : [{
-    title: "Primary payment plan",
-    cashPrice: project.price,
-    startingPrice: project.price,
-    downPayment: "",
-    escrowReference: "",
-    feesAndTaxNotes: "",
-    bankAndSubsidyNotes: "",
-    milestones: [],
-  }];
+  const price = parseProjectNumber(project.paymentPlans?.[0]?.startingPrice) ?? parseProjectNumber(project.price);
+  const plans = project.paymentPlans?.filter((plan) =>
+    Boolean(
+      plan.cashPrice.trim() ||
+      plan.startingPrice.trim() ||
+      plan.downPayment.trim() ||
+      plan.escrowReference.trim() ||
+      plan.feesAndTaxNotes.trim() ||
+      plan.bankAndSubsidyNotes.trim() ||
+      plan.milestones.length,
+    ),
+  ) ?? [];
   return plans.map((plan) => ({
     dossierId: "server-owned",
     title: plan.title || "Primary payment plan",

@@ -36,7 +36,7 @@ export type AdminUserDetail = Record<string, unknown> | null;
  * HOW:   Calls the existing `admin_zone/users` queries and mutations with the current admin token.
  */
 export const convexAdminUsersRepository = {
-  async listAdminUsers(token: string, input: { paginationOpts: PaginationOptions; role?: "admin" | "broker" | "developer" | "user" | "RED" }) {
+  async listAdminUsers(token: string, input: { paginationOpts: PaginationOptions; role?: "broker" | "developer" | "user" | "RED" }) {
     return fetchQuery(usersApi.listAdminUsers as never, input as never, { token }) as Promise<PaginationResult<AdminUserRecord>>;
   },
   async listAdminProfiles(token: string, input: { paginationOpts: PaginationOptions }) {

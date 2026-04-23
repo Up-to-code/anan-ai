@@ -2,6 +2,7 @@ import { ConvexError } from "convex/values";
 import type { MutationCtx } from "../../../_generated/server";
 import { auditLog } from "../../../auditLog";
 import { tenants } from "../../../tenants";
+import { getAdminPlatformAccess } from "../../../_core/security/adminAccess";
 import {
   findProfileByAuthUserId,
   normalizeEmail,
@@ -49,6 +50,7 @@ export async function createOrganizationForAuthUserRecord(
     displayName?: string;
     name: string;
     type: "broker" | "red";
+    countryCode: string;
     actorAuthUserId?: string;
   },
 ) {
@@ -64,7 +66,7 @@ export async function createOrganizationForAuthUserRecord(
 
   let profile = await findProfileByAuthUserId(ctx, args.authUserId);
 
-  if (profile?.role === "admin") {
+  if (getAdminPlatformAccess(profile as never)) {
     throw new ConvexError({
       code: "FORBIDDEN",
       message: "Admin accounts cannot create an organization from this flow",
@@ -129,6 +131,7 @@ export async function createOrganizationForAuthUserRecord(
       status: "active",
       isVerified: false,
       contactEmail: args.email ?? profile.email,
+      countryCode: args.countryCode,
     });
 
     const tenantOrgId = await tenants.createOrganization(ctx as never, profile.authUserId, normalizedName, {
@@ -208,6 +211,7 @@ export async function createOrganizationForAuthUserRecord(
     status: "active",
     isVerified: false,
     contactEmail: args.email ?? profile.email,
+    countryCode: args.countryCode,
   });
 
   const tenantOrgId = await tenants.createOrganization(ctx as never, profile.authUserId, normalizedName, {

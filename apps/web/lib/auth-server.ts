@@ -76,10 +76,10 @@ function resolveHostedUrl(
 export function resolveAuthBridgeConfig(env: Record<string, string | undefined> = process.env): AuthBridgeConfig {
   const isProduction = isProductionLikeEnv(env.NODE_ENV, env.VERCEL_ENV);
   const convexUrl =
-    resolveHostedUrl([env.NEXT_PUBLIC_CONVEX_URL, env.CONVEX_URL], isProduction)
+    resolveHostedUrl([env.CONVEX_URL, env.NEXT_PUBLIC_CONVEX_URL], isProduction)
     ?? (!isProduction ? LOCAL_CONVEX_URL : null);
   const explicitConvexSiteUrl = resolveHostedUrl(
-    [env.NEXT_PUBLIC_CONVEX_SITE_URL, env.CONVEX_SITE_URL],
+    [env.CONVEX_SITE_URL, env.NEXT_PUBLIC_CONVEX_SITE_URL],
     isProduction,
   );
   const convexSiteUrl =

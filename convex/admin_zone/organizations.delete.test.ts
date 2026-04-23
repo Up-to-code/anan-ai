@@ -24,6 +24,7 @@ vi.mock("../auditLog", () => ({
 
 vi.mock("../_core/security/accessPolicy", () => ({
   requireRole: mockRequireRole,
+  requireAdminAccess: mockRequireRole,
 }));
 
 beforeEach(() => {

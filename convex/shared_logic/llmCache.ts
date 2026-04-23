@@ -4,7 +4,7 @@ import { LLMCache } from "@mzedstudio/llm-cache";
 import type { ActionCtx } from "../_generated/server";
 import { mutation, query } from "../_generated/server";
 import { components } from "../_generated/api";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 
 type GenerateTextOptions = Parameters<typeof generateText>[0];
 type GenerateTextResult = Awaited<ReturnType<typeof generateText>>;
@@ -177,7 +177,7 @@ export async function cachedGenerateText(
 export const getLlmCacheConfig = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return llmCache.getConfig(ctx);
   },
 });
@@ -200,7 +200,7 @@ export const updateLlmCacheConfig = mutation({
     replace: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return llmCache.setConfig(ctx, {
       config: args.config,
       replace: args.replace,
@@ -216,7 +216,7 @@ export const updateLlmCacheConfig = mutation({
 export const getLlmCacheStats = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return llmCache.getStats(ctx);
   },
 });

@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation, mutation } from "../_generated/server";
 import type { Doc } from "../_generated/dataModel";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 
 type StreamEventRecord = Doc<"assistantStreamEvents">;
 
@@ -63,7 +63,7 @@ export const purgeStreamEvents = mutation({
     dryRun: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return purgeStreamEventsBatch(ctx, {
       mode: args.mode ?? "all",
       batchSize: sanitizeBatchSize(args.batchSize),

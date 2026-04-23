@@ -1,6 +1,9 @@
 import { query } from "../../_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "../../_core/security/accessPolicy";
+import {
+  requireAdminAccess,
+  requireRole,
+} from "../../_core/security/accessPolicy";
 
 function normalizeSearchQuery(input: string) {
   return input.replace(/\s+/g, " ").trim();
@@ -17,7 +20,11 @@ export const retrieveDeveloperHandbookSnippets = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin", "broker", "developer"]);
+    try {
+      await requireAdminAccess(ctx, "admin:system");
+    } catch {
+      await requireRole(ctx, ["broker", "developer"]);
+    }
 
     const normalized = normalizeSearchQuery(args.query);
     if (!normalized) return [];
@@ -52,4 +59,3 @@ export const retrieveDeveloperHandbookSnippets = query({
       }));
   },
 });
-

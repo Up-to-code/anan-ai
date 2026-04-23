@@ -90,30 +90,27 @@ export function getLicenseStatusUi(locale: AppLocale) {
 export function getStepDefinitions(locale: AppLocale): StepDefinition[] {
   if (locale === "en") {
     return [
-      { key: "identity", title: "Identity", summary: "Project name, type, visibility, and Saudi location" },
-      { key: "scale", title: "Scale", summary: "Project scale, product mix, unit profile, and space range" },
-      { key: "pricing", title: "Pricing", summary: "Starting price, payment plan, and market position" },
-      { key: "services", title: "Services", summary: "Services, media, compliance, and authorization evidence" },
-      { key: "review", title: "Expert review", summary: "Readiness summary and save confirmation" },
+      { key: "identity", title: "Basics", summary: "Name, location, status, and visibility" },
+      { key: "scale", title: "Market data", summary: "Target, services, unit mix, count, and average price" },
+      { key: "services", title: "Story", summary: "Short description and optional gallery" },
+      { key: "review", title: "Save", summary: "Create the project shell, then add units inside it" },
     ];
   }
 
   if (locale === "fr") {
     return [
-      { key: "identity", title: "Identite", summary: "Nom, type, visibilite et adresse saoudienne" },
-      { key: "scale", title: "Echelle", summary: "Echelle, mix produit, profil unite et surface" },
-      { key: "pricing", title: "Prix", summary: "Prix de depart, paiement et position marche" },
-      { key: "services", title: "Services", summary: "Services, medias, conformite et autorisation" },
-      { key: "review", title: "Revue expert", summary: "Resume de preparation et confirmation" },
+      { key: "identity", title: "Base", summary: "Nom, lieu, statut et visibilite" },
+      { key: "scale", title: "Marche", summary: "Cible, services, mix d'unites, volume et prix moyen" },
+      { key: "services", title: "Recit", summary: "Description courte et galerie optionnelle" },
+      { key: "review", title: "Enregistrer", summary: "Creez le projet, puis ajoutez les unites" },
     ];
   }
 
   return [
-    { key: "identity", title: "هوية المشروع", summary: "الاسم والنوع والظهور والموقع السعودي" },
-    { key: "scale", title: "الحجم والمزيج", summary: "حجم المشروع ومزيج المنتجات ونطاق المساحات" },
-    { key: "pricing", title: "السعر والمقارنة", summary: "السعر وخطة الدفع وموقعه من السوق" },
-    { key: "services", title: "الخدمات والجاهزية", summary: "الخدمات والميديا والامتثال والتفويض" },
-    { key: "review", title: "مراجعة الخبير", summary: "ملخص الجاهزية وتأكيد الحفظ" },
+    { key: "identity", title: "الأساسيات", summary: "الاسم والموقع والحالة والظهور" },
+    { key: "scale", title: "بيانات السوق", summary: "الهدف والخدمات ومزيج الوحدات والعدد والسعر المتوسط" },
+    { key: "services", title: "القصة", summary: "الوصف المختصر ومعرض اختياري" },
+    { key: "review", title: "الحفظ", summary: "أنشئ المشروع الأم ثم أضف الوحدات من داخله" },
   ];
 }
 

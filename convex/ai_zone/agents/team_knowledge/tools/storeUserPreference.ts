@@ -14,7 +14,8 @@ import type { AgentRuntimeContext } from "../../types";
 
 export function storeUserPreference(ctx: ActionCtx, runtime: AgentRuntimeContext): Tool {
   return tool({
-    description: "Store a user preference or constraint for future sessions.",
+    description:
+      "Store a user preference or constraint for future sessions. Safe persona keys include communication_tone, preferred_language_style, response_density, sales_readiness, and handoff_preference.",
     inputSchema: zodSchema(z.object({
       key: z.string(),
       value: z.string(),

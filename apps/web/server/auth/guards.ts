@@ -1,5 +1,70 @@
 import { type ResolvedSession, requireSessionContext } from "@/server/auth/session";
 import { DomainError } from "@/server/contracts/errors";
+import { betterAuthOrganizationsRepository } from "@/server/infrastructure/betterAuth/organizations";
+import { convexOrganizationProfilesRepository } from "@/server/infrastructure/convex/organizationProfiles";
+
+type OwnerLinkKey = "brokerId" | "redId";
+
+async function resolveOwnerLinkOrganizationId(session: ResolvedSession): Promise<string | null> {
+  if (session.context.organizationId) {
+    return session.context.organizationId;
+  }
+
+  const organizations = await betterAuthOrganizationsRepository.listForCurrentUser(session.token);
+  return organizations[0]?.id ?? null;
+}
+
+export async function resolveOwnerLinkedSession(
+  session: ResolvedSession,
+  requiredOwnerKey?: OwnerLinkKey,
+): Promise<ResolvedSession> {
+  if (!requiredOwnerKey || session.context[requiredOwnerKey]) {
+    return session;
+  }
+
+  const organizationId = await resolveOwnerLinkOrganizationId(session);
+  if (!organizationId) {
+    return session;
+  }
+
+  const organizationProfile = await convexOrganizationProfilesRepository.getById(
+    session.token,
+    organizationId,
+  );
+  if (!organizationProfile) {
+    return session;
+  }
+
+  if (
+    requiredOwnerKey === "brokerId" &&
+    (organizationProfile.legacyOwnerType === "broker" || organizationProfile.type === "broker")
+  ) {
+    return {
+      ...session,
+      context: {
+        ...session.context,
+        organizationId: session.context.organizationId ?? organizationId,
+        brokerId: organizationProfile.legacyOwnerId ?? organizationProfile.id,
+      },
+    };
+  }
+
+  if (
+    requiredOwnerKey === "redId" &&
+    (organizationProfile.legacyOwnerType === "RED" || organizationProfile.type === "red")
+  ) {
+    return {
+      ...session,
+      context: {
+        ...session.context,
+        organizationId: session.context.organizationId ?? organizationId,
+        redId: organizationProfile.legacyOwnerId ?? organizationProfile.id,
+      },
+    };
+  }
+
+  return session;
+}
 
 /**
  * WHY:   Server functions need one shared place for role and owner-link enforcement.
@@ -11,11 +76,12 @@ function requireRoleSession(
   session: ResolvedSession,
   options: {
     allowedRoles: string[];
+    requireAdmin?: boolean;
     requiredOwnerKey?: "brokerId" | "redId";
     message: string;
   },
 ): ResolvedSession {
-  const hasRole = options.allowedRoles.includes(session.context.role ?? "");
+  const hasRole = options.requireAdmin ? Boolean(session.context.isAdmin) : options.allowedRoles.includes(session.context.role ?? "");
   const hasOwnerId =
     !options.requiredOwnerKey || Boolean(session.context[options.requiredOwnerKey]);
 
@@ -63,7 +129,8 @@ export function assertDeveloperSession(session: ResolvedSession): ResolvedSessio
  */
 export function assertAdminSession(session: ResolvedSession): ResolvedSession {
   return requireRoleSession(session, {
-    allowedRoles: ["admin"],
+    allowedRoles: [],
+    requireAdmin: true,
     message: "Admin role required",
   });
 }
@@ -75,7 +142,7 @@ export function assertAdminSession(session: ResolvedSession): ResolvedSession {
  */
 export async function requireBrokerSession(): Promise<ResolvedSession> {
   const session = await requireSessionContext();
-  return assertBrokerSession(session);
+  return assertBrokerSession(await resolveOwnerLinkedSession(session, "brokerId"));
 }
 
 /**
@@ -85,7 +152,7 @@ export async function requireBrokerSession(): Promise<ResolvedSession> {
  */
 export async function requireDeveloperSession(): Promise<ResolvedSession> {
   const session = await requireSessionContext();
-  return assertDeveloperSession(session);
+  return assertDeveloperSession(await resolveOwnerLinkedSession(session, "redId"));
 }
 
 /**

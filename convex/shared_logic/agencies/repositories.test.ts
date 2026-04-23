@@ -223,6 +223,7 @@ describe("createOrganizationForAuthUserRecord", () => {
       displayName: "Owner",
       name: "Fresh Start Realty",
       type: "broker",
+      countryCode: "SA",
     });
     expectBrokerProvisioningResult(result, userProfiles, brokers, tenantOrgLinks);
   });
@@ -236,6 +237,7 @@ describe("createOrganizationForAuthUserRecord", () => {
         displayName: "Owner",
         name: "Fresh Start Realty",
         type: "broker",
+        countryCode: "SA",
       }),
       "ORGANIZATION_EXISTS",
       "This account already has an organization",

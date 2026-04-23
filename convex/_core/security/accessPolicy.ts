@@ -3,6 +3,12 @@ import type { Doc, Id } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
 import { findProfileForResolvedIdentity, requireResolvedIdentity } from "./identity";
 import {
+  getAdminPlatformAccess,
+  profileHasAdminAccess,
+  type AdminPermission,
+  type AdminPlatformAccess,
+} from "./adminAccess";
+import {
   normalizeUserProfileRoleState,
   type UserRole,
 } from "./profileRoles";
@@ -22,9 +28,16 @@ export type AccessContext = {
   roleApprovalStatus?: Doc<"userProfiles">["roleApprovalStatus"];
 };
 
+export type AdminAccessContext = {
+  authUserId: string;
+  sessionId?: string;
+  role: "admin";
+  profile: Doc<"userProfiles"> | null;
+  adminAccess: AdminPlatformAccess;
+};
+
 function normalizeRole(value: unknown): ProtectedRole | null {
   if (
-    value === "admin" ||
     value === "broker" ||
     value === "developer" ||
     value === "user"
@@ -78,15 +91,77 @@ function assertAllowedRole(
   }
 }
 
-function assertLinkedRoleEntity(role: ProtectedRole, profile: Doc<"userProfiles"> | null) {
+async function resolveLinkedRoleEntity(
+  ctx: Ctx,
+  role: ProtectedRole,
+  profile: Doc<"userProfiles"> | null,
+) {
   const normalizedProfile = profile ? normalizeUserProfileRoleState(profile) : null;
-  if (role === "broker" && !profile?.brokerId) {
+
+  if (role === "broker" && profile?.brokerId) {
+    return {
+      brokerId: profile.brokerId,
+      developerId: undefined,
+    } as const;
+  }
+
+  if (role === "developer" && normalizedProfile?.developerId) {
+    return {
+      brokerId: undefined,
+      developerId: normalizedProfile.developerId,
+    } as const;
+  }
+
+  if (!profile?.currentTenantOrgId) {
+    return {
+      brokerId: undefined,
+      developerId: undefined,
+    } as const;
+  }
+
+  const link = await ctx.db
+    .query("tenantOrgLinks")
+    .withIndex("tenantOrgId", (q) => q.eq("tenantOrgId", profile.currentTenantOrgId!))
+    .first();
+
+  if (!link) {
+    return {
+      brokerId: undefined,
+      developerId: undefined,
+    } as const;
+  }
+
+  if (role === "broker" && link.ownerType === "broker" && link.ownerBrokerId) {
+    return {
+      brokerId: link.ownerBrokerId,
+      developerId: undefined,
+    } as const;
+  }
+
+  if (role === "developer" && link.ownerType === "RED" && link.ownerREDId) {
+    return {
+      brokerId: undefined,
+      developerId: link.ownerREDId,
+    } as const;
+  }
+
+  return {
+    brokerId: undefined,
+    developerId: undefined,
+  } as const;
+}
+
+function assertLinkedRoleEntity(
+  role: ProtectedRole,
+  linkedRoleEntity: { brokerId?: Id<"brokers">; developerId?: Id<"RED"> },
+) {
+  if (role === "broker" && !linkedRoleEntity.brokerId) {
     throw new ConvexError({
       code: "FORBIDDEN",
       message: "Broker profile not linked",
     });
   }
-  if (role === "developer" && !normalizedProfile?.developerId) {
+  if (role === "developer" && !linkedRoleEntity.developerId) {
     throw new ConvexError({
       code: "FORBIDDEN",
       message: "Developer (RED) profile not linked",
@@ -124,17 +199,53 @@ export async function requireRole(
   assertActiveProfile(profile);
   const role = resolveEffectiveRole(profile, (identity.identity as { role?: string }).role);
   assertAllowedRole(role, normalizeAllowedRoles(allowedRoles));
-  assertLinkedRoleEntity(role, profile);
+  const linkedRoleEntity = await resolveLinkedRoleEntity(ctx, role, profile);
+  assertLinkedRoleEntity(role, linkedRoleEntity);
 
   return {
     authUserId: identity.authUserId,
     sessionId: identity.sessionId,
     role,
     profile,
-    brokerId: profile?.brokerId,
-    developerId: normalizedProfile?.developerId,
-    REDId: normalizedProfile?.developerId,
+    brokerId: linkedRoleEntity.brokerId,
+    developerId: linkedRoleEntity.developerId,
+    REDId: linkedRoleEntity.developerId,
     roleApprovalStatus: normalizedProfile?.roleApprovalStatus,
+  };
+}
+
+/**
+ * WHY:   Platform control-plane access must be separate from marketplace business roles.
+ * WHAT:  Verifies authenticated admin metadata and returns a platform admin access context.
+ * HOW:   Reads `userProfiles.metadata.platformAccess.admin`, with a legacy `role: admin` fallback during migration only.
+ */
+export async function requireAdminAccess(
+  ctx: Ctx,
+  permission?: AdminPermission,
+): Promise<AdminAccessContext> {
+  const identity = await requireResolvedIdentity(ctx);
+  const profile = await findProfileForResolvedIdentity(ctx, identity);
+  assertActiveProfile(profile);
+  if (!profileHasAdminAccess(profile, permission)) {
+    throw new ConvexError({
+      code: "FORBIDDEN",
+      message: "Admin access required",
+    });
+  }
+  const adminAccess = getAdminPlatformAccess(profile);
+  if (!adminAccess) {
+    throw new ConvexError({
+      code: "FORBIDDEN",
+      message: "Admin access required",
+    });
+  }
+
+  return {
+    authUserId: identity.authUserId,
+    sessionId: identity.sessionId,
+    role: "admin",
+    profile,
+    adminAccess,
   };
 }
 
@@ -185,14 +296,19 @@ export async function requireZoneRole(
     | "user_zone"
     | "shared_logic"
     | "ai_zone",
-): Promise<AccessContext> {
-  const zoneRoles: Record<typeof zone, ProtectedRole[]> = {
-    admin_zone: ["admin"],
+): Promise<AccessContext | AdminAccessContext> {
+  if (zone === "admin_zone") {
+    return requireAdminAccess(ctx);
+  }
+  const zoneRoles: Record<
+    Exclude<typeof zone, "admin_zone">,
+    ProtectedRole[]
+  > = {
     broker_zone: ["broker"],
     red_zone: ["developer"],
-    user_zone: ["user", "broker", "developer", "admin"],
-    shared_logic: ["admin", "broker", "developer", "user"],
-    ai_zone: ["admin", "broker", "developer", "user"],
+    user_zone: ["user", "broker", "developer"],
+    shared_logic: ["broker", "developer", "user"],
+    ai_zone: ["broker", "developer", "user"],
   } as const;
 
   return requireRole(ctx, zoneRoles[zone]);

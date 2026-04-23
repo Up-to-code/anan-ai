@@ -115,3 +115,28 @@ it("injects broker owner context into the workspace-scoped session resolver", as
   expect(session?.context.role).toBe("broker");
   expect(session?.context.brokerId).toBe("broker-1");
 });
+
+it("accepts broker owner context derived from the organization id while the legacy bridge is pending", async () => {
+  requireSessionContext.mockResolvedValue({
+    token: "token-2",
+    profile: null,
+    context: {
+      userId: "user-2",
+      role: "user",
+      isActive: true,
+    },
+  });
+
+  const zone = getWorkspacePropertyZone("broker", {
+    ownerType: "broker",
+    ownerId: "org-bridge-pending",
+  });
+
+  await zone.listProperties({ paginationOpts: { cursor: null, numItems: 20 } });
+
+  const dependencies = vi.mocked(listBrokerProperties).mock.calls.at(-1)?.[1];
+  const session = await dependencies?.requireSession();
+
+  expect(session?.context.role).toBe("broker");
+  expect(session?.context.brokerId).toBe("org-bridge-pending");
+});

@@ -10,6 +10,7 @@ export type SessionContext = {
   image?: string | null;
   username?: string | null;
   role?: string;
+  isAdmin?: boolean;
   brokerId?: string;
   redId?: string;
   organizationId?: string | null;

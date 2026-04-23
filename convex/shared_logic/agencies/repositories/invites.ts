@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "../../../_generated/server";
 import { requireCurrentProfile } from "../../lib/profile";
-import { requireRole } from "../../../_core/security/accessPolicy";
+import { requireAdminAccess } from "../../../_core/security/accessPolicy";
 import {
   buildOwnerContext,
   resolveTenantOrgIdForOwner,
@@ -24,7 +24,7 @@ async function requireSameTenantOrAdmin(args: {
   managerOnly?: boolean;
 }): Promise<string> {
   try {
-    const access = await requireRole(args.ctx as any, ["admin"]);
+    const access = await requireAdminAccess(args.ctx as any);
     return access.authUserId;
   } catch (error) {
     if (

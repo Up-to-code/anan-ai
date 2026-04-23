@@ -264,7 +264,6 @@ export const mobileBuyerViewerValidator = v.object({
     v.literal("broker"),
     v.literal("developer"),
     v.literal("RED"),
-    v.literal("admin"),
   ),
   isAuthenticated: v.boolean(),
   qualifiedOrdersCount: v.number(),

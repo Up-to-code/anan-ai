@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import ProjectDetailPage from "../pages/ProjectDetailPage";
 import { requireWorkspaceData } from "../../../_lib/workspaceData";
 import { resolveWorkspaceProjectDetail } from "@/server/domains/workspace/properties/detail";
@@ -28,20 +28,29 @@ export default async function WorkspaceProjectDetailRoute({
   const { projectId } = await params;
   const workspace = await requireWorkspaceData(`/ws/projects/${projectId}`);
   const session = await requireSessionContext();
+  const projectsZone = getWorkspaceProjectZone(workspace.audience, workspace.ownerContext);
+  const canonicalDossier = await projectsZone.getProjectDossierByProjectId({ projectId }).catch(() => null);
+  const propertyId = canonicalDossier?.property?._id ?? projectId;
   const resolved = await resolveWorkspaceProjectDetail({
-    projectId,
+    projectId: propertyId,
     audience: workspace.audience,
     ownerContext: workspace.ownerContext,
   });
+  const legacyDossier = canonicalDossier
+    ? null
+    : resolved
+      ? await projectsZone.getProjectDossier({ propertyId }).catch(() => null)
+      : null;
+  if (!canonicalDossier && legacyDossier?.dossier?._id) {
+    redirect(`/ws/projects/${legacyDossier.dossier._id}`);
+  }
   const [assets, viewers] = await Promise.all([
-    resolved ? convexOrganizationAssetsRepository.listProjectAssetsForViewer(session.token, projectId) : Promise.resolve([]),
+    resolved ? convexOrganizationAssetsRepository.listProjectAssetsForViewer(session.token, propertyId) : Promise.resolve([]),
     resolved?.accessMode === "owner"
-      ? convexProjectAccessRepository.listPropertyViewers(session.token, projectId).catch(() => [])
+      ? convexProjectAccessRepository.listPropertyViewers(session.token, propertyId).catch(() => [])
       : Promise.resolve([]),
   ]);
-  const dossier = resolved
-    ? await getWorkspaceProjectZone(workspace.audience, workspace.ownerContext).getProjectDossier({ propertyId: projectId }).catch(() => null)
-    : null;
+  const dossier = canonicalDossier ?? legacyDossier;
   const project = resolved
     ? mapPropertyToWorkspaceProjectDetail(resolved.property, resolved.accessMode, { viewers, assets, dossier })
     : null;
@@ -54,7 +63,7 @@ export default async function WorkspaceProjectDetailRoute({
     "use server";
 
     try {
-      await getWorkspacePropertyZone(workspace.audience, workspace.ownerContext).publishProperty({ id: projectId });
+      await getWorkspacePropertyZone(workspace.audience, workspace.ownerContext).publishProperty({ id: propertyId });
       return { ok: true };
     } catch (error) {
       const domainError = normalizeDomainError(error);
@@ -66,7 +75,7 @@ export default async function WorkspaceProjectDetailRoute({
     "use server";
 
     try {
-      await getWorkspacePropertyZone(workspace.audience, workspace.ownerContext).deleteProperty({ id: projectId });
+      await getWorkspacePropertyZone(workspace.audience, workspace.ownerContext).deleteProperty({ id: propertyId });
       return { ok: true };
     } catch (error) {
       const domainError = normalizeDomainError(error);
@@ -81,7 +90,7 @@ export default async function WorkspaceProjectDetailRoute({
     "use server";
 
     await getWorkspacePropertyZone(workspace.audience, workspace.ownerContext).recordProjectAnalyticsEvent({
-      id: projectId,
+      id: propertyId,
       eventType: input.eventType,
       source: input.source,
     });

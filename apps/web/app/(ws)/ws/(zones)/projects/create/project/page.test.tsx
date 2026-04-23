@@ -4,6 +4,7 @@ import type { ProjectFormData } from "@/app/(ws)/ws/public";
 
 const {
   createProperty,
+  requireWorkspaceData,
   saveProjectDossierDraft,
   saveProjectUnits,
   saveProjectPaymentPlans,
@@ -17,7 +18,11 @@ const {
 
   return {
     createProperty: vi.fn(async () => "property-new"),
-    saveProjectDossierDraft: vi.fn(async () => ({ ok: true })),
+    requireWorkspaceData: vi.fn(async () => ({
+      audience: "broker",
+      ownerContext: { ownerType: "broker", ownerId: "broker-1" },
+    })),
+    saveProjectDossierDraft: vi.fn(async () => ({ ok: true, propertyId: "property-new", dossierId: "project-new" })),
     saveProjectUnits: vi.fn(async () => ({ ok: true })),
     saveProjectPaymentPlans: vi.fn(async () => ({ ok: true })),
     saveProjectComplianceDocuments: vi.fn(async () => ({ ok: true })),
@@ -31,10 +36,7 @@ const {
 });
 
 vi.mock("../../../../_lib/workspaceData", () => ({
-  requireWorkspaceData: vi.fn(async () => ({
-    audience: "developer",
-    ownerContext: { ownerType: "developer", ownerId: "red-1" },
-  })),
+  requireWorkspaceData,
 }));
 
 vi.mock("../../../../_lib/workspaceLocale", () => ({
@@ -145,6 +147,7 @@ const formInput = {
 
 beforeEach(() => {
   createProperty.mockClear();
+  requireWorkspaceData.mockClear();
   saveProjectDossierDraft.mockClear();
   saveProjectUnits.mockClear();
   saveProjectPaymentPlans.mockClear();
@@ -165,7 +168,10 @@ it("saves uploaded images as media and buyer-visible publication state separatel
   };
   const result = await props.onSave(formInput);
 
-  expect(result).toEqual({ ok: true, redirectTo: "/ws/projects/property-new" });
+  expect(result).toEqual({ ok: true, redirectTo: "/ws/projects/project-new?tab=units" });
+  expect(requireWorkspaceData).toHaveBeenCalledTimes(2);
+  expect(requireWorkspaceData).toHaveBeenNthCalledWith(1, "/ws/projects/create/project");
+  expect(requireWorkspaceData).toHaveBeenNthCalledWith(2, "/ws/projects/create/project");
   expect(createProperty).toHaveBeenCalledWith(
     expect.objectContaining({
       media: [uploadedImage],

@@ -23,7 +23,13 @@ pnpm --dir apps/mobile test
 
 ## Required mobile env
 
-- Root env source of truth: [`.env.local`](/Users/ahmedmansour/anan-lit/.env.local)
+- One env file is loaded by the mobile wrapper. By default it uses the repo root [`.env.local`](/Users/ahmedmansour/anan-lit/.env.local)
+- To keep your mobile env outside the repo, copy [`.env.example`](/Users/ahmedmansour/anan-lit/apps/mobile/.env.example) to a private path, edit it there, and run:
+
+```bash
+ANAN_MOBILE_ENV_FILE=/absolute/path/to/anan-mobile.env pnpm mobile:dev
+```
+
 - `EXPO_PUBLIC_CONVEX_URL` is required for buyer routes; without it the app shows one blocking setup screen instead of fallback data
 - `EXPO_PUBLIC_CONVEX_SITE_URL` is required for Better Auth's Expo session bridge and Convex HTTP auth routes
 - When the root env already defines `CONVEX_URL`, the mobile dev wrapper reuses it as `EXPO_PUBLIC_CONVEX_URL` automatically

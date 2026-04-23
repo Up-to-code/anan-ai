@@ -14,7 +14,7 @@ export default async function AdminLayout({
 }>) {
   const session = await getAuthenticatedSession();
 
-  if (!session.token || !session.user || session.role !== "admin") {
+  if (!session.token || !session.user || !session.isAdmin) {
     redirect("/signin?returnTo=/overview");
   }
 

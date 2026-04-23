@@ -56,6 +56,7 @@ export async function orchestrate(
     const {
         ctx,
         prompt,
+        intentPrompt,
         role,
         userId,
         threadId,
@@ -64,6 +65,7 @@ export async function orchestrate(
         channel,
         promptBudgetMeta,
     } = input;
+    const routingPrompt = intentPrompt ?? prompt;
 
     if (!getAgentLLMConfigSafe("anan")) {
         return {
@@ -82,7 +84,7 @@ export async function orchestrate(
     // 2. Analyze intent to select teams
     const selectedTeams = await analyzeIntent(
         ctx,
-        prompt,
+        routingPrompt,
         availableTeams,
         modelOverride,
         "anan",
@@ -127,7 +129,7 @@ export async function orchestrate(
 
     const merged = await mergeResults({
         ctx,
-        prompt,
+        prompt: routingPrompt,
         successOutputs,
         hasFailures,
         modelOverride,

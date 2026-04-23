@@ -1,0 +1,42 @@
+url: ${MAESTRO_WEB_URL}
+---
+- runScript:
+    file: ../scripts/bootstrap.js
+    env:
+      E2E_PERSONA: developer-manager
+      E2E_REDIRECT_TO: /ws/projects/create
+- openLink: ${output.bootstrapUrl}
+- tapOn:
+    id: create-inventory-option-project
+- tapOn:
+    id: create-inventory-continue
+- tapOn:
+    id: project-name-input
+- inputText: "${output.projectName}"
+- tapOn:
+    id: project-price-input
+- inputText: "2500000"
+- tapOn:
+    id: project-location-input
+- inputText: "الرياض، الياسمين"
+- tapOn:
+    id: creation-flow-next
+- tapOn:
+    id: project-rooms-input
+- inputText: "3"
+- tapOn:
+    id: project-baths-input
+- inputText: "2"
+- tapOn:
+    id: project-area-input
+- inputText: "180"
+- tapOn:
+    id: creation-flow-next
+- tapOn:
+    id: creation-flow-next
+- tapOn:
+    id: project-description-input
+- inputText: "وصف تجريبي لمشروع يتم إنشاؤه من Maestro."
+- assertVisible:
+    id: project-image-upload
+

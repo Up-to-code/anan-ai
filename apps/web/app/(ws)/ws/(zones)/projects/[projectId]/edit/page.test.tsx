@@ -4,6 +4,14 @@ import type { ProjectFormData } from "@/app/(ws)/ws/public";
 
 const {
   getProperty,
+  getProjectDossier,
+  getProjectDossierByProjectId,
+  saveProjectDossierDraft,
+  saveProjectUnits,
+  saveProjectPaymentPlans,
+  saveProjectComplianceDocuments,
+  saveProjectAdLicense,
+  saveProjectBrokerAuthorization,
   updateProperty,
   deleteProperty,
   attachOrganizationAssets,
@@ -45,6 +53,14 @@ const {
       adLicenseNumber: "AD-OLD",
       adLicenseStatus: "pending",
     })),
+    getProjectDossier: vi.fn(async () => null),
+    getProjectDossierByProjectId: vi.fn(async () => null),
+    saveProjectDossierDraft: vi.fn(async () => ({ ok: true, propertyId: "property-1", dossierId: "project-1" })),
+    saveProjectUnits: vi.fn(async () => undefined),
+    saveProjectPaymentPlans: vi.fn(async () => undefined),
+    saveProjectComplianceDocuments: vi.fn(async () => undefined),
+    saveProjectAdLicense: vi.fn(async () => undefined),
+    saveProjectBrokerAuthorization: vi.fn(async () => undefined),
     updateProperty: vi.fn(async () => undefined),
     deleteProperty: vi.fn(async () => undefined),
     attachOrganizationAssets: vi.fn(async () => undefined),
@@ -84,6 +100,16 @@ vi.mock("@/server/ws/zones", () => ({
     getProperty,
     updateProperty,
     deleteProperty,
+  })),
+  getWorkspaceProjectZone: vi.fn(() => ({
+    getProjectDossier,
+    getProjectDossierByProjectId,
+    saveProjectDossierDraft,
+    saveProjectUnits,
+    saveProjectPaymentPlans,
+    saveProjectComplianceDocuments,
+    saveProjectAdLicense,
+    saveProjectBrokerAuthorization,
   })),
 }));
 
@@ -167,6 +193,13 @@ async function renderEditProject() {
 
 beforeEach(() => {
   getProperty.mockClear();
+  getProjectDossier.mockClear();
+  saveProjectDossierDraft.mockClear();
+  saveProjectUnits.mockClear();
+  saveProjectPaymentPlans.mockClear();
+  saveProjectComplianceDocuments.mockClear();
+  saveProjectAdLicense.mockClear();
+  saveProjectBrokerAuthorization.mockClear();
   updateProperty.mockClear();
   deleteProperty.mockClear();
   setCapturedProps(null);
@@ -193,7 +226,7 @@ it("updates project media through the mapped patch without implicit publish side
   ]);
 
   const saveResult = await props.onSave(saveFormInput);
-  expect(saveResult).toEqual({ ok: true, redirectTo: "/ws/projects/property-1" });
+  expect(saveResult).toEqual({ ok: true, redirectTo: "/ws/projects/project-1" });
   expect(updateProperty).toHaveBeenCalledWith({
     id: "property-1",
     patch: expect.objectContaining({

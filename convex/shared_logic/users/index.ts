@@ -40,6 +40,7 @@ function buildMyProfileResponse(args: {
     requestedRole?: string | null;
     brokerId?: string | null;
     developerId?: string | null;
+    metadata?: unknown;
     isActive?: boolean;
   };
   name: string | undefined;
@@ -55,6 +56,7 @@ function buildMyProfileResponse(args: {
     requestedRole: args.profile.requestedRole,
     brokerId: args.profile.brokerId,
     developerId: args.profile.developerId,
+    metadata: args.profile.metadata,
     showInOffersDirectory: args.showInOffersDirectory,
     isActive: args.profile.isActive,
     authProvider: { id: "google", passwordManaged: false },

@@ -27,6 +27,7 @@ import type {
   BuyerSummaryCollection,
   KnowledgeSnippet,
 } from "../types";
+import { buildPersonaContextBlock } from "../../memory/persona";
 
 type PromptBlock = {
   name: string;
@@ -237,6 +238,12 @@ export function buildBuyerPromptBlocks(args: {
       priority: 5,
     },
     {
+      name: "persona_context",
+      text: buildPersonaContextBlock(args.memory),
+      bucket: "memory",
+      priority: 4,
+    },
+    {
       name: "raw_memory_fallback",
       text: args.rawMemoryFallback.join("\n"),
       bucket: "memory",
@@ -308,6 +315,7 @@ export function buildBuyerCompilationFingerprint(args: {
     threadId: args.threadId,
     state: args.effectiveState,
     memorySummary: args.memory.summary,
+    personaContext: buildPersonaContextBlock(args.memory),
     summaries: args.summaries,
     recap: args.recentThreadRecap,
     recentPropertyRefIds: args.recentPropertyRefIds,

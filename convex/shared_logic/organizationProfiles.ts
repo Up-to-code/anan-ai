@@ -8,6 +8,7 @@ import {
 import { findProfileByAuthUserId } from "./agencies/repositories/core";
 import { tenants } from "../tenants";
 import { auditLog } from "../auditLog";
+import { getGccCountryLabel } from "../../shared/gccCountries";
 
 const organizationTypeValidator = v.union(v.literal("broker"), v.literal("red"));
 
@@ -57,6 +58,8 @@ function mapOrganizationProfile(doc: any | null) {
     type: doc.type,
     name: doc.name,
     slug: doc.slug,
+    countryCode: doc.countryCode,
+    countryLabel: doc.countryLabel ?? null,
     status: doc.status ?? "active",
     isVerified: doc.isVerified === true,
     logoUrl: doc.logoUrl ?? null,
@@ -77,6 +80,8 @@ async function patchCurrentProfileTenantOrg(ctx: any, args: {
   authUserId: string;
   tenantOrgId?: string | null;
   type: "broker" | "red";
+  ownerBrokerId?: any;
+  ownerREDId?: any;
 }) {
   if (!args.tenantOrgId) {
     return null;
@@ -94,6 +99,9 @@ async function patchCurrentProfileTenantOrg(ctx: any, args: {
     role,
     requestedRole: role,
     roleApprovalStatus: "approved",
+    brokerId: args.type === "broker" ? args.ownerBrokerId : undefined,
+    developerId: args.type === "red" ? args.ownerREDId : undefined,
+    REDId: args.type === "red" ? args.ownerREDId : undefined,
     isActive: true,
     updatedAt: Date.now(),
   });
@@ -107,6 +115,7 @@ async function createLegacyOrganizationBridge(ctx: any, args: {
   displayName?: string | null;
   name: string;
   type: "broker" | "red";
+  countryCode: string;
 }) {
   const normalizedName = args.name.trim().replace(/\s+/g, " ");
   if (!normalizedName || normalizedName.length < 2) {
@@ -127,6 +136,7 @@ async function createLegacyOrganizationBridge(ctx: any, args: {
       status: "active",
       isVerified: false,
       contactEmail: args.email ?? undefined,
+      countryCode: args.countryCode,
     });
 
     const tenantOrgId = await tenants.createOrganization(ctx as never, args.authUserId, normalizedName, {
@@ -161,6 +171,7 @@ async function createLegacyOrganizationBridge(ctx: any, args: {
     status: "active",
     isVerified: false,
     contactEmail: args.email ?? undefined,
+    countryCode: args.countryCode,
   });
 
   const tenantOrgId = await tenants.createOrganization(ctx as never, args.authUserId, normalizedName, {
@@ -223,6 +234,23 @@ export const getCurrentOrganizationProfile = query({
 });
 
 /**
+ * WHY:   Fresh org bootstrap and workspace fallback paths can know the target organization id before auth claims catch up.
+ * WHAT:  Returns one local organization profile bridge by explicit Better Auth organization id.
+ * HOW:   Requires an authenticated session only, then loads the bridge row directly by indexed organization id.
+ */
+export const getOrganizationProfileById = query({
+  args: {
+    organizationId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireSession(ctx);
+    return mapOrganizationProfile(
+      await getOrganizationProfileByOrganizationId(ctx, args.organizationId),
+    );
+  },
+});
+
+/**
  * WHY:   New Better Auth organizations still need a local metadata row and a compatibility bridge while business zones migrate.
  * WHAT:  Creates or updates the current active organization's local profile bridge and syncs the caller's active tenant link.
  * HOW:   Uses the active Better Auth org claim, creates legacy owner/link records when missing, then upserts the local profile row.
@@ -233,17 +261,10 @@ export const bootstrapCurrentOrganizationProfile = mutation({
     name: v.string(),
     slug: v.optional(v.string()),
     type: organizationTypeValidator,
+    countryCode: v.string(),
   },
   handler: async (ctx, args) => {
     const actor = await requireSession(ctx);
-    const activeOrganization = await requireAuthOrganizationContext(ctx);
-
-    if (activeOrganization.organizationId !== args.organizationId) {
-      throw new ConvexError({
-        code: "FORBIDDEN",
-        message: "Active organization mismatch",
-      });
-    }
 
     const profile = await findProfileByAuthUserId(ctx, actor.authUserId);
     const existing = await getOrganizationProfileByOrganizationId(ctx, args.organizationId);
@@ -263,6 +284,7 @@ export const bootstrapCurrentOrganizationProfile = mutation({
         displayName: profile?.name ?? null,
         name: args.name,
         type: args.type,
+        countryCode: args.countryCode,
       });
       nextValues = {
         slug: args.slug?.trim() || bridge.slug,
@@ -277,6 +299,8 @@ export const bootstrapCurrentOrganizationProfile = mutation({
       authUserId: actor.authUserId,
       tenantOrgId: nextValues.legacyTenantOrgId,
       type: args.type,
+      ownerBrokerId: nextValues.legacyOwnerBrokerId,
+      ownerREDId: nextValues.legacyOwnerREDId,
     });
 
     const now = Date.now();
@@ -285,6 +309,8 @@ export const bootstrapCurrentOrganizationProfile = mutation({
         name: args.name.trim(),
         slug: nextValues.slug,
         type: args.type,
+        countryCode: args.countryCode,
+        countryLabel: getGccCountryLabel(args.countryCode),
         legacyTenantOrgId: nextValues.legacyTenantOrgId,
         legacyOwnerType: nextValues.legacyOwnerType,
         legacyOwnerBrokerId: nextValues.legacyOwnerBrokerId,
@@ -300,6 +326,8 @@ export const bootstrapCurrentOrganizationProfile = mutation({
       name: args.name.trim(),
       slug: nextValues.slug,
       type: args.type,
+      countryCode: args.countryCode,
+      countryLabel: getGccCountryLabel(args.countryCode),
       status: "active",
       isVerified: false,
       legacyTenantOrgId: nextValues.legacyTenantOrgId,
@@ -322,6 +350,7 @@ export const bootstrapCurrentOrganizationProfile = mutation({
         organizationId: args.organizationId,
         legacyTenantOrgId: nextValues.legacyTenantOrgId,
         type: args.type,
+        countryCode: args.countryCode,
       },
       tags: ["organizations", "better-auth", "bootstrap"],
     });

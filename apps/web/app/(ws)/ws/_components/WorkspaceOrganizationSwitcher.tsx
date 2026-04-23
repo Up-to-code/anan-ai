@@ -75,6 +75,7 @@ export default function WorkspaceOrganizationSwitcher() {
   return (
     <div
       data-slot="workspace-organization-switcher"
+      data-testid="workspace-organization-switcher"
       className="space-y-2 rounded-[16px] border border-[color:color-mix(in_srgb,var(--workspace-border)_82%,transparent)] bg-[var(--workspace-panel)] p-2"
       dir={direction}
     >
@@ -100,6 +101,7 @@ export default function WorkspaceOrganizationSwitcher() {
             <button
               key={organization.id}
               type="button"
+              data-testid={`workspace-org-switch-${organization.id}`}
               onClick={() => handleSwitch(organization.id)}
               disabled={isLoading}
               className={cn(

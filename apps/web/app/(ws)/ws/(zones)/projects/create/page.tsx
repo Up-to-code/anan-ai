@@ -95,6 +95,7 @@ export default function CreateInventorySelectionPage() {
               <motion.button
                 key={option.kind}
                 type="button"
+                data-testid={`create-inventory-option-${option.kind}`}
                 data-href={option.href}
                 onClick={() => setSelected(option.kind)}
                 variants={cardMotion}
@@ -145,6 +146,7 @@ export default function CreateInventorySelectionPage() {
             >
               <motion.button
                 type="button"
+                data-testid="create-inventory-continue"
                 onClick={() => router.push(options.find((option) => option.kind === selected)?.href ?? "/ws/projects/create/project")}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}

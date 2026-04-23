@@ -6,6 +6,7 @@ import {
   gccSourceAuthorityValidator,
 } from "./gccCompliance";
 import { uploadedFileReferenceListValidator } from "./uploadedFiles";
+import { transitionalGlobalSecurityFields } from "./securityFields";
 
 const projectReadinessStatusValidator = v.union(
   v.literal("draft"),
@@ -84,8 +85,32 @@ const documentStatusValidator = v.union(
 
 const projectsTables = {
   projectDossiers: defineTable({
+    ...transitionalGlobalSecurityFields,
     propertyId: v.id("properties"),
+    orgId: v.optional(v.id("organizations")),
     tenantOrgId: v.optional(v.string()),
+    name: v.optional(v.string()),
+    phase: v.optional(v.union(
+      v.literal("planning"),
+      v.literal("under_construction"),
+      v.literal("ready"),
+    )),
+    status: v.optional(v.union(
+      v.literal("draft"),
+      v.literal("published"),
+      v.literal("sold_out"),
+      v.literal("archived"),
+    )),
+    totalUnits: v.optional(v.number()),
+    expectedUnitCountLabel: v.optional(v.string()),
+    unitTypeMix: v.optional(v.array(v.string())),
+    primaryUnitType: v.optional(v.string()),
+    targetAudience: v.optional(v.string()),
+    averagePrice: v.optional(v.number()),
+    options: v.optional(v.array(v.string())),
+    handoverDate: v.optional(v.number()),
+    amenities: v.optional(v.array(v.string())),
+    services: v.optional(v.array(v.string())),
     ownerType: v.union(v.literal("broker"), v.literal("RED")),
     ownerBrokerId: v.optional(v.id("brokers")),
     ownerREDId: v.optional(v.id("RED")),
@@ -108,16 +133,34 @@ const projectsTables = {
     createdAt: v.number(),
     updatedAt: v.number(),
   })
+    .index("by_orgId", ["orgId"])
+    .index("by_orgId_and_status", ["orgId", "status"])
     .index("propertyId", ["propertyId"])
     .index("tenantOrgId", ["tenantOrgId"])
+    .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"])
     .index("ownerBrokerId", ["ownerBrokerId"])
     .index("ownerREDId", ["ownerREDId"])
     .index("readinessStatus", ["readinessStatus"])
     .index("requestedVisibility_readinessStatus", ["requestedVisibility", "readinessStatus"]),
 
   projectUnits: defineTable({
+    ...transitionalGlobalSecurityFields,
     dossierId: v.id("projectDossiers"),
     propertyId: v.id("properties"),
+    orgId: v.optional(v.id("organizations")),
+    unitNumber: v.optional(v.string()),
+    unitType: v.optional(v.union(
+      v.literal("studio"),
+      v.literal("1br"),
+      v.literal("2br"),
+      v.literal("3br"),
+      v.literal("4br_plus"),
+      v.literal("penthouse"),
+    )),
+    areaSqm: v.optional(v.number()),
+    floorNumber: v.optional(v.number()),
+    basePrice: v.optional(v.number()),
+    currency: v.optional(v.string()),
     label: v.string(),
     unitKind: v.union(v.literal("unit_type"), v.literal("unit")),
     status: v.union(v.literal("available"), v.literal("reserved"), v.literal("sold"), v.literal("draft")),
@@ -132,11 +175,15 @@ const projectsTables = {
     createdAt: v.number(),
     updatedAt: v.number(),
   })
+    .index("by_orgId_and_status", ["orgId", "status"])
+    .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"])
     .index("dossierId", ["dossierId"])
     .index("propertyId", ["propertyId"])
     .index("dossierId_status", ["dossierId", "status"]),
 
-  projectPaymentPlans: defineTable({
+    projectPaymentPlans: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     dossierId: v.id("projectDossiers"),
     propertyId: v.id("properties"),
     title: v.string(),
@@ -153,9 +200,12 @@ const projectsTables = {
   })
     .index("dossierId", ["dossierId"])
     .index("propertyId", ["propertyId"])
-    .index("dossierId_status", ["dossierId", "status"]),
+    .index("dossierId_status", ["dossierId", "status"])
+    .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
 
   projectComplianceDocuments: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     dossierId: v.id("projectDossiers"),
     propertyId: v.id("properties"),
     documentType: documentTypeValidator,
@@ -172,9 +222,12 @@ const projectsTables = {
     .index("dossierId", ["dossierId"])
     .index("propertyId", ["propertyId"])
     .index("dossierId_documentType", ["dossierId", "documentType"])
-    .index("verificationRequestId", ["verificationRequestId"]),
+    .index("verificationRequestId", ["verificationRequestId"])
+    .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
 
   projectAdLicenses: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     dossierId: v.id("projectDossiers"),
     propertyId: v.id("properties"),
     licenseNumber: v.string(),
@@ -202,9 +255,15 @@ const projectsTables = {
     .index("licenseNumber", ["licenseNumber"])
     .index("countryCode_verificationStatus", ["countryCode", "verificationStatus"])
     .index("sourceAuthority_verificationStatus", ["sourceAuthority", "verificationStatus"])
-    .index("verificationRequestId", ["verificationRequestId"]),
+    .index("verificationRequestId", ["verificationRequestId"])
+    .index("by_org_status_expiresAt", ["orgId", "status", "expiresAt"])
+    .index("by_property_status", ["propertyId", "status"])
+    .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
 
   projectBrokerAuthorizations: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
+    brokerOrgId: v.optional(v.id("organizations")),
     dossierId: v.id("projectDossiers"),
     propertyId: v.id("properties"),
     brokerId: v.optional(v.id("brokers")),
@@ -224,9 +283,14 @@ const projectsTables = {
     .index("propertyId", ["propertyId"])
     .index("brokerId", ["brokerId"])
     .index("REDId", ["REDId"])
-    .index("dossierId_status", ["dossierId", "status"]),
+    .index("dossierId_status", ["dossierId", "status"])
+    .index("by_brokerOrg_status", ["brokerOrgId", "status"])
+    .index("by_property_broker_status", ["propertyId", "brokerOrgId", "status"])
+    .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
 
   projectReadinessEvents: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     dossierId: v.optional(v.id("projectDossiers")),
     propertyId: v.optional(v.id("properties")),
     actorAuthUserId: v.optional(v.string()),
@@ -256,7 +320,8 @@ const projectsTables = {
     .index("dossierId", ["dossierId"])
     .index("propertyId", ["propertyId"])
     .index("eventType", ["eventType"])
-    .index("createdAt", ["createdAt"]),
+    .index("createdAt", ["createdAt"])
+    .index("by_org_createdAt", ["orgId", "createdAt"]),
 };
 
 export default projectsTables;

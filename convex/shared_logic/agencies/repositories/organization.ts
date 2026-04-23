@@ -245,6 +245,7 @@ export const createOrganizationForAuthUser = internalMutation({
     displayName: v.optional(v.string()),
     name: v.string(),
     type: v.union(v.literal("broker"), v.literal("red")),
+    countryCode: v.string(),
   },
   handler: async (ctx, args) => {
     const actor = await requireSession(ctx);
@@ -267,6 +268,7 @@ export const createOrganizationForCurrentUser = mutation({
   args: {
     name: v.string(),
     type: v.union(v.literal("broker"), v.literal("red")),
+    countryCode: v.string(),
   },
   handler: async (ctx, args) => {
     const profile = await requireCurrentProfile(ctx);

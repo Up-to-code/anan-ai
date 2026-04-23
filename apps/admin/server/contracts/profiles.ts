@@ -15,6 +15,16 @@ export type ProfileSummary = {
   brokerId?: string;
   developerId?: string;
   isActive?: boolean;
+  metadata?: {
+    platformAccess?: {
+      admin?: {
+        enabled: boolean;
+        level: string;
+        permissions: string[];
+        revokedAt?: number;
+      };
+    };
+  };
   authProvider: {
     id: "google";
     passwordManaged: false;

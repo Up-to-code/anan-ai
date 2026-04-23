@@ -10,10 +10,10 @@ export function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[24px] border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-5 md:p-6">
-      <div className="mb-6 text-right">
-        <h3 className="text-xl font-black tracking-tight text-foreground">{title}</h3>
-        {description ? <p className="mt-2 text-[14px] leading-7 text-[var(--workspace-muted)]">{description}</p> : null}
+    <section className="border-t border-[color:color-mix(in_srgb,var(--workspace-border)_45%,transparent)] py-7 first:border-t-0 first:pt-0">
+      <div className="mb-5 text-right">
+        <h3 className="text-lg font-black tracking-normal text-foreground">{title}</h3>
+        {description ? <p className="mt-1.5 text-[13px] leading-6 text-[var(--workspace-muted)]">{description}</p> : null}
       </div>
       {children}
     </section>
@@ -32,6 +32,7 @@ export function TextInput({
   type = "text",
   disabled = false,
   error,
+  testId,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -40,18 +41,20 @@ export function TextInput({
   type?: "text" | "number";
   disabled?: boolean;
   error?: string;
+  testId?: string;
 }) {
   return (
     <div className="grid gap-2">
       <div className="relative">
         <input
+          data-testid={testId}
           type={type}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
           disabled={disabled}
           aria-invalid={Boolean(error)}
-          className={`h-14 w-full rounded-[18px] border bg-[var(--workspace-panel)] px-5 text-[15px] font-bold text-foreground outline-none transition-all placeholder:text-[color:color-mix(in_srgb,var(--workspace-muted)_76%,transparent)] focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,var(--workspace-border))] focus:bg-[var(--workspace-elevated)] disabled:cursor-not-allowed disabled:opacity-50 ${
+          className={`h-13 w-full rounded-xl border bg-transparent px-4 text-[15px] font-bold text-foreground outline-none transition-all placeholder:text-[color:color-mix(in_srgb,var(--workspace-muted)_76%,transparent)] focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,var(--workspace-border))] focus:bg-[var(--workspace-elevated)] disabled:cursor-not-allowed disabled:opacity-50 ${
             error ? "border-rose-300 focus:border-rose-400" : "border-[color:var(--workspace-border)]"
           }`}
         />
@@ -68,22 +71,25 @@ export function TextArea({
   placeholder,
   rows = 4,
   error,
+  testId,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
   rows?: number;
   error?: string;
+  testId?: string;
 }) {
   return (
     <div className="grid gap-2">
       <textarea
+        data-testid={testId}
         rows={rows}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         aria-invalid={Boolean(error)}
-        className={`w-full resize-none rounded-[18px] border bg-[var(--workspace-panel)] px-5 py-4 text-[15px] font-bold leading-7 text-foreground outline-none transition-all placeholder:text-[color:color-mix(in_srgb,var(--workspace-muted)_76%,transparent)] focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,var(--workspace-border))] focus:bg-[var(--workspace-elevated)] ${
+        className={`w-full resize-none rounded-xl border bg-transparent px-4 py-3 text-[15px] font-bold leading-7 text-foreground outline-none transition-all placeholder:text-[color:color-mix(in_srgb,var(--workspace-muted)_76%,transparent)] focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,var(--workspace-border))] focus:bg-[var(--workspace-elevated)] ${
           error ? "border-rose-300 focus:border-rose-400" : "border-[color:var(--workspace-border)]"
         }`}
       />
@@ -98,21 +104,24 @@ export function SelectInput<TValue extends string>({
   options,
   disabled = false,
   error,
+  testId,
 }: {
   value: TValue;
   onChange: (value: TValue) => void;
   options: ReadonlyArray<{ value: TValue; label: string }>;
   disabled?: boolean;
   error?: string;
+  testId?: string;
 }) {
   return (
     <div className="grid gap-2">
       <select
+        data-testid={testId}
         value={value}
         onChange={(event) => onChange(event.target.value as TValue)}
         disabled={disabled}
         aria-invalid={Boolean(error)}
-        className={`h-14 w-full rounded-[18px] border bg-[var(--workspace-panel)] px-5 text-[15px] font-bold text-foreground outline-none transition-all focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,var(--workspace-border))] focus:bg-[var(--workspace-elevated)] disabled:cursor-not-allowed disabled:opacity-50 ${
+        className={`h-13 w-full rounded-xl border bg-transparent px-4 text-[15px] font-bold text-foreground outline-none transition-all focus:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,var(--workspace-border))] focus:bg-[var(--workspace-elevated)] disabled:cursor-not-allowed disabled:opacity-50 ${
           error ? "border-rose-300 focus:border-rose-400" : "border-[color:var(--workspace-border)]"
         }`}
       >
@@ -133,16 +142,19 @@ export function UploadTile({
   onClick,
   icon,
   disabled = false,
+  testId,
 }: {
   title: string;
   subtitle?: string;
   onClick: () => void;
   icon: React.ReactNode;
   disabled?: boolean;
+  testId?: string;
 }) {
   return (
     <button
       type="button"
+      data-testid={testId}
       onClick={onClick}
       disabled={disabled}
       className="flex w-full items-center justify-between gap-3 rounded-[20px] border border-dashed border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-5 py-5 text-right transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_22%,var(--workspace-border))] hover:bg-[var(--workspace-elevated)] disabled:cursor-not-allowed disabled:opacity-60"

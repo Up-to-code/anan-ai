@@ -15,6 +15,7 @@
 
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { transitionalGlobalSecurityFields } from "./securityFields";
 
 const conversationAnalyzerPaymentIntentValidator = v.union(
     v.literal("cash"),
@@ -92,6 +93,9 @@ const aiTables = {
      *       Queried by admin_zone for analytics dashboards.
      */
     aiTokenUsage: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
+        authUserId: v.optional(v.id("authUsers")),
         /** Agent that made this call (e.g. "anan_search") */
         agentName: v.string(),
         /** Team that owns the agent (e.g. "team_search") */
@@ -134,9 +138,13 @@ const aiTables = {
         .index("agentName", ["agentName"])
         .index("createdAt", ["createdAt"])
         .index("agentName_createdAt", ["agentName", "createdAt"])
-        .index("teamName_createdAt", ["teamName", "createdAt"]),
+        .index("teamName_createdAt", ["teamName", "createdAt"])
+        .index("by_org_createdAt", ["orgId", "createdAt"]),
 
     aiOrchestrationUsage: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
+        authUserId: v.optional(v.id("authUsers")),
         orchestratorName: v.string(),
         role: v.string(),
         channel: v.optional(v.string()),
@@ -156,7 +164,8 @@ const aiTables = {
         createdAt: v.number(),
     })
         .index("createdAt", ["createdAt"])
-        .index("orchestratorName_createdAt", ["orchestratorName", "createdAt"]),
+        .index("orchestratorName_createdAt", ["orchestratorName", "createdAt"])
+        .index("by_org_createdAt", ["orgId", "createdAt"]),
 
     /**
      * aiRAGEntries — Tracks RAG content in both production and recommendation.
@@ -170,6 +179,7 @@ const aiTables = {
      *       When approved → also added to production RAG namespace.
      */
     aiRAGEntries: defineTable({
+    ...transitionalGlobalSecurityFields,
         /** Which RAG namespace this belongs to */
         ragType: v.union(v.literal("production"), v.literal("recommendation")),
         /** Short title/label for this entry */
@@ -214,6 +224,7 @@ const aiTables = {
      *       Read by anan_knowledge before every response to inject context.
      */
     userKnowledgeBase: defineTable({
+    ...transitionalGlobalSecurityFields,
         /** User this knowledge belongs to */
         userId: v.string(),
         /** Knowledge key (e.g. "preferred_area", "budget_range") */
@@ -235,7 +246,12 @@ const aiTables = {
         .index("userId_key", ["userId", "key"]),
 
     aiConversationAnalyses: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
+        authUserId: v.optional(v.id("authUsers")),
         threadId: v.id("assistantThreads"),
+        runId: v.optional(v.id("aiConversationAnalysisRuns")),
+        buyerAccountId: v.optional(v.id("buyerAccounts")),
         userId: v.string(),
         assistantKind: v.union(v.literal("default"), v.literal("anan_main_public")),
         runKey: v.string(),
@@ -248,6 +264,18 @@ const aiTables = {
             v.literal("done"),
             v.literal("failed"),
         ),
+        demandSignals: v.optional(v.object({
+            interestedPropertyTypes: v.array(v.string()),
+            budgetRange: v.object({
+                min: v.number(),
+                max: v.number(),
+                currency: v.string(),
+            }),
+            preferredCities: v.array(v.string()),
+            urgency: v.string(),
+        })),
+        summary: v.optional(v.string()),
+        windowDate: v.optional(v.string()),
         claimedAt: v.optional(v.number()),
         processedAt: v.optional(v.number()),
         failureReason: v.optional(v.string()),
@@ -259,21 +287,31 @@ const aiTables = {
         createdAt: v.number(),
         updatedAt: v.number(),
     })
+        .index("by_threadId", ["threadId"])
+        .index("by_buyerAccountId", ["buyerAccountId"])
+        .index("by_runId", ["runId"])
+        .index("by_status_and_windowDate", ["status", "windowDate"])
         .index("by_threadId_runKey", ["threadId", "runKey"])
         .index("by_runKey_status", ["runKey", "status"])
-        .index("by_status_lastMessageAt", ["status", "lastMessageAt"]),
+        .index("by_status_lastMessageAt", ["status", "lastMessageAt"])
+        .index("by_org_createdAt", ["orgId", "createdAt"])
+        .index("by_authUser_createdAt", ["authUserId", "createdAt"]),
 
     aiConversationAnalysisRuns: defineTable({
+    ...transitionalGlobalSecurityFields,
+        windowDate: v.optional(v.string()),
         runKey: v.string(),
         windowStartMs: v.number(),
         windowEndMs: v.number(),
         timezone: v.string(),
         status: v.union(
+            v.literal("pending"),
             v.literal("draft"),
             v.literal("running"),
             v.literal("done"),
             v.literal("failed"),
         ),
+        processedCount: v.optional(v.number()),
         draftCount: v.number(),
         processingCount: v.number(),
         doneCount: v.number(),
@@ -285,7 +323,9 @@ const aiTables = {
         failureReason: v.optional(v.string()),
         createdAt: v.number(),
         updatedAt: v.number(),
-    }).index("by_runKey", ["runKey"]),
+    })
+        .index("by_windowDate", ["windowDate"])
+        .index("by_runKey", ["runKey"]),
 };
 
 export default aiTables;

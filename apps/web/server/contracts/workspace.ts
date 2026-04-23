@@ -112,6 +112,14 @@ export function getOrganizationOwnerContext(
       : { ownerType: "RED", ownerId: organization.legacyOwnerId };
   }
 
+  if (organization.type === "broker") {
+    return { ownerType: "broker", ownerId: organization.id };
+  }
+
+  if (organization.type === "red") {
+    return { ownerType: "RED", ownerId: organization.id };
+  }
+
   return null;
 }
 

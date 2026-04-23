@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { transitionalGlobalSecurityFields } from "./securityFields";
 
 /**
  * Sales and Orders Schema
@@ -11,6 +12,8 @@ import { v } from "convex/values";
 const salesTables = {
     /** Orders (pipeline / CRM) */
     orders: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         userId: v.string(),
         type: v.union(v.literal("property"), v.literal("loan")),
         status: v.union(
@@ -35,10 +38,12 @@ const salesTables = {
     })
         .index("userId", ["userId"])
         .index("status", ["status"])
-        .index("REDId", ["REDId"]),
+        .index("REDId", ["REDId"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
 
     /** Banks for getBundles */
     banks: defineTable({
+    ...transitionalGlobalSecurityFields,
         name: v.string(),
         slug: v.string(),
         contactEmail: v.string(),
@@ -64,7 +69,8 @@ const salesTables = {
         ),
     })
         .index("slug", ["slug"])
-        .index("status", ["status"]),
+        .index("status", ["status"])
+        .index("by_deletedAt_updatedAt", ["deletedAt", "updatedAt"]),
 };
 
 export default salesTables;

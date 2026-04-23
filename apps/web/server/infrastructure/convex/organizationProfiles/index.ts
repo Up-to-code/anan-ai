@@ -36,6 +36,14 @@ export const convexOrganizationProfilesRepository: OrganizationProfilesRepositor
     ) as ReturnType<OrganizationProfilesRepository["getCurrent"]>;
   },
 
+  async getById(token, organizationId) {
+    return fetchQuery(
+      organizationProfilesApi.getOrganizationProfileById as never,
+      { organizationId } as never,
+      { token },
+    ) as ReturnType<OrganizationProfilesRepository["getById"]>;
+  },
+
   async bootstrapCurrent(token, input) {
     return fetchMutation(
       organizationProfilesApi.bootstrapCurrentOrganizationProfile as never,

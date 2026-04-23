@@ -20,7 +20,6 @@ function toProjectFormStatus(property: WorkspaceProperty | null): ProjectFormDat
 function buildInitialProjectFormData(project: WorkspaceProject, property: WorkspaceProperty | null, dossierDetail?: any): Partial<ProjectFormData> {
   const presentation = parsePropertyBody(property?.body)?.presentation;
   const dossier = dossierDetail?.dossier;
-  const unit = dossierDetail?.units?.find((item: any) => item.status === "available") ?? dossierDetail?.units?.[0];
   const paymentPlan = dossierDetail?.paymentPlans?.find((item: any) => item.status === "active") ?? dossierDetail?.paymentPlans?.[0];
   const adLicense = dossierDetail?.adLicenses?.[0];
   const brokerAuthorization = dossierDetail?.brokerAuthorizations?.[0];
@@ -29,7 +28,7 @@ function buildInitialProjectFormData(project: WorkspaceProject, property: Worksp
     : project.location;
   return {
     name: dossier?.title ?? project.title,
-    price: paymentPlan?.startingPrice ? String(paymentPlan.startingPrice) : project.priceLabel,
+    price: "",
     location,
     description: dossier?.summary ?? project.summary,
     shortDescription: presentation?.descriptionShort ?? "",
@@ -44,17 +43,17 @@ function buildInitialProjectFormData(project: WorkspaceProject, property: Worksp
     expertProjectType: ["residential", "commercial", "mixed_use", "land", "hospitality"].includes(presentation?.expertMetadata?.assetType ?? "")
       ? presentation?.expertMetadata?.assetType as ProjectFormData["expertProjectType"]
       : "residential",
-    projectScale: presentation?.expertMetadata?.projectScale ?? "",
-    productMix: presentation?.expertMetadata?.productMix ?? "",
-    primaryUnitType: presentation?.expertMetadata?.primaryUnitType ?? "apartment",
+    projectScale: dossier?.expectedUnitCountLabel ?? presentation?.expertMetadata?.projectScale ?? "",
+    productMix: dossier?.unitTypeMix?.join("، ") ?? presentation?.expertMetadata?.productMix ?? "",
+    primaryUnitType: dossier?.primaryUnitType ?? presentation?.expertMetadata?.primaryUnitType ?? "apartment",
     sizeRange: presentation?.expertMetadata?.sizeRange ?? "",
     priceComparison: presentation?.expertMetadata?.priceComparison ?? "unknown",
     comparisonNotes: presentation?.expertMetadata?.comparisonNotes ?? "",
-    expertNotes: presentation?.expertMetadata?.expertNotes ?? "",
-    services: presentation?.expertMetadata?.services ?? [],
-    rooms: unit?.bedrooms !== undefined ? String(unit.bedrooms) : project.specs.rooms.replace(/[^\d]/g, ""),
-    baths: unit?.bathrooms !== undefined ? String(unit.bathrooms) : project.specs.baths.replace(/[^\d]/g, ""),
-    area: unit?.sizeSqm !== undefined ? String(unit.sizeSqm) : project.specs.area.replace(/[^\d]/g, ""),
+    expertNotes: dossier?.targetAudience ?? presentation?.expertMetadata?.expertNotes ?? "",
+    services: dossier?.services ?? presentation?.expertMetadata?.services ?? [],
+    rooms: "",
+    baths: "",
+    area: "",
     status: toProjectFormStatus(property),
     clientVisibility: dossier?.requestedVisibility ?? (project.publicationState === "published" ? "public" : "private"),
     images: property?.media ?? [],
@@ -73,7 +72,7 @@ function buildInitialProjectFormData(project: WorkspaceProject, property: Worksp
       latitude: dossier?.location?.latitude ? String(dossier.location.latitude) : "",
       longitude: dossier?.location?.longitude ? String(dossier.location.longitude) : "",
     },
-    units: unit ? [{
+    units: (dossierDetail?.units ?? []).map((unit: any) => ({
       label: unit.label ?? "Primary unit type",
       unitKind: unit.unitKind ?? "unit_type",
       status: unit.status ?? "available",
@@ -85,7 +84,7 @@ function buildInitialProjectFormData(project: WorkspaceProject, property: Worksp
       price: unit.price !== undefined ? String(unit.price) : "",
       handoverAt: unit.handoverAt ? new Date(unit.handoverAt).toISOString().slice(0, 10) : "",
       floorPlanMedia: unit.floorPlanMedia ?? [],
-    }] : undefined,
+    })),
     paymentPlans: paymentPlan ? [{
       title: paymentPlan.title ?? "Primary payment plan",
       cashPrice: paymentPlan.cashPrice !== undefined ? String(paymentPlan.cashPrice) : "",
@@ -94,6 +93,15 @@ function buildInitialProjectFormData(project: WorkspaceProject, property: Worksp
       escrowReference: paymentPlan.escrowReference ?? "",
       feesAndTaxNotes: paymentPlan.feesAndTaxNotes ?? "",
       bankAndSubsidyNotes: paymentPlan.bankAndSubsidyNotes ?? "",
+      milestones: [],
+    }] : dossier?.averagePrice ? [{
+      title: "Average project price",
+      cashPrice: "",
+      startingPrice: String(dossier.averagePrice),
+      downPayment: "",
+      escrowReference: "",
+      feesAndTaxNotes: "",
+      bankAndSubsidyNotes: "",
       milestones: [],
     }] : undefined,
     complianceDocuments: (dossierDetail?.documents ?? []).map((document: any) => ({
@@ -123,11 +131,13 @@ export async function loadEditProjectPageState(projectId: string) {
   const ownerContext = workspace.ownerContext ?? null;
   const propertiesZone = getWorkspacePropertyZone(audience, ownerContext);
   const projectsZone = getWorkspaceProjectZone(audience, ownerContext);
-  const property = await propertiesZone.getProperty({ id: projectId }).catch(() => null);
-  const dossierDetail = await projectsZone.getProjectDossier({ propertyId: projectId }).catch(() => null);
+  const canonicalDossier = await projectsZone.getProjectDossierByProjectId({ projectId }).catch(() => null);
+  const propertyId = canonicalDossier?.property?._id ?? projectId;
+  const property = canonicalDossier?.property ?? await propertiesZone.getProperty({ id: propertyId }).catch(() => null);
+  const dossierDetail = canonicalDossier ?? await projectsZone.getProjectDossier({ propertyId }).catch(() => null);
   const project = property ? mapPropertyToWorkspaceProject(property) : null;
   const visibilityMembers = await convexProjectAccessRepository
-    .listPropertyViewers(session.token, projectId)
+    .listPropertyViewers(session.token, propertyId)
     .catch(() => []);
 
   if (!project) {
@@ -135,7 +145,7 @@ export async function loadEditProjectPageState(projectId: string) {
   }
 
   return {
-    actionArgs: { audience, ownerContext, projectId },
+    actionArgs: { audience, ownerContext, projectId: propertyId },
     description: `${project.title} — تعديل البيانات والصور.`,
     initialData: {
       ...buildInitialProjectFormData(project, property, dossierDetail),

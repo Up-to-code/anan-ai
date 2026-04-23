@@ -7,6 +7,9 @@ function buildRepository(api: WorkspaceProjectInternalRefs): WorkspaceProjectRep
     async getProjectDossier(token, propertyId) {
       return fetchQuery(api.getProjectDossier as never, { propertyId: propertyId as never } as never, { token }) as ReturnType<WorkspaceProjectRepository["getProjectDossier"]>;
     },
+    async getProjectDossierByProjectId(token, projectId) {
+      return fetchQuery(api.getProjectDossierByProjectId as never, { projectId: projectId as never } as never, { token }) as ReturnType<WorkspaceProjectRepository["getProjectDossierByProjectId"]>;
+    },
     async getProjectReadiness(token, propertyId) {
       return fetchQuery(api.getProjectReadiness as never, { propertyId: propertyId as never } as never, { token }) as ReturnType<WorkspaceProjectRepository["getProjectReadiness"]>;
     },

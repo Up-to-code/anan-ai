@@ -2,8 +2,9 @@ import type { ActionCtx } from "../../../_generated/server";
 import { ConvexError } from "convex/values";
 import { api, internal } from "../../../_generated/api";
 import type { WorkspaceStructuredOutput } from "../../agents/anan_workspace/types";
-import { runAssistantSurfaceRuntime } from "../../openMultiAgent";
+import { runAssistantSurfaceRuntime } from "../assistantSurfaceRuntime";
 import { resolveWorkspaceAgUiTurn } from "../agUi";
+import { buildPersonaContextBlock } from "../../../shared_logic/memory/persona";
 import type {
   AssistantKind,
   AssistantMessageRecord,
@@ -188,6 +189,13 @@ export async function handleAssistantMessage(
         )
       : null
   );
+  const personaContextBlock = compiledBuyerContext
+    ? ""
+    : await loadPersonaContextBlock({
+        ctx,
+        userId: owner.userId,
+        query: effectiveUserMessage,
+      });
 
   // 3. Retrieve company knowledge for context
   const knowledge = compiledBuyerContext
@@ -217,6 +225,7 @@ export async function handleAssistantMessage(
     effectiveUserMessage,
     knowledgeContext,
     buyerContextBlock: compiledBuyerContext?.compiledPromptContext,
+    personaContextBlock,
     mode,
     promptPrefix: args.promptPrefix,
     workspaceContextBlock,
@@ -270,6 +279,7 @@ export async function handleAssistantMessage(
         surface: isWorkspaceAssistant ? "workspace" : "default",
         ctx,
         prompt: basePrompt,
+        intentPrompt: effectiveUserMessage,
         role: roleMap[owner.ownerType] ?? "user",
         userId: owner.userId,
         threadId: activeThreadId,
@@ -471,4 +481,25 @@ export async function handleAssistantMessage(
     userMessageId: saved.userMessageId ?? undefined,
     promptBudgetMeta: compiledBuyerContext?.promptBudgetMeta,
   };
+}
+
+async function loadPersonaContextBlock(args: {
+  ctx: ActionCtx;
+  userId: string;
+  query: string;
+}) {
+  try {
+    const memory = await args.ctx.runQuery(
+      internal.shared_logic.memory.repository.getRelevantMemoriesByQuery,
+      {
+        userId: args.userId,
+        query: args.query,
+        limit: 8,
+      },
+    );
+    return buildPersonaContextBlock(memory);
+  } catch (error) {
+    console.warn("[assistantService] Persona context load failed (non-critical):", error);
+    return "";
+  }
 }

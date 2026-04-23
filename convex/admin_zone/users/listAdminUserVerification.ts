@@ -1,5 +1,5 @@
 import { paginationOptsValidator } from "convex/server";
-import { requireRole } from "../../_core/security/accessPolicy";
+import { requireAdminAccess } from "../../_core/security/accessPolicy";
 import { buildUserKey, paginateRows } from "./helpers";
 
 /**
@@ -15,7 +15,7 @@ export async function listAdminUserVerificationHandler(
   ctx: any,
   { paginationOpts }: { paginationOpts: { cursor: string | null; numItems: number } }
 ) {
-  await requireRole(ctx, ["admin"]);
+  await requireAdminAccess(ctx);
 
   const [profiles, verificationRequests] = await Promise.all([
     ctx.db.query("userProfiles").collect(),

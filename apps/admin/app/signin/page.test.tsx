@@ -18,8 +18,8 @@ vi.mock("@/lib/serverSession", () => ({
   sanitizeInternalReturnTo,
 }));
 
-vi.mock("@/components/auth/GoogleSignInButton", () => ({
-  default: ({ redirectTo }: { redirectTo: string }) => <div data-testid="google-signin">{redirectTo}</div>,
+vi.mock("@/components/auth/EmailPasswordSignInForm", () => ({
+  default: ({ redirectTo }: { redirectTo: string }) => <div data-testid="email-password-signin">{redirectTo}</div>,
 }));
 
 vi.mock("@/components/auth/LogoutButton", () => ({
@@ -37,7 +37,8 @@ beforeEach(() => {
 it("redirects authenticated admins to the requested target", async () => {
   getAuthenticatedSession.mockResolvedValue({
     token: "token-1",
-    role: "admin",
+    role: "user",
+    isAdmin: true,
     user: { id: "u1", isActive: true },
   });
 
@@ -48,10 +49,11 @@ it("redirects authenticated admins to the requested target", async () => {
   ).rejects.toThrow("NEXT_REDIRECT:/users");
 });
 
-it("renders the google sign-in button for anonymous visitors", async () => {
+it("renders the email/password sign-in form for anonymous visitors", async () => {
   getAuthenticatedSession.mockResolvedValue({
     token: null,
     role: null,
+    isAdmin: false,
     user: null,
   });
 
@@ -60,7 +62,7 @@ it("renders the google sign-in button for anonymous visitors", async () => {
   });
   const html = renderToStaticMarkup(element);
 
-  expect(html).toContain("data-testid=\"google-signin\"");
+  expect(html).toContain("data-testid=\"email-password-signin\"");
   expect(html).not.toContain("data-testid=\"logout-button\"");
 });
 
@@ -68,6 +70,7 @@ it("renders an access denied state for authenticated non-admin users", async () 
   getAuthenticatedSession.mockResolvedValue({
     token: "token-2",
     role: "broker",
+    isAdmin: false,
     user: { id: "u2", isActive: true },
   });
 
@@ -80,7 +83,7 @@ it("renders an access denied state for authenticated non-admin users", async () 
   expect(html).toContain("الحساب الحالي مسجل");
 });
 
-it("renders the google sign-in button when session lookup fails with auth configuration mismatch", async () => {
+it("renders the email/password sign-in form when session lookup fails with auth configuration mismatch", async () => {
   getAuthenticatedSession.mockRejectedValue({
     code: "AUTH_CONFIGURATION_ERROR",
     message: "issuer mismatch",
@@ -92,6 +95,6 @@ it("renders the google sign-in button when session lookup fails with auth config
   });
   const html = renderToStaticMarkup(element);
 
-  expect(html).toContain("data-testid=\"google-signin\"");
+  expect(html).toContain("data-testid=\"email-password-signin\"");
   expect(html).not.toContain("data-testid=\"logout-button\"");
 });

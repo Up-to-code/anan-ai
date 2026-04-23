@@ -1,4 +1,4 @@
-import { requireRole } from "../../_core/security/accessPolicy";
+import { requireAdminAccess } from "../../_core/security/accessPolicy";
 import { tenants } from "../../tenants";
 import { buildDeveloperSummary, buildTenantMap } from "./listOrganizationSummaries";
 
@@ -10,7 +10,7 @@ export const listDeveloperOrganizationsArgs = {};
  * HOW:   Joins RED organizations against profiles, memberships, properties, and verification requests in memory.
  */
 export async function listDeveloperOrganizationsHandler(ctx: any) {
-  await requireRole(ctx, ["admin"]);
+  await requireAdminAccess(ctx);
 
   const [developers, profiles, tenantLinks, properties, verificationRequests] = await Promise.all([
     ctx.db.query("RED").collect(),

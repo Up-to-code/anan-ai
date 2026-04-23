@@ -1,12 +1,12 @@
 import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 import { tenants } from "../tenants";
 
 export const brokerAnalytics = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit = 10 }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const [brokers, profiles, tenantLinks, projectSummaries] = await Promise.all([
       ctx.db.query("brokers").order("desc").take(500),
       ctx.db.query("userProfiles").order("desc").take(500),
@@ -55,7 +55,7 @@ export const brokerAnalytics = query({
 export const developerAnalytics = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit = 10 }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const [developers, profiles, tenantLinks, projectSummaries] = await Promise.all([
       ctx.db.query("RED").order("desc").take(500),
       ctx.db.query("userProfiles").order("desc").take(500),

@@ -10,6 +10,13 @@ export type SessionContext = {
   image?: string | null;
   username?: string | null;
   role?: string;
+  isAdmin?: boolean;
+  adminAccess?: {
+    enabled: boolean;
+    level: string;
+    permissions: string[];
+    revokedAt?: number;
+  } | null;
   brokerId?: string;
   redId?: string;
   isActive: boolean;

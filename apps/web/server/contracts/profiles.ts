@@ -16,6 +16,16 @@ export type ProfileSummary = {
   developerId?: string;
   showInOffersDirectory?: boolean;
   isActive?: boolean;
+  metadata?: {
+    platformAccess?: {
+      admin?: {
+        enabled: boolean;
+        level: string;
+        permissions: string[];
+        revokedAt?: number;
+      };
+    };
+  };
   authProvider: {
     id: "google";
     passwordManaged: false;

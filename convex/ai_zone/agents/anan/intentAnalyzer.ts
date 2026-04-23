@@ -73,6 +73,39 @@ const PLATFORM_ARABIC_KEYWORDS = [
   "معمارية",
 ] as const;
 
+const GREETING_PATTERN =
+  /^(hi|hello|hey|good morning|good evening|السلام عليكم|اهلا|أهلا|مرحبا|صباح الخير|مساء الخير)[\s!.؟?]*$/i;
+
+const SEARCH_INTENT_KEYWORDS = [
+  "search",
+  "find",
+  "property",
+  "apartment",
+  "villa",
+  "unit",
+  "شقة",
+  "فيلا",
+  "عقار",
+  "وحدة",
+  "ابحث",
+  "دور",
+  "عايز",
+  "أريد",
+];
+
+const FINANCE_INTENT_KEYWORDS = [
+  "mortgage",
+  "finance",
+  "loan",
+  "bank",
+  "installment",
+  "تمويل",
+  "قرض",
+  "بنك",
+  "تقسيط",
+  "قسط",
+];
+
 function includesAnyKeyword(source: string, keywords: readonly string[]) {
   return keywords.some((keyword) => source.includes(keyword));
 }
@@ -134,11 +167,49 @@ function applyPlatformTeamFilter(teams: string[], availableTeams: string[], prom
 }
 
 function fallbackTeams(availableTeams: string[], prompt: string) {
+  const deterministic = resolveDeterministicIntentTeams(prompt, availableTeams);
+  if (deterministic) return deterministic;
+
   const wantsPlatform = shouldIncludePlatformTeam(prompt);
   return availableTeams.filter((team) => {
     if (team === "team_platform") return wantsPlatform;
     return true;
   });
+}
+
+function includeKnowledge(teams: string[], availableTeams: string[]) {
+  return Array.from(new Set([
+    ...teams.filter((team) => availableTeams.includes(team)),
+    ...(availableTeams.includes("team_knowledge") ? ["team_knowledge"] : []),
+  ]));
+}
+
+/**
+ * WHY:   Obvious small turns should not need a classifier LLM, especially when provider auth is degraded.
+ * WHAT:  Returns role-safe teams for greetings and clear keyword intents, or null when the LLM should decide.
+ * HOW:   Uses conservative keyword checks and always includes knowledge when available.
+ */
+export function resolveDeterministicIntentTeams(prompt: string, availableTeams: string[]) {
+  const normalizedPrompt = prompt.toLowerCase().trim();
+  if (!normalizedPrompt) return includeKnowledge([], availableTeams);
+
+  if (GREETING_PATTERN.test(prompt.trim())) {
+    return includeKnowledge([], availableTeams);
+  }
+
+  if (shouldIncludePlatformTeam(prompt)) {
+    return includeKnowledge(["team_platform"], availableTeams);
+  }
+
+  const teams: string[] = [];
+  if (includesAnyKeyword(normalizedPrompt, SEARCH_INTENT_KEYWORDS)) {
+    teams.push("team_search", "team_property");
+  }
+  if (includesAnyKeyword(normalizedPrompt, FINANCE_INTENT_KEYWORDS)) {
+    teams.push("team_finance");
+  }
+
+  return teams.length > 0 ? includeKnowledge(teams, availableTeams) : null;
 }
 
 /**
@@ -178,6 +249,9 @@ export async function analyzeIntent(
   modelOverride?: string,
   orchestratorId: OrchestratorId = "anan",
 ): Promise<string[]> {
+  const deterministicTeams = resolveDeterministicIntentTeams(prompt, availableTeams);
+  if (deterministicTeams) return deterministicTeams;
+
   try {
     const text = await runIntentModel(ctx, prompt, availableTeams, modelOverride, orchestratorId);
     const parsedTeams = parseIntentTeams(text);

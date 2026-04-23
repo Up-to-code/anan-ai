@@ -1,6 +1,6 @@
 import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 import {
   buildOrganizationProjection,
   extractOfferIdFromMetadata,
@@ -14,7 +14,7 @@ import {
 export const connectionAnalytics = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit = 10 }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
 
     const [offers, inboxMessages, deals, orders, brokers, developers] = await Promise.all([
       ctx.db.query("offers").order("desc").take(500),

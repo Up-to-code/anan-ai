@@ -1,6 +1,6 @@
 import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 import { buildDailySeries, getDashboardRangeDays, normalizeTimestamp, pushBucketValue } from "./commandCenter.helpers";
 import { buildTopOrganizations } from "./commandCenter.shared";
 
@@ -15,7 +15,7 @@ export const partnerHealthAnalytics = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { range = "90d", limit = 8 }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
 
     const [brokers, developers, subscriptions, verificationRequests, properties, memberships, offers] = await Promise.all([
       ctx.db.query("brokers").order("desc").take(500),

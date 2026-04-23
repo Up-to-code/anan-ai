@@ -25,6 +25,13 @@ type DossierRecord = {
   ownerREDId?: GenericId<"RED">;
   title: string;
   summary?: string;
+  targetAudience?: string;
+  expectedUnitCountLabel?: string;
+  unitTypeMix?: string[];
+  primaryUnitType?: string;
+  averagePrice?: number;
+  options?: string[];
+  services?: string[];
   requestedVisibility: "private" | "public";
   readinessStatus?: string;
   location: {
@@ -133,6 +140,35 @@ export async function getOwnedProjectDossierDetail(
   };
 }
 
+/**
+ * WHY:   Project routes now use the dossier id as the canonical project id while old property urls still need resolution.
+ * WHAT:  Loads an owner-scoped dossier detail by project/dossier id.
+ * HOW:   Reads the dossier first, then reuses the same property ownership gate and child-row collection as property-id reads.
+ */
+export async function getOwnedProjectDossierDetailByProjectId(
+  ctx: QueryCtx,
+  projectId: GenericId<"projectDossiers">,
+  access: OwnerAccess,
+) {
+  const dossier = (await ctx.db.get(projectId)) as DossierRecord | null;
+  if (!dossier) throw new ConvexError({ code: "NOT_FOUND", message: "Project not found" });
+  const { property } = await requireOwnedDossier(ctx, dossier.propertyId, access);
+  return {
+    property,
+    dossier,
+    ...(await collectDossierChildren(ctx, dossier._id)),
+    readiness: {
+      status: (dossier as any).readinessStatus,
+      canPublish: (dossier as any).readinessStatus === "published_ready",
+      canDistributeToAi: (dossier as any).readinessStatus === "published_ready",
+      canCreateOpenOffer: (dossier as any).readinessStatus === "published_ready",
+      blockers: (dossier as any).readinessBlockers ?? [],
+      warnings: (dossier as any).readinessWarnings ?? [],
+      completedRequirements: (dossier as any).completedRequirements ?? [],
+    } satisfies ProjectReadinessResult,
+  };
+}
+
 async function replaceRows(
   ctx: MutationCtx,
   table: "projectUnits" | "projectPaymentPlans" | "projectComplianceDocuments" | "projectAdLicenses" | "projectBrokerAuthorizations",
@@ -195,6 +231,12 @@ function normalizeUnitPatch(patch: ProjectUnitPatch) {
   return next;
 }
 
+function normalizeStringList(value: unknown) {
+  return Array.isArray(value)
+    ? value.map((item) => String(item).trim()).filter(Boolean)
+    : undefined;
+}
+
 /**
  * WHY:   Dossier draft saves must update project truth first and keep the search projection synchronized.
  * WHAT:  Patches the dossier identity/location/visibility and mirrors safe legacy fields to `properties`.
@@ -219,6 +261,13 @@ export async function saveOwnedProjectDossierDraft(
     lifecycleStage: input.lifecycleStage ?? (dossier as any).lifecycleStage ?? "draft",
     title: input.title ?? dossier.title,
     summary: input.summary ?? dossier.summary,
+    targetAudience: input.targetAudience?.trim() || dossier.targetAudience,
+    expectedUnitCountLabel: input.expectedUnitCountLabel?.trim() || dossier.expectedUnitCountLabel,
+    unitTypeMix: normalizeStringList(input.unitTypeMix) ?? dossier.unitTypeMix,
+    primaryUnitType: input.primaryUnitType?.trim() || dossier.primaryUnitType,
+    averagePrice: typeof input.averagePrice === "number" ? input.averagePrice : dossier.averagePrice,
+    options: normalizeStringList(input.options) ?? dossier.options,
+    services: normalizeStringList(input.services) ?? dossier.services,
     location: input.location ? normalizeLocation(input.location, dossier.location) : dossier.location,
     updatedAt: now,
   } as any);

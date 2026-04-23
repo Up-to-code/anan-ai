@@ -1,4 +1,4 @@
-import { requireRole } from "../../_core/security/accessPolicy";
+import { requireAdminAccess } from "../../_core/security/accessPolicy";
 import { tenants } from "../../tenants";
 import { buildOrganizationKey } from "./helpers";
 
@@ -53,7 +53,7 @@ function buildMembershipRow(args: {
  * HOW:   Joins memberships against brokers, RED organizations, and user profiles.
  */
 export async function listOrganizationMembershipsHandler(ctx: any) {
-  await requireRole(ctx, ["admin"]);
+  await requireAdminAccess(ctx);
 
   const [tenantLinks, brokers, developers, profiles] = await Promise.all([
     ctx.db.query("tenantOrgLinks").collect(),

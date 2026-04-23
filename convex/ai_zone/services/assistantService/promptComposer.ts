@@ -87,12 +87,16 @@ export function buildBasePrompt(options: {
   effectiveUserMessage: string;
   knowledgeContext: string;
   buyerContextBlock?: string;
+  personaContextBlock?: string;
   workspaceContextBlock: string;
   attachmentContext?: string;
 }): string {
   const prefix = options.promptPrefix ? `${options.promptPrefix}\n\n` : "";
   const buyerContextBlock = options.buyerContextBlock
     ? `\n\n${options.buyerContextBlock}`
+    : "";
+  const personaContextBlock = options.personaContextBlock
+    ? `\n\n${options.personaContextBlock}`
     : "";
   const workspaceBlock = options.workspaceContextBlock
     ? `\n\n${options.workspaceContextBlock}`
@@ -102,8 +106,8 @@ export function buildBasePrompt(options: {
     : "";
 
   if (options.mode === "qa") {
-    return `${prefix}${options.effectiveUserMessage}\n\n[Policy: QA-only mode. Answer questions only. Do not execute actions.]${buyerContextBlock}${options.knowledgeContext}${workspaceBlock}${attachmentBlock}`;
+    return `${prefix}${options.effectiveUserMessage}\n\n[Policy: QA-only mode. Answer questions only. Do not execute actions.]${buyerContextBlock}${personaContextBlock}${options.knowledgeContext}${workspaceBlock}${attachmentBlock}`;
   }
 
-  return `${prefix}${options.effectiveUserMessage}${buyerContextBlock}${options.knowledgeContext}${workspaceBlock}${attachmentBlock}`;
+  return `${prefix}${options.effectiveUserMessage}${buyerContextBlock}${personaContextBlock}${options.knowledgeContext}${workspaceBlock}${attachmentBlock}`;
 }

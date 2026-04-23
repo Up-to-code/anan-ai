@@ -24,6 +24,8 @@ export interface OrchestrateInput {
     ctx: ActionCtx;
     /** The user's message */
     prompt: string;
+    /** Raw user turn used for intent routing and merge framing when prompt contains assembled context */
+    intentPrompt?: string;
     /** User's role for tool access filtering */
     role: "user" | "broker" | "RED" | "admin";
     /** User ID for memory/knowledge lookup */

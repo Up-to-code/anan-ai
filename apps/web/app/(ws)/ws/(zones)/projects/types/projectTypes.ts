@@ -19,6 +19,7 @@ export type WorkspaceProjectUnitDetail = UnitReference & {
 
 export type WorkspaceProject = {
   id: string;
+  propertyId: string;
   title: string;
   location: string;
   priceLabel: string;

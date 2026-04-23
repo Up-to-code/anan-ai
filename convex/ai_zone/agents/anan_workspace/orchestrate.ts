@@ -20,6 +20,7 @@ export async function orchestrate(
   const {
     ctx,
     prompt,
+    intentPrompt,
     role,
     userId,
     threadId,
@@ -30,6 +31,7 @@ export async function orchestrate(
     onTextDelta,
     onStreamCancelledCheck,
   } = input;
+  const routingPrompt = intentPrompt ?? prompt;
 
   const emitStage = async (
     phase: WorkspaceStreamPhase,
@@ -60,7 +62,7 @@ export async function orchestrate(
   await emitStage("intent_started", { status: "running" });
   const selectedTeams = await analyzeWorkspaceIntent(
     ctx,
-    prompt,
+    routingPrompt,
     availableTeams,
     modelOverride,
   );
@@ -132,7 +134,7 @@ export async function orchestrate(
   await emitStage("merge_started", { status: "running" });
   const merged = await mergeResults({
     ctx,
-    prompt,
+    prompt: routingPrompt,
     successOutputs,
     hasFailures,
     modelOverride,

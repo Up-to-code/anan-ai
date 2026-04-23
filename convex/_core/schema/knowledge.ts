@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { transitionalGlobalSecurityFields } from "./securityFields";
 
 /**
  * Knowledge Graph Schema
@@ -12,6 +13,7 @@ import { v } from "convex/values";
 const knowledgeTables = {
     /** Knowledge pages (FAQ, guides) */
     knowledgePages: defineTable({
+    ...transitionalGlobalSecurityFields,
         slug: v.string(),
         title: v.string(),
         content: v.string(),
@@ -22,6 +24,7 @@ const knowledgeTables = {
 
     /** Developer handbook pages (architecture + best practices). Secret-free by design. */
     developerHandbookPages: defineTable({
+    ...transitionalGlobalSecurityFields,
         slug: v.string(),
         title: v.string(),
         content: v.string(),
@@ -37,6 +40,10 @@ const knowledgeTables = {
 
     /** Agent memory for cross-session persistence. */
     agentMemory: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
+        authUserId: v.optional(v.id("authUsers")),
+        buyerAccountId: v.optional(v.id("buyerAccounts")),
         userId: v.string(),
         threadId: v.optional(v.string()),
         memoryType: v.optional(v.union(
@@ -64,13 +71,21 @@ const knowledgeTables = {
         metadata: v.optional(v.any()), // dynamic agent state objects
         createdAt: v.optional(v.number()),
         updatedAt: v.optional(v.number()),
+        lastUpdatedAt: v.optional(v.number()),
     })
+        .index("by_buyerAccountId", ["buyerAccountId"])
+        .index("by_buyerAccountId_and_key", ["buyerAccountId", "key"])
         .index("userId", ["userId"])
         .index("userId_and_memoryType", ["userId", "memoryType"])
         .index("userId_and_key", ["userId", "key"])
-        .index("expiresAt", ["expiresAt"]),
+        .index("expiresAt", ["expiresAt"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"])
+        .index("by_authUser_createdAt", ["authUserId", "createdAt"]),
 
     buyerChannelStates: defineTable({
+    ...transitionalGlobalSecurityFields,
+        authUserId: v.optional(v.id("authUsers")),
+        buyerAccountId: v.optional(v.id("buyerAccounts")),
         channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
         userId: v.string(),
         threadId: v.optional(v.string()),
@@ -97,10 +112,14 @@ const knowledgeTables = {
     })
         .index("channel_userId", ["channel", "userId"])
         .index("state", ["state"])
-        .index("updatedAt", ["updatedAt"]),
+        .index("updatedAt", ["updatedAt"])
+        .index("by_buyerAccount_updatedAt", ["buyerAccountId", "updatedAt"])
+        .index("by_authUser_updatedAt", ["authUserId", "updatedAt"]),
 
     /** Entity relationships for knowledge graph. */
     entityRelations: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         fromType: v.string(),
         fromId: v.string(),
         relationType: v.string(),
@@ -113,9 +132,15 @@ const knowledgeTables = {
     })
         .index("from", ["fromType", "fromId"])
         .index("to", ["toType", "toId"])
-        .index("from_to_relation", ["fromType", "fromId", "toId", "relationType"]),
+        .index("from_to_relation", ["fromType", "fromId", "toId", "relationType"])
+        .index("by_org_from", ["orgId", "fromType", "fromId"])
+        .index("by_org_to", ["orgId", "toType", "toId"]),
 
     assistantThreads: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
+        authUserId: v.optional(v.id("authUsers")),
+        buyerAccountId: v.optional(v.id("buyerAccounts")),
         userId: v.string(),
         scope: v.optional(v.union(v.literal("user"), v.literal("organization"))),
         ownerType: v.union(v.literal("broker"), v.literal("RED"), v.literal("user")),
@@ -132,9 +157,16 @@ const knowledgeTables = {
             ),
         ),
         title: v.optional(v.string()),
+        channel: v.optional(v.string()),
+        status: v.optional(v.union(v.literal("active"), v.literal("archived"))),
+        lastActivityAt: v.optional(v.number()),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
+        .index("by_buyerAccountId", ["buyerAccountId"])
+        .index("by_buyerAccountId_and_status", ["buyerAccountId", "status"])
+        .index("by_buyer_status_updatedAt", ["buyerAccountId", "status", "updatedAt"])
+        .index("by_org_kind_updatedAt", ["orgId", "assistantKind", "updatedAt"])
         .index("userId", ["userId"])
         .index("userId_assistantKind_updatedAt", ["userId", "assistantKind", "updatedAt"])
         .index("ownerBrokerId", ["ownerBrokerId"])
@@ -143,17 +175,25 @@ const knowledgeTables = {
         .index("ownerREDId_assistantKind_updatedAt", ["ownerREDId", "assistantKind", "updatedAt"]),
 
     assistantMessages: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
+        authUserId: v.optional(v.id("authUsers")),
         threadId: v.id("assistantThreads"),
         role: v.union(v.literal("user"), v.literal("assistant")),
+        body: v.optional(v.string()),
+        sentAt: v.optional(v.number()),
         content: v.string(),
         mode: v.union(v.literal("qa"), v.literal("action")),
         metadata: v.optional(v.any()),
         createdAt: v.number(),
     })
+        .index("by_threadId", ["threadId", "sentAt"])
         .index("threadId", ["threadId"])
-        .index("threadId_createdAt", ["threadId", "createdAt"]),
+        .index("threadId_createdAt", ["threadId", "createdAt"])
+        .index("by_org_createdAt", ["orgId", "createdAt"]),
 
     assistantThreadState: defineTable({
+    ...transitionalGlobalSecurityFields,
         threadId: v.string(),
         userId: v.string(),
         scope: v.optional(v.union(v.literal("user"), v.literal("organization"))),
@@ -187,6 +227,7 @@ const knowledgeTables = {
         .index("ownerREDId_assistantKind_updatedAt", ["ownerREDId", "assistantKind", "updatedAt"]),
 
     assistantMessageState: defineTable({
+    ...transitionalGlobalSecurityFields,
         messageId: v.string(),
         threadId: v.string(),
         role: v.union(v.literal("user"), v.literal("assistant")),
@@ -201,6 +242,9 @@ const knowledgeTables = {
         .index("threadId_createdAt", ["threadId", "createdAt"]),
 
     assistantStreamEvents: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
+        authUserId: v.optional(v.id("authUsers")),
         sessionId: v.string(),
         seq: v.number(),
         eventType: v.union(
@@ -240,9 +284,13 @@ const knowledgeTables = {
         createdAt: v.number(),
     })
         .index("sessionId", ["sessionId"])
-        .index("sessionId_seq", ["sessionId", "seq"]),
+        .index("sessionId_seq", ["sessionId", "seq"])
+        .index("by_createdAt", ["createdAt"]),
 
     buyerThreadResourceRefs: defineTable({
+    ...transitionalGlobalSecurityFields,
+        authUserId: v.optional(v.id("authUsers")),
+        buyerAccountId: v.optional(v.id("buyerAccounts")),
         threadId: v.string(),
         userId: v.string(),
         channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
@@ -260,9 +308,13 @@ const knowledgeTables = {
     })
         .index("threadId_createdAt", ["threadId", "createdAt"])
         .index("threadId_resource_source_createdAt", ["threadId", "resourceId", "source", "createdAt"])
-        .index("userId_createdAt", ["userId", "createdAt"]),
+        .index("userId_createdAt", ["userId", "createdAt"])
+        .index("by_authUser_createdAt", ["authUserId", "createdAt"]),
 
     buyerComparisonArtifacts: defineTable({
+    ...transitionalGlobalSecurityFields,
+        authUserId: v.optional(v.id("authUsers")),
+        buyerAccountId: v.optional(v.id("buyerAccounts")),
         threadId: v.string(),
         userId: v.string(),
         channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
@@ -289,7 +341,8 @@ const knowledgeTables = {
         lastRefreshedAt: v.number(),
     })
         .index("threadId_createdAt", ["threadId", "createdAt"])
-        .index("userId_createdAt", ["userId", "createdAt"]),
+        .index("userId_createdAt", ["userId", "createdAt"])
+        .index("by_authUser_createdAt", ["authUserId", "createdAt"]),
 };
 
 export default knowledgeTables;

@@ -1,6 +1,6 @@
 import { mutation, query } from "../_generated/server";
 import { ConvexError, v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 import { recordProjectReadinessEvent } from "../shared_logic/projects/events";
 import {
   recomputeProjectReadinessForProperty,
@@ -59,7 +59,7 @@ async function loadProjectDetail(ctx: any, dossier: any) {
 export const listProjectReadinessQueue = query({
   args: { filter: readinessQueueFilterValidator, limit: v.optional(v.number()) },
   handler: async (ctx, { filter, limit = 100 }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const statuses = mapQueueFilter(filter);
     const rows = await ctx.db.query("projectDossiers").order("desc").take(Math.max(limit * 3, limit));
     const filtered = rows
@@ -72,7 +72,7 @@ export const listProjectReadinessQueue = query({
 export const getProjectReviewDetail = query({
   args: { dossierId: v.id("projectDossiers") },
   handler: async (ctx, { dossierId }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const dossier = await ctx.db.get(dossierId);
     if (!dossier) return null;
     return loadProjectDetail(ctx, dossier);
@@ -105,7 +105,7 @@ export const reviewProjectDocument = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, { documentId, status, notes }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const document = await ctx.db.get(documentId);
     if (!document) throw new ConvexError({ code: "NOT_FOUND", message: "Project document not found" });
     await ctx.db.patch(documentId, { status, notes, updatedAt: Date.now() } as any);
@@ -121,7 +121,7 @@ export const reviewProjectAdLicense = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, { adLicenseId, status, notes }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const license = await ctx.db.get(adLicenseId);
     if (!license) throw new ConvexError({ code: "NOT_FOUND", message: "Project ad license not found" });
     await ctx.db.patch(adLicenseId, { status, notes, lastCheckedAt: Date.now(), updatedAt: Date.now() } as any);
@@ -138,7 +138,7 @@ export const reviewProjectAdLicense = mutation({
 export const markWafiLegalReviewed = mutation({
   args: { dossierId: v.id("projectDossiers"), notes: v.optional(v.string()) },
   handler: async (ctx, { dossierId, notes }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const dossier = await requireDossier(ctx, dossierId);
     await ctx.db.patch(dossierId, { adminReviewedAt: Date.now(), updatedAt: Date.now() } as any);
     return { ok: true, readiness: await recomputeAndLog(ctx, dossier, "document_reviewed", "WAFI/legal fields were marked reviewed.", { notes }) };
@@ -148,7 +148,7 @@ export const markWafiLegalReviewed = mutation({
 export const setProjectAdminBlock = mutation({
   args: { dossierId: v.id("projectDossiers"), blocked: v.boolean(), reason: v.optional(v.string()) },
   handler: async (ctx, { dossierId, blocked, reason }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const dossier = await requireDossier(ctx, dossierId);
     await ctx.db.patch(dossierId, {
       adminBlockedReason: blocked ? reason ?? "Blocked by admin review." : undefined,
@@ -170,7 +170,7 @@ export const setProjectAdminBlock = mutation({
 export const forceRecomputeProjectReadiness = mutation({
   args: { propertyId: v.id("properties") },
   handler: async (ctx, { propertyId }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return { ok: true, readiness: await recomputeProjectReadinessForProperty(ctx, propertyId) };
   },
 });

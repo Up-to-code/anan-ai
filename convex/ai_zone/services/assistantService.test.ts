@@ -7,7 +7,7 @@ const { mockRunAssistantSurfaceRuntime, mockResolveWorkspaceAgUiTurn } = vi.hois
       surface === "workspace"
         ? "workspace orchestrator output"
         : "default orchestrator output",
-    runtime: "open-multi-agent" as const,
+    runtime: "anan-native" as const,
   })),
   mockResolveWorkspaceAgUiTurn: vi.fn(() => null),
 }));
@@ -45,6 +45,11 @@ const mockedApi = vi.hoisted(() => ({
       buyerContext: {
         getCompiledBuyerContextInternal: Symbol("buyerContext.getCompiledBuyerContextInternal"),
       },
+      memory: {
+        repository: {
+          getRelevantMemoriesByQuery: Symbol("memory.getRelevantMemoriesByQuery"),
+        },
+      },
     },
     ai_zone: {
       assistant: { _saveConversationStep: Symbol("assistant._saveConversationStep") },
@@ -60,7 +65,7 @@ const mockedApi = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("../openMultiAgent", () => ({ runAssistantSurfaceRuntime: mockRunAssistantSurfaceRuntime }));
+vi.mock("./assistantSurfaceRuntime", () => ({ runAssistantSurfaceRuntime: mockRunAssistantSurfaceRuntime }));
 vi.mock("./agUi", () => ({ resolveWorkspaceAgUiTurn: mockResolveWorkspaceAgUiTurn }));
 vi.mock("../../_generated/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../_generated/api")>();
@@ -120,6 +125,15 @@ function createHandleMessageCtx() {
     if (ref === mockedApi.api.shared_logic.knowledge.index.retrieveCompanyKnowledge) {
       return [];
     }
+    if (ref === mockedApi.internal.shared_logic.memory.repository.getRelevantMemoriesByQuery) {
+      return {
+        summary: "",
+        preferences: [],
+        constraints: [],
+        recentInteractions: [],
+        lastSearchSummary: null,
+      };
+    }
     throw new Error("Unexpected query ref");
   });
 
@@ -144,6 +158,15 @@ function createFreshThreadHandleMessageCtx() {
         regenerateSource: null,
         effectiveUserMessage: args?.message ?? "ابدأ محادثة جديدة",
         knowledge: [],
+      };
+    }
+    if (ref === mockedApi.internal.shared_logic.memory.repository.getRelevantMemoriesByQuery) {
+      return {
+        summary: "",
+        preferences: [],
+        constraints: [],
+        recentInteractions: [],
+        lastSearchSummary: null,
       };
     }
     throw new Error("Unexpected query ref");
@@ -172,7 +195,7 @@ function registerWorkspaceAssistantTest() {
     });
 
     expect(mockRunAssistantSurfaceRuntime).toHaveBeenCalledTimes(1);
-    expect(ctx.runQuery).toHaveBeenCalledTimes(1);
+    expect(ctx.runQuery).toHaveBeenCalledTimes(2);
     expect(ctx.runMutation).toHaveBeenCalledTimes(1);
 
     const [, workspacePayload] = (ctx.runMutation as any).mock.calls[0] as [unknown, Record<string, unknown>];
@@ -201,7 +224,7 @@ function registerDefaultAssistantTest() {
     const result = await handleAssistantMessage(ctx as any, { message: "hello" });
 
     expect(mockRunAssistantSurfaceRuntime).toHaveBeenCalledTimes(1);
-    expect(ctx.runQuery).toHaveBeenCalledTimes(1);
+    expect(ctx.runQuery).toHaveBeenCalledTimes(2);
     expect(ctx.runMutation).toHaveBeenCalledTimes(1);
 
     const [, defaultPayload] = (ctx.runMutation as any).mock.calls[0] as [unknown, Record<string, unknown>];
@@ -333,7 +356,7 @@ function registerFreshWorkspaceThreadTest() {
     });
 
     expect(mockRunAssistantSurfaceRuntime).toHaveBeenCalledTimes(1);
-    expect(ctx.runQuery).toHaveBeenCalledTimes(1);
+    expect(ctx.runQuery).toHaveBeenCalledTimes(2);
     expect(ctx.runMutation).toHaveBeenCalledTimes(2);
 
     const [, createThreadPayload] = (ctx.runMutation as any).mock.calls[0] as [unknown, Record<string, unknown>];

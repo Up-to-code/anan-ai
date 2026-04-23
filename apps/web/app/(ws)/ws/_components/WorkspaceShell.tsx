@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { getWorkspaceZonesForKeys } from "../_lib/zones";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import type { ComplianceBanner } from "../_lib/complianceBanner";
+import type { NotificationSummary } from "@/server/contracts/notifications";
 import {
   getWorkspaceChromeState,
   matchesWorkspacePath,
@@ -34,6 +35,7 @@ export default function WorkspaceShell({
   organization,
   recentAssistantThreads = [],
   allAssistantThreads = [],
+  initialNotifications = [],
   signalCounts = { notificationCount: 0, inboxCount: 0 },
   complianceBanner = null,
   variant,
@@ -45,6 +47,7 @@ export default function WorkspaceShell({
   organization: WorkspaceOrganizationDisplay;
   recentAssistantThreads?: AnanProThreadSummary[];
   allAssistantThreads?: AnanProThreadSummary[];
+  initialNotifications?: NotificationSummary[];
   signalCounts?: { notificationCount: number; inboxCount: number };
   complianceBanner?: ComplianceBanner | null;
   variant?: WorkspaceShellVariant;
@@ -208,7 +211,7 @@ export default function WorkspaceShell({
           </div>
         </main>
 
-        <WorkspaceMessageToasts />
+        <WorkspaceMessageToasts initialNotifications={initialNotifications} />
       </div>
     </div>
   );

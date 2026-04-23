@@ -7,11 +7,12 @@ const { notFound } = vi.hoisted(() => ({
   }),
 }));
 
-const { useRouter } = vi.hoisted(() => ({
+const { useRouter, useSearchParams } = vi.hoisted(() => ({
   useRouter: vi.fn(() => ({
     push: vi.fn(),
     refresh: vi.fn(),
   })),
+  useSearchParams: vi.fn(() => new URLSearchParams()),
 }));
 
 const { resolveWorkspaceProjectDetail } = vi.hoisted(() => ({
@@ -26,6 +27,7 @@ const { listProjectAssetsForViewer, listPropertyViewers } = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({
   notFound,
   useRouter,
+  useSearchParams,
 }));
 
 vi.mock("../../../_lib/workspaceData", () => ({
@@ -107,10 +109,12 @@ it("renders the owner project detail page", async () => {
   expect(markup).toContain("تعديل المشروع");
   expect(markup).toContain("إنشاء عرض");
   expect(markup).toContain("لوحة المشروع");
-  expect(markup).toContain("بيانات المشروع الأساسية");
-  expect(markup).toContain("المزايا والخدمات");
+  expect(markup).toContain("متوسط السعر");
+  expect(markup).toContain("خيارات إضافية");
   expect(markup).toContain("مواقف ضيوف");
-  expect(markup).toContain("الحالة الحالية");
+  expect(markup).toContain("حالة الجاهزية");
+  expect(markup).toContain("نظرة عامة");
+  expect(markup).toContain("الصور");
   expect(markup).toContain("data-slot=\"project-detail-hero\"");
 });
 
@@ -152,9 +156,8 @@ it("renders shared projects as read-only", async () => {
   expect(markup).toContain("مشاهدة فقط");
   expect(markup).not.toContain("تعديل المشروع");
   expect(markup).toContain("فتح المحادثات");
-  expect(markup).toContain("تصريح خاص بهذه المحادثة");
-  expect(markup).toContain("permit.pdf");
-  expect(markup).toContain("الملفات والوصول");
+  expect(markup).toContain("الصور");
+  expect(markup).toContain("لوحة المشروع");
   expect(markup).toContain("data-slot=\"project-detail-main\"");
 });
 

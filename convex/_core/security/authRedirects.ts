@@ -12,6 +12,16 @@ export type AllowedOriginsOptions = {
   vercelEnv?: string | null;
 };
 
+export type AppRedirectBaseUrlOptions = {
+  ananWebUrl?: string | null;
+  siteUrl?: string | null;
+  nextPublicSiteUrl?: string | null;
+  vercelUrl?: string | null;
+  fallbackOrigin?: string | null;
+  nodeEnv?: string | null;
+  vercelEnv?: string | null;
+};
+
 /**
  * WHY:   Auth redirect safety depends on knowing when the app is running in a hosted production environment.
  * WHAT:  Returns true when runtime env markers indicate a production deployment.
@@ -52,6 +62,59 @@ export function normalizeBaseUrl(value?: string | null) {
     return `https://${trimmed}`;
   }
   return trimmed;
+}
+
+/**
+ * WHY:   OAuth error redirects can happen after Better Auth loses the original
+ *        state row, so the backend needs an environment-aware app fallback.
+ * WHAT:  Resolves the web app origin, preserving localhost for dev/preview and
+ *        using hosted Vercel/app URLs in production.
+ * HOW:   Prefers explicit web envs, derives Vercel preview URLs, and only
+ *        rejects loopback when VERCEL_ENV explicitly says production.
+ */
+export function resolveAppRedirectBaseUrl(options: AppRedirectBaseUrlOptions) {
+  const isVercelProduction = options.vercelEnv === "production";
+  const candidates = [
+    options.ananWebUrl,
+    options.siteUrl,
+    options.nextPublicSiteUrl,
+    options.vercelUrl ? `https://${options.vercelUrl}` : null,
+    options.fallbackOrigin,
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeBaseUrl(candidate);
+    if (!normalized) continue;
+    if (isVercelProduction && isLoopbackOrigin(normalized)) continue;
+    return normalized;
+  }
+
+  if (!isVercelProduction) {
+    return "http://localhost:3000";
+  }
+
+  return null;
+}
+
+/**
+ * WHY:   Convex-site auth errors should return users to the workspace sign-in
+ *        flow instead of marooning them on the backend domain.
+ * WHAT:  Builds the app error URL with a sanitized internal workspace target.
+ * HOW:   Uses URLSearchParams so existing query parameters are preserved safely.
+ */
+export function buildAuthErrorRedirectUrl(
+  baseUrl: string,
+  options: {
+    error?: string | null;
+    returnTo?: string | null;
+  } = {},
+) {
+  const url = new URL("/signin", baseUrl);
+  url.searchParams.set("returnTo", options.returnTo?.startsWith("/") ? options.returnTo : "/ws");
+  if (options.error) {
+    url.searchParams.set("error", options.error);
+  }
+  return url.toString();
 }
 
 /**

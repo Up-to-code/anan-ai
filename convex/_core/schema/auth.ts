@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { transitionalGlobalSecurityFields } from "./securityFields";
 
 /**
  * WHY:   Persist channel-scoped session tokens for non-web flows (WhatsApp).
@@ -8,6 +9,7 @@ import { v } from "convex/values";
  */
 const authTables = {
   channelSessions: defineTable({
+    ...transitionalGlobalSecurityFields,
     authUserId: v.string(),
     channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web"), v.literal("main_assistant_web")),
     sessionToken: v.string(),
@@ -21,6 +23,7 @@ const authTables = {
     .index("authUserId_channel", ["authUserId", "channel"])
     .index("expiresAt", ["expiresAt"]),
   channelMessageReceipts: defineTable({
+    ...transitionalGlobalSecurityFields,
     channel: v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web"), v.literal("main_assistant_web")),
     messageId: v.string(),
     status: v.union(
@@ -37,10 +40,15 @@ const authTables = {
   })
     .index("channel_messageId", ["channel", "messageId"])
     .index("status", ["status"])
-    .index("createdAt", ["createdAt"]),
+    .index("createdAt", ["createdAt"])
+    .index("by_status_createdAt", ["status", "createdAt"]),
   oauthClients: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
+    ownerOrgId: v.optional(v.id("organizations")),
     clientId: v.string(),
     clientSecretHash: v.optional(v.string()),
+    clientName: v.optional(v.string()),
     name: v.string(),
     publisherName: v.string(),
     logoUrl: v.optional(v.string()),
@@ -52,9 +60,13 @@ const authTables = {
     createdAt: v.number(),
     updatedAt: v.number(),
   })
+    .index("by_ownerOrgId", ["ownerOrgId"])
+    .index("by_org_client", ["orgId", "clientId"])
     .index("clientId", ["clientId"])
     .index("isActive", ["isActive"]),
   oauthAuthorizations: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     userId: v.optional(v.id("users")),
     tenantOrgId: v.optional(v.string()),
     ownerType: v.optional(v.union(v.literal("broker"), v.literal("RED"))),
@@ -77,8 +89,11 @@ const authTables = {
     .index("ownerREDId", ["ownerREDId"])
     .index("ownerBrokerId_clientId", ["ownerBrokerId", "clientId"])
     .index("ownerREDId_clientId", ["ownerREDId", "clientId"])
-    .index("clientId", ["clientId"]),
+    .index("clientId", ["clientId"])
+    .index("by_org_client", ["orgId", "clientId"]),
   oauthAuthCodes: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     codeHash: v.string(),
     clientId: v.string(),
     userId: v.optional(v.id("users")),
@@ -101,6 +116,8 @@ const authTables = {
     .index("clientId", ["clientId"])
     .index("expiresAt", ["expiresAt"]),
   oauthAccessTokens: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     jti: v.string(),
     clientId: v.string(),
     userId: v.optional(v.id("users")),
@@ -121,8 +138,11 @@ const authTables = {
     .index("clientId", ["clientId"])
     .index("userId", ["userId"])
     .index("tenantOrgId", ["tenantOrgId"])
-    .index("expiresAt", ["expiresAt"]),
+    .index("expiresAt", ["expiresAt"])
+    .index("by_org_expiresAt", ["orgId", "expiresAt"]),
   oauthRefreshTokens: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     tokenHash: v.string(),
     familyId: v.string(),
     parentTokenId: v.optional(v.id("oauthRefreshTokens")),
@@ -146,6 +166,7 @@ const authTables = {
     .index("clientId", ["clientId"])
     .index("expiresAt", ["expiresAt"]),
   oauthFlowState: defineTable({
+    ...transitionalGlobalSecurityFields,
     clientId: v.string(),
     redirectUri: v.string(),
     requestedScopes: v.array(v.string()),
@@ -161,6 +182,8 @@ const authTables = {
     .index("clientId", ["clientId"])
     .index("expiresAt", ["expiresAt"]),
   oauthSubjectMappings: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     clientId: v.string(),
     userId: v.optional(v.id("users")),
     tenantOrgId: v.optional(v.string()),
@@ -176,6 +199,8 @@ const authTables = {
     .index("ownerREDId_clientId", ["ownerREDId", "clientId"])
     .index("pairwiseSubject", ["pairwiseSubject"]),
   oauthAuditLogs: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     eventType: v.string(),
     tenantOrgId: v.optional(v.string()),
     ownerType: v.optional(v.union(v.literal("broker"), v.literal("RED"))),

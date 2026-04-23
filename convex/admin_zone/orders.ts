@@ -1,6 +1,6 @@
 import { mutation, query } from "../_generated/server";
 import { ConvexError, v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 
 const orderStatusValidator = v.union(
   v.literal("new_lead"),
@@ -31,7 +31,7 @@ export const listOrders = query({
     assignment: v.optional(assignmentFilterValidator),
   },
   handler: async (ctx, { status, sourceChannel, assignment }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const assignmentMode = assignment ?? "all";
     const baseOrders = status
       ? await ctx.db
@@ -62,7 +62,7 @@ export const listOrders = query({
 export const getOrder = query({
   args: { id: v.id("orders") },
   handler: async (ctx, { id }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return ctx.db.get(id);
   },
 });
@@ -75,7 +75,7 @@ export const updateOrder = mutation({
     assignedTo: v.optional(v.string()),
   },
   handler: async (ctx, { id, ...patch }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const existing = await ctx.db.get(id);
     if (!existing) throw new ConvexError({ code: "NOT_FOUND", message: "Order not found" });
     const filtered = Object.fromEntries(

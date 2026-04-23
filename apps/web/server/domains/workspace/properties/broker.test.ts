@@ -71,6 +71,30 @@ it("lists broker properties through the repository", async () => {
   });
 });
 
+it("accepts hydrated broker sessions that were backfilled from the org bridge", async () => {
+  const repository = makeRepository();
+  const requireSession = vi.fn(async () => ({
+    token: "token",
+    context: {
+      userId: "user-1",
+      role: "broker",
+      organizationId: "org-1",
+      brokerId: "broker-1",
+      isActive: true,
+    },
+    profile: null,
+  }));
+
+  await listBrokerProperties(
+    { paginationOpts: { cursor: null, numItems: 5 } },
+    { requireSession, repository, complianceRepository: makeComplianceRepository(), organizationsRepository: makeOrganizationsRepository() },
+  );
+
+  expect(repository.listProperties).toHaveBeenCalledWith("token", "broker-1", {
+    paginationOpts: { cursor: null, numItems: 5 },
+  });
+});
+
 it("rejects property access when ownership mismatches", async () => {
   const repository = makeRepository();
   repository.getProperty.mockResolvedValue({
