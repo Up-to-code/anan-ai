@@ -76,7 +76,7 @@ const baseOffer = {
   allowedActions: {
     isInventoryOwner: false,
     isClientOwner: false,
-    isExecutionPartner: true,
+    isExecutionProvider: true,
     canEditDraft: false,
     canPublish: false,
     canArchive: false,

@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { transitionalGlobalSecurityFields } from "./securityFields";
 
 /**
  * Search Schema
@@ -32,6 +33,7 @@ const propertyFindingSchema = v.object({
 export const searchTables = {
     /** Global search cache (cross-user) */
     globalSearchCache: defineTable({
+    ...transitionalGlobalSecurityFields,
         cacheKey: v.string(),
         query: v.string(),
         normalizedQuery: v.string(),
@@ -47,15 +49,20 @@ export const searchTables = {
         hitCount: v.optional(v.number()),
         lastHitAt: v.optional(v.number()),
         propertyFindings: v.array(propertyFindingSchema),
-    }).index("cacheKey", ["cacheKey"]),
+    })
+        .index("cacheKey", ["cacheKey"])
+        .index("by_expiresAt", ["expiresAt"]),
 
     /** Per-user search cache / last search context */
     knowledgeResearch: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
+        authUserId: v.optional(v.id("authUsers")),
         userId: v.string(),
         threadId: v.optional(v.string()),
         query: v.string(),
         channel: v.optional(
-            v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
+            v.union(v.literal("workspace"), v.literal("web"), v.literal("admin")),
         ),
         status: v.union(
             v.literal("completed"),
@@ -78,13 +85,18 @@ export const searchTables = {
         propertyFindings: v.array(propertyFindingSchema),
     })
         .index("by_userId_and_createdAt", ["userId", "createdAt"])
-        .index("by_threadId_and_createdAt", ["threadId", "createdAt"]),
+        .index("by_threadId_and_createdAt", ["threadId", "createdAt"])
+        .index("by_authUser_createdAt", ["authUserId", "createdAt"])
+        .index("by_org_createdAt", ["orgId", "createdAt"]),
 
     /** Search lifecycle logs (for getRecentSearchCount) */
     searchLogs: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
+        authUserId: v.optional(v.id("authUsers")),
         query: v.optional(v.string()),
         userId: v.optional(v.string()),
-        channel: v.optional(v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web"))),
+        channel: v.optional(v.union(v.literal("workspace"), v.literal("web"), v.literal("admin"))),
         stage: v.optional(v.string()),
         status: v.optional(v.string()),
         source: v.optional(v.string()),
@@ -95,7 +107,9 @@ export const searchTables = {
     })
         .index("userId", ["userId"])
         .index("userId_createdAt", ["userId", "createdAt"])
-        .index("channel_createdAt", ["channel", "createdAt"]),
+        .index("channel_createdAt", ["channel", "createdAt"])
+        .index("by_authUser_createdAt", ["authUserId", "createdAt"])
+        .index("by_org_createdAt", ["orgId", "createdAt"]),
 };
 
 export default searchTables;

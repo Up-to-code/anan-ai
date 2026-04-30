@@ -25,7 +25,10 @@ function buildOwnerScopedQuery(
   ownerField: OwnerScopedOwnerField,
   ownerId: OwnerScopedOwnerId,
 ) {
-  return ctx.db.query("properties").withIndex(ownerField, (q: any) => q.eq(ownerField, ownerId));
+  return ctx.db
+    .query("properties")
+    .withIndex(ownerField, (q: any) => q.eq(ownerField, ownerId))
+    .filter((q: any) => q.eq(q.field("deletedAt"), undefined));
 }
 
 function resolveOwnerState(existing: {
@@ -75,6 +78,7 @@ export async function listOwnerScopedProperties(
       .withIndex(compositeIndex, (q: any) =>
         q.eq(args.ownerField, args.ownerId).eq("status", args.status),
       )
+      .filter((q: any) => q.eq(q.field("deletedAt"), undefined))
       .order("desc")
       .paginate(args.paginationOpts);
   }
@@ -90,7 +94,8 @@ export async function getOwnerScopedPropertyById(
   ctx: QueryCtx,
   args: { id: OwnerScopedPropertyUpdateArgs["id"] },
 ) {
-  return ctx.db.get(args.id);
+  const property = await ctx.db.get(args.id);
+  return property && typeof (property as any).deletedAt !== "number" ? property : null;
 }
 
 /**

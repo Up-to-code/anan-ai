@@ -5,16 +5,14 @@ import { uploadedFileReferenceSchema } from "@/server/contracts/files";
 
 export type ProjectFormFieldName =
   | "name"
-  | "price"
   | "location"
   | "description"
   | "shortDescription"
   | "amenitiesText"
   | "parkingSpaces"
-  | "rooms"
-  | "baths"
-  | "area"
-  | "images"
+  | "units"
+  | "projectScale"
+  | "productMix"
   | "adLicenseNumber"
   | "privatePermitSummary"
   | "privatePermitFiles";
@@ -36,59 +34,65 @@ export type ProjectFormSaveResult =
 
 const STEP_FIELD_ORDER: Array<readonly ProjectFormFieldName[]> = [
   ["name", "location"],
-  ["rooms", "baths", "area", "parkingSpaces"],
-  ["price"],
-  ["description", "shortDescription", "amenitiesText", "images", "adLicenseNumber", "privatePermitSummary", "privatePermitFiles"],
+  ["units", "projectScale", "productMix", "parkingSpaces"],
+  ["description", "shortDescription", "amenitiesText", "adLicenseNumber", "privatePermitSummary", "privatePermitFiles"],
   [],
 ] as const;
 
 const projectFormSchema = z
   .object({
     name: z.string().trim().min(1, "اسم المشروع مطلوب.").max(200, "اسم المشروع طويل أكثر من اللازم."),
-    price: z
-      .string()
-      .trim()
-      .min(1, "السعر مطلوب.")
-      .refine((value) => Number(value.replace(/[^\d.]/g, "")) > 0, "أدخل سعراً صحيحاً أكبر من صفر."),
+    price: z.string().trim().optional(),
     location: z.string().trim().min(1, "الموقع مطلوب.").max(200, "الموقع طويل أكثر من اللازم."),
     description: z.string().trim().min(1, "الوصف الرئيسي مطلوب."),
     shortDescription: z.string().trim().max(280, "الملخص السريع يجب ألا يتجاوز 280 حرفاً."),
     amenitiesText: z.string().trim().optional(),
+    projectScale: z.string().trim().optional(),
+    productMix: z.string().trim().optional(),
     hasParking: z.boolean(),
     parkingSpaces: z.string(),
     privatePermitSummary: z.string().trim().optional(),
     privatePermitFiles: z.array(uploadedFileReferenceSchema),
-    rooms: z.string().trim().min(1, "عدد الغرف مطلوب."),
-    baths: z.string().trim().min(1, "عدد الحمامات مطلوب."),
+    rooms: z.string().trim().optional(),
+    baths: z.string().trim().optional(),
     area: z.string().trim().optional(),
-    images: z.array(uploadedFileReferenceSchema).min(1, "أضف صورة واحدة على الأقل للمشروع."),
+    units: z.array(z.object({
+      label: z.string().trim().optional(),
+      unitKind: z.enum(["unit_type", "unit"]),
+      status: z.enum(["available", "reserved", "sold", "draft"]),
+      bedrooms: z.string().trim().optional(),
+      bathrooms: z.string().trim().optional(),
+      sizeSqm: z.string().trim().optional(),
+      floor: z.string().trim().optional(),
+      view: z.string().trim().optional(),
+      price: z.string().trim().optional(),
+      handoverAt: z.string().trim().optional(),
+      floorPlanMedia: z.array(uploadedFileReferenceSchema),
+    })).optional(),
+    images: z.array(uploadedFileReferenceSchema),
     adLicenseNumber: z.string().trim().max(100, "رقم الرخصة طويل أكثر من اللازم.").optional(),
   })
   .superRefine((data, ctx) => {
-    const rooms = Number(data.rooms);
-    if (!Number.isFinite(rooms) || rooms < 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["rooms"],
-        message: "أدخل عدداً صحيحاً صالحاً للغرف.",
-      });
-    }
+    for (const unit of data.units ?? []) {
+      const bedrooms = Number(unit.bedrooms);
+      if (unit.bedrooms && (!Number.isFinite(bedrooms) || bedrooms < 0)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["units"], message: "أدخل عدداً صحيحاً صالحاً لغرف الوحدة." });
+      }
 
-    const baths = Number(data.baths);
-    if (!Number.isFinite(baths) || baths < 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["baths"],
-        message: "أدخل عدداً صحيحاً صالحاً للحمامات.",
-      });
-    }
+      const bathrooms = Number(unit.bathrooms);
+      if (unit.bathrooms && (!Number.isFinite(bathrooms) || bathrooms < 0)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["units"], message: "أدخل عدداً صحيحاً صالحاً لحمامات الوحدة." });
+      }
 
-    if (data.area && (!Number.isFinite(Number(data.area)) || Number(data.area) <= 0)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["area"],
-        message: "أدخل مساحة صحيحة أكبر من صفر أو اترك الحقل فارغاً.",
-      });
+      const sizeSqm = Number(unit.sizeSqm);
+      if (unit.sizeSqm && (!Number.isFinite(sizeSqm) || sizeSqm <= 0)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["units"], message: "أدخل مساحة وحدة صحيحة أكبر من صفر أو اترك الحقل فارغاً." });
+      }
+
+      const price = Number(unit.price?.replace(/[^\d.]/g, ""));
+      if (unit.price && (!Number.isFinite(price) || price <= 0)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["units"], message: "أدخل سعر وحدة صحيح أكبر من صفر أو اترك الحقل فارغاً." });
+      }
     }
 
     if (data.hasParking) {

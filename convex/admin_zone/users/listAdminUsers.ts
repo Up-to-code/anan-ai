@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
-import { requireRole } from "../../_core/security/accessPolicy";
+import { requireAdminAccess } from "../../_core/security/accessPolicy";
+import { getAdminPlatformAccess } from "../../_core/security/adminAccess";
 import { buildUserKey, paginateRows, resolveVerificationStatus } from "./helpers";
 import { buildTenantMembershipRows } from "./tenantMembership";
 
@@ -13,7 +14,6 @@ export const listAdminUsersArgs = {
   paginationOpts: paginationOptsValidator,
   role: v.optional(
     v.union(
-      v.literal("admin"),
       v.literal("broker"),
       v.literal("developer"),
       v.literal("user")
@@ -74,6 +74,10 @@ function buildProfileRows(args: {
       email: profile.email ?? null,
       channel: null,
       role: profile.role ?? null,
+      platformAccess: {
+        isAdmin: Boolean(getAdminPlatformAccess(profile)),
+        adminLevel: getAdminPlatformAccess(profile)?.level ?? null,
+      },
       roleApprovalStatus: profile.roleApprovalStatus ?? null,
       requestedRole: profile.requestedRole ?? null,
       isActive: profile.isActive ?? true,
@@ -114,7 +118,7 @@ export async function listAdminUsersHandler(
   ctx: any,
   { paginationOpts, role }: { paginationOpts: { cursor: string | null; numItems: number }; role?: string | null }
 ) {
-  await requireRole(ctx, ["admin"]);
+  await requireAdminAccess(ctx);
   const data = await loadAdminUsersData(ctx);
   const membershipCountByAuthUserId = buildMembershipCountByAuthUserId(data.tenantMemberships);
   const profileRows = buildProfileRows({

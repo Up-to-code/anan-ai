@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { requireRole } from "../../_core/security/accessPolicy";
+import { requireAdminAccess } from "../../_core/security/accessPolicy";
 import { parseOrganizationKey } from "./helpers";
 import { buildOrganizationConversationSummaries } from "./detail/conversations";
 import { buildOrganizationOffers } from "./detail/offers";
@@ -18,7 +18,7 @@ export const getOrganizationDetailArgs = { organizationKey: v.string() };
  * HOW:   Parses the route key, loads the correct owner document, and joins related team, collaboration, and operational tables in memory.
  */
 export async function getOrganizationDetailHandler(ctx: any, { organizationKey }: { organizationKey: string }) {
-  await requireRole(ctx, ["admin"]);
+  await requireAdminAccess(ctx);
   const parsed = parseOrganizationKey(organizationKey);
   const collections = await loadOrganizationCollections(ctx);
   const context = resolveOrganizationContext(parsed, collections);

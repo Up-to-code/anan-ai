@@ -1,3 +1,4 @@
+import { createRepositoryRefs } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 export type OffersApiRefs = {
@@ -17,4 +18,4 @@ export type OffersApiRefs = {
   advanceOfferCaseStage: unknown;
 };
 
-export const offersApi = apiUnsafe["shared_logic/offers"] as OffersApiRefs;
+export const offersApi = createRepositoryRefs<OffersApiRefs>(apiUnsafe, "shared_logic/offers");

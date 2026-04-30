@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import type { PropertyDetail } from "@/server/contracts/properties";
-import { mapWorkspaceProjectToPropertyInput } from "./projectViewModel";
+import { mapWorkspaceProjectToDossierInput, mapWorkspaceProjectToPropertyInput, mapWorkspaceProjectToUnitInputs } from "./projectViewModel";
 
 it("preserves uploaded images as media references", () => {
   const images: PropertyDetail["media"] = [
@@ -124,4 +124,122 @@ it("maps invalid numeric fields to safe defaults", () => {
       privatePermitVisibility: undefined,
     },
   });
+});
+
+it("derives the legacy projection numbers from unit inventory first", () => {
+  const mapped = mapWorkspaceProjectToPropertyInput({
+    name: "Project shell",
+    price: "",
+    location: "Riyadh",
+    description: "Parent project data",
+    shortDescription: "",
+    amenitiesText: "",
+    hasParking: false,
+    parkingSpaces: "",
+    coverImageKey: null,
+    galleryDisplayMode: "cover",
+    galleryAspectRatio: "landscape",
+    privatePermitSummary: "",
+    privatePermitFiles: [],
+    rooms: "",
+    baths: "",
+    area: "",
+    status: "active",
+    clientVisibility: "private",
+    images: [],
+    units: [{
+      label: "1BR Type A",
+      unitKind: "unit_type",
+      status: "available",
+      bedrooms: "1",
+      bathrooms: "2",
+      sizeSqm: "84",
+      floor: "",
+      view: "",
+      price: "980,000",
+      handoverAt: "",
+      locationDetails: {
+        label: "Riyadh, Al Narjis",
+        city: "Riyadh",
+        district: "Al Narjis",
+        latitude: 24.84,
+        longitude: 46.69,
+      },
+      floorPlanMedia: [],
+    }],
+  });
+
+  expect(mapped.price).toBe(980000);
+  expect(mapped.beds).toBe(1);
+  expect(mapped.baths).toBe(2);
+  expect(mapped.sqft).toBe(84);
+});
+
+it("preserves project and unit coordinates in dossier and unit payloads", () => {
+  const payload = {
+    name: "Project shell",
+    price: "",
+    location: "Riyadh, Al Narjis",
+    description: "Parent project data",
+    shortDescription: "",
+    amenitiesText: "",
+    hasParking: false,
+    parkingSpaces: "",
+    coverImageKey: null,
+    galleryDisplayMode: "cover" as const,
+    galleryAspectRatio: "landscape" as const,
+    privatePermitSummary: "",
+    privatePermitFiles: [],
+    rooms: "",
+    baths: "",
+    area: "",
+    status: "active",
+    clientVisibility: "private" as const,
+    images: [],
+    dossier: {
+      projectType: "ready_property" as const,
+      lifecycleStage: "draft" as const,
+      salesMode: "developer_direct" as const,
+      city: "Riyadh",
+      district: "Al Narjis",
+      neighborhood: "",
+      street: "",
+      nationalAddress: "",
+      latitude: "24.84",
+      longitude: "46.69",
+    },
+    units: [{
+      label: "1BR Type A",
+      unitKind: "unit_type" as const,
+      status: "available" as const,
+      bedrooms: "1",
+      bathrooms: "2",
+      sizeSqm: "84",
+      floor: "",
+      view: "",
+      price: "980,000",
+      handoverAt: "",
+      locationDetails: {
+        label: "Riyadh, Al Narjis",
+        city: "Riyadh",
+        district: "Al Narjis",
+        latitude: 24.84,
+        longitude: 46.69,
+      },
+      floorPlanMedia: [],
+    }],
+  };
+
+  expect(mapWorkspaceProjectToDossierInput("property-1", payload).location).toEqual(expect.objectContaining({
+    city: "Riyadh",
+    district: "Al Narjis",
+    latitude: 24.84,
+    longitude: 46.69,
+  }));
+  expect(mapWorkspaceProjectToUnitInputs(payload)[0]?.location).toEqual(expect.objectContaining({
+    city: "Riyadh",
+    district: "Al Narjis",
+    latitude: 24.84,
+    longitude: 46.69,
+  }));
 });

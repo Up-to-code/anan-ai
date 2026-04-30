@@ -9,6 +9,7 @@ const mockRequireRole = vi.fn();
 const mockRequireOrganizationMembership = vi.fn();
 
 vi.mock("../../../_core/security/accessPolicy", () => ({
+  requireEntitlements: mockRequireRole,
   requireRole: mockRequireRole,
 }));
 
@@ -132,6 +133,7 @@ async function seedOrganizationAsset(t: ReturnType<typeof convexTest>, key: stri
       name: `${key}.png`,
       size: 1024,
       mime: "image/png",
+      sha256: "b".repeat(64),
       lifecycleState: "active",
       visibilityScope: "organization",
       createdAt: Date.now(),

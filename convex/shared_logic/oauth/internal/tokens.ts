@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { internalMutation } from "../../../_generated/server";
+import { getAuthorizationExpiresAt, getAuthorizationExpiryMs, isAuthorizationExpired } from "../../../_core/oauth/constants";
 import { getClientOrThrow } from "./helpers";
 import { loadOrganizationBundle } from "./subjects";
 import { revokeAuthorizationAccessTokens } from "./tokens/common";
@@ -61,12 +62,31 @@ async function getAuthorizationCodeOrThrow(ctx: any, args: any) {
   return code;
 }
 
-async function getActiveAuthorizationOrThrow(ctx: any, authorizationId: any) {
+async function getActiveAuthorizationOrExpire(ctx: any, authorizationId: any, client: any, now: number) {
   const authorization = await ctx.db.get(authorizationId);
   if (!authorization || authorization.revokedAt) {
     throw new ConvexError({ code: "INVALID_GRANT", message: "Authorization grant is no longer active" });
   }
-  return authorization;
+  if (isAuthorizationExpired(authorization, now)) {
+    await ctx.db.patch(authorization._id, {
+      revokedAt: now,
+      updatedAt: now,
+    });
+    await ctx.db.insert("oauthAuditLogs", {
+      eventType: "authorization.expired",
+      tenantOrgId: authorization.tenantOrgId,
+      ownerType: authorization.ownerType,
+      ownerBrokerId: authorization.ownerBrokerId,
+      ownerREDId: authorization.ownerREDId,
+      clientId: authorization.clientId,
+      userId: authorization.approvedByUserId,
+      authorizationId: authorization._id,
+      metadata: { expiresAt: getAuthorizationExpiresAt(authorization) },
+      createdAt: now,
+    });
+    return { authorizationExpired: true as const };
+  }
+  return { authorizationExpired: false as const, authorization };
 }
 
 async function insertAccessToken(ctx: any, args: any, tokenArgs: any) {
@@ -185,7 +205,7 @@ async function handleRefreshReplay(ctx: any, args: any, refresh: any) {
   return { replayDetected: true as const };
 }
 
-async function rotateTokenRows(ctx: any, args: any, refresh: any, authorization: any) {
+async function rotateTokenRows(ctx: any, args: any, refresh: any, authorization: any, client: any) {
   await ctx.db.patch(refresh._id, { usedAt: args.now });
   await insertAccessToken(ctx, args, {
     jti: args.accessTokenJti,
@@ -213,7 +233,11 @@ async function rotateTokenRows(ctx: any, args: any, refresh: any, authorization:
     expiresAt: args.nextRefreshTokenExpiresAt,
     createdAt: args.now,
   });
-  await ctx.db.patch(authorization._id, { lastUsedAt: args.now, updatedAt: args.now });
+  await ctx.db.patch(authorization._id, {
+    lastUsedAt: args.now,
+    updatedAt: args.now,
+    expiresAt: args.now + getAuthorizationExpiryMs(),
+  });
 }
 
 async function logRefreshRotationAudit(ctx: any, args: any, refresh: any) {
@@ -273,7 +297,11 @@ export const exchangeAuthorizationCode = internalMutation({
     const client = await getClientOrThrow(ctx, args.clientId);
     assertClientCredentials(client, args.clientSecretHash);
     const code = await getAuthorizationCodeOrThrow(ctx, args);
-    const authorization = await getActiveAuthorizationOrThrow(ctx, code.authorizationId);
+    const authorizationResult = await getActiveAuthorizationOrExpire(ctx, code.authorizationId, client, args.now);
+    if (authorizationResult.authorizationExpired) {
+      return { authorizationExpired: true as const };
+    }
+    const authorization = authorizationResult.authorization;
     await ctx.db.patch(code._id, { usedAt: args.now });
     await insertAccessToken(ctx, args, {
       jti: args.accessTokenJti,
@@ -288,7 +316,11 @@ export const exchangeAuthorizationCode = internalMutation({
       expiresAt: args.accessTokenExpiresAt,
     });
     await insertRefreshTokenFromCode(ctx, args, code);
-    await ctx.db.patch(authorization._id, { lastUsedAt: args.now, updatedAt: args.now });
+    await ctx.db.patch(authorization._id, {
+      lastUsedAt: args.now,
+      updatedAt: args.now,
+      expiresAt: args.now + getAuthorizationExpiryMs(),
+    });
     await logCodeExchangeAudit(ctx, args, code);
     const owner = requireOrganizationOwner(code);
     const bundle = await loadOrganizationBundle(ctx, owner, args.clientId);
@@ -319,8 +351,12 @@ export const rotateRefreshToken = internalMutation({
     if (refresh.usedAt) {
       return handleRefreshReplay(ctx, args, refresh);
     }
-    const authorization = await getActiveAuthorizationOrThrow(ctx, refresh.authorizationId);
-    await rotateTokenRows(ctx, args, refresh, authorization);
+    const authorizationResult = await getActiveAuthorizationOrExpire(ctx, refresh.authorizationId, client, args.now);
+    if (authorizationResult.authorizationExpired) {
+      return { authorizationExpired: true as const };
+    }
+    const authorization = authorizationResult.authorization;
+    await rotateTokenRows(ctx, args, refresh, authorization, client);
     await logRefreshRotationAudit(ctx, args, refresh);
     const owner = requireOrganizationOwner(refresh);
     const bundle = await loadOrganizationBundle(ctx, owner, args.clientId);

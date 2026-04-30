@@ -1,14 +1,21 @@
 import { createClient, type GenericCtx } from "@convex-dev/better-auth";
 import { convex } from "@convex-dev/better-auth/plugins";
-import { expo } from "@better-auth/expo";
-import { betterAuth, type BetterAuthOptions } from "better-auth";
+import {
+  betterAuth,
+  type BetterAuthOptions,
+  type BetterAuthPlugin,
+} from "better-auth";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { emailOTP, organization } from "better-auth/plugins";
+import { createAnanOAuthProviderPlugin } from "@anan/auth/server/oauth-provider";
 import { components } from "../_generated/api";
 import type { DataModel } from "../_generated/dataModel";
 import {
+  buildAuthErrorRedirectUrl,
   isLoopbackOrigin,
   isProductionLikeEnv,
   normalizeBaseUrl,
+  resolveAppRedirectBaseUrl,
   resolveAllowedOrigins,
 } from "../_core/security/authRedirects";
 import authConfig from "../auth.config";
@@ -26,8 +33,20 @@ function readCsvEnv(name: string) {
     .filter(Boolean);
 }
 
+function getWebAppBaseUrl() {
+  return resolveAppRedirectBaseUrl({
+    ananWebUrl: process.env.ANAN_WEB_URL,
+    siteUrl: process.env.SITE_URL,
+    nextPublicSiteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+    vercelUrl: process.env.VERCEL_URL,
+    fallbackOrigin: process.env.BETTER_AUTH_URL,
+    nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
+  });
+}
+
 function getAuthBaseUrl() {
-  const isProduction = isProductionLikeEnv(process.env.NODE_ENV, process.env.VERCEL_ENV);
+  const isProduction = process.env.VERCEL_ENV === "production";
   const candidates = [
     process.env.SITE_URL,
     process.env.ANAN_WEB_URL,
@@ -52,15 +71,14 @@ function getAuthBaseUrl() {
 }
 
 function getTrustedOrigins() {
+  const webAppBaseUrl = getWebAppBaseUrl();
   const allowedOrigins = resolveAllowedOrigins({
-    webBaseUrl: getAuthBaseUrl() ?? null,
+    webBaseUrl: webAppBaseUrl ?? getAuthBaseUrl() ?? null,
     allowedOriginsEnv: [
       ...readCsvEnv("ANAN_AUTH_ALLOWED_ORIGINS"),
       ...readCsvEnv("BETTER_AUTH_TRUSTED_ORIGINS"),
     ].join(","),
     extraOrigins: [
-      process.env.EXPO_PUBLIC_CLIENT_WEB_URL,
-      process.env.EXPO_PUBLIC_CONVEX_SITE_URL,
       process.env.NEXT_PUBLIC_CONVEX_SITE_URL,
       process.env.BETTER_AUTH_URL,
     ],
@@ -68,7 +86,21 @@ function getTrustedOrigins() {
     vercelEnv: process.env.VERCEL_ENV,
   });
 
-  return [...allowedOrigins, "anan://", "exp://"];
+  return allowedOrigins;
+}
+
+function getAuthErrorUrl() {
+  const webAppBaseUrl = getWebAppBaseUrl();
+  if (!webAppBaseUrl) return undefined;
+  return buildAuthErrorRedirectUrl(webAppBaseUrl, { returnTo: "/ws" });
+}
+
+function getOAuthConsentPage() {
+  return process.env.ANAN_OAUTH_CONSENT_PAGE?.trim() || "/oauth/authorize";
+}
+
+function getOAuthLoginPage() {
+  return process.env.ANAN_OAUTH_LOGIN_PAGE?.trim() || "/signin";
 }
 
 function buildSocialProviders() {
@@ -97,6 +129,43 @@ function buildSocialProviders() {
   } satisfies BetterAuthOptions["socialProviders"];
 }
 
+function isPasswordSignUpEnabled() {
+  return Boolean(
+    readOptionalEnv("ADMIN_SIGNUP_BRIDGE_SECRET")
+      || readOptionalEnv("ANAN_ADMIN_PASSWORD_SIGNUP_ENABLED"),
+  );
+}
+
+function passwordSignupGatePlugin(): BetterAuthPlugin {
+  return {
+    id: "anan-password-signup-gate",
+    hooks: {
+      before: [
+        {
+          matcher: (context) => context.path === "/sign-up/email",
+          handler: createAuthMiddleware(async (ctx) => {
+            const adminExpected = readOptionalEnv("ADMIN_SIGNUP_BRIDGE_SECRET");
+            const adminProvided = ctx.headers?.get("x-anan-admin-signup-secret");
+            const allowPublicPasswordSignup = Boolean(readOptionalEnv("ANAN_ADMIN_PASSWORD_SIGNUP_ENABLED"));
+
+            if (allowPublicPasswordSignup && !adminExpected) {
+              return;
+            }
+
+            if (adminExpected && adminProvided === adminExpected) {
+              return;
+            }
+
+            throw new APIError("FORBIDDEN", {
+              message: "Password signup requires a trusted signup flow.",
+            });
+          }),
+        },
+      ],
+    },
+  };
+}
+
 export const authComponent = createClient<DataModel, typeof schema>(
   components.betterAuth,
   {
@@ -109,12 +178,20 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
   ({
     appName: "Anan",
     baseURL: getAuthBaseUrl(),
+    onAPIError: {
+      errorURL: getAuthErrorUrl(),
+    },
     secret: process.env.BETTER_AUTH_SECRET,
     trustedOrigins: getTrustedOrigins(),
     database: authComponent.adapter(ctx),
     socialProviders: buildSocialProviders(),
+    emailAndPassword: {
+      enabled: true,
+      disableSignUp: !isPasswordSignUpEnabled(),
+      minPasswordLength: 12,
+      maxPasswordLength: 128,
+    },
     plugins: [
-      expo(),
       organization({
         creatorRole: "owner",
         allowUserToCreateOrganization: true,
@@ -124,6 +201,13 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
           throw new Error("Email OTP delivery is not configured for this Anan deployment.");
         },
       }),
+      createAnanOAuthProviderPlugin({
+        issuer: getAuthBaseUrl(),
+        loginPage: getOAuthLoginPage(),
+        consentPage: getOAuthConsentPage(),
+        allowDynamicClientRegistration: Boolean(readOptionalEnv("ANAN_OIDC_DYNAMIC_CLIENT_REGISTRATION")),
+      }) as BetterAuthPlugin,
+      passwordSignupGatePlugin(),
       convex({ authConfig }),
     ],
   }) satisfies BetterAuthOptions;

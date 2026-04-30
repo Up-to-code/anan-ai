@@ -1,6 +1,6 @@
 import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 import { getBucketMs, getLookbackMs, toBucketLabels } from "./analytics.helpers";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -157,7 +157,7 @@ export const messageAnalytics = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { range = "month", limit = 10 }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const { assistantThreads, assistantMessages, inboxMessages, profiles, channelUsers } =
       await loadMessageAnalyticsRows(ctx);
     const now = Date.now();
@@ -203,7 +203,7 @@ export const activeUsersAnalytics = query({
     range: v.optional(v.union(v.literal("week"), v.literal("month"))),
   },
   handler: async (ctx, { range = "month" }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
 
     const [assistantThreads, assistantMessages, inboxMessages, knowledgeResearch, searchLogs] = await Promise.all([
       ctx.db.query("assistantThreads").order("desc").take(500),

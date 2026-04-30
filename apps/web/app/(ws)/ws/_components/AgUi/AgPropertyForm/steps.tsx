@@ -14,6 +14,9 @@ import {
   X,
 } from "lucide-react";
 import type { UploadedFileReference } from "@/server/contracts/files";
+import { LocationPicker } from "@anan/location-map/react";
+import type { LocationValue } from "@anan/location-map";
+import { buildLocationValueFromParts } from "@anan/location-map";
 import type { BrokerPresence } from "../../Visuals/BrokerPresenceChip";
 import type { ProjectFormFieldErrors } from "../../../(zones)/projects/shared/forms/projectFormSubmission";
 import { BrokerAvatar, FieldLabel, ReviewRow, SectionCard, SelectInput, TextArea, TextInput, UploadTile } from "./controls";
@@ -95,14 +98,16 @@ function ChoiceButton({
     <button
       type="button"
       onClick={onClick}
-      className={`min-h-[88px] rounded-2xl border px-4 py-4 text-right transition ${
+      className={`min-h-11 rounded-full px-4 py-2.5 text-right transition ${
         active
-          ? "border-foreground bg-foreground text-background shadow-lg shadow-black/10"
-          : "border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-foreground hover:bg-[var(--workspace-accent-soft)]"
+          ? "bg-foreground text-background"
+          : "bg-[var(--workspace-elevated)] text-foreground hover:bg-[var(--workspace-accent-soft)]"
       }`}
     >
-      {icon ? <div className="mb-2 opacity-90">{icon}</div> : null}
-      <div className="text-sm font-black">{label}</div>
+      <div className="flex items-center justify-end gap-2">
+        <span className="text-sm font-black">{label}</span>
+        {icon ? <span className="opacity-90">{icon}</span> : null}
+      </div>
       {helper ? <div className="mt-1 text-[11px] font-semibold opacity-75">{helper}</div> : null}
     </button>
   );
@@ -117,18 +122,39 @@ export function BasicStep({
   fieldErrors: ProjectFormFieldErrors;
   setFormState: React.Dispatch<React.SetStateAction<AgPropertyFormState>>;
 }) {
+  const mapLocationValue = buildLocationValueFromParts({
+    label: formState.location,
+    city: formState.dossier.city,
+    district: formState.dossier.district,
+    latitude: formState.dossier.latitude,
+    longitude: formState.dossier.longitude,
+  });
+  const setMapLocation = (location: LocationValue) => {
+    setFormState((prev) => ({
+      ...prev,
+      location: location.label,
+      dossier: {
+        ...prev.dossier,
+        city: location.city ?? prev.dossier.city,
+        district: location.district ?? prev.dossier.district,
+        latitude: typeof location.latitude === "number" ? String(location.latitude) : prev.dossier.latitude,
+        longitude: typeof location.longitude === "number" ? String(location.longitude) : prev.dossier.longitude,
+      },
+    }));
+  };
+
   return (
     <StepShell
       badge="الخطوة 1"
       title="ابدأ بتعريف المشروع بوضوح"
-      description="هذه البطاقة تضع الأساس الذي سيظهر في القوائم وصفحة المشروع ونقاط الوصول داخل المنصة."
-      checklist={["اسم واضح وسهل التذكر", "سعر مكتوب بصياغة مفهومة", "موقع يختصر المنطقة المستهدفة"]}
+      description="ابدأ فقط بالبيانات التي تثبت وجود المشروع الأم. الوحدات والتفاصيل الثقيلة تأتي من داخل المشروع لاحقاً."
+      checklist={["اسم المشروع", "نوع المشروع", "موقع سعودي واضح"]}
     >
-      <SectionCard title="بطاقة تعريف المشروع" description="سجّل البيانات الأساسية كما تريد أن يفهمها الفريق والمستلم من أول نظرة.">
+      <SectionCard title="ما هو المشروع؟" description="سطر واحد للاسم، اختيار لنوع الأصل، وموقع يكفي للبحث والفرز.">
         <div className="grid gap-5">
           <div className="grid gap-2">
             <FieldLabel>نوع المشروع</FieldLabel>
-            <div className="grid gap-3 md:grid-cols-5">
+            <div className="flex flex-wrap justify-end gap-2">
               {PROJECT_TYPE_OPTIONS.map((option) => {
                 const active = formState.expertProjectType === option.value;
                 return (
@@ -165,67 +191,60 @@ export function BasicStep({
               placeholder="مثال: أبراج الياسمين"
               icon={<Building2 className="h-4 w-4" />}
               error={fieldErrors.name}
+              testId="project-name-input"
             />
           </div>
 
-          <div className="grid gap-5 md:grid-cols-2">
-            <div className="grid gap-2">
-              <FieldLabel>السعر</FieldLabel>
-              <TextInput
-                value={formState.price}
-                onChange={(value) => setFormState((prev) => ({ ...prev, price: value }))}
-                placeholder="مثال: 2,500,000 ر.س"
-                error={fieldErrors.price}
-              />
-            </div>
-            <div className="grid gap-2">
-              <FieldLabel>الموقع</FieldLabel>
-              <TextInput
-                value={formState.location}
-                onChange={(value) => setFormState((prev) => ({ ...prev, location: value }))}
-                placeholder="مثال: جدة، أبحر الشمالية"
-                icon={<MapPin className="h-4 w-4" />}
-                error={fieldErrors.location}
-              />
-            </div>
+          <div className="grid gap-2">
+            <FieldLabel>الموقع</FieldLabel>
+            <TextInput
+              value={formState.location}
+              onChange={(value) => setFormState((prev) => ({ ...prev, location: value }))}
+              placeholder="مثال: جدة، أبحر الشمالية"
+              icon={<MapPin className="h-4 w-4" />}
+              error={fieldErrors.location}
+              testId="project-location-input"
+            />
+            <LocationPicker
+              value={mapLocationValue}
+              onChange={setMapLocation}
+              label="اختر موقع المشروع على الخريطة"
+              placeholder="ابحث عن المدينة أو الحي أو العنوان"
+              fieldError={fieldErrors.location}
+            />
           </div>
 
           <div className="grid gap-2">
             <FieldLabel>طريقة الظهور</FieldLabel>
-            <div className="grid gap-3 md:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => setFormState((prev) => ({ ...prev, clientVisibility: "public" }))}
-                className={`rounded-2xl border px-5 py-4 text-right transition ${
-                  formState.clientVisibility === "public"
-                    ? "border-emerald-500 bg-emerald-500/10 text-foreground"
-                    : "border-border bg-muted/10 text-muted-foreground"
-                }`}
-              >
-                <div className="text-sm font-black">مرئي للعميل والـ AI</div>
-                <div className="mt-1 text-xs font-semibold">يظهر في القنوات العامة بعد النشر ويصبح جاهزاً للاستخدام البيعي.</div>
-              </button>
+            <div className="flex flex-wrap justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setFormState((prev) => ({ ...prev, clientVisibility: "private" }))}
-                className={`rounded-2xl border px-5 py-4 text-right transition ${
+                className={`rounded-full px-4 py-2.5 text-right text-sm font-black transition ${
                   formState.clientVisibility === "private"
-                    ? "border-amber-500 bg-amber-500/10 text-foreground"
-                    : "border-border bg-muted/10 text-muted-foreground"
+                    ? "bg-foreground text-background"
+                    : "bg-[var(--workspace-elevated)] text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <div className="text-sm font-black">داخلي داخل مساحة العمل</div>
-                <div className="mt-1 text-xs font-semibold">يبقى للفريق فقط إلى أن تقرر مشاركته أو نشره لاحقاً.</div>
+                داخلي حالياً
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormState((prev) => ({ ...prev, clientVisibility: "public" }))}
+                className={`rounded-full px-4 py-2.5 text-right text-sm font-black transition ${
+                  formState.clientVisibility === "public"
+                    ? "bg-foreground text-background"
+                    : "bg-[var(--workspace-elevated)] text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                جاهز للنشر لاحقاً
               </button>
             </div>
           </div>
 
-          <div className="grid gap-5 rounded-[20px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-5">
+          <div className="grid gap-4">
             <div>
               <h4 className="text-sm font-black text-foreground">الموقع السعودي المنظم</h4>
-              <p className="mt-1 text-xs font-semibold leading-6 text-muted-foreground">
-                هذه الحقول هي أساس الجاهزية: المدينة والحي مطلوبة قبل أي توزيع عام أو توصية ذكاء اصطناعي.
-              </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="grid gap-2">
@@ -236,10 +255,10 @@ export function BasicStep({
                       key={city}
                       type="button"
                       onClick={() => setFormState((prev) => ({ ...prev, dossier: { ...prev.dossier, city } }))}
-                      className={`rounded-full border px-3 py-1.5 text-[12px] font-bold transition ${
+                      className={`rounded-full px-3 py-1.5 text-[12px] font-bold transition ${
                         formState.dossier.city === city
-                          ? "border-foreground bg-foreground text-background"
-                          : "border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-[var(--workspace-muted)] hover:text-foreground"
+                          ? "bg-foreground text-background"
+                          : "bg-[var(--workspace-elevated)] text-[var(--workspace-muted)] hover:text-foreground"
                       }`}
                     >
                       {city}
@@ -250,6 +269,7 @@ export function BasicStep({
                   value={formState.dossier.city}
                   onChange={(value) => setFormState((prev) => ({ ...prev, dossier: { ...prev.dossier, city: value } }))}
                   placeholder="مثال: الرياض"
+                  testId="project-city-input"
                 />
               </div>
               <div className="grid gap-2">
@@ -258,22 +278,7 @@ export function BasicStep({
                   value={formState.dossier.district}
                   onChange={(value) => setFormState((prev) => ({ ...prev, dossier: { ...prev.dossier, district: value } }))}
                   placeholder="مثال: الملقا"
-                />
-              </div>
-              <div className="grid gap-2">
-                <FieldLabel>الشارع</FieldLabel>
-                <TextInput
-                  value={formState.dossier.street}
-                  onChange={(value) => setFormState((prev) => ({ ...prev, dossier: { ...prev.dossier, street: value } }))}
-                  placeholder="اسم الشارع عند توفره"
-                />
-              </div>
-              <div className="grid gap-2">
-                <FieldLabel>العنوان الوطني</FieldLabel>
-                <TextInput
-                  value={formState.dossier.nationalAddress}
-                  onChange={(value) => setFormState((prev) => ({ ...prev, dossier: { ...prev.dossier, nationalAddress: value } }))}
-                  placeholder="العنوان الوطني أو مرجع الموقع"
+                  testId="project-district-input"
                 />
               </div>
             </div>
@@ -307,6 +312,7 @@ export function ContentStep({
           onChange={(value) => setFormState((prev) => ({ ...prev, description: value }))}
           placeholder="اشرح المشروع، طبيعة الوحدات، المنطقة، قيمة الشراء، وأي تفاصيل يحتاجها الوسيط أو العميل لفهم العرض."
           error={fieldErrors.description}
+          testId="project-description-input"
         />
       </SectionCard>
 
@@ -361,38 +367,34 @@ export function GalleryStep(props: {
       description="املأ هذه الخطوة بالصور التي تريد أن تقود الانطباع الأول، ثم اختر صورة الغلاف وطريقة عرضها."
       checklist={["صورة غلاف قوية", "ترتيب الصور حسب الأولوية", "أسلوب عرض مناسب لكل لقطة"]}
     >
-      <SectionCard title="الخدمات التي ترفع قيمة المشروع" description="اختر الخدمات التي تساعد الخبير أو الوسيط على فهم قوة المشروع بسرعة.">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {PROJECT_SERVICE_OPTIONS.map((service) => {
-            const active = props.formState.services.includes(service);
-            return (
-              <button
-                key={service}
-                type="button"
-                onClick={() => props.setFormState((prev) => ({ ...prev, services: toggleValue(prev.services, service), amenitiesText: toggleValue(prev.services, service).join("، ") }))}
-                className={`rounded-2xl border px-4 py-4 text-right text-sm font-black transition ${
-                  active ? "border-foreground bg-foreground text-background" : "border-border bg-muted/10 text-foreground hover:bg-muted/20"
-                }`}
-              >
-                {service}
-              </button>
-            );
-          })}
+      <SectionCard title="كيف نعرّف المشروع؟" description="اكتب وصفاً يكفي لفهم المشروع في البحث والبطاقات. الصور اختيارية الآن ويمكن إكمالها لاحقاً.">
+        <div className="grid gap-2">
+          <FieldLabel>الوصف الرئيسي</FieldLabel>
+          <TextArea
+            rows={5}
+            value={props.formState.description}
+            onChange={(value) => props.setFormState((prev) => ({ ...prev, description: value }))}
+            placeholder="اشرح المشروع، طبيعة الوحدات، المنطقة، وقيمة الشراء بشكل واضح."
+            error={props.fieldErrors.description}
+            testId="project-description-input"
+          />
         </div>
         <div className="mt-5 grid gap-2">
-          <FieldLabel>ملاحظات الخبير</FieldLabel>
+          <FieldLabel>ملخص سريع</FieldLabel>
           <TextArea
             rows={3}
-            value={props.formState.expertNotes}
-            onChange={(value) => props.setFormState((prev) => ({ ...prev, expertNotes: value }))}
-            placeholder="اكتب أي ملاحظة تساعد فريق المبيعات على قراءة المشروع كخبير عقاري."
+            value={props.formState.shortDescription}
+            onChange={(value) => props.setFormState((prev) => ({ ...prev, shortDescription: value }))}
+            placeholder="سطران يظهران في قائمة المشاريع."
+            error={props.fieldErrors.shortDescription}
           />
         </div>
       </SectionCard>
 
-      <SectionCard title="مكتبة الصور" description="ارفع الصور الأساسية ثم اختر الغلاف ورتّب التسلسل كما تريد أن يراه المستلم.">
+      <SectionCard title="الصور اختيارية" description="ارفع غلافاً إذا كان جاهزاً. لا توقف إنشاء المشروع بسبب الصور.">
         <div className="space-y-4">
           <input
+            data-testid="project-image-input"
             ref={props.inputRef}
             type="file"
             accept="image/*"
@@ -406,6 +408,7 @@ export function GalleryStep(props: {
             onClick={() => props.inputRef.current?.click()}
             icon={<ImagePlus className="h-5 w-5" />}
             disabled={props.isUploading}
+            testId="project-image-upload"
           />
 
           {props.uploadError ? (
@@ -413,19 +416,13 @@ export function GalleryStep(props: {
               {props.uploadError}
             </div>
           ) : null}
-          {props.fieldErrors.images ? (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-              {props.fieldErrors.images}
-            </div>
-          ) : null}
-
           {props.formState.images.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2">
               {props.formState.images.map((image, index) => {
                 const isCover = props.formState.coverImageKey === image.key;
                 return (
-                  <div key={`${image.key}-${index}`} className="rounded-xl border border-border bg-card p-3">
-                    <div className={["overflow-hidden rounded-lg border border-border bg-muted/20", props.previewAspectClass].join(" ")}>
+                  <div key={`${image.key}-${index}`} className="border-t border-[color:color-mix(in_srgb,var(--workspace-border)_45%,transparent)] pt-4">
+                    <div className={["overflow-hidden rounded-xl bg-muted/20", props.previewAspectClass].join(" ")}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={image.url}
@@ -447,18 +444,14 @@ export function GalleryStep(props: {
                       ) : null}
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                      <button
-                        type="button"
-                        onClick={() => props.setCoverImageKey(image.key)}
-                        className="rounded-md border border-border bg-muted/20 px-3 py-2 text-xs font-bold text-foreground transition hover:border-foreground/30"
-                      >
+                      <button type="button" onClick={() => props.setCoverImageKey(image.key)} className="rounded-md bg-muted/20 px-3 py-2 text-xs font-bold text-foreground transition hover:bg-muted">
                         غلاف
                       </button>
                       <button
                         type="button"
                         onClick={() => props.moveImage(index, -1)}
                         disabled={index === 0}
-                        className="rounded-md border border-border bg-muted/20 px-3 py-2 text-xs font-bold text-foreground transition hover:border-foreground/30 disabled:opacity-40"
+                        className="rounded-md bg-muted/20 px-3 py-2 text-xs font-bold text-foreground transition hover:bg-muted disabled:opacity-40"
                       >
                         رفع
                       </button>
@@ -466,14 +459,14 @@ export function GalleryStep(props: {
                         type="button"
                         onClick={() => props.moveImage(index, 1)}
                         disabled={index === props.formState.images.length - 1}
-                        className="rounded-md border border-border bg-muted/20 px-3 py-2 text-xs font-bold text-foreground transition hover:border-foreground/30 disabled:opacity-40"
+                        className="rounded-md bg-muted/20 px-3 py-2 text-xs font-bold text-foreground transition hover:bg-muted disabled:opacity-40"
                       >
                         خفض
                       </button>
                       <button
                         type="button"
                         onClick={() => props.removeImage(index)}
-                        className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:border-rose-300"
+                        className="rounded-md bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100"
                       >
                         إزالة
                       </button>
@@ -483,72 +476,11 @@ export function GalleryStep(props: {
               })}
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center text-sm font-semibold text-muted-foreground">
-              ارفع صور المشروع أولاً لتظهر أدوات الترتيب والغلاف.
+            <div className="py-5 text-center text-sm font-semibold text-muted-foreground">
+              يمكنك حفظ المشروع الآن وإضافة المعرض لاحقاً.
             </div>
           )}
         </div>
-      </SectionCard>
-
-      <SectionCard title="طريقة عرض المعرض" description="حدد كيف ستظهر الصور داخل صفحة المشروع حتى تبقى القراءة البصرية متناسقة.">
-        <div className="grid gap-5 md:grid-cols-2">
-          <div className="grid gap-2">
-            <FieldLabel>طريقة عرض الصورة</FieldLabel>
-            <select
-              value={props.formState.galleryDisplayMode}
-              onChange={(event) =>
-                props.setFormState((prev) => ({
-                  ...prev,
-                  galleryDisplayMode: event.target.value as AgPropertyFormState["galleryDisplayMode"],
-                }))
-              }
-              className="min-h-[54px] w-full rounded-2xl border border-border bg-muted/20 px-4 py-3 text-base font-semibold text-foreground outline-none transition focus:border-ring focus:bg-card"
-            >
-              {GALLERY_DISPLAY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="grid gap-2">
-            <FieldLabel>نسبة الإطار</FieldLabel>
-            <select
-              value={props.formState.galleryAspectRatio}
-              onChange={(event) =>
-                props.setFormState((prev) => ({
-                  ...prev,
-                  galleryAspectRatio: event.target.value as AgPropertyFormState["galleryAspectRatio"],
-                }))
-              }
-              className="min-h-[54px] w-full rounded-2xl border border-border bg-muted/20 px-4 py-3 text-base font-semibold text-foreground outline-none transition focus:border-ring focus:bg-card"
-            >
-              {GALLERY_ASPECT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {props.mockDataEnabled ? (
-          <button
-            type="button"
-            onClick={() => props.setFormState((prev) => ({ ...prev, video: prev.video ? null : "mock-video.mp4" }))}
-            className="mt-5 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-right transition hover:border-stone-400"
-          >
-            <div className="text-right">
-              <div className="text-sm font-black text-foreground">
-                {props.formState.video ? "الفيديو مفعّل" : "تفعيل فيديو توضيحي"}
-              </div>
-              <div className="mt-1 text-xs font-semibold text-muted-foreground">
-                {props.formState.video ? "يمكنك إيقافه أو تركه كإضافة داعمة للعرض." : "خيار إضافي لإرفاق فيديو قصير يدعم العرض البصري."}
-              </div>
-            </div>
-            <Video className={`h-5 w-5 ${props.formState.video ? "text-emerald-300" : "text-muted-foreground"}`} />
-          </button>
-        ) : null}
       </SectionCard>
     </StepShell>
   );
@@ -575,304 +507,123 @@ export function SpecsStep(props: {
     <StepShell
       badge="الخطوة 4"
       title="أكمل المواصفات والتوثيق"
-      description="هذه الخطوة تثبّت الحالة التشغيلية للمشروع وتجمع الأرقام والبيانات التي يعتمد عليها العرض والمتابعة."
-      checklist={["حالة تشغيل واضحة", "أرقام دقيقة للغرف والمساحة", "بيانات رخصة جاهزة للمراجعة"]}
+      description="هذه الخطوة تثبّت الحالة التشغيلية للمشروع وتفصل بيانات المشروع عن مواصفات أنواع الوحدات."
+      checklist={["حالة تشغيل واضحة", "مخزون وحدات مشتق", "بيانات رخصة جاهزة للمراجعة"]}
     >
-      <SectionCard title="مواصفات المشروع" description="راجع الحالة الحالية وأدخل التفاصيل الرقمية التي ستظهر في الصفحة وبطاقات المشروع.">
+      <SectionCard title="ماذا يحتاج فريق البيع الآن؟" description="هذه هي بيانات المشروع الأم: مرحلة المشروع، الجمهور، الخدمات، مزيج الوحدات، عدد تقريبي، وسعر متوسط.">
         <div className="grid gap-5">
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-2">
+              <FieldLabel>مرحلة المشروع</FieldLabel>
+              <SelectInput
+                value={props.formState.status}
+                onChange={(value) => props.setFormState((prev) => ({ ...prev, status: value }))}
+                options={PROJECT_STATUS_OPTIONS}
+              />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>السعر المتوسط أو المتوقع</FieldLabel>
+              <TextInput
+                value={props.formState.paymentPlans[0]?.startingPrice ?? ""}
+                onChange={(value) => props.setFormState((prev) => ({ ...prev, paymentPlans: [{ ...prev.paymentPlans[0], startingPrice: value }] }))}
+                placeholder="مثال: 1,200,000 ر.س"
+                testId="project-price-input"
+              />
+            </div>
+          </div>
+
           <div className="grid gap-2">
-            <FieldLabel>حالة المشروع</FieldLabel>
-            <SelectInput
-              value={props.formState.status}
-              onChange={(value) => props.setFormState((prev) => ({ ...prev, status: value }))}
-              options={PROJECT_STATUS_OPTIONS}
+            <FieldLabel>العميل المستهدف</FieldLabel>
+            <TextArea
+              rows={3}
+              value={props.formState.expertNotes}
+              onChange={(value) => props.setFormState((prev) => ({ ...prev, expertNotes: value }))}
+              placeholder="مثال: عائلات تبحث عن سكن أول، مستثمرون، عملاء تسليم قريب، مشترون فاخرون."
             />
           </div>
 
-          <div className="grid gap-5 md:grid-cols-3">
-            <div className="grid gap-2">
-              <FieldLabel>الغرف</FieldLabel>
-              <TextInput
-                type="number"
-                value={props.formState.rooms}
-                onChange={(value) => props.setFormState((prev) => ({ ...prev, rooms: value }))}
-                placeholder="0"
-                error={props.fieldErrors.rooms}
-              />
-            </div>
-            <div className="grid gap-2">
-              <FieldLabel>الحمامات</FieldLabel>
-              <TextInput
-                type="number"
-                value={props.formState.baths}
-                onChange={(value) => props.setFormState((prev) => ({ ...prev, baths: value }))}
-                placeholder="0"
-                error={props.fieldErrors.baths}
-              />
-            </div>
-            <div className="grid gap-2">
-              <FieldLabel>المساحة بالمتر</FieldLabel>
-              <TextInput
-                value={props.formState.area}
-                onChange={(value) => props.setFormState((prev) => ({ ...prev, area: value }))}
-                placeholder="مثال: 380"
-                error={props.fieldErrors.area}
-              />
+          <div className="grid gap-2">
+            <FieldLabel>عدد الوحدات التقريبي</FieldLabel>
+            <div className="flex flex-wrap justify-end gap-2">
+              {PROJECT_SCALE_OPTIONS.map((option) => (
+                <ChoiceButton
+                  key={option.value}
+                  active={props.formState.projectScale === option.value}
+                  label={option.label}
+                  helper={option.helper}
+                  onClick={() => props.setFormState((prev) => ({ ...prev, projectScale: option.value }))}
+                />
+              ))}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-muted/20 p-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <span className="text-sm font-black text-foreground">المواقف</span>
-              <span className="text-xs font-semibold text-[var(--workspace-muted)]">اختر الأكثر شيوعاً ثم عدّل الرقم عند الحاجة</span>
+          <div className="grid gap-2">
+            <FieldLabel>أنواع الوحدات الموجودة</FieldLabel>
+            <div className="flex flex-wrap justify-end gap-2">
+              {PRODUCT_MIX_OPTIONS.map((option) => {
+                const active = splitChoices(props.formState.productMix).includes(option);
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => props.setFormState((prev) => ({ ...prev, productMix: toggleDelimitedValue(prev.productMix, option) }))}
+                    className={`rounded-full px-3 py-2 text-[12px] font-black transition ${
+                      active ? "bg-foreground text-background" : "bg-[var(--workspace-elevated)] text-foreground hover:bg-[var(--workspace-accent-soft)]"
+                    }`}
+                  >
+                    {option}
+                  </button>
+                );
+              })}
             </div>
-            <div className="grid gap-3 sm:grid-cols-4">
-              {[
-                ["", "لا يوجد"],
-                ["1", "موقف واحد"],
-                ["2", "موقفان"],
-                ["3", "3+"],
-              ].map(([value, label]) => (
+          </div>
+
+          <div className="grid gap-2">
+            <FieldLabel>نوع الوحدة الرئيسي</FieldLabel>
+            <div className="flex flex-wrap justify-end gap-2">
+              {PRIMARY_UNIT_TYPE_OPTIONS.map((option) => (
                 <button
-                  key={label}
+                  key={option}
                   type="button"
                   onClick={() =>
                     props.setFormState((prev) => ({
                       ...prev,
-                      hasParking: Boolean(value),
-                      parkingSpaces: value,
+                      primaryUnitType: option,
+                      units: [{ ...prev.units[0], label: prev.units[0]?.label || option }],
                     }))
                   }
-                  className={`rounded-2xl border px-4 py-3 text-sm font-black transition ${
-                    props.formState.parkingSpaces === value
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-foreground hover:bg-[var(--workspace-accent-soft)]"
+                  className={`rounded-full px-3 py-2 text-[12px] font-black transition ${
+                    props.formState.primaryUnitType === option
+                      ? "bg-foreground text-background"
+                      : "bg-[var(--workspace-elevated)] text-foreground hover:bg-[var(--workspace-accent-soft)]"
                   }`}
                 >
-                  {label}
+                  {option}
                 </button>
               ))}
             </div>
-            {props.fieldErrors.parkingSpaces ? <p className="mt-2 text-sm font-semibold text-rose-700">{props.fieldErrors.parkingSpaces}</p> : null}
-          </div>
-
-          <div className="grid gap-5 rounded-[20px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-5">
-            <div>
-              <h4 className="text-sm font-black text-foreground">حجم المشروع ومزيج المنتجات</h4>
-              <p className="mt-1 text-xs font-semibold leading-6 text-muted-foreground">
-                هذه الحقول تجعل المدخلات أقرب لطريقة عمل خبير عقاري عند تقييم المشروع.
-              </p>
-            </div>
-            <div className="grid gap-5">
-              <div className="grid gap-2">
-                <FieldLabel>حجم المشروع</FieldLabel>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {PROJECT_SCALE_OPTIONS.map((option) => (
-                    <ChoiceButton
-                      key={option.value}
-                      active={props.formState.projectScale === option.value}
-                      label={option.label}
-                      helper={option.helper}
-                      onClick={() => props.setFormState((prev) => ({ ...prev, projectScale: option.value }))}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <FieldLabel>مزيج المنتجات</FieldLabel>
-                <div className="flex flex-wrap justify-end gap-2">
-                  {PRODUCT_MIX_OPTIONS.map((option) => {
-                    const active = splitChoices(props.formState.productMix).includes(option);
-                    return (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => props.setFormState((prev) => ({ ...prev, productMix: toggleDelimitedValue(prev.productMix, option) }))}
-                        className={`rounded-full border px-3 py-2 text-[12px] font-black transition ${
-                          active
-                            ? "border-foreground bg-foreground text-background"
-                            : "border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-foreground hover:bg-[var(--workspace-accent-soft)]"
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <FieldLabel>نوع الوحدة الرئيسي</FieldLabel>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {PRIMARY_UNIT_TYPE_OPTIONS.map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() =>
-                        props.setFormState((prev) => ({
-                          ...prev,
-                          primaryUnitType: option,
-                          units: [{ ...prev.units[0], label: prev.units[0]?.label || option }],
-                        }))
-                      }
-                      className={`rounded-2xl border px-4 py-3 text-sm font-black transition ${
-                        props.formState.primaryUnitType === option
-                          ? "border-foreground bg-foreground text-background"
-                          : "border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-foreground hover:bg-[var(--workspace-accent-soft)]"
-                      }`}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <FieldLabel>نطاق المساحات</FieldLabel>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {SIZE_RANGE_OPTIONS.map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => props.setFormState((prev) => ({ ...prev, sizeRange: option }))}
-                      className={`rounded-2xl border px-4 py-3 text-sm font-black transition ${
-                        props.formState.sizeRange === option
-                          ? "border-foreground bg-foreground text-background"
-                          : "border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] text-foreground hover:bg-[var(--workspace-accent-soft)]"
-                      }`}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-muted/20 p-4">
-            <div className="mb-4 text-right">
-              <div className="text-sm font-black text-foreground">مخزون الوحدات</div>
-              <p className="mt-1 text-xs font-semibold leading-6 text-muted-foreground">
-                النسخة الحالية تحفظ نوع وحدة رئيسي، ويمكن توسيع القائمة لاحقاً لكل وحدة مفردة.
-              </p>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="grid gap-2">
-                <FieldLabel>اسم نوع الوحدة</FieldLabel>
-                <TextInput
-                  value={props.formState.units[0]?.label ?? ""}
-                  onChange={(value) => props.setFormState((prev) => ({ ...prev, units: [{ ...prev.units[0], label: value }] }))}
-                  placeholder="مثال: شقق ثلاث غرف"
-                />
-              </div>
-              <div className="grid gap-2">
-                <FieldLabel>الإتاحة</FieldLabel>
-                <SelectInput
-                  value={props.formState.units[0]?.status ?? "available"}
-                  onChange={(value) => props.setFormState((prev) => ({ ...prev, units: [{ ...prev.units[0], status: value }] }))}
-                  options={UNIT_AVAILABILITY_OPTIONS}
-                />
-              </div>
-              <div className="grid gap-2">
-                <FieldLabel>الدور</FieldLabel>
-                <TextInput
-                  value={props.formState.units[0]?.floor ?? ""}
-                  onChange={(value) => props.setFormState((prev) => ({ ...prev, units: [{ ...prev.units[0], floor: value }] }))}
-                  placeholder="مثال: 4-12"
-                />
-              </div>
-              <div className="grid gap-2">
-                <FieldLabel>الإطلالة</FieldLabel>
-                <TextInput
-                  value={props.formState.units[0]?.view ?? ""}
-                  onChange={(value) => props.setFormState((prev) => ({ ...prev, units: [{ ...prev.units[0], view: value }] }))}
-                  placeholder="مثال: شارع رئيسي / حديقة"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="ملف الرخصة والتوثيق" description="أدخل رقم الرخصة الآن، ثم أرفق مستندات التوثيق بعد حفظ المشروع لأول مرة.">
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-border bg-muted/20 p-4">
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <span className="text-sm font-black text-foreground">حالة التوثيق</span>
-              <span className={`rounded-full border px-3 py-1 text-xs font-bold ${props.adLicenseTone}`}>
-                {props.adLicenseLabel}
-              </span>
-            </div>
-            <p className="text-sm text-muted-foreground">ستبقى هذه الحالة محدثة عند إرسال أو مراجعة الطلب.</p>
           </div>
 
           <div className="grid gap-2">
-            <FieldLabel>رقم رخصة الإعلان</FieldLabel>
-            <TextInput
-              value={props.formState.adLicenseNumber}
-              onChange={(value) => props.setFormState((prev) => ({ ...prev, adLicenseNumber: value }))}
-              placeholder="مثال: AD-12345"
-              error={props.fieldErrors.adLicenseNumber}
-            />
-          </div>
-
-          {props.propertyId ? (
-            <>
-              <input
-                ref={props.licenseInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={(event) => void props.handleLicenseFiles(event)}
-              />
-              <UploadTile
-                title={props.isLicenseUploading ? "جارٍ رفع المستندات..." : "رفع مستندات الرخصة"}
-                subtitle={props.licenseDocs.length > 0 ? `${props.licenseDocs.length} ملف` : "PDF أو صور واضحة"}
-                onClick={() => props.licenseInputRef.current?.click()}
-                icon={<Upload className="h-5 w-5" />}
-                disabled={props.isLicenseUploading}
-              />
-
-              {props.licenseDocs.length > 0 ? (
-                <div className="space-y-2">
-                  {props.licenseDocs.map((doc) => (
-                    <div key={doc.key} className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/20 px-4 py-3">
-                      <button
-                        type="button"
-                        onClick={() => props.setLicenseDocs((current) => current.filter((item) => item.key !== doc.key))}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:border-foreground/30 hover:text-foreground"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                      <div className="truncate text-sm font-bold text-foreground">{doc.name}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-
-              {props.licenseError ? (
-                <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-                  {props.licenseError}
-                </div>
-              ) : null}
-              {props.licenseSubmitted ? (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-                  تم إرسال طلب التوثيق بنجاح.
-                </div>
-              ) : null}
-
-              <button
-                type="button"
-                onClick={() => void props.handleLicenseSubmit()}
-                disabled={props.licenseSubmitting}
-                className="w-full rounded-2xl border border-foreground/50 bg-foreground px-4 py-3 text-sm font-bold text-background transition hover:brightness-110 disabled:opacity-60"
-              >
-                {props.licenseSubmitting ? "جارٍ الإرسال..." : "إرسال طلب التوثيق"}
-              </button>
-            </>
-          ) : (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-              احفظ المشروع أولاً حتى تتمكن من رفع المستندات وإرسال الطلب.
+            <FieldLabel>الخدمات والخيارات</FieldLabel>
+            <div className="flex flex-wrap justify-end gap-2">
+              {PROJECT_SERVICE_OPTIONS.map((service) => {
+                const active = props.formState.services.includes(service);
+                return (
+                  <button
+                    key={service}
+                    type="button"
+                    onClick={() => props.setFormState((prev) => ({ ...prev, services: toggleValue(prev.services, service) }))}
+                    className={`rounded-full px-3 py-2 text-[12px] font-black transition ${
+                      active ? "bg-foreground text-background" : "bg-[var(--workspace-elevated)] text-foreground hover:bg-[var(--workspace-accent-soft)]"
+                    }`}
+                  >
+                    {service}
+                  </button>
+                );
+              })}
             </div>
-          )}
+          </div>
         </div>
       </SectionCard>
     </StepShell>
@@ -1195,7 +946,7 @@ export function PaymentStep({
           <div className="grid gap-5 md:grid-cols-3">
             <div className="grid gap-2">
               <FieldLabel>سعر البداية</FieldLabel>
-              <TextInput value={plan?.startingPrice ?? ""} onChange={(value) => setFormState((prev) => ({ ...prev, price: value, paymentPlans: [{ ...prev.paymentPlans[0], startingPrice: value }] }))} placeholder="مثال: 1,200,000" />
+              <TextInput value={plan?.startingPrice ?? ""} onChange={(value) => setFormState((prev) => ({ ...prev, paymentPlans: [{ ...prev.paymentPlans[0], startingPrice: value }] }))} placeholder="مثال: 1,200,000" />
             </div>
             <div className="grid gap-2">
               <FieldLabel>السعر النقدي</FieldLabel>
@@ -1309,7 +1060,6 @@ export function ReviewStep(props: {
       <SectionCard title="ملخص المشروع النهائي" description="تأكد من البيانات الرئيسية قبل تنفيذ الحفظ النهائي.">
         <div className="grid gap-3">
           <ReviewRow label="اسم المشروع" value={props.formState.name || "غير محدد"} />
-          <ReviewRow label="السعر" value={props.formState.price || "غير محدد"} />
           <ReviewRow label="الموقع" value={props.formState.location || "غير محدد"} />
           <ReviewRow label="الوصف القصير" value={props.formState.shortDescription || "غير محدد"} />
           <ReviewRow
@@ -1325,8 +1075,8 @@ export function ReviewStep(props: {
             value={`${GALLERY_DISPLAY_OPTIONS.find((option) => option.value === props.formState.galleryDisplayMode)?.label ?? "ملء الإطار"} / ${GALLERY_ASPECT_OPTIONS.find((option) => option.value === props.formState.galleryAspectRatio)?.label ?? "أفقي"}`}
           />
           <ReviewRow
-            label="المواصفات"
-            value={`${props.formState.rooms || "0"} غرف • ${props.formState.baths || "0"} حمامات • ${props.formState.area || "0"} م²`}
+            label="نوع الوحدة الرئيسي"
+            value={`${props.formState.units[0]?.label || "غير محدد"} • ${props.formState.units[0]?.bedrooms || "0"} غرف • ${props.formState.units[0]?.bathrooms || "0"} حمامات • ${props.formState.units[0]?.sizeSqm || "0"} م² • ${props.formState.units[0]?.price || "بدون سعر"}`}
           />
           <ReviewRow
             label="المواقف"

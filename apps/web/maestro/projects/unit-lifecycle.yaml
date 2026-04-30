@@ -1,0 +1,38 @@
+url: ${MAESTRO_WEB_URL}
+---
+- runScript:
+    file: ../scripts/bootstrap.js
+    env:
+      E2E_PERSONA: developer-manager
+      E2E_REDIRECT_TO: /ws/projects/create
+- openLink: ${output.bootstrapUrl}
+- tapOn:
+    id: create-inventory-option-unit
+- tapOn:
+    id: create-inventory-continue
+- tapOn:
+    id: unit-name-input
+- inputText: "${output.unitName}"
+- tapOn:
+    id: unit-location-input
+- inputText: "الرياض، الملقا"
+- tapOn:
+    id: unit-description-input
+- inputText: "وصف تجريبي لوحدة مستقلة من Maestro."
+- tapOn:
+    id: creation-flow-next
+- tapOn:
+    id: unit-area-input
+- inputText: "120"
+- tapOn:
+    id: creation-flow-next
+- tapOn:
+    id: unit-price-input
+- inputText: "950000"
+- tapOn:
+    id: creation-flow-next
+- tapOn:
+    id: creation-flow-next
+- assertVisible:
+    id: creation-flow-save
+

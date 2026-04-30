@@ -9,6 +9,7 @@ import {
   addBrokerDealDocument,
   archiveBrokerDeal,
   createBrokerDeal,
+  listBrokerDeals,
   listBrokerDealsByProperty,
   updateBrokerDeal,
   updateBrokerDealFollowUp,
@@ -46,6 +47,24 @@ it("creates a broker deal after property ownership validation", async () => {
       { requireBroker: requireBroker(), crmRepository: crmRepository as never, propertiesRepository },
     ),
   ).resolves.toBe("deal-1");
+});
+
+it("lists broker deals for hydrated broker sessions resolved from the org bridge", async () => {
+  const crmRepository = {
+    listByBrokerId: vi.fn(async () => []),
+  };
+
+  await listBrokerDeals({
+    requireBroker: vi.fn(async () => ({
+      token: "token",
+      context: { userId: "user-1", role: "broker", organizationId: "org-1", brokerId: "broker-1", isActive: true },
+      profile: null,
+    })),
+    crmRepository: crmRepository as never,
+    propertiesRepository: {} as never,
+  });
+
+  expect(crmRepository.listByBrokerId).toHaveBeenCalledWith("broker-1");
 });
 
 it("rejects property-scoped reads for non-owned properties", async () => {

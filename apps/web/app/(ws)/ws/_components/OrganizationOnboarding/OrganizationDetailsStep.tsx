@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { GCC_COUNTRY_OPTIONS, type GccCountryCode } from "@/server/contracts/gccCountries";
 import type { WorkspaceAudience } from "@/server/contracts/workspace";
+import { MotionEffect, MotionEffects, OnboardingActionDock, OnboardingContentTransition } from "./OnboardingMotion";
 
 function slugifyOrganizationName(value: string) {
   return value
@@ -13,12 +17,32 @@ function slugifyOrganizationName(value: string) {
     .slice(0, 48);
 }
 
+function buildOrganizationSlugCandidates(baseSlug: string) {
+  const safeBase = baseSlug || `organization-${Math.random().toString(36).slice(2, 8)}`;
+  return [
+    safeBase,
+    `${safeBase}-${Date.now().toString(36).slice(-4)}`,
+    `${safeBase}-${Math.random().toString(36).slice(2, 6)}`,
+  ];
+}
+
+function shouldRetryOrganizationCreate(message: string | null | undefined) {
+  const normalized = (message ?? "").toLowerCase();
+  return (
+    normalized.includes("already exists") ||
+    normalized.includes("duplicate") ||
+    normalized.includes("slug") ||
+    normalized.includes("unique")
+  );
+}
+
 type OrganizationDetailsStepProps = {
   suggestedOrganizationType: "broker" | "red";
   audience: WorkspaceAudience;
   pending: boolean;
+  initialCountryCode: GccCountryCode;
   onBack: () => void;
-  onCreated: (snapshot: { id: string; type: "broker" | "red" }) => void;
+  onCreated: (snapshot: { id: string; type: "broker" | "red"; countryCode: GccCountryCode }) => void;
 };
 
 /**
@@ -30,13 +54,19 @@ export default function OrganizationDetailsStep({
   suggestedOrganizationType,
   audience,
   pending,
+  initialCountryCode,
   onBack,
   onCreated,
 }: OrganizationDetailsStepProps) {
   const [name, setName] = useState("");
   const [type, setType] = useState<"broker" | "red">(suggestedOrganizationType);
+  const [countryCode, setCountryCode] = useState<GccCountryCode>(initialCountryCode);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const selectedCountry = useMemo(
+    () => GCC_COUNTRY_OPTIONS.find((country) => country.code === countryCode) ?? GCC_COUNTRY_OPTIONS[0],
+    [countryCode],
+  );
 
   const helperText =
     audience === "developer"
@@ -44,6 +74,11 @@ export default function OrganizationDetailsStep({
       : audience === "broker"
         ? "اختر وسيطاً لإدارة العملاء والتعاون."
         : "اختر نوع الجهة لتفعيل المسارات المناسبة.";
+
+  const typeTip =
+    type === "red"
+      ? "هذا المسار يهيئ الجهة لإدارة المشاريع والمخزون والعروض على مستوى المطور."
+      : "هذا المسار يهيئ الجهة لإدارة العملاء والتفويضات والعروض على مستوى الوسيط.";
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -53,15 +88,32 @@ export default function OrganizationDetailsStep({
     try {
       const trimmedName = name.trim();
       const fallbackSlug = slugifyOrganizationName(trimmedName);
-      const createdResult = await authClient.organization.create({
-        name: trimmedName,
-        slug: fallbackSlug,
-        metadata: {
-          organizationType: type === "red" ? "developer" : "broker",
-        },
-      } as never);
-      if (createdResult.error) {
-        throw new Error(createdResult.error.message ?? "تعذر إنشاء الجهة.");
+      const slugCandidates = buildOrganizationSlugCandidates(fallbackSlug);
+
+      let createdResult: Awaited<ReturnType<typeof authClient.organization.create>> | null = null;
+      let lastCreateMessage: string | null = null;
+
+      for (const candidateSlug of slugCandidates) {
+        createdResult = await authClient.organization.create({
+          name: trimmedName,
+          slug: candidateSlug,
+          metadata: {
+            organizationType: type === "red" ? "developer" : "broker",
+          },
+        } as never);
+
+        if (!createdResult.error) {
+          break;
+        }
+
+        lastCreateMessage = createdResult.error.message ?? "تعذر إنشاء الجهة.";
+        if (!shouldRetryOrganizationCreate(lastCreateMessage)) {
+          throw new Error(lastCreateMessage ?? "تعذر إنشاء الجهة.");
+        }
+      }
+
+      if (!createdResult || createdResult.error) {
+        throw new Error(lastCreateMessage ?? createdResult?.error?.message ?? "تعذر إنشاء الجهة.");
       }
       const createdOrganization = createdResult.data as Record<string, unknown> | null;
       const organizationId =
@@ -90,6 +142,7 @@ export default function OrganizationDetailsStep({
           name: trimmedName,
           slug: organizationSlug,
           type,
+          countryCode,
         }),
       });
 
@@ -98,8 +151,8 @@ export default function OrganizationDetailsStep({
         throw new Error(payload?.message ?? "تعذر إنشاء الجهة.");
       }
 
-      const organization = await response.json() as { id: string; type: "broker" | "red" };
-      onCreated({ id: organization.id, type: organization.type });
+      const organization = await response.json() as { id: string; type: "broker" | "red"; countryCode?: GccCountryCode };
+      onCreated({ id: organization.id, type: organization.type, countryCode: organization.countryCode ?? countryCode });
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "تعذر إنشاء الجهة.");
     } finally {
@@ -108,70 +161,168 @@ export default function OrganizationDetailsStep({
   };
 
   return (
-    <form className="space-y-10" onSubmit={handleSubmit}>
-      <div className="space-y-2 text-right">
-        <div className="text-xl font-black tracking-tight text-slate-900">بيانات الجهة</div>
-        <p className="text-sm font-medium text-slate-500">{helperText}</p>
-      </div>
+    <form className="mx-auto max-w-2xl space-y-7" onSubmit={handleSubmit}>
+      <MotionEffects className="space-y-6" slide="up" zoom>
+        <div className="space-y-2 text-right">
+          <div className="text-xl font-black tracking-tight text-foreground">بيانات الجهة</div>
+          <p className="text-sm font-medium text-muted-foreground">{helperText}</p>
+        </div>
 
-      <div className="space-y-8">
         <div className="flex flex-col gap-3 text-right">
-          <label className="text-xs font-black uppercase tracking-widest text-slate-900">اسم الجهة</label>
+          <label className="text-xs font-black uppercase tracking-widest text-foreground">اسم الجهة</label>
           <input
+            data-testid="onboarding-organization-name"
             type="text"
             value={name}
             onChange={(event) => setName(event.target.value)}
             required
             placeholder="مثال: مؤسسة عنان العقارية"
-            className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-300 focus:border-slate-300 focus:bg-white"
+            className="w-full rounded-2xl border border-border bg-muted/30 px-5 py-4 text-sm font-medium text-foreground outline-none transition-all placeholder:text-muted-foreground/50 focus:border-ring focus:bg-background"
           />
         </div>
 
         <div className="space-y-3 text-right">
-          <div className="text-xs font-black uppercase tracking-widest text-slate-900">نوع الجهة</div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => setType("broker")}
-              className={`flex items-start gap-4 rounded-3xl border-2 p-5 text-right transition-all ${
-                type === "broker" 
-                  ? "border-slate-900 bg-white" 
-                  : "border-slate-100 bg-slate-50 hover:bg-white"
-              }`}
-            >
-              <div className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
-                type === "broker" ? "border-slate-900 bg-slate-900" : "border-slate-200 bg-white"
-              }`}>
-                {type === "broker" && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
-              </div>
-              <span className="space-y-1">
-                <span className="block text-[15px] font-black text-slate-900">وسيط عقاري</span>
-                <span className="block text-[12px] font-medium text-slate-500">إدارة العملاء والعروض.</span>
-              </span>
-            </button>
+          <div className="text-xs font-black uppercase tracking-widest text-foreground">دولة التشغيل</div>
+          <div
+            role="radiogroup"
+            aria-label="دولة التشغيل"
+            className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-3"
+          >
+            {GCC_COUNTRY_OPTIONS.map((country) => {
+              const isSelected = countryCode === country.code;
+              return (
+                <motion.button
+                  key={country.code}
+                  type="button"
+                  role="radio"
+                  data-testid={`onboarding-country-${country.code}`}
+                  aria-checked={isSelected}
+                  onClick={() => setCountryCode(country.code as GccCountryCode)}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.985 }}
+                  className={`flex min-h-[76px] items-start gap-3 rounded-[24px] border-2 p-3.5 text-right transition-all ${
+                    isSelected
+                      ? "border-foreground bg-card shadow-sm"
+                      : "border-border bg-muted/30 hover:bg-background"
+                  }`}
+                >
+                  <motion.div
+                    animate={{
+                      borderColor: isSelected ? "var(--foreground)" : "var(--border)",
+                      backgroundColor: isSelected ? "var(--foreground)" : "var(--background)",
+                    }}
+                    className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
+                    transition={{ type: "spring", stiffness: 320, damping: 26 }}
+                  >
+                    {isSelected ? (
+                      <motion.div
+                        className="h-1.5 w-1.5 rounded-full bg-white"
+                        initial={{ scale: 0.2, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.18 }}
+                      />
+                    ) : null}
+                  </motion.div>
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="block text-[14px] font-black leading-tight text-foreground">
+                      {country.label}
+                    </span>
+                    <span className="block text-[11px] font-bold tracking-[0.18em] text-muted-foreground">
+                      {country.code}
+                    </span>
+                  </span>
+                </motion.button>
+              );
+            })}
+          </div>
+          <p className="text-[12px] font-medium text-muted-foreground">
+            نحدد الدولة من البداية حتى نفعّل متطلبات التوثيق ومسارات السوق المناسبة داخل دول الخليج.
+          </p>
+        </div>
 
-            <button
+        <div className="space-y-3 text-right">
+          <div className="text-xs font-black uppercase tracking-widest text-foreground">نوع الجهة</div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <motion.button
               type="button"
-              onClick={() => setType("red")}
-              className={`flex items-start gap-4 rounded-3xl border-2 p-5 text-right transition-all ${
-                type === "red" 
-                  ? "border-slate-900 bg-white" 
-                  : "border-slate-100 bg-slate-50 hover:bg-white"
+              data-testid="onboarding-org-type-broker"
+              onClick={() => setType("broker")}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.985 }}
+              className={`flex items-start gap-4 rounded-[24px] border-2 p-4 text-right transition-all ${
+                type === "broker"
+                  ? "border-foreground bg-card"
+                  : "border-border bg-muted/30 hover:bg-background"
               }`}
             >
-              <div className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
-                type === "red" ? "border-slate-900 bg-slate-900" : "border-slate-200 bg-white"
-              }`}>
-                {type === "red" && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
-              </div>
+              <motion.div
+                animate={{
+                  borderColor: type === "broker" ? "var(--foreground)" : "var(--border)",
+                  backgroundColor: type === "broker" ? "var(--foreground)" : "var(--background)",
+                }}
+                className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
+                transition={{ type: "spring", stiffness: 320, damping: 26 }}
+              >
+                {type === "broker" ? <div className="h-1.5 w-1.5 rounded-full bg-white" /> : null}
+              </motion.div>
               <span className="space-y-1">
-                <span className="block text-[15px] font-black text-slate-900">مطور عقاري</span>
-                <span className="block text-[12px] font-medium text-slate-500">إدارة المشاريع والعروض.</span>
+                <span className="block text-[15px] font-black text-foreground">وسيط عقاري</span>
+                <span className="block text-[12px] font-medium text-muted-foreground">إدارة العملاء والعروض.</span>
               </span>
-            </button>
+            </motion.button>
+
+            <motion.button
+              type="button"
+              data-testid="onboarding-org-type-developer"
+              onClick={() => setType("red")}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.985 }}
+              className={`flex items-start gap-4 rounded-[24px] border-2 p-4 text-right transition-all ${
+                type === "red"
+                  ? "border-foreground bg-card"
+                  : "border-border bg-muted/30 hover:bg-background"
+              }`}
+            >
+              <motion.div
+                animate={{
+                  borderColor: type === "red" ? "var(--foreground)" : "var(--border)",
+                  backgroundColor: type === "red" ? "var(--foreground)" : "var(--background)",
+                }}
+                className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
+                transition={{ type: "spring", stiffness: 320, damping: 26 }}
+              >
+                {type === "red" ? <div className="h-1.5 w-1.5 rounded-full bg-white" /> : null}
+              </motion.div>
+              <span className="space-y-1">
+                <span className="block text-[15px] font-black text-foreground">مطور عقاري</span>
+                <span className="block text-[12px] font-medium text-muted-foreground">إدارة المشاريع والعروض.</span>
+              </span>
+            </motion.button>
           </div>
         </div>
-      </div>
+
+        <MotionEffect>
+          <div className="overflow-hidden rounded-[24px] border border-border bg-muted/20 p-4">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-card px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-foreground shadow-sm">
+              <Sparkles className="h-3.5 w-3.5" />
+              Azaz Tips
+            </div>
+            <OnboardingContentTransition activeKey={`${countryCode}-${type}`} direction={1}>
+              <div className="space-y-2 text-right">
+                <div className="text-[15px] font-black tracking-tight text-foreground">
+                  {selectedCountry.label}
+                </div>
+                <p className="text-[13px] font-medium leading-relaxed text-muted-foreground">
+                  {typeTip}
+                </p>
+                <p className="text-[12px] font-medium leading-relaxed text-muted-foreground">
+                  سنبني لك مسار التوثيق الافتراضي ومتطلبات الانطلاق الأولية وفق سوق {selectedCountry.label}.
+                </p>
+              </div>
+            </OnboardingContentTransition>
+          </div>
+        </MotionEffect>
+      </MotionEffects>
 
       {error ? (
         <div className="rounded-2xl bg-red-50 p-4 text-[13px] font-bold text-red-700">
@@ -179,22 +330,26 @@ export default function OrganizationDetailsStep({
         </div>
       ) : null}
 
-      <div className="flex items-center justify-between pt-6">
-        <button
-          type="button"
-          onClick={onBack}
-          className="rounded-full bg-slate-100 px-8 py-3.5 text-xs font-black uppercase tracking-widest text-slate-900 transition hover:bg-slate-200"
-        >
-          رجوع
-        </button>
-        <button
-          type="submit"
-          disabled={pending || isSubmitting}
-          className="rounded-full bg-slate-900 px-10 py-3.5 text-xs font-black uppercase tracking-widest text-white transition hover:bg-slate-800 disabled:opacity-50"
-        >
-          {isSubmitting ? "جارٍ الحفظ..." : "متابعة"}
-        </button>
-      </div>
+      <OnboardingActionDock>
+        <div className="flex items-center justify-between gap-4">
+          <button
+            type="button"
+            data-testid="onboarding-details-back"
+            onClick={onBack}
+            className="rounded-full bg-muted px-8 py-3.5 text-xs font-black uppercase tracking-widest text-foreground transition hover:bg-muted/80"
+          >
+            رجوع
+          </button>
+          <button
+            type="submit"
+            data-testid="onboarding-details-submit"
+            disabled={pending || isSubmitting}
+            className="rounded-full bg-foreground px-10 py-3.5 text-xs font-black uppercase tracking-widest text-background transition hover:bg-foreground/90 disabled:opacity-50"
+          >
+            {isSubmitting ? "جارٍ الحفظ..." : "متابعة"}
+          </button>
+        </div>
+      </OnboardingActionDock>
     </form>
   );
 }

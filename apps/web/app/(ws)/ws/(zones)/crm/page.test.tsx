@@ -3,12 +3,16 @@ import { describe, expect, it, vi } from "vitest";
 import { WebLocaleProvider } from "@/app/_components/WebLocaleProvider";
 import { getWebDictionary } from "@/lib/i18n";
 
+const { requireWorkspaceData } = vi.hoisted(() => ({
+  requireWorkspaceData: vi.fn(),
+}));
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
 
 vi.mock("../../_lib/workspaceData", () => ({
-  requireWorkspaceData: vi.fn(async () => ({ audience: "broker" })),
+  requireWorkspaceData,
 }));
 
 const listDeals = vi.fn(async () => [
@@ -46,6 +50,7 @@ import WorkspaceCrmRoute from "./page";
 
 describe("/ws/crm page", () => {
   it("renders the real CRM pipeline projection", async () => {
+    requireWorkspaceData.mockResolvedValue({ audience: "broker", ownerContext: { ownerType: "broker", ownerId: "broker-1" } });
     const element = await WorkspaceCrmRoute();
     const markup = renderToStaticMarkup(
       <WebLocaleProvider locale="ar" dictionary={getWebDictionary("ar")}>
@@ -58,5 +63,19 @@ describe("/ws/crm page", () => {
     expect(markup).toContain("مالقا ريزيدنس");
     expect(listDeals).toHaveBeenCalled();
     expect(markup).not.toContain("<select");
+  });
+
+  it("still renders when ownerContext is missing and the workspace audience remains broker", async () => {
+    requireWorkspaceData.mockResolvedValue({ audience: "broker", ownerContext: null });
+
+    const element = await WorkspaceCrmRoute();
+    const markup = renderToStaticMarkup(
+      <WebLocaleProvider locale="ar" dictionary={getWebDictionary("ar")}>
+        {element}
+      </WebLocaleProvider>,
+    );
+
+    expect(markup).toContain("الصفقات");
+    expect(listDeals).toHaveBeenCalled();
   });
 });

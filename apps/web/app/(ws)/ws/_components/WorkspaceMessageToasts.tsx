@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useConvexAuth, useQuery } from "convex/react";
 import { BellDot, MessageSquareMore, X } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { api } from "@/lib/convexApi";
 import type { NotificationSummary } from "@/server/contracts/notifications";
 import NotificationOpenLink from "./NotificationOpenLink";
 
@@ -79,14 +77,14 @@ export function WorkspaceMessageToastCard({
   );
 }
 
-export default function WorkspaceMessageToasts() {
+export default function WorkspaceMessageToasts({
+  initialNotifications = [],
+}: {
+  initialNotifications?: NotificationSummary[];
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { isAuthenticated, isLoading } = useConvexAuth();
-  const notifications = useQuery(
-    api.shared_logic.notifications.listWorkspaceNotifications,
-    !isLoading && isAuthenticated ? { limit: 8 } : "skip",
-  );
+  const notifications = initialNotifications;
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const hasSeededInitialNotificationsRef = useRef(false);
   const seededIdsRef = useRef<Set<string>>(new Set());
@@ -108,7 +106,7 @@ export default function WorkspaceMessageToasts() {
   }, []);
 
   useEffect(() => {
-    if (!notifications) {
+    if (notifications.length === 0) {
       return;
     }
 

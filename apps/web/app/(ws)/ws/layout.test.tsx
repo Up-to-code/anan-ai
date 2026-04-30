@@ -58,4 +58,29 @@ describe("workspace root layout", () => {
     expect(markup).toContain("workspace-root-chrome");
     expect(markup).toContain("data-slot=\"workspace-shell\"");
   });
+
+  it("keeps the shared workspace shell mounted when ownerContext is stale but the workspace still resolves", async () => {
+    requireWorkspaceData.mockResolvedValue({
+      ownerContext: null,
+      primaryOrganization: { id: "org-1", type: "broker", name: "Bridge Org", slug: "bridge-org", status: "active", isVerified: true },
+      visibleZoneKeys: ["overview", "projects", "crm", "inbox", "offers", "settings"],
+    });
+    getLayoutSidebarData.mockResolvedValue({
+      user: { name: "Ahmed", email: "ahmed@example.com" },
+      organizations: [{ id: "org-1", type: "broker", name: "Bridge Org", slug: "bridge-org", status: "active", isVerified: true }],
+      recentAssistantThreads: [],
+      allAssistantThreads: [],
+      signalCounts: { notificationCount: 1, inboxCount: 2 },
+    });
+    getComplianceRulesetForCurrentOrg.mockResolvedValue(null);
+    getWorkspaceLocale.mockResolvedValue("ar");
+
+    const element = await WorkspaceRootLayout({
+      children: <div>Workspace</div>,
+    });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("Workspace");
+    expect(markup).toContain("data-slot=\"workspace-shell\"");
+  });
 });

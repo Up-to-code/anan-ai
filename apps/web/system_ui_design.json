@@ -498,6 +498,6 @@
       "apps/web/app/(ws)/ws/_components/Chat/WorkspaceAssistantBadges.tsx",
       "apps/web/app/(ws)/ws/_components/WorkspaceBrand/BrandVectorPanel.tsx"
     ],
-    "related_reference": "docs/handbook/llm/anan-system-ui-design.json"
+    "related_reference": "apps/web/system_ui_design.json"
   }
 }

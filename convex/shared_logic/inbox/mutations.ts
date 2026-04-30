@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { mutation } from "../../_generated/server";
 import type { Id } from "../../_generated/dataModel";
-import { requireRole } from "../../_core/security/accessPolicy";
+import { requireEntitlements } from "../../_core/security/accessPolicy";
 import { createWorkspaceNotification } from "../notifications";
 import { enforceHttpRateLimit } from "../lib/middleware/rateLimit";
 import { getConversationParticipant, resolveConversationInternal } from "./conversations";
@@ -21,7 +21,7 @@ export const resolveDirectConversation = mutation({
     targetUserId: v.string(),
   },
   handler: async (ctx, { targetUserId }) => {
-    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    const access = await requireEntitlements(ctx, ["workspace:user", "workspace:broker", "workspace:developer"]);
     const conversation = await resolveConversationInternal(ctx, access.authUserId, targetUserId);
     return conversation._id;
   },
@@ -223,7 +223,7 @@ export const sendConversationMessage = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, { conversationId, targetUserId, body, clientRequestId, type, metadata }) => {
-    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    const access = await requireEntitlements(ctx, ["workspace:user", "workspace:broker", "workspace:developer"]);
     await enforceHttpRateLimit(ctx, { key: `inbox:${access.authUserId}` });
     const trimmedBody = assertNonEmptyMessage(body);
     const { conversation, membership, recipientMembership } = await resolveSendParticipants({
@@ -256,7 +256,7 @@ export const bootstrapOfferConversation = mutation({
     offerId: v.string(),
   },
   handler: async (ctx, { offerId }) => {
-    const access = await requireRole(ctx, ["broker", "developer"]);
+    const access = await requireEntitlements(ctx, ["workspace:broker", "workspace:developer"]);
     const offer = await getOfferLiveStateService(ctx, { offerId });
     if (!offer) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Offer not found" });
@@ -293,7 +293,7 @@ export const markConversationRead = mutation({
     conversationId: v.id("inboxConversations"),
   },
   handler: async (ctx, { conversationId }) => {
-    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    const access = await requireEntitlements(ctx, ["workspace:user", "workspace:broker", "workspace:developer"]);
     const membership = await getConversationParticipant(ctx, conversationId, access.authUserId);
     if (!membership) {
       throw new ConvexError({ code: "FORBIDDEN", message: "Conversation not found" });
@@ -312,7 +312,7 @@ export const setConversationArchived = mutation({
     archived: v.boolean(),
   },
   handler: async (ctx, { conversationId, archived }) => {
-    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    const access = await requireEntitlements(ctx, ["workspace:user", "workspace:broker", "workspace:developer"]);
     const membership = await getConversationParticipant(ctx, conversationId, access.authUserId);
     if (!membership) {
       throw new ConvexError({ code: "FORBIDDEN", message: "Conversation not found" });

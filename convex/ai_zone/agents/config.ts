@@ -3,41 +3,27 @@
  */
 import type { OrchestratorId } from "./types";
 
-const DEFAULT_OPENROUTER_MODEL = "google/gemini-2.5-flash";
 const DEFAULT_OPENROUTER_WORKSPACE_MODEL = "google/gemini-2.5-flash";
 
 export function getAgentLLMConfig(
-  orchestratorId: OrchestratorId = "anan",
+  orchestratorId: OrchestratorId = "anan_workspace",
 ): { mode: "openrouter"; model: string; apiKey: string } {
-  if (orchestratorId === "anan_workspace") {
-    const apiKey = process.env.OPENROUTER_WORKSPACE_API_KEY?.trim();
-    if (!apiKey) {
-      throw new Error(
-        "OPENROUTER_WORKSPACE_API_KEY must be set in Convex Dashboard (Settings → Environment Variables)",
-      );
-    }
-    return {
-      mode: "openrouter",
-      model: process.env.OPENROUTER_WORKSPACE_MODEL?.trim() || DEFAULT_OPENROUTER_WORKSPACE_MODEL,
-      apiKey,
-    };
-  }
-
-  const apiKey = process.env.OPENROUTER_API_KEY?.trim();
+  const apiKey = process.env.OPENROUTER_WORKSPACE_API_KEY?.trim();
   if (!apiKey) {
     throw new Error(
-      "OPENROUTER_API_KEY must be set in Convex Dashboard (Settings → Environment Variables)",
+      "OPENROUTER_WORKSPACE_API_KEY must be set in Convex Dashboard (Settings -> Environment Variables)",
     );
   }
+  void orchestratorId;
   return {
     mode: "openrouter",
-    model: process.env.OPENROUTER_MODEL?.trim() || DEFAULT_OPENROUTER_MODEL,
+    model: process.env.OPENROUTER_WORKSPACE_MODEL?.trim() || DEFAULT_OPENROUTER_WORKSPACE_MODEL,
     apiKey,
   };
 }
 
 export function getAgentLLMConfigSafe(
-  orchestratorId: OrchestratorId = "anan",
+  orchestratorId: OrchestratorId = "anan_workspace",
 ): { mode: string; model: string } | null {
   try {
     const config = getAgentLLMConfig(orchestratorId);

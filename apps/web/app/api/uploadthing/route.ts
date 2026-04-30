@@ -2,7 +2,7 @@ import { createRouteHandler } from "uploadthing/next";
 import { uploadRouter } from "./core";
 
 const missingUploadthingTokenMessage =
-  "Missing UPLOADTHING_TOKEN. Set it in apps/web/.env.local (dev) and your web deployment environment.";
+  "Missing UPLOADTHING_TOKEN in the web app environment. Set it in apps/web/.env.local for localhost and restart pnpm dev:web; Convex Cloud env vars are separate.";
 const uploadthingToken = process.env.UPLOADTHING_TOKEN?.trim();
 const uploadthingHandlers = uploadthingToken
   ? createRouteHandler({

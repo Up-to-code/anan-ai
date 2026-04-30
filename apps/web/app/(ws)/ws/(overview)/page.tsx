@@ -4,6 +4,7 @@ import { requireWorkspaceData } from "../_lib/workspaceData";
 import { getAnanProThread } from "@/server/domains/workspace/ananPro/service";
 import { listIncomingOrganizationInvitesForCurrentUser } from "@/server/domains/auth/organizations/service";
 import { normalizeDomainError } from "@/server/contracts/errors";
+import type { GccCountryCode } from "@/server/contracts/gccCountries";
 import { getWorkspaceLocaleContext } from "../_lib/workspaceLocale";
 import type { AssistantInitialRouteState } from "./_components/WorkspaceDashboard/useWorkspaceAssistant";
 
@@ -72,7 +73,11 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
         initialStep={onboarding === "verification" ? 3 : 1}
         initialOrganization={
           workspace.primaryOrganization
-            ? { id: workspace.primaryOrganization.id, type: workspace.primaryOrganization.type }
+            ? {
+                id: workspace.primaryOrganization.id,
+                type: workspace.primaryOrganization.type,
+                countryCode: workspace.primaryOrganization.countryCode as GccCountryCode | undefined,
+              }
             : null
         }
       />

@@ -20,6 +20,8 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition, type ChangeEvent } from "react";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import type { UnitCreateActionResult, UnitCreateFormData } from "@/app/(ws)/ws/(zones)/projects/shared/forms/unitFormSubmission";
+import { LocationPicker } from "@anan/location-map/react";
+import type { LocationValue } from "@anan/location-map";
 import ZonePageIntro from "../../ZoneShell/ZonePageIntro";
 import { FieldLabel, FileRow, ReviewRow, SectionCard, SelectInput, TextArea, TextInput, UploadTile } from "../AgPropertyForm/controls";
 import { cn } from "@/lib/utils";
@@ -34,6 +36,7 @@ import {
 } from "../AgCreationFlow";
 
 type UnitCreateFormProps = {
+  mode?: "standalone" | "project_child";
   initialData?: Partial<UnitCreateFormData>;
   title: string;
   description: string;
@@ -72,6 +75,7 @@ function createInitialUnitData(initialData?: Partial<UnitCreateFormData>): UnitC
   return {
     name: initialData?.name ?? "",
     location: initialData?.location ?? "",
+    locationDetails: initialData?.locationDetails ?? null,
     unitType: initialData?.unitType ?? "apartment",
     listingType: initialData?.listingType ?? "sale",
     price: initialData?.price ?? "",
@@ -121,6 +125,7 @@ function StepIntro({
  */
 export default function AgUnitCreateForm({
   initialData,
+  mode = "standalone",
   title,
   description,
   submitLabel,
@@ -131,6 +136,7 @@ export default function AgUnitCreateForm({
   const { dictionary, isRtl } = useWebLocale();
   const router = useRouter();
   const copy = dictionary.unitCreate;
+  const eyebrow = mode === "project_child" ? "وحدة داخل المشروع" : copy.eyebrow;
   const [pending, startTransition] = useTransition();
   const [activeStep, setActiveStep] = useState(1);
   const [direction, setDirection] = useState(1);
@@ -150,6 +156,20 @@ export default function AgUnitCreateForm({
       return next;
     });
     setFormData((current) => ({ ...current, [field]: value }));
+  };
+
+  const setLocationValue = (location: LocationValue) => {
+    setFeedback(null);
+    setFieldErrors((current) => {
+      const next = { ...current };
+      delete next.location;
+      return next;
+    });
+    setFormData((current) => ({
+      ...current,
+      location: location.label,
+      locationDetails: location,
+    }));
   };
 
   const handleNext = () => {
@@ -222,7 +242,7 @@ export default function AgUnitCreateForm({
 
   return (
     <div className="flex min-h-full w-full flex-col pb-16" dir={isRtl ? "rtl" : "ltr"}>
-      <ZonePageIntro eyebrow={copy.eyebrow} title={title} description={description} />
+      <ZonePageIntro eyebrow={eyebrow} title={title} description={description} />
 
       <div className="mx-auto mt-4 w-full max-w-3xl">
         <CreationFlowProgress steps={UNIT_STEPS} currentStepIndex={activeStep - 1} onStepChange={(index) => setActiveStep(index + 1)} />
@@ -269,16 +289,31 @@ export default function AgUnitCreateForm({
                           placeholder={copy.namePlaceholder}
                           icon={<Building2 className="h-4 w-4" />}
                           error={fieldErrors.name}
+                          testId="unit-name-input"
                         />
                       </div>
                       <div className="grid gap-2">
                         <FieldLabel>{copy.locationLabel}</FieldLabel>
                         <TextInput
                           value={formData.location}
-                          onChange={(value) => setField("location", value)}
+                          onChange={(value) => {
+                            setField("location", value);
+                            setFormData((current) => ({
+                              ...current,
+                              locationDetails: current.locationDetails ? { ...current.locationDetails, label: value } : null,
+                            }));
+                          }}
                           placeholder={copy.locationPlaceholder}
                           icon={<MapPin className="h-4 w-4" />}
                           error={fieldErrors.location}
+                          testId="unit-location-input"
+                        />
+                        <LocationPicker
+                          value={formData.locationDetails}
+                          onChange={setLocationValue}
+                          label="اختر موقع الوحدة على الخريطة"
+                          placeholder={copy.locationPlaceholder}
+                          fieldError={fieldErrors.location}
                         />
                       </div>
                       <div className="grid gap-2">
@@ -326,6 +361,7 @@ export default function AgUnitCreateForm({
                           onChange={(value) => setField("description", value)}
                           placeholder={copy.descriptionPlaceholder}
                           error={fieldErrors.description}
+                          testId="unit-description-input"
                         />
                       </div>
                     </div>
@@ -352,11 +388,11 @@ export default function AgUnitCreateForm({
                     <div className="grid gap-5 md:grid-cols-2">
                       <div className="grid gap-2">
                         <FieldLabel>{copy.areaLabel}</FieldLabel>
-                        <TextInput value={formData.area} onChange={(value) => setField("area", value)} placeholder={copy.areaPlaceholder} icon={<Ruler className="h-4 w-4" />} error={fieldErrors.area} />
+                        <TextInput value={formData.area} onChange={(value) => setField("area", value)} placeholder={copy.areaPlaceholder} icon={<Ruler className="h-4 w-4" />} error={fieldErrors.area} testId="unit-area-input" />
                       </div>
                       <div className="grid gap-2">
                         <FieldLabel>{copy.roomsLabel}</FieldLabel>
-                        <TextInput value={formData.rooms} onChange={(value) => setField("rooms", value)} placeholder={copy.roomsPlaceholder} icon={<BedDouble className="h-4 w-4" />} error={fieldErrors.rooms} />
+                        <TextInput value={formData.rooms} onChange={(value) => setField("rooms", value)} placeholder={copy.roomsPlaceholder} icon={<BedDouble className="h-4 w-4" />} error={fieldErrors.rooms} testId="unit-rooms-input" />
                         <div className="flex flex-wrap justify-end gap-2">
                           {["1", "2", "3", "4", "5"].map((value) => (
                             <button
@@ -374,7 +410,7 @@ export default function AgUnitCreateForm({
                       </div>
                       <div className="grid gap-2">
                         <FieldLabel>{copy.bathsLabel}</FieldLabel>
-                        <TextInput value={formData.baths} onChange={(value) => setField("baths", value)} placeholder={copy.bathsPlaceholder} icon={<Bath className="h-4 w-4" />} error={fieldErrors.baths} />
+                        <TextInput value={formData.baths} onChange={(value) => setField("baths", value)} placeholder={copy.bathsPlaceholder} icon={<Bath className="h-4 w-4" />} error={fieldErrors.baths} testId="unit-baths-input" />
                         <div className="flex flex-wrap justify-end gap-2">
                           {["1", "2", "3", "4"].map((value) => (
                             <button
@@ -445,7 +481,7 @@ export default function AgUnitCreateForm({
                       <div className="grid gap-5 md:grid-cols-2">
                         <div className="grid gap-2">
                           <FieldLabel>{copy.priceLabel}</FieldLabel>
-                          <TextInput value={formData.price} onChange={(value) => setField("price", value)} placeholder={copy.pricePlaceholder} error={fieldErrors.price} />
+                          <TextInput value={formData.price} onChange={(value) => setField("price", value)} placeholder={copy.pricePlaceholder} error={fieldErrors.price} testId="unit-price-input" />
                         </div>
                         <div className="grid gap-2">
                           <FieldLabel>{copy.paymentPlanLabel}</FieldLabel>

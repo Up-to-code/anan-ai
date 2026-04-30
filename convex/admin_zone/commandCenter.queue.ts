@@ -1,6 +1,6 @@
 import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 import { normalizeTimestamp } from "./commandCenter.helpers";
 import { getWindowBoundaries } from "./commandCenter.shared";
 
@@ -15,7 +15,7 @@ export const queueHealthAnalytics = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { range = "30d", limit = 10 }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
 
     const [orders, verificationRequests, searchLogs, notifications] = await Promise.all([
       ctx.db.query("orders").order("desc").take(500),

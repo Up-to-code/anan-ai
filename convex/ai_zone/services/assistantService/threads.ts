@@ -13,18 +13,19 @@ import type {
   AssistantMessageRecord,
   AssistantOwner,
   AssistantThreadRecord,
+  PersistedAssistantKind,
   ThreadScope,
 } from "./types";
 import { WORKSPACE_KINDS } from "./types";
-import { isWorkspaceKind, normalizeOwner } from "./utils";
+import { isWorkspaceKind, normalizeAssistantKind, normalizeOwner } from "./utils";
 
 function matchesAssistantKind(
-  thread: { assistantKind?: AssistantKind },
+  thread: { assistantKind?: PersistedAssistantKind },
   assistantKind?: AssistantKind,
 ): boolean {
   if (!assistantKind) return true;
 
-  const kind = (thread.assistantKind ?? "default") as AssistantKind;
+  const kind = normalizeAssistantKind(thread.assistantKind) ?? "default";
   if (assistantKind === "anan_workspace") {
     return WORKSPACE_KINDS.includes(kind);
   }
@@ -80,7 +81,7 @@ function mapLegacyThread(
     ownerREDId: thread.ownerREDId,
     mode: thread.mode,
     orchestratorName: thread.orchestratorName,
-    assistantKind: thread.assistantKind,
+    assistantKind: normalizeAssistantKind(thread.assistantKind),
     title: thread.title,
     legacyThreadId: thread._id,
     createdAt: thread.createdAt,

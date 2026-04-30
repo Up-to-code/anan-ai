@@ -1,28 +1,18 @@
 import type { Metadata } from "next";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { PageHero, Section, SectionLabel } from "@/app/(public)/public";
-import { submitContactInquiry } from "./actions";
 
 export const metadata: Metadata = {
   title: "اتصل بنا | عنان",
   description: "تواصل مع فريق عنان لمعرفة المزيد عن الشركة ومساحة العمل المخصصة للمطورين والوسطاء.",
 };
 
-type ContactPageProps = {
-  searchParams: Promise<{
-    submitted?: string;
-    error?: string;
-  }>;
-};
-
 /**
- * WHY:   Partners need a clear, fast way to reach the Anan team from public routes.
- * WHAT:  Renders contact details plus a server-submitted inquiry form.
- * HOW:   Uses a server action for validation/persistence and shows a minimal success/error banner via query params.
+ * WHY:   Users need a clear, fast way to reach the Anan team from public routes.
+ * WHAT:  Renders contact details without keeping a separate public backend ingestion surface.
+ * HOW:   Keeps public web static and routes real operational records through workspace/admin systems.
  */
-export default async function ContactPage({ searchParams }: ContactPageProps) {
-  const { submitted, error } = await searchParams;
-
+export default function ContactPage() {
   return (
     <main>
       <Section bg="slate" className="pt-40">
@@ -88,55 +78,16 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
           </div>
 
           <div className="rounded-lg border-2 border-slate-100 bg-slate-50 p-12 dark:border-slate-800 dark:bg-slate-950">
-            <h2 className="mb-8 text-2xl font-black uppercase text-slate-900 dark:text-slate-100">أرسل استفسارك</h2>
-            {submitted === "1" ? (
-              <div className="mb-6 border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200">
-                تم استلام طلبك بنجاح. سيتواصل الفريق معك قريباً.
-              </div>
-            ) : null}
-            {error === "1" ? (
-              <div className="mb-6 border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200">
-                تعذر إرسال الطلب الآن. تحقق من البيانات وحاول مرة أخرى.
-              </div>
-            ) : null}
-
-            <form className="space-y-6" action={submitContactInquiry}>
-              <div className="space-y-2">
-                  <label className="text-xs font-black uppercase text-slate-500 dark:text-slate-400">الاسم والجهة المؤسسية</label>
-                <input
-                  type="text"
-                  name="name"
-                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-4 py-3 font-bold text-slate-900 transition-colors focus:border-blue-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-400"
-                  placeholder="اسمك أو اسم الجهة"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase text-slate-500 dark:text-slate-400">البريد الإلكتروني</label>
-                <input
-                  type="email"
-                  name="email"
-                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-4 py-3 font-bold text-slate-900 transition-colors focus:border-blue-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-400"
-                  placeholder="name@company.sa"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                  <label className="text-xs font-black uppercase text-slate-500 dark:text-slate-400">الرسالة</label>
-                <textarea
-                  name="message"
-                  className="min-h-[160px] w-full resize-none rounded-lg border-2 border-slate-200 bg-white px-4 py-3 font-bold text-slate-900 transition-colors focus:border-blue-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-400"
-                  placeholder="كيف يمكننا مساعدتك؟"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 py-4 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-blue-700 active:scale-[0.98]"
-              >
-                <span className="flex items-center gap-3">إرسال الرسالة</span>
-              </button>
-            </form>
+            <h2 className="mb-6 text-2xl font-black uppercase text-slate-900 dark:text-slate-100">ابدأ المحادثة</h2>
+            <p className="text-lg font-bold leading-8 text-slate-500 dark:text-slate-300">
+              استخدم البريد الإلكتروني للتواصل المباشر مع الفريق. السجلات التشغيلية والطلبات الداخلية تتم إدارتها من مساحة العمل والإدارة فقط.
+            </p>
+            <a
+              href="mailto:info@anan.sa"
+              className="mt-10 inline-flex w-full items-center justify-center rounded-lg bg-blue-600 py-4 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-blue-700 active:scale-[0.98]"
+            >
+              مراسلة الفريق
+            </a>
           </div>
         </div>
       </Section>

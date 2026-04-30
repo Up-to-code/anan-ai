@@ -31,6 +31,7 @@ describe("admin protected layout", () => {
     getAuthenticatedSession.mockResolvedValue({
       token: null,
       role: null,
+      isAdmin: false,
       user: null,
     });
 
@@ -44,7 +45,8 @@ describe("admin protected layout", () => {
   it("renders the shell for admin users", async () => {
     getAuthenticatedSession.mockResolvedValue({
       token: "token-1",
-      role: "admin",
+      role: "user",
+      isAdmin: true,
       user: { id: "u1", isActive: true },
     });
 

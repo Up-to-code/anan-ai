@@ -1,3 +1,4 @@
+import { createRepositoryRefs } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 export type CrmApiRefs = {
@@ -20,4 +21,4 @@ export type CrmApiRefs = {
   addDealDocument: unknown;
 };
 
-export const crmApi = apiUnsafe["shared_logic/crm/repositories"] as CrmApiRefs;
+export const crmApi = createRepositoryRefs<CrmApiRefs>(apiUnsafe, "shared_logic/crm/repositories");

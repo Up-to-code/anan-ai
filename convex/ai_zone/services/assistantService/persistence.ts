@@ -1,6 +1,5 @@
 import type { Id } from "../../../_generated/dataModel";
 import type { MutationCtx } from "../../../_generated/server";
-import { registerConversationAnalysisDraft } from "../../conversationAnalyzer/registration";
 import {
   createCanonicalThread,
   getAssistantThreadStateByThreadId,
@@ -313,15 +312,6 @@ export async function saveConversationStep(
     userMessage?.messageId,
   );
   await updateThreadMetadata(ctx, thread, args, now);
-  if (thread.legacyThreadId) {
-    await registerConversationAnalysisDraft(ctx, {
-      threadId: thread.legacyThreadId,
-      userId: args.userId,
-      ownerType: args.ownerType,
-      assistantKind: args.assistantKind,
-      timestampMs: now,
-    });
-  }
 
   return {
     threadId: thread._id,

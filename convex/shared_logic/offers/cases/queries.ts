@@ -127,7 +127,7 @@ async function buildCaseSummary(
   const participantSummaries = await Promise.all(participants.map((participant) => buildParticipantSummary(ctx, participant)));
   const ownerParticipant = participants.find((participant) => participant.role === "inventory_owner") ?? participants[0] ?? null;
   const owner = participantSummaries.find((participant) => participant.role === "inventory_owner") ?? participantSummaries[0] ?? null;
-  const targeted = participants.find((participant) => participant.role === "execution_partner") ?? null;
+  const targeted = participants.find((participant) => participant.role === "execution_provider") ?? null;
   const isVisible =
     !access ||
     isOpenlyVisible(offerCase, offerPackage) ||
@@ -210,17 +210,17 @@ function buildAllowedActions(args: {
   const matchingParticipants = args.participants.filter((participant) => participantMatchesAccess(participant, args.access));
   const isInventoryOwner = matchingParticipants.some((participant) => participant.role === "inventory_owner");
   const isClientOwner = matchingParticipants.some((participant) => participant.role === "client_owner");
-  const isExecutionPartner = matchingParticipants.some((participant) => participant.role === "execution_partner");
-  const executionParticipant = matchingParticipants.find((participant) => participant.role === "execution_partner");
+  const isExecutionProvider = matchingParticipants.some((participant) => participant.role === "execution_provider");
+  const executionParticipant = matchingParticipants.find((participant) => participant.role === "execution_provider");
   return {
     isInventoryOwner,
     isClientOwner,
-    isExecutionPartner,
+    isExecutionProvider,
     canEditDraft: isInventoryOwner && args.offerCase.stage === "draft",
     canPublish: isInventoryOwner && args.offerCase.stage === "draft",
     canArchive: (isInventoryOwner || isClientOwner) && !isClosedStage(args.offerCase.stage),
     canEngage: args.offerCase.stage === "open" && !isInventoryOwner,
-    canRespond: isExecutionPartner && args.offerCase.stage === "targeted" && executionParticipant?.status !== "rejected",
+    canRespond: isExecutionProvider && args.offerCase.stage === "targeted" && executionParticipant?.status !== "rejected",
     canMarkAgreed: (isInventoryOwner || isClientOwner) && args.offerCase.stage === "engaged",
     canCloseWon: (isInventoryOwner || isClientOwner) && args.offerCase.stage === "agreed",
     canCloseLost: (isInventoryOwner || isClientOwner) && args.offerCase.stage === "agreed",
@@ -248,7 +248,7 @@ async function buildCaseDetail(
     propertyAddress: summary.property?.address ?? "غير محدد",
     propertyImageUrl: summary.property?.imageUrl ?? null,
     isOwner: allowedActions.isInventoryOwner,
-    isRecipient: allowedActions.isExecutionPartner,
+    isRecipient: allowedActions.isExecutionProvider,
     canEditDraft: allowedActions.canEditDraft,
     canPublish: allowedActions.canPublish,
     canArchive: allowedActions.canArchive,
@@ -317,9 +317,9 @@ function queueSelector(args: {
         (args.access.brokerId ? participant.organizationId === String(args.access.brokerId) : false) ||
         (args.access.REDId ? participant.organizationId === String(args.access.REDId) : false)),
   );
-  const isExecutionPartner = summary.participants.some(
+  const isExecutionProvider = summary.participants.some(
     (participant) =>
-      participant.role === "execution_partner" &&
+      participant.role === "execution_provider" &&
       (participant.authUserId === args.access.authUserId ||
         (args.access.brokerId ? participant.organizationId === String(args.access.brokerId) : false) ||
         (args.access.REDId ? participant.organizationId === String(args.access.REDId) : false)),
@@ -336,7 +336,7 @@ function queueSelector(args: {
   }
 
   if (summary.stage === "engaged" || summary.stage === "agreed") return "active_collaborations";
-  if (isExecutionPartner && (summary.type === "private_offer" || summary.type === "collaboration_case")) {
+  if (isExecutionProvider && (summary.type === "private_offer" || summary.type === "collaboration_case")) {
     return "incoming_broker_requests";
   }
   if (isOwner && summary.type === "open_offer") return "open_inventory";
@@ -371,7 +371,7 @@ export async function getWorkspaceOfferQueuesService(ctx: QueryCtx) {
   );
   const received = summaries.filter((summary) =>
     summary.participants.some((participant) =>
-      participant.role === "execution_partner" &&
+      participant.role === "execution_provider" &&
       (participant.authUserId === access.authUserId ||
         (access.brokerId ? participant.organizationId === String(access.brokerId) : false) ||
         (access.REDId ? participant.organizationId === String(access.REDId) : false)),

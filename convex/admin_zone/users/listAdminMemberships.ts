@@ -1,5 +1,5 @@
 import { paginationOptsValidator } from "convex/server";
-import { requireRole } from "../../_core/security/accessPolicy";
+import { requireAdminAccess } from "../../_core/security/accessPolicy";
 import { buildUserKey, paginateRows } from "./helpers";
 import { buildTenantMembershipRows } from "./tenantMembership";
 
@@ -46,7 +46,7 @@ export async function listAdminMembershipsHandler(
   ctx: any,
   { paginationOpts }: { paginationOpts: { cursor: string | null; numItems: number } }
 ) {
-  await requireRole(ctx, ["admin"]);
+  await requireAdminAccess(ctx);
   const [tenantLinks, profiles, brokers, developers] = await Promise.all([
     ctx.db.query("tenantOrgLinks").collect(),
     ctx.db.query("userProfiles").collect(),

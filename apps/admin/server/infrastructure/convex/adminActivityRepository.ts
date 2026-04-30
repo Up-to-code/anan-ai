@@ -1,11 +1,11 @@
-import { fetchQuery } from "convex/nextjs";
+import { createRepositoryRefs, queryRef } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 type ActivitiesApiRefs = {
   listActivityFeed: unknown;
 };
 
-const activitiesApi = apiUnsafe["admin_zone/activities"] as ActivitiesApiRefs;
+const activitiesApi = createRepositoryRefs<ActivitiesApiRefs>(apiUnsafe, "admin_zone/activities");
 
 /**
  * WHY:   The activity workspace needs one repository boundary for merged operational feeds.
@@ -14,6 +14,6 @@ const activitiesApi = apiUnsafe["admin_zone/activities"] as ActivitiesApiRefs;
  */
 export const convexAdminActivityRepository = {
   async list(token: string, source: "all" | "notifications" | "messages" | "admin" = "all", limit = 60) {
-    return fetchQuery(activitiesApi.listActivityFeed as never, { source, limit } as never, { token }) as Promise<Array<Record<string, unknown>>>;
+    return queryRef<Array<Record<string, unknown>>>(token, activitiesApi.listActivityFeed, { source, limit });
   },
 };

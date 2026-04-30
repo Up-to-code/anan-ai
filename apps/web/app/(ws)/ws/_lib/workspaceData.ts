@@ -36,6 +36,7 @@ export async function getLayoutSidebarData(returnTo: string) {
         ...sidebar,
         recentAssistantThreads: [],
         allAssistantThreads: [],
+        initialNotifications: [],
         signalCounts: {
           notificationCount: 0,
           inboxCount: 0,
@@ -52,6 +53,7 @@ export async function getLayoutSidebarData(returnTo: string) {
       ...sidebar,
       recentAssistantThreads: assistantThreads.slice(0, 3),
       allAssistantThreads: assistantThreads,
+      initialNotifications: notifications.latest ?? [],
       signalCounts: {
         notificationCount: notifications.unreadCount,
         inboxCount: inboxSummary.unreadCount,

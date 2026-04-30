@@ -1,17 +1,13 @@
 import { ConvexError } from "convex/values";
+import {
+  DEFAULT_COMPLIANCE_COUNTRY,
+  normalizeOrgType,
+  resolveComplianceCountryCode,
+} from "../../../packages/compliance-logic/src/org-type";
 import { getOrganizationRecord } from "../agencies/repositories/core";
 import type { AgenciesRepositoryCtx, OwnerContext } from "../agencies/repositories/core";
 
-export const DEFAULT_COMPLIANCE_COUNTRY = "SA";
-
-/**
- * WHY:   Compliance resolution needs a canonical org type value for ruleset lookup.
- * WHAT:  Normalizes the owner type into the ruleset org type.
- * HOW:   Maps broker owners to "broker" and everything else to "red".
- */
-export function normalizeOrgType(ownerType: OwnerContext["ownerType"]) {
-  return ownerType === "broker" ? "broker" as const : "red" as const;
-}
+export { DEFAULT_COMPLIANCE_COUNTRY, normalizeOrgType };
 
 /**
  * WHY:   Compliance rules require a country context even when org metadata is missing.
@@ -28,7 +24,7 @@ export async function resolveOrganizationCountryCode(
   }
   return {
     organization,
-    countryCode: (organization as { countryCode?: string }).countryCode ?? DEFAULT_COMPLIANCE_COUNTRY,
+    countryCode: resolveComplianceCountryCode((organization as { countryCode?: string }).countryCode),
   };
 }
 

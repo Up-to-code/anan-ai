@@ -1,38 +1,106 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { mutationRef, queryRef } from "@anan/convex-adapters/repository";
 import type { WorkspaceProjectRepository } from "./types";
 import { brokerProjectsApi, redProjectsApi, type WorkspaceProjectInternalRefs } from "./api";
 
 function buildRepository(api: WorkspaceProjectInternalRefs): WorkspaceProjectRepository {
   return {
     async getProjectDossier(token, propertyId) {
-      return fetchQuery(api.getProjectDossier as never, { propertyId: propertyId as never } as never, { token }) as ReturnType<WorkspaceProjectRepository["getProjectDossier"]>;
+      return queryRef<Awaited<ReturnType<WorkspaceProjectRepository["getProjectDossier"]>>>(
+        token,
+        api.getProjectDossier,
+        { propertyId },
+      );
+    },
+    async getProjectDossierByProjectId(token, projectId) {
+      return queryRef<Awaited<ReturnType<WorkspaceProjectRepository["getProjectDossierByProjectId"]>>>(
+        token,
+        api.getProjectDossierByProjectId,
+        { projectId },
+      );
+    },
+    async getProjectsWorkspace(token) {
+      return queryRef<Awaited<ReturnType<WorkspaceProjectRepository["getProjectsWorkspace"]>>>(
+        token,
+        api.getProjectsWorkspace,
+        {},
+      );
+    },
+    async getProjectWorkspaceDetail(token, projectId) {
+      return queryRef<Awaited<ReturnType<WorkspaceProjectRepository["getProjectWorkspaceDetail"]>>>(
+        token,
+        api.getProjectWorkspaceDetail,
+        { projectId },
+      );
     },
     async getProjectReadiness(token, propertyId) {
-      return fetchQuery(api.getProjectReadiness as never, { propertyId: propertyId as never } as never, { token }) as ReturnType<WorkspaceProjectRepository["getProjectReadiness"]>;
+      return queryRef<Awaited<ReturnType<WorkspaceProjectRepository["getProjectReadiness"]>>>(
+        token,
+        api.getProjectReadiness,
+        { propertyId },
+      );
     },
     async saveProjectDossierDraft(token, input) {
-      return fetchMutation(api.saveProjectDossierDraft as never, input as never, { token }) as ReturnType<WorkspaceProjectRepository["saveProjectDossierDraft"]>;
+      return mutationRef<Awaited<ReturnType<WorkspaceProjectRepository["saveProjectDossierDraft"]>>>(
+        token,
+        api.saveProjectDossierDraft,
+        input,
+      );
     },
     async saveProjectUnits(token, propertyId, units) {
-      return fetchMutation(api.saveProjectUnits as never, { propertyId, units } as never, { token }) as ReturnType<WorkspaceProjectRepository["saveProjectUnits"]>;
+      return mutationRef<Awaited<ReturnType<WorkspaceProjectRepository["saveProjectUnits"]>>>(
+        token,
+        api.saveProjectUnits,
+        { propertyId, units },
+      );
     },
     async applyProjectUnitBulkActions(token, propertyId, actions) {
-      return fetchMutation(api.applyProjectUnitBulkActions as never, { propertyId, actions } as never, { token }) as ReturnType<WorkspaceProjectRepository["applyProjectUnitBulkActions"]>;
+      return mutationRef<Awaited<ReturnType<WorkspaceProjectRepository["applyProjectUnitBulkActions"]>>>(
+        token,
+        api.applyProjectUnitBulkActions,
+        { propertyId, actions },
+      );
+    },
+    async archiveProject(token, propertyId) {
+      return mutationRef<Awaited<ReturnType<WorkspaceProjectRepository["archiveProject"]>>>(
+        token,
+        api.archiveProject,
+        { propertyId },
+      );
     },
     async saveProjectPaymentPlans(token, propertyId, paymentPlans) {
-      return fetchMutation(api.saveProjectPaymentPlans as never, { propertyId, paymentPlans } as never, { token }) as ReturnType<WorkspaceProjectRepository["saveProjectPaymentPlans"]>;
+      return mutationRef<Awaited<ReturnType<WorkspaceProjectRepository["saveProjectPaymentPlans"]>>>(
+        token,
+        api.saveProjectPaymentPlans,
+        { propertyId, paymentPlans },
+      );
     },
     async saveProjectComplianceDocuments(token, propertyId, documents) {
-      return fetchMutation(api.saveProjectComplianceDocuments as never, { propertyId, documents } as never, { token }) as ReturnType<WorkspaceProjectRepository["saveProjectComplianceDocuments"]>;
+      return mutationRef<Awaited<ReturnType<WorkspaceProjectRepository["saveProjectComplianceDocuments"]>>>(
+        token,
+        api.saveProjectComplianceDocuments,
+        { propertyId, documents },
+      );
     },
     async saveProjectAdLicense(token, propertyId, adLicense) {
-      return fetchMutation(api.saveProjectAdLicense as never, { propertyId, adLicense } as never, { token }) as ReturnType<WorkspaceProjectRepository["saveProjectAdLicense"]>;
+      return mutationRef<Awaited<ReturnType<WorkspaceProjectRepository["saveProjectAdLicense"]>>>(
+        token,
+        api.saveProjectAdLicense,
+        { propertyId, adLicense },
+      );
     },
     async saveProjectBrokerAuthorization(token, propertyId, authorization) {
-      return fetchMutation(api.saveProjectBrokerAuthorization as never, { propertyId, authorization } as never, { token }) as ReturnType<WorkspaceProjectRepository["saveProjectBrokerAuthorization"]>;
+      return mutationRef<Awaited<ReturnType<WorkspaceProjectRepository["saveProjectBrokerAuthorization"]>>>(
+        token,
+        api.saveProjectBrokerAuthorization,
+        { propertyId, authorization },
+      );
     },
     async requestProjectPublication(token, propertyId) {
-      return fetchMutation(api.requestProjectPublication as never, { propertyId } as never, { token }) as ReturnType<WorkspaceProjectRepository["requestProjectPublication"]>;
+      return mutationRef<Awaited<ReturnType<WorkspaceProjectRepository["requestProjectPublication"]>>>(
+        token,
+        api.requestProjectPublication,
+        { propertyId },
+      );
     },
   };
 }

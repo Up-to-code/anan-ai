@@ -1,4 +1,4 @@
-import { fetchQuery } from "convex/nextjs";
+import { publicQueryRef } from "@anan/convex-adapters/repository";
 import { marketApi } from "./api";
 import type { MarketRepository } from "./types";
 
@@ -11,6 +11,6 @@ export type { MarketRepository } from "./types";
  */
 export const convexMarketRepository: MarketRepository = {
   async getSnapshot(filters) {
-    return fetchQuery(marketApi.getMarketSnapshot as never, filters as never) as ReturnType<MarketRepository["getSnapshot"]>;
+    return publicQueryRef<Awaited<ReturnType<MarketRepository["getSnapshot"]>>>(marketApi.getMarketSnapshot, filters);
   },
 };

@@ -5,7 +5,13 @@ import { internal } from "../../../_generated/api";
 import { modules } from "../../../test.setup";
 import { OAUTH_CONSENT_VERSION } from "../../../_core/oauth/constants";
 
-type SeedOptions = { refreshUsedAt?: number; refreshRevokedAt?: number; refreshExpiresAt?: number };
+type SeedOptions = {
+  refreshUsedAt?: number;
+  refreshRevokedAt?: number;
+  refreshExpiresAt?: number;
+  authorizationLastUsedAt?: number;
+  authorizationExpiresAt?: number;
+};
 
 type SeededOAuthData = {
   now: number;
@@ -27,7 +33,7 @@ async function insertOAuthClientArtifacts(ctx: any, now: number, clientId: strin
     clientType: "public",
     redirectUris: ["https://client.example.com/callback"],
     allowedScopes: ["clients:read_own", "offline_access"],
-    trusted: false,
+    trusted: true,
     isActive: true,
     createdAt: now - 10_000,
     updatedAt: now - 10_000,
@@ -64,9 +70,10 @@ async function seedOAuthData(t: ReturnType<typeof convexTest>, options: SeedOpti
       grantedScopes: ["clients:read_own", "offline_access"],
       offlineAccess: true,
       consentVersion: OAUTH_CONSENT_VERSION,
-      createdAt: now - 5_000,
-      updatedAt: now - 5_000,
-      lastUsedAt: now - 5_000,
+      createdAt: options.authorizationLastUsedAt ?? now - 5_000,
+      updatedAt: options.authorizationLastUsedAt ?? now - 5_000,
+      lastUsedAt: options.authorizationLastUsedAt ?? now - 5_000,
+      expiresAt: options.authorizationExpiresAt,
       approvedByUserId: actorUserId,
     } as any);
     await insertOAuthClientArtifacts(ctx, now, clientId, { ownerBrokerId, tenantOrgId });
@@ -223,11 +230,98 @@ function registerInvalidGrantTest() {
   });
 }
 
+function registerAuthorizationExpiryTest() {
+  it("expires organization authorization after the inactivity window", async () => {
+    const t = convexTest(schema, modules);
+    const now = Date.now();
+    const seeded = await seedOAuthData(t, {
+      authorizationLastUsedAt: now - 51 * 24 * 60 * 60 * 1000,
+    });
+
+    const result = await runRotateMutation(t, seeded, {
+      accessTokenJti: "access-jti-expired-1",
+      nextRefreshTokenHash: "refresh-next-expired-hash",
+      now,
+    });
+
+    const authorization = await t.run(async (ctx) => ctx.db.get(seeded.authorizationId)) as any;
+    expect(result).toEqual({ authorizationExpired: true });
+    expect(authorization?.revokedAt).toBe(now);
+  });
+}
+
+function registerInactiveExternalClientTest() {
+  it("blocks authorization requests for inactive mirrored external clients", async () => {
+    const t = convexTest(schema, modules);
+    const now = Date.now();
+    await t.run(async (ctx) => {
+      await ctx.db.insert("oauthClients", {
+        clientId: "inactive-external-client",
+        name: "Inactive External App",
+        publisherName: "External Publisher",
+        clientType: "public",
+        redirectUris: ["https://external.test/callback"],
+        allowedScopes: ["clients:read_own"],
+        trusted: true,
+        isActive: false,
+        createdAt: now,
+        updatedAt: now,
+      } as any);
+    });
+
+    await expect(
+      t.query(internal.shared_logic.oauth.internal.authorize.validateAuthorizationRequest, {
+        clientId: "inactive-external-client",
+        redirectUri: "https://external.test/callback",
+        scope: "clients:read_own",
+        state: "state-1",
+        codeChallenge: "challenge-1",
+        codeChallengeMethod: "S256",
+      } as never),
+    ).rejects.toThrow("Unknown or inactive OAuth client");
+  });
+}
+
+function registerUntrustedExternalClientTest() {
+  it("blocks authorization requests for untrusted mirrored external clients", async () => {
+    const t = convexTest(schema, modules);
+    const now = Date.now();
+    await t.run(async (ctx) => {
+      await ctx.db.insert("oauthClients", {
+        clientId: "untrusted-external-client",
+        name: "Untrusted External App",
+        publisherName: "External Publisher",
+        clientType: "public",
+        redirectUris: ["https://external.test/callback"],
+        allowedScopes: ["clients:read_own", "clients:create", "offline_access"],
+        trusted: false,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      } as any);
+    });
+
+    await expect(
+      t.query(internal.shared_logic.oauth.internal.authorize.validateAuthorizationRequest, {
+        clientId: "untrusted-external-client",
+        redirectUri: "https://external.test/callback",
+        scope: "clients:create offline_access",
+        state: "state-1",
+        codeChallenge: "challenge-1",
+        codeChallengeMethod: "S256",
+      } as never),
+    ).rejects.toThrow("OAuth client is not active for authorization");
+  });
+}
+
 function registerOAuthTokenStorageTests() {
   registerRotateSuccessTest();
   registerReplayDetectionTest();
   registerRevokeFamilyTest();
   registerInvalidGrantTest();
+  registerAuthorizationExpiryTest();
+  registerInactiveExternalClientTest();
+  registerUntrustedExternalClientTest();
 }
 
 describe("oauth token storage internals", registerOAuthTokenStorageTests);

@@ -10,12 +10,12 @@ import { DomainError } from "@/server/contracts/errors";
 function requireRoleSession(
   session: ResolvedSession,
   options: {
-    allowedRoles: string[];
+    requireAdmin?: boolean;
     requiredOwnerKey?: "brokerId" | "redId";
     message: string;
   },
 ): ResolvedSession {
-  const hasRole = options.allowedRoles.includes(session.context.role ?? "");
+  const hasRole = options.requireAdmin ? Boolean(session.context.isAdmin) : true;
   const hasOwnerId =
     !options.requiredOwnerKey || Boolean(session.context[options.requiredOwnerKey]);
 
@@ -37,7 +37,7 @@ function requireRoleSession(
  */
 export function assertAdminSession(session: ResolvedSession): ResolvedSession {
   return requireRoleSession(session, {
-    allowedRoles: ["admin"],
+    requireAdmin: true,
     message: "Admin role required",
   });
 }

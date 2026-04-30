@@ -39,6 +39,7 @@ it("rejects anonymous developer property access", async () => {
     ctx.db.insert("RED", {
       name: "Developer One",
       slug: "developer-one",
+      isVerified: true,
     } as any),
   );
 
@@ -168,6 +169,14 @@ it("lets the owner create, read, update, publish, and delete developer propertie
     id: propertyId,
     description: "Updated sea view",
   } as never);
+
+  await t.run(async (ctx) => {
+    await ctx.db.patch(propertyId, {
+      ownerVerified: true,
+      adLicenseStatus: "approved",
+      listingVerified: true,
+    } as any);
+  });
 
   await t.withIdentity(identity).mutation(api.red_zone.properties.publish, {
     id: propertyId,

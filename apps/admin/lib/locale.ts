@@ -1,18 +1,19 @@
-export type AdminLocale = "ar" | "en" | "fr";
+import {
+  getLocaleNumberFormat,
+  isRtlLocale,
+  resolveLocale,
+  type AppLocale,
+} from "@anan/platform-core/locale";
+
+export type AdminLocale = AppLocale;
 
 export const ADMIN_LOCALE_COOKIE = "anan_admin_locale";
 export const ADMIN_DATE_TIME_ZONE = "Africa/Cairo";
 
-export function resolveLocale(input?: string | null): AdminLocale {
-  return input === "en" || input === "fr" ? input : "ar";
-}
-
-export function isRtlLocale(locale: AdminLocale) {
-  return locale === "ar";
-}
+export { isRtlLocale, resolveLocale };
 
 export function getNumberLocale(locale: AdminLocale) {
-  return locale === "ar" ? "ar-SA" : locale === "fr" ? "fr-FR" : "en-SA";
+  return getLocaleNumberFormat(locale);
 }
 
 export function getDateLocale(locale: AdminLocale) {

@@ -81,6 +81,7 @@ export const tables = {
     createdAt: v.number(),
   })
     .index("organizationId", ["organizationId"])
+    .index("organizationId_userId", ["organizationId","userId"])
     .index("userId", ["userId"])
     .index("role", ["role"]),
   invitation: defineTable({
@@ -103,6 +104,46 @@ export const tables = {
     createdAt: v.number(),
     expiresAt: v.optional(v.union(v.null(), v.number())),
   }),
+  oauthApplication: defineTable({
+    clientId: v.string(),
+    clientSecret: v.optional(v.string()),
+    type: v.string(),
+    name: v.string(),
+    icon: v.optional(v.string()),
+    metadata: v.optional(v.string()),
+    disabled: v.optional(v.boolean()),
+    redirectUrls: v.string(),
+    userId: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("clientId", ["clientId"])
+    .index("userId", ["userId"]),
+  oauthAccessToken: defineTable({
+    accessToken: v.string(),
+    refreshToken: v.string(),
+    accessTokenExpiresAt: v.number(),
+    refreshTokenExpiresAt: v.number(),
+    clientId: v.string(),
+    userId: v.optional(v.string()),
+    scopes: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("accessToken", ["accessToken"])
+    .index("refreshToken", ["refreshToken"])
+    .index("clientId", ["clientId"])
+    .index("userId", ["userId"]),
+  oauthConsent: defineTable({
+    clientId: v.string(),
+    userId: v.string(),
+    scopes: v.string(),
+    consentGiven: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("clientId", ["clientId"])
+    .index("userId", ["userId"]),
 };
 
 const schema = defineSchema(tables);

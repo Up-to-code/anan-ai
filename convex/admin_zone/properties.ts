@@ -1,7 +1,7 @@
 import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 import {
   listPropertiesService,
   getPropertyService,
@@ -22,7 +22,7 @@ export const listProperties = query({
     brokerId: v.optional(v.id("brokers")),
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return await listPropertiesService(ctx, args);
   },
 });
@@ -30,7 +30,7 @@ export const listProperties = query({
 export const getProperty = query({
   args: { id: v.id("properties") },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return await getPropertyService(ctx, args);
   },
 });
@@ -54,7 +54,7 @@ const createPropertyArgs = {
 export const createProperty = mutation({
   args: createPropertyArgs,
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return await createPropertyService(ctx, args);
   },
 });
@@ -77,7 +77,7 @@ export const updateProperty = mutation({
     brokerId: v.optional(v.id("brokers")),
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return await updatePropertyService(ctx, args);
   },
 });
@@ -85,7 +85,7 @@ export const updateProperty = mutation({
 export const deleteProperty = mutation({
   args: { id: v.id("properties") },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return await deletePropertyService(ctx, args);
   },
 });

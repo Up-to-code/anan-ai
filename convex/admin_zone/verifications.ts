@@ -1,6 +1,6 @@
 import { mutation, query } from "../_generated/server";
 import { ConvexError, v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 import {
   buildVerificationDecisionHistory,
   buildVerificationListItem,
@@ -22,7 +22,7 @@ export const listVerificationRequests = query({
     status: optionalVerificationStatusValidator,
   },
   handler: async (ctx, { status }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const [requests, lookups] = await Promise.all([
       listVerificationRequestsByStatus(ctx, status),
       loadVerificationLookups(ctx),
@@ -41,7 +41,7 @@ export const listVerificationRequests = query({
 export const getVerificationRequest = query({
   args: { id: v.id("verificationRequests") },
   handler: async (ctx, { id }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const [request, lookups] = await Promise.all([ctx.db.get(id), loadVerificationLookups(ctx)]);
     if (!request) return null;
     const dossier =
@@ -79,7 +79,7 @@ export const getVerificationRequest = query({
 export const verificationStatusSummary = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const requests = await ctx.db.query("verificationRequests").order("desc").take(500);
 
     return {
@@ -105,7 +105,7 @@ export const reviewVerificationRequest = mutation({
     reviewerNotes: v.optional(v.string()),
   },
   handler: async (ctx, { id, status, reviewerId, reviewerNotes }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const request = await ctx.db.get(id);
     if (!request) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Verification request not found" });

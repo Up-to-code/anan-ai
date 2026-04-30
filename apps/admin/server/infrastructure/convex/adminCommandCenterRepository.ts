@@ -1,25 +1,25 @@
-import { fetchQuery } from "convex/nextjs";
+import { createRepositoryRefs, queryRef } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 type CommandCenterApiRefs = {
   commandCenterOverview: unknown;
   commercialAnalytics: unknown;
-  partnerHealthAnalytics: unknown;
+  ecosystemHealthAnalytics: unknown;
   queueHealthAnalytics: unknown;
 };
 
-const commandCenterApi = apiUnsafe["admin_zone/commandCenter"] as CommandCenterApiRefs;
+const commandCenterApi = createRepositoryRefs<CommandCenterApiRefs>(apiUnsafe, "admin_zone/commandCenter");
 
 export type AdminCommandCenterRange = "30d" | "90d";
 
 /**
  * WHY:   The rebuilt admin dashboard and grouped analytics need one repository boundary for the new command-center read models.
- * WHAT:  Exposes auth-scoped readers for overview, commercial, partner-health, and queue-health datasets.
+ * WHAT:  Exposes auth-scoped readers for overview, commercial, ecosystem-health, and queue-health datasets.
  * HOW:   Delegates to the new `convex/admin_zone/commandCenter` queries using the current admin token.
  */
 export const convexAdminCommandCenterRepository = {
   async getOverview(token: string, range: AdminCommandCenterRange = "90d") {
-    return fetchQuery(commandCenterApi.commandCenterOverview as never, { range } as never, { token }) as Promise<{
+    return queryRef<{
       range: AdminCommandCenterRange;
       kpis: {
         activeUsers: { current: number; previous: number; delta: number };
@@ -35,7 +35,7 @@ export const convexAdminCommandCenterRepository = {
         errorEvents: number;
         apiKeyDenials: number;
       };
-      partnerHealth: {
+      ecosystemHealth: {
         brokers: number;
         developers: number;
         verifiedOrganizations: number;
@@ -81,10 +81,10 @@ export const convexAdminCommandCenterRepository = {
         createdAt: number;
         status: string;
       }>;
-    }>;
+    }>(token, commandCenterApi.commandCenterOverview, { range });
   },
   async getCommercialAnalytics(token: string, range: AdminCommandCenterRange = "90d") {
-    return fetchQuery(commandCenterApi.commercialAnalytics as never, { range } as never, { token }) as Promise<{
+    return queryRef<{
       range: AdminCommandCenterRange;
       summary: {
         offers: { current: number; previous: number; delta: number };
@@ -106,10 +106,10 @@ export const convexAdminCommandCenterRepository = {
         offersCount: number;
         acceptedCount: number;
       }>;
-    }>;
+    }>(token, commandCenterApi.commercialAnalytics, { range });
   },
-  async getPartnerHealthAnalytics(token: string, range: AdminCommandCenterRange = "90d") {
-    return fetchQuery(commandCenterApi.partnerHealthAnalytics as never, { range } as never, { token }) as Promise<{
+  async getEcosystemHealthAnalytics(token: string, range: AdminCommandCenterRange = "90d") {
+    return queryRef<{
       range: AdminCommandCenterRange;
       summary: {
         brokers: number;
@@ -138,10 +138,10 @@ export const convexAdminCommandCenterRepository = {
         actionModeEnabled: boolean;
         score: number;
       }>;
-    }>;
+    }>(token, commandCenterApi.ecosystemHealthAnalytics, { range });
   },
   async getQueueHealthAnalytics(token: string, range: AdminCommandCenterRange = "30d") {
-    return fetchQuery(commandCenterApi.queueHealthAnalytics as never, { range } as never, { token }) as Promise<{
+    return queryRef<{
       range: AdminCommandCenterRange;
       summary: {
         unassignedOrders: number;
@@ -162,6 +162,6 @@ export const convexAdminCommandCenterRepository = {
         createdAt: number;
         status: string;
       }>;
-    }>;
+    }>(token, commandCenterApi.queueHealthAnalytics, { range });
   },
 };

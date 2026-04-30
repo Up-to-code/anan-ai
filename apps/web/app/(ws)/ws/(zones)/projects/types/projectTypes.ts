@@ -1,4 +1,5 @@
 import type { BrokerPresence } from "../../../_components/Visuals/BrokerPresenceChip";
+import type { LocationValue } from "@anan/location-map";
 import type { UnitReference } from "../../../_lib/entities";
 import type { UploadedFileReference } from "@/server/contracts/files";
 import type { OrganizationAsset, PropertyViewerSummary } from "@/server/contracts/properties";
@@ -8,6 +9,8 @@ export type WorkspaceProjectUnitDetail = UnitReference & {
   projectId: string;
   projectTitle: string;
   projectLocation: string;
+  projectLocationDetails: LocationValue | null;
+  locationDetails: LocationValue | null;
   projectImage: string;
   summary: string;
   paymentPlanLabel: string | null;
@@ -19,8 +22,11 @@ export type WorkspaceProjectUnitDetail = UnitReference & {
 
 export type WorkspaceProject = {
   id: string;
+  propertyId: string;
+  inventoryKind: "project" | "standalone_unit";
   title: string;
   location: string;
+  locationDetails: LocationValue | null;
   priceLabel: string;
   summary: string;
   shortDescription: string;
@@ -67,6 +73,11 @@ export type WorkspaceProject = {
     status: string;
     label: string;
     canPublish: boolean;
+  };
+  portfolio: {
+    typeLabel: string;
+    unitSummary: string;
+    complianceSummary: string;
   };
   accessMode: "owner" | "shared";
   canEdit: boolean;

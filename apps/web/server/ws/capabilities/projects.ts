@@ -1,6 +1,11 @@
 import type { WorkspaceAudience, WorkspaceOwnerContext } from "@/server/contracts/workspace";
 import { buildWorkspaceProjectService } from "@/server/domains/workspace/projects/service";
+import {
+  convexBrokerProjectRepository,
+  convexRedProjectRepository,
+} from "@/server/infrastructure/convex/projects";
 import { createUnavailableZoneError } from "../shared/errors";
+import { buildWorkspaceScopedSessionResolver } from "../session";
 
 /**
  * WHY:   Project dossier operations are now distinct from legacy property projection operations.
@@ -9,10 +14,25 @@ import { createUnavailableZoneError } from "../shared/errors";
  */
 export function getWorkspaceProjectZone(
   audience: WorkspaceAudience,
-  _ownerContext?: WorkspaceOwnerContext | null,
+  ownerContext?: WorkspaceOwnerContext | null,
 ) {
-  if (audience === "broker" || audience === "developer") {
-    return buildWorkspaceProjectService(audience);
+  const requireSession = buildWorkspaceScopedSessionResolver(audience, ownerContext);
+
+  if (audience === "broker") {
+    return buildWorkspaceProjectService(audience, {
+      audience,
+      requireSession,
+      repository: convexBrokerProjectRepository,
+    });
   }
+
+  if (audience === "developer") {
+    return buildWorkspaceProjectService(audience, {
+      audience,
+      requireSession,
+      repository: convexRedProjectRepository,
+    });
+  }
+
   throw createUnavailableZoneError("Projects");
 }

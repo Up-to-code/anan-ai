@@ -1,7 +1,7 @@
 import { ConvexError } from "convex/values";
 import type { Doc, Id } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
-import { requireRole, requireSession } from "../../_core/security/accessPolicy";
+import { requireEntitlements, requireSession } from "../../_core/security/accessPolicy";
 
 type OffersCtx = QueryCtx | MutationCtx;
 
@@ -31,7 +31,7 @@ export async function getOptionalProfile(ctx: QueryCtx) {
  * HOW:   Reuses the shared access policy and rejects inactive accounts.
  */
 export async function requireSender(ctx: OffersCtx) {
-  const access = await requireRole(ctx, ["broker", "developer"]);
+  const access = await requireEntitlements(ctx, ["workspace:broker", "workspace:developer"]);
   if (access.profile?.isActive === false) {
     throw new ConvexError({
       code: "ACCOUNT_INACTIVE",

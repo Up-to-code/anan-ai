@@ -1,3 +1,4 @@
+import { createRepositoryRefs } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 export type RedInternalRefs = {
@@ -10,5 +11,5 @@ export type RedInternalRefs = {
   publish: unknown;
 };
 
-export const redOverviewApi = apiUnsafe["red_zone/overview"] as RedInternalRefs;
-export const redPropertiesApi = apiUnsafe["red_zone/properties"] as RedInternalRefs;
+export const redOverviewApi = createRepositoryRefs<RedInternalRefs>(apiUnsafe, "red_zone/overview");
+export const redPropertiesApi = createRepositoryRefs<RedInternalRefs>(apiUnsafe, "red_zone/properties");

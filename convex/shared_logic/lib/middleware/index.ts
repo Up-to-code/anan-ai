@@ -1,6 +1,5 @@
 /**
- * lib/middleware – rate limit + channel detection helpers.
+ * lib/middleware – shared request middleware helpers.
  */
 
 export * from "./rateLimit";
-export * from "./channelDetect";

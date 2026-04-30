@@ -11,6 +11,7 @@ export type OfferCaseStage =
   | "closed_lost"
   | "archived";
 export type OfferPackageVisibility = "open" | "private";
+export type StoredOfferPackageVisibility = "open" | "public" | "private" | "broker_only";
 export type OfferAllowedAudience = "brokers" | "developers" | "both";
 
 export type OfferClientContext = {

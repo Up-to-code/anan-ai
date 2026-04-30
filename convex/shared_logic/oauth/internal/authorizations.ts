@@ -1,9 +1,11 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "../../../_generated/server";
-import { OAUTH_SCOPE_LABELS } from "../../../_core/oauth/constants";
+import { getAuthorizationExpiresAt, isAuthorizationExpired, OAUTH_SCOPE_LABELS } from "../../../_core/oauth/constants";
 import { buildOAuthOwnerContext, getAuthorizationRecordForOwner, getClientOrThrow } from "./helpers";
 
 function mapAuthorizationSummary(authorization: any, client: any) {
+  const now = Date.now();
+  const expiresAt = getAuthorizationExpiresAt(authorization);
   return {
     authorizationId: authorization._id,
     clientId: authorization.clientId,
@@ -11,12 +13,15 @@ function mapAuthorizationSummary(authorization: any, client: any) {
     appName: client.name,
     publisherName: client.publisherName,
     logoUrl: client.logoUrl ?? null,
+    iconUrl: client.iconUrl ?? client.logoUrl ?? null,
     grantedScopes: authorization.grantedScopes,
     scopeDetails: authorization.grantedScopes.map((scope: string) => ({
       id: scope,
       label: OAUTH_SCOPE_LABELS[scope as keyof typeof OAUTH_SCOPE_LABELS] ?? scope,
     })),
     offlineAccess: authorization.offlineAccess,
+    status: isAuthorizationExpired(authorization, now) ? "expired" : "active",
+    expiresAt,
     createdAt: authorization.createdAt,
     updatedAt: authorization.updatedAt,
     lastUsedAt: authorization.lastUsedAt ?? null,

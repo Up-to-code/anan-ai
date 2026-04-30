@@ -25,24 +25,24 @@ export function resolveOfferConversationTargets(offer: any, access: any) {
   const ownerParticipant = offer.participants?.find((participant: any) => participant.role === "inventory_owner")
     ?? offer.participants?.find((participant: any) => participant.role === "client_owner")
     ?? null;
-  const executionPartner = offer.participants?.find((participant: any) => participant.role === "execution_partner") ?? null;
+  const executionProvider = offer.participants?.find((participant: any) => participant.role === "execution_provider") ?? null;
   const isCurrentUserSender =
     ownerParticipant &&
     (ownerParticipant.authUserId === access.authUserId ||
       (access.brokerId ? ownerParticipant.organizationId === String(access.brokerId) : false) ||
       (access.REDId ? ownerParticipant.organizationId === String(access.REDId) : false));
   return {
-    targetUserId: isCurrentUserSender ? executionPartner?.authUserId ?? undefined : ownerParticipant?.authUserId ?? undefined,
+    targetUserId: isCurrentUserSender ? executionProvider?.authUserId ?? undefined : ownerParticipant?.authUserId ?? undefined,
     targetBrokerId: isCurrentUserSender
-      ? executionPartner?.organizationType === "broker"
-        ? executionPartner.organizationId
+      ? executionProvider?.organizationType === "broker"
+        ? executionProvider.organizationId
         : undefined
       : ownerParticipant?.organizationType === "broker"
         ? ownerParticipant.organizationId
         : undefined,
     targetREDId: isCurrentUserSender
-      ? executionPartner?.organizationType === "developer"
-        ? executionPartner.organizationId
+      ? executionProvider?.organizationType === "developer"
+        ? executionProvider.organizationId
         : undefined
       : ownerParticipant?.organizationType === "developer"
         ? ownerParticipant.organizationId
@@ -60,7 +60,7 @@ export function assertMessageableOfferTarget(targets: {
   }
   throw new ConvexError({
     code: "INVALID_TARGET",
-    message: "No messageable offer partner is available for this offer",
+    message: "No messageable offer participant is available for this offer",
   });
 }
 

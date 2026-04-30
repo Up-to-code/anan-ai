@@ -1,5 +1,5 @@
 import { query } from "../_generated/server";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 
 type OverviewCollections = {
   users: any[];
@@ -142,7 +142,7 @@ function buildOverviewStats(
 export const overviewStats = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const collections = await loadOverviewCollections(ctx);
     const now = Date.now();
     const activeUsersSince = now - 30 * 24 * 60 * 60 * 1000;

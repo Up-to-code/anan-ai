@@ -15,71 +15,8 @@
 
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
-
-const conversationAnalyzerPaymentIntentValidator = v.union(
-    v.literal("cash"),
-    v.literal("installments"),
-    v.literal("mortgage"),
-    v.literal("mixed"),
-    v.literal("unknown"),
-);
-
-const conversationAnalyzerIntentValidator = v.union(
-    v.literal("investment"),
-    v.literal("residential"),
-    v.literal("mixed"),
-    v.literal("unknown"),
-);
-
-const conversationAnalyzerMetricValidator = v.object({
-    label: v.string(),
-    count: v.number(),
-});
-
-const conversationAnalyzerAreaMetricValidator = v.object({
-    city: v.optional(v.string()),
-    area: v.string(),
-    count: v.number(),
-});
-
-const conversationAnalyzerOutputValidator = v.object({
-    summary: v.string(),
-    hotCities: v.array(v.string()),
-    hotAreas: v.array(v.object({
-        city: v.optional(v.string()),
-        area: v.string(),
-    })),
-    propertyTypes: v.array(v.string()),
-    budgetBands: v.array(v.string()),
-    paymentIntents: v.array(conversationAnalyzerPaymentIntentValidator),
-    configurations: v.array(v.string()),
-    bedroomCounts: v.array(v.string()),
-    bathroomCounts: v.array(v.string()),
-    timelineSignals: v.array(v.string()),
-    mustHaveFeatures: v.array(v.string()),
-    strongConstraints: v.array(v.string()),
-    intent: conversationAnalyzerIntentValidator,
-    repeatedKeywords: v.array(v.string()),
-    repeatedTopics: v.array(v.string()),
-});
-
-const conversationAnalyzerDailySummaryValidator = v.object({
-    summaryText: v.string(),
-    topCities: v.array(conversationAnalyzerMetricValidator),
-    topAreas: v.array(conversationAnalyzerAreaMetricValidator),
-    propertyTypes: v.array(conversationAnalyzerMetricValidator),
-    budgetBands: v.array(conversationAnalyzerMetricValidator),
-    paymentIntents: v.array(conversationAnalyzerMetricValidator),
-    configurations: v.array(conversationAnalyzerMetricValidator),
-    bedroomCounts: v.array(conversationAnalyzerMetricValidator),
-    bathroomCounts: v.array(conversationAnalyzerMetricValidator),
-    timelineSignals: v.array(conversationAnalyzerMetricValidator),
-    mustHaveFeatures: v.array(conversationAnalyzerMetricValidator),
-    strongConstraints: v.array(conversationAnalyzerMetricValidator),
-    intents: v.array(conversationAnalyzerMetricValidator),
-    repeatedKeywords: v.array(conversationAnalyzerMetricValidator),
-    repeatedTopics: v.array(conversationAnalyzerMetricValidator),
-});
+import { transitionalGlobalSecurityFields } from "./securityFields";
+import { unsafeDynamicPayloadValidator } from "./securityValidators";
 
 const aiTables = {
     /**
@@ -92,9 +29,12 @@ const aiTables = {
      *       Queried by admin_zone for analytics dashboards.
      */
     aiTokenUsage: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
+        authUserId: v.optional(v.id("authUsers")),
         /** Agent that made this call (e.g. "anan_search") */
         agentName: v.string(),
-        /** Team that owns the agent (e.g. "team_search") */
+        /** Team that owns the agent (e.g. "team_workspace_projects") */
         teamName: v.optional(v.string()),
         /** Prompt definition version used for this call */
         promptVersion: v.optional(v.string()),
@@ -134,9 +74,13 @@ const aiTables = {
         .index("agentName", ["agentName"])
         .index("createdAt", ["createdAt"])
         .index("agentName_createdAt", ["agentName", "createdAt"])
-        .index("teamName_createdAt", ["teamName", "createdAt"]),
+        .index("teamName_createdAt", ["teamName", "createdAt"])
+        .index("by_org_createdAt", ["orgId", "createdAt"]),
 
     aiOrchestrationUsage: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
+        authUserId: v.optional(v.id("authUsers")),
         orchestratorName: v.string(),
         role: v.string(),
         channel: v.optional(v.string()),
@@ -156,7 +100,8 @@ const aiTables = {
         createdAt: v.number(),
     })
         .index("createdAt", ["createdAt"])
-        .index("orchestratorName_createdAt", ["orchestratorName", "createdAt"]),
+        .index("orchestratorName_createdAt", ["orchestratorName", "createdAt"])
+        .index("by_org_createdAt", ["orgId", "createdAt"]),
 
     /**
      * aiRAGEntries — Tracks RAG content in both production and recommendation.
@@ -170,6 +115,7 @@ const aiTables = {
      *       When approved → also added to production RAG namespace.
      */
     aiRAGEntries: defineTable({
+    ...transitionalGlobalSecurityFields,
         /** Which RAG namespace this belongs to */
         ragType: v.union(v.literal("production"), v.literal("recommendation")),
         /** Short title/label for this entry */
@@ -214,6 +160,7 @@ const aiTables = {
      *       Read by anan_knowledge before every response to inject context.
      */
     userKnowledgeBase: defineTable({
+    ...transitionalGlobalSecurityFields,
         /** User this knowledge belongs to */
         userId: v.string(),
         /** Knowledge key (e.g. "preferred_area", "budget_range") */
@@ -221,7 +168,7 @@ const aiTables = {
         /** Human-readable summary of this knowledge */
         summary: v.string(),
         /** Structured data value (any shape) */
-        value: v.any(),
+        value: unsafeDynamicPayloadValidator,
         /** Importance score 0-1 for RAG weighting (1 = most important) */
         importance: v.number(),
         /** Which agent wrote this (e.g. "anan_memory") */
@@ -234,58 +181,6 @@ const aiTables = {
         .index("userId", ["userId"])
         .index("userId_key", ["userId", "key"]),
 
-    aiConversationAnalyses: defineTable({
-        threadId: v.id("assistantThreads"),
-        userId: v.string(),
-        assistantKind: v.union(v.literal("default"), v.literal("anan_main_public")),
-        runKey: v.string(),
-        windowStartMs: v.number(),
-        windowEndMs: v.number(),
-        timezone: v.string(),
-        status: v.union(
-            v.literal("draft"),
-            v.literal("processing"),
-            v.literal("done"),
-            v.literal("failed"),
-        ),
-        claimedAt: v.optional(v.number()),
-        processedAt: v.optional(v.number()),
-        failureReason: v.optional(v.string()),
-        attemptCount: v.number(),
-        messageCount: v.number(),
-        firstMessageAt: v.number(),
-        lastMessageAt: v.number(),
-        output: v.optional(conversationAnalyzerOutputValidator),
-        createdAt: v.number(),
-        updatedAt: v.number(),
-    })
-        .index("by_threadId_runKey", ["threadId", "runKey"])
-        .index("by_runKey_status", ["runKey", "status"])
-        .index("by_status_lastMessageAt", ["status", "lastMessageAt"]),
-
-    aiConversationAnalysisRuns: defineTable({
-        runKey: v.string(),
-        windowStartMs: v.number(),
-        windowEndMs: v.number(),
-        timezone: v.string(),
-        status: v.union(
-            v.literal("draft"),
-            v.literal("running"),
-            v.literal("done"),
-            v.literal("failed"),
-        ),
-        draftCount: v.number(),
-        processingCount: v.number(),
-        doneCount: v.number(),
-        failedCount: v.number(),
-        analyzedThreadCount: v.number(),
-        summary: v.optional(conversationAnalyzerDailySummaryValidator),
-        startedAt: v.optional(v.number()),
-        completedAt: v.optional(v.number()),
-        failureReason: v.optional(v.string()),
-        createdAt: v.number(),
-        updatedAt: v.number(),
-    }).index("by_runKey", ["runKey"]),
 };
 
 export default aiTables;

@@ -1,3 +1,4 @@
+import { createdResponse, handleRoute, jsonResponse, okResponse, parseJsonBody, readJsonBody } from "@anan/web-foundation/api";
 import {
   getWorkspacePushConfig,
   registerWorkspacePushSubscription,
@@ -5,8 +6,7 @@ import {
   updateWorkspaceNotificationPreferences,
 } from "@/server/domains/workspace/notifications/service";
 import { pushSubscriptionInputSchema } from "@/server/contracts/notifications";
-import { DomainError, toErrorResponse } from "@/server/contracts/errors";
-import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
+import { DomainError } from "@/server/contracts/errors";
 
 /**
  * WHY:   Push onboarding needs one read endpoint for browser configuration and current preference state.
@@ -14,11 +14,7 @@ import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
  * HOW:   Delegates to the notifications domain service and serializes normalized failures.
  */
 export async function GET() {
-  try {
-    return Response.json(await getWorkspacePushConfig());
-  } catch (error) {
-    return toErrorResponse(error);
-  }
+  return handleRoute(async () => jsonResponse(await getWorkspacePushConfig()));
 }
 
 /**
@@ -27,26 +23,12 @@ export async function GET() {
  * HOW:   Validates the subscription payload with the shared contract and delegates the side effects to the notifications domain.
  */
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const parsed = pushSubscriptionInputSchema.safeParse(body);
-    if (!parsed.success) {
-      throw new DomainError({
-        code: "INVALID_ARGUMENT",
-        message: parsed.error.issues[0]?.message ?? "Invalid push subscription",
-        status: 400,
-      });
-    }
-
+  return handleRoute(async () => {
+    const subscription = await parseJsonBody(request, pushSubscriptionInputSchema, "Invalid push subscription");
     await updateWorkspaceNotificationPreferences({ browserPushEnabled: true });
-    await registerWorkspacePushSubscription(parsed.data);
-    return Response.json({ ok: true }, { status: 201 });
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      return toInvalidJsonResponse();
-    }
-    return toErrorResponse(error);
-  }
+    await registerWorkspacePushSubscription(subscription);
+    return createdResponse({ ok: true });
+  });
 }
 
 /**
@@ -55,8 +37,8 @@ export async function POST(request: Request) {
  * HOW:   Parses the request body, validates the endpoint field, then delegates to the notifications domain service.
  */
 export async function DELETE(request: Request) {
-  try {
-    const body = (await request.json()) as { endpoint?: string };
+  return handleRoute(async () => {
+    const body = await readJsonBody<{ endpoint?: string }>(request);
     if (!body.endpoint) {
       throw new DomainError({
         code: "INVALID_ARGUMENT",
@@ -66,11 +48,6 @@ export async function DELETE(request: Request) {
     }
 
     await removeWorkspacePushSubscription(body.endpoint);
-    return Response.json({ ok: true });
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      return toInvalidJsonResponse();
-    }
-    return toErrorResponse(error);
-  }
+    return okResponse();
+  });
 }

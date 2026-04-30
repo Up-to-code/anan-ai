@@ -56,7 +56,7 @@ export const apiClientsPage: DocsPageDefinition = {
   "name": "Al Noor Investments",
   "phone": "+966511111111",
   "email": "team@alnoor.example",
-  "notes": "Imported from partner portal"
+  "notes": "Imported from external app portal"
 }`,
             },
             responseExample: {

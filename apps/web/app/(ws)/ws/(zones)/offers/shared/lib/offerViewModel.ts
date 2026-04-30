@@ -108,17 +108,6 @@ export function formatOfferMarketplaceLabel(
 }
 
 /**
- * WHY:   Offer cards expose a one-click WhatsApp shortcut when the publishing organization has a phone number.
- * WHAT:  Normalizes the phone number into a `wa.me` URL.
- * HOW:   Removes non-digit characters first, then returns `null` when the remaining value is empty.
- */
-export function buildWhatsAppHref(phone?: string | null) {
-  const normalized = phone?.replace(/[^\d]/g, "") ?? "";
-  if (!normalized) return null;
-  return `https://wa.me/${normalized}`;
-}
-
-/**
  * WHY:   Client requirements sometimes embed structured fields inside free-form notes.
  * WHAT:  Splits the free-form note into a summary and an extracted preferred location when present.
  * HOW:   Recognizes the known Arabic and English location prefixes and removes them from the summary lines.

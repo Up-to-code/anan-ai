@@ -9,7 +9,7 @@
 import type { ActionCtx } from "../../_generated/server";
 import type { Tool } from "ai";
 
-export type OrchestratorId = "anan" | "anan_workspace";
+export type OrchestratorId = "anan_workspace";
 
 export type AgentRuntimeContext = {
   /** User message */
@@ -23,7 +23,7 @@ export type AgentRuntimeContext = {
   /** Optional thread ID for per-thread caching */
   threadId?: string;
   /** Channel for analytics/caching */
-  channel?: "app" | "whatsapp" | "web";
+  channel?: "workspace" | "web" | "admin";
   /** Role for access control */
   role?: "user" | "broker" | "RED" | "admin";
 };

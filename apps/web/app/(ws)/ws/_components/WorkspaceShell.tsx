@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PanelLeft, PanelLeftClose, PenSquare } from "lucide-react";
+import { AuthStateGate } from "@anan/ui/auth";
 import Sidebar from "./Sidebar";
 import type { SidebarUser } from "./Sidebar/types";
 import type { WorkspaceOrganizationDisplay } from "../_lib/organizationDisplay";
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { getWorkspaceZonesForKeys } from "../_lib/zones";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import type { ComplianceBanner } from "../_lib/complianceBanner";
+import type { NotificationSummary } from "@/server/contracts/notifications";
 import {
   getWorkspaceChromeState,
   matchesWorkspacePath,
@@ -34,6 +36,7 @@ export default function WorkspaceShell({
   organization,
   recentAssistantThreads = [],
   allAssistantThreads = [],
+  initialNotifications = [],
   signalCounts = { notificationCount: 0, inboxCount: 0 },
   complianceBanner = null,
   variant,
@@ -45,6 +48,7 @@ export default function WorkspaceShell({
   organization: WorkspaceOrganizationDisplay;
   recentAssistantThreads?: AnanProThreadSummary[];
   allAssistantThreads?: AnanProThreadSummary[];
+  initialNotifications?: NotificationSummary[];
   signalCounts?: { notificationCount: number; inboxCount: number };
   complianceBanner?: ComplianceBanner | null;
   variant?: WorkspaceShellVariant;
@@ -203,12 +207,14 @@ export default function WorkspaceShell({
               "flex h-full min-h-0 min-w-0 flex-1 basis-0 flex-col",
               isAssistantVariant ? "pt-0" : undefined,
             )}
-          >
-            {children}
+            >
+            <AuthStateGate loading={children} unauthenticated={children} error={children}>
+              {children}
+            </AuthStateGate>
           </div>
         </main>
 
-        <WorkspaceMessageToasts />
+        <WorkspaceMessageToasts initialNotifications={initialNotifications} />
       </div>
     </div>
   );

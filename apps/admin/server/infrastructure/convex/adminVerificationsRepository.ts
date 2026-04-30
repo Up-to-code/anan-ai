@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { createRepositoryRefs, queryRef, voidMutationRef } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 type VerificationsApiRefs = {
@@ -8,7 +8,7 @@ type VerificationsApiRefs = {
   reviewVerificationRequest: unknown;
 };
 
-const verificationsApi = apiUnsafe["admin_zone/verifications"] as VerificationsApiRefs;
+const verificationsApi = createRepositoryRefs<VerificationsApiRefs>(apiUnsafe, "admin_zone/verifications");
 
 /**
  * WHY:   Verification review is now a first-class admin workflow and needs its own repository surface.
@@ -17,21 +17,21 @@ const verificationsApi = apiUnsafe["admin_zone/verifications"] as VerificationsA
  */
 export const convexAdminVerificationsRepository = {
   async list(token: string, status?: "new" | "in_review" | "approved" | "rejected" | "closed") {
-    return fetchQuery(verificationsApi.listVerificationRequests as never, { status } as never, { token }) as Promise<Array<Record<string, unknown>>>;
+    return queryRef<Array<Record<string, unknown>>>(token, verificationsApi.listVerificationRequests, { status });
   },
   async getSummary(token: string) {
-    return fetchQuery(verificationsApi.verificationStatusSummary as never, {} as never, { token }) as Promise<{
+    return queryRef<{
       new: number;
       inReview: number;
       approved: number;
       rejected: number;
       closed: number;
-    }>;
+    }>(token, verificationsApi.verificationStatusSummary);
   },
   async getDetail(token: string, id: string) {
-    return fetchQuery(verificationsApi.getVerificationRequest as never, { id } as never, { token }) as Promise<Record<string, unknown> | null>;
+    return queryRef<Record<string, unknown> | null>(token, verificationsApi.getVerificationRequest, { id });
   },
   async review(token: string, input: { id: string; status: "in_review" | "approved" | "rejected" | "closed"; reviewerId: string; reviewerNotes?: string }) {
-    await fetchMutation(verificationsApi.reviewVerificationRequest as never, input as never, { token });
+    await voidMutationRef(token, verificationsApi.reviewVerificationRequest, input);
   },
 };

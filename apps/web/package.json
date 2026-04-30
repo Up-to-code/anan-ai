@@ -7,10 +7,22 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:auth": "node scripts/e2e-refresh-auth-states.mjs",
+    "test:e2e:maestro": "maestro test maestro"
   },
   "dependencies": {
     "@anan/ag-ui": "workspace:*",
+    "@anan/auth": "workspace:*",
+    "@anan/auth-sdk": "workspace:*",
+    "@anan/auth-client": "workspace:*",
+    "@anan/convex-adapters": "workspace:*",
+    "@anan/domain-contracts": "workspace:*",
+    "@anan/location-map": "workspace:*",
+    "@anan/platform-core": "workspace:*",
+    "@anan/testing": "workspace:*",
+    "@anan/ui": "workspace:*",
+    "@anan/web-foundation": "workspace:*",
     "@base-ui/react": "^1.2.0",
     "@convex-dev/better-auth": "^0.11.4",
     "@uploadthing/react": "^7.3.3",

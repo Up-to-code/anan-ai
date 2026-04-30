@@ -1,4 +1,5 @@
 import type { UploadedFileReference } from "@/server/contracts/files";
+import type { LocationValue } from "@anan/location-map";
 import type { PropertyViewerSummary } from "@/server/contracts/properties";
 import type { BrokerPresence } from "../../Visuals/BrokerPresenceChip";
 import type { ProjectFormSaveResult } from "../../../(zones)/projects/shared/forms/projectFormSubmission";
@@ -31,6 +32,7 @@ export type ProjectUnitFormData = {
   view: string;
   price: string;
   handoverAt: string;
+  locationDetails?: LocationValue | null;
   floorPlanMedia: UploadedFileReference[];
 };
 

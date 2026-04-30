@@ -61,7 +61,7 @@ export async function createOrganizationForCurrentUser(
   }
 
   const session = await dependencies.requireSession();
-  if (session.context.role === "admin") {
+  if (session.context.isAdmin) {
     throw new DomainError({
       code: "FORBIDDEN",
       message: "Admin accounts cannot create an organization from this flow",
@@ -80,6 +80,7 @@ export async function createOrganizationForCurrentUser(
     return await dependencies.organizationsRepository.createForCurrentUser(session.token, {
       name: parsed.data.name,
       type: organizationType,
+      countryCode: parsed.data.countryCode,
     });
   } catch (error) {
     throw normalizeDomainError(error);
@@ -98,6 +99,7 @@ export async function bootstrapCurrentOrganizationFromBetterAuth(
   const parsed = createOrganizationInputSchema.safeParse({
     name: input.name,
     type: input.type,
+    countryCode: input.countryCode,
   });
   if (!parsed.success) {
     throw new DomainError({
@@ -108,6 +110,16 @@ export async function bootstrapCurrentOrganizationFromBetterAuth(
   }
 
   const session = await dependencies.requireSession();
+  if (
+    session.context.organizationId &&
+    session.context.organizationId !== input.organizationId
+  ) {
+    throw new DomainError({
+      code: "FORBIDDEN",
+      message: "Active organization mismatch",
+      status: 403,
+    });
+  }
   return dependencies.organizationProfilesRepository.bootstrapCurrent(session.token, input);
 }
 
@@ -120,6 +132,9 @@ export async function syncCurrentOrganizationFromBetterAuth(
   dependencies: OrganizationsServiceDependencies = defaultDependencies,
 ) {
   const session = await dependencies.requireSession();
+  if (!session.context.organizationId) {
+    return null;
+  }
   return dependencies.organizationProfilesRepository.syncCurrent(session.token);
 }
 

@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { internalMutation, internalQuery } from "../../../../_generated/server";
+import { getAuthorizationExpiryMs, isAuthorizationExpired } from "../../../../_core/oauth/constants";
 import { getClientOrThrow } from "../helpers";
 import { loadOrganizationBundle } from "../subjects";
 import { revokeAuthorizationAccessTokens } from "./common";
@@ -80,6 +81,9 @@ export const getAccessTokenContext = internalQuery({
     if (!authorization || authorization.revokedAt) {
       throw new ConvexError({ code: "INVALID_TOKEN", message: "Authorization grant is revoked" });
     }
+    if (isAuthorizationExpired(authorization, Date.now())) {
+      throw new ConvexError({ code: "AUTHORIZATION_EXPIRED", message: "Organization authorization expired" });
+    }
 
     const owner = requireOrganizationOwnerFromAuthorization(authorization);
     const bundle = await loadOrganizationBundle(ctx, owner, args.clientId);
@@ -110,9 +114,12 @@ export const touchAccessToken = internalMutation({
       .unique();
     if (!accessToken) return { ok: false } as const;
     await ctx.db.patch(accessToken._id, { lastUsedAt: args.now });
+    const authorization = await ctx.db.get(accessToken.authorizationId);
+    const client = authorization ? await getClientOrThrow(ctx, authorization.clientId) : null;
     await ctx.db.patch(accessToken.authorizationId, {
       lastUsedAt: args.now,
       updatedAt: args.now,
+      expiresAt: client ? args.now + getAuthorizationExpiryMs() : undefined,
     });
     return { ok: true } as const;
   },

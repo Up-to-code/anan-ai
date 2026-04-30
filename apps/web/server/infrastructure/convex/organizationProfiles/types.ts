@@ -5,6 +5,7 @@ export type BootstrapOrganizationProfileInput = {
   name: string;
   slug?: string;
   type: "broker" | "red";
+  countryCode: string;
 };
 
 /**
@@ -15,6 +16,7 @@ export type BootstrapOrganizationProfileInput = {
 export type OrganizationProfilesRepository = {
   listByOrganizationIds(token: string, organizationIds: string[]): Promise<OrganizationSummary[]>;
   getCurrent(token: string): Promise<OrganizationSummary | null>;
+  getById(token: string, organizationId: string): Promise<OrganizationSummary | null>;
   bootstrapCurrent(token: string, input: BootstrapOrganizationProfileInput): Promise<OrganizationSummary>;
   syncCurrent(token: string): Promise<OrganizationSummary | null>;
   updateCurrent(token: string, input: UpdateOrganizationInput): Promise<OrganizationSummary>;

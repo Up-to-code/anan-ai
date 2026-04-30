@@ -1,6 +1,6 @@
 import { mutation, query } from "../_generated/server";
 import { ConvexError, v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 import { DEFAULT_ENFORCEMENT, DEFAULT_KSA_RULESETS, DEFAULT_KSA_SOURCES } from "./compliance/defaults";
 
 const requirementValidator = v.object({
@@ -121,7 +121,7 @@ async function deactivateOtherRulesets(ctx: any, args: { countryCode: string; or
 export const listComplianceRulesets = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const rulesets = await ctx.db.query("complianceRulesets").collect();
     return rulesets.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
   },
@@ -135,7 +135,7 @@ export const listComplianceRulesets = query({
 export const getComplianceRuleset = query({
   args: { id: v.id("complianceRulesets") },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return ctx.db.get(args.id);
   },
 });
@@ -151,7 +151,7 @@ export const saveComplianceRuleset = mutation({
     ...rulesetPayloadValidator,
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const now = Date.now();
     const result = args.id ? await updateRuleset(ctx, args as RulesetPayload & { id: any }, now) : await createRuleset(ctx, args, now);
 
@@ -175,7 +175,7 @@ export const saveComplianceRuleset = mutation({
 export const seedDefaultComplianceRulesets = mutation({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const existing = await ctx.db
       .query("complianceRulesets")
       .withIndex("countryCode", (q) => q.eq("countryCode", "SA"))

@@ -1,0 +1,13 @@
+url: ${MAESTRO_WEB_URL}
+---
+- runScript:
+    file: ../scripts/bootstrap.js
+    env:
+      E2E_PERSONA: invitee
+      E2E_REDIRECT_TO: /ws
+- openLink: ${output.bootstrapUrl}
+- assertVisible: "رحلة التفعيل"
+- tapOn:
+    id: onboarding-invite-accept
+- assertVisible: "مساحة العمل"
+

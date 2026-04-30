@@ -139,14 +139,14 @@ export function getAssistantStageLabel(
     return "تم إيقاف التوليد.";
   }
   if (!isStreaming || !streamStage) return "مساعد مساحة العمل يجهز الخطوة التالية...";
-  const team = streamStage.teamId?.replace("team_workspace_", "");
+  const team = streamStage.teamId ? normalizeAssistantTeamLabel(streamStage.teamId) : "";
   switch (streamStage.phase) {
     case "intent_started":
       return "جاري تحليل الطلب وتحديد الفريق المناسب...";
     case "intent_done":
       return team ? `تم تحديد المسارات: ${team}` : "تم تحديد مسار التنفيذ.";
     case "team_started":
-      return team ? `فريق ${team} يعمل الآن...` : "الفريق يعمل الآن...";
+      return team ? `${team} يعمل الآن...` : "الفريق يعمل الآن...";
     case "team_done":
       return streamStage.status === "failed"
         ? "انتهت مهمة فريق مع تعذر جزئي، نكمل الدمج..."
@@ -174,5 +174,12 @@ export function getAssistantStageLabel(
  * HOW:   Strips the known prefix and replaces underscores with spaces.
  */
 export function normalizeAssistantTeamLabel(teamId: string) {
-  return teamId.replace("team_workspace_", "").replaceAll("_", " ");
+  const labels: Record<string, string> = {
+    team_workspace_projects: "فريق المشاريع",
+    team_workspace_offers: "فريق العروض",
+    team_workspace_crm: "فريق CRM",
+    team_workspace_org: "فريق المنظمة",
+    team_workspace_inbox: "فريق الوارد",
+  };
+  return labels[teamId] ?? teamId.replace("team_workspace_", "").replaceAll("_", " ");
 }

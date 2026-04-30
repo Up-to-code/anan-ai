@@ -62,6 +62,8 @@ export function AgPropertyFormSafetyOverlay({
         </p>
         <div className="grid gap-3">
           <button
+            type="button"
+            data-testid="property-form-confirm-save"
             onClick={onConfirm}
             disabled={savePending}
             className="rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-highlight)_50%,transparent)] bg-[var(--workspace-highlight)] py-4 text-sm font-bold text-[var(--primary-foreground)] transition hover:brightness-110"
@@ -69,6 +71,8 @@ export function AgPropertyFormSafetyOverlay({
             {confirmLabel}
           </button>
           <button
+            type="button"
+            data-testid="property-form-cancel-save"
             onClick={onClose}
             className="rounded-2xl border border-[color:var(--workspace-border)] py-4 text-sm font-bold text-[var(--workspace-muted)] transition hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_28%,transparent)] hover:text-[var(--workspace-bubble-other-foreground)]"
           >

@@ -1,6 +1,13 @@
 import { ConvexError, v } from "convex/values";
 import { internalMutation, internalQuery } from "../../../_generated/server";
-import { OAUTH_CONSENT_VERSION, OAUTH_SCOPE_LABELS, diffScopes } from "../../../_core/oauth/constants";
+import {
+  OAUTH_CONSENT_VERSION,
+  OAUTH_SCOPE_LABELS,
+  diffScopes,
+  getAuthorizationExpiresAt,
+  getAuthorizationExpiryMs,
+  isAuthorizationExpired,
+} from "../../../_core/oauth/constants";
 import { findProfileByAuthUserId } from "../../agencies/repositories/core";
 import {
   requireSelectedOAuthOrganization,
@@ -40,12 +47,17 @@ function toExistingAuthorization(authorization: any, organizationName: string, t
         createdAt: authorization.createdAt,
         updatedAt: authorization.updatedAt,
         lastUsedAt: authorization.lastUsedAt ?? null,
+        expiresAt: authorization.expiresAt ?? null,
       }
     : null;
 }
 
 function mergeGrantedScopes(existingScopes: string[] | undefined, requestedScopes: string[]) {
   return [...new Set([...(existingScopes ?? []), ...requestedScopes])].sort();
+}
+
+function ensureClientCanAuthorizeOrganization(_client: any, _tenantOrgId: string, _requestedScopes: string[]) {
+  return;
 }
 
 async function upsertAuthorizationGrant(args: {
@@ -58,6 +70,7 @@ async function upsertAuthorizationGrant(args: {
   clientId: string;
   actorUserId: any;
   grantedScopes: string[];
+  expiresAt: number;
   now: number;
 }) {
   if (args.existingAuthorization) {
@@ -69,6 +82,7 @@ async function upsertAuthorizationGrant(args: {
       grantedScopes: args.grantedScopes,
       offlineAccess: args.grantedScopes.includes("offline_access"),
       consentVersion: OAUTH_CONSENT_VERSION,
+      expiresAt: args.expiresAt,
       updatedAt: args.now,
       revokedAt: undefined,
       lastUsedAt: args.now,
@@ -85,6 +99,7 @@ async function upsertAuthorizationGrant(args: {
     grantedScopes: args.grantedScopes,
     offlineAccess: args.grantedScopes.includes("offline_access"),
     consentVersion: OAUTH_CONSENT_VERSION,
+    expiresAt: args.expiresAt,
     createdAt: args.now,
     updatedAt: args.now,
     lastUsedAt: args.now,
@@ -229,11 +244,13 @@ export const getAuthorizationPrompt = internalQuery({
     const flow = requireActiveFlow(await ctx.db.get(args.flowId), Date.now());
     const client = await getClientOrThrow(ctx, flow.clientId);
     const profile = await findProfileByAuthUserId(ctx, args.authUserId);
-    const { organizations, selectedOrganization } = await resolveSelectedOAuthOrganization(
+    const resolved = await resolveSelectedOAuthOrganization(
       ctx,
       args.authUserId,
       args.selectedTenantOrgId,
     );
+    const organizations = resolved.organizations;
+    const selectedOrganization = resolved.selectedOrganization;
 
     const owner = selectedOrganization
       ? buildOAuthOwnerContext({
@@ -255,6 +272,7 @@ export const getAuthorizationPrompt = internalQuery({
       !authorization ||
       authorization.revokedAt !== undefined ||
       authorization.consentVersion !== OAUTH_CONSENT_VERSION ||
+      isAuthorizationExpired(authorization, Date.now()) ||
       pendingScopes.length > 0;
     const canApproveSelectedOrganization = selectedOrganization?.role === "manager";
     const managerApprovalRequired = Boolean(
@@ -311,7 +329,9 @@ export const getAuthorizationPrompt = internalQuery({
       requiresConsent,
       existingAuthorization: selectedOrganization
         ? toExistingAuthorization(
-            authorization,
+            authorization
+              ? { ...authorization, expiresAt: getAuthorizationExpiresAt(authorization) }
+              : authorization,
             selectedOrganization.organizationName,
             selectedOrganization.tenantOrgId,
           )
@@ -344,6 +364,7 @@ export const persistAuthorizationApproval = internalMutation({
       args.authUserId,
       args.selectedTenantOrgId,
     );
+    ensureClientCanAuthorizeOrganization(client, selectedOrganization.tenantOrgId, flow.requestedScopes);
     if (selectedOrganization.role !== "manager") {
       throw new ConvexError({ code: "FORBIDDEN", message: "Manager role required" });
     }
@@ -356,6 +377,7 @@ export const persistAuthorizationApproval = internalMutation({
     });
     const existingAuthorization = await getAuthorizationRecordForOwner(ctx, owner, client.clientId);
     const grantedScopes = mergeGrantedScopes(existingAuthorization?.grantedScopes, flow.requestedScopes);
+    const expiresAt = args.now + getAuthorizationExpiryMs();
     const authorizationId = await upsertAuthorizationGrant({
       ctx,
       existingAuthorization,
@@ -366,6 +388,7 @@ export const persistAuthorizationApproval = internalMutation({
       clientId: client.clientId,
       actorUserId: args.actorUserId,
       grantedScopes,
+      expiresAt,
       now: args.now,
     });
     await ensureOrganizationSubjectMapping({
@@ -436,10 +459,13 @@ export const issueAuthorizationCodeForExistingGrant = internalMutation({
       authUserId: args.authUserId,
     });
     const existingAuthorization = await getAuthorizationRecordForOwner(ctx, owner, flow.clientId);
+    const client = await getClientOrThrow(ctx, flow.clientId);
+    ensureClientCanAuthorizeOrganization(client, selectedOrganization.tenantOrgId, flow.requestedScopes);
     if (
       !existingAuthorization ||
       existingAuthorization.revokedAt !== undefined ||
-      existingAuthorization.consentVersion !== OAUTH_CONSENT_VERSION
+      existingAuthorization.consentVersion !== OAUTH_CONSENT_VERSION ||
+      isAuthorizationExpired(existingAuthorization, args.now)
     ) {
       throw new ConvexError({ code: "FORBIDDEN", message: "Manager approval required" });
     }

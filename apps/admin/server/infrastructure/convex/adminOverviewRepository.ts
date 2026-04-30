@@ -1,4 +1,4 @@
-import { fetchQuery } from "convex/nextjs";
+import { createRepositoryRefs, queryRef } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 type OverviewApiRefs = {
@@ -9,8 +9,8 @@ type ActivitiesApiRefs = {
   listActivityFeed: unknown;
 };
 
-const overviewApi = apiUnsafe["admin_zone/overview"] as OverviewApiRefs;
-const activitiesApi = apiUnsafe["admin_zone/activities"] as ActivitiesApiRefs;
+const overviewApi = createRepositoryRefs<OverviewApiRefs>(apiUnsafe, "admin_zone/overview");
+const activitiesApi = createRepositoryRefs<ActivitiesApiRefs>(apiUnsafe, "admin_zone/activities");
 
 export type OverviewStats = {
   users: number;
@@ -39,9 +39,9 @@ export type OverviewStats = {
  */
 export const convexAdminOverviewRepository = {
   async getStats(token: string) {
-    return fetchQuery(overviewApi.overviewStats as never, {} as never, { token }) as Promise<OverviewStats>;
+    return queryRef<OverviewStats>(token, overviewApi.overviewStats);
   },
   async listRecentActivities(token: string, limit = 8) {
-    return fetchQuery(activitiesApi.listActivityFeed as never, { source: "all", limit } as never, { token }) as Promise<Array<Record<string, unknown>>>;
+    return queryRef<Array<Record<string, unknown>>>(token, activitiesApi.listActivityFeed, { source: "all", limit });
   },
 };

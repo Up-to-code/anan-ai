@@ -47,7 +47,7 @@ export type WebDictionary = {
     developers: string;
     brokers: string;
     pricing: string;
-    partnerships: string;
+    collaborations: string;
     docs: string;
     team: string;
     careers: string;
@@ -212,7 +212,7 @@ export type WebDictionary = {
     inventoryOwner: string;
     unknownOwner: string;
     noCommissionDetails: string;
-    executionPartner: string;
+    executionProvider: string;
     notAssignedYet: string;
     noPermitStatus: string;
     clientSummary: string;
@@ -387,6 +387,8 @@ export type WebDictionary = {
     connectedAppsConnectedAt: string;
     connectedAppsLastUsed: string;
     connectedAppsNeverUsed: string;
+    connectedAppsExpires: string;
+    connectedAppsExpired: string;
     connectedAppsRevoke: string;
     connectedAppsRevoking: string;
     connectedAppsRevokeConfirm: string;
@@ -609,7 +611,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       notifications: "الإشعارات",
       inbox: "الرسائل",
       overviewTitle: "نظرة عامة",
-      assistantTitle: "مساعد عنان",
+      assistantTitle: "Anan AI",
       workspaceFallback: "مساحة العمل",
       newChat: "محادثة جديدة",
       hideSidebar: "إخفاء القائمة",
@@ -640,7 +642,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       developers: "مساحة المطورين",
       brokers: "مساحة الوسطاء",
       pricing: "الباقات",
-      partnerships: "التعاونات",
+      collaborations: "التعاونات",
       docs: "التوثيق",
       team: "الفريق",
       careers: "التوظيف",
@@ -805,7 +807,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       inventoryOwner: "صاحب المخزون",
       unknownOwner: "غير معروف",
       noCommissionDetails: "بدون تفاصيل عمولة",
-      executionPartner: "الطرف التنفيذي",
+      executionProvider: "الطرف التنفيذي",
       notAssignedYet: "لم يتم التوجيه بعد",
       noPermitStatus: "بدون حالة تصريح",
       clientSummary: "ملخص العميل",
@@ -980,6 +982,8 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       connectedAppsConnectedAt: "تم الربط",
       connectedAppsLastUsed: "آخر استخدام",
       connectedAppsNeverUsed: "لم يُستخدم",
+      connectedAppsExpires: "ينتهي",
+      connectedAppsExpired: "منتهي",
       connectedAppsRevoke: "إلغاء الربط",
       connectedAppsRevoking: "جاري الإلغاء...",
       connectedAppsRevokeConfirm: "سيتم إلغاء ربط التطبيق عن هذه المنظمة وقطع كل الجلسات الحالية. هل تريد المتابعة؟",
@@ -1200,7 +1204,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       notifications: "Notifications",
       inbox: "Inbox",
       overviewTitle: "Overview",
-      assistantTitle: "Anan Assistant",
+      assistantTitle: "Anan AI",
       workspaceFallback: "Workspace",
       newChat: "New chat",
       hideSidebar: "Hide sidebar",
@@ -1231,7 +1235,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       developers: "Developer space",
       brokers: "Broker space",
       pricing: "Pricing",
-      partnerships: "Partnerships",
+      collaborations: "Collaborations",
       docs: "Documentation",
       team: "Team",
       careers: "Careers",
@@ -1384,7 +1388,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
     offers: {
       eyebrow: "Offers 2.0",
       title: "Offers as collaboration cases",
-      description: "The offers zone is now organized around practical cases between the inventory owner, the client-side broker, and the execution partner.",
+      description: "The offers zone is now organized around practical cases between the inventory owner, the client-side broker, and the execution provider.",
       create: "Create new case",
       allQueues: "All queues",
       queue: "Queue",
@@ -1396,7 +1400,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       inventoryOwner: "Inventory owner",
       unknownOwner: "Unknown",
       noCommissionDetails: "No commission details",
-      executionPartner: "Execution partner",
+      executionProvider: "Execution provider",
       notAssignedYet: "Not assigned yet",
       noPermitStatus: "No permit status",
       clientSummary: "Client summary",
@@ -1571,6 +1575,8 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       connectedAppsConnectedAt: "Connected",
       connectedAppsLastUsed: "Last used",
       connectedAppsNeverUsed: "Never used",
+      connectedAppsExpires: "Expires",
+      connectedAppsExpired: "Expired",
       connectedAppsRevoke: "Revoke",
       connectedAppsRevoking: "Revoking...",
       connectedAppsRevokeConfirm: "This will revoke the app for the organization and cut off all active sessions. Continue?",
@@ -1791,7 +1797,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       notifications: "Notifications",
       inbox: "Boîte de réception",
       overviewTitle: "Vue d'ensemble",
-      assistantTitle: "Assistant Anan",
+      assistantTitle: "Anan AI",
       workspaceFallback: "Espace de travail",
       newChat: "Nouvelle conversation",
       hideSidebar: "Masquer la barre latérale",
@@ -1822,7 +1828,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       developers: "Espace promoteurs",
       brokers: "Espace courtiers",
       pricing: "Tarifs",
-      partnerships: "Partenariats",
+      collaborations: "Collaborations",
       docs: "Documentation",
       team: "Équipe",
       careers: "Carrières",
@@ -1987,7 +1993,7 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       inventoryOwner: "Propriétaire du stock",
       unknownOwner: "Inconnu",
       noCommissionDetails: "Aucun détail de commission",
-      executionPartner: "Partenaire d'exécution",
+      executionProvider: "Prestataire d'exécution",
       notAssignedYet: "Pas encore attribué",
       noPermitStatus: "Aucun statut d'autorisation",
       clientSummary: "Résumé client",
@@ -2162,6 +2168,8 @@ const dictionaries: Record<AppLocale, WebDictionary> = {
       connectedAppsConnectedAt: "Connectée",
       connectedAppsLastUsed: "Dernière utilisation",
       connectedAppsNeverUsed: "Jamais utilisée",
+      connectedAppsExpires: "Expire",
+      connectedAppsExpired: "Expirée",
       connectedAppsRevoke: "Révoquer",
       connectedAppsRevoking: "Révocation...",
       connectedAppsRevokeConfirm: "Cette action révoquera l'application pour l'organisation et coupera toutes les sessions actives. Continuer ?",

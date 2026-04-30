@@ -16,12 +16,8 @@ type AdminSidebarDrawerProps = {
  */
 export default function AdminSidebarDrawer({ user }: AdminSidebarDrawerProps) {
   const [open, setOpen] = useState(false);
-  const [isRtl, setIsRtl] = useState(true);
+  const isRtl = typeof document === "undefined" || document.documentElement.dir !== "ltr";
   const drawerId = useId();
-
-  useEffect(() => {
-    setIsRtl(document.documentElement.dir !== "ltr");
-  }, []);
 
   useEffect(() => {
     if (!open) {

@@ -24,6 +24,8 @@ type WorkspaceAssistantRoutingMeta = {
   teamIds?: string[];
 };
 
+const WORKSPACE_ASSISTANT_LABEL = "Anan AI";
+
 const TEAM_BADGE_META: Record<
   string,
   {
@@ -73,29 +75,6 @@ function toMetaRecord(meta: unknown): Record<string, unknown> | null {
   return meta && typeof meta === "object" ? (meta as Record<string, unknown>) : null;
 }
 
-function normalizeAgentName(agentName: string, isArabic: boolean) {
-  const normalized = agentName.trim();
-  if (!normalized) {
-    return isArabic ? "وكيل عنان" : "Anan Agent";
-  }
-
-  const agentMeta = Object.values(TEAM_BADGE_META).find((team) =>
-    normalized.includes(team.en.split(" ")[0]?.toLowerCase() ?? ""),
-  );
-  if (agentMeta) {
-    return isArabic ? agentMeta.ar.replace("فريق", "وكيل") : agentMeta.en.replace("Team", "Agent");
-  }
-
-  if (normalized.startsWith("anan_workspace_")) {
-    const suffix = normalized.replace("anan_workspace_", "");
-    const words = suffix.split("_").filter(Boolean);
-    const english = words.map((word) => word[0]?.toUpperCase() + word.slice(1)).join(" ");
-    return isArabic ? `وكيل ${english}` : `${english} Agent`;
-  }
-
-  return normalized;
-}
-
 function resolveTeamBadge(teamId: string, isArabic: boolean): WorkspaceAssistantBadge {
   const meta = TEAM_BADGE_META[teamId];
   if (!meta) {
@@ -134,7 +113,7 @@ export function resolveAssistantDirection(value: string | null | undefined) {
 /**
  * WHY:   Streaming state and persisted assistant metadata need one shared badge builder so live and saved turns stay consistent.
  * WHAT:  Converts assistant routing metadata plus optional fallbacks into compact UI badges.
- * HOW:   Normalizes the assistant identity first, then appends the primary team and any extra routed teams without duplicates.
+ * HOW:   Pins the assistant identity first, then appends the primary team and any extra routed teams without duplicates.
  */
 export function getWorkspaceAssistantBadges(args: {
   content?: string | null;
@@ -145,13 +124,7 @@ export function getWorkspaceAssistantBadges(args: {
   const isArabic = isArabicText(args.content);
   const metaRecord = toMetaRecord(args.meta);
   const routing = toMetaRecord(metaRecord?.routing) as WorkspaceAssistantRoutingMeta | null;
-  const assistantLabel =
-    typeof routing?.assistantLabel === "string" && routing.assistantLabel.trim()
-      ? routing.assistantLabel.trim()
-      : normalizeAgentName(
-          routing?.agentName || args.fallbackAgentName || "",
-          isArabic,
-        );
+  const assistantLabel = WORKSPACE_ASSISTANT_LABEL;
 
   const rawTeamIds = [
     routing?.primaryTeamId,
@@ -163,7 +136,7 @@ export function getWorkspaceAssistantBadges(args: {
   const badges: WorkspaceAssistantBadge[] = [
     {
       id: "assistant",
-      label: assistantLabel || (isArabic ? "وكيل عنان" : "Anan Agent"),
+      label: assistantLabel,
       tone: "assistant",
     },
     ...uniqueTeamIds.map((teamId) => resolveTeamBadge(teamId, isArabic)),

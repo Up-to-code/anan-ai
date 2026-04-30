@@ -1,15 +1,54 @@
 import { getAuthUserId } from "./_core/security/authIdentity";
 import { makeTenantsAPI, Tenants } from "@djpanda/convex-tenants";
-import { authz } from "./authz";
 import { components } from "./_generated/api";
+import { internalMutation } from "./_generated/server";
+import { makeFunctionReference } from "convex/server";
+import { v } from "convex/values";
+
+const noopAuthzRelationRef = makeFunctionReference<"mutation">("tenants:noopAuthzRelation");
+
+/**
+ * WHY:   The legacy Convex Authz component has been removed in favor of OIDC claims and scopes.
+ * WHAT:  Keeps the tenants component operational while role-sync side effects are retired.
+ * HOW:   Satisfies the tenants package adapter contract with authorization no-ops; actual access
+ *        checks now live in Better Auth organization context and `@anan/auth` guards.
+ */
+const oidcTenantsAuthorizationAdapter = {
+  component: {
+    rebac: {
+      addRelation: noopAuthzRelationRef,
+      removeRelation: noopAuthzRelationRef,
+    },
+  },
+  can: async () => true,
+  require: async () => undefined,
+  assignRole: async () => undefined,
+  revokeRole: async () => undefined,
+  grantPermission: async () => undefined,
+  denyPermission: async () => undefined,
+  getUserPermissions: async () => [],
+  getUserRoles: async () => [],
+  getAuditLog: async () => ({ page: [], isDone: true, continueCursor: "" }),
+} as any;
+
+export const noopAuthzRelation = internalMutation({
+  args: {
+    subjectType: v.optional(v.string()),
+    subjectId: v.optional(v.string()),
+    relation: v.optional(v.string()),
+    objectType: v.optional(v.string()),
+    objectId: v.optional(v.string()),
+  },
+  handler: async () => undefined,
+});
 
 /**
  * WHY:   Admin/migration flows need direct access to tenant org operations.
  * WHAT:  Provides the low-level tenants client instance for privileged calls.
- * HOW:   Instantiates the tenants component with the shared authz map.
+ * HOW:   Instantiates the tenants component with an OIDC-era adapter that retires role sync side effects.
  */
 export const tenants = new Tenants(components.tenants, {
-  authz,
+  authz: oidcTenantsAuthorizationAdapter,
   creatorRole: "owner",
   permissionMap: {
     createOrganization: false,
@@ -17,7 +56,7 @@ export const tenants = new Tenants(components.tenants, {
 });
 
 const tenantsApi = makeTenantsAPI(components.tenants, {
-  authz,
+  authz: oidcTenantsAuthorizationAdapter,
   creatorRole: "owner",
   permissionMap: {
     createOrganization: false,

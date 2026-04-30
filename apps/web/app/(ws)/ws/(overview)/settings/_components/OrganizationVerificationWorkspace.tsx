@@ -330,6 +330,7 @@ export default function OrganizationVerificationWorkspace({
 
         <div className="grid gap-6 xl:grid-cols-2">
           <DocumentsCard
+            documentKind="required"
             title={dictionary.settings.requiredDocsTitle}
             subtitle={dictionary.settings.requiredDocsSubtitle}
             uploadingLabel={dictionary.settings.uploadingFiles}
@@ -349,6 +350,7 @@ export default function OrganizationVerificationWorkspace({
             }}
           />
           <DocumentsCard
+            documentKind="proof"
             title={dictionary.settings.proofDocsTitle}
             subtitle={dictionary.settings.proofDocsSubtitle}
             uploadingLabel={dictionary.settings.uploadingFiles}

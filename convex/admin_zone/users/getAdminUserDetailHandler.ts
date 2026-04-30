@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { requireRole } from "../../_core/security/accessPolicy";
+import { requireAdminAccess } from "../../_core/security/accessPolicy";
 import { buildTenantMembershipRows } from "./tenantMembership";
 import { buildAdminUserActivityRows } from "./detail/activity";
 import { buildConversationSummaries } from "./detail/conversations";
@@ -11,7 +11,7 @@ import { loadAdminUserDetailSources } from "./detail/sources";
 export const getAdminUserDetailArgs = { userKey: v.string() };
 
 export async function getAdminUserDetailHandler(ctx: any, { userKey }: { userKey: string }) {
-  await requireRole(ctx, ["admin"]);
+  await requireAdminAccess(ctx);
 
   const sources = await loadAdminUserDetailSources(ctx);
   const tenantMemberships = await buildTenantMembershipRows(ctx, sources.tenantLinks);

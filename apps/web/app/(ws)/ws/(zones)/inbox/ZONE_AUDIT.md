@@ -1,7 +1,7 @@
 # Workspace UI `inbox` Audit
 
 ## Current Boundary Risks
-- `InboxComposer.tsx`, `useRealtimeInbox.ts`, and `InboxWorkspaceClient.tsx` are the largest local modules.
+- `InboxComposer.tsx`, `useRealtimeInbox/`, and `InboxWorkspaceClient.tsx` are the largest local modules.
 - The zone is highly interactive, so state, keyboard handling, realtime transport, and UI rendering can easily collapse into a few oversized files.
 
 ## SOLID Findings
@@ -12,4 +12,4 @@
 - Moved the inbox page module under `pages/` while keeping the rest of the zone intentionally page-heavy.
 
 ## Deferred Follow-Ups
-- Split `InboxComposer.tsx` and `useRealtimeInbox.ts` if additional behavior continues to accumulate.
+- Continue splitting `InboxComposer.tsx` and `useRealtimeInbox/` if additional behavior accumulates.

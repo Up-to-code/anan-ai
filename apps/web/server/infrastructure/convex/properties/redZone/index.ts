@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { mutationRef, queryRef, voidMutationRef } from "@anan/convex-adapters/repository";
 import { redOverviewApi, redPropertiesApi } from "./api";
 import type { RedZoneRepository } from "./types";
 
@@ -11,47 +11,50 @@ export type { RedZoneRepository } from "./types";
  */
 export const convexRedZoneRepository: RedZoneRepository = {
   async getOverview(token, REDId) {
-    return fetchQuery(redOverviewApi.countPropertiesByRedId as never, {
-      REDId: REDId as never,
-    } as never, { token }) as ReturnType<RedZoneRepository["getOverview"]>;
+    return queryRef<Awaited<ReturnType<RedZoneRepository["getOverview"]>>>(
+      token,
+      redOverviewApi.countPropertiesByRedId,
+      { REDId },
+    );
   },
 
   async listProperties(token, REDId, filters) {
-    return fetchQuery(redPropertiesApi.listByRedId as never, {
-      REDId: REDId as never,
-      ...filters,
-    } as never, { token }) as ReturnType<RedZoneRepository["listProperties"]>;
+    return queryRef<Awaited<ReturnType<RedZoneRepository["listProperties"]>>>(
+      token,
+      redPropertiesApi.listByRedId,
+      { REDId, ...filters },
+    );
   },
 
   async getProperty(token, id) {
-    return fetchQuery(redPropertiesApi.getById as never, {
-      id: id as never,
-    } as never, { token }) as ReturnType<RedZoneRepository["getProperty"]>;
+    return queryRef<Awaited<ReturnType<RedZoneRepository["getProperty"]>>>(
+      token,
+      redPropertiesApi.getById,
+      { id },
+    );
   },
 
   async createProperty(token, REDId, input) {
-    return fetchMutation(redPropertiesApi.create as never, {
-      REDId: REDId as never,
-      ...input,
-    } as never, { token }) as ReturnType<RedZoneRepository["createProperty"]>;
+    return mutationRef<Awaited<ReturnType<RedZoneRepository["createProperty"]>>>(
+      token,
+      redPropertiesApi.create,
+      { REDId, ...input },
+    );
   },
 
   async updateProperty(token, id, patch) {
-    await fetchMutation(redPropertiesApi.update as never, {
-      id: id as never,
-      ...patch,
-    } as never, { token });
+    await voidMutationRef(token, redPropertiesApi.update, { id, ...patch });
   },
 
   async deleteProperty(token, id) {
-    await fetchMutation(redPropertiesApi.remove as never, {
-      id: id as never,
-    } as never, { token });
+    await voidMutationRef(token, redPropertiesApi.remove, { id });
   },
 
   async publishProperty(token, id) {
-    return fetchMutation(redPropertiesApi.publish as never, {
-      id: id as never,
-    } as never, { token }) as ReturnType<RedZoneRepository["publishProperty"]>;
+    return mutationRef<Awaited<ReturnType<RedZoneRepository["publishProperty"]>>>(
+      token,
+      redPropertiesApi.publish,
+      { id },
+    );
   },
 };

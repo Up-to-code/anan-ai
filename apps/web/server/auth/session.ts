@@ -82,6 +82,7 @@ function buildResolvedSession(
   profile: Awaited<ReturnType<ProfilesRepository["getCurrent"]>>,
   organizationContext: AuthOrganizationContext,
 ) {
+  const adminAccess = profile?.metadata?.platformAccess?.admin ?? null;
   return {
     token,
     profile,
@@ -92,6 +93,9 @@ function buildResolvedSession(
       image: user.image,
       username: profile?.username,
       role: profile?.role,
+      isAdmin:
+        Boolean(adminAccess?.enabled && !adminAccess.revokedAt) ||
+        (profile as { role?: unknown } | null | undefined)?.role === "admin",
       brokerId: profile?.brokerId,
       redId: profile?.developerId,
       organizationId: organizationContext.organizationId ?? user.organizationId ?? null,
@@ -131,14 +135,12 @@ async function resolveOptionalSessionContext(
     return null;
   }
 
-  let { user, profile } = await getUserAndProfile(dependencies, token);
+  const { user, profile: currentProfile } = await getUserAndProfile(dependencies, token);
 
   if (!user || user.isActive === false) {
     return null;
   }
-  if (!profile) {
-    profile = await dependencies.profilesRepository.ensureCurrent(token);
-  }
+  const profile = currentProfile ?? await dependencies.profilesRepository.ensureCurrent(token);
 
   return buildResolvedSession(token, user, profile, organizationContext);
 }

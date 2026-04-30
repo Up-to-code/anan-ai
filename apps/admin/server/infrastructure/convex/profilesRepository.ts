@@ -1,5 +1,4 @@
-import { fetchQuery } from "convex/nextjs";
-import { fetchMutation } from "convex/nextjs";
+import { createRepositoryRefs, mutationRef, queryRef } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 import type { ProfileSummary, UpdateProfileInput } from "@/server/contracts/profiles";
 
@@ -8,7 +7,7 @@ type UsersApiRefs = {
   updateMyProfile: unknown;
 };
 
-const usersApi = (apiUnsafe["shared_logic/users/index"]) as UsersApiRefs;
+const usersApi = createRepositoryRefs<UsersApiRefs>(apiUnsafe, "shared_logic/users/index");
 
 /**
  * WHY:   Profile resolution must be swappable as the migration moves more logic out of Convex.
@@ -27,14 +26,10 @@ export type ProfilesRepository = {
  */
 export const convexProfilesRepository: ProfilesRepository = {
   async getCurrent(token) {
-    const profile = (await fetchQuery(usersApi.getMyProfile as never, {} as never, {
-      token,
-    })) as ProfileSummary | null;
+    const profile = await queryRef<ProfileSummary | null>(token, usersApi.getMyProfile);
     return profile;
   },
   async updateCurrent(token, input) {
-    return fetchMutation(usersApi.updateMyProfile as never, input as never, {
-      token,
-    }) as Promise<ProfileSummary>;
+    return mutationRef<ProfileSummary>(token, usersApi.updateMyProfile, input);
   },
 };

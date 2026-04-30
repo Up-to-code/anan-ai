@@ -7,22 +7,16 @@ const tiers = {
     { label: "root typecheck", cmd: "pnpm", args: ["typecheck"] },
     { label: "root vitest", cmd: "pnpm", args: ["test:once"] },
     { label: "admin typecheck", cmd: "pnpm", args: ["--filter", "admin", "typecheck"] },
-    { label: "mobile typecheck", cmd: "pnpm", args: ["--dir", "apps/mobile", "typecheck"] },
-    { label: "private-docs vitest", cmd: "pnpm", args: ["--filter", "private-docs", "test"] },
   ],
   surfaces: [
     { label: "admin vitest", cmd: "pnpm", args: ["--filter", "admin", "test"] },
-    { label: "client-web vitest", cmd: "pnpm", args: ["--filter", "client-web", "test"] },
-    { label: "mobile vitest", cmd: "pnpm", args: ["--dir", "apps/mobile", "test"] },
   ],
   e2e: [
     { label: "web smoke e2e", cmd: "pnpm", args: ["--filter", "web", "exec", "playwright", "test", "tests/smoke.spec.ts"] },
   ],
   build: [
     { label: "web build", cmd: "pnpm", args: ["build:web"] },
-    { label: "client-web build", cmd: "pnpm", args: ["build:client-web"] },
     { label: "admin build", cmd: "pnpm", args: ["build:admin"] },
-    { label: "private-docs build", cmd: "pnpm", args: ["build:private-docs"] },
   ],
   optional: [
     { label: "web upload e2e", cmd: "pnpm", args: ["--filter", "web", "exec", "playwright", "test", "tests/projects-upload.spec.ts"] },

@@ -1,8 +1,8 @@
 "use client";
 
+import { SegmentedControl } from "@anan/ui/forms";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { cn } from "@/lib/utils";
 
 type AdminRangeControlProps = {
   className?: string;
@@ -25,30 +25,23 @@ export default function AdminRangeControl({ className }: AdminRangeControlProps)
   };
 
   return (
-    <nav
-      className={cn(
-        "flex items-center gap-1 rounded-sm border border-[color:color-mix(in_srgb,var(--workspace-border)_90%,transparent)] bg-[var(--workspace-panel)] p-1",
-        className,
-      )}
+    <SegmentedControl
+      className={className}
       aria-label="time range"
-    >
-      {[
+      activeValue={currentRange}
+      items={[
         { value: "30d" as const, label: "30 يوم" },
         { value: "90d" as const, label: "90 يوم" },
-      ].map((item) => (
+      ].map((item) => ({ ...item, href: buildHref(item.value) }))}
+      renderLink={(item, itemClassName) => (
         <Link
           key={item.value}
-          href={buildHref(item.value)}
-          className={cn(
-            "rounded-sm border border-transparent px-3 py-1.5 text-sm font-black tracking-[0.1em] transition-colors",
-            currentRange === item.value
-              ? "border-[color:var(--workspace-highlight-border)] bg-[var(--workspace-highlight)] text-white"
-              : "text-[var(--workspace-muted)] hover:border-[color:color-mix(in_srgb,var(--workspace-border)_88%,transparent)] hover:bg-[var(--workspace-elevated)] hover:text-[var(--workspace-bubble-other-foreground)]",
-          )}
+          href={item.href ?? buildHref(item.value)}
+          className={itemClassName}
         >
           {item.label}
         </Link>
-      ))}
-    </nav>
+      )}
+    />
   );
 }

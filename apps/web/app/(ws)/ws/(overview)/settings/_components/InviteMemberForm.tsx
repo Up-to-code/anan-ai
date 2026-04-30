@@ -222,6 +222,7 @@ export default function InviteMemberForm({
       <div className="space-y-2">
         <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">{dictionary.settings.inviteSearchLabel}</label>
         <input
+          data-testid="invite-member-search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm font-medium text-foreground transition focus:bg-background focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -240,6 +241,7 @@ export default function InviteMemberForm({
             <button
               key={entry}
               type="button"
+              data-testid={`invite-member-role-${entry}`}
               onClick={() => setRole(entry)}
               disabled={isSubmitting || !hasOrganization}
               className={cn(
@@ -257,6 +259,7 @@ export default function InviteMemberForm({
 
       <button
         type="submit"
+        data-testid="invite-member-search-submit"
         disabled={isSearching || !hasOrganization}
         className="inline-flex w-fit items-center justify-center rounded-xl bg-foreground px-6 py-3 text-xs font-black tracking-[0.18em] text-background shadow-sm transition hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
       >
@@ -281,6 +284,7 @@ export default function InviteMemberForm({
       {!results.length && query.includes("@") && canManage && hasOrganization ? (
         <button
           type="button"
+          data-testid="invite-member-submit"
           onClick={() => void handleInvite(query.trim())}
           disabled={isSubmitting}
           className="inline-flex w-fit items-center justify-center rounded-lg bg-blue-600 px-6 py-3 text-xs font-black tracking-[0.18em] text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-70"

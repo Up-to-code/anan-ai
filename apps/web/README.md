@@ -78,6 +78,64 @@ To make `/ws/projects/create` uploads work end-to-end in dev:
 E2E note:
 - `PLAYWRIGHT_WS_STORAGE_STATE` (optional, test-only): absolute path to a pre-authenticated Playwright storage state file used by `tests/projects-upload.spec.ts`.
 
+## Workspace E2E Setup
+
+The workspace suite has two layers:
+
+- Playwright: deep browser regression tests under `tests/`.
+- Maestro: high-value web workflow mirrors under `maestro/`.
+
+Required local web env vars:
+
+```bash
+E2E_TEST_MODE=true
+E2E_SHARED_SECRET=<local-secret>
+E2E_PERSONA_NO_ORG_EMAIL=<seeded-user>
+E2E_PERSONA_NO_ORG_PASSWORD=<password>
+E2E_PERSONA_BROKER_ONBOARDING_EMAIL=<optional-dedicated-no-org-user>
+E2E_PERSONA_BROKER_ONBOARDING_PASSWORD=<password>
+E2E_PERSONA_DEVELOPER_ONBOARDING_EMAIL=<optional-dedicated-no-org-user>
+E2E_PERSONA_DEVELOPER_ONBOARDING_PASSWORD=<password>
+E2E_PERSONA_BROKER_MANAGER_EMAIL=<seeded-user>
+E2E_PERSONA_BROKER_MANAGER_PASSWORD=<password>
+E2E_PERSONA_DEVELOPER_MANAGER_EMAIL=<seeded-user>
+E2E_PERSONA_DEVELOPER_MANAGER_PASSWORD=<password>
+E2E_PERSONA_INVITEE_EMAIL=<seeded-user>
+E2E_PERSONA_INVITEE_PASSWORD=<password>
+E2E_PERSONA_MULTI_ORG_MANAGER_EMAIL=<seeded-user>
+E2E_PERSONA_MULTI_ORG_MANAGER_PASSWORD=<password>
+```
+
+Refresh Playwright auth states after starting the web server:
+
+```bash
+pnpm --filter web test:e2e:auth
+```
+
+This writes storage states to `apps/web/test-results/.auth/*.json`. You can still override individual personas with:
+
+- `PLAYWRIGHT_NO_ORG_STATE`
+- `PLAYWRIGHT_BROKER_ONBOARDING_STATE`
+- `PLAYWRIGHT_DEVELOPER_ONBOARDING_STATE`
+- `PLAYWRIGHT_BROKER_MANAGER_STATE`
+- `PLAYWRIGHT_DEVELOPER_MANAGER_STATE`
+- `PLAYWRIGHT_INVITEE_STATE`
+- `PLAYWRIGHT_MULTI_ORG_MANAGER_STATE`
+
+The broker/developer onboarding personas are optional but recommended for full-suite runs because each onboarding flow intentionally mutates a no-org account by creating an organization.
+
+Run the suites:
+
+```bash
+pnpm --filter web test:e2e
+MAESTRO_WEB_URL=http://localhost:3000 pnpm --filter web test:e2e:maestro
+```
+
+Cleanup:
+
+- Test-created records must use an `e2e-*` namespace.
+- `POST /api/e2e/cleanup` validates cleanup requests now; destructive backend cleanup should be wired to a dedicated Convex cleanup mutation before enabling automatic deletes.
+
 Analytics note:
 - Public and workspace surfaces emit PostHog browser events from the root layout.
 - Convex emits backend order/AI analytics only when the same PostHog env vars are also present in Convex env.

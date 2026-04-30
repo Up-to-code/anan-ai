@@ -1,6 +1,6 @@
 import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 
 type ActivitySource = "all" | "notifications" | "messages" | "admin";
 type ActivityTableRow = Record<string, any>;
@@ -272,7 +272,7 @@ export const listActivityFeed = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { source = "all", limit = 50 }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const items = buildMergedActivityItems(await loadActivitySources(ctx));
     const filtered = items.filter((item) => source === "all" || item.source === source);
     return filtered.sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
@@ -287,7 +287,7 @@ export const listActivityFeed = query({
 export const recentActivities = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit = 50 }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const items = buildRecentActivityItems(await loadActivitySources(ctx));
     return items.sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
   },

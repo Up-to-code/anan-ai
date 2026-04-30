@@ -1,3 +1,5 @@
+import type { LocationValue } from "@anan/location-map";
+
 /**
  * WHY:   The workspace now needs one shared UI model for people, projects, units, market insights, and threaded offer activity.
  * WHAT:  Exports serializable frontend-facing entity types used across projects, offers, CRM, AI, and organization settings.
@@ -18,6 +20,7 @@ export type UnitReference = {
   price?: number;
   priceLabel?: string;
   handoverAt?: number;
+  location?: LocationValue | null;
   floorPlanMedia?: import("@/server/contracts/files").UploadedFileReference[];
 };
 
@@ -25,6 +28,7 @@ export type ProjectReference = {
   id: string;
   title: string;
   location: string;
+  locationDetails?: LocationValue | null;
   image?: string;
   summary?: string;
 };

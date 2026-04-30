@@ -30,7 +30,7 @@ const itemVariants = {
 };
 
 /**
- * WHY:   Public marketing routes explain Anan’s mission and context for partners and users.
+ * WHY:   Public marketing routes explain Anan’s mission and context for users and organizations.
  * WHAT:  Renders the About page narrative with feature/value blocks and headline metrics.
  * HOW:   Uses framer-motion for premium entrance animations and refined layouts.
  */

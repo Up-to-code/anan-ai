@@ -1,6 +1,14 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { uploadedFileReferenceListValidator, uploadedFileReferenceValidator } from "./uploadedFiles";
+import { transitionalGlobalSecurityFields } from "./securityFields";
+import {
+    boundedMetadataValidator,
+    sha256HexValidator,
+    trustedUploadUrlValidator,
+    unsafeDynamicPayloadValidator,
+    verifiedUploadMimeValidator,
+} from "./securityValidators";
 
 /**
  * Properties Schema
@@ -12,12 +20,30 @@ import { uploadedFileReferenceListValidator, uploadedFileReferenceValidator } fr
 
 const propertiesTables = {
     properties: defineTable({
+    ...transitionalGlobalSecurityFields,
         title: v.string(),
         address: v.string(),
+        orgId: v.optional(v.id("organizations")),
+        orgType: v.optional(v.union(v.literal("broker"), v.literal("developer"))),
         tenantOrgId: v.optional(v.string()),
         ownerType: v.optional(v.union(v.literal("broker"), v.literal("RED"))),
         REDId: v.optional(v.id("RED")), // Link to Real Estate Developer
         brokerId: v.optional(v.id("brokers")),
+        propertyType: v.optional(v.union(
+            v.literal("apartment"),
+            v.literal("villa"),
+            v.literal("townhouse"),
+            v.literal("penthouse"),
+            v.literal("commercial"),
+            v.literal("land"),
+        )),
+        countryCode: v.optional(v.string()),
+        cityCode: v.optional(v.string()),
+        addressLine: v.optional(v.string()),
+        lat: v.optional(v.number()),
+        lng: v.optional(v.number()),
+        isPublished: v.optional(v.boolean()),
+        publishedAt: v.optional(v.number()),
         price: v.number(),
         beds: v.number(),
         baths: v.number(),
@@ -40,7 +66,7 @@ const propertiesTables = {
         imageIds: v.optional(v.array(v.id("_storage"))),
         heroImage: v.optional(uploadedFileReferenceValidator),
         media: v.optional(uploadedFileReferenceListValidator),
-        body: v.optional(v.any()), // dynamic structured content block
+        body: v.optional(unsafeDynamicPayloadValidator), // dynamic structured content block
         adLicenseNumber: v.optional(v.string()),
         adLicenseStatus: v.optional(
             v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
@@ -66,10 +92,20 @@ const propertiesTables = {
         createdAt: v.optional(v.number()),
         updatedAt: v.optional(v.number()),
     })
+        .index("by_orgId", ["orgId"])
+        .index("by_orgId_and_status", ["orgId", "status"])
+        .index("by_cityCode_and_isPublished", ["cityCode", "isPublished"])
+        .index("by_countryCode_and_isPublished", ["countryCode", "isPublished"])
+        .index("by_orgId_and_isPublished", ["orgId", "isPublished"])
         .index("tenantOrgId", ["tenantOrgId"])
         .index("tenantOrgId_updatedAt", ["tenantOrgId", "updatedAt"])
         .index("tenantOrgId_publicationState_updatedAt", ["tenantOrgId", "publicationState", "updatedAt"])
         .index("tenantOrgId_status_updatedAt", ["tenantOrgId", "status", "updatedAt"])
+        .index("by_org_active_publication_updatedAt", ["orgId", "deletedAt", "publicationState", "updatedAt"])
+        .index("by_org_active_status_updatedAt", ["orgId", "deletedAt", "status", "updatedAt"])
+        .index("by_org_active_createdAt", ["orgId", "deletedAt", "createdAt"])
+        .index("by_org_createdBy_createdAt", ["orgId", "createdBy", "createdAt"])
+        .index("by_publication_city", ["publicationState", "countryCode", "cityCode"])
         .index("status", ["status"])
         .index("publicationState", ["publicationState"])
         .index("publicationState_createdAt", ["publicationState", "createdAt"])
@@ -85,6 +121,8 @@ const propertiesTables = {
         .searchIndex("search_body", { searchField: "description" })
         .searchIndex("search_full", { searchField: "searchText" }),
     propertyViewerAccess: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         propertyId: v.id("properties"),
         authUserId: v.string(),
         sharedByAuthUserId: v.optional(v.string()),
@@ -96,8 +134,12 @@ const propertiesTables = {
     })
         .index("propertyId", ["propertyId"])
         .index("authUserId", ["authUserId"])
-        .index("propertyId_authUserId", ["propertyId", "authUserId"]),
+        .index("propertyId_authUserId", ["propertyId", "authUserId"])
+        .index("by_authUser_status", ["authUserId", "status"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
     projectAnalyticsEvents: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         propertyId: v.id("properties"),
         eventType: v.union(
             v.literal("project_detail_view"),
@@ -111,7 +153,6 @@ const propertiesTables = {
         actorAuthUserId: v.optional(v.string()),
         actorAudience: v.optional(
             v.union(
-                v.literal("admin"),
                 v.literal("broker"),
                 v.literal("developer"),
                 v.literal("user"),
@@ -121,7 +162,7 @@ const propertiesTables = {
         conversationId: v.optional(v.id("inboxConversations")),
         offerCaseId: v.optional(v.id("offerCases")),
         dealId: v.optional(v.id("deals")),
-        metadata: v.optional(v.any()),
+        metadata: v.optional(boundedMetadataValidator),
         createdAt: v.number(),
         tenantOrgId: v.optional(v.string()),
         ownerType: v.optional(v.union(v.literal("broker"), v.literal("RED"))),
@@ -129,8 +170,11 @@ const propertiesTables = {
         .index("propertyId", ["propertyId"])
         .index("propertyId_createdAt", ["propertyId", "createdAt"])
         .index("propertyId_eventType", ["propertyId", "eventType"])
-        .index("propertyId_eventType_createdAt", ["propertyId", "eventType", "createdAt"]),
+        .index("propertyId_eventType_createdAt", ["propertyId", "eventType", "createdAt"])
+        .index("by_org_createdAt", ["orgId", "createdAt"]),
     propertyEngagementDaily: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         propertyId: v.id("properties"),
         tenantOrgId: v.string(),
         dateKey: v.string(),
@@ -141,8 +185,11 @@ const propertiesTables = {
         lastEventAt: v.optional(v.number()),
     })
         .index("propertyId_dateKey", ["propertyId", "dateKey"])
-        .index("tenantOrgId_dateKey", ["tenantOrgId", "dateKey"]),
+        .index("tenantOrgId_dateKey", ["tenantOrgId", "dateKey"])
+        .index("by_org_dateKey", ["orgId", "dateKey"]),
     propertyBrokerAnalytics: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         propertyId: v.id("properties"),
         tenantOrgId: v.string(),
         brokerId: v.id("brokers"),
@@ -187,8 +234,11 @@ const propertiesTables = {
     })
         .index("propertyId_brokerId", ["propertyId", "brokerId"])
         .index("propertyId_lastActivityAt", ["propertyId", "lastActivityAt"])
-        .index("tenantOrgId_lastActivityAt", ["tenantOrgId", "lastActivityAt"]),
+        .index("tenantOrgId_lastActivityAt", ["tenantOrgId", "lastActivityAt"])
+        .index("by_org_lastActivityAt", ["orgId", "lastActivityAt"]),
     organizationProjectSummaries: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         tenantOrgId: v.string(),
         ownerType: v.union(v.literal("broker"), v.literal("RED")),
         ownerBrokerId: v.optional(v.id("brokers")),
@@ -201,9 +251,12 @@ const propertiesTables = {
         updatedAt: v.number(),
     })
         .index("tenantOrgId", ["tenantOrgId"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"])
         .index("ownerBrokerId", ["ownerBrokerId"])
         .index("ownerREDId", ["ownerREDId"]),
     organizationAssets: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         tenantOrgId: v.string(),
         uploaderAuthUserId: v.string(),
         category: v.union(
@@ -215,10 +268,11 @@ const propertiesTables = {
         ),
         kind: v.union(v.literal("image"), v.literal("pdf")),
         key: v.string(),
-        url: v.string(),
+        url: trustedUploadUrlValidator,
         name: v.string(),
         size: v.number(),
-        mime: v.string(),
+        mime: verifiedUploadMimeValidator,
+        sha256: v.optional(sha256HexValidator),
         lifecycleState: v.union(
             v.literal("active"),
             v.literal("archived"),
@@ -243,7 +297,8 @@ const propertiesTables = {
         .index("tenantOrgId", ["tenantOrgId"])
         .index("key", ["key"])
         .index("attachedEntity", ["attachedEntityType", "attachedEntityId"])
-        .index("tenantOrgId_lifecycleState", ["tenantOrgId", "lifecycleState"]),
+        .index("tenantOrgId_lifecycleState", ["tenantOrgId", "lifecycleState"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
 };
 
 export default propertiesTables;

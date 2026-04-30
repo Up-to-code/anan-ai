@@ -1,7 +1,7 @@
 import { mutation, query } from "../_generated/server";
 import { ConvexError, v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireEntitlements } from "../_core/security/accessPolicy";
 import {
   optionalPropertyStatusValidator,
   ownerScopedPropertyCreateFields,
@@ -17,7 +17,7 @@ import {
 } from "./repositories/propertiesRepository";
 
 async function requireBrokerOwnerAccess(ctx: any, brokerId?: string) {
-  const access = await requireRole(ctx, ["broker"]);
+  const access = await requireEntitlements(ctx, ["workspace:broker"]);
   if (!access.brokerId) {
     throw new ConvexError({ code: "FORBIDDEN", message: "Broker profile not linked" });
   }

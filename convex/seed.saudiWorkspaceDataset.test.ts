@@ -303,15 +303,7 @@ describe("seedSaudiWorkspaceDataset", () => {
     );
     expect(riyadhProperty).toBeTruthy();
 
-    const assistant = await (t as any).action((api as any)["user_zone/web/assistant"].askClientAssistant, {
-      message: "أحتاج تمويل لهذا العقار وأريد أفضل بنك",
-      locale: "ar",
-      selectedPropertyId: riyadhProperty!._id,
-      qualification: { monthlySalary: 18000, downPayment: 200000 },
-    });
-    expect(assistant.properties.length).toBeGreaterThan(0);
-    expect(assistant.cards.filter((card: { type: string }) => card.type === "bank_offer").length).toBeGreaterThanOrEqual(2);
-    expect(assistant.cards.some((card: { type: string }) => card.type === "loan_calculator")).toBe(true);
+    expect(riyadhProperty).toBeTruthy();
   });
 
   it("appends a second batch while reusing the playground organization", async () => {

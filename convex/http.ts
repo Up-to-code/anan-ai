@@ -1,12 +1,12 @@
 import { httpRouter } from "convex/server";
 import { registerRoutes } from "@mzedstudio/uploadthingtrack";
 import { httpAction } from "./_generated/server";
-import {
-  handleWhatsAppWebhookGet,
-  handleWhatsAppWebhookPost,
-} from "./ai_zone/channels/whatsapp/webhook";
 import { components } from "./_generated/api";
 import { authComponent, createAuth } from "./betterAuth/auth";
+import {
+  buildAuthErrorRedirectUrl,
+  resolveAppRedirectBaseUrl,
+} from "./_core/security/authRedirects";
 import {
   handleAuthorize,
   handleDelegatedClients,
@@ -17,9 +17,53 @@ import {
   handleToken,
   handleUserInfo,
 } from "./_core/oauth/http";
-import { handleMobileAssistantStream } from "./ai_zone/assistantPublicHttp";
 
 const http = httpRouter();
+
+function resolveBackendAuthErrorRedirect(request: Request) {
+  const requestUrl = new URL(request.url);
+  const error = requestUrl.searchParams.get("error");
+  if (!error) return null;
+
+  const appBaseUrl = resolveAppRedirectBaseUrl({
+    ananWebUrl: process.env.ANAN_WEB_URL,
+    siteUrl: process.env.SITE_URL,
+    nextPublicSiteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+    vercelUrl: process.env.VERCEL_URL,
+    fallbackOrigin: request.headers.get("origin"),
+    nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
+  });
+  if (!appBaseUrl) return null;
+
+  return buildAuthErrorRedirectUrl(appBaseUrl, {
+    error,
+    returnTo: requestUrl.searchParams.get("returnTo") ?? "/ws",
+  });
+}
+
+http.route({
+  path: "/",
+  method: "GET",
+  handler: httpAction(async (_ctx, request) => {
+    const redirectTo = resolveBackendAuthErrorRedirect(request);
+    if (redirectTo) {
+      return Response.redirect(redirectTo, 302);
+    }
+    return Response.redirect(buildAuthErrorRedirectUrl(
+      resolveAppRedirectBaseUrl({
+        ananWebUrl: process.env.ANAN_WEB_URL,
+        siteUrl: process.env.SITE_URL,
+        nextPublicSiteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+        vercelUrl: process.env.VERCEL_URL,
+        fallbackOrigin: request.headers.get("origin"),
+        nodeEnv: process.env.NODE_ENV,
+        vercelEnv: process.env.VERCEL_ENV,
+      }) ?? "http://localhost:3000",
+      { returnTo: "/ws" },
+    ), 302);
+  }),
+});
 
 authComponent.registerRoutes(http, createAuth, { cors: true });
 registerRoutes(http, components.uploadthingFileTracker);
@@ -33,24 +77,6 @@ http.route({
       headers: { "Content-Type": "application/json" },
     });
   }),
-});
-
-http.route({
-  path: "/api/whatsapp/webhook",
-  method: "GET",
-  handler: httpAction(handleWhatsAppWebhookGet),
-});
-
-http.route({
-  path: "/api/whatsapp/webhook",
-  method: "POST",
-  handler: handleWhatsAppWebhookPost,
-});
-
-http.route({
-  path: "/api/mobile/assistant/stream/chat/completions",
-  method: "POST",
-  handler: httpAction(handleMobileAssistantStream),
 });
 
 http.route({

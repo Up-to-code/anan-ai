@@ -1,0 +1,17 @@
+url: ${MAESTRO_WEB_URL}
+---
+- runScript:
+    file: ../scripts/bootstrap.js
+    env:
+      E2E_PERSONA: multi-org-manager
+      E2E_REDIRECT_TO: /ws
+- openLink: ${output.bootstrapUrl}
+- assertVisible:
+    id: workspace-organization-switcher
+- tapOn:
+    id: workspace-organization-switcher
+- openLink: ${MAESTRO_WEB_URL}/ws/projects
+- assertVisible: "المشاريع"
+- openLink: ${MAESTRO_WEB_URL}/ws/settings
+- assertVisible: "إعدادات"
+

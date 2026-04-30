@@ -29,12 +29,20 @@ export const projectLocationInputValidator = v.object({
 
 export const projectDossierDraftInputValidator = v.object({
   propertyId: v.id("properties"),
+  inventoryKind: v.optional(v.union(v.literal("project"), v.literal("standalone_unit"))),
   projectType: v.optional(v.union(v.literal("ready_property"), v.literal("off_plan"), v.literal("land"), v.literal("mixed_use"))),
   salesMode: v.optional(v.union(v.literal("developer_direct"), v.literal("broker_mediated"), v.literal("broker_owned"))),
   requestedVisibility: v.optional(v.union(v.literal("private"), v.literal("public"))),
   lifecycleStage: v.optional(v.union(v.literal("rough_draft"), v.literal("draft"), v.literal("review"), v.literal("active"), v.literal("suspended"), v.literal("archived"))),
   title: v.optional(v.string()),
   summary: v.optional(v.string()),
+  targetAudience: v.optional(v.string()),
+  expectedUnitCountLabel: v.optional(v.string()),
+  unitTypeMix: v.optional(v.array(v.string())),
+  primaryUnitType: v.optional(v.string()),
+  averagePrice: v.optional(v.number()),
+  options: v.optional(v.array(v.string())),
+  services: v.optional(v.array(v.string())),
   location: v.optional(projectLocationInputValidator),
 });
 
@@ -50,6 +58,7 @@ export const projectUnitInputValidator = v.object({
   view: v.optional(v.string()),
   price: v.optional(v.number()),
   handoverAt: v.optional(v.number()),
+  location: v.optional(projectLocationInputValidator),
   floorPlanMedia: v.optional(uploadedFileReferenceListValidator),
 });
 

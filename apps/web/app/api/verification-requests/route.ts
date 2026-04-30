@@ -1,4 +1,4 @@
-import { DomainError, toErrorResponse } from "@/server/contracts/errors";
+import { createdResponse, handleRoute, readJsonBody } from "@anan/web-foundation/api";
 import { createVerificationRequestForCurrentOrg } from "@/server/domains/workspace/verifications/service";
 
 /**
@@ -7,20 +7,9 @@ import { createVerificationRequestForCurrentOrg } from "@/server/domains/workspa
  * HOW:   Parses JSON, delegates to the domain service, and returns a 201 response on success.
  */
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
+  return handleRoute(async () => {
+    const body = await readJsonBody(request);
     const result = await createVerificationRequestForCurrentOrg(body);
-    return Response.json(result, { status: 201 });
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      return toErrorResponse(
-        new DomainError({
-          code: "INVALID_REQUEST",
-          message: "Request body must be valid JSON",
-          status: 400,
-        }),
-      );
-    }
-    return toErrorResponse(error);
-  }
+    return createdResponse(result);
+  });
 }

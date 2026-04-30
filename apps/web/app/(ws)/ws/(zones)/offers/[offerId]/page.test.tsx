@@ -66,7 +66,7 @@ const {
       allowedActions: {
         isInventoryOwner: true,
         isClientOwner: false,
-        isExecutionPartner: false,
+        isExecutionProvider: false,
         canEditDraft: true,
         canPublish: true,
         canArchive: true,

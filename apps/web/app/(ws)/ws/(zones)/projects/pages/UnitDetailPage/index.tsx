@@ -1,22 +1,40 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, useTransition, type ReactNode } from "react";
 import {
   ArrowLeft,
   Bath,
   BedDouble,
-  Building2,
   CalendarClock,
-  CheckCircle2,
+  ChevronDown,
   Eye,
   FileText,
   MapPin,
   MessageSquareMore,
+  MoreHorizontal,
   Ruler,
   ShieldCheck,
+  Trash2,
   WalletCards,
 } from "lucide-react";
+import { AgDeleteConfirmModal } from "@/app/(ws)/ws/public";
+import { LocationPreview } from "@anan/location-map/react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { WorkspaceProjectUnitDetail } from "../../types/projectTypes";
+import type { ProjectMutationActionResult } from "../ProjectsPage/actionTypes";
+import { PROJECT_SUMMARY_MAX_CHARS, truncateProjectText } from "../../shared/lib/projectUi";
+
+type UnitDetailTab = "summary" | "details" | "media";
 
 const statusLabels: Record<string, string> = {
   available: "متاحة",
@@ -25,201 +43,406 @@ const statusLabels: Record<string, string> = {
   draft: "مسودة",
 };
 
+const tabs: Array<{ value: UnitDetailTab; label: string }> = [
+  { value: "summary", label: "الملخص" },
+  { value: "details", label: "البيانات" },
+  { value: "media", label: "الصور" },
+];
+
+const actionItemClassName =
+  "flex w-full cursor-pointer items-center justify-end gap-3 rounded-xl px-3 py-2.5 text-right text-[13px] font-black text-foreground focus:bg-[var(--workspace-elevated)]";
+const UNIT_DETAIL_VALUE_MAX_CHARS = 72;
+
 function formatHandover(value?: number) {
   if (!value) return "غير محدد";
   return new Intl.DateTimeFormat("ar-SA", { dateStyle: "medium" }).format(new Date(value));
 }
 
-function UnitFact({
+function UnitMetric({
   icon: Icon,
   label,
   value,
-  helper,
 }: {
-  icon: typeof Building2;
+  icon: typeof WalletCards;
   label: string;
   value: string;
-  helper?: string;
 }) {
   return (
-    <div className="rounded-[22px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-4 text-right">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--workspace-elevated)] text-[var(--workspace-muted)]">
-          <Icon className="h-4 w-4" />
-        </div>
-        <div>
-          <div className="text-[11px] font-bold text-[var(--workspace-muted)]">{label}</div>
-          <div className="mt-2 text-lg font-black text-foreground">{value}</div>
-        </div>
+    <div className="border-l border-[color:var(--workspace-border)] px-4 py-3 text-right last:border-l-0">
+      <Icon className="mb-3 mr-auto h-4 w-4 text-[var(--workspace-muted)]" />
+      <div className="text-[11px] font-black text-[var(--workspace-muted)]">{label}</div>
+      <div className="mt-1 truncate text-xl font-black text-foreground" title={value}>
+        {value}
       </div>
-      {helper ? <p className="mt-3 text-[13px] leading-6 text-muted-foreground">{helper}</p> : null}
     </div>
   );
 }
 
-function DetailPanel({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
+function DataRow({ label, value }: { label: string; value: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const normalizedValue = value.trim();
+  const canExpand = normalizedValue.length > UNIT_DETAIL_VALUE_MAX_CHARS;
+  const visibleValue = expanded ? normalizedValue : truncateProjectText(normalizedValue, UNIT_DETAIL_VALUE_MAX_CHARS);
+
   return (
-    <section className="rounded-[26px] border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-5 shadow-sm lg:p-6">
-      <div className="text-right">
-        <h2 className="text-lg font-black text-foreground">{title}</h2>
-        {description ? <p className="mt-2 text-[13px] leading-6 text-muted-foreground">{description}</p> : null}
+    <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-4 border-b border-[color:var(--workspace-border)] py-3 text-right last:border-b-0">
+      <span className="text-[12px] font-bold text-[var(--workspace-muted)]">{label}</span>
+      <div className="min-w-0">
+        <span
+          className={`block min-w-0 text-[13px] font-black text-foreground ${expanded ? "whitespace-pre-wrap leading-7" : "truncate"}`}
+          title={value}
+        >
+          {visibleValue}
+        </span>
+        {canExpand ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((current) => !current)}
+            className="mt-1 text-[11px] font-black text-[var(--workspace-muted)] underline-offset-4 hover:text-foreground hover:underline"
+            aria-expanded={expanded}
+          >
+            {expanded ? "إخفاء" : "عرض المزيد"}
+          </button>
+        ) : null}
       </div>
-      <div className="mt-5">{children}</div>
+    </div>
+  );
+}
+
+function DescriptionBlock({ value }: { value: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const normalizedValue = value.trim();
+  const canExpand = normalizedValue.length > PROJECT_SUMMARY_MAX_CHARS;
+  const visibleValue = expanded ? normalizedValue : truncateProjectText(normalizedValue);
+
+  return (
+    <div className="mb-4 rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-4 text-right">
+      <div className="text-[12px] font-black text-[var(--workspace-muted)]">الوصف</div>
+      <p className="mt-2 whitespace-pre-wrap text-[13px] font-black leading-7 text-foreground" title={value}>
+        {visibleValue}
+      </p>
+      {canExpand ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((current) => !current)}
+          className="mt-3 inline-flex h-8 items-center rounded-full border border-[color:var(--workspace-border)] px-3 text-[11px] font-black text-foreground transition hover:bg-[var(--workspace-elevated)]"
+          aria-expanded={expanded}
+        >
+          {expanded ? "إغلاق" : "عرض المزيد"}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function FlatSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="border-t border-[color:var(--workspace-border)] pt-5">
+      <h2 className="text-right text-base font-black text-foreground">{title}</h2>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
 
+function UnitActionsMenu({
+  unit,
+  canEdit,
+  isPending,
+  onDelete,
+}: {
+  unit: WorkspaceProjectUnitDetail;
+  canEdit: boolean;
+  isPending: boolean;
+  onDelete: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={(
+          <button
+            type="button"
+            disabled={isPending}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--workspace-panel)] text-foreground transition hover:bg-[var(--workspace-elevated)] disabled:opacity-60"
+            aria-label="إجراءات الوحدة"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+        )}
+      />
+      <DropdownMenuContent
+        align="end"
+        sideOffset={8}
+        className="w-[min(19rem,calc(100vw-1rem))] rounded-[18px] bg-[var(--workspace-panel)] p-2 shadow-2xl ring-1 ring-black/5"
+      >
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="px-3 py-2 text-right text-[11px] font-black text-[var(--workspace-muted)]">
+            إجراءات الوحدة
+          </DropdownMenuLabel>
+          {canEdit ? (
+            <DropdownMenuItem render={<Link href={`/ws/projects/${unit.projectId}/units/${unit.id}/edit`} />} className={actionItemClassName}>
+              <span className="min-w-0 flex-1">تعديل الوحدة</span>
+              <FileText className="h-4 w-4 text-[var(--workspace-muted)]" />
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem render={<Link href="/ws/inbox" />} className={actionItemClassName}>
+            <span className="min-w-0 flex-1">فتح محادثة</span>
+            <MessageSquareMore className="h-4 w-4 text-[var(--workspace-muted)]" />
+          </DropdownMenuItem>
+          <DropdownMenuItem render={<Link href={`/ws/projects/${unit.projectId}/analytics`} />} className={actionItemClassName}>
+            <span className="min-w-0 flex-1">أداء المشروع</span>
+            <Eye className="h-4 w-4 text-[var(--workspace-muted)]" />
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        {canEdit ? (
+          <>
+            <DropdownMenuSeparator className="my-2 bg-[var(--workspace-border)]" />
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                nativeButton
+                render={<button type="button" />}
+                className="flex w-full cursor-pointer items-center justify-end gap-3 rounded-xl px-3 py-2.5 text-right text-[13px] font-black text-rose-300 focus:bg-rose-500/10"
+                onClick={onDelete}
+              >
+                <span className="min-w-0 flex-1">حذف الوحدة</span>
+                <Trash2 className="h-4 w-4" />
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 /**
- * WHY:   Project-backed inventory needs a focused unit view that feels as polished as the project surface.
- * WHAT:  Renders one read-only unit detail page with Zayon-inspired hero, scorecards, technical facts, and action context.
- * HOW:   Receives server-mapped unit data only, using unit floor plans first and project media as a visual fallback.
+ * WHY:   Unit detail is an operations screen, so it should be flat, scannable, and action-safe.
+ * WHAT:  Renders unit identity, metrics, local tabs, expandable details, media, and one dropdown action menu.
+ * HOW:   Keeps all hooks top-level and all navigation as links except delete recovery.
  */
-export default function UnitDetailPage({ unit }: { unit: WorkspaceProjectUnitDetail }) {
-  const heroImage = unit.galleryImages[0]?.url ?? unit.projectImage;
-  const gallery = unit.galleryImages.slice(0, 4);
+export default function UnitDetailPage({
+  unit,
+  canEdit = false,
+  onDeleteUnit,
+}: {
+  unit: WorkspaceProjectUnitDetail;
+  canEdit?: boolean;
+  onDeleteUnit?: () => Promise<ProjectMutationActionResult>;
+}) {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<UnitDetailTab>("summary");
+  const [showFullSummary, setShowFullSummary] = useState(false);
+  const [showMoreDetails, setShowMoreDetails] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
   const statusLabel = statusLabels[unit.status ?? ""] ?? unit.status ?? "غير محدد";
-  const scorecards = [
-    { icon: WalletCards, label: "السعر", value: unit.priceLabel ?? "غير محدد", helper: unit.paymentPlanLabel ?? "لم يتم ربط خطة دفع مفصلة بعد." },
-    { icon: Ruler, label: "المساحة", value: unit.area ?? "غير محدد", helper: "مساحة الوحدة الصافية أو مساحة النموذج حسب ملف المشروع." },
+  const heroImage = unit.galleryImages[0]?.url ?? unit.projectImage;
+  const gallery = unit.galleryImages.length > 0 ? unit.galleryImages.slice(0, 6) : [{ key: "project-cover", url: unit.projectImage, name: unit.projectTitle }];
+  const unitKindLabel = unit.unitKind === "unit_type" ? "نموذج وحدة" : "وحدة مستقلة";
+  const unitLocation = unit.locationDetails ?? unit.projectLocationDetails;
+  const canExpandSummary = unit.summary.trim().length > PROJECT_SUMMARY_MAX_CHARS;
+  const summaryText = showFullSummary ? unit.summary.trim() : truncateProjectText(unit.summary);
+  const metrics = [
+    { icon: WalletCards, label: "السعر", value: unit.priceLabel ?? "غير محدد" },
+    { icon: Ruler, label: "المساحة", value: unit.area ?? "غير محدد" },
     { icon: BedDouble, label: "الغرف", value: typeof unit.bedrooms === "number" ? `${unit.bedrooms} غرف` : "غير محدد" },
     { icon: Bath, label: "الحمامات", value: typeof unit.bathrooms === "number" ? `${unit.bathrooms} حمامات` : "غير محدد" },
   ];
-  const technicalFacts = [
-    { icon: Building2, label: "المشروع", value: unit.projectTitle, helper: unit.projectLocation },
-    { icon: Eye, label: "الإطلالة", value: unit.view ?? "غير محدد", helper: "تساعد فريق المبيعات على المقارنة بين الوحدات بسرعة." },
-    { icon: Building2, label: "الدور", value: unit.floor ?? "غير محدد", helper: unit.unitKind === "unit_type" ? "هذه بطاقة نموذج وحدة وليست وحدة مفردة." : "وحدة مستقلة داخل مخزون المشروع." },
-    { icon: CalendarClock, label: "التسليم", value: formatHandover(unit.handoverAt), helper: "موعد التسليم المتوقع حسب ملف الوحدة." },
-    { icon: ShieldCheck, label: "الجاهزية", value: unit.readinessLabel, helper: unit.complianceLabel ?? "لا توجد ملفات امتثال مرتبطة ظاهرة حالياً." },
-    { icon: FileText, label: "رخصة الإعلان", value: unit.adLicenseLabel ?? "غير محدد", helper: "تعكس حالة الرخصة على مستوى المشروع المرتبط." },
+  const primaryFacts = [
+    { label: "المشروع", value: unit.projectTitle },
+    { label: "الموقع", value: unitLocation?.label ?? unit.projectLocation },
+    { label: "الإطلالة", value: unit.view ?? "غير محدد" },
+    { label: "الدور", value: unit.floor ?? "غير محدد" },
+    { label: "خطة الدفع", value: unit.paymentPlanLabel ?? "غير محدد" },
+    { label: "الجاهزية", value: unit.readinessLabel },
+  ];
+  const extraFacts = [
+    { label: "التسليم", value: formatHandover(unit.handoverAt) },
+    { label: "الامتثال", value: unit.complianceLabel ?? "غير محدد" },
+    { label: "رخصة الإعلان", value: unit.adLicenseLabel ?? "غير محدد" },
   ];
 
   return (
-    <main className="min-h-full bg-background/60 pb-24">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-6 lg:px-8 lg:py-8">
-        <nav className="flex flex-wrap items-center justify-between gap-4">
+    <main className="min-h-full bg-background pb-24" dir="rtl">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--workspace-border)] pb-4">
           <Link
-            href={`/ws/projects/${unit.projectId}`}
-            className="inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.2em] text-muted-foreground"
+            href={`/ws/projects/${unit.projectId}/units`}
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-3 text-[12px] font-black text-foreground transition hover:bg-[var(--workspace-elevated)]"
           >
             <ArrowLeft className="h-4 w-4" />
-            العودة للمشروع
+            العودة للوحدات
           </Link>
-          <div className="flex flex-wrap justify-end gap-2">
-            <span className="rounded-full border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] px-3 py-1 text-[11px] font-bold text-foreground">
-              {unit.unitKind === "unit_type" ? "نموذج وحدة" : "وحدة مستقلة"}
-            </span>
-            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
-              {statusLabel}
-            </span>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-[var(--workspace-panel)] px-3 py-1 text-[11px] font-black text-foreground">{unitKindLabel}</span>
+            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-black text-emerald-300">{statusLabel}</span>
+            <UnitActionsMenu
+              unit={unit}
+              canEdit={Boolean(canEdit && onDeleteUnit)}
+              isPending={isPending}
+              onDelete={() => setDeleteOpen(true)}
+            />
           </div>
-        </nav>
+        </div>
 
-        <section className="overflow-hidden rounded-[30px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] shadow-sm">
-          <div className="grid min-h-[460px] lg:grid-cols-[minmax(0,1fr)_420px]">
-            <div className="relative min-h-[320px] overflow-hidden">
-              <img src={heroImage} alt={unit.label} className="h-full min-h-[320px] w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-              <div className="absolute bottom-5 right-5 left-5 flex flex-wrap items-end justify-between gap-4 text-white">
-                <div className="text-right">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-black/35 px-3 py-1 text-[11px] font-bold backdrop-blur">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {unit.projectLocation}
-                  </div>
-                  <h1 className="mt-3 text-3xl font-black tracking-tight lg:text-5xl">{unit.label}</h1>
+        {actionError ? (
+          <div className="border-y border-rose-500/25 bg-rose-500/10 px-4 py-3 text-right text-[13px] font-black text-rose-300">
+            {actionError}
+          </div>
+        ) : null}
+
+        <section className="grid gap-5 border-b border-[color:var(--workspace-border)] pb-5 lg:grid-cols-[180px_minmax(0,1fr)]">
+          <div className="overflow-hidden rounded-xl bg-[var(--workspace-panel)]">
+            <img src={heroImage} alt={unit.label} className="aspect-[4/3] h-full w-full object-cover" />
+          </div>
+          <div className="min-w-0 text-right">
+            <div className="flex items-center justify-end gap-2 text-[12px] font-bold text-[var(--workspace-muted)]">
+              <MapPin className="h-4 w-4" />
+              <span className="truncate">{unitLocation?.label ?? unit.projectLocation}</span>
+            </div>
+            <h1 className="mt-2 truncate text-3xl font-black tracking-tight text-foreground" title={unit.label}>
+              {unit.label}
+            </h1>
+            <p className="mt-3 max-w-3xl text-[14px] leading-7 text-muted-foreground" title={unit.summary}>
+              {summaryText}
+            </p>
+            {canExpandSummary ? (
+              <button
+                type="button"
+                onClick={() => setShowFullSummary((current) => !current)}
+                className="mt-2 text-[12px] font-black text-foreground underline-offset-4 hover:underline"
+                aria-expanded={showFullSummary}
+              >
+                {showFullSummary ? "إخفاء الوصف" : "عرض الوصف كاملاً"}
+              </button>
+            ) : null}
+            <div className="mt-5 grid border-y border-[color:var(--workspace-border)] sm:grid-cols-2 xl:grid-cols-4">
+              {metrics.map((metric) => (
+                <UnitMetric key={metric.label} {...metric} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <div className="flex flex-wrap justify-end gap-2 border-b border-[color:var(--workspace-border)] pb-3" dir="rtl">
+          {tabs.map((tab) => {
+            const active = activeTab === tab.value;
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setActiveTab(tab.value)}
+                className={`h-9 px-1 text-[12px] font-black transition ${
+                  active ? "border-b-2 border-foreground text-foreground" : "text-[var(--workspace-muted)] hover:text-foreground"
+                }`}
+              >
+                <span className="px-3">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {activeTab === "summary" ? (
+          <FlatSection title="ملخص الوحدة">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+              <div>
+                <DescriptionBlock value={unit.summary} />
+                <div className="mb-4">
+                  <LocationPreview value={unitLocation} title="موقع الوحدة" compact />
+                </div>
+                {primaryFacts.map((fact) => (
+                  <DataRow key={fact.label} label={fact.label} value={fact.value} />
+                ))}
+                {showMoreDetails ? extraFacts.map((fact) => <DataRow key={fact.label} label={fact.label} value={fact.value} />) : null}
+                <button
+                  type="button"
+                  onClick={() => setShowMoreDetails((current) => !current)}
+                  className="mt-4 inline-flex h-9 items-center gap-2 rounded-full border border-[color:var(--workspace-border)] px-4 text-[12px] font-black text-foreground transition hover:bg-[var(--workspace-elevated)]"
+                  aria-expanded={showMoreDetails}
+                >
+                  {showMoreDetails ? "إخفاء التفاصيل" : "تفاصيل أكثر"}
+                  <ChevronDown className={`h-4 w-4 transition ${showMoreDetails ? "rotate-180" : ""}`} />
+                </button>
+              </div>
+              <div className="border-t border-[color:var(--workspace-border)] pt-4 text-right lg:border-t-0 lg:border-r lg:pr-5">
+                <div className="flex items-center justify-end gap-2">
+                  <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                  <h2 className="text-base font-black text-foreground">قراءة سريعة</h2>
+                </div>
+                <p className="mt-3 text-[13px] leading-7 text-muted-foreground">
+                  {unit.priceLabel && unit.area
+                    ? "السعر والمساحة واضحان. الوحدة جاهزة للمقارنة أو الإرسال مع فريق المبيعات."
+                    : "استكمل السعر والمساحة حتى تصبح الوحدة أكثر وضوحاً في المقارنة والعروض."}
+                </p>
+                <div className="mt-4 border-t border-[color:var(--workspace-border)] pt-4">
+                  <CalendarClock className="mb-2 mr-auto h-4 w-4 text-[var(--workspace-muted)]" />
+                  <div className="text-[11px] font-black text-[var(--workspace-muted)]">التسليم</div>
+                  <div className="mt-1 text-[14px] font-black text-foreground">{formatHandover(unit.handoverAt)}</div>
                 </div>
               </div>
             </div>
+          </FlatSection>
+        ) : null}
 
-            <aside className="flex flex-col justify-between gap-6 p-6 text-right lg:p-8">
-              <div>
-                <div className="text-[12px] font-black text-[var(--workspace-muted)]">بطاقة الوحدة</div>
-                <h2 className="mt-2 text-2xl font-black text-foreground">{unit.projectTitle}</h2>
-                <p className="mt-3 text-[14px] leading-7 text-muted-foreground">{unit.summary}</p>
-              </div>
+        {activeTab === "details" ? (
+          <FlatSection title="كل البيانات">
+            <DescriptionBlock value={unit.summary} />
+            <div className="mb-5">
+              <LocationPreview value={unitLocation} title="موقع الوحدة" compact />
+            </div>
+            <div className="grid gap-x-10 md:grid-cols-2">
+              {[...primaryFacts, ...extraFacts].map((fact) => (
+                <DataRow key={fact.label} label={fact.label} value={fact.value} />
+              ))}
+            </div>
+          </FlatSection>
+        ) : null}
 
-              <div className="grid gap-3">
-                <Link
-                  href="/ws/inbox"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-foreground px-4 py-3 text-[13px] font-black text-background transition hover:bg-foreground/90"
+        {activeTab === "media" ? (
+          <FlatSection title="صور ومخططات الوحدة">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {gallery.map((image) => (
+                <a
+                  key={image.key}
+                  href={image.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group overflow-hidden rounded-xl bg-[var(--workspace-panel)]"
                 >
-                  <MessageSquareMore className="h-4 w-4" />
-                  فتح محادثة حول الوحدة
-                </Link>
-                <Link
-                  href={`/ws/projects/${unit.projectId}/analytics`}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-4 py-3 text-[13px] font-black text-foreground transition hover:bg-[var(--workspace-accent-soft)]"
-                >
-                  <Eye className="h-4 w-4" />
-                  قراءة أداء المشروع
-                </Link>
-              </div>
-            </aside>
-          </div>
-        </section>
-
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {scorecards.map((fact) => (
-            <UnitFact key={fact.label} icon={fact.icon} label={fact.label} value={fact.value} helper={fact.helper} />
-          ))}
-        </section>
-
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="space-y-6">
-            <DetailPanel title="تفاصيل الوحدة الفنية" description="البيانات التي يحتاجها الخبير العقاري قبل المقارنة أو إرسال الوحدة.">
-              <div className="grid gap-4 md:grid-cols-2">
-                {technicalFacts.map((fact) => (
-                  <UnitFact key={fact.label} icon={fact.icon} label={fact.label} value={fact.value} helper={fact.helper} />
-                ))}
-              </div>
-            </DetailPanel>
-
-            <DetailPanel title="مخططات وصور الوحدة" description="يعرض مخطط الوحدة عند توفره، أو صور المشروع كمرجع بصري.">
-              <div className="grid gap-3 md:grid-cols-2">
-                {gallery.map((image) => (
-                  <a
-                    key={image.key}
-                    href={image.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="group block overflow-hidden rounded-[22px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)]"
-                  >
-                    <img src={image.url} alt={image.name} className="aspect-[4/3] w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
-                  </a>
-                ))}
-              </div>
-            </DetailPanel>
-          </div>
-
-          <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
-            <DetailPanel title="قراءة الخبير" description="ملخص سريع لما يجعل هذه الوحدة قابلة للبيع أو تحتاج استكمال.">
-              <div className="space-y-3">
-                <div className="rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-4 text-right">
-                  <CheckCircle2 className="ml-auto h-5 w-5 text-emerald-500" />
-                  <div className="mt-3 text-[14px] font-black text-foreground">جاهزية العرض</div>
-                  <p className="mt-2 text-[13px] leading-6 text-muted-foreground">
-                    {unit.priceLabel && unit.area
-                      ? "الوحدة تحمل سعر ومساحة واضحين، ويمكن مقارنتها بسهولة داخل الفريق."
-                      : "أضف السعر والمساحة لتحويل الوحدة إلى أصل أكثر جاهزية للتوزيع."}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-4 text-right">
-                  <div className="text-[12px] font-bold text-[var(--workspace-muted)]">الدفع والامتثال</div>
-                  <p className="mt-2 text-[14px] font-black text-foreground">{unit.paymentPlanLabel ?? "خطة الدفع غير مكتملة"}</p>
-                  <p className="mt-2 text-[13px] leading-6 text-muted-foreground">{unit.complianceLabel ?? "ملفات الامتثال ستظهر هنا عند ربطها بالمشروع."}</p>
-                </div>
-              </div>
-            </DetailPanel>
-          </aside>
-        </div>
+                  <img
+                    src={image.url}
+                    alt={image.name}
+                    className="aspect-[4/3] w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                  />
+                </a>
+              ))}
+            </div>
+          </FlatSection>
+        ) : null}
       </div>
+
+      <AgDeleteConfirmModal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={() => {
+          if (!onDeleteUnit) return;
+          startTransition(async () => {
+            setActionError(null);
+            const result = await onDeleteUnit();
+            if (!result.ok) {
+              setActionError(result.message);
+              setDeleteOpen(false);
+              return;
+            }
+            setDeleteOpen(false);
+            router.push(`/ws/projects/${unit.projectId}/units`);
+            router.refresh();
+          });
+        }}
+        title={`حذف الوحدة: ${unit.label}`}
+        description="سيتم حذف الوحدة من هذا المشروع فقط، ولن يتم حذف المشروع."
+        confirmLabel="حذف الوحدة"
+      />
     </main>
   );
 }

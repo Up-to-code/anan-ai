@@ -1,6 +1,6 @@
 import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 
 type Range = "day" | "week" | "month";
 
@@ -35,7 +35,7 @@ export const searchActivityChart = query({
     range: v.optional(v.union(v.literal("day"), v.literal("week"), v.literal("month"))),
   },
   handler: async (ctx, { range = "week" }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const logs = await ctx.db.query("searchLogs").order("desc").take(500);
     const bucketMs = getBucketMs(range);
     const lookbackMs = getLookbackMs(range);
@@ -71,7 +71,7 @@ export const errorHealthChart = query({
     range: v.optional(v.union(v.literal("day"), v.literal("week"), v.literal("month"))),
   },
   handler: async (ctx, { range = "week" }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const logs = await ctx.db.query("searchLogs").order("desc").take(500);
     const lookbackMs = getLookbackMs(range);
     const now = Date.now();
@@ -102,26 +102,26 @@ export const errorHealthChart = query({
 export const channelDistribution = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const logs = await ctx.db.query("searchLogs").order("desc").take(500);
-    let whatsapp = 0;
-    let app = 0;
+    let workspace = 0;
     let web = 0;
+    let admin = 0;
     for (const log of logs) {
       switch (log.channel) {
-        case "whatsapp":
-          whatsapp += 1;
-          break;
-        case "app":
-          app += 1;
+        case "workspace":
+          workspace += 1;
           break;
         case "web":
           web += 1;
+          break;
+        case "admin":
+          admin += 1;
           break;
         default:
           break;
       }
     }
-    return { whatsapp, app, web };
+    return { workspace, web, admin };
   },
 });

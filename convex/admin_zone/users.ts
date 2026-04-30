@@ -1,7 +1,7 @@
 import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 import { normalizeUserProfileRoleState } from "../_core/security/profileRoles";
 import {
   getUserAgentMemoryService,
@@ -49,10 +49,10 @@ export const getAdminUserDetail = query({
 export const listUsers = query({
   args: {
     paginationOpts: paginationOptsValidator,
-    channel: v.optional(v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web"))),
+    channel: v.optional(v.union(v.literal("workspace"), v.literal("web"), v.literal("admin"))),
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return listUsersService(ctx, args);
   },
 });
@@ -65,7 +65,7 @@ export const listUsers = query({
 export const getUserKnowledgeResearch = query({
   args: { userId: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return getUserKnowledgeResearchService(ctx, { userId: args.userId, limit: args.limit ?? 20 });
   },
 });
@@ -78,7 +78,7 @@ export const getUserKnowledgeResearch = query({
 export const getUserSearchLogs = query({
   args: { userId: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return getUserSearchLogsService(ctx, { userId: args.userId, limit: args.limit ?? 50 });
   },
 });
@@ -91,7 +91,7 @@ export const getUserSearchLogs = query({
 export const getUserAgentMemory = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return getUserAgentMemoryService(ctx, args);
   },
 });
@@ -105,10 +105,10 @@ export const updateUser = mutation({
   args: {
     userId: v.string(),
     displayName: v.optional(v.string()),
-    channel: v.optional(v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web"))),
+    channel: v.optional(v.union(v.literal("workspace"), v.literal("web"), v.literal("admin"))),
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     return updateUserService(ctx, args);
   },
 });
@@ -123,7 +123,7 @@ export const normalizeUserProfileRoleStateById = mutation({
     profileId: v.id("userProfiles"),
   },
   handler: async (ctx, { profileId }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const profile = await ctx.db.get(profileId);
     if (!profile) {
       return null;

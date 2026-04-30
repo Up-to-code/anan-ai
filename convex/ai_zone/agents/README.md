@@ -6,18 +6,12 @@ The AI backend is built from declarative agent definitions plus one shared runti
 ## Structure
 - `core/`
   Shared `AgentDefinition` contracts, prompt builders, tool bundle helpers, and the factory/runtime.
-- `anan/`
-  Main (public) orchestration path: intent routing, team registry, parallel execution, and merge.
 - `anan_workspace/`
-  Partner orchestration path: workspace teams, intent routing, and parallel execution.
-- `team_search/`, `team_property/`, `team_finance/`, `team_knowledge/`
-  Public teams for user-facing orchestration.
+  Workspace orchestration path: workspace teams, intent routing, and parallel execution.
 - `team_workspace_*`
-  Partner teams for workspace orchestration.
+  Workspace teams for workspace orchestration.
 - `shared/`
   Token tracking, orchestration analytics, retry/error helpers, RAG helpers, and workflows.
-- `conversationAnalyzer/`
-  Batch-only buyer conversation analysis for the noon market-intelligence pipeline.
 - `scaffold/`
   Documentation for the developer scaffolding path.
 

@@ -16,7 +16,7 @@ const adminApiMocks = vi.hoisted(() => ({
   convexAdminCommandCenterRepository: {
     getOverview: vi.fn(),
     getCommercialAnalytics: vi.fn(),
-    getPartnerHealthAnalytics: vi.fn(),
+    getEcosystemHealthAnalytics: vi.fn(),
     getQueueHealthAnalytics: vi.fn(),
   },
   convexAdminDiagnosticsRepository: {
@@ -178,7 +178,7 @@ function resetAnalyticsAndDiagnosticsMocks() {
   convexAdminAnalyticsRepository.getConnectionAnalytics.mockReset();
   convexAdminCommandCenterRepository.getOverview.mockReset();
   convexAdminCommandCenterRepository.getCommercialAnalytics.mockReset();
-  convexAdminCommandCenterRepository.getPartnerHealthAnalytics.mockReset();
+  convexAdminCommandCenterRepository.getEcosystemHealthAnalytics.mockReset();
   convexAdminCommandCenterRepository.getQueueHealthAnalytics.mockReset();
   convexAdminDiagnosticsRepository.listDevLogs.mockReset();
   convexAdminDiagnosticsRepository.getErrorRate.mockReset();

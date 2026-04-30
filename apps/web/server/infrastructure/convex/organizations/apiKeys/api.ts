@@ -1,3 +1,4 @@
+import { createRepositoryRefs } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 export type AgenciesApiRefs = {
@@ -20,4 +21,4 @@ export type AgenciesApiRefs = {
   getBrokerByApiKey: unknown;
 };
 
-export const agenciesApi = apiUnsafe["shared_logic/agencies/repositories/apiKeys"] as AgenciesApiRefs;
+export const agenciesApi = createRepositoryRefs<AgenciesApiRefs>(apiUnsafe, "shared_logic/agencies/repositories/apiKeys");

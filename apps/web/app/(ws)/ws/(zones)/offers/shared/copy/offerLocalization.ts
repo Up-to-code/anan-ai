@@ -49,7 +49,6 @@ type OfferUiCopy = {
     baths: string;
     area: string;
     phone: string;
-    whatsapp: string;
     website: string;
     email: string;
     openDetails: string;
@@ -179,7 +178,6 @@ const copyByLocale: Record<AppLocale, OfferUiCopy> = {
       baths: "الحمامات",
       area: "المساحة",
       phone: "الهاتف",
-      whatsapp: "واتساب",
       website: "الموقع",
       email: "البريد",
       openDetails: "فتح التفاصيل",
@@ -307,7 +305,6 @@ const copyByLocale: Record<AppLocale, OfferUiCopy> = {
       baths: "Bathrooms",
       area: "Area",
       phone: "Phone",
-      whatsapp: "WhatsApp",
       website: "Website",
       email: "Email",
       openDetails: "Open details",
@@ -435,7 +432,6 @@ const copyByLocale: Record<AppLocale, OfferUiCopy> = {
       baths: "Salles de bain",
       area: "Surface",
       phone: "Téléphone",
-      whatsapp: "WhatsApp",
       website: "Site",
       email: "E-mail",
       openDetails: "Ouvrir les détails",

@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
+import { useAuth } from "@anan/auth-sdk/react";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
@@ -23,6 +24,7 @@ export default function WorkspaceSignOutAction({
   className,
 }: WorkspaceSignOutActionProps) {
   const router = useRouter();
+  const auth = useAuth();
   const { dictionary, isRtl } = useWebLocale();
   const [isPending, startTransition] = useTransition();
 
@@ -31,6 +33,7 @@ export default function WorkspaceSignOutAction({
   const handleSignOut = () => {
     startTransition(async () => {
       await authClient.signOut();
+      auth.signOut("/signin");
       router.replace("/signin");
       router.refresh();
     });

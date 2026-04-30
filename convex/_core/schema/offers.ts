@@ -1,6 +1,7 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { uploadedFileReferenceListValidator } from "./uploadedFiles";
+import { transitionalGlobalSecurityFields } from "./securityFields";
 
 /**
  * Offers Schema
@@ -12,6 +13,8 @@ import { uploadedFileReferenceListValidator } from "./uploadedFiles";
 
 const offersTables = {
         offers: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         propertyId: v.id("properties"),
         tenantOrgId: v.optional(v.string()),
         fromBrokerId: v.optional(v.id("brokers")),
@@ -42,9 +45,12 @@ const offersTables = {
         .index("recipientAuthUserId", ["recipientAuthUserId"])
         .index("visibility", ["visibility"])
         .index("publicationState", ["publicationState"])
-        .index("sourceConversationId", ["sourceConversationId"]),
+        .index("sourceConversationId", ["sourceConversationId"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
     offerPackages: defineTable({
+    ...transitionalGlobalSecurityFields,
         propertyId: v.optional(v.id("properties")),
+        orgId: v.optional(v.id("organizations")),
         tenantOrgId: v.optional(v.string()),
         ownerAuthUserId: v.string(),
         fromBrokerId: v.optional(v.id("brokers")),
@@ -55,13 +61,28 @@ const offersTables = {
         commissionText: v.optional(v.string()),
         permitStatus: v.optional(v.string()),
         productStatus: v.optional(v.string()),
-        visibility: v.union(v.literal("open"), v.literal("private")),
+        visibility: v.union(
+            v.literal("open"),
+            v.literal("public"),
+            v.literal("private"),
+            v.literal("broker_only"),
+        ),
         allowedAudience: v.union(v.literal("brokers"), v.literal("developers"), v.literal("both")),
+        unitIds: v.optional(v.array(v.id("projectUnits"))),
+        pricingOverride: v.optional(v.object({
+            discountPct: v.number(),
+            validUntil: v.number(),
+        })),
+        publishedAt: v.optional(v.number()),
         notes: v.optional(v.string()),
         attachments: v.optional(uploadedFileReferenceListValidator),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
+        .index("by_orgId", ["orgId"])
+        .index("by_orgId_and_visibility", ["orgId", "visibility"])
+        .index("by_org_visibility_updatedAt", ["orgId", "visibility", "updatedAt"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"])
         .index("propertyId", ["propertyId"])
         .index("tenantOrgId", ["tenantOrgId"])
         .index("ownerAuthUserId", ["ownerAuthUserId"])
@@ -69,7 +90,20 @@ const offersTables = {
         .index("fromREDId", ["fromREDId"])
         .index("visibility", ["visibility"]),
     offerCases: defineTable({
+    ...transitionalGlobalSecurityFields,
         offerPackageId: v.id("offerPackages"),
+        packageId: v.optional(v.id("offerPackages")),
+        dealId: v.optional(v.id("deals")),
+        orgId: v.optional(v.id("organizations")),
+        status: v.optional(v.union(
+            v.literal("open"),
+            v.literal("in_review"),
+            v.literal("approved"),
+            v.literal("rejected"),
+            v.literal("withdrawn"),
+        )),
+        workflowStage: v.optional(v.string()),
+        resolvedAt: v.optional(v.number()),
         tenantOrgId: v.optional(v.string()),
         type: v.union(
             v.literal("open_offer"),
@@ -114,14 +148,21 @@ const offersTables = {
         updatedAt: v.number(),
         lastActivityAt: v.number(),
     })
+        .index("by_orgId", ["orgId"])
+        .index("by_dealId", ["dealId"])
+        .index("by_orgId_and_status", ["orgId", "status"])
         .index("offerPackageId", ["offerPackageId"])
         .index("tenantOrgId_stage_lastActivityAt", ["tenantOrgId", "stage", "lastActivityAt"])
+        .index("by_org_stage_lastActivityAt", ["orgId", "stage", "lastActivityAt"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"])
         .index("visibility_stage_lastActivityAt", ["visibility", "stage", "lastActivityAt"])
         .index("stage", ["stage"])
         .index("type", ["type"])
         .index("initiatedByAuthUserId", ["initiatedByAuthUserId"])
         .index("sourceConversationId", ["sourceConversationId"]),
     offerCaseParticipants: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         offerCaseId: v.id("offerCases"),
         tenantOrgId: v.optional(v.string()),
         authUserId: v.optional(v.string()),
@@ -130,7 +171,7 @@ const offersTables = {
         role: v.union(
             v.literal("inventory_owner"),
             v.literal("client_owner"),
-            v.literal("execution_partner"),
+            v.literal("execution_provider"),
         ),
         status: v.union(
             v.literal("pending"),
@@ -143,6 +184,8 @@ const offersTables = {
         lastActivityAt: v.optional(v.number()),
     })
         .index("offerCaseId", ["offerCaseId"])
+        .index("by_case_user", ["offerCaseId", "authUserId"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"])
         .index("authUserId", ["authUserId"])
         .index("authUserId_lastActivityAt", ["authUserId", "lastActivityAt"])
         .index("brokerId", ["brokerId"])
@@ -150,6 +193,8 @@ const offersTables = {
         .index("REDId", ["REDId"])
         .index("REDId_lastActivityAt", ["REDId", "lastActivityAt"]),
     offerActivities: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         offerCaseId: v.id("offerCases"),
         tenantOrgId: v.optional(v.string()),
         kind: v.union(
@@ -170,7 +215,8 @@ const offersTables = {
         createdAt: v.number(),
     })
         .index("offerCaseId", ["offerCaseId"])
-        .index("offerCaseId_createdAt", ["offerCaseId", "createdAt"]),
+        .index("offerCaseId_createdAt", ["offerCaseId", "createdAt"])
+        .index("by_org_createdAt", ["orgId", "createdAt"]),
 };
 
 export default offersTables;

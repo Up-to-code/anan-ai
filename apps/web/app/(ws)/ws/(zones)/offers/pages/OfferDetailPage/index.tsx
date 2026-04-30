@@ -18,7 +18,6 @@ import {
   type LucideIcon,
   Mail,
   MapPin,
-  MessageCircle,
   Ruler,
   ShieldCheck,
   Tag,
@@ -27,7 +26,6 @@ import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { formatLocaleDateTime } from "@/lib/locale";
 import {
   buildClientRequirementViewModel,
-  buildWhatsAppHref,
   formatOfferMarketplaceLabel,
   formatOfferPrice,
   formatOfferStageLabel,
@@ -525,7 +523,6 @@ function OfferBrandPanel({
   const { locale } = useWebLocale();
   const copy = getOfferUiCopy(locale);
   const organization = offer.primaryOrganization;
-  const whatsappHref = buildWhatsAppHref(organization?.phone);
   const hasWorkflowActions =
     offer.allowedActions.canEngage ||
     offer.allowedActions.canRespond ||
@@ -564,17 +561,6 @@ function OfferBrandPanel({
         </div>
 
         <div className="mt-5 flex flex-wrap justify-end gap-2">
-          {whatsappHref ? (
-            <a
-              href={whatsappHref}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-2 text-[12px] font-bold text-foreground transition hover:bg-muted/70"
-            >
-              <MessageCircle className="h-4 w-4" />
-              {copy.list.whatsapp}
-            </a>
-          ) : null}
           {organization?.website ? (
             <a
               href={organization.website}

@@ -1,6 +1,6 @@
 import type { MutationCtx, QueryCtx, ActionCtx } from "../../../_generated/server";
 import { ConvexError } from "convex/values";
-import { requireZoneRole, type AccessContext } from "../../../_core/security/accessPolicy";
+import { requireZoneRole, type AccessContext, type AdminAccessContext } from "../../../_core/security/accessPolicy";
 
 type AnyHandler<Args, Return> = (ctx: any, args: Args) => Promise<Return>;
 
@@ -14,11 +14,10 @@ export function withZoneGuard<Args, Return>(
     | "admin_zone"
     | "broker_zone"
     | "red_zone"
-    | "user_zone"
     | "shared_logic"
     | "ai_zone",
   handler: (
-    ctx: (QueryCtx | MutationCtx | ActionCtx) & { access: AccessContext },
+    ctx: (QueryCtx | MutationCtx | ActionCtx) & { access: AccessContext | AdminAccessContext },
     args: Args,
   ) => Promise<Return>,
 ): AnyHandler<Args, Return> {

@@ -50,6 +50,7 @@ export default async function WorkspaceRootLayout({ children }: { children: Reac
         })}
         recentAssistantThreads={chrome.recentAssistantThreads}
         allAssistantThreads={chrome.allAssistantThreads}
+        initialNotifications={chrome.initialNotifications}
         signalCounts={chrome.signalCounts}
         complianceBanner={complianceBanner}
       >

@@ -63,10 +63,7 @@ export async function getWorkspaceBehaviorForCurrentUser(
     dependencies === defaultDependencies
       ? await loadWorkspaceStateCached()
       : await loadWorkspaceState(dependencies);
-  const accessError = currentOrganization?.accessError === true;
-  const primaryOrganization = accessError
-    ? null
-    : (currentOrganization?.organization ?? organizations[0] ?? null);
+  const primaryOrganization = currentOrganization?.organization ?? organizations[0] ?? null;
   const orderedOrganizations = primaryOrganization
     ? [primaryOrganization, ...organizations.filter((org) => org.id !== primaryOrganization.id)]
     : organizations;
