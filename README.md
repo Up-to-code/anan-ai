@@ -1,128 +1,123 @@
 # Anan
 
-Anan is a multi-surface real estate platform built around one shared Convex backend.
-It connects buyers, brokers, developers, platform operators, and AI workflows inside a single operating system instead of scattering them across separate tools.
+Anan is the core workspace, authorization, operations, and AI backend for the real estate platform. It owns the Anan product surfaces, the shared Convex backend, workspace/org permissions, OAuth runtime grants, and the internal admin console.
 
 Private, closed-source, and proprietary. See `LICENSE` and `NOTICE.md`.
 
 ## What This Repo Is
 
-This repository is the full product stack for Anan:
+This repo is the Anan platform core:
 
-- buyer-facing experiences across web, mobile, and conversational channels
-- broker and developer workspaces
-- an internal admin console
-- public and private documentation surfaces
-- shared UI systems and AI interaction primitives
-- a Convex backend that owns data, policy, orchestration, and live projections
+- `apps/web` - main Next.js product surface for public entry points, sign-in, workspaces, OAuth consent, and workspace flows.
+- `apps/admin` - internal Next.js operations console for platform administration.
+- `convex/` - shared Convex backend for auth, data, policy, AI workflows, OAuth runtime, workspace authorization, and live projections.
+- `packages/` - shared TypeScript packages for auth, authorization, domain contracts, UI, testing, web foundations, and domain logic.
 
-## Repo Overview
+The independent Partners developer portal now lives outside this repo at `../partners`. Partners owns developer/programmer accounts, programmer organizations, app registration lifecycle, reviews, app secrets, partner events, and portal audit logs. Anan only stores the minimal OAuth client mirror needed to authorize workspace access.
+
+## Current Repo Shape
 
 ```mermaid
 flowchart LR
-    A["People: buyers, brokers, developers, admins"] --> B["Runtime surfaces in apps/*"]
-    B --> B1["apps/web"]
-    B --> B2["apps/client-web"]
-    B --> B3["apps/mobile"]
-    B --> B4["apps/admin"]
-    B --> B5["apps/marketing, apps/docs, apps/private-docs"]
-
-    B1 --> C["Convex backend"]
-    B2 --> C
-    B3 --> C
-    B4 --> C
-
-    C --> D1["convex/_core"]
-    C --> D2["convex/shared_logic"]
-    C --> D3["convex/ai_zone"]
-    C --> D4["convex/user_zone, broker_zone, red_zone, admin_zone, public_zone"]
-
-    D1 --> E["Schema, auth, security, projections, policies"]
-    D2 --> E
-    D3 --> E
-    D4 --> E
-
-    E --> F["UI updates, assistant replies, analytics, and operations flows"]
+    A["apps/web"] --> C["Anan Convex backend"]
+    B["apps/admin"] --> C
+    C --> D["workspace/org authorization"]
+    C --> E["OAuth consent, grants, tokens"]
+    C --> F["AI, CRM, market, offers, compliance logic"]
+    P["../partners app"] -->|app_registration_sync.v1| M["minimal OAuth client mirror"]
+    M --> E
 ```
 
-## Request Lifecycle
+## Product Boundaries
+
+Anan owns:
+
+- workspace and organization authorization
+- Better Auth runtime for Anan users and admins
+- OAuth authorize, consent, token, and grant flows
+- external OAuth client mirror validation
+- workspace-side actions and permission checks
+- core real estate data, offers, CRM, compliance, market, and AI workflows
+- admin analytics, diagnostics, and operations
+
+Partners owns:
+
+- developer/programmer portal auth
+- programmer profiles and programmer organizations
+- partner app records, credentials, reviews, lifecycle state, and audit logs
+- app registration sync payload generation
+- outbound/inbound integration event logs for communication with Anan
+
+Cross-app communication must go through explicit integration contracts and service tokens. Do not import generated Convex APIs across the Anan/Partners boundary.
+
+## Runtime Flow
 
 ```mermaid
 flowchart TD
-    A["User action or assistant prompt"] --> B["Surface route or app shell"]
-    B --> C["Owning layer"]
-    C --> D["Convex function or workflow"]
-    D --> E["Shared logic or zone capability"]
-    E --> F["Data, policy, and projection updates"]
-    F --> G["Realtime UI state, docs output, or assistant response"]
+    A["User or admin action"] --> B["apps/web or apps/admin route"]
+    B --> C["server/repository boundary"]
+    C --> D["Convex function"]
+    D --> E["shared logic or zone module"]
+    E --> F["schema, auth, policy, projection"]
+    F --> G["realtime UI, admin view, OAuth response, or assistant output"]
 ```
 
 ## Monorepo Map
 
 ### Apps
 
-- `apps/web` - main Next.js surface for the public site and broker/developer workspace
-- `apps/client-web` - standalone buyer-facing Next.js experience
-- `apps/mobile` - Expo app for buyers
-- `apps/admin` - internal operations console
-- `apps/marketing` - public marketing surface
-- `apps/docs` - public integration and developer docs
-- `apps/private-docs` - internal handbook and audit portal
-
-### Packages
-
-- `packages/ag-ui` - reusable UI primitives for structured agent turns
-- `packages/client-assistant` - shared client assistant package surface
+- `apps/web` - main Anan web app.
+- `apps/admin` - internal admin console.
 
 ### Backend
 
-- `convex/_core` - schema, auth, security, foundation
-- `convex/shared_logic` - reusable domain capabilities
-- `convex/ai_zone` - assistant orchestration, channels, agent teams, workflows
-- `convex/user_zone` - buyer-facing endpoints for web, mobile, and WhatsApp
-- `convex/broker_zone` - broker-scoped backend adapters
-- `convex/red_zone` - developer-scoped backend adapters
-- `convex/admin_zone` - admin operations and internal views
-- `convex/public_zone` - unauthenticated entry flows
+- `convex/_core` - schema, auth, OAuth, security, and platform foundations.
+- `convex/betterAuth` - Anan Better Auth component schema and runtime integration.
+- `convex/shared_logic` - reusable domain capabilities for CRM, market, offers, projects, integrations, content, notifications, verifications, and OAuth.
+- `convex/ai_zone` - assistant orchestration, channels, agents, and workflows.
+- `convex/broker_zone` - broker-scoped backend adapters.
+- `convex/red_zone` - developer-scoped backend adapters.
+- `convex/admin_zone` - admin operations and internal views.
+- `convex/public` - unauthenticated public entry flows.
 
-### Docs And Rules
+### Packages
 
-- `ARCHITECTURE.md` - repo-wide architecture standards
-- `CONVEX_RULES.md` - backend rules for Convex design
-- `docs/handbook` - deep handbook by surface and domain
-- app-level `README.md` files - local setup and subsystem notes
+- `packages/auth` - Anan auth primitives and server helpers.
+- `packages/auth-sdk` - SDK surface for OAuth/client authorization.
+- `packages/authorization` - shared authorization contracts and React helpers.
+- `packages/auth-client` - auth clients for web/admin usage.
+- `packages/domain-contracts` - stable domain types and contracts.
+- `packages/platform-core` - platform utilities, errors, classnames, and shared primitives.
+- `packages/web-foundation` - common Next.js/web route and session helpers.
+- `packages/ui` - shared UI components.
+- `packages/testing` - test helpers and fixtures.
+- `packages/*-logic` - domain logic packages for base, market, CRM, offers, workspace, and compliance.
+- `packages/location-map` - location/map utilities.
+- `packages/ag-ui` - structured agent UI primitives.
 
-## Product Shape
+## OAuth And Partners Boundary
 
-Anan is designed as shared infrastructure for a real estate network:
+The root Partners app syncs runtime app metadata into Anan through the app registration contract. Anan stores only the mirror fields needed by OAuth:
 
-- buyers discover and qualify through AI-first flows across web, mobile, and chat surfaces
-- brokers work inside a live workspace with CRM, offers, projects, and collaboration tools
-- developers publish projects, manage offers, and monitor demand and partner activity
-- admins operate the platform, knowledge base, diagnostics, and internal systems
-- docs surfaces support both external integrations and internal team onboarding
+- client id
+- optional secret hash
+- display metadata
+- redirect URIs
+- allowed scopes
+- trusted/active flags
+- client type
+- timestamps
 
-That shared product model is why the repo is organized around ownership boundaries and backend capabilities instead of per-page duplication.
-
-## How The Architecture Thinks
-
-Anan is organized around ownership boundaries, not random folder growth.
-
-- surfaces stay thin and delegate to owning layers
-- Convex is the source of truth for data, policy, orchestration, and real-time delivery
-- shared domain behavior lives once in `convex/shared_logic`
-- AI is a first-class backend capability, not a bolt-on widget
-- packages are reserved for stable shared systems, not just large folders
-
-If you are changing architecture-sensitive code, read `ARCHITECTURE.md` first.
+The sync token is `ANAN_APP_REGISTRATION_SYNC_TOKEN`. Anan OAuth flows use this mirror for client validation, redirect validation, scope validation, consent, grants, and token exchange. App reviews, developer orgs, app lifecycle state, portal audit logs, and developer auth do not belong in Anan.
 
 ## Core Stack
 
-- backend: Convex
-- web surfaces: Next.js App Router
-- mobile: Expo Router
-- language: TypeScript across the stack
-- shared UI: workspace packages such as `@anan/ag-ui`
+- Backend: Convex
+- Web apps: Next.js App Router
+- Auth: Better Auth with Convex integration
+- Language: TypeScript
+- Testing: Vitest, Playwright where app-level browser coverage exists
+- Package manager: pnpm
 
 ## Quick Start
 
@@ -132,128 +127,86 @@ If you are changing architecture-sensitive code, read `ARCHITECTURE.md` first.
 pnpm install
 ```
 
-### Read this first
-
-- [Architecture rules](./ARCHITECTURE.md)
-- [Convex rules](./CONVEX_RULES.md)
-- [Handbook index](./docs/handbook/README.md)
-
-### Required environment direction
-
-At minimum, local development usually needs:
-
-- a Convex deployment URL for the surface you are running
-- app-specific env files such as `apps/web/.env.local` or `apps/client-web/.env.local`
-- OAuth redirect origins when testing sign-in flows
-
-Common root-level redirect vars:
-
-- `SITE_URL`
-- `ANAN_WEB_URL`
-- `ANAN_ADMIN_URL`
-- `ANAN_MOBILE_URL`
-- `ANAN_AUTH_ALLOWED_ORIGINS`
-
-Check each app README for the exact env contract.
-
-### Run locally
+### Run Locally
 
 ```bash
-pnpm dev                # Convex
-pnpm dev:all            # Convex + web + client-web + marketing + admin
-pnpm dev:web            # web app on http://localhost:3000
-pnpm dev:client-web
-pnpm dev:marketing
-pnpm dev:admin          # admin app on http://localhost:3001
-pnpm dev:docs
-pnpm dev:private-docs
-pnpm mobile:dev
+pnpm dev         # Convex backend
+pnpm dev:web     # apps/web on http://localhost:3000
+pnpm dev:admin   # apps/admin on http://localhost:3001
+pnpm dev:all     # Convex + web + admin
 ```
 
-### Build and test
+### Build And Test
 
 ```bash
-pnpm build
+pnpm typecheck
 pnpm test:once
+pnpm build
+```
+
+Deeper verification:
+
+```bash
+pnpm test:deep:fast
+pnpm test:deep:surfaces
+pnpm test:deep:e2e
+pnpm test:deep:build
 pnpm test:deep
 pnpm test:deep:exhaustive
 ```
 
-## Verification Tiers
+## Environment Direction
 
-- `pnpm test:deep:fast` - core deterministic checks
-- `pnpm test:deep:surfaces` - app-local non-browser suites
-- `pnpm test:deep:e2e` - stable browser coverage
-- `pnpm test:deep:build` - full build verification
-- `pnpm test:deep:optional` - setup-dependent browser scenarios
-- `pnpm test:deep` - fast + surfaces + e2e
-- `pnpm test:deep:exhaustive` - deepest verification pass
+Use local env files only for local development. Do not commit `.env`, `.env.local`, `.env.*.local`, `.next/`, `node_modules/`, or build/cache output.
 
-## Docs Index
+Common Anan environment areas:
 
-### Repo rules
+- Convex deployment and site URLs
+- Better Auth secrets and trusted origins
+- Anan web/admin URLs
+- OAuth redirect origins
+- `ANAN_APP_REGISTRATION_SYNC_TOKEN` for trusted external app mirror sync
 
-- [Architecture standards](./ARCHITECTURE.md)
-- [Convex rules](./CONVEX_RULES.md)
-- [Developer system guide](./docs/developer-system-guide.md)
-- [Codebase knowledge base](./docs/codebase-knowledge-base.md)
-- [LLM data access guide](./docs/llm-data-access-guide.md)
+Check `apps/web/README.md`, `apps/admin/README.md`, and `.env.example` for app-specific setup.
 
-### Handbook
+## Important Commands
 
-- [Handbook index](./docs/handbook/README.md)
-- [Convex handbook](./docs/handbook/convex/README.md)
-- [Web handbook](./docs/handbook/web/README.md)
-- [Admin handbook](./docs/handbook/admin/README.md)
-- [Mobile handbook](./docs/handbook/mobile/README.md)
-- [Security handbook](./docs/handbook/security/README.md)
-- [LLM handbook](./docs/handbook/llm/README.md)
-- [Glossary](./docs/handbook/glossary.md)
+```bash
+pnpm --filter web dev
+pnpm --filter admin dev
+pnpm --filter web build
+pnpm --filter admin build
+pnpm --filter admin test
+pnpm gates
+pnpm test:e2e:web
+pnpm admin:bootstrap-password
+```
 
-### Deep-dive docs
+## Architecture Rules
 
-- [Convex AI zone](./docs/handbook/convex/ai-zone.md)
-- [Convex zones](./docs/handbook/convex/zones.md)
-- [Convex shared logic](./docs/handbook/convex/shared-logic.md)
-- [Web server gateway](./docs/handbook/web/server-gateway.md)
-- [Web SSR and performance](./docs/handbook/web/ssr-performance.md)
-- [Mobile architecture](./docs/handbook/mobile/architecture.md)
-- [Security authorization](./docs/handbook/security/authorization.md)
-- [Web authorization flow](./docs/handbook/security/web-authorization-flow.md)
+If you are changing architecture-sensitive code:
 
-### Recipes
-
-- [Add an agent](./docs/handbook/recipes/add-agent.md)
-- [Add a channel](./docs/handbook/recipes/add-channel.md)
-- [Add a table](./docs/handbook/recipes/add-table.md)
-- [Add a web domain](./docs/handbook/recipes/add-web-domain.md)
+1. Read `ARCHITECTURE.md`.
+2. Read `CONVEX_RULES.md`.
+3. Use the nearest package or app `README.md`.
+4. Keep surfaces thin and push durable business behavior into the owning package, server boundary, or Convex module.
+5. Keep Partners-owned data out of Anan.
+6. Keep Anan workspace authorization and OAuth grants inside Anan.
 
 ## Useful Entry Points
 
-### App docs
-
+- [Architecture standards](./ARCHITECTURE.md)
+- [Convex rules](./CONVEX_RULES.md)
 - [Web app](./apps/web/README.md)
-- [Client web app](./apps/client-web/README.md)
 - [Admin app](./apps/admin/README.md)
-- [Admin deploy guide](./apps/admin/DEPLOY.md)
-- [Mobile app](./apps/mobile/README.md)
-- [Docs app](./apps/docs/README.md)
-- [Private docs app](./apps/private-docs/README.md)
-- [Client zone notes](./apps/client-web/client_zone/README.md)
-- [Web server gateway](./apps/web/server/README.md)
-
-### Package docs
-
+- [Audit scripts](./scripts/audit/README.md)
 - [AG UI package](./packages/ag-ui/README.md)
+- [Auth package](./packages/auth/README.md)
+- [Authorization package](./packages/authorization/README.md)
+- [Domain contracts](./packages/domain-contracts/README.md)
+- [Web foundation](./packages/web-foundation/README.md)
+- [UI package](./packages/ui/README.md)
 
-## Start Here If You Are New
+## Mental Model
 
-1. Read [ARCHITECTURE.md](./ARCHITECTURE.md).
-2. Read [CONVEX_RULES.md](./CONVEX_RULES.md).
-3. Open [docs/handbook/README.md](./docs/handbook/README.md).
-4. Jump into the app or backend zone you are changing.
-5. Use the nearest local `README.md` before changing subsystem structure.
-
-## Mental Model In One Line
-
-Anan is not just a website, CRM, or chatbot. It is a shared real estate infrastructure where every surface plugs into the same backend truth.
+Anan is the source of truth for workspace execution, authorization, consent, grants, and platform operations. The Partners app is a separate developer portal that asks Anan for workspace access through explicit contracts instead of sharing internal database ownership.
