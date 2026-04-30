@@ -100,6 +100,8 @@ export default function OrganizationAppsWorkspace({
         <div className="space-y-3">
           {apps.map((app) => {
             const isRevoking = isPending && revokingClientId === app.clientId;
+            const expiresAt = app.expiresAt ? dateFormatter.format(new Date(app.expiresAt)) : null;
+            const iconUrl = app.iconUrl ?? app.logoUrl ?? null;
             return (
               <section
                 key={app.clientId}
@@ -108,7 +110,12 @@ export default function OrganizationAppsWorkspace({
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                   <div className="flex items-start gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-slate-100 text-sm font-black uppercase text-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                      {(app.appName ?? "?").slice(0, 1)}
+                      {iconUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={iconUrl} alt="" className="h-full w-full rounded-[18px] object-cover" />
+                      ) : (
+                        (app.appName ?? "?").slice(0, 1)
+                      )}
                     </div>
                     <div className="space-y-2">
                       <div>
@@ -128,6 +135,13 @@ export default function OrganizationAppsWorkspace({
                             ? dateFormatter.format(new Date(app.lastUsedAt))
                             : dictionary.settings.connectedAppsNeverUsed}
                         </span>
+                        {expiresAt ? (
+                          <span className="rounded-full bg-slate-100 px-3 py-1 dark:bg-slate-900">
+                            {app.status === "expired"
+                              ? dictionary.settings.connectedAppsExpired
+                              : dictionary.settings.connectedAppsExpires}: {expiresAt}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
                   </div>

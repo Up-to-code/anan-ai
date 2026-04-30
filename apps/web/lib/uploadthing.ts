@@ -4,7 +4,7 @@ import { generateReactHelpers } from "@uploadthing/react";
 import type { UploadRouter } from "@/app/api/uploadthing/core";
 
 const uploadthingDisabledMessage =
-  "Uploads are not configured. Set UPLOADTHING_TOKEN in apps/web/.env.local and restart the web app.";
+  "Uploads are not configured for the local web app. Set UPLOADTHING_TOKEN in apps/web/.env.local and restart pnpm dev:web; Convex Cloud env vars do not automatically flow into localhost.";
 const uploadthingEnabled = process.env.NEXT_PUBLIC_UPLOADTHING_ENABLED === "true";
 const generatedHelpers = generateReactHelpers<UploadRouter>();
 

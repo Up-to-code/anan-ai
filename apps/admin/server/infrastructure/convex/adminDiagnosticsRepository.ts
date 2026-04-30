@@ -1,4 +1,4 @@
-import { fetchQuery } from "convex/nextjs";
+import { createRepositoryRefs, queryRef } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 type DevelopersApiRefs = {
@@ -12,8 +12,8 @@ type ChartsApiRefs = {
   channelDistribution: unknown;
 };
 
-const developersApi = apiUnsafe["admin_zone/developers"] as DevelopersApiRefs;
-const chartsApi = apiUnsafe["admin_zone/charts"] as ChartsApiRefs;
+const developersApi = createRepositoryRefs<DevelopersApiRefs>(apiUnsafe, "admin_zone/developers");
+const chartsApi = createRepositoryRefs<ChartsApiRefs>(apiUnsafe, "admin_zone/charts");
 
 export type AdminDevLog = Record<string, unknown>;
 
@@ -24,34 +24,34 @@ export type AdminDevLog = Record<string, unknown>;
  */
 export const convexAdminDiagnosticsRepository = {
   async listDevLogs(token: string, limit = 50) {
-    return fetchQuery(developersApi.devLogs as never, { limit } as never, { token }) as Promise<AdminDevLog[]>;
+    return queryRef<AdminDevLog[]>(token, developersApi.devLogs, { limit });
   },
   async getErrorRate(token: string, range: "day" | "week" | "month" = "week") {
-    return fetchQuery(developersApi.devErrorRate as never, { range } as never, { token }) as Promise<{
+    return queryRef<{
       total: number;
       errors: number;
       rate: number;
-    }>;
+    }>(token, developersApi.devErrorRate, { range });
   },
   async getSearchActivityChart(token: string, range: "day" | "week" | "month" = "week") {
-    return fetchQuery(chartsApi.searchActivityChart as never, { range } as never, { token }) as Promise<{
+    return queryRef<{
       labels: string[];
       successSeries: number[];
       failedSeries: number[];
-    }>;
+    }>(token, chartsApi.searchActivityChart, { range });
   },
   async getErrorHealthChart(token: string, range: "day" | "week" | "month" = "week") {
-    return fetchQuery(chartsApi.errorHealthChart as never, { range } as never, { token }) as Promise<{
+    return queryRef<{
       labels: string[];
       errorByStatus: Record<string, number>;
       errorByStage: Record<string, number>;
-    }>;
+    }>(token, chartsApi.errorHealthChart, { range });
   },
   async getChannelDistribution(token: string) {
-    return fetchQuery(chartsApi.channelDistribution as never, {} as never, { token }) as Promise<{
-      whatsapp: number;
-      app: number;
+    return queryRef<{
+      workspace: number;
       web: number;
-    }>;
+      admin: number;
+    }>(token, chartsApi.channelDistribution);
   },
 };

@@ -54,7 +54,7 @@ it("renders organization-owned marketplace copy with organization settings and p
   expect(html).toContain("إنشاء عرض باسم المنظمة");
   expect(html).toContain("المنظمة المالكة للعرض");
   expect(html).toContain("إعدادات المنظمة");
-  expect(html).toContain("واتساب");
+  expect(html).not.toContain("واتساب");
   expect(html).toContain("مشاركة عقار");
   expect(html).toContain("طلب عميل");
   expect(html).toContain("العقار المختار");

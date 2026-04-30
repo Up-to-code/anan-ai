@@ -28,8 +28,8 @@ export default function OnboardingLogoutButton({
     "inline-flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition disabled:opacity-60";
   const variantClasses =
     variant === "ghost"
-      ? "border-2 border-slate-100 bg-white px-6 py-2.5 text-slate-500 hover:border-blue-600 hover:text-blue-600"
-      : "border-2 border-blue-600 bg-blue-600 px-6 py-2.5 text-white hover:bg-blue-700";
+      ? "rounded-full border border-border bg-card px-6 py-2.5 text-muted-foreground hover:border-primary/40 hover:text-primary"
+      : "rounded-full border border-primary bg-primary px-6 py-2.5 text-primary-foreground hover:opacity-90";
 
   return (
     <button

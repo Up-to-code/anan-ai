@@ -1,7 +1,7 @@
 import { LegalArticle, PageHero, Section, SectionLabel } from "@/app/(public)/public";
 
 /**
- * WHY:   Users and partners need a clear privacy policy aligned to the platform's public and workspace surfaces.
+ * WHY:   Users and users need a clear privacy policy aligned to the platform's public and workspace surfaces.
  * WHAT:  Renders the Privacy Policy as structured legal sections.
  * HOW:   Server-rendered static content for performance and accessibility.
  */

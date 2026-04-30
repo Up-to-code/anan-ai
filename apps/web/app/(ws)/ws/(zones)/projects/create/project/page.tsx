@@ -24,8 +24,6 @@ import { toProjectFormActionFailure, validateProjectFormSubmission } from "../..
 export default async function CreateProjectPage() {
   const locale: AppLocale = await getWorkspaceLocale();
   const workspace = await requireWorkspaceData("/ws/projects/create/project");
-  const audience = workspace.audience;
-  const ownerContext = workspace.ownerContext ?? null;
   const title =
     locale === "fr"
       ? "Configurer un nouveau projet"
@@ -48,10 +46,21 @@ export default async function CreateProjectPage() {
     }
 
     try {
-      const propertiesZone = getWorkspacePropertyZone(audience, ownerContext);
-      const projectsZone = getWorkspaceProjectZone(audience, ownerContext);
+      const actionWorkspace = await requireWorkspaceData("/ws/projects/create/project");
+      const resolvedAudience =
+        actionWorkspace.audience === "none" ? workspace.audience : actionWorkspace.audience;
+      const resolvedOwnerContext =
+        actionWorkspace.ownerContext ?? workspace.ownerContext ?? null;
+      const propertiesZone = getWorkspacePropertyZone(
+        resolvedAudience,
+        resolvedOwnerContext,
+      );
+      const projectsZone = getWorkspaceProjectZone(
+        resolvedAudience,
+        resolvedOwnerContext,
+      );
       const id = await propertiesZone.createProperty(mapWorkspaceProjectToPropertyInput(data));
-      await projectsZone.saveProjectDossierDraft(mapWorkspaceProjectToDossierInput(id, data));
+      const dossierResult = await projectsZone.saveProjectDossierDraft(mapWorkspaceProjectToDossierInput(id, data));
       await projectsZone.saveProjectUnits({ propertyId: id, units: mapWorkspaceProjectToUnitInputs(data) });
       await projectsZone.saveProjectPaymentPlans({ propertyId: id, paymentPlans: mapWorkspaceProjectToPaymentPlanInputs(data) });
       await projectsZone.saveProjectComplianceDocuments({ propertyId: id, documents: mapWorkspaceProjectToComplianceDocumentInputs(data) });
@@ -79,7 +88,7 @@ export default async function CreateProjectPage() {
         });
       }
 
-      return { ok: true, redirectTo: `/ws/projects/${id}` } as const;
+      return { ok: true, redirectTo: `/ws/projects/${dossierResult.dossierId ?? id}/units` } as const;
     } catch (error) {
       return toProjectFormActionFailure(error);
     }

@@ -13,6 +13,9 @@ export function isWorkspaceKind(kind?: AssistantKind): boolean {
   return kind === "anan_workspace" || kind === "anan_pro";
 }
 
-export function isPublicAssistantKind(kind?: AssistantKind): boolean {
-  return kind === "anan_main_public";
+export function normalizeAssistantKind(kind?: string): AssistantKind | undefined {
+  if (!kind || kind === "default" || kind === "anan_main_public") {
+    return kind ? "default" : undefined;
+  }
+  return isWorkspaceKind(kind as AssistantKind) ? (kind as AssistantKind) : undefined;
 }

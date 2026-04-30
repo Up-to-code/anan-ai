@@ -57,6 +57,7 @@ it("returns a stable 503 payload when UploadThing token is missing", async () =>
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toMatchObject({
       code: "UPLOADTHING_NOT_CONFIGURED",
+      message: expect.stringContaining("Convex Cloud env vars are separate"),
       status: 503,
     });
   } finally {

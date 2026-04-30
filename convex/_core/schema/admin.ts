@@ -1,5 +1,8 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { adminAccessLevelValidator, adminPermissionValidator } from "../security/adminAccess";
+import { transitionalGlobalSecurityFields } from "./securityFields";
+import { unsafeDynamicPayloadValidator } from "./securityValidators";
 
 const verificationDocumentValidator = v.object({
   key: v.string(),
@@ -36,6 +39,7 @@ const complianceEnforcementValidator = v.object({
 
 const adminTables = {
   complianceRulesets: defineTable({
+    ...transitionalGlobalSecurityFields,
     countryCode: v.string(),
     countryLabel: v.optional(v.string()),
     orgType: v.union(v.literal("broker"), v.literal("red")),
@@ -53,6 +57,8 @@ const adminTables = {
     .index("countryCode", ["countryCode"]),
 
   verificationRequests: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     requestType: v.union(v.literal("user"), v.literal("broker"), v.literal("RED"), v.literal("property")),
     subjectProfileId: v.optional(v.id("userProfiles")),
     subjectBrokerId: v.optional(v.id("brokers")),
@@ -70,7 +76,7 @@ const adminTables = {
     ),
     rulesetId: v.optional(v.id("complianceRulesets")),
     rulesetVersion: v.optional(v.number()),
-    submittedData: v.any(),
+    submittedData: unsafeDynamicPayloadValidator,
     attachedDocuments: v.array(verificationDocumentValidator),
     reviewerId: v.optional(v.string()),
     reviewerNotes: v.optional(v.string()),
@@ -80,6 +86,7 @@ const adminTables = {
     updatedAt: v.number(),
   })
     .index("currentStatus", ["currentStatus"])
+    .index("by_org_status_submittedAt", ["orgId", "currentStatus", "submittedAt"])
     .index("requestType", ["requestType"])
     .index("subjectProfileId", ["subjectProfileId"])
     .index("subjectBrokerId", ["subjectBrokerId"])
@@ -88,6 +95,8 @@ const adminTables = {
     .index("submittedAt", ["submittedAt"]),
 
   adminDataHealthSummaries: defineTable({
+    ...transitionalGlobalSecurityFields,
+    orgId: v.optional(v.id("organizations")),
     summaryType: v.string(),
     tenantOrgId: v.optional(v.string()),
     status: v.union(v.literal("healthy"), v.literal("warning"), v.literal("critical")),
@@ -96,12 +105,35 @@ const adminTables = {
     staleAfterMs: v.optional(v.number()),
     lastAggregatedAt: v.number(),
     staleSince: v.optional(v.number()),
-    details: v.optional(v.any()),
+    details: v.optional(unsafeDynamicPayloadValidator),
     updatedAt: v.number(),
   })
     .index("summaryType", ["summaryType"])
     .index("status", ["status"])
-    .index("tenantOrgId", ["tenantOrgId"]),
+    .index("tenantOrgId", ["tenantOrgId"])
+    .index("by_org_summaryType", ["orgId", "summaryType"])
+    .index("by_status_updatedAt", ["status", "updatedAt"]),
+
+  adminSignupInvites: defineTable({
+    ...transitionalGlobalSecurityFields,
+    tokenHash: v.string(),
+    email: v.string(),
+    name: v.optional(v.string()),
+    level: adminAccessLevelValidator,
+    permissions: v.array(adminPermissionValidator),
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+    usedByAuthUserId: v.optional(v.string()),
+    revokedAt: v.optional(v.number()),
+    revokedByAuthUserId: v.optional(v.string()),
+    createdByAuthUserId: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("tokenHash", ["tokenHash"])
+    .index("email", ["email"])
+    .index("expiresAt", ["expiresAt"])
+    .index("by_deletedAt_expiresAt", ["deletedAt", "expiresAt"]),
 };
 
 export default adminTables;

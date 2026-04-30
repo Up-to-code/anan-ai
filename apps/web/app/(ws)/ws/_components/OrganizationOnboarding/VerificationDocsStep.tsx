@@ -98,7 +98,7 @@ function useVerificationDocsModel(props: VerificationDocsStepProps): Verificatio
 
 function VerificationDocsView(model: VerificationDocsModel) {
   return (
-    <div className="space-y-10">
+    <div className="mx-auto max-w-2xl space-y-7">
       <div className="space-y-2 text-right">
         <div className="text-xl font-black tracking-tight text-foreground">التوثيق والمستندات</div>
         <p className="text-sm font-medium text-muted-foreground">ارفع مستنداتك لإثبات الهوية والنشاط. القائمة أدناه مرجع إرشادي ويمكن تحديثها لاحقاً.</p>
@@ -115,9 +115,9 @@ function VerificationDocsView(model: VerificationDocsModel) {
         sources={model.sources} 
       />
 
-      <div className="grid gap-8 md:grid-cols-2">
-        <DocumentsCard title="المستندات الأساسية" subtitle="ملفات الهوية والسجلات النظامية الأساسية." uploadingLabel="جارٍ رفع الملفات..." idleLabel="رفع ملفات PDF أو صور" docs={model.requiredDocs} isUploading={model.isUploading} onRemoveDoc={(docKey) => model.setRequiredDocs((current) => current.filter((item) => item.key !== docKey))} inputRef={model.requiredInputRef} onFilesChange={model.handleRequiredFiles} />
-        <DocumentsCard title="إثبات العمل (اختياري)" subtitle="نماذج أعمال أو مستندات داعمة لنشاطك." uploadingLabel="جارٍ رفع الملفات..." idleLabel="أضف نماذج أعمال أو موافقات مشاريع" docs={model.proofDocs} isUploading={model.isUploading} onRemoveDoc={(docKey) => model.setProofDocs((current) => current.filter((item) => item.key !== docKey))} inputRef={model.proofInputRef} onFilesChange={model.handleProofFiles} />
+      <div className="grid gap-6 md:grid-cols-2">
+        <DocumentsCard documentKind="required" title="المستندات الأساسية" subtitle="ملفات الهوية والسجلات النظامية الأساسية." uploadingLabel="جارٍ رفع الملفات..." idleLabel="رفع ملفات PDF أو صور" docs={model.requiredDocs} isUploading={model.isUploading} onRemoveDoc={(docKey) => model.setRequiredDocs((current) => current.filter((item) => item.key !== docKey))} inputRef={model.requiredInputRef} onFilesChange={model.handleRequiredFiles} />
+        <DocumentsCard documentKind="proof" title="إثبات العمل (اختياري)" subtitle="نماذج أعمال أو مستندات داعمة لنشاطك." uploadingLabel="جارٍ رفع الملفات..." idleLabel="أضف نماذج أعمال أو موافقات مشاريع" docs={model.proofDocs} isUploading={model.isUploading} onRemoveDoc={(docKey) => model.setProofDocs((current) => current.filter((item) => item.key !== docKey))} inputRef={model.proofInputRef} onFilesChange={model.handleProofFiles} />
       </div>
 
       {model.error ? (

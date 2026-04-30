@@ -1,6 +1,6 @@
 import { mutation } from "../_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 import { buildOwnerContext, resolveTenantOrgIdForOwner } from "../shared_logic/agencies/repositories/core";
 import { buildPropertyProjectionFields } from "../shared_logic/properties/projections";
 
@@ -264,7 +264,7 @@ export const backfillScaleControlPlane = mutation({
     cursor: v.optional(v.string()),
   },
   handler: async (ctx, { limit = 200, cursor }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const current = decodeBackfillCursor(cursor);
     const page = await paginateStage(ctx, current.stage, limit, current.dbCursor);
     const patched = await processBackfillStagePage(ctx, current.stage, page.page as any[]);
@@ -294,7 +294,7 @@ export const backfillScaleControlPlane = mutation({
 export const rebuildAdminDataHealthSummaries = mutation({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const [engagement, brokerAnalytics, searchLogs, apiKeys] = await Promise.all([
       ctx.db.query("propertyEngagementDaily").collect(),
       ctx.db.query("propertyBrokerAnalytics").collect(),

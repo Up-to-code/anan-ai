@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { createdResponse, handleRoute, jsonResponse, parseJsonBody, safeJsonBody } from "@anan/web-foundation/api";
 import {
   cancelAnanProStreamSession,
   getAnanProThread,
@@ -7,7 +8,6 @@ import {
 } from "@/server/domains/workspace/ananPro/service";
 import { sendAnanProMessageInputSchema } from "@/server/contracts/ananPro";
 import { DomainError, toErrorResponse } from "@/server/contracts/errors";
-import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
 import { parseThreadListLimit, shouldListThreads } from "./route.helpers";
 import { createAnanProMessageStream } from "./route.stream";
 
@@ -17,7 +17,7 @@ import { createAnanProMessageStream } from "./route.stream";
  * HOW:   Reads `threadId` and `list` from the request URL, delegates to the domain service, and normalizes failures.
  */
 export async function GET(request: NextRequest) {
-  try {
+  return handleRoute(async () => {
     const threadId = request.nextUrl.searchParams.get("threadId") ?? undefined;
     if (shouldListThreads(request)) {
       const limit = parseThreadListLimit(request);
@@ -27,10 +27,8 @@ export async function GET(request: NextRequest) {
         },
       });
     }
-    return Response.json(await getAnanProThread(threadId));
-  } catch (error) {
-    return toErrorResponse(error);
-  }
+    return jsonResponse(await getAnanProThread(threadId));
+  });
 }
 
 /**
@@ -40,19 +38,11 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const parsed = sendAnanProMessageInputSchema.safeParse(body);
-    if (!parsed.success) {
-      throw new DomainError({
-        code: "INVALID_ARGUMENT",
-        message: parsed.error.issues[0]?.message ?? "Invalid message payload",
-        status: 400,
-      });
-    }
+    const payload = await parseJsonBody(request, sendAnanProMessageInputSchema, "Invalid message payload");
 
     const streamMode = request.nextUrl.searchParams.get("stream") === "1";
     if (streamMode) {
-      return new Response(createAnanProMessageStream(parsed.data), {
+      return new Response(createAnanProMessageStream(payload), {
         headers: {
           "Content-Type": "text/event-stream; charset=utf-8",
           "Cache-Control": "no-cache, no-transform",
@@ -62,11 +52,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return Response.json(await sendAnanProMessage(parsed.data), { status: 201 });
+    return createdResponse(await sendAnanProMessage(payload));
   } catch (error) {
-    if (error instanceof SyntaxError) {
-      return toInvalidJsonResponse();
-    }
     return toErrorResponse(error);
   }
 }
@@ -74,7 +61,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const querySessionId = request.nextUrl.searchParams.get("sessionId")?.trim();
-    const body = querySessionId ? null : await request.json().catch(() => null);
+    const body = querySessionId ? null : await safeJsonBody(request);
     const bodySessionId =
       body && typeof body === "object" && "sessionId" in body
         ? String((body as { sessionId?: unknown }).sessionId ?? "").trim()
@@ -89,7 +76,7 @@ export async function DELETE(request: NextRequest) {
       });
     }
 
-    return Response.json(await cancelAnanProStreamSession(sessionId));
+    return jsonResponse(await cancelAnanProStreamSession(sessionId));
   } catch (error) {
     return toErrorResponse(error);
   }

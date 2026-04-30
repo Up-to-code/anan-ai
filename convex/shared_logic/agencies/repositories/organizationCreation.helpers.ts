@@ -2,11 +2,14 @@ import { ConvexError } from "convex/values";
 import type { MutationCtx } from "../../../_generated/server";
 import { auditLog } from "../../../auditLog";
 import { tenants } from "../../../tenants";
+import { getAdminPlatformAccess } from "../../../_core/security/adminAccess";
 import {
+  buildOwnerContext,
   findProfileByAuthUserId,
   normalizeEmail,
   type AgenciesRepositoryCtx,
 } from "./core";
+import { enqueueOrganizationUpsertForZaneAi } from "../../integrations/zaneAiWebhook";
 
 function slugifyOrganizationName(value: string) {
   return value
@@ -49,6 +52,7 @@ export async function createOrganizationForAuthUserRecord(
     displayName?: string;
     name: string;
     type: "broker" | "red";
+    countryCode: string;
     actorAuthUserId?: string;
   },
 ) {
@@ -64,7 +68,7 @@ export async function createOrganizationForAuthUserRecord(
 
   let profile = await findProfileByAuthUserId(ctx, args.authUserId);
 
-  if (profile?.role === "admin") {
+  if (getAdminPlatformAccess(profile as never)) {
     throw new ConvexError({
       code: "FORBIDDEN",
       message: "Admin accounts cannot create an organization from this flow",
@@ -129,6 +133,7 @@ export async function createOrganizationForAuthUserRecord(
       status: "active",
       isVerified: false,
       contactEmail: args.email ?? profile.email,
+      countryCode: args.countryCode,
     });
 
     const tenantOrgId = await tenants.createOrganization(ctx as never, profile.authUserId, normalizedName, {
@@ -190,6 +195,11 @@ export async function createOrganizationForAuthUserRecord(
       },
       tags: ["organizations", "broker"],
     });
+    await enqueueOrganizationUpsertForZaneAi(
+      ctx,
+      buildOwnerContext({ ownerType: "broker", ownerBrokerId: brokerId, authUserId: profile.authUserId }),
+      { authUserId: args.actorAuthUserId ?? args.authUserId, role: "manager" },
+    );
     return {
       ok: true,
       organization: {
@@ -208,6 +218,7 @@ export async function createOrganizationForAuthUserRecord(
     status: "active",
     isVerified: false,
     contactEmail: args.email ?? profile.email,
+    countryCode: args.countryCode,
   });
 
   const tenantOrgId = await tenants.createOrganization(ctx as never, profile.authUserId, normalizedName, {
@@ -269,6 +280,11 @@ export async function createOrganizationForAuthUserRecord(
     },
     tags: ["organizations", "red"],
   });
+  await enqueueOrganizationUpsertForZaneAi(
+    ctx,
+    buildOwnerContext({ ownerType: "RED", ownerREDId: redId, authUserId: profile.authUserId }),
+    { authUserId: args.actorAuthUserId ?? args.authUserId, role: "manager" },
+  );
   return {
     ok: true,
     organization: {

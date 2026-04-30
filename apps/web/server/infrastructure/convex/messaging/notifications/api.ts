@@ -1,3 +1,4 @@
+import { createRepositoryRefs } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 export type NotificationsApiRefs = {
@@ -10,4 +11,4 @@ export type NotificationsApiRefs = {
   getPushSubscriptionConfig: unknown;
 };
 
-export const notificationsApi = apiUnsafe["shared_logic/notifications"] as NotificationsApiRefs;
+export const notificationsApi = createRepositoryRefs<NotificationsApiRefs>(apiUnsafe, "shared_logic/notifications");

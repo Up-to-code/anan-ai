@@ -2,14 +2,14 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { getChatModel, getEmbeddingModel } from "./providers";
 
 describe("providers", () => {
-  const originalKey = process.env.OPENROUTER_API_KEY;
+  const originalKey = process.env.OPENROUTER_WORKSPACE_API_KEY;
 
   beforeEach(() => {
-    process.env.OPENROUTER_API_KEY = "test-key";
+    process.env.OPENROUTER_WORKSPACE_API_KEY = "test-key";
   });
 
   afterEach(() => {
-    process.env.OPENROUTER_API_KEY = originalKey;
+    process.env.OPENROUTER_WORKSPACE_API_KEY = originalKey;
   });
 
   it("getChatModel returns a model", () => {

@@ -1,5 +1,5 @@
+import { handleRoute, jsonResponse } from "@anan/web-foundation/api";
 import { getOrganizationApiKeyHeader, getOrganizationApiKeyOrigin } from "@/app/api/org/_shared";
-import { toErrorResponse } from "@/server/contracts/errors";
 import { getOrganizationBrokerByApiKey } from "@/server/domains/auth/organizationApiKeys/service";
 
 type OrganizationBrokerRouteProps = {
@@ -12,10 +12,8 @@ type OrganizationBrokerRouteProps = {
  * HOW:   Resolves the route param and delegates to the organization API key domain service.
  */
 export async function GET(request: Request, { params }: OrganizationBrokerRouteProps) {
-  try {
+  return handleRoute(async () => {
     const { brokerId } = await params;
-    return Response.json({ broker: await getOrganizationBrokerByApiKey(getOrganizationApiKeyHeader(request), brokerId, getOrganizationApiKeyOrigin(request)) });
-  } catch (error) {
-    return toErrorResponse(error);
-  }
+    return jsonResponse({ broker: await getOrganizationBrokerByApiKey(getOrganizationApiKeyHeader(request), brokerId, getOrganizationApiKeyOrigin(request)) });
+  });
 }

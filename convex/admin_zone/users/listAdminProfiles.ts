@@ -1,5 +1,5 @@
 import { paginationOptsValidator } from "convex/server";
-import { requireRole } from "../../_core/security/accessPolicy";
+import { requireAdminAccess } from "../../_core/security/accessPolicy";
 import { buildUserKey, paginateRows, resolveVerificationStatus } from "./helpers";
 
 export const listAdminProfilesArgs = {
@@ -47,7 +47,7 @@ export async function listAdminProfilesHandler(
   ctx: any,
   { paginationOpts }: { paginationOpts: { cursor: string | null; numItems: number } }
 ) {
-  await requireRole(ctx, ["admin"]);
+  await requireAdminAccess(ctx);
   const [profiles, brokers, developers, verificationRequests] = await Promise.all([
     ctx.db.query("userProfiles").collect(),
     ctx.db.query("brokers").collect(),

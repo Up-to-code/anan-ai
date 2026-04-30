@@ -25,7 +25,7 @@ export const generateResponseWorkflow = workflow.define({
     threadId: v.string(),
     promptMessageId: v.string(),
     channel: v.optional(
-      v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
+      v.union(v.literal("workspace"), v.literal("web"), v.literal("admin")),
     ),
   },
   returns: v.null(),
@@ -56,7 +56,7 @@ export const startGenerateResponseWorkflow = internalAction({
     threadId: v.string(),
     promptMessageId: v.string(),
     channel: v.optional(
-      v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
+      v.union(v.literal("workspace"), v.literal("web"), v.literal("admin")),
     ),
   },
   handler: async (ctx, actionArgs): Promise<WorkflowId> => {

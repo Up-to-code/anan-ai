@@ -1,7 +1,9 @@
 import ConvexClientProvider from "../ConvexClientProvider";
 import { WebLocaleProvider } from "../_components/WebLocaleProvider";
+import AuthSdkWorkspaceProvider from "./AuthSdkWorkspaceProvider";
 import { getToken } from "@/lib/auth-server";
 import { getWebDictionary } from "@/lib/i18n";
+import { getInitialAuthSdkSession } from "@/lib/auth-sdk-session";
 import { getWorkspaceLocale } from "./ws/_lib/workspaceLocale";
 
 export const dynamic = "force-dynamic";
@@ -14,17 +16,22 @@ export const dynamic = "force-dynamic";
 export default async function WorkspaceGroupLayout({ children }: { children: React.ReactNode }) {
   const locale = await getWorkspaceLocale();
   const dictionary = getWebDictionary(locale);
-  const initialToken = await getToken().catch(() => null);
+  const [initialToken, initialSession] = await Promise.all([
+    getToken().catch(() => null),
+    getInitialAuthSdkSession(),
+  ]);
 
   return (
     <ConvexClientProvider initialToken={initialToken}>
       <WebLocaleProvider locale={locale} dictionary={dictionary}>
-        <div
-          data-slot="workspace-group-layout"
-          className="flex h-full min-h-screen min-h-dvh min-w-0 w-full flex-1 basis-0 flex-col"
-        >
-          {children}
-        </div>
+        <AuthSdkWorkspaceProvider initialSession={initialSession}>
+          <div
+            data-slot="workspace-group-layout"
+            className="flex h-full min-h-screen min-h-dvh min-w-0 w-full flex-1 basis-0 flex-col"
+          >
+            {children}
+          </div>
+        </AuthSdkWorkspaceProvider>
       </WebLocaleProvider>
     </ConvexClientProvider>
   );

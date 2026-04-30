@@ -12,7 +12,7 @@ export async function getAnalyticsPageData(
     | "executive"
     | "engagement"
     | "commercial"
-    | "partners"
+    | "ecosystem"
     | "inventory"
     | "collaboration",
   range: "30d" | "90d" = "90d",
@@ -21,13 +21,13 @@ export async function getAnalyticsPageData(
   const token = session.token;
 
   if (tab === "executive") {
-    const [overview, commercial, partners, queue] = await Promise.all([
+    const [overview, commercial, ecosystem, queue] = await Promise.all([
       convexAdminCommandCenterRepository.getOverview(token, range),
       convexAdminCommandCenterRepository.getCommercialAnalytics(token, range),
-      convexAdminCommandCenterRepository.getPartnerHealthAnalytics(token, range),
+      convexAdminCommandCenterRepository.getEcosystemHealthAnalytics(token, range),
       convexAdminCommandCenterRepository.getQueueHealthAnalytics(token, range === "90d" ? "90d" : "30d"),
     ]);
-    return { session, tab, data: { overview, commercial, partners, queue } };
+    return { session, tab, data: { overview, commercial, ecosystem, queue } };
   }
 
   if (tab === "engagement") {
@@ -42,13 +42,13 @@ export async function getAnalyticsPageData(
     return { session, tab, data: await convexAdminCommandCenterRepository.getCommercialAnalytics(token, range) };
   }
 
-  if (tab === "partners") {
-    const [partners, brokers, developers] = await Promise.all([
-      convexAdminCommandCenterRepository.getPartnerHealthAnalytics(token, range),
+  if (tab === "ecosystem") {
+    const [ecosystem, brokers, developers] = await Promise.all([
+      convexAdminCommandCenterRepository.getEcosystemHealthAnalytics(token, range),
       convexAdminAnalyticsRepository.getBrokerAnalytics(token),
       convexAdminAnalyticsRepository.getDeveloperAnalytics(token),
     ]);
-    return { session, tab, data: { partners, brokers, developers } };
+    return { session, tab, data: { ecosystem, brokers, developers } };
   }
 
   if (tab === "collaboration") {

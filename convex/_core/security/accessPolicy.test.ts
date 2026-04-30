@@ -1,15 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { requireRole, requireSession } from "./accessPolicy";
+import { requireAdminAccess, requireRole, requireSession } from "./accessPolicy";
 
-function makeCtx(params: { identity?: any; profile?: any }) {
+function makeCtx(params: { identity?: any; profile?: any; tenantOrgLink?: any }) {
   return {
     auth: {
       getUserIdentity: async () => params.identity ?? null,
     },
     db: {
-      query: (_table: string) => ({
+      query: (table: string) => ({
         withIndex: (_index: string, _builder: any) => ({
-          first: async () => params.profile ?? null,
+          first: async () =>
+            table === "tenantOrgLinks"
+              ? params.tenantOrgLink ?? null
+              : params.profile ?? null,
         }),
       }),
       get: async () => null,
@@ -31,7 +34,56 @@ describe("accessPolicy", () => {
       profile: { role: "broker", brokerId: "broker-1", isActive: true },
     });
 
-    await expect(requireRole(ctx, ["admin"])).rejects.toMatchObject({
+    await expect(requireRole(ctx, ["user"])).rejects.toMatchObject({
+      data: { code: "FORBIDDEN" },
+    });
+  });
+
+  it("requireAdminAccess authorizes platform metadata admin access", async () => {
+    const ctx = makeCtx({
+      identity: { subject: "auth-admin-1", tokenIdentifier: "session-admin" },
+      profile: {
+        role: "user",
+        isActive: true,
+        metadata: {
+          platformAccess: {
+            admin: {
+              enabled: true,
+              level: "owner",
+              permissions: ["admin:*"],
+              grantedAt: 1,
+            },
+          },
+        },
+      },
+    });
+
+    const access = await requireAdminAccess(ctx, "admin:users");
+    expect(access.role).toBe("admin");
+    expect(access.authUserId).toBe("auth-admin-1");
+  });
+
+  it("requireAdminAccess rejects revoked platform metadata", async () => {
+    const ctx = makeCtx({
+      identity: { subject: "auth-admin-2", tokenIdentifier: "session-admin" },
+      profile: {
+        role: "user",
+        isActive: true,
+        metadata: {
+          platformAccess: {
+            admin: {
+              enabled: true,
+              level: "owner",
+              permissions: ["admin:*"],
+              grantedAt: 1,
+              revokedAt: 2,
+            },
+          },
+        },
+      },
+    });
+
+    await expect(requireAdminAccess(ctx)).rejects.toMatchObject({
       data: { code: "FORBIDDEN" },
     });
   });
@@ -84,6 +136,44 @@ describe("accessPolicy", () => {
     await expect(requireRole(ctx, ["broker"])).rejects.toMatchObject({
       data: { code: "ROLE_REJECTED" },
     });
+  });
+
+  it("authorizes broker role via tenant org link when profile link is stale", async () => {
+    const ctx = makeCtx({
+      identity: { subject: "auth-user-6", tokenIdentifier: "session-6" },
+      profile: {
+        role: "broker",
+        roleApprovalStatus: "approved",
+        currentTenantOrgId: "tenant-org-6",
+        isActive: true,
+      },
+      tenantOrgLink: {
+        ownerType: "broker",
+        ownerBrokerId: "broker-6",
+      },
+    });
+
+    const access = await requireRole(ctx, ["broker"]);
+    expect(access.brokerId).toBe("broker-6");
+  });
+
+  it("authorizes developer role via tenant org link when profile link is stale", async () => {
+    const ctx = makeCtx({
+      identity: { subject: "auth-user-7", tokenIdentifier: "session-7" },
+      profile: {
+        role: "developer",
+        roleApprovalStatus: "approved",
+        currentTenantOrgId: "tenant-org-7",
+        isActive: true,
+      },
+      tenantOrgLink: {
+        ownerType: "RED",
+        ownerREDId: "red-7",
+      },
+    });
+
+    const access = await requireRole(ctx, ["developer"]);
+    expect(access.developerId).toBe("red-7");
   });
 
   it("rejects developer roles without a linked developer organization", async () => {

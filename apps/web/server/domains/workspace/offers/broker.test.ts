@@ -43,6 +43,29 @@ describe("broker offers server functions", () => {
     expect(repository.getQueues).toHaveBeenCalledWith("token");
   });
 
+  it("accepts hydrated broker sessions that were backfilled from the org bridge", async () => {
+    const repository = {
+      getQueues: vi.fn(async () => ({
+        audience: "broker" as const,
+        queues: [],
+        sent: [],
+        received: [],
+        marketplace: [],
+      })),
+    };
+
+    await getBrokerOffersSnapshot({
+      requireBroker: vi.fn(async () => ({
+        token: "token",
+        context: { userId: "user-1", role: "broker", organizationId: "org-1", brokerId: "broker-1", isActive: true },
+        profile: null,
+      })),
+      repository: repository as never,
+    });
+
+    expect(repository.getQueues).toHaveBeenCalledWith("token");
+  });
+
   it("updates only owner-editable drafts", async () => {
     const repository = {
       getOfferLiveState: vi.fn(async () => ({

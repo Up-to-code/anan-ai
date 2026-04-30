@@ -49,7 +49,7 @@ function createOrganization(args: { id: string; type: "broker" | "red"; name: st
   };
 }
 
-it("resolves broker workspace behavior when organization access is blocked", async () => {
+it("falls back to the first listed organization when current organization access is stale", async () => {
   const requireSession = createRequireSession(createBrokerSession({ userId: "user-1", brokerId: "broker-1" }));
   const organizationsRepository = createOrganizationsRepository({
     listForCurrentUser: vi.fn(async () => [createOrganization({ id: "broker-1", type: "broker", name: "Fresh Start Realty", slug: "fresh-start-realty" })]),
@@ -59,8 +59,9 @@ it("resolves broker workspace behavior when organization access is blocked", asy
   const behavior = await getWorkspaceBehaviorForCurrentUser({ requireSession, organizationsRepository });
 
   expect(behavior.audience).toBe("broker");
-  expect(behavior.ownerContext).toBeNull();
-  expect(behavior.onboarding.needsOrganization).toBe(true);
+  expect(behavior.primaryOrganization?.id).toBe("broker-1");
+  expect(behavior.ownerContext).toEqual({ ownerType: "broker", ownerId: "broker-1" });
+  expect(behavior.onboarding.needsOrganization).toBe(false);
   expect(behavior.visibleZoneKeys).toContain("projects");
 });
 
@@ -75,6 +76,29 @@ it("falls back to the first organization when the current org is not set", async
   expect(behavior.primaryOrganization?.id).toBe("broker-1");
   expect(behavior.onboarding.needsOrganization).toBe(false);
   expect(behavior.ownerContext).toEqual({ ownerType: "broker", ownerId: "broker-1" });
+});
+
+it("derives owner context from the organization id when the legacy owner bridge is still missing", async () => {
+  const requireSession = createRequireSession(createBrokerSession({ userId: "user-1", brokerId: "broker-1" }));
+  const organizationsRepository = createOrganizationsRepository({
+    listForCurrentUser: vi.fn(async () => [{
+      id: "org-bridge-pending",
+      organizationId: "org-bridge-pending",
+      type: "broker" as const,
+      name: "Bridge Pending Realty",
+      slug: "bridge-pending-realty",
+      status: "active" as const,
+      isVerified: true,
+      legacyOwnerType: null,
+      legacyOwnerId: null,
+    }]),
+  });
+
+  const behavior = await getWorkspaceBehaviorForCurrentUser({ requireSession, organizationsRepository });
+
+  expect(behavior.primaryOrganization?.id).toBe("org-bridge-pending");
+  expect(behavior.ownerContext).toEqual({ ownerType: "broker", ownerId: "org-bridge-pending" });
+  expect(behavior.onboarding.needsOrganization).toBe(false);
 });
 
 it("resolves developer workspace behavior from canonical developer profile links", async () => {

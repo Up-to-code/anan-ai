@@ -89,15 +89,46 @@ function extractStatusCode(error: unknown): number | undefined {
     const candidate =
         (error as any)?.status ??
         (error as any)?.statusCode ??
-        (error as any)?.response?.status;
+        (error as any)?.response?.status ??
+        (error as any)?.data?.error?.code;
     return typeof candidate === "number" ? candidate : undefined;
 }
 
+function extractErrorText(error: unknown): string {
+    const parts = [
+        (error as any)?.message,
+        (error as any)?.responseBody,
+        (error as any)?.data?.error?.message,
+        String(error),
+    ];
+    return parts
+        .filter((part): part is string => typeof part === "string" && part.length > 0)
+        .join("\n");
+}
+
 function isTransientMessage(error: unknown): boolean {
-    const message = (error as any)?.message ?? String(error);
+    const message = extractErrorText(error);
     return TRANSIENT_ERROR_PATTERNS.some((pattern) =>
         message.toLowerCase().includes(pattern.toLowerCase()),
     );
+}
+
+export function isProviderAuthenticationError(error: unknown): boolean {
+    const statusCode = extractStatusCode(error);
+    if (statusCode === 401 || statusCode === 403) {
+        return true;
+    }
+
+    const message = extractErrorText(error).toLowerCase();
+    return [
+        "user not found",
+        "invalid api key",
+        "invalid_api_key",
+        "unauthorized",
+        "forbidden",
+        "authentication",
+        "auth failed",
+    ].some((pattern) => message.includes(pattern));
 }
 
 /**
@@ -231,4 +262,7 @@ export const FALLBACK_MESSAGES = {
     orchestratorFailure: "حدث خطأ في المعالجة، يرجى المحاولة مرة أخرى.",
     /** Rate limited */
     rateLimited: "تم تجاوز الحد المسموح من الطلبات، يرجى الانتظار لحظات.",
+    /** Provider authentication/configuration failed */
+    providerAuth:
+        "Anan AI غير متصل حالياً بمزود النماذج. حدّث مفتاح `OPENROUTER_WORKSPACE_API_KEY` في إعدادات Convex ثم أعد المحاولة.",
 } as const;

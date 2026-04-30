@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation } from "../_generated/server";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 import {
   mapLinksByOwner,
 } from "./tenantsMigration/helpers";
@@ -16,7 +16,7 @@ export const migrateTenantsFromLegacy = mutation({
     dryRun: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const dryRun = Boolean(args.dryRun);
     const tenantOrgLinks = await ctx.db.query("tenantOrgLinks").collect();
     const linksByOwner = mapLinksByOwner(tenantOrgLinks);

@@ -1,3 +1,4 @@
+import { createRepositoryRefs } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 export type ComplianceApiRefs = {
@@ -5,4 +6,4 @@ export type ComplianceApiRefs = {
   getComplianceRulesetByCountry: unknown;
 };
 
-export const complianceApi = apiUnsafe["shared_logic/compliance/index"] as ComplianceApiRefs;
+export const complianceApi = createRepositoryRefs<ComplianceApiRefs>(apiUnsafe, "shared_logic/compliance/index");

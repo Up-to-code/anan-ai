@@ -1,57 +1,17 @@
+import {
+  projectAuthenticatedSession,
+  sanitizeInternalReturnTo as sanitizeReturnTo,
+} from "@anan/web-foundation/auth-session";
 import { getOptionalSessionContext } from "@/server/auth/session";
-import { toSessionUser } from "@/server/contracts/session";
 
 export type { SessionUser } from "@/server/contracts/session";
 
-function isAuthConfigurationError(error: unknown) {
-  return Boolean(
-    error
-    && typeof error === "object"
-    && "code" in error
-    && error.code === "AUTH_CONFIGURATION_ERROR",
-  );
-}
-
-/**
- * WHY:   Workspace and public layouts need one lightweight auth lookup for chrome-level decisions.
- * WHAT:  Returns the current token, projected user, and resolved role when a session exists.
- * HOW:   Reuses the optional session resolver and narrows the payload for UI callers.
- */
-export async function getAuthenticatedSession() {
-  let session;
-  try {
-    session = await getOptionalSessionContext();
-  } catch (error) {
-    if (isAuthConfigurationError(error)) {
-      return { token: null, user: null, role: null };
-    }
-    throw error;
-  }
-  if (!session) {
-    return { token: null, user: null, role: null };
-  }
-
-  return {
-    token: session.token,
-    user: toSessionUser(session.context),
-    role: session.context.role ?? null,
-  };
+export function getAuthenticatedSession() {
+  return projectAuthenticatedSession(getOptionalSessionContext);
 }
 
 export function sanitizeInternalReturnTo(returnTo?: string | null, fallback = "/ws") {
-  if (!returnTo) {
-    return fallback;
-  }
-
-  if (!returnTo.startsWith("/") || returnTo.startsWith("//")) {
-    return fallback;
-  }
-
-  if (returnTo.startsWith("/signin")) {
-    return fallback;
-  }
-
-  return returnTo;
+  return sanitizeReturnTo(returnTo, fallback);
 }
 
 export function buildWorkspaceSecurityAppsPath(clientId?: string) {

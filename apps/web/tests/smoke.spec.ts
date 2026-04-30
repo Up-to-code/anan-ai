@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("landing page renders primary CTA", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("link", { name: "ابدأ الوصول المجاني" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "دخول مساحة العمل" })).toBeVisible();
 });
 
 test("theme toggle persists dark mode on public pages", async ({ page }) => {

@@ -1,29 +1,18 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": [
-    "apps/mobile/babel.config.js",
-    "apps/mobile/metro.config.js",
-    "scripts/audit/analyze.mjs",
-    "scripts/audit/generateAudit.mjs",
-    "scripts/gates.mjs"
-  ],
-  "ignoreDependencies": [
-    "react-native-worklets"
-  ],
-  "ignoreFiles": [
-    "apps/mobile/babel.config.js",
-    "apps/mobile/metro.config.js"
+    "scripts/gates.mjs",
+    "scripts/test-deep.mjs",
+    "scripts/bootstrap-admin-password.mjs"
   ],
   "ignoreIssues": {
-    "apps/mobile/app.json": [
-      "unlisted"
-    ],
     "vitest.config.ts": [
       "unlisted"
     ]
   },
   "ignore": [
     "convex/_generated/**",
-    "apps/**/.next/**"
+    "apps/**/.next/**",
+    "packages/*/dist/**"
   ]
 }

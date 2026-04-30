@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { mutationRef, queryRef } from "@anan/convex-adapters/repository";
 import { projectAnalyticsApi } from "./api";
 import type { ProjectAnalyticsRepository } from "./types";
 
@@ -11,26 +11,26 @@ export type { ProjectAnalyticsRepository } from "./types";
  */
 export const convexProjectAnalyticsRepository: ProjectAnalyticsRepository = {
   async getProjectAnalytics(token, propertyId) {
-    return fetchQuery(
-      projectAnalyticsApi.getProjectAnalytics as never,
-      { propertyId: propertyId as never } as never,
-      { token },
-    ) as ReturnType<ProjectAnalyticsRepository["getProjectAnalytics"]>;
+    return queryRef<Awaited<ReturnType<ProjectAnalyticsRepository["getProjectAnalytics"]>>>(
+      token,
+      projectAnalyticsApi.getProjectAnalytics,
+      { propertyId },
+    );
   },
 
   async recordProjectAnalyticsEvent(token, input) {
-    return fetchMutation(
-      projectAnalyticsApi.recordProjectAnalyticsEvent as never,
+    return mutationRef<Awaited<ReturnType<ProjectAnalyticsRepository["recordProjectAnalyticsEvent"]>>>(
+      token,
+      projectAnalyticsApi.recordProjectAnalyticsEvent,
       {
-        propertyId: input.id as never,
+        propertyId: input.id,
         eventType: input.eventType,
         source: input.source,
-        conversationId: input.conversationId as never,
-        offerCaseId: input.offerCaseId as never,
-        dealId: input.dealId as never,
+        conversationId: input.conversationId,
+        offerCaseId: input.offerCaseId,
+        dealId: input.dealId,
         metadata: input.metadata,
-      } as never,
-      { token },
-    ) as ReturnType<ProjectAnalyticsRepository["recordProjectAnalyticsEvent"]>;
+      },
+    );
   },
 };

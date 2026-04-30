@@ -1,9 +1,13 @@
 import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireEntitlements } from "../_core/security/accessPolicy";
 import {
   applyOwnedProjectUnitBulkActions,
+  archiveOwnedProject,
   getOwnedProjectDossierDetail,
+  getOwnedProjectDossierDetailByProjectId,
+  getOwnedProjectWorkspaceDetail,
+  getOwnedProjectsWorkspace,
   requestOwnedProjectPublication,
   saveOwnedProjectAdLicense,
   saveOwnedProjectBrokerAuthorization,
@@ -23,7 +27,7 @@ import {
 } from "../shared_logic/projects/validation";
 
 async function requireDeveloperAccess(ctx: any) {
-  const access = await requireRole(ctx, ["developer"]);
+  const access = await requireEntitlements(ctx, ["workspace:developer"]);
   return { authUserId: access.authUserId, role: access.role, REDId: access.REDId };
 }
 
@@ -37,12 +41,27 @@ export const getProjectDossier = query({
   handler: async (ctx, { propertyId }) => getOwnedProjectDossierDetail(ctx, propertyId, await requireDeveloperAccess(ctx)),
 });
 
+export const getProjectDossierByProjectId = query({
+  args: { projectId: v.id("projectDossiers") },
+  handler: async (ctx, { projectId }) => getOwnedProjectDossierDetailByProjectId(ctx, projectId, await requireDeveloperAccess(ctx)),
+});
+
 export const getProjectReadiness = query({
   args: { propertyId: v.id("properties") },
   handler: async (ctx, { propertyId }) => {
     const detail = await getOwnedProjectDossierDetail(ctx, propertyId, await requireDeveloperAccess(ctx));
     return detail.readiness;
   },
+});
+
+export const getProjectsWorkspace = query({
+  args: {},
+  handler: async (ctx) => getOwnedProjectsWorkspace(ctx, await requireDeveloperAccess(ctx)),
+});
+
+export const getProjectWorkspaceDetail = query({
+  args: { projectId: v.string() },
+  handler: async (ctx, { projectId }) => getOwnedProjectWorkspaceDetail(ctx, projectId, await requireDeveloperAccess(ctx)),
 });
 
 export const saveProjectDossierDraft = mutation({
@@ -58,6 +77,11 @@ export const saveProjectUnits = mutation({
 export const applyProjectUnitBulkActions = mutation({
   args: { propertyId: v.id("properties"), actions: v.array(projectUnitBulkActionValidator) },
   handler: async (ctx, { propertyId, actions }) => applyOwnedProjectUnitBulkActions(ctx, propertyId, actions as any, await requireDeveloperAccess(ctx)),
+});
+
+export const archiveProject = mutation({
+  args: { propertyId: v.id("properties") },
+  handler: async (ctx, { propertyId }) => archiveOwnedProject(ctx, propertyId, await requireDeveloperAccess(ctx)),
 });
 
 export const saveProjectPaymentPlans = mutation({

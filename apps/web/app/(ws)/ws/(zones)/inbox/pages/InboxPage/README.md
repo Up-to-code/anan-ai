@@ -10,4 +10,4 @@ Realtime workspace inbox orchestration for `/ws/inbox`.
 - `components/InboxCollaborationCard.tsx`: compact card renderer for file, project, deal, invite, and role events inside the thread.
 - `components/InboxComposer.tsx`: reply composer with auto-resize, send-state feedback, keyboard rules, and the broker/developer collaboration launcher.
 - `components/InboxStates.tsx`: shared empty and loading states for the thread panel.
-- `useRealtimeInbox.ts`: live Convex subscriptions, optimistic sending, route sync, and visibility-aware read handling.
+- `useRealtimeInbox/`: live Convex subscriptions, optimistic sending, route sync, validation, and visibility-aware read handling.

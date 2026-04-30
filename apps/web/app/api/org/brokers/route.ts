@@ -1,5 +1,5 @@
+import { handleRoute, jsonResponse } from "@anan/web-foundation/api";
 import { getOrganizationApiKeyHeader, getOrganizationApiKeyOrigin } from "@/app/api/org/_shared";
-import { toErrorResponse } from "@/server/contracts/errors";
 import { listOrganizationBrokersByApiKey } from "@/server/domains/auth/organizationApiKeys/service";
 
 /**
@@ -8,9 +8,7 @@ import { listOrganizationBrokersByApiKey } from "@/server/domains/auth/organizat
  * HOW:   Delegates to the organization API key domain service using the API key header.
  */
 export async function GET(request: Request) {
-  try {
-    return Response.json({ brokers: await listOrganizationBrokersByApiKey(getOrganizationApiKeyHeader(request), getOrganizationApiKeyOrigin(request)) });
-  } catch (error) {
-    return toErrorResponse(error);
-  }
+  return handleRoute(async () =>
+    jsonResponse({ brokers: await listOrganizationBrokersByApiKey(getOrganizationApiKeyHeader(request), getOrganizationApiKeyOrigin(request)) }),
+  );
 }

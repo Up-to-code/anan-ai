@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { queryRef, voidMutationRef } from "@anan/convex-adapters/repository";
 import { organizationAssetsApi } from "./api";
 import type { OrganizationAssetsRepository } from "./types";
 
@@ -11,23 +11,23 @@ export type {
 
 export const convexOrganizationAssetsRepository: OrganizationAssetsRepository = {
   async listOrganizationAssets(token, input) {
-    return fetchQuery(organizationAssetsApi.listOrganizationAssets as never, input as never, {
+    return queryRef<Awaited<ReturnType<OrganizationAssetsRepository["listOrganizationAssets"]>>>(
       token,
-    }) as ReturnType<OrganizationAssetsRepository["listOrganizationAssets"]>;
+      organizationAssetsApi.listOrganizationAssets,
+      input,
+    );
   },
   async attachOrganizationAssets(token, input) {
-    await fetchMutation(organizationAssetsApi.attachOrganizationAssets as never, input as never, {
-      token,
-    });
+    await voidMutationRef(token, organizationAssetsApi.attachOrganizationAssets, input);
   },
   async markEntityAssetsPendingDelete(token, input) {
-    await fetchMutation(organizationAssetsApi.markEntityAssetsPendingDelete as never, input as never, {
-      token,
-    });
+    await voidMutationRef(token, organizationAssetsApi.markEntityAssetsPendingDelete, input);
   },
   async listProjectAssetsForViewer(token, propertyId) {
-    return fetchQuery(organizationAssetsApi.listProjectAssetsForViewer as never, { propertyId } as never, {
+    return queryRef<Awaited<ReturnType<OrganizationAssetsRepository["listProjectAssetsForViewer"]>>>(
       token,
-    }) as ReturnType<OrganizationAssetsRepository["listProjectAssetsForViewer"]>;
+      organizationAssetsApi.listProjectAssetsForViewer,
+      { propertyId },
+    );
   },
 };

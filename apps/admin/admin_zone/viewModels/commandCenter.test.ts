@@ -17,7 +17,7 @@ const overviewPayload = {
     errorEvents: 4,
     apiKeyDenials: 2,
   },
-  partnerHealth: {
+  ecosystemHealth: {
     brokers: 30,
     developers: 12,
     verifiedOrganizations: 16,
@@ -116,7 +116,7 @@ const commercialPayload = {
   ],
 };
 
-const partnerPayload = {
+const ecosystemPayload = {
   range: "30d" as const,
   summary: {
     brokers: 30,
@@ -196,7 +196,7 @@ describe("commandCenter view models", () => {
     expect(viewModel.network.groups.map((group) => group.id)).toEqual([
       "demand",
       "channels",
-      "partners",
+      "ecosystem",
       "pipeline",
       "risk",
     ]);
@@ -206,17 +206,17 @@ describe("commandCenter view models", () => {
     expect(viewModel.queueFocus[0]?.status).toBe("warning");
   });
 
-  it("builds analytics slices for commercial, partner, and queue sections", () => {
+  it("builds analytics slices for commercial, ecosystem, and queue sections", () => {
     const viewModel = buildAnalyticsCommandCenterViewModel({
       range: "30d",
       commercial: commercialPayload,
-      partner: partnerPayload,
+      ecosystem: ecosystemPayload,
       queue: queuePayload,
     });
 
     expect(viewModel.summaryMetrics).toHaveLength(6);
     expect(viewModel.commercial.orderChannels).toHaveLength(3);
-    expect(viewModel.partner.verificationMixRows[0]?.label).toBe("وسطاء");
+    expect(viewModel.ecosystem.verificationMixRows[0]?.label).toBe("وسطاء");
     expect(viewModel.queue.diagnosticsByStatus[0]?.value).toBe(4);
     expect(viewModel.queue.recentItems[0]?.title).toBe("طلب غير مُسند");
   });

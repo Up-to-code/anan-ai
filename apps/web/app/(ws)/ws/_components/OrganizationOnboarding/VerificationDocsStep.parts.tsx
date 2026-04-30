@@ -5,6 +5,7 @@ import type { UploadedFileReference } from "@/server/contracts/files";
 import type { RequirementItem, RequirementSourceLink } from "./requirements";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import { cn } from "@/lib/utils";
+import { OnboardingActionDock } from "./OnboardingMotion";
 
 type RequirementsChecklistProps = {
   countryLabel?: string | null;
@@ -174,6 +175,7 @@ export function RequirementsChecklist({
 }
 
 type DocumentsCardProps = {
+  documentKind: "proof" | "required";
   title: string;
   subtitle: string;
   uploadingLabel: string;
@@ -186,6 +188,7 @@ type DocumentsCardProps = {
 };
 
 export function DocumentsCard({
+  documentKind,
   title,
   subtitle,
   uploadingLabel,
@@ -205,10 +208,11 @@ export function DocumentsCard({
         <div className="text-[13px] font-medium text-muted-foreground">{subtitle}</div>
       </div>
 
-      <input ref={inputRef} type="file" multiple className="hidden" onChange={(event) => void onFilesChange(event)} />
+      <input data-testid={`verification-doc-input-${documentKind}`} ref={inputRef} type="file" multiple className="hidden" onChange={(event) => void onFilesChange(event)} />
 
       <button
         type="button"
+        data-testid={`verification-doc-upload-${documentKind}`}
         onClick={() => inputRef.current?.click()}
         className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border bg-muted/20 px-4 py-8 text-sm font-bold text-muted-foreground transition hover:border-ring/40 hover:bg-muted/30"
       >
@@ -247,42 +251,47 @@ export function StepActions({ isSubmitting, onBack, onSkip, onSubmit }: StepActi
   const { locale } = useWebLocale();
 
   return (
-    <div className="flex items-center justify-between pt-6">
-      <button
-        type="button"
-        onClick={onBack}
-        className="rounded-full bg-muted px-8 py-3.5 text-xs font-black uppercase tracking-widest text-foreground transition hover:bg-muted/80"
-      >
-        {locale === "fr" ? "Retour" : locale === "en" ? "Back" : "رجوع"}
-      </button>
-      <div className="flex items-center gap-4">
+    <OnboardingActionDock>
+      <div className="flex items-center justify-between gap-4">
         <button
           type="button"
-          onClick={onSkip}
-          className="rounded-full border border-border bg-background px-8 py-3.5 text-xs font-black uppercase tracking-widest text-muted-foreground transition hover:bg-muted/20"
+          data-testid="verification-back"
+          onClick={onBack}
+          className="rounded-full bg-muted px-8 py-3.5 text-xs font-black uppercase tracking-widest text-foreground transition hover:bg-muted/80"
         >
-          {locale === "fr" ? "Passer maintenant" : locale === "en" ? "Skip for now" : "تخطي الآن"}
+          {locale === "fr" ? "Retour" : locale === "en" ? "Back" : "رجوع"}
         </button>
-        <button
-          type="button"
-          onClick={onSubmit}
-          disabled={isSubmitting}
-          className="rounded-full bg-foreground px-10 py-3.5 text-xs font-black uppercase tracking-widest text-background shadow-sm transition hover:bg-foreground/90 disabled:opacity-50"
-        >
-          {isSubmitting
-            ? locale === "fr"
-              ? "Envoi..."
-              : locale === "en"
-                ? "Submitting..."
-                : "جارٍ الإرسال..."
-            : locale === "fr"
-              ? "Envoyer la demande"
-              : locale === "en"
-                ? "Submit request"
-                : "إرسال الطلب"}
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            data-testid="verification-skip"
+            onClick={onSkip}
+            className="rounded-full border border-border bg-background px-8 py-3.5 text-xs font-black uppercase tracking-widest text-muted-foreground transition hover:bg-muted/20"
+          >
+            {locale === "fr" ? "Passer maintenant" : locale === "en" ? "Skip for now" : "تخطي الآن"}
+          </button>
+          <button
+            type="button"
+            data-testid="verification-submit"
+            onClick={onSubmit}
+            disabled={isSubmitting}
+            className="rounded-full bg-foreground px-10 py-3.5 text-xs font-black uppercase tracking-widest text-background shadow-sm transition hover:bg-foreground/90 disabled:opacity-50"
+          >
+            {isSubmitting
+              ? locale === "fr"
+                ? "Envoi..."
+                : locale === "en"
+                  ? "Submitting..."
+                  : "جارٍ الإرسال..."
+              : locale === "fr"
+                ? "Envoyer la demande"
+                : locale === "en"
+                  ? "Submit request"
+                  : "إرسال الطلب"}
+          </button>
+        </div>
       </div>
-    </div>
+    </OnboardingActionDock>
   );
 }
 

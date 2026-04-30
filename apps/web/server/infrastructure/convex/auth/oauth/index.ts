@@ -1,4 +1,4 @@
-import { fetchAction, fetchQuery } from "convex/nextjs";
+import { actionRef, queryRef } from "@anan/convex-adapters/repository";
 import { oauthApi } from "./api";
 import type { OAuthRepository } from "./types";
 
@@ -11,30 +11,34 @@ export type { OAuthRepository } from "./types";
  */
 export const convexOAuthRepository: OAuthRepository = {
   async getAuthorizationPrompt(token, flowId, tenantOrgId) {
-    return fetchQuery(
-      oauthApi.getAuthorizationPrompt as never,
-      { flowId: flowId as never, tenantOrgId: tenantOrgId as never } as never,
-      { token },
-    ) as ReturnType<OAuthRepository["getAuthorizationPrompt"]>;
+    return queryRef<Awaited<ReturnType<OAuthRepository["getAuthorizationPrompt"]>>>(
+      token,
+      oauthApi.getAuthorizationPrompt,
+      { flowId, tenantOrgId },
+    );
   },
 
   async approveAuthorization(token, flowId, tenantOrgId) {
-    return fetchAction(
-      oauthApi.approveAuthorization as never,
-      { flowId: flowId as never, tenantOrgId: tenantOrgId as never } as never,
-      { token },
-    ) as ReturnType<OAuthRepository["approveAuthorization"]>;
+    return actionRef<Awaited<ReturnType<OAuthRepository["approveAuthorization"]>>>(
+      token,
+      oauthApi.approveAuthorization,
+      { flowId, tenantOrgId },
+    );
   },
 
   async listAuthorizedApps(token) {
-    return fetchQuery(oauthApi.listAuthorizedApps as never, {} as never, { token }) as ReturnType<OAuthRepository["listAuthorizedApps"]>;
+    return queryRef<Awaited<ReturnType<OAuthRepository["listAuthorizedApps"]>>>(token, oauthApi.listAuthorizedApps);
   },
 
   async getAuthorizedAppDetail(token, clientId) {
-    return fetchQuery(oauthApi.getAuthorizedAppDetail as never, { clientId } as never, { token }) as ReturnType<OAuthRepository["getAuthorizedAppDetail"]>;
+    return queryRef<Awaited<ReturnType<OAuthRepository["getAuthorizedAppDetail"]>>>(
+      token,
+      oauthApi.getAuthorizedAppDetail,
+      { clientId },
+    );
   },
 
   async revokeAuthorizedApp(token, clientId) {
-    await fetchAction(oauthApi.revokeAuthorizedApp as never, { clientId } as never, { token });
+    await actionRef(token, oauthApi.revokeAuthorizedApp, { clientId });
   },
 };

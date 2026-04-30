@@ -40,7 +40,7 @@ it("loads the authorization prompt with a flow-aware returnTo", async () => {
     offlineAccess: false,
     requiresConsent: true,
     existingAuthorization: null,
-    client: { clientId: "client-1", name: "Partner", publisherName: "Publisher" },
+    client: { clientId: "client-1", name: "External Publisher", publisherName: "Publisher" },
     requestedScopes: [],
     user: { email: "admin@example.com" },
   });

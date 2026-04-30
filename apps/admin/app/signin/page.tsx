@@ -1,6 +1,6 @@
 import { ShieldCheck, ShieldX } from "lucide-react";
 import { redirect } from "next/navigation";
-import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import EmailPasswordSignInForm from "@/components/auth/EmailPasswordSignInForm";
 import LogoutButton from "@/components/auth/LogoutButton";
 import PageHero from "@/components/shared/PageHero";
 import Section from "@/components/shared/Section";
@@ -14,7 +14,7 @@ type SigninPageProps = {
 
 /**
  * WHY:   The admin app needs a dedicated sign-in screen that prevents non-admin access without duplicating auth logic.
- * WHAT:  Renders the admin Google sign-in flow and shows an access-denied state for authenticated non-admin users.
+ * WHAT:  Renders the admin email/password sign-in flow and shows an access-denied state for authenticated non-admin users.
  * HOW:   Resolves the current session on the server, redirects confirmed admins, and preserves safe return targets.
  */
 export default async function SigninPage({ searchParams }: SigninPageProps) {
@@ -30,7 +30,7 @@ export default async function SigninPage({ searchParams }: SigninPageProps) {
           && "code" in error
           && error.code === "AUTH_CONFIGURATION_ERROR"
         ) {
-          return { token: null, user: null, role: null };
+          return { token: null, user: null, role: null, isAdmin: false };
         }
         throw error;
       }
@@ -38,11 +38,11 @@ export default async function SigninPage({ searchParams }: SigninPageProps) {
   ]);
   const redirectTo = sanitizeInternalReturnTo(returnTo, "/overview");
 
-  if (session.token && session.role === "admin") {
+  if (session.token && session.isAdmin) {
     redirect(redirectTo);
   }
 
-  const accessDenied = Boolean(session.token && session.role !== "admin");
+  const accessDenied = Boolean(session.token && !session.isAdmin);
 
   return (
     <main className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-600 selection:text-white flex flex-col pt-20" dir="rtl">
@@ -72,12 +72,10 @@ export default async function SigninPage({ searchParams }: SigninPageProps) {
                 {accessDenied ? (
                   <LogoutButton className="w-full flex items-center justify-center gap-4" />
                 ) : (
-                  <GoogleSignInButton
+                  <EmailPasswordSignInForm
                     redirectTo={redirectTo}
-                    className="w-full flex items-center justify-center gap-4"
-                  >
-                    الدخول عبر Google
-                  </GoogleSignInButton>
+                    className="space-y-5"
+                  />
                 )}
 
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">

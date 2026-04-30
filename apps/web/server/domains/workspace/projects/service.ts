@@ -59,6 +59,18 @@ export function buildWorkspaceProjectService(
       const session = await requireWorkspaceSession(dependencies);
       return dependencies.repository.getProjectDossier(session.token, input.propertyId);
     },
+    async getProjectDossierByProjectId(input: { projectId: string }) {
+      const session = await requireWorkspaceSession(dependencies);
+      return dependencies.repository.getProjectDossierByProjectId(session.token, input.projectId);
+    },
+    async getProjectsWorkspace() {
+      const session = await requireWorkspaceSession(dependencies);
+      return dependencies.repository.getProjectsWorkspace(session.token);
+    },
+    async getProjectWorkspaceDetail(input: { projectId: string }) {
+      const session = await requireWorkspaceSession(dependencies);
+      return dependencies.repository.getProjectWorkspaceDetail(session.token, input.projectId);
+    },
     async getProjectReadiness(input: { propertyId: string }) {
       const session = await requireWorkspaceSession(dependencies);
       return dependencies.repository.getProjectReadiness(session.token, input.propertyId);
@@ -77,6 +89,10 @@ export function buildWorkspaceProjectService(
       const actions = input.actions.map((action) => parseOrThrow(projectUnitBulkActionSchema.safeParse(action), "Invalid project unit bulk action"));
       const session = await requireWorkspaceSession(dependencies);
       return dependencies.repository.applyProjectUnitBulkActions(session.token, input.propertyId, actions);
+    },
+    async archiveProject(input: { propertyId: string }) {
+      const session = await requireWorkspaceSession(dependencies);
+      return dependencies.repository.archiveProject(session.token, input.propertyId);
     },
     async saveProjectPaymentPlans(input: { propertyId: string; paymentPlans: ProjectPaymentPlanInput[] }) {
       const paymentPlans = input.paymentPlans.map((plan) => parseOrThrow(projectPaymentPlanInputSchema.safeParse(plan), "Invalid payment plan payload"));

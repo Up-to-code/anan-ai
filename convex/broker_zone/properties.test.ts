@@ -39,6 +39,7 @@ it("rejects anonymous broker property access", async () => {
     ctx.db.insert("brokers", {
       name: "Broker One",
       slug: "broker-one",
+      isVerified: true,
     } as any),
   );
 
@@ -168,6 +169,25 @@ it("lets the owner create, read, update, publish, and delete broker properties",
     id: propertyId,
     description: "Updated garden home",
   } as never);
+
+  await t.run(async (ctx) => {
+    const property = await ctx.db.get(propertyId);
+    const dossier = property?.projectDossierId ? await ctx.db.get(property.projectDossierId) : null;
+    await ctx.db.patch(propertyId, {
+      ownerVerified: true,
+      adLicenseStatus: "approved",
+      listingVerified: true,
+    } as any);
+    await ctx.db.insert("projectBrokerAuthorizations", {
+      dossierId: dossier?._id,
+      propertyId,
+      brokerId,
+      channels: ["broker_network"],
+      status: "active",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    } as any);
+  });
 
   await t.withIdentity(identity).mutation(api.broker_zone.properties.publish, {
     id: propertyId,

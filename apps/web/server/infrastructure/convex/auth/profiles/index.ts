@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { mutationRef, queryRef } from "@anan/convex-adapters/repository";
 import { usersApi } from "./api";
 import type { ProfilesRepository } from "./types";
 
@@ -11,19 +11,23 @@ export type { ProfilesRepository } from "./types";
  */
 export const convexProfilesRepository: ProfilesRepository = {
   async getCurrent(token) {
-    const profile = (await fetchQuery(usersApi.getMyProfile as never, {} as never, {
+    const profile = await queryRef<Awaited<ReturnType<ProfilesRepository["getCurrent"]>>>(
       token,
-    })) as Awaited<ReturnType<ProfilesRepository["getCurrent"]>>;
+      usersApi.getMyProfile,
+    );
     return profile;
   },
   async ensureCurrent(token) {
-    return fetchMutation(usersApi.ensureMyProfile as never, {} as never, {
+    return mutationRef<Awaited<ReturnType<ProfilesRepository["ensureCurrent"]>>>(
       token,
-    }) as ReturnType<ProfilesRepository["ensureCurrent"]>;
+      usersApi.ensureMyProfile,
+    );
   },
   async updateCurrent(token, input) {
-    return fetchMutation(usersApi.updateMyProfile as never, input as never, {
+    return mutationRef<Awaited<ReturnType<ProfilesRepository["updateCurrent"]>>>(
       token,
-    }) as ReturnType<ProfilesRepository["updateCurrent"]>;
+      usersApi.updateMyProfile,
+      input,
+    );
   },
 };

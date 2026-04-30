@@ -1,6 +1,6 @@
 import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 import {
   buildOrganizationProjection,
   getLookbackMs,
@@ -118,7 +118,7 @@ export const propertyAnalytics = query({
     range: v.optional(v.union(v.literal("week"), v.literal("month"))),
   },
   handler: async (ctx, { range = "month" }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
 
     const properties = await ctx.db.query("properties").order("desc").take(500);
     const since = Date.now() - getLookbackMs(range === "week" ? "week" : "month");
@@ -160,7 +160,7 @@ export const offerAnalytics = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { range = "month", limit = 10 }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const { offers, brokers, developers } = await loadOfferAnalyticsData(ctx);
     const since = Date.now() - getLookbackMs(range === "week" ? "week" : "month");
     const { trendBuckets, senderStats, recipientStats } = collectOfferAnalytics({

@@ -66,7 +66,7 @@ function buildFallbackState(metadata: OfferEventMetadata): OfferLiveState {
     allowedActions: {
       isInventoryOwner: false,
       isClientOwner: false,
-      isExecutionPartner: false,
+      isExecutionProvider: false,
       canEditDraft: false,
       canPublish: false,
       canArchive: false,

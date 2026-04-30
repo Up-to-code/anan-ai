@@ -11,6 +11,7 @@ import type {
   AssistantMessageRecord,
   AssistantThreadRecord,
 } from "./types";
+import { normalizeAssistantKind } from "./utils";
 
 const AGENT_COMPONENT = components.agent as unknown as AgentComponent;
 const MESSAGE_PAGE_SIZE = 256;
@@ -46,7 +47,7 @@ export function mapAssistantThreadState(
     mode: thread.mode,
     channel: thread.channel,
     orchestratorName: thread.orchestratorName,
-    assistantKind: thread.assistantKind,
+    assistantKind: normalizeAssistantKind(thread.assistantKind),
     title: thread.title,
     legacyThreadId: thread.legacyThreadId,
     createdAt: thread.createdAt,

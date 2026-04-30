@@ -13,3 +13,4 @@ export {
   type OrganizationApiKeyResource,
   type OrganizationOAuthScopeId,
 } from "../../../../shared/auth/organizationPermissions";
+export { normalizeRequestedScopes, formatScopeString, diffScopes } from "@anan/auth/scopes";

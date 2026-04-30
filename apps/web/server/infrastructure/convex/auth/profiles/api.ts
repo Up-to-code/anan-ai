@@ -1,3 +1,4 @@
+import { createRepositoryRefs } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 export type UsersApiRefs = {
@@ -6,4 +7,4 @@ export type UsersApiRefs = {
   updateMyProfile: unknown;
 };
 
-export const usersApi = apiUnsafe["shared_logic/users/index"] as UsersApiRefs;
+export const usersApi = createRepositoryRefs<UsersApiRefs>(apiUnsafe, "shared_logic/users/index");

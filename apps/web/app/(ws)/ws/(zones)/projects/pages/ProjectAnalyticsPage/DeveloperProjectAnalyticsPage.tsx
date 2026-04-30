@@ -1,15 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import {
   Activity,
-  ArrowLeft,
   BarChart3,
   Building2,
   CheckCircle2,
   Clock3,
-  Eye,
   Gauge,
   Layers3,
   MapPin,
@@ -40,6 +37,7 @@ import type {
   WorkspaceProjectAnalyticsBrokerTrackingCustomer,
   WorkspaceProjectAnalyticsDeveloperStageKey,
 } from "@/server/contracts/properties";
+import type { ProjectMutationActionResult } from "../ProjectsPage/actionTypes";
 import type { WorkspaceProject } from "../../types/projectTypes";
 import {
   BROKER_ACTIVITY_STYLES,
@@ -236,19 +234,12 @@ function DeveloperTabRail({
 }
 
 function ChartSurface({
-  fallback,
   children,
 }: {
   fallback: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const [canRender, setCanRender] = useState(false);
-
-  useEffect(() => {
-    setCanRender(true);
-  }, []);
-
-  return <>{canRender ? children : fallback}</>;
+  return <>{children}</>;
 }
 
 function BrokerStateColumns({
@@ -843,7 +834,7 @@ export default function DeveloperProjectAnalyticsPage({
   onTrackProjectEvent?: (input: {
     eventType: ProjectAnalyticsEventType;
     source: string;
-  }) => Promise<{ ok: true }>;
+  }) => Promise<ProjectMutationActionResult>;
   initialActiveTab?: DeveloperTabKey;
   initialVisibleBrokerCount?: number;
 }) {
@@ -861,23 +852,13 @@ export default function DeveloperProjectAnalyticsPage({
     });
   }, [onTrackProjectEvent, project.id]);
 
-  useEffect(() => {
-    if (!analytics.brokerTracking.length) {
-      setSelectedBrokerId(null);
-      return;
-    }
-    if (!selectedBrokerId || !analytics.brokerTracking.some((broker) => broker.brokerId === selectedBrokerId)) {
-      setSelectedBrokerId(analytics.brokerTracking[0]?.brokerId ?? null);
-    }
-  }, [analytics.brokerTracking, selectedBrokerId]);
-
-  useEffect(() => {
-    setVisibleBrokerCount((current) => Math.min(current, analytics.brokerTracking.length));
-  }, [analytics.brokerTracking.length]);
-
+  const selectedBrokerIdForView =
+    selectedBrokerId && analytics.brokerTracking.some((broker) => broker.brokerId === selectedBrokerId)
+      ? selectedBrokerId
+      : analytics.brokerTracking[0]?.brokerId ?? null;
   const selectedBroker = useMemo(
-    () => analytics.brokerTracking.find((broker) => broker.brokerId === selectedBrokerId) ?? null,
-    [analytics.brokerTracking, selectedBrokerId],
+    () => analytics.brokerTracking.find((broker) => broker.brokerId === selectedBrokerIdForView) ?? null,
+    [analytics.brokerTracking, selectedBrokerIdForView],
   );
 
   const topBrokers = useMemo(
@@ -892,10 +873,11 @@ export default function DeveloperProjectAnalyticsPage({
         .slice(0, 4),
     [analytics.brokerTracking],
   );
-  const visibleBrokers = analytics.brokerTracking.slice(0, visibleBrokerCount);
+  const safeVisibleBrokerCount = Math.min(visibleBrokerCount, analytics.brokerTracking.length);
+  const visibleBrokers = analytics.brokerTracking.slice(0, safeVisibleBrokerCount);
   const brokerListLimit = 5;
-  const hasMoreBrokers = analytics.brokerTracking.length > visibleBrokerCount;
-  const canCollapseBrokerList = visibleBrokerCount > brokerListLimit;
+  const hasMoreBrokers = analytics.brokerTracking.length > safeVisibleBrokerCount;
+  const canCollapseBrokerList = safeVisibleBrokerCount > brokerListLimit;
   const stageNewCount = analytics.developerStageSummary.find((entry) => entry.key === "new")?.count ?? 0;
   const stageContactedCount = analytics.developerStageSummary.find((entry) => entry.key === "contacted")?.count ?? 0;
   const stageNegotiationCount = analytics.developerStageSummary.find((entry) => entry.key === "negotiation")?.count ?? 0;
@@ -903,22 +885,8 @@ export default function DeveloperProjectAnalyticsPage({
   const readinessLabel = project.readiness?.label ?? "جاهز";
 
   return (
-    <div className="min-h-full bg-background/60 pb-24">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-6 lg:px-8 lg:py-8">
-        <nav className="flex flex-wrap items-center justify-between gap-4">
-          <Link
-            href={`/ws/projects/${project.id}`}
-            className="inline-flex items-center gap-2 text-[12px] font-bold tracking-[0.2em] text-muted-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            العودة لتفاصيل المشروع
-          </Link>
-          <div className="text-right">
-            <div className="text-[11px] font-bold tracking-[0.18em] text-muted-foreground">Developer Project Analytics</div>
-            <div className="mt-1 text-[14px] font-bold text-foreground">{project.title}</div>
-          </div>
-        </nav>
-
+    <div className="min-h-full">
+      <div className="flex w-full flex-col gap-6">
         <section className="overflow-hidden rounded-[32px] border border-border/60 bg-card shadow-sm">
           <div className="grid gap-0 xl:grid-cols-[380px_minmax(0,1fr)]">
             <div className="relative min-h-[320px] bg-muted/20">
@@ -1115,7 +1083,7 @@ export default function DeveloperProjectAnalyticsPage({
                             <div>
                               <div className="text-[13px] font-black text-foreground">قائمة الوسطاء</div>
                               <div className="mt-1 text-[12px] text-muted-foreground">
-                                يعرض {Math.min(visibleBrokerCount, analytics.brokerTracking.length)} من {analytics.brokerTracking.length} وسطاء.
+                                يعرض {safeVisibleBrokerCount} من {analytics.brokerTracking.length} وسطاء.
                               </div>
                             </div>
                             <div className="flex flex-wrap gap-2">

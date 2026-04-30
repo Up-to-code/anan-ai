@@ -1,9 +1,8 @@
-import { auth } from "@clerk/nextjs/server";
 import {
   isClearlyExpiredJwtToken,
-  isMissingAuthTokenConfigurationError,
   isNoAuthProviderError,
 } from "../../../../convex/_core/security/authProviderErrors";
+import { getToken } from "@/lib/auth-server";
 import { DomainError } from "@/server/contracts/errors";
 import type { ProfileSummary } from "@/server/contracts/profiles";
 import type { SessionContext } from "@/server/contracts/session";
@@ -22,38 +21,8 @@ type SessionDependencies = {
   profilesRepository: ProfilesRepository;
 };
 
-const clerkConvexJwtTemplate = process.env.CLERK_CONVEX_JWT_TEMPLATE?.trim() || "convex";
-
-function toMissingClerkTemplateDomainError(template: string) {
-  return new DomainError({
-    code: "AUTH_CONFIGURATION_ERROR",
-    message:
-      `Clerk JWT template "${template}" was not found. Create a Clerk JWT template named "${template}" for Convex, ` +
-      "or set CLERK_CONVEX_JWT_TEMPLATE to the name of your existing Clerk JWT template.",
-    status: 503,
-  });
-}
-
-function mapClerkTokenError(error: unknown) {
-  if (isMissingAuthTokenConfigurationError(error)) {
-    return toMissingClerkTemplateDomainError(clerkConvexJwtTemplate);
-  }
-
-  return error;
-}
-
 const defaultDependencies: SessionDependencies = {
-  getToken: async () => {
-    const { getToken, userId } = await auth();
-    if (!userId) {
-      return null;
-    }
-    try {
-      return (await getToken({ template: clerkConvexJwtTemplate })) ?? null;
-    } catch (error) {
-      throw mapClerkTokenError(error);
-    }
-  },
+  getToken: async () => (await getToken()) ?? null,
   sessionsRepository: convexSessionsRepository,
   profilesRepository: convexProfilesRepository,
 };
@@ -92,6 +61,10 @@ function buildResolvedSession(
   user: NonNullable<Awaited<ReturnType<SessionsRepository["getCurrent"]>>>,
   profile: Awaited<ReturnType<ProfilesRepository["getCurrent"]>>,
 ): ResolvedSession {
+  const adminAccess = profile?.metadata?.platformAccess?.admin ?? null;
+  const isAdmin =
+    Boolean(adminAccess?.enabled && !adminAccess.revokedAt)
+    || (profile as { role?: unknown } | null | undefined)?.role === "admin";
   return {
     token,
     profile,
@@ -102,6 +75,8 @@ function buildResolvedSession(
       image: user.image,
       username: profile?.username,
       role: profile?.role,
+      isAdmin,
+      adminAccess,
       brokerId: profile?.brokerId,
       redId: profile?.developerId,
       isActive: user.isActive,
@@ -121,7 +96,7 @@ export async function getOptionalSessionContext(
   try {
     token = await dependencies.getToken();
   } catch (error) {
-    throw mapClerkTokenError(error);
+    throw error;
   }
   if (!token) {
     return null;

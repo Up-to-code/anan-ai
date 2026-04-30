@@ -1,3 +1,4 @@
+import { createRepositoryRefs } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 export type BrokerInternalRefs = {
@@ -10,5 +11,5 @@ export type BrokerInternalRefs = {
   publish: unknown;
 };
 
-export const brokerOverviewApi = apiUnsafe["broker_zone/overview"] as BrokerInternalRefs;
-export const brokerPropertiesApi = apiUnsafe["broker_zone/properties"] as BrokerInternalRefs;
+export const brokerOverviewApi = createRepositoryRefs<BrokerInternalRefs>(apiUnsafe, "broker_zone/overview");
+export const brokerPropertiesApi = createRepositoryRefs<BrokerInternalRefs>(apiUnsafe, "broker_zone/properties");

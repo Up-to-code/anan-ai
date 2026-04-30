@@ -29,6 +29,22 @@ Standalone Next.js admin console for Anan platform operations.
 
 - Vercel: see [DEPLOY.md](DEPLOY.md) for project settings and env checklist.
 
+## Password Admin Bootstrap
+
+Admin sign-up is disabled unless it comes through the trusted admin invite bridge. To create the first email/password admin account, set `ADMIN_SIGNUP_BRIDGE_SECRET` and `ADMIN_BOOTSTRAP_SECRET` on the Convex deployment, then run:
+
+```sh
+ADMIN_BOOTSTRAP_EMAIL=admin@example.com \
+ADMIN_BOOTSTRAP_PASSWORD='Use-A-Strong-Password-123!' \
+ADMIN_BOOTSTRAP_NAME='Admin User' \
+ADMIN_BOOTSTRAP_SECRET='the-same-secret-set-in-convex' \
+ADMIN_SIGNUP_BRIDGE_SECRET='the-same-bridge-secret-set-in-convex' \
+CONVEX_SITE_URL='https://your-deployment.convex.site' \
+pnpm admin:bootstrap-password
+```
+
+Additional admins should use `/signup?token=...` with an admin invite token or be granted through the profile platform-access workflow.
+
 ## References
 
 - Deep handbook: `docs/handbook/admin/README.md`

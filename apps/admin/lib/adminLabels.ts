@@ -33,6 +33,8 @@ const statusLabels: Record<string, string> = {
   complete: "مكتمل",
   missing_document: "مستند ناقص",
   pending_review: "بانتظار المراجعة",
+  testing: "تجريبي",
+  suspended: "موقوف",
   none: "غير متوفر",
   unknown: "غير معروف",
   new_lead: "طلب جديد",
@@ -45,9 +47,9 @@ const statusLabels: Record<string, string> = {
 };
 
 const channelLabels: Record<string, string> = {
-  whatsapp: "واتساب",
-  app: "التطبيق",
+  workspace: "مساحة العمل",
   web: "الويب",
+  admin: "الإدارة",
 };
 
 const roleLabels: Record<string, string> = {

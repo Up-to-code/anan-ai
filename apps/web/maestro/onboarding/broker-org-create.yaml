@@ -1,0 +1,22 @@
+url: ${MAESTRO_WEB_URL}
+---
+- runScript:
+    file: ../scripts/bootstrap.js
+    env:
+      E2E_PERSONA: broker-onboarding
+      E2E_REDIRECT_TO: /ws
+- openLink: ${output.bootstrapUrl}
+- assertVisible: "رحلة التفعيل"
+- tapOn:
+    id: onboarding-create-organization
+- tapOn:
+    id: onboarding-organization-name
+- inputText: "${output.namespace} Broker"
+- tapOn:
+    id: onboarding-org-type-broker
+- tapOn:
+    id: onboarding-details-submit
+- assertVisible: "التوثيق والمستندات"
+- tapOn:
+    id: verification-skip
+- assertVisible: "مساحة العمل"

@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { createRepositoryRefs, mutationRef, queryRef } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 type AdminProjectsApiRefs = {
@@ -17,8 +17,8 @@ type MigrationApiRefs = {
   projectDossierMigrationPostflight: unknown;
 };
 
-const projectsApi = apiUnsafe["admin_zone/projects"] as AdminProjectsApiRefs;
-const migrationsApi = apiUnsafe["shared_logic/projects/migrations"] as MigrationApiRefs;
+const projectsApi = createRepositoryRefs<AdminProjectsApiRefs>(apiUnsafe, "admin_zone/projects");
+const migrationsApi = createRepositoryRefs<MigrationApiRefs>(apiUnsafe, "shared_logic/projects/migrations");
 
 export type ProjectReadinessQueueFilter = "incomplete" | "pending_review" | "approved" | "blocked" | "expired";
 
@@ -29,33 +29,33 @@ export type ProjectReadinessQueueFilter = "incomplete" | "pending_review" | "app
  */
 export const convexAdminProjectsRepository = {
   async listQueue(token: string, filter: ProjectReadinessQueueFilter, limit = 100) {
-    return fetchQuery(projectsApi.listProjectReadinessQueue as never, { filter, limit } as never, { token }) as Promise<Array<Record<string, unknown>>>;
+    return queryRef<Array<Record<string, unknown>>>(token, projectsApi.listProjectReadinessQueue, { filter, limit });
   },
   async getDetail(token: string, dossierId: string) {
-    return fetchQuery(projectsApi.getProjectReviewDetail as never, { dossierId } as never, { token }) as Promise<Record<string, unknown> | null>;
+    return queryRef<Record<string, unknown> | null>(token, projectsApi.getProjectReviewDetail, { dossierId });
   },
   async reviewDocument(token: string, input: { documentId: string; status: "approved" | "rejected" | "in_review" | "expired"; notes?: string }) {
-    return fetchMutation(projectsApi.reviewProjectDocument as never, input as never, { token }) as Promise<Record<string, unknown>>;
+    return mutationRef<Record<string, unknown>>(token, projectsApi.reviewProjectDocument, input);
   },
   async reviewAdLicense(token: string, input: { adLicenseId: string; status: "approved" | "rejected" | "pending" | "expired"; notes?: string }) {
-    return fetchMutation(projectsApi.reviewProjectAdLicense as never, input as never, { token }) as Promise<Record<string, unknown>>;
+    return mutationRef<Record<string, unknown>>(token, projectsApi.reviewProjectAdLicense, input);
   },
   async markWafiLegalReviewed(token: string, input: { dossierId: string; notes?: string }) {
-    return fetchMutation(projectsApi.markWafiLegalReviewed as never, input as never, { token }) as Promise<Record<string, unknown>>;
+    return mutationRef<Record<string, unknown>>(token, projectsApi.markWafiLegalReviewed, input);
   },
   async setAdminBlock(token: string, input: { dossierId: string; blocked: boolean; reason?: string }) {
-    return fetchMutation(projectsApi.setProjectAdminBlock as never, input as never, { token }) as Promise<Record<string, unknown>>;
+    return mutationRef<Record<string, unknown>>(token, projectsApi.setProjectAdminBlock, input);
   },
   async forceRecompute(token: string, input: { propertyId: string }) {
-    return fetchMutation(projectsApi.forceRecomputeProjectReadiness as never, input as never, { token }) as Promise<Record<string, unknown>>;
+    return mutationRef<Record<string, unknown>>(token, projectsApi.forceRecomputeProjectReadiness, input);
   },
   async migrationPreflight(token: string) {
-    return fetchMutation(migrationsApi.projectDossierMigrationPreflight as never, {} as never, { token }) as Promise<Record<string, unknown>>;
+    return mutationRef<Record<string, unknown>>(token, migrationsApi.projectDossierMigrationPreflight);
   },
   async runMigrationBatch(token: string, limit = 200) {
-    return fetchMutation(migrationsApi.hardMigratePropertiesToProjectDossiers as never, { limit } as never, { token }) as Promise<Record<string, unknown>>;
+    return mutationRef<Record<string, unknown>>(token, migrationsApi.hardMigratePropertiesToProjectDossiers, { limit });
   },
   async migrationPostflight(token: string) {
-    return fetchMutation(migrationsApi.projectDossierMigrationPostflight as never, {} as never, { token }) as Promise<Record<string, unknown>>;
+    return mutationRef<Record<string, unknown>>(token, migrationsApi.projectDossierMigrationPostflight);
   },
 };

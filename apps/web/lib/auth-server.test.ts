@@ -29,6 +29,23 @@ describe("resolveAuthBridgeConfig", () => {
     });
   });
 
+  it("prefers runtime server envs over stale public envs", () => {
+    expect(
+      resolveAuthBridgeConfig({
+        NODE_ENV: "production",
+        VERCEL_ENV: "production",
+        CONVEX_URL: "https://charming-pika-586.eu-west-1.convex.cloud",
+        CONVEX_SITE_URL: "https://charming-pika-586.eu-west-1.convex.site",
+        NEXT_PUBLIC_CONVEX_URL: "https://keen-oyster-497.eu-west-1.convex.cloud",
+        NEXT_PUBLIC_CONVEX_SITE_URL: "https://keen-oyster-497.eu-west-1.convex.site",
+      }),
+    ).toEqual({
+      convexUrl: "https://charming-pika-586.eu-west-1.convex.cloud",
+      convexSiteUrl: "https://charming-pika-586.eu-west-1.convex.site",
+      isConfigured: true,
+    });
+  });
+
   it("ignores localhost envs in production", () => {
     expect(
       resolveAuthBridgeConfig({

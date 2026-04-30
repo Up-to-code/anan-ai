@@ -7,16 +7,34 @@ const { notFound } = vi.hoisted(() => ({
   }),
 }));
 
+const { useRouter } = vi.hoisted(() => ({
+  useRouter: vi.fn(() => ({
+    push: vi.fn(),
+    refresh: vi.fn(),
+  })),
+}));
+
 const { resolveWorkspaceProjectDetail } = vi.hoisted(() => ({
   resolveWorkspaceProjectDetail: vi.fn(),
 }));
 
-const { getProjectDossier } = vi.hoisted(() => ({
+const {
+  getProjectDossier,
+  getProjectWorkspaceDetail,
+  applyProjectUnitBulkActions,
+  listProjectAssetsForViewer,
+  listPropertyViewers,
+} = vi.hoisted(() => ({
   getProjectDossier: vi.fn(),
+  getProjectWorkspaceDetail: vi.fn(),
+  applyProjectUnitBulkActions: vi.fn(async () => ({ ok: true })),
+  listProjectAssetsForViewer: vi.fn(async () => []),
+  listPropertyViewers: vi.fn(async () => []),
 }));
 
 vi.mock("next/navigation", () => ({
   notFound,
+  useRouter,
 }));
 
 vi.mock("../../../../../_lib/workspaceData", () => ({
@@ -30,9 +48,31 @@ vi.mock("@/server/domains/workspace/properties/detail", () => ({
   resolveWorkspaceProjectDetail,
 }));
 
+vi.mock("@/server/auth/session", () => ({
+  requireSessionContext: vi.fn(async () => ({
+    token: "token",
+    context: { userId: "user-1", role: "broker", isActive: true, brokerId: "broker-1" },
+    profile: null,
+  })),
+}));
+
+vi.mock("@/server/infrastructure/convex/organizations/assets", () => ({
+  convexOrganizationAssetsRepository: {
+    listProjectAssetsForViewer,
+  },
+}));
+
+vi.mock("@/server/infrastructure/convex/properties/access", () => ({
+  convexProjectAccessRepository: {
+    listPropertyViewers,
+  },
+}));
+
 vi.mock("@/server/ws/zones", () => ({
   getWorkspaceProjectZone: vi.fn(() => ({
+    getProjectWorkspaceDetail,
     getProjectDossier,
+    applyProjectUnitBulkActions,
   })),
 }));
 
@@ -42,6 +82,9 @@ beforeEach(() => {
   notFound.mockClear();
   resolveWorkspaceProjectDetail.mockReset();
   getProjectDossier.mockReset();
+  getProjectWorkspaceDetail.mockReset();
+  applyProjectUnitBulkActions.mockClear();
+  getProjectWorkspaceDetail.mockResolvedValue(null);
 });
 
 it("renders a dossier-backed unit detail page", async () => {

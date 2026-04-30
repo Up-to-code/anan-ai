@@ -78,6 +78,21 @@ it("returns the composed workspace payload", async () => {
   expect(payload.primaryOrganization.slug).toBe("fresh-start-realty");
 });
 
+it("returns a workspace payload even when ownerContext is temporarily missing", async () => {
+  getWorkspaceBehaviorForCurrentUser.mockResolvedValue({
+    ...workspacePayloadFixture,
+    ownerContext: null,
+  });
+
+  const response = await GET();
+
+  expect(response.status).toBe(200);
+  await expect(response.json()).resolves.toMatchObject({
+    audience: "broker",
+    ownerContext: null,
+  });
+});
+
 it("serializes unauthorized errors", async () => {
   getWorkspaceBehaviorForCurrentUser.mockRejectedValue(
     new DomainError({
@@ -94,5 +109,24 @@ it("serializes unauthorized errors", async () => {
     code: "UNAUTHORIZED",
     message: "Authentication required",
     status: 401,
+  });
+});
+
+it("serializes forbidden errors", async () => {
+  getWorkspaceBehaviorForCurrentUser.mockRejectedValue(
+    new DomainError({
+      code: "FORBIDDEN",
+      message: "Broker profile required",
+      status: 403,
+    }),
+  );
+
+  const response = await GET();
+
+  expect(response.status).toBe(403);
+  await expect(response.json()).resolves.toEqual({
+    code: "FORBIDDEN",
+    message: "Broker profile required",
+    status: 403,
   });
 });

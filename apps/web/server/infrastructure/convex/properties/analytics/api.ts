@@ -1,3 +1,4 @@
+import { createRepositoryRefs } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 export type ProjectAnalyticsApiRefs = {
@@ -5,4 +6,4 @@ export type ProjectAnalyticsApiRefs = {
   recordProjectAnalyticsEvent: unknown;
 };
 
-export const projectAnalyticsApi = apiUnsafe["shared_logic/projectAnalytics"] as ProjectAnalyticsApiRefs;
+export const projectAnalyticsApi = createRepositoryRefs<ProjectAnalyticsApiRefs>(apiUnsafe, "shared_logic/projectAnalytics");

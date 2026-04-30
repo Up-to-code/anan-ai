@@ -1,4 +1,4 @@
-import { fetchQuery } from "convex/nextjs";
+import { createRepositoryRefs, queryRef } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 type AnalyticsApiRefs = {
@@ -11,7 +11,7 @@ type AnalyticsApiRefs = {
   connectionAnalytics: unknown;
 };
 
-const analyticsApi = apiUnsafe["admin_zone/analytics"] as AnalyticsApiRefs;
+const analyticsApi = createRepositoryRefs<AnalyticsApiRefs>(apiUnsafe, "admin_zone/analytics");
 
 /**
  * WHY:   The analytics workspace needs a dedicated repository boundary separate from overview and activity reads.
@@ -20,7 +20,7 @@ const analyticsApi = apiUnsafe["admin_zone/analytics"] as AnalyticsApiRefs;
  */
 export const convexAdminAnalyticsRepository = {
   async getMessageAnalytics(token: string) {
-    return fetchQuery(analyticsApi.messageAnalytics as never, { range: "month", limit: 12 } as never, { token }) as Promise<{
+    return queryRef<{
       totals: {
         assistantMessages: number;
         inboxMessages: number;
@@ -36,16 +36,16 @@ export const convexAdminAnalyticsRepository = {
         totalMessages: number;
       }>;
       activatedTrend: Array<{ label: string; value: number }>;
-    }>;
+    }>(token, analyticsApi.messageAnalytics, { range: "month", limit: 12 });
   },
   async getActiveUsersAnalytics(token: string) {
-    return fetchQuery(analyticsApi.activeUsersAnalytics as never, { range: "month" } as never, { token }) as Promise<{
+    return queryRef<{
       totalDistinctUsers: number;
       trend: Array<{ label: string; value: number }>;
-    }>;
+    }>(token, analyticsApi.activeUsersAnalytics, { range: "month" });
   },
   async getBrokerAnalytics(token: string) {
-    return fetchQuery(analyticsApi.brokerAnalytics as never, { limit: 12 } as never, { token }) as Promise<{
+    return queryRef<{
       summary: { total: number; verified: number; pending: number };
       topByInventory: Array<{
         id: string;
@@ -56,10 +56,10 @@ export const convexAdminAnalyticsRepository = {
         membersCount: number;
         inventoryCount: number;
       }>;
-    }>;
+    }>(token, analyticsApi.brokerAnalytics, { limit: 12 });
   },
   async getDeveloperAnalytics(token: string) {
-    return fetchQuery(analyticsApi.developerAnalytics as never, { limit: 12 } as never, { token }) as Promise<{
+    return queryRef<{
       summary: { total: number; verified: number; pending: number };
       topByInventory: Array<{
         id: string;
@@ -70,18 +70,18 @@ export const convexAdminAnalyticsRepository = {
         membersCount: number;
         inventoryCount: number;
       }>;
-    }>;
+    }>(token, analyticsApi.developerAnalytics, { limit: 12 });
   },
   async getPropertyAnalytics(token: string) {
-    return fetchQuery(analyticsApi.propertyAnalytics as never, { range: "month" } as never, { token }) as Promise<{
+    return queryRef<{
       total: number;
       statusBreakdown: Record<string, number>;
       ownerBreakdown: Record<string, number>;
       trend: Array<{ label: string; value: number }>;
-    }>;
+    }>(token, analyticsApi.propertyAnalytics, { range: "month" });
   },
   async getOfferAnalytics(token: string) {
-    return fetchQuery(analyticsApi.offerAnalytics as never, { range: "month", limit: 12 } as never, { token }) as Promise<{
+    return queryRef<{
       summary: {
         total: number;
         pending: number;
@@ -107,10 +107,10 @@ export const convexAdminAnalyticsRepository = {
         acceptedCount: number;
         pendingCount: number;
       }>;
-    }>;
+    }>(token, analyticsApi.offerAnalytics, { range: "month", limit: 12 });
   },
   async getConnectionAnalytics(token: string) {
-    return fetchQuery(analyticsApi.connectionAnalytics as never, { limit: 12 } as never, { token }) as Promise<{
+    return queryRef<{
       summary: {
         totalPairs: number;
         offersWithConversation: number;
@@ -131,6 +131,6 @@ export const convexAdminAnalyticsRepository = {
         dealsCount: number;
         ordersCount: number;
       }>;
-    }>;
+    }>(token, analyticsApi.connectionAnalytics, { limit: 12 });
   },
 };

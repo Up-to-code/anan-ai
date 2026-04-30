@@ -58,7 +58,7 @@ export function CreationFlowProgress({
   const completionPercent = ((currentStepIndex + 1) / steps.length) * 100;
 
   return (
-    <section className="rounded-[24px] border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-4 lg:p-5">
+    <section className="border-y border-[color:color-mix(in_srgb,var(--workspace-border)_45%,transparent)] py-4">
       <div className="text-right">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -67,12 +67,12 @@ export function CreationFlowProgress({
             </div>
             <div className="mt-1 text-xl font-black text-foreground">{activeStep.title}</div>
           </div>
-          <div className="rounded-full border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-3 py-1.5 text-[12px] font-bold text-[var(--workspace-muted)]">
+          <div className="text-[12px] font-bold text-[var(--workspace-muted)]">
             {Math.round(completionPercent)}%
           </div>
         </div>
         <div className="mt-2 text-sm leading-7 text-[var(--workspace-muted)]">{activeStep.summary}</div>
-        <div className="mt-4 h-2 rounded-full bg-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)]">
+        <div className="mt-4 h-1 rounded-full bg-[color:color-mix(in_srgb,var(--workspace-border)_72%,transparent)]">
           <motion.div
             className="h-full rounded-full bg-[var(--workspace-highlight)]"
             animate={{ width: `${completionPercent}%` }}
@@ -91,12 +91,12 @@ export function CreationFlowProgress({
               type="button"
               onClick={() => onStepChange(index)}
               className={cn(
-                "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-[12px] font-bold transition",
+                "inline-flex items-center gap-2 rounded-full px-3 py-2 text-[12px] font-bold transition",
                 isActive
-                  ? "border-[color:color-mix(in_srgb,var(--workspace-highlight)_22%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,var(--workspace-panel))] text-foreground"
+                  ? "bg-foreground text-background"
                   : isCompleted
-                    ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                    : "border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] text-[var(--workspace-muted)] hover:text-foreground",
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                    : "text-[var(--workspace-muted)] hover:bg-[var(--workspace-elevated)] hover:text-foreground",
               )}
             >
               <span
@@ -178,13 +178,14 @@ export function CreationFlowActions({
   onSave: () => void;
 }) {
   return (
-    <section className="sticky bottom-4 z-10 rounded-[22px] border border-[color:var(--workspace-border)] bg-[color:color-mix(in_srgb,var(--workspace-panel)_92%,transparent)] p-4 shadow-lg backdrop-blur md:p-5">
+      <section className="sticky bottom-4 z-10 rounded-2xl bg-[color:color-mix(in_srgb,var(--workspace-panel)_86%,transparent)] p-3 shadow-lg backdrop-blur md:p-4">
       <div className="flex items-center justify-between gap-6">
         <button
           type="button"
+          data-testid="creation-flow-back"
           onClick={onBack}
           disabled={(isFirstStep && !allowFirstBack) || pending}
-          className="group inline-flex items-center justify-center gap-2 rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] px-6 py-3 text-[13px] font-black text-foreground transition-all hover:bg-[var(--workspace-accent-soft)] active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+          className="group inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-[13px] font-black text-foreground transition-all hover:bg-[var(--workspace-accent-soft)] active:scale-95 disabled:pointer-events-none disabled:opacity-30"
         >
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           {previousLabel}
@@ -192,9 +193,10 @@ export function CreationFlowActions({
 
         <button
           type="button"
+          data-testid={isLastStep ? "creation-flow-save" : "creation-flow-next"}
           onClick={isLastStep ? onSave : onNext}
           disabled={pending}
-          className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-foreground px-8 py-3 text-[13px] font-black text-background shadow-lg shadow-black/10 transition-all hover:opacity-90 active:scale-95 disabled:pointer-events-none disabled:opacity-60"
+          className="group inline-flex items-center justify-center gap-2 rounded-xl bg-foreground px-8 py-3 text-[13px] font-black text-background transition-all hover:opacity-90 active:scale-95 disabled:pointer-events-none disabled:opacity-60"
         >
           {isLastStep ? (pending ? savingLabel : saveLabel) : nextLabel}
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />

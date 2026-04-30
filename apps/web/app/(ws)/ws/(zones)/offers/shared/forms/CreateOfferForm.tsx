@@ -9,7 +9,6 @@ import {
   Building2,
   FileText,
   Handshake,
-  MessageCircle,
   Upload,
   UserRoundSearch,
   X,
@@ -21,7 +20,6 @@ import type { OfferAllowedAudience, OfferCaseType } from "@/server/contracts/off
 import type { OrganizationSummary } from "@/server/contracts/organizations";
 import type { WorkspaceAudience } from "@/server/contracts/workspace";
 import type { OfferPropertyOption } from "../../types/offerTypes";
-import { buildWhatsAppHref } from "../lib/offerViewModel";
 
 type FormState = {
   propertyId: string;
@@ -224,7 +222,6 @@ export default function CreateOfferForm({
   const [isArchivePending, startArchiveTransition] = useTransition();
   const { startUpload, isUploading } = useUploadThing("offerAttachments");
 
-  const whatsappHref = buildWhatsAppHref(organization?.phone);
   const isBrokerAudience = audience === "broker";
   const isDeveloperAudience = audience === "developer";
   const effectiveMode: OfferCaseType = simplifiedFieldsOnly
@@ -401,17 +398,6 @@ export default function CreateOfferForm({
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {whatsappHref ? (
-                  <a
-                    href={whatsappHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-bold text-foreground transition hover:bg-muted"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    واتساب
-                  </a>
-                ) : null}
                 <Link
                   href={settingsHref}
                   className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-bold text-foreground transition hover:bg-muted"

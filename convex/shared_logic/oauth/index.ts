@@ -46,7 +46,7 @@ export const getAuthorizationPrompt = query({
 
 /**
  * WHY:   App approval needs a public entry point reachable from the consent page.
- * WHAT:  Creates an organization-scoped authorization grant and returns the partner redirect URL containing the auth code.
+ * WHAT:  Creates an organization-scoped authorization grant and returns the external app redirect URL containing the auth code.
  * HOW:   Enforces manager access, generates raw code material in an action, persists only its hash, and builds the redirect response.
  */
 export const approveAuthorization = action({

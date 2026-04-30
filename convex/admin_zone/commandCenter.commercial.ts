@@ -1,6 +1,6 @@
 import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireAdminAccess } from "../_core/security/accessPolicy";
 import { buildOrganizationProjection } from "./analytics.helpers";
 import { buildDailySeries, getDashboardRangeDays, normalizeTimestamp, pushBucketValue } from "./commandCenter.helpers";
 import { countWindowRecords, getWindowBoundaries } from "./commandCenter.shared";
@@ -16,7 +16,7 @@ export const commercialAnalytics = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { range = "90d", limit = 8 }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
 
     const [offers, deals, orders, brokers, developers] = await Promise.all([
       ctx.db.query("offers").order("desc").take(500),
@@ -143,9 +143,9 @@ export const commercialAnalytics = query({
         { label: "مغلق خاسر", value: orders.filter((item) => item.status === "closed_lost").length },
       ],
       orderChannels: [
-        { label: "واتساب", value: orders.filter((item) => item.sourceChannel === "whatsapp").length },
-        { label: "التطبيق", value: orders.filter((item) => item.sourceChannel === "app").length },
+        { label: "مساحة العمل", value: orders.filter((item) => item.sourceChannel === "workspace").length },
         { label: "الويب", value: orders.filter((item) => item.sourceChannel === "web").length },
+        { label: "الإدارة", value: orders.filter((item) => item.sourceChannel === "admin").length },
       ],
       topSenders: Array.from(senderVolume.values())
         .sort((left, right) => right.offersCount - left.offersCount)
@@ -153,4 +153,3 @@ export const commercialAnalytics = query({
     };
   },
 });
-

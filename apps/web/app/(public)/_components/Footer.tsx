@@ -47,7 +47,7 @@ export default function Footer({ locale = "ar" }: { locale?: AppLocale }) {
                                 <li><Link href="/broker" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">{dictionary.footer.brokers}</Link></li>
                                 <li><Link href="/about" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">{dictionary.nav.about}</Link></li>
                                 <li><Link href="/pricing" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">{dictionary.footer.pricing}</Link></li>
-                                <li><Link href="/partnerships" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">{dictionary.footer.partnerships}</Link></li>
+                                <li><Link href="/collaborations" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">{dictionary.footer.collaborations}</Link></li>
                                 <li><Link href="/docs" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">{dictionary.footer.docs}</Link></li>
                                 <li><Link href="/contact" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">{dictionary.nav.contact}</Link></li>
                             </ul>

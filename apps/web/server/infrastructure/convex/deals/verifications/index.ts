@@ -1,4 +1,4 @@
-import { fetchMutation } from "convex/nextjs";
+import { mutationRef } from "@anan/convex-adapters/repository";
 import { verificationsApi } from "./api";
 import type { VerificationsRepository } from "./types";
 
@@ -11,17 +11,17 @@ export type { VerificationsRepository } from "./types";
  */
 export const convexVerificationsRepository: VerificationsRepository = {
   async createForCurrentOrganization(token, input) {
-    return fetchMutation(
-      verificationsApi.createVerificationRequestForCurrentOrg as never,
-      input as never,
-      { token },
-    ) as ReturnType<VerificationsRepository["createForCurrentOrganization"]>;
+    return mutationRef<Awaited<ReturnType<VerificationsRepository["createForCurrentOrganization"]>>>(
+      token,
+      verificationsApi.createVerificationRequestForCurrentOrg,
+      input,
+    );
   },
   async createPropertyForCurrentOrganization(token, input) {
-    return fetchMutation(
-      verificationsApi.createPropertyVerificationRequestForCurrentOrg as never,
-      input as never,
-      { token },
-    ) as ReturnType<VerificationsRepository["createPropertyForCurrentOrganization"]>;
+    return mutationRef<Awaited<ReturnType<VerificationsRepository["createPropertyForCurrentOrganization"]>>>(
+      token,
+      verificationsApi.createPropertyVerificationRequestForCurrentOrg,
+      input,
+    );
   },
 };

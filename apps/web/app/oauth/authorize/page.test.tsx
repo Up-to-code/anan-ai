@@ -109,8 +109,8 @@ it("skips the authorization screen when the session is already authorized", asyn
     existingAuthorization: { tenantOrgId: "tenant-1", organizationName: "Alpha Brokers", grantedScopes: [], createdAt: 1, updatedAt: 1, lastUsedAt: null },
     client: {
       clientId: "client-1",
-      name: "Partner App",
-      publisherName: "Partner",
+      name: "External App",
+      publisherName: "External Publisher",
     },
     user: {},
     requestedScopes: [],
@@ -167,8 +167,8 @@ it("renders the authorization page when new consent is required", async () => {
     existingAuthorization: null,
     client: {
       clientId: "client-1",
-      name: "Partner App",
-      publisherName: "Partner",
+      name: "External App",
+      publisherName: "External Publisher",
     },
     user: {},
     requestedScopes: [
@@ -185,7 +185,7 @@ it("renders the authorization page when new consent is required", async () => {
   });
   const markup = renderToStaticMarkup(element);
 
-  expect(markup).toContain("السماح لتطبيق Partner App");
+  expect(markup).toContain("السماح لتطبيق External App");
   expect(markup).toContain("الموافقة وربط التطبيق");
   expect(markup).toContain("name=\"flowId\"");
   expect(markup).toContain("name=\"tenantOrgId\"");
@@ -232,8 +232,8 @@ it("renders organization choices when the user belongs to multiple orgs", async 
     existingAuthorization: null,
     client: {
       clientId: "client-1",
-      name: "Partner App",
-      publisherName: "Partner",
+      name: "External App",
+      publisherName: "External Publisher",
     },
     user: {},
     requestedScopes: [],

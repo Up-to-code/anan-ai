@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { query } from "../../_generated/server";
 import type { Doc } from "../../_generated/dataModel";
-import { requireRole } from "../../_core/security/accessPolicy";
+import { requireEntitlements } from "../../_core/security/accessPolicy";
 import { buildOwnerContext, resolveTenantOrgIdForOwner } from "../agencies/repositories/core";
 import { tenants } from "../../tenants";
 import { mapConversationSummary, getConversationParticipant, mapConversationMessage } from "./conversations";
@@ -23,7 +23,7 @@ export const listConversations = query({
     archived: v.optional(v.boolean()),
   },
   handler: async (ctx, { archived }) => {
-    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    const access = await requireEntitlements(ctx, ["workspace:user", "workspace:broker", "workspace:developer"]);
     const memberships = await ctx.db
       .query("inboxConversationParticipants")
       .withIndex("userId", (q) => q.eq("userId", access.authUserId))
@@ -48,7 +48,7 @@ export const getConversation = query({
     conversationId: v.id("inboxConversations"),
   },
   handler: async (ctx, { conversationId }) => {
-    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    const access = await requireEntitlements(ctx, ["workspace:user", "workspace:broker", "workspace:developer"]);
     const membership = await getConversationParticipant(
       ctx,
       conversationId,
@@ -83,7 +83,7 @@ export const getConversation = query({
 export const getInboxUnreadSummary = query({
   args: {},
   handler: async (ctx) => {
-    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    const access = await requireEntitlements(ctx, ["workspace:user", "workspace:broker", "workspace:developer"]);
     const memberships = await ctx.db
       .query("inboxConversationParticipants")
       .withIndex("userId", (q) => q.eq("userId", access.authUserId))
@@ -100,7 +100,7 @@ export const hasProjectShareAccess = query({
     propertyId: v.id("properties"),
   },
   handler: async (ctx, { propertyId }) => {
-    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    const access = await requireEntitlements(ctx, ["workspace:user", "workspace:broker", "workspace:developer"]);
     return hasInboxProjectShareAccess(ctx, access.authUserId, propertyId);
   },
 });
@@ -295,7 +295,7 @@ export const searchConversationTargets = query({
     query: v.string(),
   },
   handler: async (ctx, { query: searchQuery }) => {
-    const access = await requireRole(ctx, ["user", "broker", "developer", "admin"]);
+    const access = await requireEntitlements(ctx, ["workspace:user", "workspace:broker", "workspace:developer"]);
     const normalizedQuery = normalizeSearchQuery(searchQuery);
     if (!normalizedQuery) {
       return [];

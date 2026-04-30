@@ -1,4 +1,4 @@
-import { requireRole } from "../../_core/security/accessPolicy";
+import { requireAdminAccess } from "../../_core/security/accessPolicy";
 import { tenants } from "../../tenants";
 import { buildBrokerSummary, buildTenantMap } from "./listOrganizationSummaries";
 
@@ -10,7 +10,7 @@ export const listBrokerOrganizationsArgs = {};
  * HOW:   Joins brokers against profiles, memberships, properties, and verification requests in memory.
  */
 export async function listBrokerOrganizationsHandler(ctx: any) {
-  await requireRole(ctx, ["admin"]);
+  await requireAdminAccess(ctx);
 
   const [brokers, profiles, tenantLinks, properties, verificationRequests] = await Promise.all([
     ctx.db.query("brokers").collect(),

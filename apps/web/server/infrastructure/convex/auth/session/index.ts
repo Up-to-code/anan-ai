@@ -1,4 +1,4 @@
-import { fetchQuery } from "convex/nextjs";
+import { queryRef } from "@anan/convex-adapters/repository";
 import { sessionApi } from "./api";
 import type { SessionsRepository } from "./types";
 
@@ -11,9 +11,10 @@ export type { SessionsRepository } from "./types";
  */
 export const convexSessionsRepository: SessionsRepository = {
   async getCurrent(token) {
-    const user = (await fetchQuery(sessionApi.getSessionUser as never, {} as never, {
+    const user = await queryRef<Awaited<ReturnType<SessionsRepository["getCurrent"]>>>(
       token,
-    })) as Awaited<ReturnType<SessionsRepository["getCurrent"]>>;
+      sessionApi.getSessionUser,
+    );
     return user;
   },
 };

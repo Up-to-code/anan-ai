@@ -1,4 +1,4 @@
-import { DomainError, toErrorResponse } from "@/server/contracts/errors";
+import { createdResponse, handleRoute, readJsonBody } from "@anan/web-foundation/api";
 import { bootstrapCurrentOrganizationFromBetterAuth } from "@/server/domains/auth/organizations/service";
 
 /**
@@ -7,20 +7,9 @@ import { bootstrapCurrentOrganizationFromBetterAuth } from "@/server/domains/aut
  * HOW:   Reads JSON from the request, delegates to the organizations domain service, and returns a 201 response on success.
  */
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
+  return handleRoute(async () => {
+    const body = await readJsonBody<Parameters<typeof bootstrapCurrentOrganizationFromBetterAuth>[0]>(request);
     const organization = await bootstrapCurrentOrganizationFromBetterAuth(body);
-    return Response.json(organization, { status: 201 });
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      return toErrorResponse(
-        new DomainError({
-          code: "INVALID_REQUEST",
-          message: "Request body must be valid JSON",
-          status: 400,
-        }),
-      );
-    }
-    return toErrorResponse(error);
-  }
+    return createdResponse(organization);
+  });
 }

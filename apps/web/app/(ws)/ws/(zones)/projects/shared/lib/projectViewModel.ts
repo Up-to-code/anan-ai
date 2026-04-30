@@ -10,6 +10,7 @@ import type {
   ProjectUnitInput,
 } from "@/server/contracts/projects";
 import type { UnitReference } from "../../../../_lib/entities";
+import { buildLocationValueFromParts } from "@anan/location-map";
 import type { WorkspaceProject, WorkspaceProjectUnitDetail } from "../../types/projectTypes";
 import type { WorkspaceProjectDetailAccessMode } from "@/server/domains/workspace/properties/detail";
 
@@ -43,6 +44,45 @@ function resolveReadinessLabel(status: PropertyDetail["projectReadinessStatus"])
   if (status === "blocked") return "محظور للنشر";
   if (status === "data_complete") return "البيانات مكتملة";
   return "غير مكتمل";
+}
+
+function resolveInventoryKind(property: PropertyDetail, dossier: ProjectDossierDetail | null | undefined): WorkspaceProject["inventoryKind"] {
+  const explicitKind = dossier?.dossier?.inventoryKind;
+  if (explicitKind === "project" || explicitKind === "standalone_unit") return explicitKind;
+  const units = dossier?.units ?? [];
+  const onlyUnit = units.length === 1 ? units[0] : null;
+  if (onlyUnit?.unitKind === "unit" && onlyUnit.label.trim() === property.title.trim()) {
+    return "standalone_unit";
+  }
+  return "project";
+}
+
+function buildPortfolioMeta(
+  inventoryKind: WorkspaceProject["inventoryKind"],
+  project: Pick<WorkspaceProject, "readiness" | "permit" | "publicationState">,
+  dossier: ProjectDossierDetail | null | undefined,
+) {
+  const units = dossier?.units ?? [];
+  const availableCount = units.filter((unit) => unit.status === "available").length;
+  const reservedCount = units.filter((unit) => unit.status === "reserved").length;
+  const soldCount = units.filter((unit) => unit.status === "sold").length;
+  const approvedDocs = (dossier?.documents ?? []).filter((document) => document.status === "approved").length;
+  const requiredOffPlanDocs = dossier?.dossier?.projectType === "off_plan" ? " · WAFI/ضمان مطلوب" : "";
+  const brokerAuthorization =
+    dossier?.dossier?.salesMode === "developer_direct"
+      ? "تفويض الوسيط غير مطلوب"
+      : (dossier?.brokerAuthorizations ?? []).some((authorization) => authorization.status === "active")
+        ? "تفويض وسيط نشط"
+        : "تفويض الوسيط غير مكتمل";
+
+  return {
+    typeLabel: inventoryKind === "standalone_unit" ? "وحدة مستقلة" : "مشروع",
+    unitSummary:
+      units.length > 0
+        ? `${units.length} وحدات · ${availableCount} متاحة · ${reservedCount} محجوزة · ${soldCount} مباعة`
+        : "لا توجد وحدات بعد",
+    complianceSummary: `${project.permit.statusLabel} · ${approvedDocs}/${dossier?.documents?.length ?? 0} ملفات معتمدة · ${brokerAuthorization}${requiredOffPlanDocs}`,
+  };
 }
 
 function buildFallbackImage(): UploadedFileReference {
@@ -89,11 +129,15 @@ export function mapPropertyToWorkspaceProject(property: PropertyDetail): Workspa
   const galleryImages = resolveGalleryImages(property);
   const parkingSpaces = presentation?.parkingSpaces ?? null;
   const hasParking = presentation?.hasParking ?? Boolean(parkingSpaces && parkingSpaces > 0);
+  const locationDetails = buildLocationValueFromParts({ label: property.location ?? property.address });
 
   return {
     id: property._id,
+    propertyId: property._id,
+    inventoryKind: "project",
     title: property.title,
     location: property.location ?? property.address,
+    locationDetails,
     priceLabel: `${formatCurrency(property.price)} ر.س`,
     summary: property.description,
     shortDescription: presentation?.descriptionShort ?? property.description,
@@ -141,6 +185,11 @@ export function mapPropertyToWorkspaceProject(property: PropertyDetail): Workspa
       label: resolveReadinessLabel(property.projectReadinessStatus),
       canPublish: property.projectReadinessStatus === "published_ready",
     },
+    portfolio: {
+      typeLabel: "مشروع",
+      unitSummary: "لا توجد وحدات بعد",
+      complianceSummary: resolvePermitStatusLabel(property.adLicenseStatus),
+    },
     accessMode: "owner",
     canEdit: true,
     visibility: {
@@ -170,8 +219,33 @@ export function mapPropertyToWorkspaceProjectDetail(
 ): WorkspaceProject {
   const project = mapPropertyToWorkspaceProject(property);
   const dossier = options?.dossier ?? null;
-  return {
+  const inventoryKind = resolveInventoryKind(property, dossier);
+  const dossierLocation = buildLocationValueFromParts({
+    label: [dossier?.dossier?.location?.city, dossier?.dossier?.location?.district].filter(Boolean).join("، ") || project.location,
+    city: dossier?.dossier?.location?.city,
+    district: dossier?.dossier?.location?.district,
+    latitude: dossier?.dossier?.location?.latitude,
+    longitude: dossier?.dossier?.location?.longitude,
+  }) ?? project.locationDetails;
+  const units = mapProjectDossierUnitsToUnitReferences(dossier);
+  const unitStats = buildUnitDerivedStats(units, dossier, project);
+  const nextProject = {
     ...project,
+    inventoryKind,
+    id: dossier?.dossier?._id ?? project.id,
+    propertyId: project.propertyId,
+    location: dossierLocation?.label ?? project.location,
+    locationDetails: dossierLocation,
+    priceLabel: unitStats.priceLabel,
+    specs: unitStats.specs,
+    expert: {
+      ...project.expert,
+      projectScale: dossier?.dossier?.expectedUnitCountLabel ?? project.expert.projectScale,
+      productMix: dossier?.dossier?.unitTypeMix?.join("، ") ?? project.expert.productMix,
+      primaryUnitType: dossier?.dossier?.primaryUnitType ?? project.expert.primaryUnitType,
+      expertNotes: dossier?.dossier?.targetAudience ?? project.expert.expertNotes,
+      services: dossier?.dossier?.services?.length ? dossier.dossier.services : project.expert.services,
+    },
     accessMode,
     canEdit: accessMode === "owner",
     visibility: {
@@ -179,7 +253,7 @@ export function mapPropertyToWorkspaceProjectDetail(
       viewers: options?.viewers ?? [],
     },
     assets: options?.assets ?? [],
-    units: mapProjectDossierUnitsToUnitReferences(dossier),
+    units,
     dossier,
     permit: {
       ...project.permit,
@@ -188,6 +262,10 @@ export function mapPropertyToWorkspaceProjectDetail(
         project.permit.visibility === "conversation_only" &&
         (Boolean(project.permit.privateSummary) || project.permit.privateFiles.length > 0),
     },
+  };
+  return {
+    ...nextProject,
+    portfolio: buildPortfolioMeta(inventoryKind, nextProject, dossier),
   };
 }
 
@@ -199,6 +277,14 @@ export function mapPropertyToWorkspaceProjectDetail(
 export function mapProjectDossierUnitsToUnitReferences(
   dossier: ProjectDossierDetail | null | undefined,
 ): UnitReference[] {
+  const projectLocation = buildLocationValueFromParts({
+    label: [dossier?.dossier?.location?.city, dossier?.dossier?.location?.district].filter(Boolean).join("، "),
+    city: dossier?.dossier?.location?.city,
+    district: dossier?.dossier?.location?.district,
+    latitude: dossier?.dossier?.location?.latitude,
+    longitude: dossier?.dossier?.location?.longitude,
+  });
+
   return (dossier?.units ?? []).map((unit) => ({
     id: unit._id,
     label: unit.label,
@@ -213,8 +299,52 @@ export function mapProjectDossierUnitsToUnitReferences(
     price: unit.price,
     priceLabel: formatUnitPrice(unit.price),
     handoverAt: unit.handoverAt,
+    location: buildLocationValueFromParts({
+      label: [unit.location?.city, unit.location?.district].filter(Boolean).join("، "),
+      city: unit.location?.city,
+      district: unit.location?.district,
+      latitude: unit.location?.latitude,
+      longitude: unit.location?.longitude,
+    }) ?? projectLocation,
     floorPlanMedia: unit.floorPlanMedia,
   }));
+}
+
+function formatRange(values: number[], suffix: string) {
+  const unique = [...new Set(values.filter((value) => Number.isFinite(value)).sort((a, b) => a - b))];
+  if (unique.length === 0) return "غير محدد";
+  if (unique.length === 1) return `${formatCurrency(unique[0])} ${suffix}`;
+  return `${formatCurrency(unique[0])}-${formatCurrency(unique[unique.length - 1])} ${suffix}`;
+}
+
+function buildUnitDerivedStats(
+  units: UnitReference[],
+  dossier: ProjectDossierDetail | null,
+  fallback: WorkspaceProject,
+) {
+  const sellableUnits = units.filter((unit) => unit.status === "available" || unit.status === "draft");
+  const statsUnits = sellableUnits.length > 0 ? sellableUnits : units;
+  const unitPrices = statsUnits
+    .map((unit) => unit.price)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0);
+  const planPrices = (dossier?.paymentPlans ?? [])
+    .flatMap((plan) => [plan.startingPrice, plan.cashPrice])
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0);
+  const dossierAveragePrices = typeof dossier?.dossier?.averagePrice === "number" ? [dossier.dossier.averagePrice] : [];
+  const startingPrice = Math.min(...[...unitPrices, ...planPrices, ...dossierAveragePrices]);
+  const priceLabel = Number.isFinite(startingPrice)
+    ? `يبدأ من ${formatCurrency(startingPrice)} ر.س`
+    : fallback.priceLabel;
+
+  return {
+    priceLabel,
+    specs: {
+      rooms: formatRange(statsUnits.map((unit) => unit.bedrooms ?? Number.NaN), "غرف"),
+      baths: formatRange(statsUnits.map((unit) => unit.bathrooms ?? Number.NaN), "حمامات"),
+      area: formatRange(statsUnits.map((unit) => unit.sizeSqm ?? Number.NaN), "م²"),
+      status: fallback.specs.status,
+    },
+  };
 }
 
 /**
@@ -234,6 +364,8 @@ export function mapWorkspaceProjectUnitDetail(
     projectId: project.id,
     projectTitle: project.title,
     projectLocation: project.location,
+    projectLocationDetails: project.locationDetails,
+    locationDetails: unit.location ?? project.locationDetails,
     projectImage: project.image,
     summary: project.shortDescription || project.summary,
     paymentPlanLabel: formatPaymentPlanLabel(project.dossier),
@@ -272,9 +404,9 @@ export function mapWorkspaceProjectToPropertyInput(project: {
   coverImageKey?: string | null;
   galleryDisplayMode?: "cover" | "fit";
   galleryAspectRatio?: "auto" | "landscape" | "square" | "portrait";
-  rooms: string;
-  baths: string;
-  area: string;
+  rooms?: string;
+  baths?: string;
+  area?: string;
   status: string;
   clientVisibility: "private" | "public";
   images: PropertyDetail["media"];
@@ -285,8 +417,15 @@ export function mapWorkspaceProjectToPropertyInput(project: {
   complianceDocuments?: import("@/app/(ws)/ws/public").ProjectFormData["complianceDocuments"];
   brokerAuthorization?: import("@/app/(ws)/ws/public").ProjectFormData["brokerAuthorization"];
 }) {
-  const numericPrice = Number(project.price.replace(/[^\d.]/g, "")) || 0;
-  const numericArea = Number(project.area.replace(/[^\d.]/g, "")) || undefined;
+  const primaryUnit = project.units?.find((unit) => unit.status === "available") ?? project.units?.[0];
+  const primaryPlan = project.paymentPlans?.[0];
+  const numericPrice =
+    parseProjectNumber(primaryUnit?.price) ??
+    parseProjectNumber(primaryPlan?.startingPrice) ??
+    parseProjectNumber(primaryPlan?.cashPrice) ??
+    parseProjectNumber(project.price) ??
+    0;
+  const numericArea = parseProjectNumber(primaryUnit?.sizeSqm) ?? parseProjectNumber(project.area);
   const numericParkingSpaces = Number(project.parkingSpaces?.replace(/[^\d]/g, "")) || undefined;
   const amenities = (project.amenitiesText ?? "")
     .split(/[\n,،]/)
@@ -315,8 +454,8 @@ export function mapWorkspaceProjectToPropertyInput(project: {
     location: project.location.trim(),
     description: project.description.trim(),
     price: numericPrice,
-    beds: Number(project.rooms) || 0,
-    baths: Number(project.baths) || 0,
+    beds: parseProjectNumber(primaryUnit?.bedrooms) ?? parseProjectNumber(project.rooms) ?? 0,
+    baths: parseProjectNumber(primaryUnit?.bathrooms) ?? parseProjectNumber(project.baths) ?? 0,
     sqft: numericArea,
     status:
       project.status === "maintenance"
@@ -369,6 +508,13 @@ function splitSaudiLocation(value: string) {
   };
 }
 
+function splitProjectChoices(value?: string) {
+  return (value ?? "")
+    .split(/[\n,،]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function formatUnitArea(value?: number) {
   return typeof value === "number" && Number.isFinite(value) ? `${formatCurrency(value)} م²` : undefined;
 }
@@ -412,11 +558,19 @@ export function mapWorkspaceProjectToDossierInput(
 ): ProjectDossierInput {
   return {
     propertyId,
+    inventoryKind: "project",
     projectType: project.dossier?.projectType ?? "ready_property",
     salesMode: project.dossier?.salesMode ?? "developer_direct",
     requestedVisibility: project.clientVisibility,
     title: project.name.trim(),
     summary: project.description.trim(),
+    targetAudience: project.expertNotes?.trim() || undefined,
+    expectedUnitCountLabel: project.projectScale?.trim() || undefined,
+    unitTypeMix: splitProjectChoices(project.productMix),
+    primaryUnitType: project.primaryUnitType?.trim() || undefined,
+    averagePrice: parseProjectNumber(project.paymentPlans?.[0]?.startingPrice) ?? parseProjectNumber(project.price),
+    options: project.services?.length ? project.services : splitProjectChoices(project.amenitiesText),
+    services: project.services?.length ? project.services : splitProjectChoices(project.amenitiesText),
     location: {
       countryCode: "SA",
       ...splitSaudiLocation(project.location),
@@ -432,19 +586,20 @@ export function mapWorkspaceProjectToDossierInput(
 }
 
 export function mapWorkspaceProjectToUnitInputs(project: WorkspaceProjectFormPayload): ProjectUnitInput[] {
-  const units = project.units?.length ? project.units : [{
-    label: "Primary unit type",
-    unitKind: "unit_type" as const,
-    status: "available" as const,
-    bedrooms: project.rooms,
-    bathrooms: project.baths,
-    sizeSqm: project.area,
-    floor: "",
-    view: "",
-    price: project.price,
-    handoverAt: "",
-    floorPlanMedia: [],
-  }];
+  const units = project.units?.filter((unit) => {
+    const changedDefaultLabel = unit.label.trim() && unit.label.trim() !== "Primary unit type";
+    return Boolean(
+      changedDefaultLabel ||
+      unit.bedrooms.trim() ||
+      unit.bathrooms.trim() ||
+      unit.sizeSqm.trim() ||
+      unit.floor.trim() ||
+      unit.view.trim() ||
+      unit.price.trim() ||
+      unit.handoverAt.trim() ||
+      unit.floorPlanMedia.length,
+    );
+  }) ?? [];
   return units.map((unit) => ({
     dossierId: "server-owned",
     label: unit.label || "Primary unit type",
@@ -457,22 +612,32 @@ export function mapWorkspaceProjectToUnitInputs(project: WorkspaceProjectFormPay
     view: unit.view || undefined,
     price: parseProjectNumber(unit.price) ?? parseProjectNumber(project.price),
     handoverAt: parseOptionalDate(unit.handoverAt),
+    location: unit.locationDetails
+      ? {
+          countryCode: "SA",
+          city: unit.locationDetails.city,
+          district: unit.locationDetails.district,
+          latitude: unit.locationDetails.latitude,
+          longitude: unit.locationDetails.longitude,
+        }
+      : undefined,
     floorPlanMedia: unit.floorPlanMedia?.length ? unit.floorPlanMedia : undefined,
   }));
 }
 
 export function mapWorkspaceProjectToPaymentPlanInputs(project: WorkspaceProjectFormPayload): ProjectPaymentPlanInput[] {
-  const price = parseProjectNumber(project.price);
-  const plans = project.paymentPlans?.length ? project.paymentPlans : [{
-    title: "Primary payment plan",
-    cashPrice: project.price,
-    startingPrice: project.price,
-    downPayment: "",
-    escrowReference: "",
-    feesAndTaxNotes: "",
-    bankAndSubsidyNotes: "",
-    milestones: [],
-  }];
+  const price = parseProjectNumber(project.paymentPlans?.[0]?.startingPrice) ?? parseProjectNumber(project.price);
+  const plans = project.paymentPlans?.filter((plan) =>
+    Boolean(
+      plan.cashPrice.trim() ||
+      plan.startingPrice.trim() ||
+      plan.downPayment.trim() ||
+      plan.escrowReference.trim() ||
+      plan.feesAndTaxNotes.trim() ||
+      plan.bankAndSubsidyNotes.trim() ||
+      plan.milestones.length,
+    ),
+  ) ?? [];
   return plans.map((plan) => ({
     dossierId: "server-owned",
     title: plan.title || "Primary payment plan",

@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { transitionalGlobalSecurityFields } from "./securityFields";
 import {
     ORGANIZATION_API_KEY_ACTIONS,
     ORGANIZATION_API_KEY_RESOURCES,
@@ -19,6 +20,7 @@ const [firstOrganizationApiKeyAction, ...restOrganizationApiKeyActions] = ORGANI
 const agenciesTables = {
     /** Brokers – manage their own properties */
     brokers: defineTable({
+    ...transitionalGlobalSecurityFields,
         name: v.string(),
         slug: v.string(),
         status: v.optional(v.union(v.literal("active"), v.literal("pending"))),
@@ -36,6 +38,7 @@ const agenciesTables = {
 
     /** RED (Real Estate Developers) - replaces Developer and Real Estate roles */
     RED: defineTable({
+    ...transitionalGlobalSecurityFields,
         name: v.string(),
         slug: v.string(),
         status: v.optional(v.union(v.literal("active"), v.literal("pending"))),
@@ -52,6 +55,8 @@ const agenciesTables = {
         .index("status", ["status"]),
 
     subscriptions: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         ownerType: v.union(v.literal("broker"), v.literal("RED")),
         ownerBrokerId: v.optional(v.id("brokers")),
         ownerREDId: v.optional(v.id("RED")),
@@ -63,9 +68,13 @@ const agenciesTables = {
     })
         .index("ownerBrokerId", ["ownerBrokerId"])
         .index("ownerREDId", ["ownerREDId"])
-        .index("status", ["status"]),
+        .index("status", ["status"])
+        .index("by_org_status", ["orgId", "status"])
+        .index("by_status_expiresAt", ["status", "expiresAt"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
 
     tenantOrgLinks: defineTable({
+    ...transitionalGlobalSecurityFields,
         tenantOrgId: v.string(),
         ownerType: v.union(v.literal("broker"), v.literal("RED")),
         ownerBrokerId: v.optional(v.id("brokers")),
@@ -79,6 +88,8 @@ const agenciesTables = {
         .index("ownerType", ["ownerType"]),
 
     organizationApiKeys: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         keyId: v.string(),
         prefix: v.string(),
         secretHash: v.string(),
@@ -114,8 +125,12 @@ const agenciesTables = {
         .index("ownerBrokerId", ["ownerBrokerId"])
         .index("ownerREDId", ["ownerREDId"])
         .index("status", ["status"])
-        .index("tenantOrgId_status", ["tenantOrgId", "status"]),
+        .index("tenantOrgId_status", ["tenantOrgId", "status"])
+        .index("by_org_status", ["orgId", "status"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
     organizationIntegrationPolicies: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         tenantOrgId: v.string(),
         ownerType: v.union(v.literal("broker"), v.literal("RED")),
         ownerBrokerId: v.optional(v.id("brokers")),
@@ -132,9 +147,12 @@ const agenciesTables = {
         lastReviewedAt: v.optional(v.number()),
     })
         .index("tenantOrgId", ["tenantOrgId"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"])
         .index("ownerBrokerId", ["ownerBrokerId"])
         .index("ownerREDId", ["ownerREDId"]),
     organizationApiKeyUsageDaily: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         tenantOrgId: v.string(),
         apiKeyId: v.string(),
         dateKey: v.string(),
@@ -145,26 +163,37 @@ const agenciesTables = {
         updatedAt: v.number(),
     })
         .index("apiKeyId_dateKey", ["apiKeyId", "dateKey"])
-        .index("tenantOrgId_dateKey", ["tenantOrgId", "dateKey"]),
+        .index("tenantOrgId_dateKey", ["tenantOrgId", "dateKey"])
+        .index("by_org_dateKey", ["orgId", "dateKey"]),
 
     /**
      * Legacy org membership system. Deprecated after convex-tenants migration.
      * Keep until data migration is completed and verified.
      */
     teamInvites: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         ownerType: v.union(v.literal("broker"), v.literal("RED")),
         ownerBrokerId: v.optional(v.id("brokers")),
         ownerREDId: v.optional(v.id("RED")),
         email: v.string(),
+        invitedEmail: v.optional(v.string()),
         role: v.union(v.literal("manager"), v.literal("member"), v.literal("viewer")),
         token: v.string(),
+        tokenHash: v.optional(v.string()),
         status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("canceled"), v.literal("expired")),
         invitedBy: v.string(),
+        invitedByProfileId: v.optional(v.id("userProfiles")),
         expiresAt: v.number(),
         acceptedBy: v.optional(v.string()),
         acceptedAt: v.optional(v.number()),
     })
+        .index("by_orgId", ["orgId"])
+        .index("by_org_status_createdAt", ["orgId", "status", "createdAt"])
+        .index("by_invitedEmail", ["invitedEmail"])
+        .index("by_invitedEmail_status", ["invitedEmail", "status"])
         .index("token", ["token"])
+        .index("by_tokenHash", ["tokenHash"])
         .index("email", ["email"])
         .index("ownerBrokerId", ["ownerBrokerId"])
         .index("ownerREDId", ["ownerREDId"])
@@ -175,6 +204,8 @@ const agenciesTables = {
      * Keep until data migration is completed and verified.
      */
     organizationMemberships: defineTable({
+    ...transitionalGlobalSecurityFields,
+        orgId: v.optional(v.id("organizations")),
         ownerType: v.union(v.literal("broker"), v.literal("RED")),
         ownerBrokerId: v.optional(v.id("brokers")),
         ownerREDId: v.optional(v.id("RED")),
@@ -192,7 +223,8 @@ const agenciesTables = {
         .index("ownerBrokerId", ["ownerBrokerId"])
         .index("ownerREDId", ["ownerREDId"])
         .index("ownerBrokerId_authUserId", ["ownerBrokerId", "authUserId"])
-        .index("ownerREDId_authUserId", ["ownerREDId", "authUserId"]),
+        .index("ownerREDId_authUserId", ["ownerREDId", "authUserId"])
+        .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
 };
 
 export default agenciesTables;

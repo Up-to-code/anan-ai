@@ -1,18 +1,19 @@
 /**
  * intentAnalyzer.ts — Workspace Intent Classification
  *
- * WHY:   Partner workflows should dispatch only the relevant operational teams.
+ * WHY:   Workspace workflows should dispatch only the relevant operational teams.
  * WHAT:  Uses a lightweight LLM call to classify intent into workspace teams.
  * HOW:   Sends the message with a structured prompt and parses the JSON array.
  */
 
 import type { ActionCtx } from "../../../_generated/server";
 import { getChatModel } from "../../../shared_logic/lib/providers";
-import { cachedGenerateText } from "../../../shared_logic/llmCache";
+import { cachedGenerateText } from "../../../shared_logic/integrations/llmCacheNode";
 import { getAgentLLMConfigSafe } from "../config";
+import { isProviderAuthenticationError } from "../shared/errorHandler";
 
 function buildIntentPrompt(prompt: string, availableTeams: string[]) {
-  return `You are an intent classifier for a partner workspace AI assistant.
+  return `You are an intent classifier for a workspace AI assistant.
 Given the user's message, determine which teams should handle it.
 
 Available teams: ${availableTeams.join(", ")}
@@ -68,6 +69,9 @@ export async function analyzeWorkspaceIntent(
       return teams;
     }
   } catch (error) {
+    if (isProviderAuthenticationError(error)) {
+      throw error;
+    }
     console.warn("[anan_workspace] Intent analysis failed, dispatching all teams:", error);
   }
 

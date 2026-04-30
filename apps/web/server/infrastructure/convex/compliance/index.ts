@@ -1,4 +1,4 @@
-import { fetchQuery } from "convex/nextjs";
+import { queryRef } from "@anan/convex-adapters/repository";
 import { complianceApi } from "./api";
 import type { ComplianceRepository } from "./types";
 
@@ -6,17 +6,16 @@ export type { ComplianceRepository } from "./types";
 
 export const convexComplianceRepository: ComplianceRepository = {
   async getForCurrentOrg(token) {
-    return fetchQuery(
-      complianceApi.getComplianceRulesetForCurrentOrg as never,
-      {} as never,
-      { token },
-    ) as ReturnType<ComplianceRepository["getForCurrentOrg"]>;
+    return queryRef<Awaited<ReturnType<ComplianceRepository["getForCurrentOrg"]>>>(
+      token,
+      complianceApi.getComplianceRulesetForCurrentOrg,
+    );
   },
   async getByCountryOrgType(token, args) {
-    return fetchQuery(
-      complianceApi.getComplianceRulesetByCountry as never,
-      args as never,
-      { token },
-    ) as ReturnType<ComplianceRepository["getByCountryOrgType"]>;
+    return queryRef<Awaited<ReturnType<ComplianceRepository["getByCountryOrgType"]>>>(
+      token,
+      complianceApi.getComplianceRulesetByCountry,
+      args,
+    );
   },
 };

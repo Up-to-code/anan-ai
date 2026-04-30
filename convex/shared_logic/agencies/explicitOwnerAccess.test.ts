@@ -46,7 +46,8 @@ async function seedProfile(
     authUserId: string;
     email: string;
     name: string;
-    role: "admin" | "broker" | "user";
+    role: "broker" | "user";
+    isAdmin?: boolean;
     brokerId?: string;
     currentTenantOrgId?: string;
   },
@@ -59,6 +60,18 @@ async function seedProfile(
       username: args.name.toLowerCase().replace(/\s+/g, "-"),
       usernameLower: args.name.toLowerCase().replace(/\s+/g, "-"),
       role: args.role,
+      metadata: args.isAdmin
+        ? {
+            platformAccess: {
+              admin: {
+                enabled: true,
+                level: "owner",
+                permissions: ["admin:*"],
+                grantedAt: Date.now(),
+              },
+            },
+          }
+        : undefined,
       brokerId: args.brokerId,
       currentTenantOrgId: args.currentTenantOrgId,
       isActive: true,
@@ -287,7 +300,8 @@ describe("explicit owner organization endpoints", () => {
       authUserId: "auth-admin",
       email: "admin@example.com",
       name: "Admin",
-      role: "admin",
+      role: "user",
+      isAdmin: true,
     });
     await seedProfile(t, {
       authUserId: "auth-owner",

@@ -1,15 +1,15 @@
 import {
   OAUTH_SCOPE_CATALOG,
-  OAUTH_SCOPE_IDS,
+  ORGANIZATION_OAUTH_SCOPE_IDS,
   type OrganizationOAuthScopeId,
-} from "../../../shared/auth/organizationPermissions";
+} from "@anan/auth/scopes";
 
 /**
  * WHY:   OAuth scopes and token lifetimes must stay centralized to keep auth behavior consistent.
  * WHAT:  Defines the supported v1 delegated scopes, display labels, and security-related TTLs.
  * HOW:   Shared by HTTP handlers, consent UI queries, token issuance, and delegated resource guards.
  */
-export const OAUTH_SCOPE_REGISTRY = OAUTH_SCOPE_IDS;
+export const OAUTH_SCOPE_REGISTRY = ORGANIZATION_OAUTH_SCOPE_IDS;
 
 export type OAuthScope = OrganizationOAuthScopeId;
 
@@ -22,6 +22,24 @@ export const AUTHORIZATION_CODE_TTL_MS = 10 * 60 * 1000;
 export const ACCESS_TOKEN_TTL_MS = 15 * 60 * 1000;
 export const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 export const FLOW_STATE_TTL_MS = 10 * 60 * 1000;
+export const DEFAULT_ORGANIZATION_AUTHORIZATION_EXPIRY_DAYS = 50;
+
+export function getAuthorizationExpiryMs() {
+  return DEFAULT_ORGANIZATION_AUTHORIZATION_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+}
+
+export function getAuthorizationExpiresAt(
+  authorization: { expiresAt?: number; lastUsedAt?: number; updatedAt?: number; createdAt?: number },
+) {
+  return authorization.expiresAt ?? (authorization.lastUsedAt ?? authorization.updatedAt ?? authorization.createdAt ?? 0) + getAuthorizationExpiryMs();
+}
+
+export function isAuthorizationExpired(
+  authorization: { expiresAt?: number; lastUsedAt?: number; updatedAt?: number; createdAt?: number },
+  now: number,
+) {
+  return getAuthorizationExpiresAt(authorization) <= now;
+}
 
 /**
  * WHY:   Scope parsing must deduplicate and reject unsupported values before persistence.

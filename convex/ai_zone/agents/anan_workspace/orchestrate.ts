@@ -1,12 +1,12 @@
 /**
  * orchestrate.ts — Workspace Orchestration Logic
  *
- * WHY:   Partner workflows need a separate orchestration runtime to isolate
+ * WHY:   Workspace workflows need a separate orchestration runtime to isolate
  *        operational traffic from public user flows.
  * WHAT:  Receives a user message → analyzes intent → dispatches workspace agents → merges results.
  */
 
-import { FALLBACK_MESSAGES } from "../shared/errorHandler";
+import { FALLBACK_MESSAGES, isProviderAuthenticationError } from "../shared/errorHandler";
 import { internal } from "../../../_generated/api";
 import type { OrchestrateInput, OrchestrateOutput, WorkspaceStreamPhase, WorkspaceStreamStageEvent } from "./types";
 import { getAvailableTeams, getTeamAgents, getTeamDefinitions } from "./teamRegistry";
@@ -20,6 +20,7 @@ export async function orchestrate(
   const {
     ctx,
     prompt,
+    intentPrompt,
     role,
     userId,
     threadId,
@@ -30,6 +31,7 @@ export async function orchestrate(
     onTextDelta,
     onStreamCancelledCheck,
   } = input;
+  const routingPrompt = intentPrompt ?? prompt;
 
   const emitStage = async (
     phase: WorkspaceStreamPhase,
@@ -43,11 +45,22 @@ export async function orchestrate(
     });
   };
 
+  const deterministicGreeting = maybeHandleWorkspaceGreeting(routingPrompt);
+  if (deterministicGreeting) {
+    return {
+      ok: true,
+      output: deterministicGreeting,
+      structured: { questions: [] },
+      agentsDispatched: [],
+      agentResults: [],
+      totalTokenUsage: { inputTokens: 0, outputTokens: 0 },
+    };
+  }
+
   if (!getAgentLLMConfigSafe("anan_workspace")) {
     return {
       ok: false,
-      output:
-        "تعذر تشغيل anan workspace حالياً لأن مفتاح النموذج غير مضبوط في Convex. أضف `OPENROUTER_WORKSPACE_API_KEY` من Convex Dashboard ثم أعد المحاولة.",
+      output: FALLBACK_MESSAGES.providerAuth,
       structured: { questions: [] },
       agentsDispatched: [],
       agentResults: [],
@@ -58,12 +71,31 @@ export async function orchestrate(
   const availableTeams = getAvailableTeams(role);
 
   await emitStage("intent_started", { status: "running" });
-  const selectedTeams = await analyzeWorkspaceIntent(
-    ctx,
-    prompt,
-    availableTeams,
-    modelOverride,
-  );
+  let selectedTeams: string[];
+  try {
+    selectedTeams = await analyzeWorkspaceIntent(
+      ctx,
+      routingPrompt,
+      availableTeams,
+      modelOverride,
+    );
+  } catch (error) {
+    if (isProviderAuthenticationError(error)) {
+      await emitStage("intent_done", {
+        status: "failed",
+        details: { reason: "provider_authentication_failed" },
+      });
+      return {
+        ok: false,
+        output: FALLBACK_MESSAGES.providerAuth,
+        structured: { questions: [] },
+        agentsDispatched: [],
+        agentResults: [],
+        totalTokenUsage: { inputTokens: 0, outputTokens: 0 },
+      };
+    }
+    throw error;
+  }
   await emitStage("intent_done", {
     status: "completed",
     details: { selectedTeams },
@@ -132,7 +164,7 @@ export async function orchestrate(
   await emitStage("merge_started", { status: "running" });
   const merged = await mergeResults({
     ctx,
-    prompt,
+    prompt: routingPrompt,
     successOutputs,
     hasFailures,
     modelOverride,
@@ -180,4 +212,20 @@ export async function orchestrate(
       outputTokens: totalOutput + merged.mergeTokens.outputTokens,
     },
   };
+}
+
+function maybeHandleWorkspaceGreeting(prompt: string) {
+  const normalized = prompt.trim();
+  if (!normalized) return null;
+
+  const isGreeting =
+    /^(hi|hello|hey|good morning|good evening|السلام عليكم|اهلا|أهلا|مرحبا|صباح الخير|مساء الخير)[\s!.؟?]*$/i.test(
+      normalized,
+    );
+
+  if (!isGreeting) return null;
+
+  return /[\u0600-\u06ff]/.test(normalized)
+    ? "أهلاً، أنا Anan AI. أقدر أساعدك في المشاريع، الوحدات، العروض، CRM، والمهام التشغيلية داخل مساحة العمل."
+    : "Hi, I’m Anan AI. I can help with projects, units, offers, CRM, and operational work inside the workspace.";
 }

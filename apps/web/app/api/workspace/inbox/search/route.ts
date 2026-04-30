@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
+import { handleRoute, jsonResponse } from "@anan/web-foundation/api";
 import { searchInboxTargets } from "@/server/domains/workspace/inbox/service";
-import { toErrorResponse } from "@/server/contracts/errors";
 
 /**
  * WHY:   Inbox compose flows need a server-owned search endpoint for recipient discovery.
@@ -8,10 +8,8 @@ import { toErrorResponse } from "@/server/contracts/errors";
  * HOW:   Reads `q` from the request URL, delegates to the inbox domain service, and serializes normalized failures.
  */
 export async function GET(request: NextRequest) {
-  try {
+  return handleRoute(async () => {
     const query = request.nextUrl.searchParams.get("q") ?? "";
-    return Response.json(await searchInboxTargets(query));
-  } catch (error) {
-    return toErrorResponse(error);
-  }
+    return jsonResponse(await searchInboxTargets(query));
+  });
 }

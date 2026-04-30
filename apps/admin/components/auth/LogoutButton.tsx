@@ -1,9 +1,9 @@
 "use client";
 
-import { useClerk } from "@clerk/nextjs";
 import { startTransition, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/shared/Button";
+import { authClient } from "@/lib/auth-client";
 
 type LogoutButtonProps = {
   children?: ReactNode;
@@ -19,7 +19,6 @@ export default function LogoutButton({
   children = "Sign Out",
   className,
 }: LogoutButtonProps) {
-  const { signOut } = useClerk();
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
@@ -30,7 +29,7 @@ export default function LogoutButton({
       onClick={() => {
         setPending(true);
         startTransition(() => {
-          void signOut({ redirectUrl: "/signin" })
+          void authClient.signOut()
             .then(() => router.replace("/signin"))
             .catch(() => setPending(false));
         });

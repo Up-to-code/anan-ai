@@ -4,7 +4,7 @@ import { convexAdminUsersRepository } from "@/server/infrastructure/convex/admin
 
 async function listUsersByTab(args: {
   paginationOpts: { numItems: number; cursor: string | null };
-  role?: "admin" | "broker" | "developer" | "user" | "RED";
+  role?: "broker" | "developer" | "user" | "RED";
   tab: "users" | "profiles" | "memberships" | "verification";
   token: string;
 }) {
@@ -30,7 +30,7 @@ async function listUsersByTab(args: {
  */
 export async function getAdminUsersPageData(input: {
   tab?: "users" | "profiles" | "memberships" | "verification";
-  role?: "admin" | "broker" | "developer" | "user" | "RED";
+  role?: "broker" | "developer" | "user" | "RED";
   cursor?: string | null;
   numItems?: number;
 }) {
@@ -73,7 +73,7 @@ export async function getAdminUserDetailPageData(userKey: string) {
 export async function updateAdminUser(input: {
   userId: string;
   displayName?: string;
-  channel?: "whatsapp" | "app" | "web";
+  channel?: "workspace" | "web" | "admin";
 }) {
   const session = await requireAdminSession();
   await convexAdminUsersRepository.update(session.token, input);

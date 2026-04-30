@@ -126,7 +126,7 @@ async function listOffersDirectoryProfilesForOwner(
 }
 
 /**
- * WHY:   Offer collaboration flows need the current organization's partner directory with membership and messaging context.
+ * WHY:   Offer collaboration flows need the current organization's ecosystem directory with membership and messaging context.
  * WHAT:  Lists approved broker/developer profiles visible to the current organization.
  * HOW:   Resolves the current membership context and delegates to the shared offers-directory projection helper.
  */

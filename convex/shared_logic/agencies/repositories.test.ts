@@ -28,6 +28,7 @@ type RecordsByTable = {
   organizationMemberships: TableRecords;
   tenantOrgLinks: TableRecords;
   inboxConversations: TableRecords;
+  zaneAiWebhookOutbox: TableRecords;
 };
 type QueryCondition = { field: string; value: unknown };
 type QueryConditionChain = {
@@ -64,6 +65,7 @@ function findRecordById(recordsByTable: RecordsByTable, id: string) {
     ?? recordsByTable.teamInvites.get(id)
     ?? recordsByTable.organizationMemberships.get(id)
     ?? recordsByTable.inboxConversations.get(id)
+    ?? recordsByTable.zaneAiWebhookOutbox.get(id)
     ?? null;
 }
 function makeDb(recordsByTable: RecordsByTable) {
@@ -108,6 +110,7 @@ function makeMutationCtx() {
     organizationMemberships: new Map<string, any>(),
     tenantOrgLinks: new Map<string, any>(),
     inboxConversations: new Map<string, any>(),
+    zaneAiWebhookOutbox: new Map<string, any>(),
   };
   const ctx = {
     auth: {
@@ -223,6 +226,7 @@ describe("createOrganizationForAuthUserRecord", () => {
       displayName: "Owner",
       name: "Fresh Start Realty",
       type: "broker",
+      countryCode: "SA",
     });
     expectBrokerProvisioningResult(result, userProfiles, brokers, tenantOrgLinks);
   });
@@ -236,6 +240,7 @@ describe("createOrganizationForAuthUserRecord", () => {
         displayName: "Owner",
         name: "Fresh Start Realty",
         type: "broker",
+        countryCode: "SA",
       }),
       "ORGANIZATION_EXISTS",
       "This account already has an organization",

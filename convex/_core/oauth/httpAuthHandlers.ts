@@ -19,6 +19,21 @@ import {
 
 const oauthInternal = getOauthInternal();
 
+function getOAuthErrorPayload(error: unknown, fallback: string) {
+  const data = error && typeof error === "object" && "data" in error ? (error as { data?: unknown }).data : null;
+  const code = data && typeof data === "object" && "code" in data ? String((data as { code?: unknown }).code) : "";
+  const errorMap: Record<string, string> = {
+    AUTHORIZATION_EXPIRED: "authorization_expired",
+    INACTIVE_CLIENT: "inactive_client",
+    INVALID_SCOPE: "invalid_scope",
+    ACCESS_DENIED: "access_denied",
+  };
+  return {
+    error: errorMap[code] ?? fallback,
+    error_description: error instanceof Error ? error.message : "OAuth request failed",
+  };
+}
+
 /**
  * WHY:   OAuth authorization must begin with a stable redirect into the Anan consent experience.
  * WHAT:  Validates the incoming request, persists short-lived flow state, and redirects to the web consent page.
@@ -61,12 +76,12 @@ export const handleAuthorize = httpAction(async (ctx, request) => {
     consentUrl.searchParams.set("flow", String(flow.flowId));
     return Response.redirect(consentUrl.toString(), 302);
   } catch (error) {
-    return jsonResponse({ error: "invalid_request", error_description: (error as Error).message }, 400);
+    return jsonResponse(getOAuthErrorPayload(error, "invalid_request"), 400);
   }
 });
 
 /**
- * WHY:   Partner apps need standards-style token exchange and refresh behavior.
+ * WHY:   External apps need standards-style token exchange and refresh behavior.
  * WHAT:  Supports authorization-code and refresh-token grants for registered Anan clients.
  * HOW:   Parses form-encoded requests, validates client auth and PKCE, and persists server-side token state.
  */
@@ -99,7 +114,7 @@ export const handleToken = httpAction(async (ctx, request) => {
 
     return jsonResponse({ error: "unsupported_grant_type" }, 400);
   } catch (error) {
-    return jsonResponse({ error: "invalid_grant", error_description: (error as Error).message }, 400);
+    return jsonResponse(getOAuthErrorPayload(error, "invalid_grant"), 400);
   }
 });
 

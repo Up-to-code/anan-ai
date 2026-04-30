@@ -1,0 +1,20 @@
+url: ${MAESTRO_WEB_URL}
+---
+- runScript:
+    file: ../scripts/bootstrap.js
+    env:
+      E2E_PERSONA: broker-manager
+      E2E_REDIRECT_TO: /ws/settings?tab=members
+- openLink: ${output.bootstrapUrl}
+- assertVisible: "الأعضاء"
+- tapOn:
+    id: members-invite-open
+- tapOn:
+    id: invite-member-search
+- inputText: "${output.inviteeEmail}"
+- tapOn:
+    id: invite-member-role-viewer
+- tapOn:
+    id: invite-member-submit
+- assertVisible: "تم"
+

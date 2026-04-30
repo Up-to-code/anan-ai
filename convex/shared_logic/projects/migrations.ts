@@ -2,7 +2,7 @@ import { mutation } from "../../_generated/server";
 import { v } from "convex/values";
 import type { GenericId } from "convex/values";
 import type { MutationCtx } from "../../_generated/server";
-import { requireRole } from "../../_core/security/accessPolicy";
+import { requireAdminAccess } from "../../_core/security/accessPolicy";
 import {
   getProjectDossierByPropertyId,
   isPropertyDistributionReady,
@@ -161,6 +161,7 @@ export async function ensureProjectDossierForProperty(
     includeLegacyUnitAndPaymentPlan?: boolean;
     forcePrivateUntilReady?: boolean;
     requestedVisibility?: "private" | "public";
+    inventoryKind?: "project" | "standalone_unit";
   } = {},
 ) {
   const property = (await ctx.db.get(propertyId)) as PropertyRecord | null;
@@ -180,6 +181,7 @@ export async function ensureProjectDossierForProperty(
     existing?._id ??
     await ctx.db.insert("projectDossiers", {
       propertyId,
+      inventoryKind: options.inventoryKind ?? "project",
       tenantOrgId: property.tenantOrgId,
       ownerType: resolveOwnerType(property),
       ownerBrokerId: property.brokerId,
@@ -214,8 +216,16 @@ export async function ensureProjectDossierForProperty(
     });
   }
 
-  if (existing && existing.requestedVisibility !== requestedVisibility) {
-    await ctx.db.patch(existing._id, { requestedVisibility, updatedAt: now } as any);
+  if (
+    existing &&
+    (existing.requestedVisibility !== requestedVisibility ||
+      (options.inventoryKind && (existing as any).inventoryKind !== options.inventoryKind))
+  ) {
+    await ctx.db.patch(existing._id, {
+      requestedVisibility,
+      inventoryKind: options.inventoryKind ?? (existing as any).inventoryKind ?? "project",
+      updatedAt: now,
+    } as any);
   }
 
   if (options.includeLegacyUnitAndPaymentPlan) {
@@ -237,7 +247,7 @@ export const hardMigratePropertiesToProjectDossiers = mutation({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { limit = 200 }) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const properties = (await ctx.db.query("properties").take(limit)) as PropertyRecord[];
     let processed = 0;
     let created = 0;
@@ -270,7 +280,7 @@ export const hardMigratePropertiesToProjectDossiers = mutation({
 export const projectDossierMigrationPreflight = mutation({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const [properties, brokers, developers, dossiers] = await Promise.all([
       ctx.db.query("properties").collect() as Promise<PropertyRecord[]>,
       ctx.db.query("brokers").collect(),
@@ -301,7 +311,7 @@ export const projectDossierMigrationPreflight = mutation({
 export const projectDossierMigrationPostflight = mutation({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, ["admin"]);
+    await requireAdminAccess(ctx);
     const [properties, offers, offerPackages] = await Promise.all([
       ctx.db.query("properties").collect() as Promise<any[]>,
       ctx.db.query("offers").collect() as Promise<any[]>,

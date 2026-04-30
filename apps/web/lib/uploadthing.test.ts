@@ -28,7 +28,7 @@ it("returns a local fallback without touching UploadThing when the client flag i
 
   expect(mockUseUploadThing).not.toHaveBeenCalled();
   await expect(result.startUpload([])).rejects.toThrow(
-    "Uploads are not configured. Set UPLOADTHING_TOKEN in apps/web/.env.local and restart the web app.",
+    "Uploads are not configured for the local web app.",
   );
   expect(result.isUploading).toBe(false);
 });

@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { publicMutationRef, publicQueryRef } from "@anan/convex-adapters/repository";
 import { crmApi } from "./api";
 import { mapDealDetail, mapDealIds, mapPaginatedDeals } from "./mappers";
 import type { CrmRepository } from "./types";
@@ -12,140 +12,155 @@ export type { CrmRepository } from "./types";
  */
 export const convexCrmRepository: CrmRepository = {
   async listByBrokerId(brokerId) {
-    const deals = (await fetchQuery(crmApi.listDealsByBrokerId as never, {
-      brokerId: brokerId as never,
-    } as never)) as Awaited<ReturnType<CrmRepository["listByBrokerId"]>>;
+    const deals = await publicQueryRef<Awaited<ReturnType<CrmRepository["listByBrokerId"]>>>(
+      crmApi.listDealsByBrokerId,
+      { brokerId },
+    );
     return deals.map(mapDealIds);
   },
 
   async listByRedId(redId) {
-    const deals = (await fetchQuery(crmApi.listDealsByRedId as never, {
-      REDId: redId as never,
-    })) as Awaited<ReturnType<CrmRepository["listByRedId"]>>;
+    const deals = await publicQueryRef<Awaited<ReturnType<CrmRepository["listByRedId"]>>>(
+      crmApi.listDealsByRedId,
+      { REDId: redId },
+    );
     return deals.map(mapDealIds);
   },
 
   async listPageByBrokerId(brokerId, paginationOpts) {
-    const result = (await fetchQuery(crmApi.listDealsPageByBrokerId as never, {
-      brokerId: brokerId as never,
-      paginationOpts,
-    } as never)) as Awaited<ReturnType<CrmRepository["listPageByBrokerId"]>>;
+    const result = await publicQueryRef<Awaited<ReturnType<CrmRepository["listPageByBrokerId"]>>>(
+      crmApi.listDealsPageByBrokerId,
+      {
+        brokerId,
+        paginationOpts,
+      },
+    );
     return mapPaginatedDeals(result);
   },
 
   async listPageByRedId(redId, paginationOpts) {
-    const result = (await fetchQuery(crmApi.listDealsPageByRedId as never, {
-      REDId: redId as never,
-      paginationOpts,
-    } as never)) as Awaited<ReturnType<CrmRepository["listPageByRedId"]>>;
+    const result = await publicQueryRef<Awaited<ReturnType<CrmRepository["listPageByRedId"]>>>(
+      crmApi.listDealsPageByRedId,
+      {
+        REDId: redId,
+        paginationOpts,
+      },
+    );
     return mapPaginatedDeals(result);
   },
 
   async listByPropertyId(propertyId) {
-    const deals = (await fetchQuery(crmApi.listDealsByPropertyId as never, {
-      propertyId: propertyId as never,
-    })) as Awaited<ReturnType<CrmRepository["listByPropertyId"]>>;
+    const deals = await publicQueryRef<Awaited<ReturnType<CrmRepository["listByPropertyId"]>>>(
+      crmApi.listDealsByPropertyId,
+      { propertyId },
+    );
     return deals.map(mapDealIds);
   },
 
   async listClientsByBrokerId(brokerId) {
-    return (await fetchQuery(crmApi.listClientsByBrokerId as never, {
-      brokerId: brokerId as never,
-    } as never)) as ReturnType<CrmRepository["listClientsByBrokerId"]>;
+    return publicQueryRef<Awaited<ReturnType<CrmRepository["listClientsByBrokerId"]>>>(
+      crmApi.listClientsByBrokerId,
+      { brokerId },
+    );
   },
 
   async listClientsByRedId(redId) {
-    return (await fetchQuery(crmApi.listClientsByRedId as never, {
-      REDId: redId as never,
-    } as never)) as ReturnType<CrmRepository["listClientsByRedId"]>;
+    return publicQueryRef<Awaited<ReturnType<CrmRepository["listClientsByRedId"]>>>(
+      crmApi.listClientsByRedId,
+      { REDId: redId },
+    );
   },
 
   async getClientById(clientId) {
-    return (await fetchQuery(crmApi.getClientById as never, {
-      clientId: clientId as never,
-    } as never)) as ReturnType<CrmRepository["getClientById"]>;
+    return publicQueryRef<Awaited<ReturnType<CrmRepository["getClientById"]>>>(
+      crmApi.getClientById,
+      { clientId },
+    );
   },
 
   async listBrokerSelectorOptions() {
-    return (await fetchQuery(crmApi.listBrokerSelectorOptions as never, {} as never)) as ReturnType<CrmRepository["listBrokerSelectorOptions"]>;
+    return publicQueryRef<Awaited<ReturnType<CrmRepository["listBrokerSelectorOptions"]>>>(
+      crmApi.listBrokerSelectorOptions,
+    );
   },
 
   async getById(dealId) {
-    const deal = (await fetchQuery(crmApi.getDealById as never, {
-      dealId: dealId as never,
-    })) as Awaited<ReturnType<CrmRepository["getById"]>>;
+    const deal = await publicQueryRef<Awaited<ReturnType<CrmRepository["getById"]>>>(
+      crmApi.getDealById,
+      { dealId },
+    );
     return mapDealDetail(deal);
   },
 
   async create({ brokerId, redId, lastUpdatedBy, input }) {
-    return fetchMutation(crmApi.createDeal as never, {
+    return publicMutationRef<Awaited<ReturnType<CrmRepository["create"]>>>(crmApi.createDeal, {
       ...input,
-      propertyId: input.propertyId as never,
-      crmClientId: input.crmClientId as never,
-      relatedBrokerId: input.relatedBrokerId as never,
-      brokerId: brokerId as never,
-      REDId: redId as never,
+      propertyId: input.propertyId,
+      crmClientId: input.crmClientId,
+      relatedBrokerId: input.relatedBrokerId,
+      brokerId,
+      REDId: redId,
       lastUpdatedBy,
-    } as never) as ReturnType<CrmRepository["create"]>;
+    });
   },
 
   async update({ lastUpdatedBy, dealId, title, description, value, nextFollowUpAt, stage, contactName, contactPhone, propertyId, relationType, crmClientId, relatedBrokerId, notes }) {
-    await fetchMutation(crmApi.updateDeal as never, {
-      dealId: dealId as never,
+    await publicMutationRef(crmApi.updateDeal, {
+      dealId,
       title,
       description,
       value,
       nextFollowUpAt,
       stage,
       relationType,
-      crmClientId: crmClientId as never,
-      relatedBrokerId: relatedBrokerId as never,
+      crmClientId,
+      relatedBrokerId,
       contactName,
       contactPhone,
-      propertyId: propertyId as never,
+      propertyId,
       notes,
       lastUpdatedBy,
-    } as never);
+    });
   },
 
   async updateStage({ lastUpdatedBy, dealId, stage }) {
-    await fetchMutation(crmApi.updateDealStage as never, {
-      dealId: dealId as never,
+    await publicMutationRef(crmApi.updateDealStage, {
+      dealId,
       stage,
       lastUpdatedBy,
-    } as never);
+    });
   },
 
   async updateFollowUp({ lastUpdatedBy, dealId, nextFollowUpAt }) {
-    await fetchMutation(crmApi.updateDealFollowUp as never, {
-      dealId: dealId as never,
+    await publicMutationRef(crmApi.updateDealFollowUp, {
+      dealId,
       nextFollowUpAt,
       lastUpdatedBy,
-    } as never);
+    });
   },
 
   async updateNotes({ lastUpdatedBy, dealId, notes }) {
-    await fetchMutation(crmApi.updateDealNotes as never, {
-      dealId: dealId as never,
+    await publicMutationRef(crmApi.updateDealNotes, {
+      dealId,
       notes,
       lastUpdatedBy,
-    } as never);
+    });
   },
 
   async archive({ archivedAt, lastUpdatedBy, dealId }) {
-    await fetchMutation(crmApi.archiveDeal as never, {
-      dealId: dealId as never,
+    await publicMutationRef(crmApi.archiveDeal, {
+      dealId,
       archivedAt,
       archivedBy: lastUpdatedBy,
       lastUpdatedBy,
-    } as never);
+    });
   },
 
   async addDocument({ lastUpdatedBy, dealId, document }) {
-    await fetchMutation(crmApi.addDealDocument as never, {
-      dealId: dealId as never,
-      document: document as never,
+    await publicMutationRef(crmApi.addDealDocument, {
+      dealId,
+      document,
       lastUpdatedBy,
-    } as never);
+    });
   },
 };

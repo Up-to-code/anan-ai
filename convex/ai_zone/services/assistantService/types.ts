@@ -21,7 +21,8 @@ export type WorkspaceUploadedFileReference = {
   mime?: string;
 };
 
-export type AssistantKind = "default" | "anan_workspace" | "anan_pro" | "anan_main_public";
+export type AssistantKind = "default" | "anan_workspace" | "anan_pro";
+export type PersistedAssistantKind = AssistantKind | "anan_main_public";
 export type ThreadScope = "user" | "organization";
 
 export type AssistantThreadRecord = {
@@ -32,9 +33,9 @@ export type AssistantThreadRecord = {
   ownerBrokerId?: Id<"brokers">;
   ownerREDId?: Id<"RED">;
   mode: "qa" | "action";
-  channel?: "app" | "web" | "whatsapp";
+  channel?: "workspace" | "web" | "admin";
   orchestratorName?: string;
-  assistantKind?: AssistantKind;
+  assistantKind?: PersistedAssistantKind;
   title?: string;
   legacyThreadId?: Id<"assistantThreads">;
   createdAt: number;

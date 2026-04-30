@@ -16,7 +16,7 @@ type OverviewPageClientProps = {
 
 /**
  * WHY:   Leadership and operations teams need one command-center surface that explains system flow, commercial throughput, and blockers at a glance.
- * WHAT:  Renders the live overview using KPI cards, a network chart, insight rails, trends, alerts, and partner/queue supporting panels.
+ * WHAT:  Renders the live overview using KPI cards, a network chart, insight rails, trends, alerts, and ecosystem/queue supporting panels.
  * HOW:   Uses the shared grid-first scaffold so the hero canvas scrolls independently from the fixed rail and large datasets stay bounded inside their own panels.
  */
 export default function OverviewPageClient({ viewModel }: OverviewPageClientProps) {

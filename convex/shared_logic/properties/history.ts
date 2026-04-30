@@ -105,7 +105,7 @@ export const logSearchEvent = mutation({
   args: {
     query: v.optional(v.string()),
     userId: v.optional(v.string()),
-    channel: v.optional(v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web"))),
+    channel: v.optional(v.union(v.literal("workspace"), v.literal("web"), v.literal("admin"))),
     stage: v.optional(v.string()),
     status: v.optional(v.string()),
     source: v.optional(v.string()),
@@ -170,7 +170,7 @@ export const logKnowledgeResearch = mutation({
     userId: v.string(),
     threadId: v.optional(v.string()),
     query: v.string(),
-    channel: v.optional(v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web"))),
+    channel: v.optional(v.union(v.literal("workspace"), v.literal("web"), v.literal("admin"))),
     status: v.union(v.literal("completed"), v.literal("partial"), v.literal("failed")),
     requestedTopSources: v.number(),
     requestedTopCardsPerSource: v.number(),

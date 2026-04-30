@@ -130,10 +130,11 @@ export interface WorkspaceStructuredOutput {
 export interface OrchestrateInput {
   ctx: ActionCtx;
   prompt: string;
+  intentPrompt?: string;
   role: "user" | "broker" | "RED" | "admin";
   userId: string;
   threadId?: string;
-  channel?: "app" | "whatsapp" | "web";
+  channel?: "workspace" | "web" | "admin";
   ragContext?: string;
   modelOverride?: string;
   streamSessionId?: string;

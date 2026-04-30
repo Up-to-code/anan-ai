@@ -1,12 +1,49 @@
 import { httpAction } from "../../_generated/server";
+import { z } from "zod/v3";
 import { verifyJwt } from "./jwt";
 import {
   getOauthInternal,
   getTokenFromRequest,
+  JsonRequestError,
   jsonResponse,
+  readJsonBody,
 } from "./httpShared";
 
 const oauthInternal = getOauthInternal();
+
+const delegatedClientCreateSchema = z.object({
+  name: z.string().trim().min(1).max(160),
+  phone: z.string().trim().min(1).max(40).optional(),
+  email: z.string().trim().email().max(254).optional(),
+  notes: z.string().trim().max(2_000).optional(),
+}).strict();
+
+const delegatedPropertyCreateSchema = z.object({
+  title: z.string().trim().min(1).max(180),
+  address: z.string().trim().min(1).max(260),
+  price: z.number().finite().nonnegative().max(1_000_000_000),
+  beds: z.number().int().nonnegative().max(100),
+  baths: z.number().int().nonnegative().max(100),
+  description: z.string().trim().max(5_000).optional(),
+  area: z.string().trim().min(1).max(120).optional(),
+  location: z.string().trim().min(1).max(260).optional(),
+}).strict();
+
+function parseDelegatedBody<T>(schema: z.ZodType<T>, body: unknown): T {
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    const message = parsed.error.issues[0]?.message ?? "Invalid request body";
+    throw new JsonRequestError(message);
+  }
+  return parsed.data;
+}
+
+function delegatedErrorResponse(error: unknown) {
+  if (error instanceof JsonRequestError) {
+    return jsonResponse({ error: "invalid_request", error_description: error.message }, error.status);
+  }
+  return jsonResponse({ error: "invalid_token", error_description: (error as Error).message }, 401);
+}
 
 async function resolveDelegatedAccessContext(ctx: any, request: Request) {
   const token = getTokenFromRequest(request);
@@ -44,17 +81,17 @@ async function handleDelegatedClientsPost(ctx: any, request: Request, context: a
   if (!context.accessToken.scopes.includes("clients:create")) {
     return insufficientScope();
   }
-  const body = await request.json();
+  const body = parseDelegatedBody(delegatedClientCreateSchema, await readJsonBody(request));
   const created = await ctx.runMutation(oauthInternal.createDelegatedClient, {
     ownerAuthUserId: String(context.authorization.approvedByUserId ?? context.authorization.tenantOrgId),
     tenantOrgId: String(context.authorization.tenantOrgId),
     brokerId: context.authorization.ownerType === "broker" ? context.authorization.ownerBrokerId : undefined,
     REDId: context.authorization.ownerType === "RED" ? context.authorization.ownerREDId : undefined,
     sourceClientId: String(claims.aud),
-    name: String(body.name ?? ""),
-    phone: typeof body.phone === "string" ? body.phone : undefined,
-    email: typeof body.email === "string" ? body.email : undefined,
-    notes: typeof body.notes === "string" ? body.notes : undefined,
+    name: body.name,
+    phone: body.phone,
+    email: body.email,
+    notes: body.notes,
     now: Date.now(),
   });
   return jsonResponse({ client: created }, 201);
@@ -74,19 +111,19 @@ async function handleDelegatedPropertiesPost(ctx: any, request: Request, context
   if (!context.accessToken.scopes.includes("properties:create_own")) {
     return insufficientScope();
   }
-  const body = await request.json();
+  const body = parseDelegatedBody(delegatedPropertyCreateSchema, await readJsonBody(request));
   const property = await ctx.runMutation(oauthInternal.createDelegatedProperty, {
     tenantOrgId: String(context.authorization.tenantOrgId),
     brokerId: context.authorization.ownerType === "broker" ? context.authorization.ownerBrokerId : undefined,
     REDId: context.authorization.ownerType === "RED" ? context.authorization.ownerREDId : undefined,
-    title: String(body.title ?? ""),
-    address: String(body.address ?? ""),
-    price: Number(body.price ?? 0),
-    beds: Number(body.beds ?? 0),
-    baths: Number(body.baths ?? 0),
-    description: String(body.description ?? ""),
-    area: typeof body.area === "string" ? body.area : undefined,
-    location: typeof body.location === "string" ? body.location : undefined,
+    title: body.title,
+    address: body.address,
+    price: body.price,
+    beds: body.beds,
+    baths: body.baths,
+    description: body.description ?? "",
+    area: body.area,
+    location: body.location,
   });
   return jsonResponse({ property }, 201);
 }
@@ -98,7 +135,7 @@ export const handleDelegatedClients = httpAction(async (ctx, request) => {
     if (request.method === "POST") return handleDelegatedClientsPost(ctx, request, context, claims);
     return new Response(null, { status: 405 });
   } catch (error) {
-    return jsonResponse({ error: "invalid_token", error_description: (error as Error).message }, 401);
+    return delegatedErrorResponse(error);
   }
 });
 
@@ -109,6 +146,6 @@ export const handleDelegatedProperties = httpAction(async (ctx, request) => {
     if (request.method === "POST") return handleDelegatedPropertiesPost(ctx, request, context);
     return new Response(null, { status: 405 });
   } catch (error) {
-    return jsonResponse({ error: "invalid_token", error_description: (error as Error).message }, 401);
+    return delegatedErrorResponse(error);
   }
 });

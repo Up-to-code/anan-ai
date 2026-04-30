@@ -1,3 +1,4 @@
+import { resolveOwnerLinkedSession } from "@/server/auth/guards";
 import { requireSessionContext, type ResolvedSession } from "@/server/auth/session";
 import type { WorkspaceAudience, WorkspaceOwnerContext } from "@/server/contracts/workspace";
 
@@ -24,6 +25,17 @@ export function buildWorkspaceScopedSessionResolver(
       };
     }
 
+    if (audience === "broker") {
+      const hydrated = await resolveOwnerLinkedSession(session, "brokerId");
+      return {
+        ...hydrated,
+        context: {
+          ...hydrated.context,
+          role: "broker",
+        },
+      };
+    }
+
     if (audience === "developer" && ownerContext?.ownerType === "RED") {
       return {
         ...session,
@@ -31,6 +43,17 @@ export function buildWorkspaceScopedSessionResolver(
           ...session.context,
           role: "developer",
           redId: session.context.redId ?? ownerContext.ownerId,
+        },
+      };
+    }
+
+    if (audience === "developer") {
+      const hydrated = await resolveOwnerLinkedSession(session, "redId");
+      return {
+        ...hydrated,
+        context: {
+          ...hydrated.context,
+          role: "developer",
         },
       };
     }

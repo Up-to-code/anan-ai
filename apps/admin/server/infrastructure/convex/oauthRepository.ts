@@ -1,4 +1,4 @@
-import { fetchAction, fetchQuery } from "convex/nextjs";
+import { createRepositoryRefs, actionRef, queryRef } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 import type { OAuthApprovalResult, OAuthAuthorizationPrompt } from "@/server/contracts/oauth";
 
@@ -7,7 +7,7 @@ type OAuthApiRefs = {
   approveAuthorization: unknown;
 };
 
-const oauthApi = apiUnsafe["shared_logic/oauth/index"] as OAuthApiRefs;
+const oauthApi = createRepositoryRefs<OAuthApiRefs>(apiUnsafe, "shared_logic/oauth/index");
 
 export type OAuthRepository = {
   getAuthorizationPrompt(token: string, flowId: string): Promise<OAuthAuthorizationPrompt>;
@@ -21,10 +21,10 @@ export type OAuthRepository = {
  */
 export const convexOAuthRepository: OAuthRepository = {
   async getAuthorizationPrompt(token, flowId) {
-    return fetchQuery(oauthApi.getAuthorizationPrompt as never, { flowId: flowId as never } as never, { token }) as Promise<OAuthAuthorizationPrompt>;
+    return queryRef<OAuthAuthorizationPrompt>(token, oauthApi.getAuthorizationPrompt, { flowId });
   },
 
   async approveAuthorization(token, flowId) {
-    return fetchAction(oauthApi.approveAuthorization as never, { flowId: flowId as never } as never, { token }) as Promise<OAuthApprovalResult>;
+    return actionRef<OAuthApprovalResult>(token, oauthApi.approveAuthorization, { flowId });
   },
 };

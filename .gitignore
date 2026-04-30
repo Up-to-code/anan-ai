@@ -2,6 +2,7 @@
 node_modules/
 **/node_modules/
 .pnpm-store/
+.pnpm-store/**
 
 # Environment
 .env
@@ -16,6 +17,8 @@ output/
 *.tsbuildinfo
 .next/
 **/.next/
+.turbo/
+**/.turbo/
 .expo/
 **/.expo/
 .expo-export-smoke/
@@ -29,10 +32,14 @@ npm-debug.log*
 
 # OS
 .DS_Store
+**/.DS_Store
 Thumbs.db
 
 # IDE
 .idea/
+.cursor/
+.cursor/**
+.vscode/
 *.swp
 *.swo
 

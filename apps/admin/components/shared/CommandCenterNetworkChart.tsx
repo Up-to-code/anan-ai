@@ -31,7 +31,7 @@ function scaleValue(value: number, min: number, max: number, values: number[]) {
 }
 
 /**
- * WHY:   The overview needs one visual centerpiece that explains how demand, channels, partner capacity, pipeline, and risk connect across Anan.
+ * WHY:   The overview needs one visual centerpiece that explains how demand, channels, ecosystem capacity, pipeline, and risk connect across Anan.
  * WHAT:  Renders a custom SVG network chart with group hubs, metric satellites, and weighted links.
  * HOW:   Uses fixed horizontal group positions, logarithmic sizing for node emphasis, and CSS-token colors so the chart reads well in both themes.
  */

@@ -1,7 +1,7 @@
 "use client";
 
 import { PanelLeft, PanelLeftClose } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { SessionUser } from "@/lib/serverSession";
 import AdminSidebar from "@/components/shell/AdminSidebar";
 import AdminSidebarDrawer from "@/components/shell/AdminSidebarDrawer";
@@ -23,14 +23,9 @@ type AdminShellProps = {
  * HOW:   Copies the workspace-shell layout behavior into admin-owned components while keeping admin routes and auth semantics unchanged.
  */
 export default function AdminShell({ children, user }: AdminShellProps) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem("admin_sidebar_state");
-    if (stored === "collapsed") {
-      setSidebarCollapsed(true);
-    }
-  }, []);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => (
+    typeof window !== "undefined" && window.localStorage.getItem("admin_sidebar_state") === "collapsed"
+  ));
 
   function toggleDesktopSidebar() {
     setSidebarCollapsed((current) => {

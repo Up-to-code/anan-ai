@@ -1,3 +1,4 @@
+import { createRepositoryRefs } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 export type OAuthApiRefs = {
@@ -8,4 +9,4 @@ export type OAuthApiRefs = {
   revokeAuthorizedApp: unknown;
 };
 
-export const oauthApi = apiUnsafe["shared_logic/oauth/index"] as OAuthApiRefs;
+export const oauthApi = createRepositoryRefs<OAuthApiRefs>(apiUnsafe, "shared_logic/oauth/index");

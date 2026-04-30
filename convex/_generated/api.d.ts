@@ -21,29 +21,34 @@ import type * as _core_oauth_jwt from "../_core/oauth/jwt.js";
 import type * as _core_schema_admin from "../_core/schema/admin.js";
 import type * as _core_schema_agencies from "../_core/schema/agencies.js";
 import type * as _core_schema_ai from "../_core/schema/ai.js";
+import type * as _core_schema_audit from "../_core/schema/audit.js";
 import type * as _core_schema_auth from "../_core/schema/auth.js";
 import type * as _core_schema_contact from "../_core/schema/contact.js";
 import type * as _core_schema_crm from "../_core/schema/crm.js";
 import type * as _core_schema_forms from "../_core/schema/forms.js";
 import type * as _core_schema_gccCompliance from "../_core/schema/gccCompliance.js";
+import type * as _core_schema_integrations from "../_core/schema/integrations.js";
 import type * as _core_schema_knowledge from "../_core/schema/knowledge.js";
 import type * as _core_schema_offers from "../_core/schema/offers.js";
 import type * as _core_schema_organizations from "../_core/schema/organizations.js";
 import type * as _core_schema_projects from "../_core/schema/projects.js";
 import type * as _core_schema_properties from "../_core/schema/properties.js";
+import type * as _core_schema_realEstateOs from "../_core/schema/realEstateOs.js";
 import type * as _core_schema_sales from "../_core/schema/sales.js";
 import type * as _core_schema_search from "../_core/schema/search.js";
+import type * as _core_schema_securityFields from "../_core/schema/securityFields.js";
+import type * as _core_schema_securityValidators from "../_core/schema/securityValidators.js";
 import type * as _core_schema_uploadedFiles from "../_core/schema/uploadedFiles.js";
 import type * as _core_schema_users from "../_core/schema/users.js";
 import type * as _core_schema_workspace from "../_core/schema/workspace.js";
 import type * as _core_security_accessPolicy from "../_core/security/accessPolicy.js";
+import type * as _core_security_adminAccess from "../_core/security/adminAccess.js";
 import type * as _core_security_authConfig from "../_core/security/authConfig.js";
 import type * as _core_security_authIdentity from "../_core/security/authIdentity.js";
 import type * as _core_security_authIssuer from "../_core/security/authIssuer.js";
 import type * as _core_security_authOrganizations from "../_core/security/authOrganizations.js";
 import type * as _core_security_authProviderErrors from "../_core/security/authProviderErrors.js";
 import type * as _core_security_authRedirects from "../_core/security/authRedirects.js";
-import type * as _core_security_channelAuth from "../_core/security/channelAuth.js";
 import type * as _core_security_delegatedAccess from "../_core/security/delegatedAccess.js";
 import type * as _core_security_identity from "../_core/security/identity.js";
 import type * as _core_security_migrations from "../_core/security/migrations.js";
@@ -52,8 +57,10 @@ import type * as _core_security_profileRoles from "../_core/security/profileRole
 import type * as _core_security_providers from "../_core/security/providers.js";
 import type * as admin_zone_RED from "../admin_zone/RED.js";
 import type * as admin_zone_activities from "../admin_zone/activities.js";
+import type * as admin_zone_adminSignup from "../admin_zone/adminSignup.js";
 import type * as admin_zone_analytics from "../admin_zone/analytics.js";
 import type * as admin_zone_banks from "../admin_zone/banks.js";
+import type * as admin_zone_bootstrapPasswordAdmin from "../admin_zone/bootstrapPasswordAdmin.js";
 import type * as admin_zone_charts from "../admin_zone/charts.js";
 import type * as admin_zone_commandCenter from "../admin_zone/commandCenter.js";
 import type * as admin_zone_compliance from "../admin_zone/compliance.js";
@@ -102,16 +109,6 @@ import type * as admin_zone_users_listAdminUsers from "../admin_zone/users/listA
 import type * as admin_zone_users_tenantMembership from "../admin_zone/users/tenantMembership.js";
 import type * as admin_zone_verifications from "../admin_zone/verifications.js";
 import type * as ai_zone_agents_AnanAgent from "../ai_zone/agents/AnanAgent.js";
-import type * as ai_zone_agents_anan_index from "../ai_zone/agents/anan/index.js";
-import type * as ai_zone_agents_anan_intentAnalyzer from "../ai_zone/agents/anan/intentAnalyzer.js";
-import type * as ai_zone_agents_anan_orchestrate from "../ai_zone/agents/anan/orchestrate.js";
-import type * as ai_zone_agents_anan_orchestrationAgentsKnowledge from "../ai_zone/agents/anan/orchestrationAgentsKnowledge.js";
-import type * as ai_zone_agents_anan_orchestrationAgentsSearchFinance from "../ai_zone/agents/anan/orchestrationAgentsSearchFinance.js";
-import type * as ai_zone_agents_anan_orchestrationCatalog from "../ai_zone/agents/anan/orchestrationCatalog.js";
-import type * as ai_zone_agents_anan_orchestrationConfig from "../ai_zone/agents/anan/orchestrationConfig.js";
-import type * as ai_zone_agents_anan_resultMerger from "../ai_zone/agents/anan/resultMerger.js";
-import type * as ai_zone_agents_anan_teamRegistry from "../ai_zone/agents/anan/teamRegistry.js";
-import type * as ai_zone_agents_anan_types from "../ai_zone/agents/anan/types.js";
 import type * as ai_zone_agents_anan_workspace_index from "../ai_zone/agents/anan_workspace/index.js";
 import type * as ai_zone_agents_anan_workspace_intentAnalyzer from "../ai_zone/agents/anan_workspace/intentAnalyzer.js";
 import type * as ai_zone_agents_anan_workspace_orchestrate from "../ai_zone/agents/anan_workspace/orchestrate.js";
@@ -135,33 +132,6 @@ import type * as ai_zone_agents_shared_ragInstances from "../ai_zone/agents/shar
 import type * as ai_zone_agents_shared_tokenTracker from "../ai_zone/agents/shared/tokenTracker.js";
 import type * as ai_zone_agents_shared_tokenTrackerActions from "../ai_zone/agents/shared/tokenTrackerActions.js";
 import type * as ai_zone_agents_shared_workflows from "../ai_zone/agents/shared/workflows.js";
-import type * as ai_zone_agents_team_finance_anan_banks_config from "../ai_zone/agents/team_finance/anan_banks/config.js";
-import type * as ai_zone_agents_team_finance_anan_finance_config from "../ai_zone/agents/team_finance/anan_finance/config.js";
-import type * as ai_zone_agents_team_finance_tools_estimateMortgage from "../ai_zone/agents/team_finance/tools/estimateMortgage.js";
-import type * as ai_zone_agents_team_finance_tools_getBankBundles from "../ai_zone/agents/team_finance/tools/getBankBundles.js";
-import type * as ai_zone_agents_team_knowledge_anan_knowledge_config from "../ai_zone/agents/team_knowledge/anan_knowledge/config.js";
-import type * as ai_zone_agents_team_knowledge_anan_memory_config from "../ai_zone/agents/team_knowledge/anan_memory/config.js";
-import type * as ai_zone_agents_team_knowledge_tools_getKnowledgePage from "../ai_zone/agents/team_knowledge/tools/getKnowledgePage.js";
-import type * as ai_zone_agents_team_knowledge_tools_getMemoryContext from "../ai_zone/agents/team_knowledge/tools/getMemoryContext.js";
-import type * as ai_zone_agents_team_knowledge_tools_storeInteraction from "../ai_zone/agents/team_knowledge/tools/storeInteraction.js";
-import type * as ai_zone_agents_team_knowledge_tools_storeUserPreference from "../ai_zone/agents/team_knowledge/tools/storeUserPreference.js";
-import type * as ai_zone_agents_team_platform_anan_platform_docs_config from "../ai_zone/agents/team_platform/anan_platform_docs/config.js";
-import type * as ai_zone_agents_team_platform_tools_getDeveloperHandbookSnippets from "../ai_zone/agents/team_platform/tools/getDeveloperHandbookSnippets.js";
-import type * as ai_zone_agents_team_property_anan_property_config from "../ai_zone/agents/team_property/anan_property/config.js";
-import type * as ai_zone_agents_team_property_anan_recommender_config from "../ai_zone/agents/team_property/anan_recommender/config.js";
-import type * as ai_zone_agents_team_property_tools_getLastSearchContext from "../ai_zone/agents/team_property/tools/getLastSearchContext.js";
-import type * as ai_zone_agents_team_property_tools_getLastSearchFindings from "../ai_zone/agents/team_property/tools/getLastSearchFindings.js";
-import type * as ai_zone_agents_team_property_tools_getMemoryContext from "../ai_zone/agents/team_property/tools/getMemoryContext.js";
-import type * as ai_zone_agents_team_search_anan_search_config from "../ai_zone/agents/team_search/anan_search/config.js";
-import type * as ai_zone_agents_team_search_anan_search_tools_getLastSearchContext from "../ai_zone/agents/team_search/anan_search/tools/getLastSearchContext.js";
-import type * as ai_zone_agents_team_search_anan_search_tools_getLastSearchFindings from "../ai_zone/agents/team_search/anan_search/tools/getLastSearchFindings.js";
-import type * as ai_zone_agents_team_search_anan_search_tools_serperSearch from "../ai_zone/agents/team_search/anan_search/tools/serperSearch.js";
-import type * as ai_zone_agents_team_search_anan_search_tools_smartPropertySearch from "../ai_zone/agents/team_search/anan_search/tools/smartPropertySearch.js";
-import type * as ai_zone_agents_team_search_anan_web_config from "../ai_zone/agents/team_search/anan_web/config.js";
-import type * as ai_zone_agents_team_search_anan_web_tools_browseAndExtract from "../ai_zone/agents/team_search/anan_web/tools/browseAndExtract.js";
-import type * as ai_zone_agents_team_search_anan_web_tools_genericScraper from "../ai_zone/agents/team_search/anan_web/tools/genericScraper.js";
-import type * as ai_zone_agents_team_search_anan_web_tools_scrapingConfig from "../ai_zone/agents/team_search/anan_web/tools/scrapingConfig.js";
-import type * as ai_zone_agents_team_search_anan_web_tools_stagehand from "../ai_zone/agents/team_search/anan_web/tools/stagehand.js";
 import type * as ai_zone_agents_team_workspace_crm_anan_workspace_crm_config from "../ai_zone/agents/team_workspace_crm/anan_workspace_crm/config.js";
 import type * as ai_zone_agents_team_workspace_inbox_anan_workspace_inbox_config from "../ai_zone/agents/team_workspace_inbox/anan_workspace_inbox/config.js";
 import type * as ai_zone_agents_team_workspace_offers_anan_workspace_offers_config from "../ai_zone/agents/team_workspace_offers/anan_workspace_offers/config.js";
@@ -170,26 +140,8 @@ import type * as ai_zone_agents_team_workspace_projects_anan_workspace_projects_
 import type * as ai_zone_agents_types from "../ai_zone/agents/types.js";
 import type * as ai_zone_assistant from "../ai_zone/assistant.js";
 import type * as ai_zone_assistantPro from "../ai_zone/assistantPro.js";
-import type * as ai_zone_assistantPublic from "../ai_zone/assistantPublic.js";
-import type * as ai_zone_assistantPublicHttp from "../ai_zone/assistantPublicHttp.js";
 import type * as ai_zone_assistantWorkspace from "../ai_zone/assistantWorkspace.js";
-import type * as ai_zone_channels_rules_index from "../ai_zone/channels/rules/index.js";
-import type * as ai_zone_channels_whatsapp_actions from "../ai_zone/channels/whatsapp/actions.js";
-import type * as ai_zone_channels_whatsapp_api from "../ai_zone/channels/whatsapp/api.js";
-import type * as ai_zone_channels_whatsapp_preprocess_index from "../ai_zone/channels/whatsapp/preprocess/index.js";
-import type * as ai_zone_channels_whatsapp_preprocess_textPipeline from "../ai_zone/channels/whatsapp/preprocess/textPipeline.js";
-import type * as ai_zone_channels_whatsapp_preprocess_voicePipeline from "../ai_zone/channels/whatsapp/preprocess/voicePipeline.js";
-import type * as ai_zone_channels_whatsapp_service from "../ai_zone/channels/whatsapp/service.js";
-import type * as ai_zone_channels_whatsapp_webhook from "../ai_zone/channels/whatsapp/webhook.js";
-import type * as ai_zone_conversationAnalyzer from "../ai_zone/conversationAnalyzer.js";
-import type * as ai_zone_conversationAnalyzer_aggregate from "../ai_zone/conversationAnalyzer/aggregate.js";
-import type * as ai_zone_conversationAnalyzer_constants from "../ai_zone/conversationAnalyzer/constants.js";
-import type * as ai_zone_conversationAnalyzer_extract from "../ai_zone/conversationAnalyzer/extract.js";
-import type * as ai_zone_conversationAnalyzer_registration from "../ai_zone/conversationAnalyzer/registration.js";
-import type * as ai_zone_conversationAnalyzer_time from "../ai_zone/conversationAnalyzer/time.js";
-import type * as ai_zone_conversationAnalyzer_types from "../ai_zone/conversationAnalyzer/types.js";
-import type * as ai_zone_openMultiAgent_index from "../ai_zone/openMultiAgent/index.js";
-import type * as ai_zone_openMultiAgent_runtime from "../ai_zone/openMultiAgent/runtime.js";
+import type * as ai_zone_assistantWorkspaceNode from "../ai_zone/assistantWorkspaceNode.js";
 import type * as ai_zone_services_agUi from "../ai_zone/services/agUi.js";
 import type * as ai_zone_services_agUi_types from "../ai_zone/services/agUi/types.js";
 import type * as ai_zone_services_assistantService from "../ai_zone/services/assistantService.js";
@@ -216,14 +168,12 @@ import type * as ai_zone_services_assistantService_workspaceParsing from "../ai_
 import type * as ai_zone_services_assistantService_workspaceProjectAction from "../ai_zone/services/assistantService/workspaceProjectAction.js";
 import type * as ai_zone_services_assistantService_workspaceStream from "../ai_zone/services/assistantService/workspaceStream.js";
 import type * as ai_zone_services_assistantService_workspaceUi from "../ai_zone/services/assistantService/workspaceUi.js";
-import type * as ai_zone_services_publicAssistantResponse from "../ai_zone/services/publicAssistantResponse.js";
-import type * as ai_zone_services_publicBuyerResponse from "../ai_zone/services/publicBuyerResponse.js";
+import type * as ai_zone_services_assistantSurfaceRuntime from "../ai_zone/services/assistantSurfaceRuntime.js";
 import type * as ai_zone_services_voiceSynthesisService from "../ai_zone/services/voiceSynthesisService.js";
 import type * as ai_zone_services_voiceTranscriptionService from "../ai_zone/services/voiceTranscriptionService.js";
 import type * as ai_zone_workflows_index from "../ai_zone/workflows/index.js";
 import type * as auditLog from "../auditLog.js";
 import type * as auth from "../auth.js";
-import type * as authz from "../authz.js";
 import type * as broker_zone_overview from "../broker_zone/overview.js";
 import type * as broker_zone_projects from "../broker_zone/projects.js";
 import type * as broker_zone_properties from "../broker_zone/properties.js";
@@ -231,9 +181,19 @@ import type * as broker_zone_repositories_overviewRepository from "../broker_zon
 import type * as broker_zone_repositories_propertiesRepository from "../broker_zone/repositories/propertiesRepository.js";
 import type * as cascading from "../cascading.js";
 import type * as crons from "../crons.js";
+import type * as enterpriseReadinessMigrations from "../enterpriseReadinessMigrations.js";
 import type * as http from "../http.js";
-import type * as public_zone_contact from "../public_zone/contact.js";
-import type * as public_zone_forms from "../public_zone/forms.js";
+import type * as lib_authorizationGuard from "../lib/authorizationGuard.js";
+import type * as lib_constants from "../lib/constants.js";
+import type * as lib_tenantGuard from "../lib/tenantGuard.js";
+import type * as model_offers_mutations from "../model/offers/mutations.js";
+import type * as model_offers_queries from "../model/offers/queries.js";
+import type * as model_offers_services from "../model/offers/services.js";
+import type * as model_offers_types from "../model/offers/types.js";
+import type * as properties_mutations from "../properties/mutations.js";
+import type * as public_inbox from "../public/inbox.js";
+import type * as public_offers from "../public/offers.js";
+import type * as public_projects from "../public/projects.js";
 import type * as red_zone_overview from "../red_zone/overview.js";
 import type * as red_zone_projects from "../red_zone/projects.js";
 import type * as red_zone_properties from "../red_zone/properties.js";
@@ -241,6 +201,9 @@ import type * as red_zone_repositories_overviewRepository from "../red_zone/repo
 import type * as red_zone_repositories_propertiesRepository from "../red_zone/repositories/propertiesRepository.js";
 import type * as seed from "../seed.js";
 import type * as seed_saudiWorkspaceDataset from "../seed/saudiWorkspaceDataset.js";
+import type * as shared_logic_agencies_assets from "../shared_logic/agencies/assets.js";
+import type * as shared_logic_agencies_index from "../shared_logic/agencies/index.js";
+import type * as shared_logic_agencies_profiles from "../shared_logic/agencies/profiles.js";
 import type * as shared_logic_agencies_repositories from "../shared_logic/agencies/repositories.js";
 import type * as shared_logic_agencies_repositories_apiKeys from "../shared_logic/agencies/repositories/apiKeys.js";
 import type * as shared_logic_agencies_repositories_core from "../shared_logic/agencies/repositories/core.js";
@@ -253,29 +216,6 @@ import type * as shared_logic_agencies_repositories_organization from "../shared
 import type * as shared_logic_analytics_posthog from "../shared_logic/analytics/posthog.js";
 import type * as shared_logic_banks_queries from "../shared_logic/banks/queries.js";
 import type * as shared_logic_batch_index from "../shared_logic/batch/index.js";
-import type * as shared_logic_buyerComparisons from "../shared_logic/buyerComparisons.js";
-import type * as shared_logic_buyerComparisons_builder from "../shared_logic/buyerComparisons/builder.js";
-import type * as shared_logic_buyerComparisons_index from "../shared_logic/buyerComparisons/index.js";
-import type * as shared_logic_buyerComparisons_mutations from "../shared_logic/buyerComparisons/mutations.js";
-import type * as shared_logic_buyerComparisons_queries from "../shared_logic/buyerComparisons/queries.js";
-import type * as shared_logic_buyerComparisons_types from "../shared_logic/buyerComparisons/types.js";
-import type * as shared_logic_buyerContext from "../shared_logic/buyerContext.js";
-import type * as shared_logic_buyerContext_compiled from "../shared_logic/buyerContext/compiled.js";
-import type * as shared_logic_buyerContext_compiledShared from "../shared_logic/buyerContext/compiledShared.js";
-import type * as shared_logic_buyerContext_compiler_index from "../shared_logic/buyerContext/compiler/index.js";
-import type * as shared_logic_buyerContext_compiler_shared from "../shared_logic/buyerContext/compiler/shared.js";
-import type * as shared_logic_buyerContext_constants from "../shared_logic/buyerContext/constants.js";
-import type * as shared_logic_buyerContext_handlers_contracts from "../shared_logic/buyerContext/handlers/contracts.js";
-import type * as shared_logic_buyerContext_handlers_mutations from "../shared_logic/buyerContext/handlers/mutations.js";
-import type * as shared_logic_buyerContext_handlers_promotion from "../shared_logic/buyerContext/handlers/promotion.js";
-import type * as shared_logic_buyerContext_handlers_queries from "../shared_logic/buyerContext/handlers/queries.js";
-import type * as shared_logic_buyerContext_helpers from "../shared_logic/buyerContext/helpers.js";
-import type * as shared_logic_buyerContext_prompt_index from "../shared_logic/buyerContext/prompt/index.js";
-import type * as shared_logic_buyerContext_storage from "../shared_logic/buyerContext/storage.js";
-import type * as shared_logic_buyerContext_storage_index from "../shared_logic/buyerContext/storage/index.js";
-import type * as shared_logic_buyerContext_summaries from "../shared_logic/buyerContext/summaries.js";
-import type * as shared_logic_buyerContext_summaries_index from "../shared_logic/buyerContext/summaries/index.js";
-import type * as shared_logic_buyerContext_types from "../shared_logic/buyerContext/types.js";
 import type * as shared_logic_compliance_contracts from "../shared_logic/compliance/contracts.js";
 import type * as shared_logic_compliance_index from "../shared_logic/compliance/index.js";
 import type * as shared_logic_compliance_utils from "../shared_logic/compliance/utils.js";
@@ -298,15 +238,20 @@ import type * as shared_logic_inbox_profiles from "../shared_logic/inbox/profile
 import type * as shared_logic_inbox_queries from "../shared_logic/inbox/queries.js";
 import type * as shared_logic_inbox_types from "../shared_logic/inbox/types.js";
 import type * as shared_logic_inbox_utils from "../shared_logic/inbox/utils.js";
+import type * as shared_logic_integrations_index from "../shared_logic/integrations/index.js";
+import type * as shared_logic_integrations_llmCache from "../shared_logic/integrations/llmCache.js";
+import type * as shared_logic_integrations_llmCacheNode from "../shared_logic/integrations/llmCacheNode.js";
+import type * as shared_logic_integrations_uploadthing from "../shared_logic/integrations/uploadthing.js";
+import type * as shared_logic_integrations_zaneAiWebhook from "../shared_logic/integrations/zaneAiWebhook.js";
 import type * as shared_logic_knowledge_index from "../shared_logic/knowledge/index.js";
 import type * as shared_logic_lib_constants from "../shared_logic/lib/constants.js";
 import type * as shared_logic_lib_core_errors from "../shared_logic/lib/core/errors.js";
 import type * as shared_logic_lib_core_index from "../shared_logic/lib/core/index.js";
 import type * as shared_logic_lib_core_logger from "../shared_logic/lib/core/logger.js";
 import type * as shared_logic_lib_core_utilities from "../shared_logic/lib/core/utilities.js";
+import type * as shared_logic_lib_files from "../shared_logic/lib/files.js";
 import type * as shared_logic_lib_httpFetch from "../shared_logic/lib/httpFetch.js";
 import type * as shared_logic_lib_language from "../shared_logic/lib/language.js";
-import type * as shared_logic_lib_middleware_channelDetect from "../shared_logic/lib/middleware/channelDetect.js";
 import type * as shared_logic_lib_middleware_guard from "../shared_logic/lib/middleware/guard.js";
 import type * as shared_logic_lib_middleware_index from "../shared_logic/lib/middleware/index.js";
 import type * as shared_logic_lib_middleware_rateLimit from "../shared_logic/lib/middleware/rateLimit.js";
@@ -329,12 +274,18 @@ import type * as shared_logic_market_analytics_snapshot from "../shared_logic/ma
 import type * as shared_logic_market_analytics_types from "../shared_logic/market/analytics/types.js";
 import type * as shared_logic_market_analytics_utils from "../shared_logic/market/analytics/utils.js";
 import type * as shared_logic_market_normalizers from "../shared_logic/market/normalizers.js";
+import type * as shared_logic_market_public from "../shared_logic/market/public.js";
+import type * as shared_logic_memory_persona from "../shared_logic/memory/persona.js";
 import type * as shared_logic_memory_repository from "../shared_logic/memory/repository.js";
 import type * as shared_logic_memory_repository_getRelevantContextInternal from "../shared_logic/memory/repository/getRelevantContextInternal.js";
 import type * as shared_logic_memory_repository_getRelevantMemoriesByQuery from "../shared_logic/memory/repository/getRelevantMemoriesByQuery.js";
 import type * as shared_logic_memory_repository_shared from "../shared_logic/memory/repository/shared.js";
 import type * as shared_logic_notifications from "../shared_logic/notifications.js";
+import type * as shared_logic_notifications_index from "../shared_logic/notifications/index.js";
+import type * as shared_logic_notifications_node from "../shared_logic/notifications/node.js";
+import type * as shared_logic_notifications_workflows from "../shared_logic/notifications/workflows.js";
 import type * as shared_logic_notificationsNode from "../shared_logic/notificationsNode.js";
+import type * as shared_logic_oauth_clientMirror from "../shared_logic/oauth/clientMirror.js";
 import type * as shared_logic_oauth_index from "../shared_logic/oauth/index.js";
 import type * as shared_logic_oauth_internal from "../shared_logic/oauth/internal.js";
 import type * as shared_logic_oauth_internal_audit from "../shared_logic/oauth/internal/audit.js";
@@ -352,6 +303,7 @@ import type * as shared_logic_offers from "../shared_logic/offers.js";
 import type * as shared_logic_offers_access from "../shared_logic/offers/access.js";
 import type * as shared_logic_offers_cases from "../shared_logic/offers/cases.js";
 import type * as shared_logic_offers_cases_index from "../shared_logic/offers/cases/index.js";
+import type * as shared_logic_offers_cases_migrations from "../shared_logic/offers/cases/migrations.js";
 import type * as shared_logic_offers_cases_mutations from "../shared_logic/offers/cases/mutations.js";
 import type * as shared_logic_offers_cases_queries from "../shared_logic/offers/cases/queries.js";
 import type * as shared_logic_offers_cases_repositories from "../shared_logic/offers/cases/repositories.js";
@@ -368,6 +320,7 @@ import type * as shared_logic_offers_mutations_publish from "../shared_logic/off
 import type * as shared_logic_offers_mutations_respond from "../shared_logic/offers/mutations/respond.js";
 import type * as shared_logic_offers_mutations_sideEffects from "../shared_logic/offers/mutations/sideEffects.js";
 import type * as shared_logic_offers_mutations_types from "../shared_logic/offers/mutations/types.js";
+import type * as shared_logic_offers_public from "../shared_logic/offers/public.js";
 import type * as shared_logic_offers_queries from "../shared_logic/offers/queries.js";
 import type * as shared_logic_offers_recipients from "../shared_logic/offers/recipients.js";
 import type * as shared_logic_organizationAssets from "../shared_logic/organizationAssets.js";
@@ -375,11 +328,16 @@ import type * as shared_logic_organizationProfiles from "../shared_logic/organiz
 import type * as shared_logic_projectAccess from "../shared_logic/projectAccess.js";
 import type * as shared_logic_projectAnalytics from "../shared_logic/projectAnalytics.js";
 import type * as shared_logic_projectDetails from "../shared_logic/projectDetails.js";
+import type * as shared_logic_projects_access from "../shared_logic/projects/access.js";
+import type * as shared_logic_projects_analytics from "../shared_logic/projects/analytics.js";
+import type * as shared_logic_projects_details from "../shared_logic/projects/details.js";
 import type * as shared_logic_projects_events from "../shared_logic/projects/events.js";
+import type * as shared_logic_projects_index from "../shared_logic/projects/index.js";
 import type * as shared_logic_projects_migrations from "../shared_logic/projects/migrations.js";
 import type * as shared_logic_projects_operations from "../shared_logic/projects/operations.js";
 import type * as shared_logic_projects_readiness from "../shared_logic/projects/readiness.js";
 import type * as shared_logic_projects_validation from "../shared_logic/projects/validation.js";
+import type * as shared_logic_properties_accessControl from "../shared_logic/properties/accessControl.js";
 import type * as shared_logic_properties_cache from "../shared_logic/properties/cache.js";
 import type * as shared_logic_properties_history from "../shared_logic/properties/history.js";
 import type * as shared_logic_properties_ownerScoped_index from "../shared_logic/properties/ownerScoped/index.js";
@@ -393,7 +351,6 @@ import type * as shared_logic_subscriptions_index from "../shared_logic/subscrip
 import type * as shared_logic_uploadthing from "../shared_logic/uploadthing.js";
 import type * as shared_logic_users_index from "../shared_logic/users/index.js";
 import type * as shared_logic_users_session from "../shared_logic/users/session.js";
-import type * as shared_logic_users_whatsapp from "../shared_logic/users/whatsapp.js";
 import type * as shared_logic_verifications_index from "../shared_logic/verifications/index.js";
 import type * as shared_logic_verifications_submissions from "../shared_logic/verifications/submissions.js";
 import type * as shared_logic_verifications_types_index from "../shared_logic/verifications/types/index.js";
@@ -401,25 +358,10 @@ import type * as shared_logic_verifications_types_validation_index from "../shar
 import type * as shared_logic_workspaceWorkflows from "../shared_logic/workspaceWorkflows.js";
 import type * as tenants from "../tenants.js";
 import type * as uploadthing from "../uploadthing.js";
-import type * as user_zone_mobile_account from "../user_zone/mobile/account.js";
-import type * as user_zone_mobile_analytics from "../user_zone/mobile/analytics.js";
-import type * as user_zone_mobile_assistant from "../user_zone/mobile/assistant.js";
-import type * as user_zone_mobile_contracts from "../user_zone/mobile/contracts.js";
-import type * as user_zone_mobile_feed from "../user_zone/mobile/feed.js";
-import type * as user_zone_mobile_finance from "../user_zone/mobile/finance.js";
-import type * as user_zone_mobile_viewer from "../user_zone/mobile/viewer.js";
-import type * as user_zone_web_assistant from "../user_zone/web/assistant.js";
-import type * as user_zone_web_contracts from "../user_zone/web/contracts.js";
-import type * as user_zone_web_orders from "../user_zone/web/orders.js";
-import type * as user_zone_web_properties from "../user_zone/web/properties.js";
-import type * as user_zone_web_threads from "../user_zone/web/threads.js";
-import type * as user_zone_whatsapp_contracts from "../user_zone/whatsapp/contracts.js";
-import type * as user_zone_whatsapp_formatters from "../user_zone/whatsapp/formatters.js";
-import type * as user_zone_whatsapp_handoff from "../user_zone/whatsapp/handoff.js";
-import type * as user_zone_whatsapp_index from "../user_zone/whatsapp/index.js";
-import type * as user_zone_whatsapp_propertyFlow from "../user_zone/whatsapp/propertyFlow.js";
-import type * as user_zone_whatsapp_searchFlow from "../user_zone/whatsapp/searchFlow.js";
-import type * as user_zone_whatsapp_state from "../user_zone/whatsapp/state.js";
+import type * as validations_convex from "../validations/convex.js";
+import type * as validations_files from "../validations/files.js";
+import type * as validations_index from "../validations/index.js";
+import type * as validations_offers from "../validations/offers.js";
 
 import type {
   ApiFromModules,
@@ -441,29 +383,34 @@ declare const fullApi: ApiFromModules<{
   "_core/schema/admin": typeof _core_schema_admin;
   "_core/schema/agencies": typeof _core_schema_agencies;
   "_core/schema/ai": typeof _core_schema_ai;
+  "_core/schema/audit": typeof _core_schema_audit;
   "_core/schema/auth": typeof _core_schema_auth;
   "_core/schema/contact": typeof _core_schema_contact;
   "_core/schema/crm": typeof _core_schema_crm;
   "_core/schema/forms": typeof _core_schema_forms;
   "_core/schema/gccCompliance": typeof _core_schema_gccCompliance;
+  "_core/schema/integrations": typeof _core_schema_integrations;
   "_core/schema/knowledge": typeof _core_schema_knowledge;
   "_core/schema/offers": typeof _core_schema_offers;
   "_core/schema/organizations": typeof _core_schema_organizations;
   "_core/schema/projects": typeof _core_schema_projects;
   "_core/schema/properties": typeof _core_schema_properties;
+  "_core/schema/realEstateOs": typeof _core_schema_realEstateOs;
   "_core/schema/sales": typeof _core_schema_sales;
   "_core/schema/search": typeof _core_schema_search;
+  "_core/schema/securityFields": typeof _core_schema_securityFields;
+  "_core/schema/securityValidators": typeof _core_schema_securityValidators;
   "_core/schema/uploadedFiles": typeof _core_schema_uploadedFiles;
   "_core/schema/users": typeof _core_schema_users;
   "_core/schema/workspace": typeof _core_schema_workspace;
   "_core/security/accessPolicy": typeof _core_security_accessPolicy;
+  "_core/security/adminAccess": typeof _core_security_adminAccess;
   "_core/security/authConfig": typeof _core_security_authConfig;
   "_core/security/authIdentity": typeof _core_security_authIdentity;
   "_core/security/authIssuer": typeof _core_security_authIssuer;
   "_core/security/authOrganizations": typeof _core_security_authOrganizations;
   "_core/security/authProviderErrors": typeof _core_security_authProviderErrors;
   "_core/security/authRedirects": typeof _core_security_authRedirects;
-  "_core/security/channelAuth": typeof _core_security_channelAuth;
   "_core/security/delegatedAccess": typeof _core_security_delegatedAccess;
   "_core/security/identity": typeof _core_security_identity;
   "_core/security/migrations": typeof _core_security_migrations;
@@ -472,8 +419,10 @@ declare const fullApi: ApiFromModules<{
   "_core/security/providers": typeof _core_security_providers;
   "admin_zone/RED": typeof admin_zone_RED;
   "admin_zone/activities": typeof admin_zone_activities;
+  "admin_zone/adminSignup": typeof admin_zone_adminSignup;
   "admin_zone/analytics": typeof admin_zone_analytics;
   "admin_zone/banks": typeof admin_zone_banks;
+  "admin_zone/bootstrapPasswordAdmin": typeof admin_zone_bootstrapPasswordAdmin;
   "admin_zone/charts": typeof admin_zone_charts;
   "admin_zone/commandCenter": typeof admin_zone_commandCenter;
   "admin_zone/compliance": typeof admin_zone_compliance;
@@ -522,16 +471,6 @@ declare const fullApi: ApiFromModules<{
   "admin_zone/users/tenantMembership": typeof admin_zone_users_tenantMembership;
   "admin_zone/verifications": typeof admin_zone_verifications;
   "ai_zone/agents/AnanAgent": typeof ai_zone_agents_AnanAgent;
-  "ai_zone/agents/anan/index": typeof ai_zone_agents_anan_index;
-  "ai_zone/agents/anan/intentAnalyzer": typeof ai_zone_agents_anan_intentAnalyzer;
-  "ai_zone/agents/anan/orchestrate": typeof ai_zone_agents_anan_orchestrate;
-  "ai_zone/agents/anan/orchestrationAgentsKnowledge": typeof ai_zone_agents_anan_orchestrationAgentsKnowledge;
-  "ai_zone/agents/anan/orchestrationAgentsSearchFinance": typeof ai_zone_agents_anan_orchestrationAgentsSearchFinance;
-  "ai_zone/agents/anan/orchestrationCatalog": typeof ai_zone_agents_anan_orchestrationCatalog;
-  "ai_zone/agents/anan/orchestrationConfig": typeof ai_zone_agents_anan_orchestrationConfig;
-  "ai_zone/agents/anan/resultMerger": typeof ai_zone_agents_anan_resultMerger;
-  "ai_zone/agents/anan/teamRegistry": typeof ai_zone_agents_anan_teamRegistry;
-  "ai_zone/agents/anan/types": typeof ai_zone_agents_anan_types;
   "ai_zone/agents/anan_workspace/index": typeof ai_zone_agents_anan_workspace_index;
   "ai_zone/agents/anan_workspace/intentAnalyzer": typeof ai_zone_agents_anan_workspace_intentAnalyzer;
   "ai_zone/agents/anan_workspace/orchestrate": typeof ai_zone_agents_anan_workspace_orchestrate;
@@ -555,33 +494,6 @@ declare const fullApi: ApiFromModules<{
   "ai_zone/agents/shared/tokenTracker": typeof ai_zone_agents_shared_tokenTracker;
   "ai_zone/agents/shared/tokenTrackerActions": typeof ai_zone_agents_shared_tokenTrackerActions;
   "ai_zone/agents/shared/workflows": typeof ai_zone_agents_shared_workflows;
-  "ai_zone/agents/team_finance/anan_banks/config": typeof ai_zone_agents_team_finance_anan_banks_config;
-  "ai_zone/agents/team_finance/anan_finance/config": typeof ai_zone_agents_team_finance_anan_finance_config;
-  "ai_zone/agents/team_finance/tools/estimateMortgage": typeof ai_zone_agents_team_finance_tools_estimateMortgage;
-  "ai_zone/agents/team_finance/tools/getBankBundles": typeof ai_zone_agents_team_finance_tools_getBankBundles;
-  "ai_zone/agents/team_knowledge/anan_knowledge/config": typeof ai_zone_agents_team_knowledge_anan_knowledge_config;
-  "ai_zone/agents/team_knowledge/anan_memory/config": typeof ai_zone_agents_team_knowledge_anan_memory_config;
-  "ai_zone/agents/team_knowledge/tools/getKnowledgePage": typeof ai_zone_agents_team_knowledge_tools_getKnowledgePage;
-  "ai_zone/agents/team_knowledge/tools/getMemoryContext": typeof ai_zone_agents_team_knowledge_tools_getMemoryContext;
-  "ai_zone/agents/team_knowledge/tools/storeInteraction": typeof ai_zone_agents_team_knowledge_tools_storeInteraction;
-  "ai_zone/agents/team_knowledge/tools/storeUserPreference": typeof ai_zone_agents_team_knowledge_tools_storeUserPreference;
-  "ai_zone/agents/team_platform/anan_platform_docs/config": typeof ai_zone_agents_team_platform_anan_platform_docs_config;
-  "ai_zone/agents/team_platform/tools/getDeveloperHandbookSnippets": typeof ai_zone_agents_team_platform_tools_getDeveloperHandbookSnippets;
-  "ai_zone/agents/team_property/anan_property/config": typeof ai_zone_agents_team_property_anan_property_config;
-  "ai_zone/agents/team_property/anan_recommender/config": typeof ai_zone_agents_team_property_anan_recommender_config;
-  "ai_zone/agents/team_property/tools/getLastSearchContext": typeof ai_zone_agents_team_property_tools_getLastSearchContext;
-  "ai_zone/agents/team_property/tools/getLastSearchFindings": typeof ai_zone_agents_team_property_tools_getLastSearchFindings;
-  "ai_zone/agents/team_property/tools/getMemoryContext": typeof ai_zone_agents_team_property_tools_getMemoryContext;
-  "ai_zone/agents/team_search/anan_search/config": typeof ai_zone_agents_team_search_anan_search_config;
-  "ai_zone/agents/team_search/anan_search/tools/getLastSearchContext": typeof ai_zone_agents_team_search_anan_search_tools_getLastSearchContext;
-  "ai_zone/agents/team_search/anan_search/tools/getLastSearchFindings": typeof ai_zone_agents_team_search_anan_search_tools_getLastSearchFindings;
-  "ai_zone/agents/team_search/anan_search/tools/serperSearch": typeof ai_zone_agents_team_search_anan_search_tools_serperSearch;
-  "ai_zone/agents/team_search/anan_search/tools/smartPropertySearch": typeof ai_zone_agents_team_search_anan_search_tools_smartPropertySearch;
-  "ai_zone/agents/team_search/anan_web/config": typeof ai_zone_agents_team_search_anan_web_config;
-  "ai_zone/agents/team_search/anan_web/tools/browseAndExtract": typeof ai_zone_agents_team_search_anan_web_tools_browseAndExtract;
-  "ai_zone/agents/team_search/anan_web/tools/genericScraper": typeof ai_zone_agents_team_search_anan_web_tools_genericScraper;
-  "ai_zone/agents/team_search/anan_web/tools/scrapingConfig": typeof ai_zone_agents_team_search_anan_web_tools_scrapingConfig;
-  "ai_zone/agents/team_search/anan_web/tools/stagehand": typeof ai_zone_agents_team_search_anan_web_tools_stagehand;
   "ai_zone/agents/team_workspace_crm/anan_workspace_crm/config": typeof ai_zone_agents_team_workspace_crm_anan_workspace_crm_config;
   "ai_zone/agents/team_workspace_inbox/anan_workspace_inbox/config": typeof ai_zone_agents_team_workspace_inbox_anan_workspace_inbox_config;
   "ai_zone/agents/team_workspace_offers/anan_workspace_offers/config": typeof ai_zone_agents_team_workspace_offers_anan_workspace_offers_config;
@@ -590,26 +502,8 @@ declare const fullApi: ApiFromModules<{
   "ai_zone/agents/types": typeof ai_zone_agents_types;
   "ai_zone/assistant": typeof ai_zone_assistant;
   "ai_zone/assistantPro": typeof ai_zone_assistantPro;
-  "ai_zone/assistantPublic": typeof ai_zone_assistantPublic;
-  "ai_zone/assistantPublicHttp": typeof ai_zone_assistantPublicHttp;
   "ai_zone/assistantWorkspace": typeof ai_zone_assistantWorkspace;
-  "ai_zone/channels/rules/index": typeof ai_zone_channels_rules_index;
-  "ai_zone/channels/whatsapp/actions": typeof ai_zone_channels_whatsapp_actions;
-  "ai_zone/channels/whatsapp/api": typeof ai_zone_channels_whatsapp_api;
-  "ai_zone/channels/whatsapp/preprocess/index": typeof ai_zone_channels_whatsapp_preprocess_index;
-  "ai_zone/channels/whatsapp/preprocess/textPipeline": typeof ai_zone_channels_whatsapp_preprocess_textPipeline;
-  "ai_zone/channels/whatsapp/preprocess/voicePipeline": typeof ai_zone_channels_whatsapp_preprocess_voicePipeline;
-  "ai_zone/channels/whatsapp/service": typeof ai_zone_channels_whatsapp_service;
-  "ai_zone/channels/whatsapp/webhook": typeof ai_zone_channels_whatsapp_webhook;
-  "ai_zone/conversationAnalyzer": typeof ai_zone_conversationAnalyzer;
-  "ai_zone/conversationAnalyzer/aggregate": typeof ai_zone_conversationAnalyzer_aggregate;
-  "ai_zone/conversationAnalyzer/constants": typeof ai_zone_conversationAnalyzer_constants;
-  "ai_zone/conversationAnalyzer/extract": typeof ai_zone_conversationAnalyzer_extract;
-  "ai_zone/conversationAnalyzer/registration": typeof ai_zone_conversationAnalyzer_registration;
-  "ai_zone/conversationAnalyzer/time": typeof ai_zone_conversationAnalyzer_time;
-  "ai_zone/conversationAnalyzer/types": typeof ai_zone_conversationAnalyzer_types;
-  "ai_zone/openMultiAgent/index": typeof ai_zone_openMultiAgent_index;
-  "ai_zone/openMultiAgent/runtime": typeof ai_zone_openMultiAgent_runtime;
+  "ai_zone/assistantWorkspaceNode": typeof ai_zone_assistantWorkspaceNode;
   "ai_zone/services/agUi": typeof ai_zone_services_agUi;
   "ai_zone/services/agUi/types": typeof ai_zone_services_agUi_types;
   "ai_zone/services/assistantService": typeof ai_zone_services_assistantService;
@@ -636,14 +530,12 @@ declare const fullApi: ApiFromModules<{
   "ai_zone/services/assistantService/workspaceProjectAction": typeof ai_zone_services_assistantService_workspaceProjectAction;
   "ai_zone/services/assistantService/workspaceStream": typeof ai_zone_services_assistantService_workspaceStream;
   "ai_zone/services/assistantService/workspaceUi": typeof ai_zone_services_assistantService_workspaceUi;
-  "ai_zone/services/publicAssistantResponse": typeof ai_zone_services_publicAssistantResponse;
-  "ai_zone/services/publicBuyerResponse": typeof ai_zone_services_publicBuyerResponse;
+  "ai_zone/services/assistantSurfaceRuntime": typeof ai_zone_services_assistantSurfaceRuntime;
   "ai_zone/services/voiceSynthesisService": typeof ai_zone_services_voiceSynthesisService;
   "ai_zone/services/voiceTranscriptionService": typeof ai_zone_services_voiceTranscriptionService;
   "ai_zone/workflows/index": typeof ai_zone_workflows_index;
   auditLog: typeof auditLog;
   auth: typeof auth;
-  authz: typeof authz;
   "broker_zone/overview": typeof broker_zone_overview;
   "broker_zone/projects": typeof broker_zone_projects;
   "broker_zone/properties": typeof broker_zone_properties;
@@ -651,9 +543,19 @@ declare const fullApi: ApiFromModules<{
   "broker_zone/repositories/propertiesRepository": typeof broker_zone_repositories_propertiesRepository;
   cascading: typeof cascading;
   crons: typeof crons;
+  enterpriseReadinessMigrations: typeof enterpriseReadinessMigrations;
   http: typeof http;
-  "public_zone/contact": typeof public_zone_contact;
-  "public_zone/forms": typeof public_zone_forms;
+  "lib/authorizationGuard": typeof lib_authorizationGuard;
+  "lib/constants": typeof lib_constants;
+  "lib/tenantGuard": typeof lib_tenantGuard;
+  "model/offers/mutations": typeof model_offers_mutations;
+  "model/offers/queries": typeof model_offers_queries;
+  "model/offers/services": typeof model_offers_services;
+  "model/offers/types": typeof model_offers_types;
+  "properties/mutations": typeof properties_mutations;
+  "public/inbox": typeof public_inbox;
+  "public/offers": typeof public_offers;
+  "public/projects": typeof public_projects;
   "red_zone/overview": typeof red_zone_overview;
   "red_zone/projects": typeof red_zone_projects;
   "red_zone/properties": typeof red_zone_properties;
@@ -661,6 +563,9 @@ declare const fullApi: ApiFromModules<{
   "red_zone/repositories/propertiesRepository": typeof red_zone_repositories_propertiesRepository;
   seed: typeof seed;
   "seed/saudiWorkspaceDataset": typeof seed_saudiWorkspaceDataset;
+  "shared_logic/agencies/assets": typeof shared_logic_agencies_assets;
+  "shared_logic/agencies/index": typeof shared_logic_agencies_index;
+  "shared_logic/agencies/profiles": typeof shared_logic_agencies_profiles;
   "shared_logic/agencies/repositories": typeof shared_logic_agencies_repositories;
   "shared_logic/agencies/repositories/apiKeys": typeof shared_logic_agencies_repositories_apiKeys;
   "shared_logic/agencies/repositories/core": typeof shared_logic_agencies_repositories_core;
@@ -673,29 +578,6 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/analytics/posthog": typeof shared_logic_analytics_posthog;
   "shared_logic/banks/queries": typeof shared_logic_banks_queries;
   "shared_logic/batch/index": typeof shared_logic_batch_index;
-  "shared_logic/buyerComparisons": typeof shared_logic_buyerComparisons;
-  "shared_logic/buyerComparisons/builder": typeof shared_logic_buyerComparisons_builder;
-  "shared_logic/buyerComparisons/index": typeof shared_logic_buyerComparisons_index;
-  "shared_logic/buyerComparisons/mutations": typeof shared_logic_buyerComparisons_mutations;
-  "shared_logic/buyerComparisons/queries": typeof shared_logic_buyerComparisons_queries;
-  "shared_logic/buyerComparisons/types": typeof shared_logic_buyerComparisons_types;
-  "shared_logic/buyerContext": typeof shared_logic_buyerContext;
-  "shared_logic/buyerContext/compiled": typeof shared_logic_buyerContext_compiled;
-  "shared_logic/buyerContext/compiledShared": typeof shared_logic_buyerContext_compiledShared;
-  "shared_logic/buyerContext/compiler/index": typeof shared_logic_buyerContext_compiler_index;
-  "shared_logic/buyerContext/compiler/shared": typeof shared_logic_buyerContext_compiler_shared;
-  "shared_logic/buyerContext/constants": typeof shared_logic_buyerContext_constants;
-  "shared_logic/buyerContext/handlers/contracts": typeof shared_logic_buyerContext_handlers_contracts;
-  "shared_logic/buyerContext/handlers/mutations": typeof shared_logic_buyerContext_handlers_mutations;
-  "shared_logic/buyerContext/handlers/promotion": typeof shared_logic_buyerContext_handlers_promotion;
-  "shared_logic/buyerContext/handlers/queries": typeof shared_logic_buyerContext_handlers_queries;
-  "shared_logic/buyerContext/helpers": typeof shared_logic_buyerContext_helpers;
-  "shared_logic/buyerContext/prompt/index": typeof shared_logic_buyerContext_prompt_index;
-  "shared_logic/buyerContext/storage": typeof shared_logic_buyerContext_storage;
-  "shared_logic/buyerContext/storage/index": typeof shared_logic_buyerContext_storage_index;
-  "shared_logic/buyerContext/summaries": typeof shared_logic_buyerContext_summaries;
-  "shared_logic/buyerContext/summaries/index": typeof shared_logic_buyerContext_summaries_index;
-  "shared_logic/buyerContext/types": typeof shared_logic_buyerContext_types;
   "shared_logic/compliance/contracts": typeof shared_logic_compliance_contracts;
   "shared_logic/compliance/index": typeof shared_logic_compliance_index;
   "shared_logic/compliance/utils": typeof shared_logic_compliance_utils;
@@ -718,15 +600,20 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/inbox/queries": typeof shared_logic_inbox_queries;
   "shared_logic/inbox/types": typeof shared_logic_inbox_types;
   "shared_logic/inbox/utils": typeof shared_logic_inbox_utils;
+  "shared_logic/integrations/index": typeof shared_logic_integrations_index;
+  "shared_logic/integrations/llmCache": typeof shared_logic_integrations_llmCache;
+  "shared_logic/integrations/llmCacheNode": typeof shared_logic_integrations_llmCacheNode;
+  "shared_logic/integrations/uploadthing": typeof shared_logic_integrations_uploadthing;
+  "shared_logic/integrations/zaneAiWebhook": typeof shared_logic_integrations_zaneAiWebhook;
   "shared_logic/knowledge/index": typeof shared_logic_knowledge_index;
   "shared_logic/lib/constants": typeof shared_logic_lib_constants;
   "shared_logic/lib/core/errors": typeof shared_logic_lib_core_errors;
   "shared_logic/lib/core/index": typeof shared_logic_lib_core_index;
   "shared_logic/lib/core/logger": typeof shared_logic_lib_core_logger;
   "shared_logic/lib/core/utilities": typeof shared_logic_lib_core_utilities;
+  "shared_logic/lib/files": typeof shared_logic_lib_files;
   "shared_logic/lib/httpFetch": typeof shared_logic_lib_httpFetch;
   "shared_logic/lib/language": typeof shared_logic_lib_language;
-  "shared_logic/lib/middleware/channelDetect": typeof shared_logic_lib_middleware_channelDetect;
   "shared_logic/lib/middleware/guard": typeof shared_logic_lib_middleware_guard;
   "shared_logic/lib/middleware/index": typeof shared_logic_lib_middleware_index;
   "shared_logic/lib/middleware/rateLimit": typeof shared_logic_lib_middleware_rateLimit;
@@ -749,12 +636,18 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/market/analytics/types": typeof shared_logic_market_analytics_types;
   "shared_logic/market/analytics/utils": typeof shared_logic_market_analytics_utils;
   "shared_logic/market/normalizers": typeof shared_logic_market_normalizers;
+  "shared_logic/market/public": typeof shared_logic_market_public;
+  "shared_logic/memory/persona": typeof shared_logic_memory_persona;
   "shared_logic/memory/repository": typeof shared_logic_memory_repository;
   "shared_logic/memory/repository/getRelevantContextInternal": typeof shared_logic_memory_repository_getRelevantContextInternal;
   "shared_logic/memory/repository/getRelevantMemoriesByQuery": typeof shared_logic_memory_repository_getRelevantMemoriesByQuery;
   "shared_logic/memory/repository/shared": typeof shared_logic_memory_repository_shared;
   "shared_logic/notifications": typeof shared_logic_notifications;
+  "shared_logic/notifications/index": typeof shared_logic_notifications_index;
+  "shared_logic/notifications/node": typeof shared_logic_notifications_node;
+  "shared_logic/notifications/workflows": typeof shared_logic_notifications_workflows;
   "shared_logic/notificationsNode": typeof shared_logic_notificationsNode;
+  "shared_logic/oauth/clientMirror": typeof shared_logic_oauth_clientMirror;
   "shared_logic/oauth/index": typeof shared_logic_oauth_index;
   "shared_logic/oauth/internal": typeof shared_logic_oauth_internal;
   "shared_logic/oauth/internal/audit": typeof shared_logic_oauth_internal_audit;
@@ -772,6 +665,7 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/offers/access": typeof shared_logic_offers_access;
   "shared_logic/offers/cases": typeof shared_logic_offers_cases;
   "shared_logic/offers/cases/index": typeof shared_logic_offers_cases_index;
+  "shared_logic/offers/cases/migrations": typeof shared_logic_offers_cases_migrations;
   "shared_logic/offers/cases/mutations": typeof shared_logic_offers_cases_mutations;
   "shared_logic/offers/cases/queries": typeof shared_logic_offers_cases_queries;
   "shared_logic/offers/cases/repositories": typeof shared_logic_offers_cases_repositories;
@@ -788,6 +682,7 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/offers/mutations/respond": typeof shared_logic_offers_mutations_respond;
   "shared_logic/offers/mutations/sideEffects": typeof shared_logic_offers_mutations_sideEffects;
   "shared_logic/offers/mutations/types": typeof shared_logic_offers_mutations_types;
+  "shared_logic/offers/public": typeof shared_logic_offers_public;
   "shared_logic/offers/queries": typeof shared_logic_offers_queries;
   "shared_logic/offers/recipients": typeof shared_logic_offers_recipients;
   "shared_logic/organizationAssets": typeof shared_logic_organizationAssets;
@@ -795,11 +690,16 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/projectAccess": typeof shared_logic_projectAccess;
   "shared_logic/projectAnalytics": typeof shared_logic_projectAnalytics;
   "shared_logic/projectDetails": typeof shared_logic_projectDetails;
+  "shared_logic/projects/access": typeof shared_logic_projects_access;
+  "shared_logic/projects/analytics": typeof shared_logic_projects_analytics;
+  "shared_logic/projects/details": typeof shared_logic_projects_details;
   "shared_logic/projects/events": typeof shared_logic_projects_events;
+  "shared_logic/projects/index": typeof shared_logic_projects_index;
   "shared_logic/projects/migrations": typeof shared_logic_projects_migrations;
   "shared_logic/projects/operations": typeof shared_logic_projects_operations;
   "shared_logic/projects/readiness": typeof shared_logic_projects_readiness;
   "shared_logic/projects/validation": typeof shared_logic_projects_validation;
+  "shared_logic/properties/accessControl": typeof shared_logic_properties_accessControl;
   "shared_logic/properties/cache": typeof shared_logic_properties_cache;
   "shared_logic/properties/history": typeof shared_logic_properties_history;
   "shared_logic/properties/ownerScoped/index": typeof shared_logic_properties_ownerScoped_index;
@@ -813,7 +713,6 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/uploadthing": typeof shared_logic_uploadthing;
   "shared_logic/users/index": typeof shared_logic_users_index;
   "shared_logic/users/session": typeof shared_logic_users_session;
-  "shared_logic/users/whatsapp": typeof shared_logic_users_whatsapp;
   "shared_logic/verifications/index": typeof shared_logic_verifications_index;
   "shared_logic/verifications/submissions": typeof shared_logic_verifications_submissions;
   "shared_logic/verifications/types/index": typeof shared_logic_verifications_types_index;
@@ -821,25 +720,10 @@ declare const fullApi: ApiFromModules<{
   "shared_logic/workspaceWorkflows": typeof shared_logic_workspaceWorkflows;
   tenants: typeof tenants;
   uploadthing: typeof uploadthing;
-  "user_zone/mobile/account": typeof user_zone_mobile_account;
-  "user_zone/mobile/analytics": typeof user_zone_mobile_analytics;
-  "user_zone/mobile/assistant": typeof user_zone_mobile_assistant;
-  "user_zone/mobile/contracts": typeof user_zone_mobile_contracts;
-  "user_zone/mobile/feed": typeof user_zone_mobile_feed;
-  "user_zone/mobile/finance": typeof user_zone_mobile_finance;
-  "user_zone/mobile/viewer": typeof user_zone_mobile_viewer;
-  "user_zone/web/assistant": typeof user_zone_web_assistant;
-  "user_zone/web/contracts": typeof user_zone_web_contracts;
-  "user_zone/web/orders": typeof user_zone_web_orders;
-  "user_zone/web/properties": typeof user_zone_web_properties;
-  "user_zone/web/threads": typeof user_zone_web_threads;
-  "user_zone/whatsapp/contracts": typeof user_zone_whatsapp_contracts;
-  "user_zone/whatsapp/formatters": typeof user_zone_whatsapp_formatters;
-  "user_zone/whatsapp/handoff": typeof user_zone_whatsapp_handoff;
-  "user_zone/whatsapp/index": typeof user_zone_whatsapp_index;
-  "user_zone/whatsapp/propertyFlow": typeof user_zone_whatsapp_propertyFlow;
-  "user_zone/whatsapp/searchFlow": typeof user_zone_whatsapp_searchFlow;
-  "user_zone/whatsapp/state": typeof user_zone_whatsapp_state;
+  "validations/convex": typeof validations_convex;
+  "validations/files": typeof validations_files;
+  "validations/index": typeof validations_index;
+  "validations/offers": typeof validations_offers;
 }>;
 
 /**
@@ -5840,6 +5724,47 @@ export declare const components: {
                   publicKey: string;
                 };
                 model: "jwks";
+              }
+            | {
+                data: {
+                  clientId: string;
+                  clientSecret?: string;
+                  createdAt: number;
+                  disabled?: boolean;
+                  icon?: string;
+                  metadata?: string;
+                  name: string;
+                  redirectUrls: string;
+                  type: string;
+                  updatedAt: number;
+                  userId?: string;
+                };
+                model: "oauthApplication";
+              }
+            | {
+                data: {
+                  accessToken: string;
+                  accessTokenExpiresAt: number;
+                  clientId: string;
+                  createdAt: number;
+                  refreshToken: string;
+                  refreshTokenExpiresAt: number;
+                  scopes: string;
+                  updatedAt: number;
+                  userId?: string;
+                };
+                model: "oauthAccessToken";
+              }
+            | {
+                data: {
+                  clientId: string;
+                  consentGiven: boolean;
+                  createdAt: number;
+                  scopes: string;
+                  updatedAt: number;
+                  userId: string;
+                };
+                model: "oauthConsent";
               };
           onCreateHandle?: string;
           select?: Array<string>;
@@ -6097,6 +6022,113 @@ export declare const components: {
                     | "privateKey"
                     | "createdAt"
                     | "expiresAt"
+                    | "_id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "oauthApplication";
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "clientId"
+                    | "clientSecret"
+                    | "type"
+                    | "name"
+                    | "icon"
+                    | "metadata"
+                    | "disabled"
+                    | "redirectUrls"
+                    | "userId"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "_id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "oauthAccessToken";
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "accessToken"
+                    | "refreshToken"
+                    | "accessTokenExpiresAt"
+                    | "refreshTokenExpiresAt"
+                    | "clientId"
+                    | "userId"
+                    | "scopes"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "_id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "oauthConsent";
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "clientId"
+                    | "userId"
+                    | "scopes"
+                    | "consentGiven"
+                    | "createdAt"
+                    | "updatedAt"
                     | "_id";
                   operator?:
                     | "lt"
@@ -6403,6 +6435,113 @@ export declare const components: {
                     | Array<number>
                     | null;
                 }>;
+              }
+            | {
+                model: "oauthApplication";
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "clientId"
+                    | "clientSecret"
+                    | "type"
+                    | "name"
+                    | "icon"
+                    | "metadata"
+                    | "disabled"
+                    | "redirectUrls"
+                    | "userId"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "_id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "oauthAccessToken";
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "accessToken"
+                    | "refreshToken"
+                    | "accessTokenExpiresAt"
+                    | "refreshTokenExpiresAt"
+                    | "clientId"
+                    | "userId"
+                    | "scopes"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "_id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "oauthConsent";
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "clientId"
+                    | "userId"
+                    | "scopes"
+                    | "consentGiven"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "_id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
               };
           onDeleteHandle?: string;
         },
@@ -6422,7 +6561,10 @@ export declare const components: {
             | "organization"
             | "member"
             | "invitation"
-            | "jwks";
+            | "jwks"
+            | "oauthApplication"
+            | "oauthAccessToken"
+            | "oauthConsent";
           offset?: number;
           paginationOpts: {
             cursor: string | null;
@@ -6473,7 +6615,10 @@ export declare const components: {
             | "organization"
             | "member"
             | "invitation"
-            | "jwks";
+            | "jwks"
+            | "oauthApplication"
+            | "oauthAccessToken"
+            | "oauthConsent";
           select?: Array<string>;
           where?: Array<{
             connector?: "AND" | "OR";
@@ -6841,6 +6986,145 @@ export declare const components: {
                     | Array<number>
                     | null;
                 }>;
+              }
+            | {
+                model: "oauthApplication";
+                update: {
+                  clientId?: string;
+                  clientSecret?: string;
+                  createdAt?: number;
+                  disabled?: boolean;
+                  icon?: string;
+                  metadata?: string;
+                  name?: string;
+                  redirectUrls?: string;
+                  type?: string;
+                  updatedAt?: number;
+                  userId?: string;
+                };
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "clientId"
+                    | "clientSecret"
+                    | "type"
+                    | "name"
+                    | "icon"
+                    | "metadata"
+                    | "disabled"
+                    | "redirectUrls"
+                    | "userId"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "_id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "oauthAccessToken";
+                update: {
+                  accessToken?: string;
+                  accessTokenExpiresAt?: number;
+                  clientId?: string;
+                  createdAt?: number;
+                  refreshToken?: string;
+                  refreshTokenExpiresAt?: number;
+                  scopes?: string;
+                  updatedAt?: number;
+                  userId?: string;
+                };
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "accessToken"
+                    | "refreshToken"
+                    | "accessTokenExpiresAt"
+                    | "refreshTokenExpiresAt"
+                    | "clientId"
+                    | "userId"
+                    | "scopes"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "_id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "oauthConsent";
+                update: {
+                  clientId?: string;
+                  consentGiven?: boolean;
+                  createdAt?: number;
+                  scopes?: string;
+                  updatedAt?: number;
+                  userId?: string;
+                };
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "clientId"
+                    | "userId"
+                    | "scopes"
+                    | "consentGiven"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "_id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
               };
           onUpdateHandle?: string;
           paginationOpts: {
@@ -7173,6 +7457,145 @@ export declare const components: {
                     | "privateKey"
                     | "createdAt"
                     | "expiresAt"
+                    | "_id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "oauthApplication";
+                update: {
+                  clientId?: string;
+                  clientSecret?: string;
+                  createdAt?: number;
+                  disabled?: boolean;
+                  icon?: string;
+                  metadata?: string;
+                  name?: string;
+                  redirectUrls?: string;
+                  type?: string;
+                  updatedAt?: number;
+                  userId?: string;
+                };
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "clientId"
+                    | "clientSecret"
+                    | "type"
+                    | "name"
+                    | "icon"
+                    | "metadata"
+                    | "disabled"
+                    | "redirectUrls"
+                    | "userId"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "_id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "oauthAccessToken";
+                update: {
+                  accessToken?: string;
+                  accessTokenExpiresAt?: number;
+                  clientId?: string;
+                  createdAt?: number;
+                  refreshToken?: string;
+                  refreshTokenExpiresAt?: number;
+                  scopes?: string;
+                  updatedAt?: number;
+                  userId?: string;
+                };
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "accessToken"
+                    | "refreshToken"
+                    | "accessTokenExpiresAt"
+                    | "refreshTokenExpiresAt"
+                    | "clientId"
+                    | "userId"
+                    | "scopes"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "_id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "oauthConsent";
+                update: {
+                  clientId?: string;
+                  consentGiven?: boolean;
+                  createdAt?: number;
+                  scopes?: string;
+                  updatedAt?: number;
+                  userId?: string;
+                };
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "clientId"
+                    | "userId"
+                    | "scopes"
+                    | "consentGiven"
+                    | "createdAt"
+                    | "updatedAt"
                     | "_id";
                   operator?:
                     | "lt"
@@ -9002,475 +9425,6 @@ export declare const components: {
         "internal",
         { memberUserId: string; role: string; teamId: string; userId: string },
         null
-      >;
-    };
-  };
-  authz: {
-    indexed: {
-      addRelationWithCompute: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          createdBy?: string;
-          inheritedRelations?: Array<{
-            fromObjectType: string;
-            fromRelation: string;
-            relation: string;
-          }>;
-          objectId: string;
-          objectType: string;
-          relation: string;
-          subjectId: string;
-          subjectType: string;
-        },
-        string
-      >;
-      assignRoleWithCompute: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          assignedBy?: string;
-          expiresAt?: number;
-          role: string;
-          rolePermissions: Array<string>;
-          scope?: { id: string; type: string };
-          userId: string;
-        },
-        string
-      >;
-      checkPermissionFast: FunctionReference<
-        "query",
-        "internal",
-        {
-          objectId?: string;
-          objectType?: string;
-          permission: string;
-          userId: string;
-        },
-        boolean
-      >;
-      cleanupExpired: FunctionReference<
-        "mutation",
-        "internal",
-        {},
-        { expiredPermissions: number; expiredRoles: number }
-      >;
-      denyPermissionDirect: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          deniedBy?: string;
-          expiresAt?: number;
-          permission: string;
-          reason?: string;
-          scope?: { id: string; type: string };
-          userId: string;
-        },
-        string
-      >;
-      getUserPermissionsFast: FunctionReference<
-        "query",
-        "internal",
-        { scopeKey?: string; userId: string },
-        Array<{
-          effect: string;
-          permission: string;
-          scopeKey: string;
-          sources: Array<string>;
-        }>
-      >;
-      getUserRolesFast: FunctionReference<
-        "query",
-        "internal",
-        { scopeKey?: string; userId: string },
-        Array<{
-          role: string;
-          scope?: { id: string; type: string };
-          scopeKey: string;
-        }>
-      >;
-      grantPermissionDirect: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          expiresAt?: number;
-          grantedBy?: string;
-          permission: string;
-          reason?: string;
-          scope?: { id: string; type: string };
-          userId: string;
-        },
-        string
-      >;
-      hasRelationFast: FunctionReference<
-        "query",
-        "internal",
-        {
-          objectId: string;
-          objectType: string;
-          relation: string;
-          subjectId: string;
-          subjectType: string;
-        },
-        boolean
-      >;
-      hasRoleFast: FunctionReference<
-        "query",
-        "internal",
-        {
-          objectId?: string;
-          objectType?: string;
-          role: string;
-          userId: string;
-        },
-        boolean
-      >;
-      removeRelationWithCompute: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          objectId: string;
-          objectType: string;
-          relation: string;
-          subjectId: string;
-          subjectType: string;
-        },
-        boolean
-      >;
-      revokeRoleWithCompute: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          role: string;
-          rolePermissions: Array<string>;
-          scope?: { id: string; type: string };
-          userId: string;
-        },
-        boolean
-      >;
-    };
-    mutations: {
-      assignRole: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          assignedBy?: string;
-          enableAudit?: boolean;
-          expiresAt?: number;
-          metadata?: any;
-          role: string;
-          scope?: { id: string; type: string };
-          userId: string;
-        },
-        string
-      >;
-      cleanupExpired: FunctionReference<
-        "mutation",
-        "internal",
-        {},
-        { expiredOverrides: number; expiredRoles: number }
-      >;
-      denyPermission: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          createdBy?: string;
-          enableAudit?: boolean;
-          expiresAt?: number;
-          permission: string;
-          reason?: string;
-          scope?: { id: string; type: string };
-          userId: string;
-        },
-        string
-      >;
-      grantPermission: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          createdBy?: string;
-          enableAudit?: boolean;
-          expiresAt?: number;
-          permission: string;
-          reason?: string;
-          scope?: { id: string; type: string };
-          userId: string;
-        },
-        string
-      >;
-      logPermissionCheck: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          permission: string;
-          reason?: string;
-          result: boolean;
-          scope?: { id: string; type: string };
-          userId: string;
-        },
-        null
-      >;
-      removeAllAttributes: FunctionReference<
-        "mutation",
-        "internal",
-        { enableAudit?: boolean; removedBy?: string; userId: string },
-        number
-      >;
-      removeAttribute: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          enableAudit?: boolean;
-          key: string;
-          removedBy?: string;
-          userId: string;
-        },
-        boolean
-      >;
-      removePermissionOverride: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          enableAudit?: boolean;
-          permission: string;
-          removedBy?: string;
-          scope?: { id: string; type: string };
-          userId: string;
-        },
-        boolean
-      >;
-      revokeAllRoles: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          enableAudit?: boolean;
-          revokedBy?: string;
-          scope?: { id: string; type: string };
-          userId: string;
-        },
-        number
-      >;
-      revokeRole: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          enableAudit?: boolean;
-          revokedBy?: string;
-          role: string;
-          scope?: { id: string; type: string };
-          userId: string;
-        },
-        boolean
-      >;
-      setAttribute: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          enableAudit?: boolean;
-          key: string;
-          setBy?: string;
-          userId: string;
-          value: any;
-        },
-        string
-      >;
-    };
-    queries: {
-      checkPermission: FunctionReference<
-        "query",
-        "internal",
-        {
-          permission: string;
-          rolePermissions: Record<string, Array<string>>;
-          scope?: { id: string; type: string };
-          userId: string;
-        },
-        {
-          allowed: boolean;
-          matchedOverride?: string;
-          matchedRole?: string;
-          reason: string;
-        }
-      >;
-      getAuditLog: FunctionReference<
-        "query",
-        "internal",
-        {
-          action?:
-            | "permission_check"
-            | "role_assigned"
-            | "role_revoked"
-            | "permission_granted"
-            | "permission_denied"
-            | "attribute_set"
-            | "attribute_removed";
-          limit?: number;
-          userId?: string;
-        },
-        Array<{
-          _id: string;
-          action: string;
-          actorId?: string;
-          details: any;
-          timestamp: number;
-          userId: string;
-        }>
-      >;
-      getEffectivePermissions: FunctionReference<
-        "query",
-        "internal",
-        {
-          rolePermissions: Record<string, Array<string>>;
-          scope?: { id: string; type: string };
-          userId: string;
-        },
-        {
-          deniedPermissions: Array<string>;
-          permissions: Array<string>;
-          roles: Array<string>;
-        }
-      >;
-      getPermissionOverrides: FunctionReference<
-        "query",
-        "internal",
-        { permission?: string; userId: string },
-        Array<{
-          _id: string;
-          effect: "allow" | "deny";
-          expiresAt?: number;
-          permission: string;
-          reason?: string;
-          scope?: { id: string; type: string };
-        }>
-      >;
-      getUserAttribute: FunctionReference<
-        "query",
-        "internal",
-        { key: string; userId: string },
-        null | any
-      >;
-      getUserAttributes: FunctionReference<
-        "query",
-        "internal",
-        { userId: string },
-        Array<{ _id: string; key: string; value: any }>
-      >;
-      getUserRoles: FunctionReference<
-        "query",
-        "internal",
-        { scope?: { id: string; type: string }; userId: string },
-        Array<{
-          _id: string;
-          expiresAt?: number;
-          metadata?: any;
-          role: string;
-          scope?: { id: string; type: string };
-        }>
-      >;
-      getUsersWithRole: FunctionReference<
-        "query",
-        "internal",
-        { role: string; scope?: { id: string; type: string } },
-        Array<{ assignedAt: number; expiresAt?: number; userId: string }>
-      >;
-      hasRole: FunctionReference<
-        "query",
-        "internal",
-        { role: string; scope?: { id: string; type: string }; userId: string },
-        boolean
-      >;
-    };
-    rebac: {
-      addRelation: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          createdBy?: string;
-          objectId: string;
-          objectType: string;
-          relation: string;
-          subjectId: string;
-          subjectType: string;
-        },
-        string
-      >;
-      checkRelationWithTraversal: FunctionReference<
-        "query",
-        "internal",
-        {
-          maxDepth?: number;
-          objectId: string;
-          objectType: string;
-          relation: string;
-          subjectId: string;
-          subjectType: string;
-          traversalRules?: any;
-        },
-        { allowed: boolean; path: Array<string>; reason: string }
-      >;
-      getObjectRelations: FunctionReference<
-        "query",
-        "internal",
-        { objectId: string; objectType: string; relation?: string },
-        Array<{
-          _id: string;
-          relation: string;
-          subjectId: string;
-          subjectType: string;
-        }>
-      >;
-      getSubjectRelations: FunctionReference<
-        "query",
-        "internal",
-        { objectType?: string; subjectId: string; subjectType: string },
-        Array<{
-          _id: string;
-          objectId: string;
-          objectType: string;
-          relation: string;
-        }>
-      >;
-      hasDirectRelation: FunctionReference<
-        "query",
-        "internal",
-        {
-          objectId: string;
-          objectType: string;
-          relation: string;
-          subjectId: string;
-          subjectType: string;
-        },
-        boolean
-      >;
-      listAccessibleObjects: FunctionReference<
-        "query",
-        "internal",
-        {
-          objectType: string;
-          relation: string;
-          subjectId: string;
-          subjectType: string;
-          traversalRules?: any;
-        },
-        Array<{ objectId: string; via: string }>
-      >;
-      listUsersWithAccess: FunctionReference<
-        "query",
-        "internal",
-        { objectId: string; objectType: string; relation: string },
-        Array<{ userId: string; via: string }>
-      >;
-      removeRelation: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          objectId: string;
-          objectType: string;
-          relation: string;
-          subjectId: string;
-          subjectType: string;
-        },
-        boolean
       >;
     };
   };

@@ -16,7 +16,8 @@ const mockTenants = {
 const mockRequireRole = vi.fn(async () => ({ authUserId: "admin-auth" }));
 
 vi.mock("../tenants", () => ({ tenants: mockTenants }));
-vi.mock("../_core/security/accessPolicy", () => ({ requireRole: mockRequireRole }));
+vi.mock("../_core/security/accessPolicy", () => ({ requireRole: mockRequireRole,
+  requireAdminAccess: mockRequireRole }));
 
 function stubRandomUUID() {
   const original = globalThis.crypto?.randomUUID;
@@ -67,8 +68,8 @@ async function insertOwnerProfiles(ctx: any, brokerId: any, redId: any) {
     authUserId: "auth-red-owner",
     email: "red@owner.com",
     name: "RED Owner",
-    REDId: redId,
-    role: "RED",
+    developerId: redId,
+    role: "developer",
     roleStatus: "approved",
     isActive: true,
   } as any);

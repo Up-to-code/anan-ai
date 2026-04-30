@@ -1,4 +1,4 @@
-import { fetchQuery } from "convex/nextjs";
+import { createRepositoryRefs, queryRef } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 import type { SessionUser } from "@/server/contracts/session";
 
@@ -6,7 +6,7 @@ type SessionApiRefs = {
   getSessionUser: unknown;
 };
 
-const sessionApi = (apiUnsafe["shared_logic/users/session"]) as SessionApiRefs;
+const sessionApi = createRepositoryRefs<SessionApiRefs>(apiUnsafe, "shared_logic/users/session");
 
 /**
  * WHY:   Domain services should depend on repository contracts instead of raw Convex calls.
@@ -24,9 +24,7 @@ export type SessionsRepository = {
  */
 export const convexSessionsRepository: SessionsRepository = {
   async getCurrent(token) {
-    const user = (await fetchQuery(sessionApi.getSessionUser as never, {} as never, {
-      token,
-    })) as SessionUser | null;
+    const user = await queryRef<SessionUser | null>(token, sessionApi.getSessionUser);
     return user;
   },
 };

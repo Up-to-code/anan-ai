@@ -6,7 +6,7 @@ import {
 
 type OverviewPayload = Awaited<ReturnType<typeof convexAdminCommandCenterRepository.getOverview>>;
 type CommercialPayload = Awaited<ReturnType<typeof convexAdminCommandCenterRepository.getCommercialAnalytics>>;
-type PartnerPayload = Awaited<ReturnType<typeof convexAdminCommandCenterRepository.getPartnerHealthAnalytics>>;
+type EcosystemPayload = Awaited<ReturnType<typeof convexAdminCommandCenterRepository.getEcosystemHealthAnalytics>>;
 type QueuePayload = Awaited<ReturnType<typeof convexAdminCommandCenterRepository.getQueueHealthAnalytics>>;
 
 export type CommandCenterMetricCard = {
@@ -120,7 +120,7 @@ export type CommandCenterAnalyticsViewModel = {
     pipelineValue: string;
     pipelineFallbackCount: string;
   };
-  partner: {
+  ecosystem: {
     onboardingTrend: Array<{ label: string; brokers: number; developers: number }>;
     verificationMixRows: Array<{
       label: string;
@@ -196,7 +196,7 @@ function statusEntries(record: Record<string, number>) {
 }
 
 function buildTopOrganizationsViewModel(
-  organizations: OverviewPayload["topOrganizations"] | PartnerPayload["topOrganizations"],
+  organizations: OverviewPayload["topOrganizations"] | EcosystemPayload["topOrganizations"],
 ): CommandCenterOverviewViewModel["topOrganizations"] {
   return organizations.map((organization) => ({
     id: organization.organizationKey,
@@ -217,9 +217,9 @@ function buildInsights(args: {
   commercial: CommercialPayload;
   queue: QueuePayload;
 }): CommandCenterInsight[] {
-  const demandPerVerifiedPartner =
-    args.overview.partnerHealth.verifiedOrganizations > 0
-      ? args.overview.kpis.activeUsers.current / args.overview.partnerHealth.verifiedOrganizations
+  const demandPerVerifiedOrganization =
+    args.overview.ecosystemHealth.verifiedOrganizations > 0
+      ? args.overview.kpis.activeUsers.current / args.overview.ecosystemHealth.verifiedOrganizations
       : args.overview.kpis.activeUsers.current;
   const verificationBacklog =
     args.queue.summary.newVerifications + args.queue.summary.inReviewVerifications;
@@ -232,11 +232,11 @@ function buildInsights(args: {
 
   const insights: CommandCenterInsight[] = [];
 
-  if (demandPerVerifiedPartner >= 18) {
+  if (demandPerVerifiedOrganization >= 18) {
     insights.push({
-      id: "demand-vs-partners",
-      title: "الطلب أسرع من سعة الشركاء",
-      body: `متوسط الحمل الحالي يقترب من ${formatNumber(demandPerVerifiedPartner)} مستخدمًا نشطًا لكل جهة موثقة، ما يشير إلى حاجة لتوسيع الشركاء أو رفع اعتماد الجهات المؤهلة.`,
+      id: "demand-vs-ecosystem",
+      title: "الطلب أسرع من سعة الشبكة",
+      body: `متوسط الحمل الحالي يقترب من ${formatNumber(demandPerVerifiedOrganization)} مستخدمًا نشطًا لكل جهة موثقة، ما يشير إلى حاجة لتوسيع الشبكة أو رفع اعتماد الجهات المؤهلة.`,
       tone: "warn",
     });
   }
@@ -259,11 +259,11 @@ function buildInsights(args: {
     });
   }
 
-  if (apiRisk > 0 || args.overview.partnerHealth.restrictedOrganizations > 0) {
+  if (apiRisk > 0 || args.overview.ecosystemHealth.restrictedOrganizations > 0) {
     insights.push({
       id: "integration-risk",
       title: "مخاطر تكامل تحتاج متابعة",
-      body: `هناك ${formatNumber(apiRisk)} مفاتيح عالية المخاطر و${formatNumber(args.overview.partnerHealth.restrictedOrganizations)} جهات مقيدة بالسياسات، ما قد يقطع التدفق بين الطلب والتفعيل لدى بعض الشركاء.`,
+      body: `هناك ${formatNumber(apiRisk)} مفاتيح عالية المخاطر و${formatNumber(args.overview.ecosystemHealth.restrictedOrganizations)} جهات مقيدة بالسياسات، ما قد يقطع التدفق بين الطلب والتفعيل لدى بعض الجهات.`,
       tone: "warn",
     });
   }
@@ -272,7 +272,7 @@ function buildInsights(args: {
     insights.push({
       id: "healthy-system",
       title: "التدفق متوازن حاليًا",
-      body: "الطلب، القنوات، وسعة الشركاء متقاربة نسبيًا في هذه النافذة، لذلك يمكن تشغيل الفريق على تحسين جودة الإغلاق بدلًا من إطفاء الحرائق.",
+      body: "الطلب، القنوات، وسعة الشبكة متقاربة نسبيًا في هذه النافذة، لذلك يمكن تشغيل الفريق على تحسين جودة الإغلاق بدلًا من إطفاء الحرائق.",
       tone: "positive",
     });
   }
@@ -302,7 +302,7 @@ export function buildOverviewCommandCenterViewModel(args: {
     verificationBacklog +
     args.overview.queueHealth.errorEvents +
     args.overview.apiRisk.deniedKeys +
-    args.overview.partnerHealth.restrictedOrganizations;
+    args.overview.ecosystemHealth.restrictedOrganizations;
 
   return {
     range: args.range,
@@ -379,24 +379,24 @@ export function buildOverviewCommandCenterViewModel(args: {
           })),
         },
         {
-          id: "partners",
-          label: "سعة الشركاء",
+          id: "ecosystem",
+          label: "سعة الشبكة",
           summary: "من يستطيع استقبال الطلب وتحويله.",
           totalValue:
             Math.max(
-              args.overview.partnerHealth.brokers +
-                args.overview.partnerHealth.developers +
-                args.overview.partnerHealth.verifiedOrganizations +
-                args.overview.partnerHealth.actionModeOrganizations,
+              args.overview.ecosystemHealth.brokers +
+                args.overview.ecosystemHealth.developers +
+                args.overview.ecosystemHealth.verifiedOrganizations +
+                args.overview.ecosystemHealth.actionModeOrganizations,
               1,
             ),
-          totalDisplayValue: formatNumber(args.overview.partnerHealth.verifiedOrganizations),
+          totalDisplayValue: formatNumber(args.overview.ecosystemHealth.verifiedOrganizations),
           accent: "var(--chart-teal)",
           metrics: [
-            { id: "brokers", label: "وسطاء", value: args.overview.partnerHealth.brokers, displayValue: formatNumber(args.overview.partnerHealth.brokers) },
-            { id: "developers", label: "مطورون", value: args.overview.partnerHealth.developers, displayValue: formatNumber(args.overview.partnerHealth.developers) },
-            { id: "verified", label: "جهات موثقة", value: args.overview.partnerHealth.verifiedOrganizations, displayValue: formatNumber(args.overview.partnerHealth.verifiedOrganizations) },
-            { id: "action-mode", label: "Action Mode", value: args.overview.partnerHealth.actionModeOrganizations, displayValue: formatNumber(args.overview.partnerHealth.actionModeOrganizations) },
+            { id: "brokers", label: "وسطاء", value: args.overview.ecosystemHealth.brokers, displayValue: formatNumber(args.overview.ecosystemHealth.brokers) },
+            { id: "developers", label: "مطورون", value: args.overview.ecosystemHealth.developers, displayValue: formatNumber(args.overview.ecosystemHealth.developers) },
+            { id: "verified", label: "جهات موثقة", value: args.overview.ecosystemHealth.verifiedOrganizations, displayValue: formatNumber(args.overview.ecosystemHealth.verifiedOrganizations) },
+            { id: "action-mode", label: "Action Mode", value: args.overview.ecosystemHealth.actionModeOrganizations, displayValue: formatNumber(args.overview.ecosystemHealth.actionModeOrganizations) },
           ],
         },
         {
@@ -431,7 +431,7 @@ export function buildOverviewCommandCenterViewModel(args: {
             { id: "unassigned", label: "طلبات غير مسندة", value: args.overview.queueHealth.unassignedOrders, displayValue: formatNumber(args.overview.queueHealth.unassignedOrders) },
             { id: "verification", label: "تراكم التوثيق", value: verificationBacklog, displayValue: formatNumber(verificationBacklog) },
             { id: "errors", label: "أخطاء حديثة", value: args.overview.queueHealth.errorEvents, displayValue: formatNumber(args.overview.queueHealth.errorEvents) },
-            { id: "api-risk", label: "رفض API وسياسات", value: args.overview.apiRisk.deniedKeys + args.overview.partnerHealth.restrictedOrganizations, displayValue: formatNumber(args.overview.apiRisk.deniedKeys + args.overview.partnerHealth.restrictedOrganizations) },
+            { id: "api-risk", label: "رفض API وسياسات", value: args.overview.apiRisk.deniedKeys + args.overview.ecosystemHealth.restrictedOrganizations, displayValue: formatNumber(args.overview.apiRisk.deniedKeys + args.overview.ecosystemHealth.restrictedOrganizations) },
           ],
         },
       ],
@@ -445,16 +445,16 @@ export function buildOverviewCommandCenterViewModel(args: {
           displayValue: formatNumber(channelTotal),
         },
         {
-          id: "channels-partners",
+          id: "channels-ecosystem",
           sourceId: "channels",
-          targetId: "partners",
-          value: Math.max(args.overview.partnerHealth.verifiedOrganizations + args.overview.partnerHealth.actionModeOrganizations, 1),
+          targetId: "ecosystem",
+          value: Math.max(args.overview.ecosystemHealth.verifiedOrganizations + args.overview.ecosystemHealth.actionModeOrganizations, 1),
           label: "قدرة الاستيعاب",
-          displayValue: formatNumber(args.overview.partnerHealth.verifiedOrganizations + args.overview.partnerHealth.actionModeOrganizations),
+          displayValue: formatNumber(args.overview.ecosystemHealth.verifiedOrganizations + args.overview.ecosystemHealth.actionModeOrganizations),
         },
         {
-          id: "partners-pipeline",
-          sourceId: "partners",
+          id: "ecosystem-pipeline",
+          sourceId: "ecosystem",
           targetId: "pipeline",
           value: Math.max(args.overview.kpis.qualifiedOrders.current + args.overview.kpis.offerVolume.current, 1),
           label: "تحويل تجاري",
@@ -542,14 +542,14 @@ export function buildOverviewCommandCenterViewModel(args: {
 }
 
 /**
- * WHY:   The analytics route needs one render-ready model that groups the live commercial, partner, and queue datasets into chart-friendly sections.
+ * WHY:   The analytics route needs one render-ready model that groups the live commercial, ecosystem, and queue datasets into chart-friendly sections.
  * WHAT:  Maps the three command-center analytics payloads into summary cards, chart rows, and ranked operational lists.
  * HOW:   Preserves the source metrics while normalizing labels, colors, and table/list structures for the admin presentation layer.
  */
 export function buildAnalyticsCommandCenterViewModel(args: {
   range: AdminCommandCenterRange;
   commercial: CommercialPayload;
-  partner: PartnerPayload;
+  ecosystem: EcosystemPayload;
   queue: QueuePayload;
 }): CommandCenterAnalyticsViewModel {
   return {
@@ -578,8 +578,8 @@ export function buildAnalyticsCommandCenterViewModel(args: {
       {
         key: "active-subscriptions",
         label: "اشتراكات نشطة",
-        value: formatNumber(args.partner.summary.activeSubscriptions),
-        hint: `${formatNumber(args.partner.summary.trialSubscriptions)} اشتراكًا تجريبيًا.`,
+        value: formatNumber(args.ecosystem.summary.activeSubscriptions),
+        hint: `${formatNumber(args.ecosystem.summary.trialSubscriptions)} اشتراكًا تجريبيًا.`,
       },
       {
         key: "unassigned-orders",
@@ -621,23 +621,23 @@ export function buildAnalyticsCommandCenterViewModel(args: {
       pipelineValue: formatCurrency(args.commercial.summary.pipelineValue),
       pipelineFallbackCount: formatNumber(args.commercial.summary.pipelineFallbackCount),
     },
-    partner: {
-      onboardingTrend: args.partner.onboardingTrend,
+    ecosystem: {
+      onboardingTrend: args.ecosystem.onboardingTrend,
       verificationMixRows: [
-        { label: "وسطاء", ...args.partner.verificationMix.brokers },
-        { label: "مطورون", ...args.partner.verificationMix.developers },
+        { label: "وسطاء", ...args.ecosystem.verificationMix.brokers },
+        { label: "مطورون", ...args.ecosystem.verificationMix.developers },
       ],
-      subscriptionHealth: args.partner.subscriptionHealth.map((item, index) => ({
+      subscriptionHealth: args.ecosystem.subscriptionHealth.map((item, index) => ({
         label: item.label,
         value: item.value,
         color: HEALTH_COLORS[index % HEALTH_COLORS.length],
       })),
       actionMode: [
-        { label: "وسطاء مفعلون", value: args.partner.actionModeAdoption.brokers, color: "var(--chart-teal)" },
-        { label: "مطورون مفعلون", value: args.partner.actionModeAdoption.developers, color: "var(--chart-blue)" },
-        { label: "إجمالي مؤهل", value: args.partner.actionModeAdoption.totalEligible, color: "var(--chart-amber)" },
+        { label: "وسطاء مفعلون", value: args.ecosystem.actionModeAdoption.brokers, color: "var(--chart-teal)" },
+        { label: "مطورون مفعلون", value: args.ecosystem.actionModeAdoption.developers, color: "var(--chart-blue)" },
+        { label: "إجمالي مؤهل", value: args.ecosystem.actionModeAdoption.totalEligible, color: "var(--chart-amber)" },
       ],
-      topOrganizations: buildTopOrganizationsViewModel(args.partner.topOrganizations),
+      topOrganizations: buildTopOrganizationsViewModel(args.ecosystem.topOrganizations),
     },
     queue: {
       verificationAging: args.queue.verificationAging.map((item, index) => ({

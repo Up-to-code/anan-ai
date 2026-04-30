@@ -1,3 +1,4 @@
+import { createRepositoryRefs } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 export type ProjectAccessApiRefs = {
@@ -7,4 +8,4 @@ export type ProjectAccessApiRefs = {
   revokePropertyViewer: unknown;
 };
 
-export const projectAccessApi = apiUnsafe["shared_logic/projectAccess"] as ProjectAccessApiRefs;
+export const projectAccessApi = createRepositoryRefs<ProjectAccessApiRefs>(apiUnsafe, "shared_logic/projectAccess");

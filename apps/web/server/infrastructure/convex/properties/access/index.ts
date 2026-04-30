@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { mutationRef, queryRef } from "@anan/convex-adapters/repository";
 import { projectAccessApi } from "./api";
 import type { ProjectAccessRepository } from "./types";
 
@@ -6,23 +6,31 @@ export type { ProjectAccessRepository } from "./types";
 
 export const convexProjectAccessRepository: ProjectAccessRepository = {
   async listPropertyViewers(token, propertyId) {
-    return fetchQuery(projectAccessApi.listPropertyViewers as never, { propertyId } as never, {
+    return queryRef<Awaited<ReturnType<ProjectAccessRepository["listPropertyViewers"]>>>(
       token,
-    }) as ReturnType<ProjectAccessRepository["listPropertyViewers"]>;
+      projectAccessApi.listPropertyViewers,
+      { propertyId },
+    );
   },
   async hasExplicitProjectViewerAccess(token, propertyId) {
-    return fetchQuery(projectAccessApi.hasExplicitProjectViewerAccess as never, { propertyId } as never, {
+    return queryRef<Awaited<ReturnType<ProjectAccessRepository["hasExplicitProjectViewerAccess"]>>>(
       token,
-    }) as ReturnType<ProjectAccessRepository["hasExplicitProjectViewerAccess"]>;
+      projectAccessApi.hasExplicitProjectViewerAccess,
+      { propertyId },
+    );
   },
   async promoteCurrentUserToProjectViewer(token, input) {
-    return fetchMutation(projectAccessApi.promoteCurrentUserToProjectViewer as never, input as never, {
+    return mutationRef<Awaited<ReturnType<ProjectAccessRepository["promoteCurrentUserToProjectViewer"]>>>(
       token,
-    }) as ReturnType<ProjectAccessRepository["promoteCurrentUserToProjectViewer"]>;
+      projectAccessApi.promoteCurrentUserToProjectViewer,
+      input,
+    );
   },
   async revokePropertyViewer(token, input) {
-    return fetchMutation(projectAccessApi.revokePropertyViewer as never, input as never, {
+    return mutationRef<Awaited<ReturnType<ProjectAccessRepository["revokePropertyViewer"]>>>(
       token,
-    }) as ReturnType<ProjectAccessRepository["revokePropertyViewer"]>;
+      projectAccessApi.revokePropertyViewer,
+      input,
+    );
   },
 };

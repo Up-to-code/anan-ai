@@ -2,8 +2,9 @@ import type { ActionCtx } from "../../../_generated/server";
 import { ConvexError } from "convex/values";
 import { api, internal } from "../../../_generated/api";
 import type { WorkspaceStructuredOutput } from "../../agents/anan_workspace/types";
-import { runAssistantSurfaceRuntime } from "../../openMultiAgent";
+import { runAssistantSurfaceRuntime } from "../assistantSurfaceRuntime";
 import { resolveWorkspaceAgUiTurn } from "../agUi";
+import { buildPersonaContextBlock } from "../../../shared_logic/memory/persona";
 import type {
   AssistantKind,
   AssistantMessageRecord,
@@ -12,7 +13,7 @@ import type {
   WorkspaceActionState,
   WorkspaceProjectActionState,
 } from "./types";
-import { isPublicAssistantKind, isWorkspaceKind } from "./utils";
+import { isWorkspaceKind } from "./utils";
 import { getLatestWorkspaceActionState } from "./workspaceContext";
 import { normalizeWorkspaceStructuredOutput, buildProjectQuestions } from "./workspaceParsing";
 import { maybeAutoCreateDraftAndAnnotate, resolveWorkspaceProjectActionState } from "./workspaceProjectAction";
@@ -52,10 +53,6 @@ export async function handleAssistantMessage(
       regenerateSource?: AssistantMessageRecord | null;
       effectiveUserMessage?: string;
       knowledge?: Array<{ title: string; category?: string | null; excerpt: string }>;
-      compiledBuyerContext?: {
-        compiledPromptContext: string;
-        promptBudgetMeta: unknown;
-      } | null;
     };
     saveConversationStepMutationOverride?: unknown;
   }
@@ -71,7 +68,7 @@ export async function handleAssistantMessage(
   const isWorkspaceAssistant = isWorkspaceKind(args.assistantKind);
   let runtimeContext = args.runtimeContextOverride ?? null;
 
-  if (!runtimeContext && !isPublicAssistantKind(args.assistantKind)) {
+  if (!runtimeContext) {
     runtimeContext = await ctx.runQuery(
       isWorkspaceAssistant
         ? api.ai_zone.assistantWorkspace.getRuntimeContextBundle
@@ -127,10 +124,8 @@ export async function handleAssistantMessage(
 
   // 2. Get entitlement (determines qa vs action mode)
   const entitlement = runtimeContext?.entitlement ?? await ctx.runQuery(
-    isPublicAssistantKind(args.assistantKind)
-      ? api.shared_logic.subscriptions.index.getAssistantEntitlementSafe
-      : api.shared_logic.subscriptions.index.getAssistantEntitlement,
-    {}
+    api.shared_logic.subscriptions.index.getAssistantEntitlement,
+    {},
   );
   const mode = entitlement.mode;
 
@@ -154,12 +149,7 @@ export async function handleAssistantMessage(
       ? ((await ctx.runQuery(api.ai_zone.assistantWorkspace.listMessages, {
           threadId: activeThreadId,
         })) as Array<AssistantMessageRecord>)
-      : isPublicAssistantKind(args.assistantKind) && activeThreadId
-        ? ((await ctx.runQuery(internal.ai_zone.assistantPublic._listMessagesForOwner, {
-            userId: owner.userId,
-            threadId: activeThreadId,
-          })) as Array<AssistantMessageRecord>)
-        : []
+      : []
   );
 
   const previousActionState = isWorkspaceAssistant
@@ -175,27 +165,17 @@ export async function handleAssistantMessage(
   const effectiveUserMessage =
     runtimeContext?.effectiveUserMessage ?? regenerateSource?.content ?? args.message;
 
-  const compiledBuyerContext = runtimeContext?.compiledBuyerContext ?? (
-    isPublicAssistantKind(args.assistantKind)
-      ? await ctx.runMutation(
-          internal.shared_logic.buyerContext.getCompiledBuyerContextInternal,
-          {
-            channel: "web",
-            userId: owner.userId,
-            message: effectiveUserMessage,
-            threadId: activeThreadId,
-          },
-        )
-      : null
-  );
+  const personaContextBlock = await loadPersonaContextBlock({
+    ctx,
+    userId: owner.userId,
+    query: effectiveUserMessage,
+  });
 
   // 3. Retrieve company knowledge for context
-  const knowledge = compiledBuyerContext
-    ? []
-    : runtimeContext?.knowledge ?? await ctx.runQuery(
-        api.shared_logic.knowledge.index.retrieveCompanyKnowledge,
-        { query: effectiveUserMessage, limit: 3 }
-      );
+  const knowledge = runtimeContext?.knowledge ?? await ctx.runQuery(
+    api.shared_logic.knowledge.index.retrieveCompanyKnowledge,
+    { query: effectiveUserMessage, limit: 3 },
+  );
 
   const knowledgeContext = buildKnowledgeContext(knowledge);
   const workspaceContextBlock = buildWorkspaceContextBlock({
@@ -216,40 +196,12 @@ export async function handleAssistantMessage(
   const basePrompt = buildBasePrompt({
     effectiveUserMessage,
     knowledgeContext,
-    buyerContextBlock: compiledBuyerContext?.compiledPromptContext,
+    personaContextBlock,
     mode,
     promptPrefix: args.promptPrefix,
     workspaceContextBlock,
     attachmentContext,
   });
-
-  if (compiledBuyerContext?.promptBudgetMeta) {
-    try {
-      await ctx.runMutation(
-        internal.ai_zone.agents.shared.tokenTrackerActions.trackTokenUsageInternal,
-        {
-          agentName: "anan_public_buyer_context_compiler",
-          teamName: "team_knowledge",
-          promptVersion: "buyer_context_v1",
-          modelName: "internal_context_compiler",
-          inputTokens: compiledBuyerContext.promptBudgetMeta.totalContextTokens,
-          outputTokens: 0,
-          userId: owner.userId,
-          threadId: activeThreadId,
-          channel: "web",
-          role: roleMap[owner.ownerType] ?? "user",
-          errorOccurred: false,
-          contextTokens: compiledBuyerContext.promptBudgetMeta.contextTokens,
-          memoryTokens: compiledBuyerContext.promptBudgetMeta.memoryTokens,
-          ragTokens: compiledBuyerContext.promptBudgetMeta.ragTokens,
-          historyTokens: compiledBuyerContext.promptBudgetMeta.historyTokens,
-          cacheHit: compiledBuyerContext.promptBudgetMeta.cacheHit,
-        },
-      );
-    } catch (error) {
-      console.warn("[assistantService] Public buyer context tracking failed (non-critical):", error);
-    }
-  }
 
   // 6. Run the multi-agent orchestrator
   const directWorkspaceCommand = isWorkspaceAssistant
@@ -270,12 +222,12 @@ export async function handleAssistantMessage(
         surface: isWorkspaceAssistant ? "workspace" : "default",
         ctx,
         prompt: basePrompt,
+        intentPrompt: effectiveUserMessage,
         role: roleMap[owner.ownerType] ?? "user",
         userId: owner.userId,
         threadId: activeThreadId,
         ragContext: knowledgeContext || undefined,
-        channel: isPublicAssistantKind(args.assistantKind) ? "web" : "app",
-        promptBudgetMeta: compiledBuyerContext?.promptBudgetMeta,
+        channel: "workspace",
         streamSessionId: args.streamSessionId,
         onStageEvent: (event) => {
           if (event.teamId && !routedTeamIds.includes(event.teamId)) {
@@ -394,7 +346,7 @@ export async function handleAssistantMessage(
         attachments: args.attachments,
         directWorkspaceCommand: directWorkspaceCommand?.meta,
         routing: {
-          assistantLabel: "وكيل عنان",
+          assistantLabel: "Anan AI",
           agentName: routedAgentNames[0],
           primaryTeamId: routedTeamIds[0],
           teamIds: routedTeamIds,
@@ -469,6 +421,26 @@ export async function handleAssistantMessage(
     output: assistantText,
     messageId: saved.assistantMessageId,
     userMessageId: saved.userMessageId ?? undefined,
-    promptBudgetMeta: compiledBuyerContext?.promptBudgetMeta,
   };
+}
+
+async function loadPersonaContextBlock(args: {
+  ctx: ActionCtx;
+  userId: string;
+  query: string;
+}) {
+  try {
+    const memory = await args.ctx.runQuery(
+      internal.shared_logic.memory.repository.getRelevantMemoriesByQuery,
+      {
+        userId: args.userId,
+        query: args.query,
+        limit: 8,
+      },
+    );
+    return buildPersonaContextBlock(memory);
+  } catch (error) {
+    console.warn("[assistantService] Persona context load failed (non-critical):", error);
+    return "";
+  }
 }

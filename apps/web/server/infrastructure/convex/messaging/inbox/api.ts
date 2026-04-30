@@ -1,3 +1,4 @@
+import { createRepositoryRefs } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 export type InboxApiRefs = {
@@ -13,4 +14,4 @@ export type InboxApiRefs = {
   searchConversationTargets: unknown;
 };
 
-export const inboxApi = apiUnsafe["shared_logic/inbox"] as InboxApiRefs;
+export const inboxApi = createRepositoryRefs<InboxApiRefs>(apiUnsafe, "shared_logic/inbox");

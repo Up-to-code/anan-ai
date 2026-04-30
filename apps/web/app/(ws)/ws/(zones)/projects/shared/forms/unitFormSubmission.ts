@@ -1,11 +1,14 @@
 import { z } from "zod";
 import { normalizeDomainError } from "@/server/contracts/errors";
 import { uploadedFileReferenceSchema, type UploadedFileReference } from "@/server/contracts/files";
+import type { LocationValue } from "@anan/location-map";
+import { buildLocationValueFromParts } from "@anan/location-map";
 import type { CreatePropertyInput } from "@/server/contracts/properties";
 import type {
   ProjectAdLicenseInput,
   ProjectComplianceDocumentInput,
   ProjectDossierInput,
+  ProjectDossierDetail,
   ProjectPaymentPlanInput,
   ProjectUnitInput,
 } from "@/server/contracts/projects";
@@ -37,6 +40,7 @@ export type UnitCreateActionResult =
 export type UnitCreateFormData = {
   name: string;
   location: string;
+  locationDetails?: LocationValue | null;
   unitType: "apartment" | "villa" | "duplex" | "studio" | "penthouse" | "townhouse" | "commercial";
   listingType: "sale" | "rent";
   price: string;
@@ -63,6 +67,13 @@ export type UnitCreateFormData = {
 const unitCreateSchema = z.object({
   name: z.string().trim().min(1, "اسم الوحدة مطلوب.").max(200, "اسم الوحدة طويل أكثر من اللازم."),
   location: z.string().trim().min(1, "الموقع مطلوب.").max(200, "الموقع طويل أكثر من اللازم."),
+  locationDetails: z.object({
+    label: z.string(),
+    city: z.string().optional(),
+    district: z.string().optional(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+  }).nullable().optional(),
   unitType: z.enum(["apartment", "villa", "duplex", "studio", "penthouse", "townhouse", "commercial"]),
   listingType: z.enum(["sale", "rent"]),
   price: z
@@ -129,6 +140,19 @@ function splitSaudiLocation(value: string) {
   return {
     city: city || value.trim() || undefined,
     district: district || city || value.trim() || undefined,
+  };
+}
+
+function buildProjectLocationInput(data: UnitCreateFormData) {
+  const fallback = splitSaudiLocation(data.location);
+  const details = data.locationDetails;
+
+  return {
+    countryCode: "SA",
+    city: details?.city || fallback.city,
+    district: details?.district || fallback.district,
+    latitude: details?.latitude,
+    longitude: details?.longitude,
   };
 }
 
@@ -218,19 +242,15 @@ export function mapUnitCreateToPropertyInput(data: UnitCreateFormData): CreatePr
  * HOW:   Uses `ready_property` plus private visibility by default to avoid publishing during creation.
  */
 export function mapUnitCreateToDossierInput(propertyId: string, data: UnitCreateFormData): ProjectDossierInput {
-  const location = splitSaudiLocation(data.location);
-
   return {
     propertyId,
+    inventoryKind: "standalone_unit",
     projectType: "ready_property",
     salesMode: "developer_direct",
     requestedVisibility: "private",
     title: data.name.trim(),
     summary: data.description.trim(),
-    location: {
-      countryCode: "SA",
-      ...location,
-    },
+    location: buildProjectLocationInput(data),
   };
 }
 
@@ -252,7 +272,64 @@ export function mapUnitCreateToUnitInputs(data: UnitCreateFormData): ProjectUnit
     view: data.view.trim() || undefined,
     price: parseOptionalNumber(data.price),
     handoverAt: parseOptionalDate(data.handoverAt),
+    location: buildProjectLocationInput(data),
   }];
+}
+
+/**
+ * WHY:   Creating a unit from inside a project must not create a standalone property card.
+ * WHAT:  Converts the unit wizard payload into a single child project-unit input.
+ * HOW:   Uses the parent dossier server-side and treats uploaded images as floor-plan/media evidence.
+ */
+export function mapUnitCreateToChildUnitInput(data: UnitCreateFormData): ProjectUnitInput {
+  return {
+    dossierId: "server-owned",
+    label: data.name.trim(),
+    unitKind: "unit",
+    status: data.status,
+    bedrooms: parseOptionalNumber(data.rooms) ?? 0,
+    bathrooms: parseOptionalNumber(data.baths) ?? 0,
+    sizeSqm: parseOptionalNumber(data.area),
+    floor: data.floor.trim() || undefined,
+    view: data.view.trim() || undefined,
+    price: parseOptionalNumber(data.price),
+    handoverAt: parseOptionalDate(data.handoverAt),
+    location: buildProjectLocationInput(data),
+    floorPlanMedia: data.images.length ? data.images : undefined,
+  };
+}
+
+export function mapProjectUnitRecordToUnitCreateFormData(
+  unit: NonNullable<ProjectDossierDetail["units"]>[number],
+  fallback: Partial<UnitCreateFormData> = {},
+): Partial<UnitCreateFormData> {
+  return {
+    ...fallback,
+    name: unit.label,
+    price: unit.price !== undefined ? String(unit.price) : fallback.price ?? "",
+    area: unit.sizeSqm !== undefined ? String(unit.sizeSqm) : fallback.area ?? "",
+    rooms: unit.bedrooms !== undefined ? String(unit.bedrooms) : fallback.rooms ?? "",
+    baths: unit.bathrooms !== undefined ? String(unit.bathrooms) : fallback.baths ?? "",
+    floor: unit.floor ?? fallback.floor ?? "",
+    view: unit.view ?? fallback.view ?? "",
+    location: buildLocationValueFromParts({
+      label: [unit.location?.city, unit.location?.district].filter(Boolean).join("، "),
+      city: unit.location?.city,
+      district: unit.location?.district,
+      latitude: unit.location?.latitude,
+      longitude: unit.location?.longitude,
+    })?.label ?? fallback.location ?? "",
+    locationDetails: buildLocationValueFromParts({
+      label: [unit.location?.city, unit.location?.district].filter(Boolean).join("، "),
+      city: unit.location?.city,
+      district: unit.location?.district,
+      latitude: unit.location?.latitude,
+      longitude: unit.location?.longitude,
+    }) ?? fallback.locationDetails ?? null,
+    status: unit.status,
+    handoverAt: unit.handoverAt ? new Date(unit.handoverAt).toISOString().slice(0, 10) : fallback.handoverAt ?? "",
+    images: unit.floorPlanMedia ?? fallback.images ?? [],
+  };
 }
 
 /**
