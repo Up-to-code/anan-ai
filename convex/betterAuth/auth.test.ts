@@ -5,6 +5,7 @@ import { createAuthOptions } from "./auth";
 
 const originalSignupFlag = process.env.ANAN_ADMIN_PASSWORD_SIGNUP_ENABLED;
 const originalBridgeSecret = process.env.ADMIN_SIGNUP_BRIDGE_SECRET;
+const originalNodeEnv = process.env.NODE_ENV;
 const originalAnanWebUrl = process.env.ANAN_WEB_URL;
 const originalSiteUrl = process.env.SITE_URL;
 const originalVercelEnv = process.env.VERCEL_ENV;
@@ -20,6 +21,11 @@ afterEach(() => {
     delete process.env.ADMIN_SIGNUP_BRIDGE_SECRET;
   } else {
     process.env.ADMIN_SIGNUP_BRIDGE_SECRET = originalBridgeSecret;
+  }
+  if (originalNodeEnv === undefined) {
+    delete process.env.NODE_ENV;
+  } else {
+    process.env.NODE_ENV = originalNodeEnv;
   }
   if (originalAnanWebUrl === undefined) {
     delete process.env.ANAN_WEB_URL;
@@ -64,6 +70,47 @@ it("allows the trusted admin signup bridge to enable guarded password sign-up", 
   expect(options.emailAndPassword).toMatchObject({
     enabled: true,
     disableSignUp: false,
+  });
+});
+
+it("does not enable signup by default in local development", () => {
+  delete process.env.ADMIN_SIGNUP_BRIDGE_SECRET;
+  process.env.NODE_ENV = "development";
+
+  const options = createAuthOptions({} as GenericCtx<DataModel>);
+
+  expect(options.emailAndPassword).toMatchObject({
+    enabled: true,
+    disableSignUp: true,
+  });
+});
+
+it("does not enable signup for hosted dev auth pointing back to localhost", () => {
+  delete process.env.ADMIN_SIGNUP_BRIDGE_SECRET;
+  process.env.NODE_ENV = "production";
+  process.env.VERCEL_ENV = "preview";
+  process.env.ANAN_WEB_URL = "http://localhost:3000";
+
+  const options = createAuthOptions({} as GenericCtx<DataModel>);
+
+  expect(options.emailAndPassword).toMatchObject({
+    enabled: true,
+    disableSignUp: true,
+  });
+});
+
+it("does not enable signup for production deployments without an admin bridge", () => {
+  delete process.env.ADMIN_SIGNUP_BRIDGE_SECRET;
+  process.env.NODE_ENV = "production";
+  process.env.VERCEL_ENV = "production";
+  process.env.ANAN_WEB_URL = "http://localhost:3000";
+  process.env.VERCEL_URL = "anan-lit-web.vercel.app";
+
+  const options = createAuthOptions({} as GenericCtx<DataModel>);
+
+  expect(options.emailAndPassword).toMatchObject({
+    enabled: true,
+    disableSignUp: true,
   });
 });
 

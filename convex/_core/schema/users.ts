@@ -63,36 +63,6 @@ const userTables = {
     .index("phone", ["phone"])
     .index("userId", ["userId"])
     .index("by_deletedAt_updatedAt", ["deletedAt", "updatedAt"]),
-  mobileBuyerAccounts: defineTable({
-    ...transitionalGlobalSecurityFields,
-    authUserId: v.string(),
-    profile: v.object({
-      displayName: v.optional(v.string()),
-      phone: v.optional(v.string()),
-      email: v.optional(v.string()),
-    }),
-    savedPropertyIds: v.array(v.id("properties")),
-    consents: v.object({
-      privacyAcceptedAt: v.optional(v.number()),
-      termsAcceptedAt: v.optional(v.number()),
-      microphoneAcceptedAt: v.optional(v.number()),
-      supportAcceptedAt: v.optional(v.number()),
-    }),
-    preferences: v.object({
-      locale: v.union(v.literal("ar"), v.literal("en")),
-      onboardingCompletedAt: v.optional(v.number()),
-      authEntryDismissedAt: v.optional(v.number()),
-      financeDefaults: v.object({
-        downPaymentPercent: v.number(),
-        preferredYears: v.number(),
-        annualRate: v.number(),
-      }),
-    }),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("authUserId", ["authUserId"])
-    .index("by_deletedAt_updatedAt", ["deletedAt", "updatedAt"]),
 };
 
 export default userTables;

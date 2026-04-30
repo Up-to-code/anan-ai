@@ -106,7 +106,6 @@ export const CONTACT_TYPE = {
   BUYER: "buyer",
   INVESTOR: "investor",
   TENANT: "tenant",
-  PARTNER: "partner",
 } as const;
 
 export const DEAL_STAGE = {
@@ -148,7 +147,7 @@ export const OFFER_CASE_STATUS = {
 export const CASE_PARTICIPANT_ROLE = {
   INVENTORY_OWNER: "inventory_owner",
   CLIENT_OWNER: "client_owner",
-  EXECUTION_PARTNER: "execution_partner",
+  EXECUTION_PROVIDER: "execution_provider",
   OBSERVER: "observer",
 } as const;
 
@@ -161,7 +160,6 @@ export const CASE_ACTIVITY_TYPE = {
 
 export const CONVERSATION_CHANNEL = {
   PLATFORM: "platform",
-  WHATSAPP: "whatsapp",
   EMAIL: "email",
 } as const;
 

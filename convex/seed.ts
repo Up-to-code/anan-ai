@@ -197,8 +197,8 @@ export const seedDeveloperHandbookPages = mutation({
       {
         slug: "webhooks-idempotency",
         title: "Webhooks: idempotency, dedupe, replay safety",
-        category: "channels",
-        tags: ["webhook", "idempotency", "channels"],
+        category: "integrations",
+        tags: ["webhook", "idempotency", "integrations"],
         content: [
           "Rules:",
           "- Webhooks retry. Treat vendor message/event id as dedupe key.",
@@ -208,8 +208,7 @@ export const seedDeveloperHandbookPages = mutation({
           "",
           "Repo blueprint:",
           "- convex/http.ts",
-          "- convex/ai_zone/channels/whatsapp/webhook.ts",
-          "- docs/handbook/convex/channels.md",
+          "- convex/shared_logic/integrations/webhookOutbox.ts",
         ].join("\n"),
       },
       {
@@ -225,8 +224,8 @@ export const seedDeveloperHandbookPages = mutation({
           "- Never log prompts, thread history, or PII.",
           "",
           "Repo references:",
-          "- convex/ai_zone/agents/anan/orchestrate.ts",
-          "- convex/ai_zone/agents/anan/intentAnalyzer.ts",
+          "- convex/ai_zone/agents/anan_workspace/orchestrate.ts",
+          "- convex/ai_zone/agents/anan_workspace/intentAnalyzer.ts",
           "- docs/handbook/convex/ai-zone.md",
         ].join("\n"),
       },
@@ -239,11 +238,9 @@ export const seedDeveloperHandbookPages = mutation({
           "Convex zones:",
           "- _core: schema + security + auth/OAuth internals (no business handlers).",
           "- shared_logic: shared business capabilities (inbox/offers/market/properties).",
-          "- ai_zone: assistant runtime + channels.",
-          "- user_zone: buyer/mobile backend.",
+          "- ai_zone: workspace assistant runtime.",
           "- broker_zone/red_zone: owner-scoped adapters.",
           "- admin_zone: admin projections/ops.",
-          "- public_zone: public entry features.",
           "",
           "Deep reference:",
           "- docs/handbook/convex/zones.md",
@@ -801,21 +798,21 @@ export const seedArabicDevelopmentEcosystem = mutation({
     });
 
     await upsertOrder(ctx, {
-      userId: "seed-client-web-1",
+      userId: "seed-workspace-demo-1",
       type: "property",
       propertyId: properties[0],
       REDId: redOne,
-      intent: "client_web_property_search",
+      intent: "workspace_property_search",
       notes: "أراد تفاصيل الشقة ثم طلب مقارنة تمويل.",
       sourceChannel: "web",
     });
     await upsertOrder(ctx, {
-      userId: "seed-client-web-1",
+      userId: "seed-workspace-demo-1",
       type: "loan",
       propertyId: properties[0],
       bankId: bankOne,
       REDId: redOne,
-      intent: "client_web_loan_review",
+      intent: "workspace_loan_review",
       notes: "طلب حساب القسط الشهري وأفضل عرض بنكي للشقة.",
       sourceChannel: "web",
     });

@@ -1,17 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin } from "lucide-react";
+import { CheckCircle2, Layers3, MapPin, ShieldCheck } from "lucide-react";
+import { trackProjectEventAction } from "../../actions/trackProjectEvent";
 import type { WorkspaceProject } from "../../types/projectTypes";
-import type { ProjectAnalyticsEventType } from "@/server/contracts/properties";
 
 type ProjectPortfolioCardProps = {
   project: WorkspaceProject;
-  onTrackProjectEvent?: (input: {
-    id: string;
-    eventType: ProjectAnalyticsEventType;
-    source: string;
-  }) => Promise<{ ok: true }>;
 };
 
 /**
@@ -21,14 +16,13 @@ type ProjectPortfolioCardProps = {
  */
 export default function ProjectPortfolioCard({
   project,
-  onTrackProjectEvent,
 }: ProjectPortfolioCardProps) {
   return (
     <Link
       href={`/ws/projects/${project.id}`}
       onClick={() => {
-        void onTrackProjectEvent?.({
-          id: project.id,
+        void trackProjectEventAction({
+          propertyId: project.propertyId,
           eventType: "project_detail_view",
           source: "projects_list_card",
         });
@@ -42,6 +36,9 @@ export default function ProjectPortfolioCard({
           alt={project.title}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
         />
+        <div className="absolute right-4 top-4 rounded-full bg-black/55 px-3 py-1 text-[11px] font-black text-white backdrop-blur">
+          {project.portfolio.typeLabel}
+        </div>
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
           <div className="text-lg font-black leading-6">{project.title}</div>
           <div className="mt-2 inline-flex items-center gap-1 text-[12px] font-bold text-white/80">
@@ -51,9 +48,25 @@ export default function ProjectPortfolioCard({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4 px-4 py-4">
-        <span className="text-[12px] font-bold text-[var(--workspace-muted)]">متوسط السعر</span>
-        <span className="text-[15px] font-black text-foreground">{project.priceLabel}</span>
+      <div className="space-y-3 px-4 py-4">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-[12px] font-bold text-[var(--workspace-muted)]">متوسط السعر</span>
+          <span className="text-[15px] font-black text-foreground">{project.priceLabel}</span>
+        </div>
+        <div className="grid gap-2 text-[12px] font-bold text-[var(--workspace-muted)]">
+          <div className="flex items-center justify-end gap-2">
+            <span>{project.portfolio.unitSummary}</span>
+            <Layers3 className="h-3.5 w-3.5" />
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            <span>{project.readiness.label}</span>
+            <CheckCircle2 className="h-3.5 w-3.5" />
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            <span className="truncate">{project.portfolio.complianceSummary}</span>
+            <ShieldCheck className="h-3.5 w-3.5" />
+          </div>
+        </div>
       </div>
     </Link>
   );

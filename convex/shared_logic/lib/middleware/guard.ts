@@ -14,7 +14,6 @@ export function withZoneGuard<Args, Return>(
     | "admin_zone"
     | "broker_zone"
     | "red_zone"
-    | "user_zone"
     | "shared_logic"
     | "ai_zone",
   handler: (

@@ -1,6 +1,9 @@
 import { ConvexError, v } from "convex/values";
 import { internalMutation, internalQuery } from "../../../_generated/server";
-import { normalizeRequestedScopes, OAUTH_SCOPE_REGISTRY } from "../../../_core/oauth/constants";
+import {
+  normalizeRequestedScopes,
+  OAUTH_SCOPE_REGISTRY,
+} from "../../../_core/oauth/constants";
 import { ensureRedirectUri, ensureScopes, getClientOrThrow } from "./helpers";
 
 function parseRequestedScopeTokens(scope: string | undefined) {
@@ -59,7 +62,7 @@ export const createAuthorizationFlow = internalMutation({
     redirectUri: v.string(),
     requestedScopes: v.array(v.string()),
     state: v.string(),
-    sourceApp: v.optional(v.union(v.literal("web"), v.literal("admin"), v.literal("mobile"))),
+    sourceApp: v.optional(v.union(v.literal("web"), v.literal("admin"))),
     nonce: v.optional(v.string()),
     codeChallenge: v.string(),
     codeChallengeMethod: v.literal("S256"),

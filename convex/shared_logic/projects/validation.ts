@@ -29,6 +29,7 @@ export const projectLocationInputValidator = v.object({
 
 export const projectDossierDraftInputValidator = v.object({
   propertyId: v.id("properties"),
+  inventoryKind: v.optional(v.union(v.literal("project"), v.literal("standalone_unit"))),
   projectType: v.optional(v.union(v.literal("ready_property"), v.literal("off_plan"), v.literal("land"), v.literal("mixed_use"))),
   salesMode: v.optional(v.union(v.literal("developer_direct"), v.literal("broker_mediated"), v.literal("broker_owned"))),
   requestedVisibility: v.optional(v.union(v.literal("private"), v.literal("public"))),
@@ -57,6 +58,7 @@ export const projectUnitInputValidator = v.object({
   view: v.optional(v.string()),
   price: v.optional(v.number()),
   handoverAt: v.optional(v.number()),
+  location: v.optional(projectLocationInputValidator),
   floorPlanMedia: v.optional(uploadedFileReferenceListValidator),
 });
 

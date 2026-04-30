@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { createRepositoryRefs, queryRef, voidMutationRef } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 type UsersApiRefs = {
@@ -14,7 +14,7 @@ type UsersApiRefs = {
   updateUser: unknown;
 };
 
-const usersApi = apiUnsafe["admin_zone/users"] as UsersApiRefs;
+const usersApi = createRepositoryRefs<UsersApiRefs>(apiUnsafe, "admin_zone/users");
 
 export type PaginationOptions = {
   numItems: number;
@@ -37,36 +37,36 @@ export type AdminUserDetail = Record<string, unknown> | null;
  */
 export const convexAdminUsersRepository = {
   async listAdminUsers(token: string, input: { paginationOpts: PaginationOptions; role?: "broker" | "developer" | "user" | "RED" }) {
-    return fetchQuery(usersApi.listAdminUsers as never, input as never, { token }) as Promise<PaginationResult<AdminUserRecord>>;
+    return queryRef<PaginationResult<AdminUserRecord>>(token, usersApi.listAdminUsers, input);
   },
   async listAdminProfiles(token: string, input: { paginationOpts: PaginationOptions }) {
-    return fetchQuery(usersApi.listAdminProfiles as never, input as never, { token }) as Promise<PaginationResult<AdminUserRecord>>;
+    return queryRef<PaginationResult<AdminUserRecord>>(token, usersApi.listAdminProfiles, input);
   },
   async listAdminMemberships(token: string, input: { paginationOpts: PaginationOptions }) {
-    return fetchQuery(usersApi.listAdminMemberships as never, input as never, { token }) as Promise<PaginationResult<AdminUserRecord>>;
+    return queryRef<PaginationResult<AdminUserRecord>>(token, usersApi.listAdminMemberships, input);
   },
   async listAdminUserVerification(token: string, input: { paginationOpts: PaginationOptions }) {
-    return fetchQuery(usersApi.listAdminUserVerification as never, input as never, { token }) as Promise<PaginationResult<AdminUserRecord>>;
+    return queryRef<PaginationResult<AdminUserRecord>>(token, usersApi.listAdminUserVerification, input);
   },
-  async list(token: string, input: { paginationOpts: PaginationOptions; channel?: "whatsapp" | "app" | "web" }) {
-    return fetchQuery(usersApi.listUsers as never, input as never, { token }) as Promise<PaginationResult<AdminUserRecord>>;
+  async list(token: string, input: { paginationOpts: PaginationOptions; channel?: "workspace" | "web" | "admin" }) {
+    return queryRef<PaginationResult<AdminUserRecord>>(token, usersApi.listUsers, input);
   },
   async getDetail(token: string, userKey: string) {
-    return fetchQuery(usersApi.getAdminUserDetail as never, { userKey } as never, { token }) as Promise<AdminUserDetail>;
+    return queryRef<AdminUserDetail>(token, usersApi.getAdminUserDetail, { userKey });
   },
   async listKnowledgeResearch(token: string, userId: string, limit = 20) {
-    return fetchQuery(usersApi.getUserKnowledgeResearch as never, { userId, limit } as never, { token }) as Promise<Array<Record<string, unknown>>>;
+    return queryRef<Array<Record<string, unknown>>>(token, usersApi.getUserKnowledgeResearch, { userId, limit });
   },
   async listSearchLogs(token: string, userId: string, limit = 50) {
-    return fetchQuery(usersApi.getUserSearchLogs as never, { userId, limit } as never, { token }) as Promise<Array<Record<string, unknown>>>;
+    return queryRef<Array<Record<string, unknown>>>(token, usersApi.getUserSearchLogs, { userId, limit });
   },
   async listAgentMemory(token: string, userId: string) {
-    return fetchQuery(usersApi.getUserAgentMemory as never, { userId } as never, { token }) as Promise<Array<Record<string, unknown>>>;
+    return queryRef<Array<Record<string, unknown>>>(token, usersApi.getUserAgentMemory, { userId });
   },
   async update(
     token: string,
-    input: { userId: string; displayName?: string; channel?: "whatsapp" | "app" | "web" },
+    input: { userId: string; displayName?: string; channel?: "workspace" | "web" | "admin" },
   ) {
-    await fetchMutation(usersApi.updateUser as never, input as never, { token });
+    await voidMutationRef(token, usersApi.updateUser, input);
   },
 };

@@ -171,7 +171,7 @@ const offersTables = {
         role: v.union(
             v.literal("inventory_owner"),
             v.literal("client_owner"),
-            v.literal("execution_partner"),
+            v.literal("execution_provider"),
         ),
         status: v.union(
             v.literal("pending"),

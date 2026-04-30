@@ -6,6 +6,14 @@ import { isOfferCardMetadata } from "./types";
 import { normalizeDirectPair } from "./utils";
 
 type ReadCtx = QueryCtx | MutationCtx;
+type BoundedMetadataValue =
+  | string
+  | number
+  | boolean
+  | null
+  | (string | number | boolean | null)[]
+  | Record<string, string | number | boolean | null>;
+type BoundedMetadata = Record<string, BoundedMetadataValue>;
 
 export async function getConversationParticipant(
   ctx: ReadCtx,
@@ -35,6 +43,45 @@ function assertConversationParticipantsAreActive(args: {
       message: "Conversation participant not found",
     });
   }
+}
+
+function toBoundedMetadata(metadata: Record<string, unknown>): BoundedMetadata {
+  const bounded: BoundedMetadata = {};
+  for (const [key, value] of Object.entries(metadata)) {
+    if (
+      value === null ||
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      bounded[key] = value;
+      continue;
+    }
+    if (Array.isArray(value) && value.every((item) => (
+      item === null ||
+      typeof item === "string" ||
+      typeof item === "number" ||
+      typeof item === "boolean"
+    ))) {
+      bounded[key] = value;
+      continue;
+    }
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const nested: Record<string, string | number | boolean | null> = {};
+      for (const [nestedKey, nestedValue] of Object.entries(value as Record<string, unknown>)) {
+        if (
+          nestedValue === null ||
+          typeof nestedValue === "string" ||
+          typeof nestedValue === "number" ||
+          typeof nestedValue === "boolean"
+        ) {
+          nested[nestedKey] = nestedValue;
+        }
+      }
+      bounded[key] = nested;
+    }
+  }
+  return bounded;
 }
 
 async function createDirectConversation(ctx: MutationCtx, args: {
@@ -147,7 +194,7 @@ async function persistConversationEvent(ctx: MutationCtx, args: {
     recipientUserId: args.event.recipientUserId,
     type: args.event.type,
     body: args.event.body,
-    metadata: args.event.metadata,
+    metadata: toBoundedMetadata(args.event.metadata),
     createdAt: now,
   });
   await Promise.all([

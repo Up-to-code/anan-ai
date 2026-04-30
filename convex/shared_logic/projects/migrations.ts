@@ -161,6 +161,7 @@ export async function ensureProjectDossierForProperty(
     includeLegacyUnitAndPaymentPlan?: boolean;
     forcePrivateUntilReady?: boolean;
     requestedVisibility?: "private" | "public";
+    inventoryKind?: "project" | "standalone_unit";
   } = {},
 ) {
   const property = (await ctx.db.get(propertyId)) as PropertyRecord | null;
@@ -180,6 +181,7 @@ export async function ensureProjectDossierForProperty(
     existing?._id ??
     await ctx.db.insert("projectDossiers", {
       propertyId,
+      inventoryKind: options.inventoryKind ?? "project",
       tenantOrgId: property.tenantOrgId,
       ownerType: resolveOwnerType(property),
       ownerBrokerId: property.brokerId,
@@ -214,8 +216,16 @@ export async function ensureProjectDossierForProperty(
     });
   }
 
-  if (existing && existing.requestedVisibility !== requestedVisibility) {
-    await ctx.db.patch(existing._id, { requestedVisibility, updatedAt: now } as any);
+  if (
+    existing &&
+    (existing.requestedVisibility !== requestedVisibility ||
+      (options.inventoryKind && (existing as any).inventoryKind !== options.inventoryKind))
+  ) {
+    await ctx.db.patch(existing._id, {
+      requestedVisibility,
+      inventoryKind: options.inventoryKind ?? (existing as any).inventoryKind ?? "project",
+      updatedAt: now,
+    } as any);
   }
 
   if (options.includeLegacyUnitAndPaymentPlan) {

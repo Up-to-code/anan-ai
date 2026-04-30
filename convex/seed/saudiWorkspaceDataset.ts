@@ -12,7 +12,7 @@ type MutationCtx = GenericMutationCtx<DataModel>;
 export const SAUDI_SEED_NAMESPACE = "seed.saudi_workspace_v1";
 const PLAYGROUND_NAME = "مساحة اختبار السعودية";
 const PLAYGROUND_DESCRIPTION =
-  "مساحة تطوير محملة ببيانات سعودية كبيرة لاختبار المشاريع والـ CRM والتوصيات وسير عمل وكيل عنان.";
+  "مساحة تطوير محملة ببيانات سعودية كبيرة لاختبار المشاريع والـ CRM والتوصيات وسير عمل Anan AI.";
 const BANK_SLUGS = [
   "saudi-national-bank-seed",
   "alrajhi-bank-seed",
@@ -2067,7 +2067,7 @@ async function ensureSeededConversationNetwork(args: {
           authUserId: playgroundOwner.authUserId,
           brokerId: playgroundOwner.brokerId,
           REDId: (playgroundOwner as any).developerId,
-          role: "execution_partner",
+          role: "execution_provider",
           status: "accepted",
           createdAt: Date.now(),
           updatedAt: Date.now(),

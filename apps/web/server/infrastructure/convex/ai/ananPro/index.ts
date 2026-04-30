@@ -1,4 +1,4 @@
-import { fetchAction, fetchMutation, fetchQuery } from "convex/nextjs";
+import { actionRef, mutationRef, queryRef } from "@anan/convex-adapters/repository";
 import { ananProApi } from "./api";
 import { mapThreadMessages, resolveThreadTitle } from "./mappers";
 import type { AnanProRepository, RawAssistantMessage, RawAssistantThread } from "./types";
@@ -6,15 +6,11 @@ import type { AnanProRepository, RawAssistantMessage, RawAssistantThread } from 
 export type { AnanProRepository } from "./types";
 
 async function fetchThreadMessages(token: string, threadId: string) {
-  return (await fetchQuery(ananProApi.listMessages as never, { threadId } as never, {
-    token,
-  })) as RawAssistantMessage[];
+  return queryRef<RawAssistantMessage[]>(token, ananProApi.listMessages, { threadId });
 }
 
 async function fetchThreadSummary(token: string, threadId: string) {
-  return (await fetchQuery(ananProApi.getThreadById as never, { threadId } as never, {
-    token,
-  })) as RawAssistantThread;
+  return queryRef<RawAssistantThread>(token, ananProApi.getThreadById, { threadId });
 }
 
 export const convexAnanProRepository: AnanProRepository = {
@@ -41,9 +37,7 @@ export const convexAnanProRepository: AnanProRepository = {
       };
     }
 
-    const { thread } = (await fetchQuery(ananProApi.getThreadSafe as never, {} as never, {
-      token,
-    })) as { thread: RawAssistantThread };
+    const { thread } = await queryRef<{ thread: RawAssistantThread }>(token, ananProApi.getThreadSafe);
 
     if (!thread?._id) {
       return null;
@@ -59,9 +53,11 @@ export const convexAnanProRepository: AnanProRepository = {
   },
 
   async listThreads(token, limit = 6) {
-    const threads = (await fetchQuery(ananProApi.listThreads as never, { limit } as never, {
+    const threads = await queryRef<Array<{ _id: string; title?: string; updatedAt: number }>>(
       token,
-    })) as Array<{ _id: string; title?: string; updatedAt: number }>;
+      ananProApi.listThreads,
+      { limit },
+    );
 
     return threads.map((thread) => ({
       id: thread._id,
@@ -71,9 +67,7 @@ export const convexAnanProRepository: AnanProRepository = {
   },
 
   async sendMessage(token, input) {
-    const response = (await fetchAction(ananProApi.sendMessage as never, input as never, {
-      token,
-    })) as { threadId: string };
+    const response = await actionRef<{ threadId: string }>(token, ananProApi.sendMessage, input);
 
     const messages = await fetchThreadMessages(token, response.threadId);
 
@@ -85,32 +79,41 @@ export const convexAnanProRepository: AnanProRepository = {
   },
 
   async listStreamEvents(token, input) {
-    return fetchQuery(ananProApi.listStreamEvents as never, input as never, {
+    return queryRef<Awaited<ReturnType<AnanProRepository["listStreamEvents"]>>>(
       token,
-    }) as ReturnType<AnanProRepository["listStreamEvents"]>;
+      ananProApi.listStreamEvents,
+      input,
+    );
   },
 
   async cancelStreamSession(token, sessionId) {
-    return fetchMutation(ananProApi.cancelStreamSession as never, { sessionId } as never, {
+    return mutationRef<Awaited<ReturnType<AnanProRepository["cancelStreamSession"]>>>(
       token,
-    }) as ReturnType<AnanProRepository["cancelStreamSession"]>;
+      ananProApi.cancelStreamSession,
+      { sessionId },
+    );
   },
 
   async getVoiceUploadUrl(token) {
-    return fetchMutation(ananProApi.generateVoiceUploadUrl as never, {} as never, {
+    return mutationRef<Awaited<ReturnType<AnanProRepository["getVoiceUploadUrl"]>>>(
       token,
-    }) as ReturnType<AnanProRepository["getVoiceUploadUrl"]>;
+      ananProApi.generateVoiceUploadUrl,
+    );
   },
 
   async transcribeVoiceFromStorage(token, input) {
-    return fetchAction(ananProApi.transcribeVoiceFromStorage as never, input as never, {
+    return actionRef<Awaited<ReturnType<AnanProRepository["transcribeVoiceFromStorage"]>>>(
       token,
-    }) as ReturnType<AnanProRepository["transcribeVoiceFromStorage"]>;
+      ananProApi.transcribeVoiceFromStorage,
+      input,
+    );
   },
 
   async finalizeUploadedFiles(token, input) {
-    return fetchMutation(ananProApi.finalizeUploadedFiles as never, input as never, {
+    return mutationRef<Awaited<ReturnType<AnanProRepository["finalizeUploadedFiles"]>>>(
       token,
-    }) as ReturnType<AnanProRepository["finalizeUploadedFiles"]>;
+      ananProApi.finalizeUploadedFiles,
+      input,
+    );
   },
 };

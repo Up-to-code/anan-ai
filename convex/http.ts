@@ -1,10 +1,6 @@
 import { httpRouter } from "convex/server";
 import { registerRoutes } from "@mzedstudio/uploadthingtrack";
 import { httpAction } from "./_generated/server";
-import {
-  handleWhatsAppWebhookGet,
-  handleWhatsAppWebhookPost,
-} from "./ai_zone/channels/whatsapp/webhook";
 import { components } from "./_generated/api";
 import { authComponent, createAuth } from "./betterAuth/auth";
 import {
@@ -21,7 +17,6 @@ import {
   handleToken,
   handleUserInfo,
 } from "./_core/oauth/http";
-import { handleMobileAssistantStream } from "./ai_zone/assistantPublicHttp";
 
 const http = httpRouter();
 
@@ -82,24 +77,6 @@ http.route({
       headers: { "Content-Type": "application/json" },
     });
   }),
-});
-
-http.route({
-  path: "/api/whatsapp/webhook",
-  method: "GET",
-  handler: httpAction(handleWhatsAppWebhookGet),
-});
-
-http.route({
-  path: "/api/whatsapp/webhook",
-  method: "POST",
-  handler: handleWhatsAppWebhookPost,
-});
-
-http.route({
-  path: "/api/mobile/assistant/stream/chat/completions",
-  method: "POST",
-  handler: httpAction(handleMobileAssistantStream),
 });
 
 http.route({

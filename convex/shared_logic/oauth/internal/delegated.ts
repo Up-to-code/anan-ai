@@ -55,7 +55,7 @@ export const listDelegatedClients = internalQuery({
 });
 
 /**
- * WHY:   Partner apps need a real delegated property write path inside the connected organization.
+ * WHY:   External apps need a real delegated property write path inside the connected organization.
  * WHAT:  Creates a draft property tied to the organization owner record.
  * HOW:   Persists tenant org ownership plus broker/RED ownership links for compatibility with existing property flows.
  */

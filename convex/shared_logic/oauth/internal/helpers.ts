@@ -10,6 +10,9 @@ export async function getClientOrThrow(ctx: any, clientId: string) {
   if (!client || !client.isActive) {
     throw new ConvexError({ code: "INVALID_CLIENT", message: "Unknown or inactive OAuth client" });
   }
+  if (!client.trusted) {
+    throw new ConvexError({ code: "INACTIVE_CLIENT", message: "OAuth client is not active for authorization" });
+  }
   return client;
 }
 

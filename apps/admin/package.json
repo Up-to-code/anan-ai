@@ -11,6 +11,14 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@anan/auth": "workspace:*",
+    "@anan/auth-client": "workspace:*",
+    "@anan/convex-adapters": "workspace:*",
+    "@anan/domain-contracts": "workspace:*",
+    "@anan/platform-core": "workspace:*",
+    "@anan/testing": "workspace:*",
+    "@anan/ui": "workspace:*",
+    "@anan/web-foundation": "workspace:*",
     "@convex-dev/better-auth": "^0.11.4",
     "better-auth": "1.5.6",
     "clsx": "^2.1.1",

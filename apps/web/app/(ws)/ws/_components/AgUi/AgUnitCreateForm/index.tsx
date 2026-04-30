@@ -20,6 +20,8 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition, type ChangeEvent } from "react";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import type { UnitCreateActionResult, UnitCreateFormData } from "@/app/(ws)/ws/(zones)/projects/shared/forms/unitFormSubmission";
+import { LocationPicker } from "@anan/location-map/react";
+import type { LocationValue } from "@anan/location-map";
 import ZonePageIntro from "../../ZoneShell/ZonePageIntro";
 import { FieldLabel, FileRow, ReviewRow, SectionCard, SelectInput, TextArea, TextInput, UploadTile } from "../AgPropertyForm/controls";
 import { cn } from "@/lib/utils";
@@ -34,6 +36,7 @@ import {
 } from "../AgCreationFlow";
 
 type UnitCreateFormProps = {
+  mode?: "standalone" | "project_child";
   initialData?: Partial<UnitCreateFormData>;
   title: string;
   description: string;
@@ -72,6 +75,7 @@ function createInitialUnitData(initialData?: Partial<UnitCreateFormData>): UnitC
   return {
     name: initialData?.name ?? "",
     location: initialData?.location ?? "",
+    locationDetails: initialData?.locationDetails ?? null,
     unitType: initialData?.unitType ?? "apartment",
     listingType: initialData?.listingType ?? "sale",
     price: initialData?.price ?? "",
@@ -121,6 +125,7 @@ function StepIntro({
  */
 export default function AgUnitCreateForm({
   initialData,
+  mode = "standalone",
   title,
   description,
   submitLabel,
@@ -131,6 +136,7 @@ export default function AgUnitCreateForm({
   const { dictionary, isRtl } = useWebLocale();
   const router = useRouter();
   const copy = dictionary.unitCreate;
+  const eyebrow = mode === "project_child" ? "وحدة داخل المشروع" : copy.eyebrow;
   const [pending, startTransition] = useTransition();
   const [activeStep, setActiveStep] = useState(1);
   const [direction, setDirection] = useState(1);
@@ -150,6 +156,20 @@ export default function AgUnitCreateForm({
       return next;
     });
     setFormData((current) => ({ ...current, [field]: value }));
+  };
+
+  const setLocationValue = (location: LocationValue) => {
+    setFeedback(null);
+    setFieldErrors((current) => {
+      const next = { ...current };
+      delete next.location;
+      return next;
+    });
+    setFormData((current) => ({
+      ...current,
+      location: location.label,
+      locationDetails: location,
+    }));
   };
 
   const handleNext = () => {
@@ -222,7 +242,7 @@ export default function AgUnitCreateForm({
 
   return (
     <div className="flex min-h-full w-full flex-col pb-16" dir={isRtl ? "rtl" : "ltr"}>
-      <ZonePageIntro eyebrow={copy.eyebrow} title={title} description={description} />
+      <ZonePageIntro eyebrow={eyebrow} title={title} description={description} />
 
       <div className="mx-auto mt-4 w-full max-w-3xl">
         <CreationFlowProgress steps={UNIT_STEPS} currentStepIndex={activeStep - 1} onStepChange={(index) => setActiveStep(index + 1)} />
@@ -276,11 +296,24 @@ export default function AgUnitCreateForm({
                         <FieldLabel>{copy.locationLabel}</FieldLabel>
                         <TextInput
                           value={formData.location}
-                          onChange={(value) => setField("location", value)}
+                          onChange={(value) => {
+                            setField("location", value);
+                            setFormData((current) => ({
+                              ...current,
+                              locationDetails: current.locationDetails ? { ...current.locationDetails, label: value } : null,
+                            }));
+                          }}
                           placeholder={copy.locationPlaceholder}
                           icon={<MapPin className="h-4 w-4" />}
                           error={fieldErrors.location}
                           testId="unit-location-input"
+                        />
+                        <LocationPicker
+                          value={formData.locationDetails}
+                          onChange={setLocationValue}
+                          label="اختر موقع الوحدة على الخريطة"
+                          placeholder={copy.locationPlaceholder}
+                          fieldError={fieldErrors.location}
                         />
                       </div>
                       <div className="grid gap-2">

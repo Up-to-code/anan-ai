@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureE2ERequest } from "../_shared";
+import { e2eJsonBodyErrorResponse, ensureE2ERequest, readE2EJsonBody } from "../_shared";
 
 type CleanupRequestBody = {
   namespace?: string;
@@ -18,7 +18,12 @@ export async function POST(request: NextRequest) {
   const blocked = ensureE2ERequest(request);
   if (blocked) return blocked;
 
-  const body = (await request.json().catch(() => ({}))) as CleanupRequestBody;
+  let body: CleanupRequestBody;
+  try {
+    body = await readE2EJsonBody<CleanupRequestBody>(request);
+  } catch (error) {
+    return e2eJsonBodyErrorResponse(error) ?? NextResponse.json({ ok: false, message: "Invalid request body." }, { status: 400 });
+  }
   if (!isSafeNamespace(body.namespace)) {
     return NextResponse.json(
       {
@@ -36,4 +41,3 @@ export async function POST(request: NextRequest) {
     message: "Cleanup contract accepted. No destructive backend cleanup mutation is wired yet.",
   });
 }
-

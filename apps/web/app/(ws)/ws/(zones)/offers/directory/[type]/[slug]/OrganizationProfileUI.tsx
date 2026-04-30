@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { OrganizationPublicProfile } from "@/server/contracts/organizations";
 
 /**
- * WHY:   Detailed partner visibility is key for professional collaboration in the marketplace.
+ * WHY:   Detailed organization visibility is key for professional collaboration in the marketplace.
  * WHAT:  A premium, flat layout showing organization metadata and a grid of their published offers.
  * HOW:   Provides deep links to specific offers while maintaining the simplified, high-contrast design aesthetic.
  */

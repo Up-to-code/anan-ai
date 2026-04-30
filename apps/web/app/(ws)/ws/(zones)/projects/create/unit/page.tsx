@@ -52,7 +52,7 @@ export default async function CreateUnitPage() {
       const propertiesZone = getWorkspacePropertyZone(audience, ownerContext);
       const projectsZone = getWorkspaceProjectZone(audience, ownerContext);
       const id = await propertiesZone.createProperty(mapUnitCreateToPropertyInput(data));
-      await projectsZone.saveProjectDossierDraft(mapUnitCreateToDossierInput(id, data));
+      const dossierResult = await projectsZone.saveProjectDossierDraft(mapUnitCreateToDossierInput(id, data));
       await projectsZone.saveProjectUnits({ propertyId: id, units: mapUnitCreateToUnitInputs(data) });
       await projectsZone.saveProjectPaymentPlans({ propertyId: id, paymentPlans: mapUnitCreateToPaymentPlanInputs(data) });
       await projectsZone.saveProjectComplianceDocuments({ propertyId: id, documents: mapUnitCreateToComplianceDocumentInputs(data) });
@@ -80,7 +80,7 @@ export default async function CreateUnitPage() {
         });
       }
 
-      return { ok: true, redirectTo: `/ws/projects/${id}` } as const;
+      return { ok: true, redirectTo: `/ws/projects/${dossierResult.dossierId ?? id}/units` } as const;
     } catch (error) {
       return toUnitCreateActionFailure(error);
     }
@@ -88,6 +88,7 @@ export default async function CreateUnitPage() {
 
   return (
     <AgUnitCreateForm
+      mode="standalone"
       title={title}
       description={description}
       submitLabel={locale === "fr" ? "Enregistrer l'unité" : locale === "en" ? "Save unit" : "حفظ الوحدة"}

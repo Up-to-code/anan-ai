@@ -40,6 +40,8 @@ describe("resolveAllowedOrigins", () => {
     expect(origins).toContain("http://127.0.0.1:3000");
     expect(origins).toContain("http://localhost:3001");
     expect(origins).toContain("http://127.0.0.1:3001");
+    expect(origins).toContain("http://localhost:3002");
+    expect(origins).toContain("http://127.0.0.1:3002");
   });
 
   it("does not add localhost defaults in production", () => {
@@ -53,6 +55,8 @@ describe("resolveAllowedOrigins", () => {
     expect(origins).not.toContain("http://127.0.0.1:3000");
     expect(origins).not.toContain("http://localhost:3001");
     expect(origins).not.toContain("http://127.0.0.1:3001");
+    expect(origins).not.toContain("http://localhost:3002");
+    expect(origins).not.toContain("http://127.0.0.1:3002");
   });
 
   it("adds explicit extra origins", () => {

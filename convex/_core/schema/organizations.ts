@@ -1,6 +1,7 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { transitionalGlobalSecurityFields } from "./securityFields";
+import { unsafeDynamicPayloadValidator } from "./securityValidators";
 
 const organizationTypeValidator = v.union(v.literal("broker"), v.literal("red"));
 const legacyOwnerTypeValidator = v.union(v.literal("broker"), v.literal("RED"));
@@ -38,8 +39,8 @@ const organizationTables = {
       accentColor: v.optional(v.string()),
       wordmarkUrl: v.optional(v.string()),
     })),
-    featureFlags: v.optional(v.any()),
-    settings: v.optional(v.any()),
+    featureFlags: v.optional(unsafeDynamicPayloadValidator),
+    settings: v.optional(unsafeDynamicPayloadValidator),
     createdByUserId: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -122,7 +123,7 @@ const organizationTables = {
     ),
     visibility: v.union(v.literal("internal"), v.literal("user_visible")),
     summary: v.optional(v.string()),
-    payload: v.optional(v.any()),
+    payload: v.optional(unsafeDynamicPayloadValidator),
     createdAt: v.number(),
   })
     .index("organizationId_sessionId_createdAt", ["organizationId", "sessionId", "createdAt"])
@@ -137,7 +138,7 @@ const organizationTables = {
     scope: v.union(v.literal("workspace"), v.literal("assistant"), v.literal("crm"), v.literal("market")),
     key: v.string(),
     summary: v.string(),
-    value: v.any(),
+    value: unsafeDynamicPayloadValidator,
     importance: v.optional(v.number()),
     source: v.optional(v.string()),
     createdAt: v.number(),

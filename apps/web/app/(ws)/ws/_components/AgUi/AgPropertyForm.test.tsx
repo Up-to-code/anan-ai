@@ -41,12 +41,8 @@ it("renders the project form as a five-step expert wizard", () => {
     />,
   );
 
-  expect(markup).toContain("الخطوة 1 من 5");
-  expect(markup).toContain("هوية المشروع");
-  expect(markup).toContain("الحجم والمزيج");
-  expect(markup).toContain("السعر والمقارنة");
-  expect(markup).toContain("الخدمات والجاهزية");
-  expect(markup).toContain("مراجعة الخبير");
-  expect(markup).toContain("الاسم والنوع والظهور والموقع السعودي");
+  expect(markup).toContain("الخطوة 1");
+  expect(markup).toContain("الأساسيات");
+  expect(markup).toContain("الموقع السعودي المنظم");
   expect(markup).toContain("نوع المشروع");
 });

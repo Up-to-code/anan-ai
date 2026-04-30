@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import {
   Activity,
-  ArrowLeft,
   CheckCircle2,
   Clock3,
   Eye,
@@ -30,11 +28,13 @@ import type {
   WorkspaceProjectAnalytics,
   WorkspaceProjectAnalyticsBrokerRow,
 } from "@/server/contracts/properties";
+import { trackProjectEventAction } from "../../actions/trackProjectEvent";
+import type { ProjectMutationActionResult } from "../ProjectsPage/actionTypes";
 import type { WorkspaceProject } from "../../types/projectTypes";
 import DeveloperProjectAnalyticsPage from "./DeveloperProjectAnalyticsPage";
 
-type AnalyticsTabKey = "overview" | "network" | "activity";
 type PerformanceMetricKey = "views" | "clicks" | "clickRate";
+type AnalyticsSectionKey = "overview" | "brokers" | "interaction" | "activity";
 
 const CHART_COLORS = {
   views: "#0f766e",
@@ -44,24 +44,6 @@ const CHART_COLORS = {
   accent: "#0ea5e9",
   soft: "#94a3b8",
 };
-
-const TAB_LABELS: { key: AnalyticsTabKey; label: string; description: string }[] = [
-  {
-    key: "overview",
-    label: "الأداء",
-    description: "ابدأ من الوصول والتفاعل واقرأ القصة العامة للمشروع في شاشة واحدة.",
-  },
-  {
-    key: "network",
-    label: "شبكة الوسطاء",
-    description: "من يقود الحركة، وأين تقف الحالات الحالية داخل الشبكة.",
-  },
-  {
-    key: "activity",
-    label: "النشاط والمراحل",
-    description: "تابع أحدث الإشارات، وتوزيع التفاعلات، والمراحل المفتوحة الآن.",
-  },
-];
 
 const PERFORMANCE_METRIC_LABELS: Record<PerformanceMetricKey, { label: string; helper: string; color: string }> = {
   views: {
@@ -80,6 +62,13 @@ const PERFORMANCE_METRIC_LABELS: Record<PerformanceMetricKey, { label: string; h
     color: CHART_COLORS.accent,
   },
 };
+
+const ANALYTICS_SECTIONS: Array<{ key: AnalyticsSectionKey; label: string }> = [
+  { key: "overview", label: "نظرة عامة" },
+  { key: "brokers", label: "الوسطاء" },
+  { key: "interaction", label: "التفاعل" },
+  { key: "activity", label: "النشاط" },
+];
 
 function formatDateTime(value: number | null) {
   if (!value) return "بدون نشاط";
@@ -110,48 +99,6 @@ function getRecentWindowTotals(analytics: WorkspaceProjectAnalytics, windowSize 
   return { recentWindow, recentViews, recentClicks };
 }
 
-function KpiCard({
-  label,
-  value,
-  helper,
-  icon,
-  tone = "default",
-}: {
-  label: string;
-  value: string | number;
-  helper?: string;
-  icon: React.ReactNode;
-  tone?: "default" | "highlight";
-}) {
-  const cardClassName =
-    tone === "highlight"
-      ? "rounded-2xl border border-[color:color-mix(in_srgb,var(--workspace-highlight)_20%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_4%,var(--workspace-panel))] p-4 text-right"
-      : "rounded-2xl border border-[color:var(--workspace-border)] bg-[var(--workspace-panel)] p-4 text-right";
-
-  return (
-    <div className={cardClassName}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="text-right">
-          <div className="text-[11px] font-bold tracking-[0.18em] text-muted-foreground">{label}</div>
-          <div className="mt-3 text-3xl font-black tracking-tight text-foreground">
-            {typeof value === "number" ? formatNumber(value) : value}
-          </div>
-        </div>
-        <div
-          className={
-            tone === "highlight"
-              ? "flex h-10 w-10 items-center justify-center rounded-full bg-[color:color-mix(in_srgb,var(--workspace-highlight)_12%,transparent)] text-[var(--workspace-highlight)]"
-              : "flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-background/80 text-muted-foreground"
-          }
-        >
-          {icon}
-        </div>
-      </div>
-      {helper ? <div className="mt-3 text-[13px] leading-6 text-muted-foreground">{helper}</div> : null}
-    </div>
-  );
-}
-
 function AnalyticsPanel({
   title,
   description,
@@ -167,88 +114,20 @@ function AnalyticsPanel({
 }) {
   const panelClassName =
     tone === "highlight"
-      ? "rounded-[28px] border border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] bg-card/80 p-5 shadow-sm lg:p-6"
-      : "rounded-[28px] border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-5 shadow-sm lg:p-6";
+      ? "rounded-lg border border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] bg-card/80 p-4 shadow-sm"
+      : "rounded-lg border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-4 shadow-sm";
 
   return (
     <section className={panelClassName}>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="text-right">
-          <h2 className="text-lg font-black text-foreground">{title}</h2>
+          <h2 className="text-[16px] font-black text-foreground">{title}</h2>
           {description ? <p className="mt-2 text-[13px] leading-6 text-muted-foreground">{description}</p> : null}
         </div>
         {actions ? <div className="shrink-0">{actions}</div> : null}
       </div>
-      <div className="mt-5">{children}</div>
+      <div className="mt-4">{children}</div>
     </section>
-  );
-}
-
-function AnalyticsTabs({
-  activeTab,
-  onChange,
-}: {
-  activeTab: AnalyticsTabKey;
-  onChange: (tab: AnalyticsTabKey) => void;
-}) {
-  const activeConfig = TAB_LABELS.find((tab) => tab.key === activeTab) ?? TAB_LABELS[0];
-
-  return (
-    <section
-      className="rounded-[26px] border border-[color:var(--workspace-border)] bg-[var(--workspace-elevated)] p-3 shadow-sm lg:p-4"
-      aria-label="Project analytics tabs"
-    >
-      <div className="flex flex-wrap justify-end gap-2">
-        {TAB_LABELS.map((tab) => {
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => onChange(tab.key)}
-              className={
-                isActive
-                  ? "inline-flex items-center rounded-full border border-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,var(--workspace-panel))] px-4 py-2.5 text-[13px] font-black text-foreground transition-all"
-                  : "inline-flex items-center rounded-full border border-border/60 bg-background/60 px-4 py-2.5 text-[13px] font-bold text-muted-foreground transition-all hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_14%,var(--workspace-border))] hover:text-foreground"
-              }
-            >
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-      <p className="mt-4 text-right text-[13px] leading-6 text-muted-foreground">{activeConfig.description}</p>
-    </section>
-  );
-}
-
-function ChartMetricTabs({
-  activeMetric,
-  onChange,
-}: {
-  activeMetric: PerformanceMetricKey;
-  onChange: (metric: PerformanceMetricKey) => void;
-}) {
-  return (
-    <div className="flex flex-wrap justify-end gap-2" aria-label="Performance chart metrics">
-      {Object.entries(PERFORMANCE_METRIC_LABELS).map(([key, config]) => {
-        const isActive = activeMetric === key;
-        return (
-          <button
-            key={key}
-            type="button"
-            onClick={() => onChange(key as PerformanceMetricKey)}
-            className={
-              isActive
-                ? "inline-flex items-center rounded-full border border-[color:color-mix(in_srgb,var(--workspace-highlight)_30%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,transparent)] px-4 py-2 text-[12px] font-bold text-foreground transition-all"
-                : "inline-flex items-center rounded-full border border-border/60 bg-transparent px-4 py-2 text-[12px] font-bold text-muted-foreground transition-all hover:border-[color:color-mix(in_srgb,var(--workspace-highlight)_18%,var(--workspace-border))] hover:text-foreground"
-            }
-          >
-            {config.label}
-          </button>
-        );
-      })}
-    </div>
   );
 }
 
@@ -260,9 +139,41 @@ function ChartFallbackMetric({
   value: string | number;
 }) {
   return (
-    <div className="rounded-xl border border-border/50 bg-background/60 px-4 py-3 text-right">
+    <div className="rounded-md border border-border/50 bg-background/60 px-4 py-3 text-right">
       <div className="text-[11px] font-bold tracking-[0.14em] text-muted-foreground">{label}</div>
       <div className="mt-2 text-lg font-black text-foreground">{value}</div>
+    </div>
+  );
+}
+
+function AnalyticsSectionTabs({
+  activeSection,
+  onChange,
+}: {
+  activeSection: AnalyticsSectionKey;
+  onChange: (section: AnalyticsSectionKey) => void;
+}) {
+  return (
+    <div dir="rtl" className="flex items-center justify-start border-b border-border/70" aria-label="تبويبات تحليلات المشروع">
+      <div className="flex flex-wrap justify-start gap-7">
+        {ANALYTICS_SECTIONS.map((section) => {
+          const isActive = activeSection === section.key;
+          return (
+            <button
+              key={section.key}
+              type="button"
+              onClick={() => onChange(section.key)}
+              className={
+                isActive
+                  ? "border-b-2 border-foreground px-1 pb-3 text-[13px] font-black text-foreground"
+                  : "border-b-2 border-transparent px-1 pb-3 text-[13px] font-bold text-muted-foreground transition hover:text-foreground"
+              }
+            >
+              {section.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -297,7 +208,7 @@ function ChartSurface({
   }, []);
 
   return (
-    <div ref={containerRef} className="h-[320px] w-full">
+    <div ref={containerRef} className="h-[280px] w-full">
       {canRenderChart ? children : fallback}
     </div>
   );
@@ -317,7 +228,7 @@ function SimpleChartTooltip({
   }
 
   return (
-    <div className="rounded-xl border border-border/70 bg-background px-4 py-3 text-right">
+    <div className="rounded-md border border-border/70 bg-background px-4 py-3 text-right shadow-lg">
       <div className="text-[12px] font-bold text-foreground">{label}</div>
       <div className="mt-2 space-y-1">
         {payload.map((entry) => (
@@ -334,109 +245,60 @@ function SimpleChartTooltip({
   );
 }
 
-function ProjectAnalyticsHeader({
-  project,
-}: {
-  project: WorkspaceProject;
-}) {
-  return (
-    <section className="rounded-[28px] border border-border/60 bg-card/80 p-6 shadow-sm lg:p-8">
-      <div className="space-y-5 text-right">
-        <div className="text-[12px] font-semibold text-muted-foreground">تحليل المشروع</div>
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight text-foreground">{project.title}</h1>
-            <p className="mt-3 max-w-3xl text-[14px] leading-7 text-muted-foreground">
-              {project.shortDescription || project.summary}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <span className="inline-flex items-center rounded-full border border-border/60 bg-background/65 px-3 py-1.5 text-[12px] font-bold text-foreground">
-              {project.location}
-            </span>
-            <span className="inline-flex items-center rounded-full border border-border/60 bg-background/65 px-3 py-1.5 text-[12px] font-bold text-foreground">
-              {project.priceLabel}
-            </span>
-            <span className="inline-flex items-center rounded-full border border-border/60 bg-background/65 px-3 py-1.5 text-[12px] font-bold text-foreground">
-              {project.specs.area}
-            </span>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function SignalBoard({
   analytics,
-  clickRate,
 }: {
   analytics: WorkspaceProjectAnalytics;
-  clickRate: number;
 }) {
-  return (
-    <AnalyticsPanel
-      title="لوحة الإشارات الأساسية"
-      description="ملخص سريع للحركة الحالية قبل الدخول إلى التفاصيل."
-    >
-      <div className="space-y-6">
-        <div>
-          <div className="text-right text-[12px] font-bold text-muted-foreground">مؤشرات الأداء</div>
-          <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <KpiCard
-              label="المشاهدات"
-              value={analytics.kpis.totalViews}
-              helper="حجم الوصول الخام لهذا المشروع."
-              icon={<Eye className="h-5 w-5" />}
-              tone="highlight"
-            />
-            <KpiCard
-              label="النقرات"
-              value={analytics.kpis.totalClicks}
-              helper="الأفعال التي تتجاوز المشاهدة فقط."
-              icon={<MousePointerClick className="h-5 w-5" />}
-            />
-            <KpiCard
-              label="معدل التفاعل"
-              value={formatPercent(clickRate)}
-              helper="النقرات نسبة إلى إجمالي المشاهدات."
-              icon={<Gauge className="h-5 w-5" />}
-              tone="highlight"
-            />
-            <KpiCard
-              label="الوسطاء المرتبطون"
-              value={analytics.kpis.connectedBrokers}
-              helper="عدد الوسطاء الذين يحرّكون المشروع الآن."
-              icon={<Users className="h-5 w-5" />}
-            />
-          </div>
-        </div>
+  const latestEvent = analytics.recentEvents[0] ?? null;
 
-        <div>
-          <div className="text-right text-[12px] font-bold text-muted-foreground">السياق التشغيلي</div>
-          <div className="mt-3 grid gap-3 md:grid-cols-3">
-            <KpiCard
-              label="العملاء المدارون"
-              value={analytics.kpis.brokerManagedClients}
-              helper="عملاء مرتبطون بعلاقات broker-managed."
-              icon={<Users className="h-5 w-5" />}
-            />
-            <KpiCard
-              label="الحالات النشطة"
-              value={analytics.kpis.activeCases}
-              helper="علاقات أو عروض لا تزال مفتوحة."
-              icon={<Activity className="h-5 w-5" />}
-            />
-            <KpiCard
-              label="الصفقات النشطة"
-              value={analytics.kpis.activeDeals}
-              helper="صفقات مرتبطة بالمشروع ولم تغلق بعد."
-              icon={<CheckCircle2 className="h-5 w-5" />}
-            />
-          </div>
+  return (
+    <section className="space-y-3 text-right">
+      <div>
+        <h2 className="text-[16px] font-black text-foreground">الحركة المباشرة</h2>
+        <div className="mt-2 flex items-center justify-end gap-2 text-[12px] font-bold text-muted-foreground">
+          <span>يتم التحديث مباشرة من حركة المشروع</span>
+          <span className="h-2 w-2 rounded-full bg-sky-400" />
         </div>
       </div>
-    </AnalyticsPanel>
+
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-xl border border-border/60 bg-[var(--workspace-elevated)] p-4">
+          <Users className="mb-3 h-4 w-4 text-muted-foreground" />
+          <div className="text-2xl font-black text-foreground">{formatNumber(analytics.kpis.connectedBrokers)}</div>
+          <div className="mt-1 text-[11px] font-bold text-muted-foreground">وسطاء</div>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-[var(--workspace-elevated)] p-4">
+          <Activity className="mb-3 h-4 w-4 text-muted-foreground" />
+          <div className="text-2xl font-black text-foreground">{formatNumber(analytics.kpis.activeCases)}</div>
+          <div className="mt-1 text-[11px] font-bold text-muted-foreground">حالات</div>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-[var(--workspace-elevated)] p-4">
+          <CheckCircle2 className="mb-3 h-4 w-4 text-muted-foreground" />
+          <div className="text-2xl font-black text-foreground">{formatNumber(analytics.kpis.activeDeals)}</div>
+          <div className="mt-1 text-[11px] font-bold text-muted-foreground">صفقات</div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border/60 bg-[var(--workspace-elevated)] p-4">
+        <div className="text-[11px] font-bold text-muted-foreground">آخر نشاط</div>
+        {latestEvent ? (
+          <>
+            <div className="mt-2 text-[14px] font-black text-foreground">{latestEvent.title}</div>
+            <div className="mt-1 text-[12px] leading-5 text-muted-foreground">
+              {latestEvent.subtitle ?? "نشاط على المشروع"} · {formatDateTime(latestEvent.createdAt)}
+            </div>
+          </>
+        ) : (
+          <div className="mt-2 text-[13px] font-bold text-muted-foreground">لا يوجد نشاط بعد.</div>
+        )}
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <ChartFallbackMetric label="عملاء الوسطاء" value={formatNumber(analytics.kpis.brokerManagedClients)} />
+        <ChartFallbackMetric label="إجمالي النقرات" value={formatNumber(analytics.kpis.totalClicks)} />
+      </div>
+    </section>
   );
 }
 
@@ -459,36 +321,80 @@ function VisibilityTrendChart({
   const metricMeta = PERFORMANCE_METRIC_LABELS[activeMetric];
   const dataKey = activeMetric === "clickRate" ? "clickRate" : activeMetric;
   const latestPoint = chartData.at(-1);
+  const metricCards: Array<{
+    key: PerformanceMetricKey;
+    label: string;
+    value: string;
+    icon: React.ReactNode;
+  }> = [
+    {
+      key: "views",
+      label: "المشاهدات",
+      value: formatNumber(analytics.kpis.totalViews),
+      icon: <Eye className="h-4 w-4" />,
+    },
+    {
+      key: "clicks",
+      label: "النقرات",
+      value: formatNumber(analytics.kpis.totalClicks),
+      icon: <MousePointerClick className="h-4 w-4" />,
+    },
+    {
+      key: "clickRate",
+      label: "معدل التفاعل",
+      value: formatPercent(clickRate),
+      icon: <Gauge className="h-4 w-4" />,
+    },
+  ];
 
   return (
     <AnalyticsPanel
       title="أداء المشروع عبر الزمن"
       description="راقب تطور الوصول والتفاعل عبر الزمن من نفس الرسم."
-      actions={<ChartMetricTabs activeMetric={activeMetric} onChange={onMetricChange} />}
     >
-      <div className="mb-5 rounded-[24px] border border-border/60 bg-background/70 p-4">
-        <div className="text-right">
-          <div className="text-[11px] font-bold tracking-[0.18em] text-muted-foreground">{metricMeta.label}</div>
-          <div className="mt-2 text-3xl font-black text-foreground">
-            {activeMetric === "clickRate"
-              ? formatPercent(clickRate)
-              : formatNumber(activeMetric === "views" ? analytics.kpis.totalViews : analytics.kpis.totalClicks)}
-          </div>
-          <div className="mt-2 text-[13px] leading-6 text-muted-foreground">{metricMeta.helper}</div>
-          {latestPoint ? (
-            <div className="mt-2 text-[12px] font-semibold text-muted-foreground">
-              آخر نقطة مسجلة: {latestPoint.label} •{" "}
-              {activeMetric === "clickRate"
-                ? formatPercent(latestPoint.clickRate)
-                : formatNumber(activeMetric === "views" ? latestPoint.views : latestPoint.clicks)}
-            </div>
-          ) : null}
+      <div className="mb-5 grid overflow-hidden rounded-lg border border-border/60 bg-background/65 sm:grid-cols-4">
+        {metricCards.map((metric) => {
+          const isActive = activeMetric === metric.key;
+          return (
+            <button
+              key={metric.key}
+              type="button"
+              onClick={() => onMetricChange(metric.key)}
+              className={
+                isActive
+                  ? "border-b border-border/60 bg-[color:color-mix(in_srgb,var(--workspace-highlight)_8%,transparent)] p-4 text-right sm:border-b-0 sm:border-l"
+                  : "border-b border-border/60 p-4 text-right transition hover:bg-background sm:border-b-0 sm:border-l"
+              }
+            >
+              <span className={isActive ? "text-[var(--workspace-highlight)]" : "text-muted-foreground"}>{metric.icon}</span>
+              <span className="mt-3 block text-[11px] font-bold text-muted-foreground">{metric.label}</span>
+              <span className="mt-1 block text-2xl font-black text-foreground">{metric.value}</span>
+            </button>
+          );
+        })}
+        <div className="p-4 text-right">
+          <Users className="mb-3 h-4 w-4 text-muted-foreground" />
+          <div className="text-[11px] font-bold text-muted-foreground">الوسطاء المرتبطون</div>
+          <div className="mt-1 text-2xl font-black text-foreground">{formatNumber(analytics.kpis.connectedBrokers)}</div>
         </div>
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3 text-[12px] font-bold text-muted-foreground">
+        <span>
+          {latestPoint
+            ? `آخر نقطة: ${latestPoint.label} · ${
+                activeMetric === "clickRate"
+                  ? formatPercent(latestPoint.clickRate)
+                  : formatNumber(activeMetric === "views" ? latestPoint.views : latestPoint.clicks)
+              }`
+            : "لا توجد نقاط مسجلة بعد"}
+        </span>
+        <span>{metricMeta.helper}</span>
       </div>
 
       <ChartSurface
         fallback={
-          <div className="grid h-full content-start gap-3 rounded-[20px] bg-muted/20 p-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid h-full content-start gap-3 rounded-md bg-muted/20 p-4 md:grid-cols-2 xl:grid-cols-4">
             <ChartFallbackMetric label="آخر نافذة" value={`${recentWindow.length} يوم`} />
             <ChartFallbackMetric label="مشاهدات قريبة" value={formatNumber(recentViews)} />
             <ChartFallbackMetric label="نقرات قريبة" value={formatNumber(recentClicks)} />
@@ -514,13 +420,6 @@ function VisibilityTrendChart({
           </LineChart>
         </ResponsiveContainer>
       </ChartSurface>
-
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <ChartFallbackMetric label="آخر 4 أيام" value={`${recentWindow.length} يوم`} />
-        <ChartFallbackMetric label="المشاهدات القريبة" value={formatNumber(recentViews)} />
-        <ChartFallbackMetric label="النقرات القريبة" value={formatNumber(recentClicks)} />
-        <ChartFallbackMetric label="معدل التفاعل العام" value={formatPercent(clickRate)} />
-      </div>
     </AnalyticsPanel>
   );
 }
@@ -533,7 +432,7 @@ function BrokerStateChart({ analytics }: { analytics: WorkspaceProjectAnalytics 
     >
       <ChartSurface
         fallback={
-          <div className="grid h-full content-start gap-3 rounded-[20px] bg-muted/20 p-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid h-full content-start gap-3 rounded-md bg-muted/20 p-4 sm:grid-cols-2 xl:grid-cols-3">
             {analytics.brokerStateSummary.map((entry) => (
               <ChartFallbackMetric key={entry.key} label={entry.label} value={formatNumber(entry.count)} />
             ))}
@@ -579,10 +478,10 @@ function TopBrokerChart({ rows }: { rows: WorkspaceProjectAnalyticsBrokerRow[] }
     >
       <ChartSurface
         fallback={
-          <div className="grid h-full content-start gap-3 rounded-[20px] bg-muted/20 p-4">
+          <div className="grid h-full content-start gap-3 rounded-md bg-muted/20 p-4">
             {data.length > 0 ? (
               data.map((row) => (
-                <div key={row.brokerName} className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3 text-right">
+                <div key={row.brokerName} className="rounded-md border border-border/70 bg-background/80 px-4 py-3 text-right">
                   <div className="text-[14px] font-black text-foreground">{row.brokerName}</div>
                   <div className="mt-1 text-[12px] text-muted-foreground">
                     {formatNumber(row.views)} مشاهدة / {formatNumber(row.clicks)} نقرة
@@ -590,7 +489,7 @@ function TopBrokerChart({ rows }: { rows: WorkspaceProjectAnalyticsBrokerRow[] }
                 </div>
               ))
             ) : (
-              <div className="rounded-2xl border border-dashed border-border/70 bg-background/80 px-4 py-10 text-center text-[13px] font-semibold text-muted-foreground">
+              <div className="rounded-md border border-dashed border-border/70 bg-background/80 px-4 py-10 text-center text-[13px] font-semibold text-muted-foreground">
                 لا يوجد وسطاء لعرض المقارنة بعد.
               </div>
             )}
@@ -621,7 +520,7 @@ function InteractionChart({ analytics }: { analytics: WorkspaceProjectAnalytics 
     >
       <ChartSurface
         fallback={
-          <div className="grid h-full content-start gap-3 rounded-[20px] bg-muted/20 p-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid h-full content-start gap-3 rounded-md bg-muted/20 p-4 sm:grid-cols-2 xl:grid-cols-3">
             {analytics.interactionSummary.map((entry) => (
               <ChartFallbackMetric key={entry.eventType} label={entry.label} value={formatNumber(entry.count)} />
             ))}
@@ -650,7 +549,7 @@ function StageSummaryChart({ analytics }: { analytics: WorkspaceProjectAnalytics
     >
       <ChartSurface
         fallback={
-          <div className="grid h-full content-start gap-3 rounded-[20px] bg-muted/20 p-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid h-full content-start gap-3 rounded-md bg-muted/20 p-4 sm:grid-cols-2 xl:grid-cols-3">
             {analytics.stageSummary.map((entry) => (
               <ChartFallbackMetric key={entry.key} label={entry.label} value={formatNumber(entry.count)} />
             ))}
@@ -685,7 +584,7 @@ function BrokerTable({ rows }: { rows: WorkspaceProjectAnalyticsBrokerRow[] }) {
         <>
           <div className="space-y-3 lg:hidden">
             {rows.map((row) => (
-              <div key={row.brokerId} className="rounded-[22px] border border-border/70 bg-background/75 p-4 text-right">
+              <div key={row.brokerId} className="rounded-md border border-border/70 bg-background/75 p-4 text-right">
                 <div className="flex items-start justify-between gap-4">
                   <span className="inline-flex rounded-full border border-border bg-card px-3 py-1 text-[11px] font-bold text-foreground">
                     {row.stateLabel}
@@ -743,7 +642,7 @@ function BrokerTable({ rows }: { rows: WorkspaceProjectAnalyticsBrokerRow[] }) {
           </div>
         </>
       ) : (
-        <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-10 text-center text-[13px] font-semibold text-muted-foreground">
+        <div className="rounded-md border border-dashed border-border bg-muted/20 px-4 py-10 text-center text-[13px] font-semibold text-muted-foreground">
           لا توجد علاقات وسطاء مسجلة لهذا المشروع بعد.
         </div>
       )}
@@ -752,22 +651,25 @@ function BrokerTable({ rows }: { rows: WorkspaceProjectAnalyticsBrokerRow[] }) {
 }
 
 function RecentActivityList({ analytics }: { analytics: WorkspaceProjectAnalytics }) {
+  const visibleEvents = analytics.recentEvents.slice(0, 8);
+  const hiddenCount = Math.max(analytics.recentEvents.length - visibleEvents.length, 0);
+
   return (
     <AnalyticsPanel
       title="التسلسل الزمني للنشاط"
       description="سجل مرتب زمنياً لأهم ما حدث حول المشروع."
     >
-      {analytics.recentEvents.length > 0 ? (
+      {visibleEvents.length > 0 ? (
         <div className="space-y-4">
-          {analytics.recentEvents.map((event, index) => (
+          {visibleEvents.map((event, index) => (
             <div key={event.id} className="relative pr-8">
-              {index < analytics.recentEvents.length - 1 ? (
+              {index < visibleEvents.length - 1 ? (
                 <span className="absolute right-[11px] top-8 h-[calc(100%+8px)] w-px bg-border/70" />
               ) : null}
               <span className="absolute right-0 top-1 flex h-6 w-6 items-center justify-center rounded-full border border-[color:color-mix(in_srgb,var(--workspace-highlight)_24%,var(--workspace-border))] bg-[color:color-mix(in_srgb,var(--workspace-highlight)_10%,var(--workspace-panel))] text-[var(--workspace-highlight)]">
                 <Clock3 className="h-3.5 w-3.5" />
               </span>
-              <div className="rounded-[22px] border border-border/70 bg-background/75 px-4 py-4 text-right">
+              <div className="rounded-md border border-border/70 bg-background/75 px-4 py-4 text-right">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="text-[12px] font-bold tabular-nums text-muted-foreground">
                     {formatDateTime(event.createdAt)}
@@ -782,9 +684,14 @@ function RecentActivityList({ analytics }: { analytics: WorkspaceProjectAnalytic
               </div>
             </div>
           ))}
+          {hiddenCount > 0 ? (
+            <div className="rounded-md border border-dashed border-border/70 bg-background/50 px-4 py-3 text-center text-[12px] font-bold text-muted-foreground">
+              يوجد {formatNumber(hiddenCount)} نشاط إضافي محفوظ في سجل المشروع.
+            </div>
+          ) : null}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-10 text-center text-[13px] font-semibold text-muted-foreground">
+        <div className="rounded-md border border-dashed border-border bg-muted/20 px-4 py-10 text-center text-[13px] font-semibold text-muted-foreground">
           لا توجد نشاطات مرتبطة بهذا المشروع بعد.
         </div>
       )}
@@ -807,11 +714,11 @@ function BrokerProjectAnalyticsPage({
   onTrackProjectEvent?: (input: {
     eventType: ProjectAnalyticsEventType;
     source: string;
-  }) => Promise<{ ok: true }>;
+  }) => Promise<ProjectMutationActionResult>;
 }) {
-  const [activeTab, setActiveTab] = useState<AnalyticsTabKey>("overview");
   const [activePerformanceMetric, setActivePerformanceMetric] =
     useState<PerformanceMetricKey>("views");
+  const [activeSection, setActiveSection] = useState<AnalyticsSectionKey>("overview");
   const clickRate = useMemo(
     () => computeClickRate(analytics.kpis.totalClicks, analytics.kpis.totalViews),
     [analytics.kpis.totalClicks, analytics.kpis.totalViews],
@@ -825,58 +732,40 @@ function BrokerProjectAnalyticsPage({
   }, [onTrackProjectEvent, project.id]);
 
   return (
-    <div className="min-h-full bg-background/60 pb-24">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-6 lg:px-8 lg:py-8">
-        <nav className="flex flex-wrap items-center justify-between gap-4">
-          <Link
-            href={`/ws/projects/${project.id}`}
-            className="inline-flex items-center gap-2 text-[12px] font-bold tracking-[0.2em] text-muted-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            العودة لتفاصيل المشروع
-          </Link>
-          <div className="text-right">
-            <div className="text-[11px] font-bold tracking-[0.18em] text-muted-foreground">Project Analytics</div>
-            <div className="mt-1 text-[14px] font-bold text-foreground">{project.title}</div>
+    <div className="flex w-full flex-col gap-5">
+      <AnalyticsSectionTabs activeSection={activeSection} onChange={setActiveSection} />
+
+      {activeSection === "overview" ? (
+        <div className="space-y-5">
+          <VisibilityTrendChart
+            analytics={analytics}
+            activeMetric={activePerformanceMetric}
+            onMetricChange={setActivePerformanceMetric}
+            clickRate={clickRate}
+          />
+          <SignalBoard analytics={analytics} />
+        </div>
+      ) : null}
+
+      {activeSection === "brokers" ? (
+        <div className="space-y-5">
+          <div className="grid gap-5 xl:grid-cols-2">
+            <BrokerStateChart analytics={analytics} />
+            <TopBrokerChart rows={analytics.brokerRows} />
           </div>
-        </nav>
 
-        <ProjectAnalyticsHeader project={project} />
+          <BrokerTable rows={analytics.brokerRows} />
+        </div>
+      ) : null}
 
-        <AnalyticsTabs activeTab={activeTab} onChange={setActiveTab} />
+      {activeSection === "interaction" ? (
+        <div className="grid gap-5 xl:grid-cols-2">
+          <StageSummaryChart analytics={analytics} />
+          <InteractionChart analytics={analytics} />
+        </div>
+      ) : null}
 
-        {activeTab === "overview" ? (
-          <div className="grid gap-6 xl:grid-cols-[minmax(320px,0.92fr)_minmax(0,1.08fr)]">
-            <SignalBoard analytics={analytics} clickRate={clickRate} />
-            <VisibilityTrendChart
-              analytics={analytics}
-              activeMetric={activePerformanceMetric}
-              onMetricChange={setActivePerformanceMetric}
-              clickRate={clickRate}
-            />
-          </div>
-        ) : null}
-
-        {activeTab === "network" ? (
-          <div className="space-y-6">
-            <div className="grid gap-6 xl:grid-cols-2">
-              <BrokerStateChart analytics={analytics} />
-              <TopBrokerChart rows={analytics.brokerRows} />
-            </div>
-            <BrokerTable rows={analytics.brokerRows} />
-          </div>
-        ) : null}
-
-        {activeTab === "activity" ? (
-          <div className="space-y-6">
-            <div className="grid gap-6 xl:grid-cols-2">
-              <StageSummaryChart analytics={analytics} />
-              <InteractionChart analytics={analytics} />
-            </div>
-            <RecentActivityList analytics={analytics} />
-          </div>
-        ) : null}
-      </div>
+      {activeSection === "activity" ? <RecentActivityList analytics={analytics} /> : null}
     </div>
   );
 }
@@ -898,14 +787,24 @@ export default function ProjectAnalyticsPage({
   onTrackProjectEvent?: (input: {
     eventType: ProjectAnalyticsEventType;
     source: string;
-  }) => Promise<{ ok: true }>;
+  }) => Promise<ProjectMutationActionResult>;
 }) {
+  const trackProjectEvent = onTrackProjectEvent ?? ((input: {
+    eventType: ProjectAnalyticsEventType;
+    source: string;
+  }) =>
+    trackProjectEventAction({
+      propertyId: project.propertyId,
+      eventType: input.eventType,
+      source: input.source,
+    }));
+
   if (ownerAudience === "developer") {
     return (
       <DeveloperProjectAnalyticsPage
         project={project}
         analytics={analytics}
-        onTrackProjectEvent={onTrackProjectEvent}
+        onTrackProjectEvent={trackProjectEvent}
       />
     );
   }
@@ -914,7 +813,7 @@ export default function ProjectAnalyticsPage({
     <BrokerProjectAnalyticsPage
       project={project}
       analytics={analytics}
-      onTrackProjectEvent={onTrackProjectEvent}
+      onTrackProjectEvent={trackProjectEvent}
     />
   );
 }

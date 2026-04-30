@@ -135,14 +135,12 @@ async function resolveOptionalSessionContext(
     return null;
   }
 
-  let { user, profile } = await getUserAndProfile(dependencies, token);
+  const { user, profile: currentProfile } = await getUserAndProfile(dependencies, token);
 
   if (!user || user.isActive === false) {
     return null;
   }
-  if (!profile) {
-    profile = await dependencies.profilesRepository.ensureCurrent(token);
-  }
+  const profile = currentProfile ?? await dependencies.profilesRepository.ensureCurrent(token);
 
   return buildResolvedSession(token, user, profile, organizationContext);
 }

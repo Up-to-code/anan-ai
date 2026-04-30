@@ -1,7 +1,7 @@
 /**
  * resultMerger.ts — Workspace Result Merging
  *
- * WHY:   Partner responses should be merged into one operational reply.
+ * WHY:   Workspace responses should be merged into one operational reply.
  * WHAT:  Merges multiple agent outputs into a single response.
  * HOW:   Uses an LLM merge prompt and falls back to concatenation.
  */
@@ -9,7 +9,7 @@
 import type { ActionCtx } from "../../../_generated/server";
 import { streamText } from "ai";
 import { getChatModel } from "../../../shared_logic/lib/providers";
-import { cachedGenerateText } from "../../../shared_logic/llmCache";
+import { cachedGenerateText } from "../../../shared_logic/integrations/llmCacheNode";
 import { FALLBACK_MESSAGES } from "../shared/errorHandler";
 import type { AnanAgentResult } from "../AnanAgent";
 import { getAgentLLMConfigSafe } from "../config";

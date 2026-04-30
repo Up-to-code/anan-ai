@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { POST } from "./route";
 
-function createRequest(body: unknown, headers: Record<string, string> = { "x-e2e-secret": "secret" }) {
+function createRequest(body: unknown, headers: Record<string, string> = { authorization: "Bearer secret" }) {
   return new NextRequest("http://localhost:3000/api/e2e/cleanup", {
     method: "POST",
     headers: {
@@ -10,6 +10,17 @@ function createRequest(body: unknown, headers: Record<string, string> = { "x-e2e
       ...headers,
     },
     body: JSON.stringify(body),
+  });
+}
+
+function createRawRequest(body: string, headers: Record<string, string> = { authorization: "Bearer secret" }) {
+  return new NextRequest("http://localhost:3000/api/e2e/cleanup", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      ...headers,
+    },
+    body,
   });
 }
 
@@ -46,12 +57,25 @@ describe("POST /api/e2e/cleanup", () => {
     expect(body.ok).toBe(true);
   });
 
+  it("rejects malformed JSON instead of silently falling back to an empty body", async () => {
+    stubE2EEnv();
+
+    const response = await POST(createRawRequest("{"));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({
+      ok: false,
+      message: "Request body must be valid JSON.",
+    });
+  });
+
   it("rejects requests with a missing or invalid shared secret", async () => {
     stubE2EEnv();
 
     const response = await POST(createRequest(
       { namespace: "e2e-playwright-abc123" },
-      { "x-e2e-secret": "wrong" },
+      { authorization: "Bearer wrong" },
     ));
     const body = await response.json();
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AlertTriangle, Bell, Mail } from "lucide-react";
+import { SessionAvatar } from "@anan/ui/auth";
 import WebLocaleSwitcher from "@/app/_components/WebLocaleSwitcher";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import type { WorkspaceZoneKey } from "@/server/contracts/workspace";
@@ -131,6 +132,9 @@ export default function WorkspaceTopNavbar({
             <span className="hidden sm:inline">{verificationBadgeLabel}</span>
           </Link>
         ) : null}
+        <div className="hidden sm:block" aria-hidden="true">
+          <SessionAvatar className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:color-mix(in_srgb,var(--workspace-border)_80%,transparent)] bg-[var(--workspace-elevated)] object-cover text-[11px] font-black text-foreground" />
+        </div>
         <WorkspaceIdentityMenu user={user} organization={organization} variant={variant} />
       </div>
     </header>

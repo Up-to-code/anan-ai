@@ -1,13 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  defaultOrchestrate: vi.fn(async () => ({
-    ok: true,
-    output: "default native output",
-    agentsDispatched: ["anan_knowledge"],
-    agentResults: [],
-    totalTokenUsage: { inputTokens: 1, outputTokens: 2 },
-  })),
   workspaceOrchestrate: vi.fn(async () => ({
     ok: true,
     output: "workspace native output",
@@ -18,10 +11,6 @@ const mocks = vi.hoisted(() => ({
   })),
 }));
 
-vi.mock("../agents/anan", () => ({
-  orchestrate: mocks.defaultOrchestrate,
-}));
-
 vi.mock("../agents/anan_workspace", () => ({
   orchestrate: mocks.workspaceOrchestrate,
 }));
@@ -29,12 +18,11 @@ vi.mock("../agents/anan_workspace", () => ({
 import { runAssistantSurfaceRuntime } from "./assistantSurfaceRuntime";
 
 beforeEach(() => {
-  mocks.defaultOrchestrate.mockClear();
   mocks.workspaceOrchestrate.mockClear();
 });
 
 describe("assistantSurfaceRuntime", () => {
-  it("routes default surface through the native public orchestrator", async () => {
+  it("disables legacy default buyer orchestration", async () => {
     const ctx = {} as any;
     const result = await runAssistantSurfaceRuntime({
       surface: "default",
@@ -59,23 +47,9 @@ describe("assistantSurfaceRuntime", () => {
       },
     });
 
-    expect(mocks.defaultOrchestrate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        ctx,
-        prompt: "ابحث عن شقة",
-        intentPrompt: "ابحث عن شقة",
-        role: "user",
-        userId: "user-1",
-        threadId: "thread-1",
-        channel: "web",
-        ragContext: "[Company Knowledge]",
-        promptBudgetMeta: expect.objectContaining({ memoryTokens: 2 }),
-      }),
-    );
-    expect(result).toEqual({
-      output: "default native output",
-      runtime: "anan-native",
-    });
+    expect(mocks.workspaceOrchestrate).not.toHaveBeenCalled();
+    expect(result.output).toContain("Anan AI");
+    expect(result.runtime).toBe("anan-native");
   });
 
   it("routes workspace surface through the native workspace orchestrator and preserves streaming hooks", async () => {
@@ -92,7 +66,7 @@ describe("assistantSurfaceRuntime", () => {
       role: "broker",
       userId: "broker-1",
       threadId: "thread-2",
-      channel: "app",
+      channel: "workspace",
       onStageEvent,
       onTextDelta,
       onStreamCancelledCheck,
@@ -106,7 +80,7 @@ describe("assistantSurfaceRuntime", () => {
         role: "broker",
         userId: "broker-1",
         threadId: "thread-2",
-        channel: "app",
+        channel: "workspace",
         onStageEvent,
         onTextDelta,
         onStreamCancelledCheck,
@@ -130,8 +104,7 @@ describe("assistantSurfaceRuntime", () => {
       channel: "web",
     });
 
-    expect(mocks.defaultOrchestrate).not.toHaveBeenCalled();
-    expect(result.output).toContain("Etijah");
+    expect(result.output).toContain("Anan AI");
     expect(result.runtime).toBe("anan-native");
   });
 });

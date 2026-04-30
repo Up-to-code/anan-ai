@@ -76,7 +76,7 @@ it("skips the authorization screen when the session is already authorized", asyn
       offlineAccess: false,
       requiresConsent: false,
       existingAuthorization: { id: "auth-1" },
-      client: { name: "Partner App", publisherName: "Partner" },
+      client: { name: "External App", publisherName: "External Publisher" },
       requestedScopes: [],
     },
   });
@@ -101,7 +101,7 @@ it("renders the authorization page when new consent is required", async () => {
       offlineAccess: false,
       requiresConsent: true,
       existingAuthorization: null,
-      client: { name: "Partner App", publisherName: "Partner" },
+      client: { name: "External App", publisherName: "External Publisher" },
       requestedScopes: [
         { id: "profile:read", label: "قراءة الملف", newlyRequested: true },
       ],
@@ -112,6 +112,6 @@ it("renders the authorization page when new consent is required", async () => {
   const markup = renderToStaticMarkup(element);
 
   expect(markup).toContain("data-testid=\"admin-shell\"");
-  expect(markup).toContain("السماح لتطبيق Partner App");
+  expect(markup).toContain("السماح لتطبيق External App");
   expect(markup).toContain("السماح للتطبيق");
 });

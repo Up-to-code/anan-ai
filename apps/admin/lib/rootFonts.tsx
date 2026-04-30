@@ -1,3 +1,4 @@
+import { createRootFontClassName } from "@anan/web-foundation/fonts";
 import localFont from "next/font/local";
 
 const cairo = localFont({
@@ -16,4 +17,4 @@ const geistMono = localFont({
   variable: "--font-geist-mono",
 });
 
-export const rootFontClassName = `${cairo.variable} ${cairo.className} ${geistMono.variable} antialiased font-sans`;
+export const rootFontClassName = createRootFontClassName(cairo.variable, cairo.className, geistMono.variable);

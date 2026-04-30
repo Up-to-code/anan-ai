@@ -13,9 +13,9 @@ const orderStatusValidator = v.union(
 );
 
 const orderChannelValidator = v.union(
-  v.literal("whatsapp"),
-  v.literal("app"),
+  v.literal("workspace"),
   v.literal("web"),
+  v.literal("admin"),
 );
 
 const assignmentFilterValidator = v.union(

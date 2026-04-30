@@ -68,8 +68,8 @@ async function insertOwnerProfiles(ctx: any, brokerId: any, redId: any) {
     authUserId: "auth-red-owner",
     email: "red@owner.com",
     name: "RED Owner",
-    REDId: redId,
-    role: "RED",
+    developerId: redId,
+    role: "developer",
     roleStatus: "approved",
     isActive: true,
   } as any);

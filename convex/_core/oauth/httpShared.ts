@@ -22,6 +22,32 @@ export function jsonResponse(body: unknown, status = 200, headers: Record<string
   });
 }
 
+export class JsonRequestError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status = 400) {
+    super(message);
+    this.name = "JsonRequestError";
+    this.status = status;
+  }
+}
+
+export async function readJsonBody(request: Request, options: { maxBytes?: number } = {}) {
+  const maxBytes = options.maxBytes ?? 16_384;
+  const body = await request.text();
+  if (new TextEncoder().encode(body).byteLength > maxBytes) {
+    throw new JsonRequestError("Request body is too large", 413);
+  }
+  if (!body.trim()) {
+    throw new JsonRequestError("Request body is required");
+  }
+  try {
+    return JSON.parse(body) as unknown;
+  } catch {
+    throw new JsonRequestError("Request body must be valid JSON");
+  }
+}
+
 export function formValue(params: URLSearchParams, key: string) {
   const value = params.get(key);
   return value?.trim() || undefined;

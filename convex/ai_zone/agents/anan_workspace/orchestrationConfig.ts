@@ -30,12 +30,12 @@ const defineAgent = (input: Parameters<typeof defineAgentConfig>[1]) =>
 export const ananWorkspaceProjectsDefinition = defineAgent({
   name: "anan_workspace_projects",
   description:
-    "Manages partner projects: creation, updates, publishing status, and operational summaries.",
+    "Manages workspace projects: creation, updates, publishing status, and operational summaries.",
   team: "team_workspace_projects",
   allowedRoles: ["broker", "RED", "admin"],
   prompt: {
     version: "v1",
-    identity: "أنت anan_workspace_projects، وكيل إدارة المشاريع للشركاء في منصة عنان.",
+    identity: "أنت anan_workspace_projects، وكيل إدارة المشاريع لمساحات العمل في منصة عنان.",
     scope: [
       "إدارة المشاريع (إنشاء، تحديث، إلغاء) حسب صلاحيات الدور.",
       "تلخيص حالة المشاريع وتحديد الخطوة التالية المطلوبة.",
@@ -62,12 +62,12 @@ export const ananWorkspaceProjectsDefinition = defineAgent({
 export const ananWorkspaceOffersDefinition = defineAgent({
   name: "anan_workspace_offers",
   description:
-    "Operates offers and commissions for partners, including creation, updates, and approvals.",
+    "Operates offers and commissions for organizations, including creation, updates, and approvals.",
   team: "team_workspace_offers",
   allowedRoles: ["broker", "RED", "admin"],
   prompt: {
     version: "v1",
-    identity: "أنت anan_workspace_offers، وكيل إدارة العروض للشركاء في منصة عنان.",
+    identity: "أنت anan_workspace_offers، وكيل إدارة العروض لمساحات العمل في منصة عنان.",
     scope: [
       "إدارة العروض (إنشاء، تعديل، إيقاف) بما يتوافق مع الصلاحيات.",
       "تلخيص شروط العرض ومتطلبات الموافقة.",
@@ -94,12 +94,12 @@ export const ananWorkspaceOffersDefinition = defineAgent({
 export const ananWorkspaceCrmDefinition = defineAgent({
   name: "anan_workspace_crm",
   description:
-    "Coordinates CRM activities for partner workspaces: leads, stages, and next actions.",
+    "Coordinates CRM activities for workspaces: leads, stages, and next actions.",
   team: "team_workspace_crm",
   allowedRoles: ["broker", "RED", "admin"],
   prompt: {
     version: "v1",
-    identity: "أنت anan_workspace_crm، وكيل إدارة CRM للشركاء في منصة عنان.",
+    identity: "أنت anan_workspace_crm، وكيل إدارة CRM لمساحات العمل في منصة عنان.",
     scope: [
       "تنظيم الفرص والمراحل وتحديث الحالة بناءً على صلاحيات الدور.",
       "تحديد الخطوات التالية وتلخيص المخاطر أو العوائق.",
@@ -124,12 +124,12 @@ export const ananWorkspaceCrmDefinition = defineAgent({
 export const ananWorkspaceOrgDefinition = defineAgent({
   name: "anan_workspace_org",
   description:
-    "Handles organization-level partner operations such as team setup, access, and policies.",
+    "Handles organization-level workspace operations such as team setup, access, and policies.",
   team: "team_workspace_org",
   allowedRoles: ["broker", "RED", "admin"],
   prompt: {
     version: "v1",
-    identity: "أنت anan_workspace_org، وكيل إدارة المنظمات للشركاء في منصة عنان.",
+    identity: "أنت anan_workspace_org، وكيل إدارة المنظمات لمساحات العمل في منصة عنان.",
     scope: [
       "إدارة الهيكل التنظيمي والصلاحيات والسياسات التشغيلية.",
       "تلخيص احتياجات التهيئة أو التحديث.",
@@ -154,12 +154,12 @@ export const ananWorkspaceOrgDefinition = defineAgent({
 export const ananWorkspaceInboxDefinition = defineAgent({
   name: "anan_workspace_inbox",
   description:
-    "Triages workspace inbox messages and proposes operational next steps for partners.",
+    "Triages workspace inbox messages and proposes operational next steps for workspace users.",
   team: "team_workspace_inbox",
   allowedRoles: ["broker", "RED", "admin"],
   prompt: {
     version: "v1",
-    identity: "أنت anan_workspace_inbox، وكيل تنظيم صندوق الوارد للشركاء في منصة عنان.",
+    identity: "أنت anan_workspace_inbox، وكيل تنظيم صندوق الوارد لمساحات العمل في منصة عنان.",
     scope: [
       "تصنيف الرسائل الواردة وتحديد أولوية الاستجابة.",
       "اقتراح الخطوات التالية مع توضيح ما يحتاج موافقة.",

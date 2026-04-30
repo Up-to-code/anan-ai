@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { createRepositoryRefs, mutationRef, queryRef, voidMutationRef } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 type KnowledgeApiRefs = {
@@ -9,7 +9,7 @@ type KnowledgeApiRefs = {
   deleteKnowledgePage: unknown;
 };
 
-const knowledgeApi = apiUnsafe["admin_zone/knowledge"] as KnowledgeApiRefs;
+const knowledgeApi = createRepositoryRefs<KnowledgeApiRefs>(apiUnsafe, "admin_zone/knowledge");
 
 export type AdminKnowledgePage = {
   _id: string;
@@ -27,18 +27,18 @@ export type AdminKnowledgePage = {
  */
 export const convexAdminKnowledgeRepository = {
   async list(token: string) {
-    return fetchQuery(knowledgeApi.listKnowledgePages as never, {} as never, { token }) as Promise<AdminKnowledgePage[]>;
+    return queryRef<AdminKnowledgePage[]>(token, knowledgeApi.listKnowledgePages);
   },
   async get(token: string, id: string) {
-    return fetchQuery(knowledgeApi.getKnowledgePage as never, { id } as never, { token }) as Promise<AdminKnowledgePage | null>;
+    return queryRef<AdminKnowledgePage | null>(token, knowledgeApi.getKnowledgePage, { id });
   },
   async create(token: string, input: Omit<AdminKnowledgePage, "_id" | "_creationTime">) {
-    return fetchMutation(knowledgeApi.createKnowledgePage as never, input as never, { token }) as Promise<string>;
+    return mutationRef<string>(token, knowledgeApi.createKnowledgePage, input);
   },
   async update(token: string, input: Partial<Omit<AdminKnowledgePage, "_creationTime">> & { id: string }) {
-    await fetchMutation(knowledgeApi.updateKnowledgePage as never, input as never, { token });
+    await voidMutationRef(token, knowledgeApi.updateKnowledgePage, input);
   },
   async remove(token: string, id: string) {
-    await fetchMutation(knowledgeApi.deleteKnowledgePage as never, { id } as never, { token });
+    await voidMutationRef(token, knowledgeApi.deleteKnowledgePage, { id });
   },
 };

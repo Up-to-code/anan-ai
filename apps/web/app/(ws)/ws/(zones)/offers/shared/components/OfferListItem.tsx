@@ -10,13 +10,11 @@ import {
   ShieldCheck,
   Tag,
   Building2,
-  MessageCircle,
   Phone,
 } from "lucide-react";
 import { useWebLocale } from "@/app/_components/WebLocaleProvider";
 import {
   buildClientRequirementViewModel,
-  buildWhatsAppHref,
   formatOfferMarketplaceLabel,
   formatOfferPrice,
   formatOfferStageLabel,
@@ -138,22 +136,10 @@ function OfferBrandBlock({ item }: { item: WorkspaceOfferSummary }) {
   const { locale } = useWebLocale();
   const copy = getOfferUiCopy(locale);
   const organization = item.primaryOrganization;
-  const whatsappHref = buildWhatsAppHref(organization?.phone);
 
   return (
     <div className="flex flex-col gap-3 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-wrap items-center gap-2">
-        {whatsappHref ? (
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-[12px] font-bold text-foreground transition hover:bg-muted/50"
-          >
-            <MessageCircle className="h-4 w-4" />
-            {copy.list.whatsapp}
-          </a>
-        ) : null}
         {organization?.website ? (
           <a
             href={organization.website}

@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { mutationRef, queryRef } from "@anan/convex-adapters/repository";
 import { organizationProfilesApi } from "./api";
 import type {
   BootstrapOrganizationProfileInput,
@@ -21,50 +21,48 @@ export const convexOrganizationProfilesRepository: OrganizationProfilesRepositor
       return [];
     }
 
-    return fetchQuery(
-      organizationProfilesApi.listOrganizationProfilesByIds as never,
-      { organizationIds } as never,
-      { token },
-    ) as ReturnType<OrganizationProfilesRepository["listByOrganizationIds"]>;
+    return queryRef<Awaited<ReturnType<OrganizationProfilesRepository["listByOrganizationIds"]>>>(
+      token,
+      organizationProfilesApi.listOrganizationProfilesByIds,
+      { organizationIds },
+    );
   },
 
   async getCurrent(token) {
-    return fetchQuery(
-      organizationProfilesApi.getCurrentOrganizationProfile as never,
-      {} as never,
-      { token },
-    ) as ReturnType<OrganizationProfilesRepository["getCurrent"]>;
+    return queryRef<Awaited<ReturnType<OrganizationProfilesRepository["getCurrent"]>>>(
+      token,
+      organizationProfilesApi.getCurrentOrganizationProfile,
+    );
   },
 
   async getById(token, organizationId) {
-    return fetchQuery(
-      organizationProfilesApi.getOrganizationProfileById as never,
-      { organizationId } as never,
-      { token },
-    ) as ReturnType<OrganizationProfilesRepository["getById"]>;
+    return queryRef<Awaited<ReturnType<OrganizationProfilesRepository["getById"]>>>(
+      token,
+      organizationProfilesApi.getOrganizationProfileById,
+      { organizationId },
+    );
   },
 
   async bootstrapCurrent(token, input) {
-    return fetchMutation(
-      organizationProfilesApi.bootstrapCurrentOrganizationProfile as never,
-      input as never,
-      { token },
-    ) as ReturnType<OrganizationProfilesRepository["bootstrapCurrent"]>;
+    return mutationRef<Awaited<ReturnType<OrganizationProfilesRepository["bootstrapCurrent"]>>>(
+      token,
+      organizationProfilesApi.bootstrapCurrentOrganizationProfile,
+      input,
+    );
   },
 
   async syncCurrent(token) {
-    return fetchMutation(
-      organizationProfilesApi.syncCurrentOrganizationProfile as never,
-      {} as never,
-      { token },
-    ) as ReturnType<OrganizationProfilesRepository["syncCurrent"]>;
+    return mutationRef<Awaited<ReturnType<OrganizationProfilesRepository["syncCurrent"]>>>(
+      token,
+      organizationProfilesApi.syncCurrentOrganizationProfile,
+    );
   },
 
   async updateCurrent(token, input) {
-    return fetchMutation(
-      organizationProfilesApi.updateCurrentOrganizationProfile as never,
-      input as never,
-      { token },
-    ) as ReturnType<OrganizationProfilesRepository["updateCurrent"]>;
+    return mutationRef<Awaited<ReturnType<OrganizationProfilesRepository["updateCurrent"]>>>(
+      token,
+      organizationProfilesApi.updateCurrentOrganizationProfile,
+      input,
+    );
   },
 };

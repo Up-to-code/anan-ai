@@ -9,7 +9,6 @@
 - `schema/*.ts`: domain-scoped table declarations consumed by `convex/schema.ts`
 - `security/accessPolicy.ts`: central permission checks used by protected backend flows
 - `security/identity.ts`: normalized session/context shape for callers
-- `security/channelAuth.ts`: channel-facing auth helpers
 - `oauth/http.ts`: OAuth callback/request handling used by the Convex HTTP router
 
 ## Core Exports And Consumers

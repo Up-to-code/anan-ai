@@ -18,6 +18,7 @@ import organizationTables from "./_core/schema/organizations";
 import projectsTables from "./_core/schema/projects";
 import realEstateOsTables from "./_core/schema/realEstateOs";
 import auditTables from "./_core/schema/audit";
+import integrationTables from "./_core/schema/integrations";
 
 /**
  * anan-ai schema
@@ -46,4 +47,5 @@ export default defineSchema({
   ...projectsTables,
   ...realEstateOsTables,
   ...auditTables,
+  ...integrationTables,
 });

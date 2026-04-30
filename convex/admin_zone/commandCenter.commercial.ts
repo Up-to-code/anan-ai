@@ -143,9 +143,9 @@ export const commercialAnalytics = query({
         { label: "مغلق خاسر", value: orders.filter((item) => item.status === "closed_lost").length },
       ],
       orderChannels: [
-        { label: "واتساب", value: orders.filter((item) => item.sourceChannel === "whatsapp").length },
-        { label: "التطبيق", value: orders.filter((item) => item.sourceChannel === "app").length },
+        { label: "مساحة العمل", value: orders.filter((item) => item.sourceChannel === "workspace").length },
         { label: "الويب", value: orders.filter((item) => item.sourceChannel === "web").length },
+        { label: "الإدارة", value: orders.filter((item) => item.sourceChannel === "admin").length },
       ],
       topSenders: Array.from(senderVolume.values())
         .sort((left, right) => right.offersCount - left.offersCount)
@@ -153,4 +153,3 @@ export const commercialAnalytics = query({
     };
   },
 });
-

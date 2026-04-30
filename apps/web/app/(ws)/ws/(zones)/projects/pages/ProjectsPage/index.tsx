@@ -1,17 +1,10 @@
 import type { WorkspaceProject } from "../../types/projectTypes";
-import type { ProjectMutationActionResult } from "./actionTypes";
-import type { ProjectAnalyticsEventType } from "@/server/contracts/properties";
+import type { WorkspaceAudience } from "@/server/contracts/workspace";
 import ProjectsWorkspace from "./ProjectsWorkspace";
 
 type ProjectsPageProps = {
+  audience: WorkspaceAudience;
   projects: WorkspaceProject[];
-  onDeleteProject?: (projectId: string) => Promise<ProjectMutationActionResult>;
-  onPublishProject?: (projectId: string) => Promise<ProjectMutationActionResult>;
-  onTrackProjectEvent?: (input: {
-    id: string;
-    eventType: ProjectAnalyticsEventType;
-    source: string;
-  }) => Promise<{ ok: true }>;
 };
 
 /**
@@ -20,17 +13,13 @@ type ProjectsPageProps = {
  * HOW:   Passes server-loaded projects and supported server actions to `ProjectsWorkspace`.
  */
 export default function ProjectsPage({
+  audience,
   projects,
-  onDeleteProject,
-  onPublishProject,
-  onTrackProjectEvent,
 }: ProjectsPageProps) {
   return (
     <ProjectsWorkspace
+      audience={audience}
       initialProjects={projects}
-      onDeleteProject={onDeleteProject}
-      onPublishProject={onPublishProject}
-      onTrackProjectEvent={onTrackProjectEvent}
     />
   );
 }

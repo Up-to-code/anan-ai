@@ -1,6 +1,5 @@
-import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
+import { deletedResponse, handleRoute, jsonResponse, readJsonBody } from "@anan/web-foundation/api";
 import { getOrganizationApiKeyHeader, getOrganizationApiKeyOrigin } from "@/app/api/org/_shared";
-import { toErrorResponse } from "@/server/contracts/errors";
 import {
   deleteOrganizationPropertyByApiKey,
   updateOrganizationPropertyByApiKey,
@@ -16,24 +15,17 @@ type OrganizationPropertyRouteProps = {
  * HOW:   Resolves the route param, validates JSON when needed, and delegates to the shared domain service.
  */
 export async function PATCH(request: Request, { params }: OrganizationPropertyRouteProps) {
-  try {
-    const body = await request.json();
+  return handleRoute(async () => {
+    const body = await readJsonBody(request);
     const { propertyId } = await params;
-    return Response.json({ property: await updateOrganizationPropertyByApiKey(getOrganizationApiKeyHeader(request), propertyId, body, getOrganizationApiKeyOrigin(request)) });
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      return toInvalidJsonResponse();
-    }
-    return toErrorResponse(error);
-  }
+    return jsonResponse({ property: await updateOrganizationPropertyByApiKey(getOrganizationApiKeyHeader(request), propertyId, body, getOrganizationApiKeyOrigin(request)) });
+  });
 }
 
 export async function DELETE(request: Request, { params }: OrganizationPropertyRouteProps) {
-  try {
+  return handleRoute(async () => {
     const { propertyId } = await params;
     await deleteOrganizationPropertyByApiKey(getOrganizationApiKeyHeader(request), propertyId, getOrganizationApiKeyOrigin(request));
-    return Response.json({ deleted: true });
-  } catch (error) {
-    return toErrorResponse(error);
-  }
+    return deletedResponse();
+  });
 }

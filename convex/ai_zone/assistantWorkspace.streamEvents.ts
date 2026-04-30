@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { internalMutation, mutation, query } from "../_generated/server";
 import type { Doc } from "../_generated/dataModel";
-import { resolveAssistantOwner } from "./services/assistantService";
+import { resolveAssistantOwner } from "./services/assistantService/owner";
 type StreamEventType = "stage" | "delta" | "assistant_meta" | "thread" | "lifecycle" | "error";
 type StreamEventRecord = Doc<"assistantStreamEvents">;
 type InsertStreamEventArgs = {

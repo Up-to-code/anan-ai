@@ -45,7 +45,7 @@ it("loads activity data with the mapped admin-log source", async () => {
 it("loads the executive analytics dataset", async () => {
   convexAdminCommandCenterRepository.getOverview.mockResolvedValue({ range: "90d", kpis: {} });
   convexAdminCommandCenterRepository.getCommercialAnalytics.mockResolvedValue({ range: "90d", summary: {} });
-  convexAdminCommandCenterRepository.getPartnerHealthAnalytics.mockResolvedValue({ range: "90d", summary: {} });
+  convexAdminCommandCenterRepository.getEcosystemHealthAnalytics.mockResolvedValue({ range: "90d", summary: {} });
   convexAdminCommandCenterRepository.getQueueHealthAnalytics.mockResolvedValue({ range: "90d", summary: {} });
 
   const result = await getAnalyticsPageData("executive");
@@ -53,12 +53,12 @@ it("loads the executive analytics dataset", async () => {
   expect(requireAdminPageSession).toHaveBeenCalledWith("/analytics/executive");
   expect(convexAdminCommandCenterRepository.getOverview).toHaveBeenCalledWith("admin-token", "90d");
   expect(convexAdminCommandCenterRepository.getCommercialAnalytics).toHaveBeenCalledWith("admin-token", "90d");
-  expect(convexAdminCommandCenterRepository.getPartnerHealthAnalytics).toHaveBeenCalledWith("admin-token", "90d");
+  expect(convexAdminCommandCenterRepository.getEcosystemHealthAnalytics).toHaveBeenCalledWith("admin-token", "90d");
   expect(convexAdminCommandCenterRepository.getQueueHealthAnalytics).toHaveBeenCalledWith("admin-token", "90d");
   expect(result.data).toEqual({
     overview: { range: "90d", kpis: {} },
     commercial: { range: "90d", summary: {} },
-    partners: { range: "90d", summary: {} },
+    ecosystem: { range: "90d", summary: {} },
     queue: { range: "90d", summary: {} },
   });
 });

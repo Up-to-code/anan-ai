@@ -75,9 +75,9 @@ export async function deleteProjectAction(args: WorkspaceActionArgs) {
   await convexOrganizationAssetsRepository.markEntityAssetsPendingDelete(session.token, {
     attachedEntityType: "project",
     attachedEntityId: args.projectId,
-    deletionReason: "project_deleted",
+    deletionReason: "project_archived",
   });
-  await getWorkspacePropertyZone(args.audience, args.ownerContext).deleteProperty({ id: args.projectId });
+  await getWorkspaceProjectZone(args.audience, args.ownerContext).archiveProject({ propertyId: args.projectId });
   return { redirectTo: "/ws/projects" };
 }
 

@@ -7,8 +7,9 @@ const { requireWorkspaceData } = vi.hoisted(() => ({
   requireWorkspaceData: vi.fn(),
 }));
 
-const { getWorkspacePropertyZone } = vi.hoisted(() => ({
+const { getWorkspacePropertyZone, getWorkspaceProjectZone } = vi.hoisted(() => ({
   getWorkspacePropertyZone: vi.fn(),
+  getWorkspaceProjectZone: vi.fn(),
 }));
 
 const { useRouter } = vi.hoisted(() => ({
@@ -21,6 +22,11 @@ const { useRouter } = vi.hoisted(() => ({
 
 vi.mock("next/navigation", () => ({
   useRouter,
+}));
+
+vi.mock("convex/react", () => ({
+  useConvexAuth: () => ({ isAuthenticated: true, isLoading: false }),
+  useQuery: () => undefined,
 }));
 
 vi.mock("../../_lib/workspaceData", () => ({
@@ -45,10 +51,39 @@ const listProperties = vi.fn(async () => ({
   isDone: true,
   continueCursor: "",
 }));
+const getProjectDossier = vi.fn(async () => null);
+const getProjectsWorkspace = vi.fn(async () => ({
+  page: [
+    {
+      property: {
+        _id: "property-1",
+        title: "مالقا ريزيدنس",
+        address: "الرياض",
+        location: "الملقا، الرياض",
+        description: "مشروع سكني فاخر",
+        price: 2100000,
+        beds: 4,
+        baths: 5,
+        media: [{ key: "file-1", url: "https://images.unsplash.com/photo-1", name: "cover.jpg" }],
+        publicationState: "published",
+      },
+      dossier: null,
+      units: [],
+      paymentPlans: [],
+      documents: [],
+      adLicenses: [],
+      brokerAuthorizations: [],
+    },
+  ],
+}));
 
 vi.mock("@/server/ws/zones", () => ({
   getWorkspacePropertyZone: getWorkspacePropertyZone.mockImplementation(() => ({
     listProperties,
+  })),
+  getWorkspaceProjectZone: getWorkspaceProjectZone.mockImplementation(() => ({
+    getProjectDossier,
+    getProjectsWorkspace,
   })),
 }));
 
@@ -66,15 +101,11 @@ describe("/ws/projects page", () => {
 
     expect(markup).toContain("المشاريع");
     expect(markup).toContain("مالقا ريزيدنس");
-    expect(markup).toContain("تحليل");
-    expect(markup).toContain("فتح التفاصيل");
-    expect(getWorkspacePropertyZone).toHaveBeenCalledWith("broker", {
+    expect(getWorkspaceProjectZone).toHaveBeenCalledWith("broker", {
       ownerType: "broker",
       ownerId: "broker-1",
     });
-    expect(listProperties).toHaveBeenCalledWith({
-      paginationOpts: { cursor: null, numItems: 100 },
-    });
+    expect(getProjectsWorkspace).toHaveBeenCalled();
     expect(markup).toContain("https://images.unsplash.com/photo-1");
   });
 
@@ -88,9 +119,7 @@ describe("/ws/projects page", () => {
     );
 
     expect(markup).toContain("المشاريع");
-    expect(getWorkspacePropertyZone).toHaveBeenCalledWith("broker", null);
-    expect(listProperties).toHaveBeenCalledWith({
-      paginationOpts: { cursor: null, numItems: 100 },
-    });
+    expect(getWorkspaceProjectZone).toHaveBeenCalledWith("broker", null);
+    expect(getProjectsWorkspace).toHaveBeenCalled();
   });
 });

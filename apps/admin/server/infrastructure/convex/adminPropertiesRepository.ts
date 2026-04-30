@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { createRepositoryRefs, mutationRef, queryRef, voidMutationRef } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 import type { PaginationOptions, PaginationResult } from "@/server/infrastructure/convex/adminUsersRepository";
 
@@ -14,8 +14,8 @@ type RedApiRefs = {
   listREDs: unknown;
 };
 
-const propertiesApi = apiUnsafe["admin_zone/properties"] as PropertiesApiRefs;
-const redApi = apiUnsafe["admin_zone/RED"] as RedApiRefs;
+const propertiesApi = createRepositoryRefs<PropertiesApiRefs>(apiUnsafe, "admin_zone/properties");
+const redApi = createRepositoryRefs<RedApiRefs>(apiUnsafe, "admin_zone/RED");
 
 export type AdminPropertyRecord = {
   _id: string;
@@ -64,21 +64,21 @@ export const convexAdminPropertiesRepository = {
     token: string,
     input: { paginationOpts: PaginationOptions; status?: "available" | "sold" | "reserved"; REDId?: string },
   ) {
-    return fetchQuery(propertiesApi.listProperties as never, input as never, { token }) as Promise<PaginationResult<AdminPropertyRecord>>;
+    return queryRef<PaginationResult<AdminPropertyRecord>>(token, propertiesApi.listProperties, input);
   },
   async get(token: string, id: string) {
-    return fetchQuery(propertiesApi.getProperty as never, { id } as never, { token }) as Promise<AdminPropertyRecord | null>;
+    return queryRef<AdminPropertyRecord | null>(token, propertiesApi.getProperty, { id });
   },
   async listReds(token: string) {
-    return fetchQuery(redApi.listREDs as never, {} as never, { token }) as Promise<AdminRedRecord[]>;
+    return queryRef<AdminRedRecord[]>(token, redApi.listREDs);
   },
   async create(token: string, input: PropertyMutationInput) {
-    return fetchMutation(propertiesApi.createProperty as never, input as never, { token }) as Promise<string>;
+    return mutationRef<string>(token, propertiesApi.createProperty, input);
   },
   async update(token: string, input: Partial<PropertyMutationInput> & { id: string }) {
-    await fetchMutation(propertiesApi.updateProperty as never, input as never, { token });
+    await voidMutationRef(token, propertiesApi.updateProperty, input);
   },
   async remove(token: string, id: string) {
-    await fetchMutation(propertiesApi.deleteProperty as never, { id } as never, { token });
+    await voidMutationRef(token, propertiesApi.deleteProperty, { id });
   },
 };

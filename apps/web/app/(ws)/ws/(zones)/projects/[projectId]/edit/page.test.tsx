@@ -12,6 +12,7 @@ const {
   saveProjectComplianceDocuments,
   saveProjectAdLicense,
   saveProjectBrokerAuthorization,
+  archiveProject,
   updateProperty,
   deleteProperty,
   attachOrganizationAssets,
@@ -61,6 +62,7 @@ const {
     saveProjectComplianceDocuments: vi.fn(async () => undefined),
     saveProjectAdLicense: vi.fn(async () => undefined),
     saveProjectBrokerAuthorization: vi.fn(async () => undefined),
+    archiveProject: vi.fn(async () => ({ ok: true as const })),
     updateProperty: vi.fn(async () => undefined),
     deleteProperty: vi.fn(async () => undefined),
     attachOrganizationAssets: vi.fn(async () => undefined),
@@ -110,6 +112,7 @@ vi.mock("@/server/ws/zones", () => ({
     saveProjectComplianceDocuments,
     saveProjectAdLicense,
     saveProjectBrokerAuthorization,
+    archiveProject,
   })),
 }));
 
@@ -200,6 +203,7 @@ beforeEach(() => {
   saveProjectComplianceDocuments.mockClear();
   saveProjectAdLicense.mockClear();
   saveProjectBrokerAuthorization.mockClear();
+  archiveProject.mockClear();
   updateProperty.mockClear();
   deleteProperty.mockClear();
   setCapturedProps(null);
@@ -262,5 +266,6 @@ it("supports deleting the project", async () => {
       attachedEntityId: "property-1",
     }),
   );
-  expect(deleteProperty).toHaveBeenCalledWith({ id: "property-1" });
+  expect(archiveProject).toHaveBeenCalledWith({ propertyId: "property-1" });
+  expect(deleteProperty).not.toHaveBeenCalled();
 });

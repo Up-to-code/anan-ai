@@ -29,6 +29,16 @@ type ParsedCookie = {
   sameSite: "Lax" | "Strict" | "None";
 };
 
+export class E2EJsonBodyError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status = 400) {
+    super(message);
+    this.name = "E2EJsonBodyError";
+    this.status = status;
+  }
+}
+
 function isProductionLike() {
   return process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
 }
@@ -47,7 +57,27 @@ function getSharedSecret(request: NextRequest) {
   if (authorization?.toLowerCase().startsWith("bearer ")) {
     return authorization.slice("bearer ".length).trim();
   }
-  return request.headers.get("x-e2e-secret")?.trim() ?? request.nextUrl.searchParams.get("secret")?.trim() ?? null;
+  return request.headers.get("x-e2e-secret")?.trim() ?? null;
+}
+
+export async function readE2EJsonBody<TBody = unknown>(request: NextRequest, maxBytes = 4096): Promise<TBody> {
+  const text = await request.text();
+  if (new TextEncoder().encode(text).byteLength > maxBytes) {
+    throw new E2EJsonBodyError("Request body is too large.", 413);
+  }
+  if (!text.trim()) {
+    return {} as TBody;
+  }
+  try {
+    return JSON.parse(text) as TBody;
+  } catch {
+    throw new E2EJsonBodyError("Request body must be valid JSON.");
+  }
+}
+
+export function e2eJsonBodyErrorResponse(error: unknown): NextResponse | null {
+  if (!(error instanceof E2EJsonBodyError)) return null;
+  return NextResponse.json({ ok: false, message: error.message }, { status: error.status });
 }
 
 function getCookieDomain(request: NextRequest) {

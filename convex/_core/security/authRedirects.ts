@@ -152,6 +152,8 @@ export function resolveAllowedOrigins(options: AllowedOriginsOptions): string[] 
     origins.add("http://127.0.0.1:3000");
     origins.add("http://localhost:3001");
     origins.add("http://127.0.0.1:3001");
+    origins.add("http://localhost:3002");
+    origins.add("http://127.0.0.1:3002");
   }
 
   return Array.from(origins);

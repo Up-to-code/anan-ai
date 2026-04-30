@@ -1,10 +1,13 @@
 import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireEntitlements } from "../_core/security/accessPolicy";
 import {
   applyOwnedProjectUnitBulkActions,
+  archiveOwnedProject,
   getOwnedProjectDossierDetail,
   getOwnedProjectDossierDetailByProjectId,
+  getOwnedProjectWorkspaceDetail,
+  getOwnedProjectsWorkspace,
   requestOwnedProjectPublication,
   saveOwnedProjectAdLicense,
   saveOwnedProjectBrokerAuthorization,
@@ -24,7 +27,7 @@ import {
 } from "../shared_logic/projects/validation";
 
 async function requireBrokerAccess(ctx: any) {
-  const access = await requireRole(ctx, ["broker"]);
+  const access = await requireEntitlements(ctx, ["workspace:broker"]);
   return { authUserId: access.authUserId, role: access.role, brokerId: access.brokerId };
 }
 
@@ -51,6 +54,16 @@ export const getProjectReadiness = query({
   },
 });
 
+export const getProjectsWorkspace = query({
+  args: {},
+  handler: async (ctx) => getOwnedProjectsWorkspace(ctx, await requireBrokerAccess(ctx)),
+});
+
+export const getProjectWorkspaceDetail = query({
+  args: { projectId: v.string() },
+  handler: async (ctx, { projectId }) => getOwnedProjectWorkspaceDetail(ctx, projectId, await requireBrokerAccess(ctx)),
+});
+
 export const saveProjectDossierDraft = mutation({
   args: projectDossierDraftInputValidator,
   handler: async (ctx, args) => saveOwnedProjectDossierDraft(ctx, args, await requireBrokerAccess(ctx)),
@@ -64,6 +77,11 @@ export const saveProjectUnits = mutation({
 export const applyProjectUnitBulkActions = mutation({
   args: { propertyId: v.id("properties"), actions: v.array(projectUnitBulkActionValidator) },
   handler: async (ctx, { propertyId, actions }) => applyOwnedProjectUnitBulkActions(ctx, propertyId, actions as any, await requireBrokerAccess(ctx)),
+});
+
+export const archiveProject = mutation({
+  args: { propertyId: v.id("properties") },
+  handler: async (ctx, { propertyId }) => archiveOwnedProject(ctx, propertyId, await requireBrokerAccess(ctx)),
 });
 
 export const saveProjectPaymentPlans = mutation({

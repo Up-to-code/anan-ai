@@ -32,6 +32,7 @@ export type ProjectReadinessResult = {
 type DossierRecord = {
   _id: GenericId<"projectDossiers">;
   propertyId: GenericId<"properties">;
+  inventoryKind?: "project" | "standalone_unit";
   requestedVisibility: "private" | "public";
   ownerType: "broker" | "RED";
   salesMode: "developer_direct" | "broker_mediated" | "broker_owned";
@@ -39,6 +40,7 @@ type DossierRecord = {
   location?: { countryCode?: string; city?: string; district?: string };
   readinessStatus?: ProjectReadinessStatus;
   adminBlockedReason?: string;
+  deletedAt?: number;
 };
 
 type PropertyRecord = {
@@ -52,6 +54,10 @@ type PropertyRecord = {
 
 function blocker(args: ProjectReadinessBlocker): ProjectReadinessBlocker {
   return args;
+}
+
+function activeRows<T extends { deletedAt?: number }>(rows: T[]) {
+  return rows.filter((row) => typeof row.deletedAt !== "number");
 }
 
 export async function getProjectDossierByPropertyId(
@@ -87,7 +93,13 @@ async function collectReadinessInputs(ctx: QueryCtx | MutationCtx, dossier: Doss
       .withIndex("dossierId", (q: any) => q.eq("dossierId", dossier._id))
       .collect(),
   ]);
-  return { units, paymentPlans, documents, adLicenses, brokerAuthorizations };
+  return {
+    units: activeRows(units as any[]),
+    paymentPlans: activeRows(paymentPlans as any[]),
+    documents: activeRows(documents as any[]),
+    adLicenses: activeRows(adLicenses as any[]),
+    brokerAuthorizations: activeRows(brokerAuthorizations as any[]),
+  };
 }
 
 function hasApprovedDocument(documents: any[], documentType: string) {

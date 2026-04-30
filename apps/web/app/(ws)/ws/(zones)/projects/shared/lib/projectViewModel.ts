@@ -10,6 +10,7 @@ import type {
   ProjectUnitInput,
 } from "@/server/contracts/projects";
 import type { UnitReference } from "../../../../_lib/entities";
+import { buildLocationValueFromParts } from "@anan/location-map";
 import type { WorkspaceProject, WorkspaceProjectUnitDetail } from "../../types/projectTypes";
 import type { WorkspaceProjectDetailAccessMode } from "@/server/domains/workspace/properties/detail";
 
@@ -43,6 +44,45 @@ function resolveReadinessLabel(status: PropertyDetail["projectReadinessStatus"])
   if (status === "blocked") return "محظور للنشر";
   if (status === "data_complete") return "البيانات مكتملة";
   return "غير مكتمل";
+}
+
+function resolveInventoryKind(property: PropertyDetail, dossier: ProjectDossierDetail | null | undefined): WorkspaceProject["inventoryKind"] {
+  const explicitKind = dossier?.dossier?.inventoryKind;
+  if (explicitKind === "project" || explicitKind === "standalone_unit") return explicitKind;
+  const units = dossier?.units ?? [];
+  const onlyUnit = units.length === 1 ? units[0] : null;
+  if (onlyUnit?.unitKind === "unit" && onlyUnit.label.trim() === property.title.trim()) {
+    return "standalone_unit";
+  }
+  return "project";
+}
+
+function buildPortfolioMeta(
+  inventoryKind: WorkspaceProject["inventoryKind"],
+  project: Pick<WorkspaceProject, "readiness" | "permit" | "publicationState">,
+  dossier: ProjectDossierDetail | null | undefined,
+) {
+  const units = dossier?.units ?? [];
+  const availableCount = units.filter((unit) => unit.status === "available").length;
+  const reservedCount = units.filter((unit) => unit.status === "reserved").length;
+  const soldCount = units.filter((unit) => unit.status === "sold").length;
+  const approvedDocs = (dossier?.documents ?? []).filter((document) => document.status === "approved").length;
+  const requiredOffPlanDocs = dossier?.dossier?.projectType === "off_plan" ? " · WAFI/ضمان مطلوب" : "";
+  const brokerAuthorization =
+    dossier?.dossier?.salesMode === "developer_direct"
+      ? "تفويض الوسيط غير مطلوب"
+      : (dossier?.brokerAuthorizations ?? []).some((authorization) => authorization.status === "active")
+        ? "تفويض وسيط نشط"
+        : "تفويض الوسيط غير مكتمل";
+
+  return {
+    typeLabel: inventoryKind === "standalone_unit" ? "وحدة مستقلة" : "مشروع",
+    unitSummary:
+      units.length > 0
+        ? `${units.length} وحدات · ${availableCount} متاحة · ${reservedCount} محجوزة · ${soldCount} مباعة`
+        : "لا توجد وحدات بعد",
+    complianceSummary: `${project.permit.statusLabel} · ${approvedDocs}/${dossier?.documents?.length ?? 0} ملفات معتمدة · ${brokerAuthorization}${requiredOffPlanDocs}`,
+  };
 }
 
 function buildFallbackImage(): UploadedFileReference {
@@ -89,12 +129,15 @@ export function mapPropertyToWorkspaceProject(property: PropertyDetail): Workspa
   const galleryImages = resolveGalleryImages(property);
   const parkingSpaces = presentation?.parkingSpaces ?? null;
   const hasParking = presentation?.hasParking ?? Boolean(parkingSpaces && parkingSpaces > 0);
+  const locationDetails = buildLocationValueFromParts({ label: property.location ?? property.address });
 
   return {
     id: property._id,
     propertyId: property._id,
+    inventoryKind: "project",
     title: property.title,
     location: property.location ?? property.address,
+    locationDetails,
     priceLabel: `${formatCurrency(property.price)} ر.س`,
     summary: property.description,
     shortDescription: presentation?.descriptionShort ?? property.description,
@@ -142,6 +185,11 @@ export function mapPropertyToWorkspaceProject(property: PropertyDetail): Workspa
       label: resolveReadinessLabel(property.projectReadinessStatus),
       canPublish: property.projectReadinessStatus === "published_ready",
     },
+    portfolio: {
+      typeLabel: "مشروع",
+      unitSummary: "لا توجد وحدات بعد",
+      complianceSummary: resolvePermitStatusLabel(property.adLicenseStatus),
+    },
     accessMode: "owner",
     canEdit: true,
     visibility: {
@@ -171,12 +219,23 @@ export function mapPropertyToWorkspaceProjectDetail(
 ): WorkspaceProject {
   const project = mapPropertyToWorkspaceProject(property);
   const dossier = options?.dossier ?? null;
+  const inventoryKind = resolveInventoryKind(property, dossier);
+  const dossierLocation = buildLocationValueFromParts({
+    label: [dossier?.dossier?.location?.city, dossier?.dossier?.location?.district].filter(Boolean).join("، ") || project.location,
+    city: dossier?.dossier?.location?.city,
+    district: dossier?.dossier?.location?.district,
+    latitude: dossier?.dossier?.location?.latitude,
+    longitude: dossier?.dossier?.location?.longitude,
+  }) ?? project.locationDetails;
   const units = mapProjectDossierUnitsToUnitReferences(dossier);
   const unitStats = buildUnitDerivedStats(units, dossier, project);
-  return {
+  const nextProject = {
     ...project,
+    inventoryKind,
     id: dossier?.dossier?._id ?? project.id,
     propertyId: project.propertyId,
+    location: dossierLocation?.label ?? project.location,
+    locationDetails: dossierLocation,
     priceLabel: unitStats.priceLabel,
     specs: unitStats.specs,
     expert: {
@@ -204,6 +263,10 @@ export function mapPropertyToWorkspaceProjectDetail(
         (Boolean(project.permit.privateSummary) || project.permit.privateFiles.length > 0),
     },
   };
+  return {
+    ...nextProject,
+    portfolio: buildPortfolioMeta(inventoryKind, nextProject, dossier),
+  };
 }
 
 /**
@@ -214,6 +277,14 @@ export function mapPropertyToWorkspaceProjectDetail(
 export function mapProjectDossierUnitsToUnitReferences(
   dossier: ProjectDossierDetail | null | undefined,
 ): UnitReference[] {
+  const projectLocation = buildLocationValueFromParts({
+    label: [dossier?.dossier?.location?.city, dossier?.dossier?.location?.district].filter(Boolean).join("، "),
+    city: dossier?.dossier?.location?.city,
+    district: dossier?.dossier?.location?.district,
+    latitude: dossier?.dossier?.location?.latitude,
+    longitude: dossier?.dossier?.location?.longitude,
+  });
+
   return (dossier?.units ?? []).map((unit) => ({
     id: unit._id,
     label: unit.label,
@@ -228,6 +299,13 @@ export function mapProjectDossierUnitsToUnitReferences(
     price: unit.price,
     priceLabel: formatUnitPrice(unit.price),
     handoverAt: unit.handoverAt,
+    location: buildLocationValueFromParts({
+      label: [unit.location?.city, unit.location?.district].filter(Boolean).join("، "),
+      city: unit.location?.city,
+      district: unit.location?.district,
+      latitude: unit.location?.latitude,
+      longitude: unit.location?.longitude,
+    }) ?? projectLocation,
     floorPlanMedia: unit.floorPlanMedia,
   }));
 }
@@ -244,7 +322,7 @@ function buildUnitDerivedStats(
   dossier: ProjectDossierDetail | null,
   fallback: WorkspaceProject,
 ) {
-  const sellableUnits = units.filter((unit) => unit.status !== "sold");
+  const sellableUnits = units.filter((unit) => unit.status === "available" || unit.status === "draft");
   const statsUnits = sellableUnits.length > 0 ? sellableUnits : units;
   const unitPrices = statsUnits
     .map((unit) => unit.price)
@@ -286,6 +364,8 @@ export function mapWorkspaceProjectUnitDetail(
     projectId: project.id,
     projectTitle: project.title,
     projectLocation: project.location,
+    projectLocationDetails: project.locationDetails,
+    locationDetails: unit.location ?? project.locationDetails,
     projectImage: project.image,
     summary: project.shortDescription || project.summary,
     paymentPlanLabel: formatPaymentPlanLabel(project.dossier),
@@ -478,6 +558,7 @@ export function mapWorkspaceProjectToDossierInput(
 ): ProjectDossierInput {
   return {
     propertyId,
+    inventoryKind: "project",
     projectType: project.dossier?.projectType ?? "ready_property",
     salesMode: project.dossier?.salesMode ?? "developer_direct",
     requestedVisibility: project.clientVisibility,
@@ -531,6 +612,15 @@ export function mapWorkspaceProjectToUnitInputs(project: WorkspaceProjectFormPay
     view: unit.view || undefined,
     price: parseProjectNumber(unit.price) ?? parseProjectNumber(project.price),
     handoverAt: parseOptionalDate(unit.handoverAt),
+    location: unit.locationDetails
+      ? {
+          countryCode: "SA",
+          city: unit.locationDetails.city,
+          district: unit.locationDetails.district,
+          latitude: unit.locationDetails.latitude,
+          longitude: unit.locationDetails.longitude,
+        }
+      : undefined,
     floorPlanMedia: unit.floorPlanMedia?.length ? unit.floorPlanMedia : undefined,
   }));
 }

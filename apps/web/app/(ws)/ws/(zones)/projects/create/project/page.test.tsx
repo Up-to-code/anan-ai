@@ -168,7 +168,7 @@ it("saves uploaded images as media and buyer-visible publication state separatel
   };
   const result = await props.onSave(formInput);
 
-  expect(result).toEqual({ ok: true, redirectTo: "/ws/projects/project-new?tab=units" });
+  expect(result).toEqual({ ok: true, redirectTo: "/ws/projects/project-new/units" });
   expect(requireWorkspaceData).toHaveBeenCalledTimes(2);
   expect(requireWorkspaceData).toHaveBeenNthCalledWith(1, "/ws/projects/create/project");
   expect(requireWorkspaceData).toHaveBeenNthCalledWith(2, "/ws/projects/create/project");

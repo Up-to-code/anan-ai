@@ -1,3 +1,4 @@
+import { createRepositoryRefs } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 export type VerificationsApiRefs = {
@@ -5,4 +6,4 @@ export type VerificationsApiRefs = {
   createPropertyVerificationRequestForCurrentOrg: unknown;
 };
 
-export const verificationsApi = apiUnsafe["shared_logic/verifications/index"] as VerificationsApiRefs;
+export const verificationsApi = createRepositoryRefs<VerificationsApiRefs>(apiUnsafe, "shared_logic/verifications/index");

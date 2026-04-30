@@ -88,7 +88,7 @@ export default async function CreateProjectPage() {
         });
       }
 
-      return { ok: true, redirectTo: `/ws/projects/${dossierResult.dossierId ?? id}?tab=units` } as const;
+      return { ok: true, redirectTo: `/ws/projects/${dossierResult.dossierId ?? id}/units` } as const;
     } catch (error) {
       return toProjectFormActionFailure(error);
     }

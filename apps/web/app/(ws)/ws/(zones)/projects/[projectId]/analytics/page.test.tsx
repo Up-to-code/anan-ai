@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, it, vi } from "vitest";
 import DeveloperProjectAnalyticsPage from "../../pages/ProjectAnalyticsPage/DeveloperProjectAnalyticsPage";
+import type { WorkspaceProject } from "../../types/projectTypes";
 
 function buildAnalyticsPayload() {
   return {
@@ -261,8 +262,31 @@ const { requireWorkspaceData } = vi.hoisted(() => ({
   requireWorkspaceData: vi.fn(),
 }));
 
-const { getProjectAnalytics } = vi.hoisted(() => ({
+const { getProjectAnalytics, getProjectWorkspaceDetail, listProjectAssetsForViewer, listPropertyViewers } = vi.hoisted(() => ({
   getProjectAnalytics: vi.fn(async () => buildAnalyticsPayload()),
+  getProjectWorkspaceDetail: vi.fn(async () => ({
+    property: {
+      _id: "property-1",
+      title: "برج الاختبار",
+      address: "الرياض",
+      location: "الرياض",
+      description: "وصف",
+      price: 2200000,
+      beds: 4,
+      baths: 4,
+      sqft: 380,
+      publicationState: "draft",
+      projectReadinessStatus: "data_complete",
+    },
+    dossier: null,
+    units: [],
+    paymentPlans: [],
+    documents: [],
+    adLicenses: [],
+    brokerAuthorizations: [],
+  })),
+  listProjectAssetsForViewer: vi.fn(async () => []),
+  listPropertyViewers: vi.fn(async () => []),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -278,7 +302,32 @@ vi.mock("@/server/domains/workspace/properties/detail", () => ({
   resolveWorkspaceProjectDetail,
 }));
 
+vi.mock("@/server/auth/session", () => ({
+  requireSessionContext: vi.fn(async () => ({
+    token: "token",
+    context: { userId: "user-1", role: "broker", isActive: true, brokerId: "broker-1" },
+    profile: null,
+  })),
+}));
+
+vi.mock("@/server/infrastructure/convex/organizations/assets", () => ({
+  convexOrganizationAssetsRepository: {
+    listProjectAssetsForViewer,
+  },
+}));
+
+vi.mock("@/server/infrastructure/convex/properties/access", () => ({
+  convexProjectAccessRepository: {
+    listPropertyViewers,
+  },
+}));
+
 vi.mock("@/server/ws/zones", () => ({
+  getWorkspaceProjectZone: vi.fn(() => ({
+    getProjectWorkspaceDetail,
+    getProjectDossierByProjectId: vi.fn(async () => null),
+    getProjectDossier: vi.fn(async () => null),
+  })),
   getWorkspacePropertyZone: vi.fn(() => ({
     getProjectAnalytics,
     recordProjectAnalyticsEvent: vi.fn(async () => ({ ok: true })),
@@ -321,11 +370,16 @@ it("renders the broker owner analytics page", async () => {
   });
   const markup = renderToStaticMarkup(element);
 
-  expect(markup).toContain("تحليل المشروع");
-  expect(markup).toContain("برج الاختبار");
-  expect(markup).toContain("الأداء");
+  expect(markup).toContain("نظرة عامة");
+  expect(markup).toContain("الوسطاء");
+  expect(markup).toContain("التفاعل");
+  expect(markup).toContain("النشاط");
   expect(markup).toContain("أداء المشروع عبر الزمن");
-  expect(markup).toContain("شبكة الوسطاء");
+  expect(markup).toContain("الحركة المباشرة");
+  expect(markup).toContain("الوسطاء المرتبطون");
+  expect(markup).not.toContain("تفاصيل شبكة الوسطاء");
+  expect(markup).not.toContain("التسلسل الزمني للنشاط");
+  expect(markup).not.toContain("تحليل المشروع");
   expect(getProjectAnalytics).toHaveBeenCalledWith({ id: "property-1" });
 });
 
@@ -358,7 +412,7 @@ it("renders the developer owner analytics page", async () => {
   });
   const markup = renderToStaticMarkup(element);
 
-  expect(markup).toContain("Developer Project Analytics");
+  expect(markup).toContain("تحليل المطور للمشروع");
   expect(markup).toContain("Overview");
   expect(markup).toContain("Broker Tracking");
   expect(markup).toContain("Business Overview");
@@ -410,7 +464,7 @@ it("collapses and expands the developer broker list in fixed batches", () => {
     assets: [],
     units: [],
     brokers: [],
-  } as any;
+  } as unknown as WorkspaceProject;
 
   const collapsedMarkup = renderToStaticMarkup(
     <DeveloperProjectAnalyticsPage

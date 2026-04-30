@@ -14,6 +14,9 @@ import {
   X,
 } from "lucide-react";
 import type { UploadedFileReference } from "@/server/contracts/files";
+import { LocationPicker } from "@anan/location-map/react";
+import type { LocationValue } from "@anan/location-map";
+import { buildLocationValueFromParts } from "@anan/location-map";
 import type { BrokerPresence } from "../../Visuals/BrokerPresenceChip";
 import type { ProjectFormFieldErrors } from "../../../(zones)/projects/shared/forms/projectFormSubmission";
 import { BrokerAvatar, FieldLabel, ReviewRow, SectionCard, SelectInput, TextArea, TextInput, UploadTile } from "./controls";
@@ -119,6 +122,27 @@ export function BasicStep({
   fieldErrors: ProjectFormFieldErrors;
   setFormState: React.Dispatch<React.SetStateAction<AgPropertyFormState>>;
 }) {
+  const mapLocationValue = buildLocationValueFromParts({
+    label: formState.location,
+    city: formState.dossier.city,
+    district: formState.dossier.district,
+    latitude: formState.dossier.latitude,
+    longitude: formState.dossier.longitude,
+  });
+  const setMapLocation = (location: LocationValue) => {
+    setFormState((prev) => ({
+      ...prev,
+      location: location.label,
+      dossier: {
+        ...prev.dossier,
+        city: location.city ?? prev.dossier.city,
+        district: location.district ?? prev.dossier.district,
+        latitude: typeof location.latitude === "number" ? String(location.latitude) : prev.dossier.latitude,
+        longitude: typeof location.longitude === "number" ? String(location.longitude) : prev.dossier.longitude,
+      },
+    }));
+  };
+
   return (
     <StepShell
       badge="الخطوة 1"
@@ -180,6 +204,13 @@ export function BasicStep({
               icon={<MapPin className="h-4 w-4" />}
               error={fieldErrors.location}
               testId="project-location-input"
+            />
+            <LocationPicker
+              value={mapLocationValue}
+              onChange={setMapLocation}
+              label="اختر موقع المشروع على الخريطة"
+              placeholder="ابحث عن المدينة أو الحي أو العنوان"
+              fieldError={fieldErrors.location}
             />
           </div>
 

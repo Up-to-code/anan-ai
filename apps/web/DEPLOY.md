@@ -16,18 +16,14 @@ Monorepo layout: this app lives at `apps/web`. It imports the shared AG UI packa
 
 ## Why this matters
 
-The repo-level `pnpm build` intentionally builds every app:
+The repo-level `pnpm build` intentionally builds the active workspace surfaces:
 
 ```bash
 pnpm build:web
-pnpm build:client-web
-pnpm build:marketing
 pnpm build:admin
-pnpm build:docs
-pnpm build:private-docs
 ```
 
-That is useful as a local full-repo gate, but it is too broad for the workspace web Vercel project. A web deployment should stop after `pnpm build:web`; otherwise Vercel can spend time building unrelated apps and fail because of an unrelated app.
+That is useful as a local full-repo gate, but it is too broad for the workspace web Vercel project. A web deployment should stop after `pnpm build:web`; otherwise Vercel can spend time building unrelated surfaces and fail for a surface it is not deploying.
 
 ## Local verification
 
@@ -37,4 +33,4 @@ From the repo root:
 pnpm build:web
 ```
 
-This should complete the production build for `apps/web` without building the buyer app, marketing site, admin app, docs, or private docs.
+This should complete the production build for `apps/web` without building admin.

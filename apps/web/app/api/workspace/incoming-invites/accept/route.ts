@@ -1,4 +1,5 @@
-import { DomainError, toErrorResponse } from "@/server/contracts/errors";
+import { handleRoute, okResponse, readJsonBody } from "@anan/web-foundation/api";
+import { DomainError } from "@/server/contracts/errors";
 import { acceptCurrentOrganizationInvite } from "@/server/domains/auth/organizations/service";
 
 /**
@@ -7,8 +8,8 @@ import { acceptCurrentOrganizationInvite } from "@/server/domains/auth/organizat
  * HOW:   Parses the invite token from JSON and delegates to the organizations domain service.
  */
 export async function POST(request: Request) {
-  try {
-    const body = (await request.json()) as { token?: string };
+  return handleRoute(async () => {
+    const body = await readJsonBody<{ token?: string }>(request);
     const token = body.token?.trim();
 
     if (!token) {
@@ -20,18 +21,6 @@ export async function POST(request: Request) {
     }
 
     await acceptCurrentOrganizationInvite(token);
-    return Response.json({ ok: true });
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      return toErrorResponse(
-        new DomainError({
-          code: "INVALID_REQUEST",
-          message: "Request body must be valid JSON",
-          status: 400,
-        }),
-      );
-    }
-
-    return toErrorResponse(error);
-  }
+    return okResponse();
+  });
 }

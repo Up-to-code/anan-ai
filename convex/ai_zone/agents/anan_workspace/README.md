@@ -1,7 +1,7 @@
-# anan_workspace/ — Partner Orchestrator
+# anan_workspace/ — Workspace Orchestrator
 
 ## Purpose
-This folder contains the partner (workspace) orchestrator that receives partner messages,
+This folder contains the workspace orchestrator that receives workspace messages,
 selects workspace teams, runs them in parallel, and merges results into one response.
 
 ## Files

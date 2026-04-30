@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { mutationRef, queryRef, voidMutationRef } from "@anan/convex-adapters/repository";
 import { agenciesApi } from "./api";
 import type { CurrentOrganizationResult, OrganizationsRepository } from "./types";
 
@@ -25,22 +25,25 @@ function isOrganizationAccessError(error: unknown) {
  */
 export const convexOrganizationsRepository: OrganizationsRepository = {
   async listForCurrentUser(token) {
-    const organizations = (await fetchQuery(agenciesApi.listCurrentOrganizations as never, {} as never, { token })) as Awaited<ReturnType<OrganizationsRepository["listForCurrentUser"]>>;
+    const organizations = await queryRef<Awaited<ReturnType<OrganizationsRepository["listForCurrentUser"]>>>(
+      token,
+      agenciesApi.listCurrentOrganizations,
+    );
     return organizations;
   },
 
   async createForCurrentUser(token, input) {
-    const result = (await fetchMutation(agenciesApi.createOrganizationForCurrentUser as never, {
-      ...input,
-    } as never, { token })) as {
+    const result = await mutationRef<{
       organization: Awaited<ReturnType<OrganizationsRepository["createForCurrentUser"]>>;
-    };
+    }>(token, agenciesApi.createOrganizationForCurrentUser, {
+      ...input,
+    });
     return result.organization;
   },
 
   async getCurrentOrganization(token) {
     try {
-      return (await fetchQuery(agenciesApi.getCurrentOrganization as never, {} as never, { token })) as CurrentOrganizationResult;
+      return await queryRef<CurrentOrganizationResult>(token, agenciesApi.getCurrentOrganization);
     } catch (error) {
       if (isOrganizationAccessError(error)) {
         return { organization: null, membership: null, accessError: true };
@@ -50,51 +53,69 @@ export const convexOrganizationsRepository: OrganizationsRepository = {
   },
 
   async updateCurrentOrganization(token, input) {
-    return fetchMutation(agenciesApi.updateCurrentOrganization as never, input as never, { token }) as ReturnType<OrganizationsRepository["updateCurrentOrganization"]>;
+    return mutationRef<Awaited<ReturnType<OrganizationsRepository["updateCurrentOrganization"]>>>(
+      token,
+      agenciesApi.updateCurrentOrganization,
+      input,
+    );
   },
 
   async listCurrentTeamMembers(token) {
-    return fetchQuery(agenciesApi.listCurrentTeamMembers as never, {} as never, { token }) as ReturnType<OrganizationsRepository["listCurrentTeamMembers"]>;
+    return queryRef<Awaited<ReturnType<OrganizationsRepository["listCurrentTeamMembers"]>>>(
+      token,
+      agenciesApi.listCurrentTeamMembers,
+    );
   },
 
   async listCurrentTeamInvites(token) {
-    return fetchQuery(agenciesApi.listCurrentTeamInvites as never, {} as never, { token }) as ReturnType<OrganizationsRepository["listCurrentTeamInvites"]>;
+    return queryRef<Awaited<ReturnType<OrganizationsRepository["listCurrentTeamInvites"]>>>(
+      token,
+      agenciesApi.listCurrentTeamInvites,
+    );
   },
 
   async createCurrentTeamInvite(token, input) {
-    return fetchMutation(agenciesApi.createTeamInviteForCurrentUser as never, input as never, { token }) as ReturnType<OrganizationsRepository["createCurrentTeamInvite"]>;
+    return mutationRef<Awaited<ReturnType<OrganizationsRepository["createCurrentTeamInvite"]>>>(
+      token,
+      agenciesApi.createTeamInviteForCurrentUser,
+      input,
+    );
   },
 
   async cancelCurrentTeamInvite(token, inviteId) {
-    await fetchMutation(agenciesApi.cancelTeamInviteForCurrentUser as never, {
-      inviteId: inviteId as never,
-    } as never, { token });
+    await voidMutationRef(token, agenciesApi.cancelTeamInviteForCurrentUser, { inviteId });
   },
 
   async updateCurrentTeamMemberRole(token, { membershipId, input }) {
-    await fetchMutation(agenciesApi.updateMembershipRoleForCurrentUser as never, {
-      membershipId: membershipId as never,
+    await voidMutationRef(token, agenciesApi.updateMembershipRoleForCurrentUser, {
+      membershipId,
       ...input,
-    } as never, { token });
+    });
   },
 
   async acceptCurrentTeamInvite(authToken, inviteToken) {
-    await fetchMutation(agenciesApi.acceptTeamInviteForCurrentUser as never, {
+    await voidMutationRef(authToken, agenciesApi.acceptTeamInviteForCurrentUser, {
       token: inviteToken,
-    } as never, { token: authToken });
+    });
   },
 
   async searchDirectoryExact(token, query) {
-    return fetchQuery(agenciesApi.searchOrganizationDirectoryExact as never, {
-      query,
-    } as never, { token }) as ReturnType<OrganizationsRepository["searchDirectoryExact"]>;
+    return queryRef<Awaited<ReturnType<OrganizationsRepository["searchDirectoryExact"]>>>(
+      token,
+      agenciesApi.searchOrganizationDirectoryExact,
+      { query },
+    );
   },
 
   async listOffersDirectoryProfiles(token, role) {
     try {
-      return fetchQuery(agenciesApi.listOffersDirectoryProfiles as never, {
-        role,
-      } as never, { token }) as ReturnType<OrganizationsRepository["listOffersDirectoryProfiles"]>;
+      return await queryRef<Awaited<ReturnType<OrganizationsRepository["listOffersDirectoryProfiles"]>>>(
+        token,
+        agenciesApi.listOffersDirectoryProfiles,
+        {
+          role,
+        },
+      );
     } catch (error) {
       if (isOrganizationAccessError(error)) {
         return [];
@@ -104,9 +125,13 @@ export const convexOrganizationsRepository: OrganizationsRepository = {
   },
   async listOfferOrganizationsDirectory(token, role) {
     try {
-      return fetchQuery(agenciesApi.listOfferOrganizationsDirectory as never, {
-        role,
-      } as never, { token }) as ReturnType<OrganizationsRepository["listOfferOrganizationsDirectory"]>;
+      return await queryRef<Awaited<ReturnType<OrganizationsRepository["listOfferOrganizationsDirectory"]>>>(
+        token,
+        agenciesApi.listOfferOrganizationsDirectory,
+        {
+          role,
+        },
+      );
     } catch (error) {
       if (isOrganizationAccessError(error)) {
         return [];
@@ -116,10 +141,14 @@ export const convexOrganizationsRepository: OrganizationsRepository = {
   },
   async getOrganizationPublicProfile(token, type, slug) {
     try {
-      return fetchQuery(agenciesApi.getOrganizationPublicProfile as never, {
-        type,
-        slug,
-      } as never, { token }) as ReturnType<OrganizationsRepository["getOrganizationPublicProfile"]>;
+      return await queryRef<Awaited<ReturnType<OrganizationsRepository["getOrganizationPublicProfile"]>>>(
+        token,
+        agenciesApi.getOrganizationPublicProfile,
+        {
+          type,
+          slug,
+        },
+      );
     } catch (error) {
       if (isOrganizationAccessError(error)) {
         return null;
@@ -128,14 +157,13 @@ export const convexOrganizationsRepository: OrganizationsRepository = {
     }
   },
   async listIncomingTeamInvites(token) {
-    return fetchQuery(agenciesApi.listIncomingTeamInvitesForCurrentUser as never, {} as never, {
+    return queryRef<Awaited<ReturnType<OrganizationsRepository["listIncomingTeamInvites"]>>>(
       token,
-    }) as ReturnType<OrganizationsRepository["listIncomingTeamInvites"]>;
+      agenciesApi.listIncomingTeamInvitesForCurrentUser,
+    );
   },
 
   async cancelIncomingTeamInvite(token, inviteId) {
-    await fetchMutation(agenciesApi.cancelIncomingTeamInviteForCurrentUser as never, {
-      inviteId: inviteId as never,
-    } as never, { token });
+    await voidMutationRef(token, agenciesApi.cancelIncomingTeamInviteForCurrentUser, { inviteId });
   },
 };

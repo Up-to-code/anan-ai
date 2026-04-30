@@ -1,5 +1,4 @@
 import type { ActionCtx } from "../../_generated/server";
-import { orchestrate as orchestrateDefault } from "../agents/anan";
 import { orchestrate as orchestrateWorkspace } from "../agents/anan_workspace";
 import type {
   WorkspaceStreamStageEvent,
@@ -28,7 +27,7 @@ export type AssistantSurfaceRuntimeInput = {
   role: AssistantRole;
   userId: string;
   threadId?: string;
-  channel?: "app" | "whatsapp" | "web";
+  channel?: "workspace" | "web" | "admin";
   ragContext?: string;
   promptBudgetMeta?: PromptBudgetMeta;
   streamSessionId?: string;
@@ -60,14 +59,14 @@ function maybeHandleDeterministicDefaultTurn(prompt: string) {
   if (!isGreeting) return null;
 
   return isArabicText(prompt)
-    ? "أهلاً، أنا مساعد Etijah. أقدر أساعدك تفهم المنصة أو تبدأ بحثك العقاري خطوة بخطوة."
-    : "Hi, I’m Etijah’s assistant. I can help you understand the platform or start your property search step by step.";
+    ? "أهلاً، أنا Anan AI. أقدر أساعدك تفهم مساحة العمل أو تبدأ تنظيم المشاريع والوحدات خطوة بخطوة."
+    : "Hi, I’m Anan AI. I can help you understand the workspace or organize projects and units step by step.";
 }
 
 /**
  * WHY:   Assistant callers need one stable runtime entrypoint while the implementation stays native to Anan.
- * WHAT:  Routes public/default traffic to `anan` and workspace traffic to `anan_workspace`.
- * HOW:   Preserves the old surface contract but delegates to the repo's declarative Convex orchestrators.
+ * WHAT:  Routes workspace traffic to `anan_workspace` and keeps legacy default calls disabled.
+ * HOW:   Preserves the old surface contract without retaining Anan buyer/public orchestration.
  */
 export async function runAssistantSurfaceRuntime(
   input: AssistantSurfaceRuntimeInput,
@@ -106,20 +105,10 @@ export async function runAssistantSurfaceRuntime(
     };
   }
 
-  const result = await orchestrateDefault({
-    ctx: input.ctx,
-    prompt: input.prompt,
-    intentPrompt,
-    role: input.role,
-    userId: input.userId,
-    threadId: input.threadId,
-    channel: input.channel,
-    ragContext: input.ragContext,
-    promptBudgetMeta: input.promptBudgetMeta,
-  });
-
   return {
-    output: result.output,
+    output: isArabicText(intentPrompt)
+      ? "Anan AI متاح الآن داخل مساحة العمل لإدارة المشاريع والوحدات والخطوات التشغيلية."
+      : "Anan AI is now available inside the workspace for projects, units, and operational next steps.",
     runtime: "anan-native",
   };
 }

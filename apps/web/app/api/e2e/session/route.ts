@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   appendSetCookies,
+  e2eJsonBodyErrorResponse,
   ensureE2ERequest,
   getSetCookies,
   listConfiguredPersonas,
+  readE2EJsonBody,
   readPersona,
 } from "../_shared";
 
@@ -18,7 +20,7 @@ function getOrigin(request: NextRequest) {
 }
 
 async function readBody(request: NextRequest): Promise<SessionRequestBody> {
-  return (await request.json().catch(() => ({}))) as SessionRequestBody;
+  return readE2EJsonBody<SessionRequestBody>(request);
 }
 
 async function signInPersona(request: NextRequest, body: SessionRequestBody) {
@@ -80,7 +82,12 @@ export async function POST(request: NextRequest) {
   const blocked = ensureE2ERequest(request);
   if (blocked) return blocked;
 
-  const body = await readBody(request);
+  let body: SessionRequestBody;
+  try {
+    body = await readBody(request);
+  } catch (error) {
+    return e2eJsonBodyErrorResponse(error) ?? NextResponse.json({ ok: false, message: "Invalid request body." }, { status: 400 });
+  }
   const signedIn = await signInPersona(request, body);
   if (!signedIn.ok) return signedIn.response;
 

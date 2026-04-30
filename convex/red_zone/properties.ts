@@ -1,7 +1,7 @@
 import { mutation, query } from "../_generated/server";
 import { ConvexError, v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
-import { requireRole } from "../_core/security/accessPolicy";
+import { requireEntitlements } from "../_core/security/accessPolicy";
 import {
   optionalPropertyStatusValidator,
   ownerScopedPropertyCreateFields,
@@ -17,7 +17,7 @@ import {
 } from "./repositories/propertiesRepository";
 
 async function requireRedOwnerAccess(ctx: any, REDId?: string) {
-  const access = await requireRole(ctx, ["developer"]);
+  const access = await requireEntitlements(ctx, ["workspace:developer"]);
   if (!access.REDId) {
     throw new ConvexError({ code: "FORBIDDEN", message: "Developer (RED) profile not linked" });
   }

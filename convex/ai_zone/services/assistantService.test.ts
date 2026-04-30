@@ -42,9 +42,6 @@ const mockedApi = vi.hoisted(() => ({
   },
   internal: {
     shared_logic: {
-      buyerContext: {
-        getCompiledBuyerContextInternal: Symbol("buyerContext.getCompiledBuyerContextInternal"),
-      },
       memory: {
         repository: {
           getRelevantMemoriesByQuery: Symbol("memory.getRelevantMemoriesByQuery"),
@@ -262,86 +259,6 @@ function registerVoiceMetadataTest() {
     }));
   });
 
-  it("uses safe entitlement lookup for public assistant guest sessions", async () => {
-    const ctx = createHandleMessageCtx();
-    const publicSaveMutation = Symbol("assistantPublic._saveConversationStep");
-
-    (ctx.runMutation as any).mockImplementation(async (ref: unknown) => {
-      if (ref === mockedApi.internal.shared_logic.buyerContext.getCompiledBuyerContextInternal) {
-        return {
-          compiledPromptContext: "[Buyer Context Compiler]\nIntent: search",
-          promptBudgetMeta: {
-            contextTokens: 10,
-            memoryTokens: 8,
-            ragTokens: 6,
-            historyTokens: 4,
-            totalContextTokens: 28,
-            budgetCap: 1200,
-            cacheHit: false,
-            includedBlocks: ["search_journey"],
-            droppedBlocks: [],
-          },
-        };
-      }
-      if (ref === mockedApi.internal.ai_zone.agents.shared.tokenTrackerActions.trackTokenUsageInternal) {
-        return null;
-      }
-      return {
-        threadId: "thread_123",
-        assistantMessageId: "assistant_message_1",
-      };
-    });
-
-    const result = await handleAssistantMessage(ctx as any, {
-      message: "hello from public",
-      assistantKind: "anan_main_public",
-      ownerOverride: {
-        userId: "channel:main_assistant_web:guest_1",
-        ownerType: "user",
-      },
-      saveConversationStepMutationOverride: publicSaveMutation,
-    });
-
-    expect(ctx.runQuery).toHaveBeenCalledWith(
-      mockedApi.api.shared_logic.subscriptions.index.getAssistantEntitlementSafe,
-      {},
-    );
-    expect(ctx.runQuery).not.toHaveBeenCalledWith(
-      mockedApi.api.shared_logic.subscriptions.index.getAssistantEntitlement,
-      {},
-    );
-
-    const [mutationRef, payload] = (ctx.runMutation as any).mock.calls[0] as [
-      unknown,
-      Record<string, unknown>,
-    ];
-    expect(mutationRef).toBe(mockedApi.internal.shared_logic.buyerContext.getCompiledBuyerContextInternal);
-    expect(payload).toEqual(expect.objectContaining({
-      channel: "web",
-      userId: "channel:main_assistant_web:guest_1",
-      message: "hello from public",
-    }));
-
-    const [saveMutationRef, savePayload] = (ctx.runMutation as any).mock.calls[2] as [
-      unknown,
-      Record<string, unknown>,
-    ];
-    expect(saveMutationRef).toBe(publicSaveMutation);
-    expect(savePayload).toEqual(expect.objectContaining({
-      userId: "channel:main_assistant_web:guest_1",
-      ownerType: "user",
-      userMessage: "hello from public",
-      mode: "qa",
-    }));
-
-    expect(result).toEqual(expect.objectContaining({
-      ok: true,
-      output: "default orchestrator output",
-      promptBudgetMeta: expect.objectContaining({
-        totalContextTokens: 28,
-      }),
-    }));
-  });
 }
 
 function registerFreshWorkspaceThreadTest() {

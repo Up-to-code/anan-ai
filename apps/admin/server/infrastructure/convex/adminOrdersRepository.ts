@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { createRepositoryRefs, queryRef, voidMutationRef } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 type OrdersApiRefs = {
@@ -7,7 +7,7 @@ type OrdersApiRefs = {
   updateOrder: unknown;
 };
 
-const ordersApi = apiUnsafe["admin_zone/orders"] as OrdersApiRefs;
+const ordersApi = createRepositoryRefs<OrdersApiRefs>(apiUnsafe, "admin_zone/orders");
 
 export type OrderStatus =
   | "new_lead"
@@ -18,7 +18,7 @@ export type OrderStatus =
   | "closed_won"
   | "closed_lost";
 
-export type OrderChannel = "whatsapp" | "app" | "web";
+export type OrderChannel = "workspace" | "web" | "admin";
 export type OrderAssignmentFilter = "all" | "assigned" | "unassigned";
 
 export type AdminOrderRecord = {
@@ -46,20 +46,20 @@ export const convexAdminOrdersRepository = {
       assignment?: OrderAssignmentFilter;
     },
   ) {
-    return fetchQuery(
-      ordersApi.listOrders as never,
+    return queryRef<AdminOrderRecord[]>(
+      token,
+      ordersApi.listOrders,
       {
         status: filters?.status,
         sourceChannel: filters?.sourceChannel,
         assignment: filters?.assignment,
-      } as never,
-      { token },
-    ) as Promise<AdminOrderRecord[]>;
+      },
+    );
   },
   async get(token: string, id: string) {
-    return fetchQuery(ordersApi.getOrder as never, { id } as never, { token }) as Promise<AdminOrderRecord | null>;
+    return queryRef<AdminOrderRecord | null>(token, ordersApi.getOrder, { id });
   },
   async update(token: string, input: { id: string; status?: OrderStatus; notes?: string; assignedTo?: string }) {
-    await fetchMutation(ordersApi.updateOrder as never, input as never, { token });
+    await voidMutationRef(token, ordersApi.updateOrder, input);
   },
 };

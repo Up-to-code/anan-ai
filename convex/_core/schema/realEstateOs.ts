@@ -2,6 +2,7 @@ import { defineTable } from "convex/server";
 import type { VLiteral } from "convex/values";
 import { v } from "convex/values";
 import { transitionalGlobalSecurityFields } from "./securityFields";
+import { unsafeDynamicPayloadValidator } from "./securityValidators";
 import {
   AD_LICENSE_STATUS,
   BROKER_AUTHORIZATION_STATUS,
@@ -11,8 +12,6 @@ import {
   CONTACT_TYPE,
   ORG_MEMBERSHIP_ROLE,
   ORG_TYPE,
-  SALES_ORDER_ASSIGNEE_TYPE,
-  SALES_ORDER_STATUS,
   SUBSCRIPTION_TIER,
 } from "../../lib/constants";
 
@@ -24,14 +23,6 @@ function enumValidator<T extends LiteralObject>(values: T) {
   ) as Array<VLiteral<T[keyof T], "required">>;
   return v.union(...literals);
 }
-
-const searchPreferencesValidator = v.object({
-  propertyTypes: v.array(v.string()),
-  minBudget: v.number(),
-  maxBudget: v.number(),
-  currency: v.string(),
-  preferredCities: v.array(v.string()),
-});
 
 const installmentScheduleItemValidator = v.object({
   label: v.string(),
@@ -61,21 +52,6 @@ const realEstateOsTables = {
   })
     .index("by_email", ["email"])
     .index("by_phone", ["phone"])
-    .index("by_deletedAt_updatedAt", ["deletedAt", "updatedAt"]),
-
-  /**
-   * Represents a buyer account attached to a human auth user.
-   * Primary access pattern: load buyer preferences by authUserId for search, assistant, and orders.
-   * Shard/isolation strategy: buyer-owned global record; org exposure happens through orders/conversations.
-   */
-  buyerAccounts: defineTable({
-    ...transitionalGlobalSecurityFields,
-    authUserId: v.id("authUsers"),
-    preferredLocale: v.string(),
-    searchPreferences: searchPreferencesValidator,
-    channelSource: v.optional(v.string()),
-  })
-    .index("by_authUserId", ["authUserId"])
     .index("by_deletedAt_updatedAt", ["deletedAt", "updatedAt"]),
 
   /**
@@ -305,7 +281,6 @@ const realEstateOsTables = {
     ...transitionalGlobalSecurityFields,
     orgId: v.id("organizations"),
     authUserId: v.optional(v.id("authUsers")),
-    buyerAccountId: v.optional(v.id("buyerAccounts")),
     fullName: v.string(),
     email: v.string(),
     phone: v.optional(v.string()),
@@ -317,33 +292,9 @@ const realEstateOsTables = {
     .index("by_orgId", ["orgId"])
     .index("by_orgId_and_contactType", ["orgId", "contactType"])
     .index("by_authUserId", ["authUserId"])
-    .index("by_buyerAccountId", ["buyerAccountId"])
     .index("by_email_and_authUserId", ["email", "authUserId"])
     .index("by_org_contactType_updatedAt", ["orgId", "contactType", "updatedAt"])
     .index("by_org_email", ["orgId", "email"])
-    .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
-
-  /**
-   * Represents a buyer-initiated lead or reservation request.
-   * Primary access pattern: route new orders by orgId/status and trace buyer/property history.
-   * Shard/isolation strategy: orgId gates owner handling; assigneeId is string because target type varies.
-   */
-  salesOrders: defineTable({
-    ...transitionalGlobalSecurityFields,
-    orgId: v.id("organizations"),
-    buyerAccountId: v.id("buyerAccounts"),
-    propertyId: v.id("properties"),
-    unitId: v.optional(v.id("projectUnits")),
-    dealId: v.optional(v.id("deals")),
-    assigneeType: enumValidator(SALES_ORDER_ASSIGNEE_TYPE),
-    assigneeId: v.string(),
-    status: enumValidator(SALES_ORDER_STATUS),
-  })
-    .index("by_orgId", ["orgId"])
-    .index("by_buyerAccountId", ["buyerAccountId"])
-    .index("by_propertyId", ["propertyId"])
-    .index("by_orgId_and_status", ["orgId", "status"])
-    .index("by_org_status_updatedAt", ["orgId", "status", "updatedAt"])
     .index("by_org_active_updatedAt", ["orgId", "deletedAt", "updatedAt"]),
 
   /**
@@ -378,7 +329,7 @@ const realEstateOsTables = {
     actorAuthUserId: v.optional(v.id("authUsers")),
     actionType: enumValidator(CASE_ACTIVITY_TYPE),
     // Payload shape varies by actionType; companion TypeScript contracts document each event payload.
-    payload: v.object({ data: v.any() }),
+    payload: v.object({ data: unsafeDynamicPayloadValidator }),
   })
     .index("by_caseId", ["caseId"])
     .index("by_org_createdAt", ["orgId", "createdAt"])

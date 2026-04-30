@@ -15,8 +15,6 @@ export const IGNORE_PREFIXES = [
   "output/", // keep output directory out of the scan to avoid self-referencing artifacts
   "apps/web/.next/",
   "apps/admin/.next/",
-  "apps/mobile/.expo/",
-  "apps/mobile/.expo-shared/",
   "convex/_generated/",
 ];
 
@@ -195,4 +193,3 @@ export function listRepoFiles(repoRoot) {
   const buf = execSync("git ls-files -z -co --exclude-standard", { cwd: repoRoot });
   return buf.toString("utf8").split("\0").filter(Boolean);
 }
-

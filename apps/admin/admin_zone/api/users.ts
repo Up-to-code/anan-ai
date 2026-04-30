@@ -73,7 +73,7 @@ export async function getAdminUserDetailPageData(userKey: string) {
 export async function updateAdminUser(input: {
   userId: string;
   displayName?: string;
-  channel?: "whatsapp" | "app" | "web";
+  channel?: "workspace" | "web" | "admin";
 }) {
   const session = await requireAdminSession();
   await convexAdminUsersRepository.update(session.token, input);

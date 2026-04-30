@@ -11,11 +11,13 @@ import {
 import { requireManagerAccess, requireOrganizationMembership } from "./membership";
 import { tenants } from "../../../tenants";
 import { createOrganizationForAuthUserRecord } from "./organizationCreation.helpers";
+import { requireResolvedIdentity } from "../../../_core/security/identity";
 import {
   listOrganizationsForProfile,
   updateOrganizationForOwner,
 } from "./organizationProfile.helpers";
 import { resolveComplianceRulesetForOwner } from "../../compliance/utils";
+import { enqueueOrganizationUpsertForZaneAi } from "../../integrations/zaneAiWebhook";
 
 const ORGANIZATION_ACCESS_ERROR_MESSAGES = [
   "Organization owner profile required",
@@ -262,7 +264,7 @@ export const createOrganizationForAuthUser = internalMutation({
 /**
  * WHY:   The workspace onboarding flow needs one current-user create mutation with no exposed auth-user plumbing.
  * WHAT:  Creates an organization for the current authenticated profile.
- * HOW:   Resolves the current profile and delegates to the shared auth-user create helper.
+ * HOW:   Resolves the current identity and delegates to the shared helper, which bootstraps a missing profile.
  */
 export const createOrganizationForCurrentUser = mutation({
   args: {
@@ -271,12 +273,12 @@ export const createOrganizationForCurrentUser = mutation({
     countryCode: v.string(),
   },
   handler: async (ctx, args) => {
-    const profile = await requireCurrentProfile(ctx);
+    const identity = await requireResolvedIdentity(ctx);
     return createOrganizationForAuthUserRecord(ctx, {
-      authUserId: profile.authUserId,
-      email: profile.email,
-      displayName: profile.name,
-      actorAuthUserId: profile.authUserId,
+      authUserId: identity.authUserId,
+      email: identity.email,
+      displayName: identity.name,
+      actorAuthUserId: identity.authUserId,
       ...args,
     });
   },
@@ -323,6 +325,10 @@ export const updateCurrentOrganization = mutation({
       afterTenantOrg,
       beforeOwnerRecord,
       organization,
+    });
+    await enqueueOrganizationUpsertForZaneAi(ctx, owner, {
+      authUserId: profile.authUserId,
+      role: "manager",
     });
     return mapOrganizationSummary(ctx, owner, organization);
   },

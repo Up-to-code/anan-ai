@@ -9,6 +9,11 @@ import {
   recomputeProjectReadinessForProperty,
   type ProjectReadinessResult,
 } from "./readiness";
+import {
+  enqueueProjectUnitArchiveForZaneAi,
+  enqueueProjectUnitsForZaneAi,
+  enqueueProjectUpsertForZaneAi,
+} from "../integrations/zaneAiWebhook";
 
 type OwnerAccess = {
   authUserId?: string;
@@ -20,6 +25,7 @@ type OwnerAccess = {
 type DossierRecord = {
   _id: GenericId<"projectDossiers">;
   propertyId: GenericId<"properties">;
+  inventoryKind?: "project" | "standalone_unit";
   ownerType: "broker" | "RED";
   ownerBrokerId?: GenericId<"brokers">;
   ownerREDId?: GenericId<"RED">;
@@ -58,6 +64,7 @@ type ProjectUnitPatch = Partial<{
   view: string;
   price: number;
   handoverAt: number;
+  location: DossierRecord["location"];
   floorPlanMedia: unknown[];
 }>;
 
@@ -89,13 +96,19 @@ function normalizeLocation(input: any, fallback?: DossierRecord["location"]) {
   };
 }
 
+function activeRows<T extends { deletedAt?: number }>(rows: T[]) {
+  return rows.filter((row) => typeof row.deletedAt !== "number");
+}
+
 async function requireOwnedDossier(
   ctx: QueryCtx | MutationCtx,
   propertyId: GenericId<"properties">,
   access: OwnerAccess,
 ) {
   const property = await ctx.db.get(propertyId);
-  if (!property) throw new ConvexError({ code: "NOT_FOUND", message: "Property not found" });
+  if (!property || typeof (property as any).deletedAt === "number") {
+    throw new ConvexError({ code: "NOT_FOUND", message: "Property not found" });
+  }
   assertOwner(property, access);
   return { property, dossier: await getProjectDossierByPropertyId(ctx, propertyId) };
 }
@@ -109,7 +122,14 @@ async function collectDossierChildren(ctx: QueryCtx | MutationCtx, dossierId: Ge
     ctx.db.query("projectBrokerAuthorizations").withIndex("dossierId", (q: any) => q.eq("dossierId", dossierId)).collect(),
     ctx.db.query("projectReadinessEvents").withIndex("dossierId", (q: any) => q.eq("dossierId", dossierId)).order("desc").take(25),
   ]);
-  return { units, paymentPlans, documents, adLicenses, brokerAuthorizations, events };
+  return {
+    units: activeRows(units as any[]),
+    paymentPlans: activeRows(paymentPlans as any[]),
+    documents: activeRows(documents as any[]),
+    adLicenses: activeRows(adLicenses as any[]),
+    brokerAuthorizations: activeRows(brokerAuthorizations as any[]),
+    events,
+  };
 }
 
 /**
@@ -151,7 +171,9 @@ export async function getOwnedProjectDossierDetailByProjectId(
   access: OwnerAccess,
 ) {
   const dossier = (await ctx.db.get(projectId)) as DossierRecord | null;
-  if (!dossier) throw new ConvexError({ code: "NOT_FOUND", message: "Project not found" });
+  if (!dossier || typeof (dossier as any).deletedAt === "number") {
+    throw new ConvexError({ code: "NOT_FOUND", message: "Project not found" });
+  }
   const { property } = await requireOwnedDossier(ctx, dossier.propertyId, access);
   return {
     property,
@@ -166,6 +188,66 @@ export async function getOwnedProjectDossierDetailByProjectId(
       warnings: (dossier as any).readinessWarnings ?? [],
       completedRequirements: (dossier as any).completedRequirements ?? [],
     } satisfies ProjectReadinessResult,
+  };
+}
+
+export async function getOwnedProjectWorkspaceDetail(
+  ctx: QueryCtx,
+  routeProjectId: string,
+  access: OwnerAccess,
+) {
+  const dossierId = ctx.db.normalizeId("projectDossiers", routeProjectId);
+  if (dossierId) {
+    return getOwnedProjectDossierDetailByProjectId(ctx, dossierId, access);
+  }
+
+  const propertyId = ctx.db.normalizeId("properties", routeProjectId);
+  if (propertyId) {
+    return getOwnedProjectDossierDetail(ctx, propertyId, access);
+  }
+
+  throw new ConvexError({ code: "NOT_FOUND", message: "Project not found" });
+}
+
+async function listOwnedProperties(ctx: QueryCtx, access: OwnerAccess) {
+  if (access.brokerId) {
+    return ctx.db
+      .query("properties")
+      .withIndex("brokerId", (q: any) => q.eq("brokerId", access.brokerId!))
+      .order("desc")
+      .take(100);
+  }
+  if (access.REDId) {
+    return ctx.db
+      .query("properties")
+      .withIndex("REDId", (q: any) => q.eq("REDId", access.REDId!))
+      .order("desc")
+      .take(100);
+  }
+  throw new ConvexError({ code: "FORBIDDEN", message: "Missing project owner context" });
+}
+
+/**
+ * WHY:   The projects workspace should subscribe to one read model instead of route code assembling many reads.
+ * WHAT:  Returns owner properties with their dossier details in one serializable payload.
+ * HOW:   Uses the same ownership gate as detail reads and keeps zone wrappers tiny.
+ */
+export async function getOwnedProjectsWorkspace(ctx: QueryCtx, access: OwnerAccess) {
+  const properties = (await listOwnedProperties(ctx, access)).filter(
+    (property: any) => typeof property.deletedAt !== "number",
+  );
+  const details = await Promise.all(
+    properties.map((property: any) =>
+      getOwnedProjectDossierDetail(ctx, property._id, access).catch(() => ({
+        property,
+        dossier: null,
+        readiness: null,
+      })),
+    ),
+  );
+
+  return {
+    page: details,
   };
 }
 
@@ -216,7 +298,7 @@ async function requireOwnedUnit(
   unitId: GenericId<"projectUnits">,
 ) {
   const unit = await ctx.db.get(unitId);
-  if (!unit || (unit as any).dossierId !== dossierId) {
+  if (!unit || (unit as any).dossierId !== dossierId || typeof (unit as any).deletedAt === "number") {
     throw new ConvexError({ code: "NOT_FOUND", message: "Project unit not found for this dossier" });
   }
   return unit as any;
@@ -224,6 +306,9 @@ async function requireOwnedUnit(
 
 function normalizeUnitPatch(patch: ProjectUnitPatch) {
   const next: any = { ...patch };
+  if (next.location) {
+    next.location = normalizeLocation(next.location);
+  }
   delete next.dossierId;
   delete next.propertyId;
   delete next.createdAt;
@@ -251,10 +336,12 @@ export async function saveOwnedProjectDossierDraft(
   const ensured = await ensureProjectDossierForProperty(ctx, input.propertyId, {
     forcePrivateUntilReady: true,
     requestedVisibility: input.requestedVisibility,
+    inventoryKind: input.inventoryKind,
   });
   const dossier = (await ctx.db.get(ensured.dossierId)) as DossierRecord;
   const now = Date.now();
   await ctx.db.patch(dossier._id, {
+    inventoryKind: input.inventoryKind ?? dossier.inventoryKind ?? "project",
     projectType: input.projectType ?? (dossier as any).projectType,
     salesMode: input.salesMode ?? (dossier as any).salesMode,
     requestedVisibility: input.requestedVisibility ?? dossier.requestedVisibility,
@@ -283,15 +370,23 @@ export async function saveOwnedProjectDossierDraft(
     message: "Project dossier draft saved.",
     metadata: { requestedVisibility: input.requestedVisibility, ownerType: property.ownerType },
   });
+  await enqueueProjectUpsertForZaneAi(ctx, input.propertyId, access);
   return { ok: true as const, propertyId: input.propertyId, dossierId: dossier._id, readiness };
 }
 
 export async function saveOwnedProjectUnits(ctx: MutationCtx, propertyId: GenericId<"properties">, units: any[], access: OwnerAccess) {
   const { dossier } = await requireOwnedDossier(ctx, propertyId, access);
   if (!dossier) throw new ConvexError({ code: "NOT_FOUND", message: "Project dossier not found" });
+  const existing = await ctx.db.query("projectUnits").withIndex("propertyId", (q: any) => q.eq("propertyId", propertyId)).collect();
+  for (const unit of existing) {
+    await enqueueProjectUnitArchiveForZaneAi(ctx, propertyId, unit, access);
+  }
   await replaceRows(ctx, "projectUnits", dossier._id, units, (unit) => ({ ...unit, dossierId: dossier._id, propertyId }));
   await regeneratePropertyProjection(ctx, propertyId);
-  return { ok: true as const, propertyId, dossierId: dossier._id, readiness: await recomputeProjectReadinessForProperty(ctx, propertyId) };
+  const readiness = await recomputeProjectReadinessForProperty(ctx, propertyId);
+  await enqueueProjectUpsertForZaneAi(ctx, propertyId, access);
+  await enqueueProjectUnitsForZaneAi(ctx, propertyId, access);
+  return { ok: true as const, propertyId, dossierId: dossier._id, readiness };
 }
 
 /**
@@ -308,28 +403,31 @@ export async function applyOwnedProjectUnitBulkActions(
   const { dossier } = await requireOwnedDossier(ctx, propertyId, access);
   if (!dossier) throw new ConvexError({ code: "NOT_FOUND", message: "Project dossier not found" });
   const now = Date.now();
+  const createdUnitIds: GenericId<"projectUnits">[] = [];
 
   for (const action of actions) {
     if (action.type === "create") {
-      await ctx.db.insert("projectUnits", {
+      const unitId = await ctx.db.insert("projectUnits", {
         ...action.unit,
         dossierId: dossier._id,
         propertyId,
         createdAt: now,
         updatedAt: now,
       } as any);
+      createdUnitIds.push(unitId);
       continue;
     }
 
     if (action.type === "import") {
       for (const unit of action.units) {
-        await ctx.db.insert("projectUnits", {
+        const unitId = await ctx.db.insert("projectUnits", {
           ...unit,
           dossierId: dossier._id,
           propertyId,
           createdAt: now,
           updatedAt: now,
         } as any);
+        createdUnitIds.push(unitId);
       }
       continue;
     }
@@ -341,21 +439,23 @@ export async function applyOwnedProjectUnitBulkActions(
     }
 
     if (action.type === "delete") {
-      await requireOwnedUnit(ctx, dossier._id, action.unitId);
-      await ctx.db.delete(action.unitId);
+      const unit = await requireOwnedUnit(ctx, dossier._id, action.unitId);
+      await enqueueProjectUnitArchiveForZaneAi(ctx, propertyId, unit, access);
+      await ctx.db.patch(action.unitId, { deletedAt: now, status: "draft", updatedAt: now } as any);
       continue;
     }
 
     if (action.type === "duplicate") {
       const source = await requireOwnedUnit(ctx, dossier._id, action.unitId);
       const { _id, _creationTime, createdAt, updatedAt, ...copy } = source;
-      await ctx.db.insert("projectUnits", {
+      const unitId = await ctx.db.insert("projectUnits", {
         ...copy,
         label: action.label?.trim() || `${source.label} copy`,
         status: source.status === "sold" ? "draft" : source.status,
         createdAt: now,
         updatedAt: now,
       } as any);
+      createdUnitIds.push(unitId);
       continue;
     }
 
@@ -366,7 +466,10 @@ export async function applyOwnedProjectUnitBulkActions(
   }
 
   await regeneratePropertyProjection(ctx, propertyId);
-  return { ok: true as const, propertyId, dossierId: dossier._id, readiness: await recomputeProjectReadinessForProperty(ctx, propertyId) };
+  const readiness = await recomputeProjectReadinessForProperty(ctx, propertyId);
+  await enqueueProjectUpsertForZaneAi(ctx, propertyId, access);
+  await enqueueProjectUnitsForZaneAi(ctx, propertyId, access);
+  return { ok: true as const, propertyId, dossierId: dossier._id, readiness, createdUnitIds };
 }
 
 export async function saveOwnedProjectPaymentPlans(ctx: MutationCtx, propertyId: GenericId<"properties">, paymentPlans: any[], access: OwnerAccess) {
@@ -374,7 +477,9 @@ export async function saveOwnedProjectPaymentPlans(ctx: MutationCtx, propertyId:
   if (!dossier) throw new ConvexError({ code: "NOT_FOUND", message: "Project dossier not found" });
   await replaceRows(ctx, "projectPaymentPlans", dossier._id, paymentPlans, (plan) => ({ ...plan, milestones: plan.milestones ?? [], dossierId: dossier._id, propertyId }));
   await regeneratePropertyProjection(ctx, propertyId);
-  return { ok: true as const, propertyId, dossierId: dossier._id, readiness: await recomputeProjectReadinessForProperty(ctx, propertyId) };
+  const readiness = await recomputeProjectReadinessForProperty(ctx, propertyId);
+  await enqueueProjectUpsertForZaneAi(ctx, propertyId, access);
+  return { ok: true as const, propertyId, dossierId: dossier._id, readiness };
 }
 
 export async function saveOwnedProjectComplianceDocuments(ctx: MutationCtx, propertyId: GenericId<"properties">, documents: any[], access: OwnerAccess) {
@@ -383,6 +488,7 @@ export async function saveOwnedProjectComplianceDocuments(ctx: MutationCtx, prop
   await replaceRows(ctx, "projectComplianceDocuments", dossier._id, documents, (document) => ({ ...document, status: document.status ?? "submitted", dossierId: dossier._id, propertyId }));
   const readiness = await recomputeProjectReadinessForProperty(ctx, propertyId);
   await recordProjectReadinessEvent(ctx, { dossierId: dossier._id, propertyId, actorAuthUserId: access.authUserId, actorRole: access.role, eventType: "document_reviewed", nextStatus: readiness.status, message: "Project compliance documents saved." });
+  await enqueueProjectUpsertForZaneAi(ctx, propertyId, access);
   return { ok: true as const, propertyId, dossierId: dossier._id, readiness };
 }
 
@@ -412,6 +518,7 @@ export async function saveOwnedProjectAdLicense(ctx: MutationCtx, propertyId: Ge
   } as any);
   const readiness = await recomputeProjectReadinessForProperty(ctx, propertyId);
   await recordProjectReadinessEvent(ctx, { dossierId: dossier._id, propertyId, actorAuthUserId: access.authUserId, actorRole: access.role, eventType: "ad_license_reviewed", nextStatus: readiness.status, message: "Project ad license saved." });
+  await enqueueProjectUpsertForZaneAi(ctx, propertyId, access);
   return { ok: true as const, propertyId, dossierId: dossier._id, readiness };
 }
 
@@ -419,7 +526,66 @@ export async function saveOwnedProjectBrokerAuthorization(ctx: MutationCtx, prop
   const { dossier } = await requireOwnedDossier(ctx, propertyId, access);
   if (!dossier) throw new ConvexError({ code: "NOT_FOUND", message: "Project dossier not found" });
   await replaceRows(ctx, "projectBrokerAuthorizations", dossier._id, authorization ? [authorization] : [], (row) => ({ ...row, channels: row.channels ?? [], status: row.status ?? "draft", dossierId: dossier._id, propertyId }));
-  return { ok: true as const, propertyId, dossierId: dossier._id, readiness: await recomputeProjectReadinessForProperty(ctx, propertyId) };
+  const readiness = await recomputeProjectReadinessForProperty(ctx, propertyId);
+  await enqueueProjectUpsertForZaneAi(ctx, propertyId, access);
+  return { ok: true as const, propertyId, dossierId: dossier._id, readiness };
+}
+
+/**
+ * WHY:   Project-zone deletion must archive dossier children instead of hard-deleting only the property projection.
+ * WHAT:  Marks the project, dossier, units, payment plans, documents, licenses, and authorizations as inactive.
+ * HOW:   Enforces owner access through the parent property, soft-deletes child rows, then syncs downstream inventory.
+ */
+export async function archiveOwnedProject(ctx: MutationCtx, propertyId: GenericId<"properties">, access: OwnerAccess) {
+  const { property, dossier } = await requireOwnedDossier(ctx, propertyId, access);
+  if (!dossier) throw new ConvexError({ code: "NOT_FOUND", message: "Project dossier not found" });
+  const now = Date.now();
+  const detail = await collectDossierChildren(ctx, dossier._id);
+
+  for (const unit of detail.units) {
+    await enqueueProjectUnitArchiveForZaneAi(ctx, propertyId, unit, access);
+    await ctx.db.patch(unit._id, { deletedAt: now, status: "draft", updatedAt: now } as any);
+  }
+  for (const plan of detail.paymentPlans) {
+    await ctx.db.patch(plan._id, { deletedAt: now, status: "archived", updatedAt: now } as any);
+  }
+  for (const document of detail.documents) {
+    await ctx.db.patch(document._id, { deletedAt: now, updatedAt: now } as any);
+  }
+  for (const license of detail.adLicenses) {
+    await ctx.db.patch(license._id, { deletedAt: now, status: "expired", updatedAt: now } as any);
+  }
+  for (const authorization of detail.brokerAuthorizations) {
+    await ctx.db.patch(authorization._id, { deletedAt: now, status: "revoked", updatedAt: now } as any);
+  }
+
+  await ctx.db.patch(dossier._id, {
+    deletedAt: now,
+    lifecycleStage: "archived",
+    status: "archived",
+    requestedVisibility: "private",
+    updatedAt: now,
+  } as any);
+  await ctx.db.patch(propertyId, {
+    deletedAt: now,
+    publicationState: "archived",
+    isPublished: false,
+    isPublicSearchable: false,
+    projectReadinessStatus: "blocked",
+    updatedAt: now,
+  } as any);
+  await recordProjectReadinessEvent(ctx, {
+    dossierId: dossier._id,
+    propertyId,
+    actorAuthUserId: access.authUserId,
+    actorRole: access.role,
+    eventType: "dossier_saved",
+    nextStatus: "blocked",
+    message: "Project archived from workspace.",
+    metadata: { ownerType: property.ownerType, inventoryKind: (dossier as any).inventoryKind ?? "project" },
+  });
+  await enqueueProjectUpsertForZaneAi(ctx, propertyId, access);
+  return { ok: true as const, propertyId, dossierId: dossier._id };
 }
 
 export async function requestOwnedProjectPublication(ctx: MutationCtx, propertyId: GenericId<"properties">, access: OwnerAccess) {
@@ -434,5 +600,7 @@ export async function requestOwnedProjectPublication(ctx: MutationCtx, propertyI
   }
   await ctx.db.patch(propertyId, { publicationState: "published", isPublicSearchable: true, projectReadinessStatus: readiness.status, updatedAt: Date.now() } as any);
   await recordProjectReadinessEvent(ctx, { dossierId: dossier._id, propertyId, actorAuthUserId: access.authUserId, actorRole: access.role, eventType: "publish_approved", nextStatus: readiness.status, message: "Project is approved for public distribution." });
+  await enqueueProjectUpsertForZaneAi(ctx, propertyId, access);
+  await enqueueProjectUnitsForZaneAi(ctx, propertyId, access);
   return { ok: true as const, publicationState: "published" as const, readiness };
 }

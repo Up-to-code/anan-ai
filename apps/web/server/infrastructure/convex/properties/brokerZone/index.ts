@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { mutationRef, queryRef, voidMutationRef } from "@anan/convex-adapters/repository";
 import { brokerOverviewApi, brokerPropertiesApi } from "./api";
 import type { BrokerZoneRepository } from "./types";
 
@@ -11,47 +11,59 @@ export type { BrokerZoneRepository } from "./types";
  */
 export const convexBrokerZoneRepository: BrokerZoneRepository = {
   async getOverview(token, brokerId) {
-    return fetchQuery(brokerOverviewApi.countPropertiesByBrokerId as never, {
-      brokerId: brokerId as never,
-    } as never, { token }) as ReturnType<BrokerZoneRepository["getOverview"]>;
+    return queryRef<Awaited<ReturnType<BrokerZoneRepository["getOverview"]>>>(
+      token,
+      brokerOverviewApi.countPropertiesByBrokerId,
+      { brokerId },
+    );
   },
 
   async listProperties(token, brokerId, filters) {
-    return fetchQuery(brokerPropertiesApi.listByBrokerId as never, {
-      brokerId: brokerId as never,
-      ...filters,
-    } as never, { token }) as ReturnType<BrokerZoneRepository["listProperties"]>;
+    return queryRef<Awaited<ReturnType<BrokerZoneRepository["listProperties"]>>>(
+      token,
+      brokerPropertiesApi.listByBrokerId,
+      {
+        brokerId,
+        ...filters,
+      },
+    );
   },
 
   async getProperty(token, id) {
-    return fetchQuery(brokerPropertiesApi.getById as never, {
-      id: id as never,
-    } as never, { token }) as ReturnType<BrokerZoneRepository["getProperty"]>;
+    return queryRef<Awaited<ReturnType<BrokerZoneRepository["getProperty"]>>>(
+      token,
+      brokerPropertiesApi.getById,
+      { id },
+    );
   },
 
   async createProperty(token, brokerId, input) {
-    return fetchMutation(brokerPropertiesApi.create as never, {
-      brokerId: brokerId as never,
-      ...input,
-    } as never, { token }) as ReturnType<BrokerZoneRepository["createProperty"]>;
+    return mutationRef<Awaited<ReturnType<BrokerZoneRepository["createProperty"]>>>(
+      token,
+      brokerPropertiesApi.create,
+      {
+        brokerId,
+        ...input,
+      },
+    );
   },
 
   async updateProperty(token, id, patch) {
-    await fetchMutation(brokerPropertiesApi.update as never, {
-      id: id as never,
+    await voidMutationRef(token, brokerPropertiesApi.update, {
+      id,
       ...patch,
-    } as never, { token });
+    });
   },
 
   async deleteProperty(token, id) {
-    await fetchMutation(brokerPropertiesApi.remove as never, {
-      id: id as never,
-    } as never, { token });
+    await voidMutationRef(token, brokerPropertiesApi.remove, { id });
   },
 
   async publishProperty(token, id) {
-    return fetchMutation(brokerPropertiesApi.publish as never, {
-      id: id as never,
-    } as never, { token }) as ReturnType<BrokerZoneRepository["publishProperty"]>;
+    return mutationRef<Awaited<ReturnType<BrokerZoneRepository["publishProperty"]>>>(
+      token,
+      brokerPropertiesApi.publish,
+      { id },
+    );
   },
 };

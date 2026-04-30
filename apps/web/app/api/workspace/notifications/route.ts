@@ -1,6 +1,6 @@
+import { handleRoute, okResponse, readJsonBody } from "@anan/web-foundation/api";
 import { markWorkspaceNotificationRead } from "@/server/domains/workspace/notifications/service";
-import { DomainError, toErrorResponse } from "@/server/contracts/errors";
-import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
+import { DomainError } from "@/server/contracts/errors";
 
 /**
  * WHY:   Notification rows still need one write endpoint for read-state mutations.
@@ -8,8 +8,8 @@ import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
  * HOW:   Parses JSON, validates the required notification id, delegates to the notifications service, and normalizes failures.
  */
 export async function PATCH(request: Request) {
-  try {
-    const body = (await request.json()) as { notificationId?: string };
+  return handleRoute(async () => {
+    const body = await readJsonBody<{ notificationId?: string }>(request);
     if (!body.notificationId) {
       throw new DomainError({
         code: "INVALID_ARGUMENT",
@@ -18,11 +18,6 @@ export async function PATCH(request: Request) {
       });
     }
     await markWorkspaceNotificationRead(body.notificationId);
-    return Response.json({ ok: true });
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      return toInvalidJsonResponse();
-    }
-    return toErrorResponse(error);
-  }
+    return okResponse();
+  });
 }

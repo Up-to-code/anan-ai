@@ -1,4 +1,4 @@
-import { toErrorResponse } from "@/server/contracts/errors";
+import { deletedResponse, handleRoute } from "@anan/web-foundation/api";
 import { cancelIncomingOrganizationInvite } from "@/server/domains/auth/organizations/service";
 
 type IncomingInviteRouteProps = {
@@ -11,11 +11,9 @@ type IncomingInviteRouteProps = {
  * HOW:   Resolves the route param and delegates to the organizations domain service.
  */
 export async function DELETE(_request: Request, { params }: IncomingInviteRouteProps) {
-  try {
+  return handleRoute(async () => {
     const { inviteId } = await params;
     await cancelIncomingOrganizationInvite(inviteId);
-    return new Response(null, { status: 204 });
-  } catch (error) {
-    return toErrorResponse(error);
-  }
+    return deletedResponse(null);
+  });
 }

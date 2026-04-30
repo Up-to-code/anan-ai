@@ -1,4 +1,9 @@
 import { ConvexError } from "convex/values";
+import {
+  authContextFromClaims,
+  requireEntitlement as requireSharedEntitlement,
+  type AuthContext,
+} from "@anan/auth/server";
 import type { Doc, Id } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
 import { findProfileForResolvedIdentity, requireResolvedIdentity } from "./identity";
@@ -16,6 +21,10 @@ import {
 type Ctx = QueryCtx | MutationCtx;
 
 export type ProtectedRole = UserRole;
+export type WorkspaceEntitlement =
+  | "workspace:user"
+  | "workspace:broker"
+  | "workspace:developer";
 
 export type AccessContext = {
   authUserId: string;
@@ -35,6 +44,14 @@ export type AdminAccessContext = {
   profile: Doc<"userProfiles"> | null;
   adminAccess: AdminPlatformAccess;
 };
+
+function entitlementForRole(role: ProtectedRole): WorkspaceEntitlement {
+  return `workspace:${role}` as WorkspaceEntitlement;
+}
+
+function roleForEntitlement(entitlement: WorkspaceEntitlement): ProtectedRole {
+  return entitlement.replace("workspace:", "") as ProtectedRole;
+}
 
 function normalizeRole(value: unknown): ProtectedRole | null {
   if (
@@ -169,6 +186,32 @@ function assertLinkedRoleEntity(
   }
 }
 
+function createAuthContextForAccess(params: {
+  identity: Awaited<ReturnType<typeof requireResolvedIdentity>>;
+  profile: Doc<"userProfiles"> | null;
+  role: ProtectedRole;
+  linkedRoleEntity: { brokerId?: Id<"brokers">; developerId?: Id<"RED"> };
+}): AuthContext {
+  const { identity, profile, role, linkedRoleEntity } = params;
+  const identityClaims = identity.identity as Record<string, unknown> & {
+    entitlements?: string[];
+  };
+  return authContextFromClaims({
+    ...identityClaims,
+    sub: identity.authUserId,
+    email: identity.email,
+    name: identity.name,
+    role,
+    broker_id: linkedRoleEntity.brokerId,
+    red_id: linkedRoleEntity.developerId,
+    org_id: profile?.currentTenantOrgId,
+    entitlements: [
+      entitlementForRole(role),
+      ...(Array.isArray(identityClaims.entitlements) ? identityClaims.entitlements : []),
+    ],
+  });
+}
+
 /**
  * WHY:   Gives every protected handler a single session-entry check.
  * WHAT:  Resolves the authenticated subject and session token identifier.
@@ -185,22 +228,30 @@ export async function requireSession(
 }
 
 /**
- * WHY:   Centralizes role enforcement on the server for all protected zones.
- * WHAT:  Verifies session + role and returns a typed access context.
- * HOW:   Resolves role from userProfiles first, then optional identity fallback.
+ * WHY:   Centralizes entitlement enforcement on the server for all protected zones.
+ * WHAT:  Verifies session + OIDC-style entitlements and returns a typed access context.
+ * HOW:   Resolves business ownership from profiles, projects it to AuthContext, then applies shared guards.
  */
-export async function requireRole(
+export async function requireEntitlements(
   ctx: Ctx,
-  allowedRoles: ProtectedRole[],
+  entitlements: WorkspaceEntitlement[],
 ): Promise<AccessContext> {
   const identity = await requireResolvedIdentity(ctx);
   const profile = await findProfileForResolvedIdentity(ctx, identity);
   const normalizedProfile = profile ? normalizeUserProfileRoleState(profile) : null;
   assertActiveProfile(profile);
   const role = resolveEffectiveRole(profile, (identity.identity as { role?: string }).role);
+  const allowedRoles = entitlements.map(roleForEntitlement);
   assertAllowedRole(role, normalizeAllowedRoles(allowedRoles));
   const linkedRoleEntity = await resolveLinkedRoleEntity(ctx, role, profile);
   assertLinkedRoleEntity(role, linkedRoleEntity);
+  const authContext = createAuthContextForAccess({
+    identity,
+    profile,
+    role,
+    linkedRoleEntity,
+  });
+  requireSharedEntitlement(authContext, entitlementForRole(role));
 
   return {
     authUserId: identity.authUserId,
@@ -212,6 +263,16 @@ export async function requireRole(
     REDId: linkedRoleEntity.developerId,
     roleApprovalStatus: normalizedProfile?.roleApprovalStatus,
   };
+}
+
+/**
+ * @deprecated Use requireEntitlements(ctx, ["workspace:broker"]) or a narrower ownership helper.
+ */
+export async function requireRole(
+  ctx: Ctx,
+  allowedRoles: ProtectedRole[],
+): Promise<AccessContext> {
+  return requireEntitlements(ctx, allowedRoles.map(entitlementForRole));
 }
 
 /**
@@ -251,15 +312,15 @@ export async function requireAdminAccess(
 
 /**
  * WHY:   Keeps publish-time verification checks consistent across zones.
- * WHAT:  Validates a role and enforces verified broker/RED organization status.
- * HOW:   Builds on requireRole then loads the linked organization document.
+ * WHAT:  Validates an entitlement and enforces verified broker/RED organization status.
+ * HOW:   Builds on requireEntitlements then loads the linked organization document.
  */
 export async function requireVerifiedRole(
   ctx: Ctx,
   role: "broker" | "developer",
 ): Promise<AccessContext> {
   const normalizedRole = role;
-  const access = await requireRole(ctx, [normalizedRole]);
+  const access = await requireEntitlements(ctx, [entitlementForRole(normalizedRole)]);
 
   if (normalizedRole === "broker") {
     const broker = await ctx.db.get(access.brokerId!);
@@ -284,7 +345,7 @@ export async function requireVerifiedRole(
 
 /**
  * WHY:   Provides zone-scoped role enforcement without repeating role lists.
- * WHAT:  Maps a zone name to its allowed roles and delegates to requireRole.
+ * WHAT:  Maps a zone name to its required entitlements and delegates to requireEntitlements.
  * HOW:   Keeps zone gate logic centralized for future role additions.
  */
 export async function requireZoneRole(
@@ -293,23 +354,21 @@ export async function requireZoneRole(
     | "admin_zone"
     | "broker_zone"
     | "red_zone"
-    | "user_zone"
     | "shared_logic"
     | "ai_zone",
 ): Promise<AccessContext | AdminAccessContext> {
   if (zone === "admin_zone") {
     return requireAdminAccess(ctx);
   }
-  const zoneRoles: Record<
+  const zoneEntitlements: Record<
     Exclude<typeof zone, "admin_zone">,
-    ProtectedRole[]
+    WorkspaceEntitlement[]
   > = {
-    broker_zone: ["broker"],
-    red_zone: ["developer"],
-    user_zone: ["user", "broker", "developer"],
-    shared_logic: ["broker", "developer", "user"],
-    ai_zone: ["broker", "developer", "user"],
+    broker_zone: ["workspace:broker"],
+    red_zone: ["workspace:developer"],
+    shared_logic: ["workspace:broker", "workspace:developer", "workspace:user"],
+    ai_zone: ["workspace:broker", "workspace:developer", "workspace:user"],
   } as const;
 
-  return requireRole(ctx, zoneRoles[zone]);
+  return requireEntitlements(ctx, zoneEntitlements[zone]);
 }

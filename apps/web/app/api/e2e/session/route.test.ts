@@ -7,18 +7,33 @@ function createPostRequest(body: unknown, secret = "secret") {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-e2e-secret": secret,
+      authorization: `Bearer ${secret}`,
     },
     body: JSON.stringify(body),
   });
 }
 
-function createGetRequest(searchParams: Record<string, string>) {
+function createRawPostRequest(body: string, secret = "secret") {
+  return new NextRequest("http://localhost:3000/api/e2e/session", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${secret}`,
+    },
+    body,
+  });
+}
+
+function createGetRequest(searchParams: Record<string, string>, secret = "secret") {
   const url = new URL("http://localhost:3000/api/e2e/session");
   for (const [key, value] of Object.entries(searchParams)) {
     url.searchParams.set(key, value);
   }
-  return new NextRequest(url);
+  return new NextRequest(url, {
+    headers: {
+      authorization: `Bearer ${secret}`,
+    },
+  });
 }
 
 function stubE2EEnv() {
@@ -64,6 +79,19 @@ describe("POST /api/e2e/session", () => {
 
     expect(response.status).toBe(400);
     expect(body.ok).toBe(false);
+  });
+
+  it("rejects malformed JSON instead of treating it as an empty request", async () => {
+    stubE2EEnv();
+
+    const response = await POST(createRawPostRequest("{"));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({
+      ok: false,
+      message: "Request body must be valid JSON.",
+    });
   });
 
   it("signs in a configured persona and returns Playwright storage cookies", async () => {
@@ -131,7 +159,6 @@ describe("GET /api/e2e/session", () => {
     stubSuccessfulSignIn();
 
     const response = await GET(createGetRequest({
-      secret: "secret",
       persona: "broker-manager",
       redirectTo: "/ws/projects",
     }));
@@ -146,7 +173,6 @@ describe("GET /api/e2e/session", () => {
     stubSuccessfulSignIn();
 
     const response = await GET(createGetRequest({
-      secret: "secret",
       persona: "broker-manager",
       redirectTo: "//evil.example/phish",
     }));

@@ -1,5 +1,7 @@
 import { expect, it } from "vitest";
 import {
+  mapUnitCreateToChildUnitInput,
+  mapUnitCreateToDossierInput,
   mapUnitCreateToPropertyInput,
   mapUnitCreateToUnitInputs,
   validateUnitCreateSubmission,
@@ -9,6 +11,13 @@ import {
 const validUnit: UnitCreateFormData = {
   name: "Unit A-101",
   location: "Riyadh, Al Malqa",
+  locationDetails: {
+    label: "Riyadh, Al Malqa",
+    city: "Riyadh",
+    district: "Al Malqa",
+    latitude: 24.801,
+    longitude: 46.623,
+  },
   unitType: "apartment",
   listingType: "sale",
   price: "1,250,000",
@@ -45,7 +54,9 @@ it("validates required standalone unit fields while allowing expert comparison f
 
 it("persists unit expert metadata while preserving canonical property and unit fields", () => {
   const propertyInput = mapUnitCreateToPropertyInput(validUnit);
+  const dossierInput = mapUnitCreateToDossierInput("property-1", validUnit);
   const unitInput = mapUnitCreateToUnitInputs(validUnit)[0];
+  const childUnitInput = mapUnitCreateToChildUnitInput(validUnit);
 
   expect(propertyInput).toEqual(expect.objectContaining({
     title: "Unit A-101",
@@ -77,5 +88,19 @@ it("persists unit expert metadata while preserving canonical property and unit f
     floor: "5",
     view: "Garden",
     price: 1250000,
+    location: expect.objectContaining({
+      countryCode: "SA",
+      city: "Riyadh",
+      district: "Al Malqa",
+      latitude: 24.801,
+      longitude: 46.623,
+    }),
+  }));
+  expect(childUnitInput.location).toEqual(unitInput.location);
+  expect(dossierInput.location).toEqual(expect.objectContaining({
+    city: "Riyadh",
+    district: "Al Malqa",
+    latitude: 24.801,
+    longitude: 46.623,
   }));
 });

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PanelLeft, PanelLeftClose, PenSquare } from "lucide-react";
+import { AuthStateGate } from "@anan/ui/auth";
 import Sidebar from "./Sidebar";
 import type { SidebarUser } from "./Sidebar/types";
 import type { WorkspaceOrganizationDisplay } from "../_lib/organizationDisplay";
@@ -206,8 +207,10 @@ export default function WorkspaceShell({
               "flex h-full min-h-0 min-w-0 flex-1 basis-0 flex-col",
               isAssistantVariant ? "pt-0" : undefined,
             )}
-          >
-            {children}
+            >
+            <AuthStateGate loading={children} unauthenticated={children} error={children}>
+              {children}
+            </AuthStateGate>
           </div>
         </main>
 

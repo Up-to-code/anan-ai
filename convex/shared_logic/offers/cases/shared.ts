@@ -1,6 +1,18 @@
 import { ConvexError } from "convex/values";
 import type { Doc } from "../../../_generated/dataModel";
 import type { CreateOfferCaseArgs, LegacyOfferStatus, LegacyPublicationState, LegacyOfferVisibility, OfferCaseStage, OfferCaseType, OfferPackageVisibility, StoredOfferPackageVisibility } from "./types";
+import {
+  isClosedStage as sharedIsClosedStage,
+  isOpenlyVisible as sharedIsOpenlyVisible,
+  isPresent as sharedIsPresent,
+  legacyPublicationStateFromStage as sharedLegacyPublicationStateFromStage,
+  legacyStatusFromStage as sharedLegacyStatusFromStage,
+  legacyVisibilityFromPackage as sharedLegacyVisibilityFromPackage,
+  resolveCaseType as sharedResolveCaseType,
+  resolveStageForDraft as sharedResolveStageForDraft,
+  resolveStageForPublish as sharedResolveStageForPublish,
+  resolveVisibility as sharedResolveVisibility,
+} from "../../../../packages/offers-logic/src/cases";
 
 export function assert(condition: unknown, message: string, code = "INVALID_STATE"): asserts condition {
   if (!condition) {
@@ -9,49 +21,41 @@ export function assert(condition: unknown, message: string, code = "INVALID_STAT
 }
 
 export function legacyStatusFromStage(stage: OfferCaseStage): LegacyOfferStatus {
-  if (stage === "closed_lost" || stage === "archived") return "rejected";
-  if (stage === "engaged" || stage === "agreed" || stage === "closed_won") return "accepted";
-  return "pending";
+  return sharedLegacyStatusFromStage(stage);
 }
 
 export function legacyPublicationStateFromStage(stage: OfferCaseStage): LegacyPublicationState {
-  if (stage === "draft") return "draft";
-  if (stage === "archived") return "archived";
-  return "published";
+  return sharedLegacyPublicationStateFromStage(stage);
 }
 
 export function legacyVisibilityFromPackage(visibility: StoredOfferPackageVisibility): LegacyOfferVisibility {
-  return visibility === "open" || visibility === "public" ? "public" : "private";
+  return sharedLegacyVisibilityFromPackage(visibility);
 }
 
 export function isClosedStage(stage: OfferCaseStage) {
-  return stage === "closed_won" || stage === "closed_lost" || stage === "archived";
+  return sharedIsClosedStage(stage);
 }
 
 export function resolveVisibility(args: CreateOfferCaseArgs): OfferPackageVisibility {
-  if (args.caseType === "open_offer") return "open";
-  if (args.visibility === "public") return "open";
-  return "private";
+  return sharedResolveVisibility(args);
 }
 
 export function resolveCaseType(args: CreateOfferCaseArgs): OfferCaseType {
-  if (args.caseType) return args.caseType;
-  if (args.visibility === "public") return "open_offer";
-  return args.clientContext ? "collaboration_case" : "private_offer";
+  return sharedResolveCaseType(args);
 }
 
 export function resolveStageForDraft() {
-  return "draft" as const;
+  return sharedResolveStageForDraft();
 }
 
 export function resolveStageForPublish(type: OfferCaseType): OfferCaseStage {
-  return type === "open_offer" ? "open" : "targeted";
+  return sharedResolveStageForPublish(type);
 }
 
 export function isPresent<T>(value: T | null | undefined): value is T {
-  return value != null;
+  return sharedIsPresent(value);
 }
 
 export function isOpenlyVisible(offerCase: Doc<"offerCases">, offerPackage: Doc<"offerPackages">) {
-  return offerCase.stage === "open" && (offerPackage.visibility === "open" || offerPackage.visibility === "public");
+  return sharedIsOpenlyVisible(offerCase, offerPackage);
 }

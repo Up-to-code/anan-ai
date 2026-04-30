@@ -4,10 +4,12 @@ import { auditLog } from "../../../auditLog";
 import { tenants } from "../../../tenants";
 import { getAdminPlatformAccess } from "../../../_core/security/adminAccess";
 import {
+  buildOwnerContext,
   findProfileByAuthUserId,
   normalizeEmail,
   type AgenciesRepositoryCtx,
 } from "./core";
+import { enqueueOrganizationUpsertForZaneAi } from "../../integrations/zaneAiWebhook";
 
 function slugifyOrganizationName(value: string) {
   return value
@@ -193,6 +195,11 @@ export async function createOrganizationForAuthUserRecord(
       },
       tags: ["organizations", "broker"],
     });
+    await enqueueOrganizationUpsertForZaneAi(
+      ctx,
+      buildOwnerContext({ ownerType: "broker", ownerBrokerId: brokerId, authUserId: profile.authUserId }),
+      { authUserId: args.actorAuthUserId ?? args.authUserId, role: "manager" },
+    );
     return {
       ok: true,
       organization: {
@@ -273,6 +280,11 @@ export async function createOrganizationForAuthUserRecord(
     },
     tags: ["organizations", "red"],
   });
+  await enqueueOrganizationUpsertForZaneAi(
+    ctx,
+    buildOwnerContext({ ownerType: "RED", ownerREDId: redId, authUserId: profile.authUserId }),
+    { authUserId: args.actorAuthUserId ?? args.authUserId, role: "manager" },
+  );
   return {
     ok: true,
     organization: {

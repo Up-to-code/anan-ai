@@ -1,6 +1,5 @@
-import { toInvalidJsonResponse } from "@/app/api/_shared/errors";
+import { createdResponse, handleRoute, jsonResponse, readJsonBody } from "@anan/web-foundation/api";
 import { getOrganizationApiKeyHeader, getOrganizationApiKeyOrigin } from "@/app/api/org/_shared";
-import { toErrorResponse } from "@/server/contracts/errors";
 import {
   createOrganizationClientByApiKey,
   listOrganizationClientsByApiKey,
@@ -12,24 +11,16 @@ import {
  * HOW:   Routes reads and writes through the organization API key domain service and returns normalized errors.
  */
 export async function GET(request: Request) {
-  try {
-    return Response.json({ clients: await listOrganizationClientsByApiKey(getOrganizationApiKeyHeader(request), getOrganizationApiKeyOrigin(request)) });
-  } catch (error) {
-    return toErrorResponse(error);
-  }
+  return handleRoute(async () =>
+    jsonResponse({ clients: await listOrganizationClientsByApiKey(getOrganizationApiKeyHeader(request), getOrganizationApiKeyOrigin(request)) }),
+  );
 }
 
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    return Response.json(
+  return handleRoute(async () => {
+    const body = await readJsonBody(request);
+    return createdResponse(
       { client: await createOrganizationClientByApiKey(getOrganizationApiKeyHeader(request), body, getOrganizationApiKeyOrigin(request)) },
-      { status: 201 },
     );
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      return toInvalidJsonResponse();
-    }
-    return toErrorResponse(error);
-  }
+  });
 }

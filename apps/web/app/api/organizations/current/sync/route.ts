@@ -1,4 +1,4 @@
-import { toErrorResponse } from "@/server/contracts/errors";
+import { handleRoute, okResponse } from "@anan/web-foundation/api";
 import { syncCurrentOrganizationFromBetterAuth } from "@/server/domains/auth/organizations/service";
 
 /**
@@ -7,10 +7,8 @@ import { syncCurrentOrganizationFromBetterAuth } from "@/server/domains/auth/org
  * HOW:   Delegates to the organizations domain service and returns the mapped organization summary when available.
  */
 export async function POST() {
-  try {
+  return handleRoute(async () => {
     const organization = await syncCurrentOrganizationFromBetterAuth();
-    return Response.json({ ok: true, organization }, { status: 200 });
-  } catch (error) {
-    return toErrorResponse(error);
-  }
+    return okResponse({ ok: true, organization });
+  });
 }

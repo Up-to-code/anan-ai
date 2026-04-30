@@ -1,14 +1,14 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { transitionalGlobalSecurityFields } from "./securityFields";
+import { boundedMetadataValidator } from "./securityValidators";
 
 const workspaceTables = {
     inboxConversations: defineTable({
     ...transitionalGlobalSecurityFields,
         orgId: v.optional(v.id("organizations")),
         propertyId: v.optional(v.id("properties")),
-        buyerAccountId: v.optional(v.id("buyerAccounts")),
-        channel: v.optional(v.union(v.literal("platform"), v.literal("whatsapp"), v.literal("email"))),
+        channel: v.optional(v.union(v.literal("platform"), v.literal("email"))),
         status: v.optional(v.union(v.literal("open"), v.literal("resolved"), v.literal("archived"))),
         assignedToProfileId: v.optional(v.id("userProfiles")),
         directKey: v.string(),
@@ -22,7 +22,6 @@ const workspaceTables = {
         lastMessageSenderId: v.optional(v.string()),
     })
         .index("by_orgId", ["orgId"])
-        .index("by_buyerAccountId", ["buyerAccountId"])
         .index("by_orgId_and_status", ["orgId", "status"])
         .index("by_orgId_and_lastMessageAt", ["orgId", "lastMessageAt"])
         .index("by_org_status_lastMessageAt", ["orgId", "status", "lastMessageAt"])
@@ -79,7 +78,7 @@ const workspaceTables = {
             v.literal("role_event"),
         ),
         body: v.string(),
-        metadata: v.optional(v.any()),
+        metadata: v.optional(boundedMetadataValidator),
         createdAt: v.number(),
     })
         .index("by_conversationId", ["conversationId", "sentAt"])
@@ -119,7 +118,7 @@ const workspaceTables = {
         severity: v.union(v.literal("info"), v.literal("warning"), v.literal("success")),
         entityType: v.optional(v.string()),
         entityId: v.optional(v.string()),
-        metadata: v.optional(v.any()),
+        metadata: v.optional(boundedMetadataValidator),
         readAt: v.optional(v.number()),
         createdAt: v.number(),
         pushedAt: v.optional(v.number()),

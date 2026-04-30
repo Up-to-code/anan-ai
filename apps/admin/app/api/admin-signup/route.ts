@@ -1,44 +1,40 @@
-import { fetchMutation } from "convex/nextjs";
 import { NextResponse, type NextRequest } from "next/server";
-import { apiUnsafe } from "@/lib/convexApi";
-
-const adminSignupApi = apiUnsafe["admin_zone/adminSignup"] as {
-  validateAdminSignup: unknown;
-  completeAdminSignup: unknown;
-};
+import {
+  copySetCookieHeaders,
+  buildAuthBridgeHeaders,
+  isExistingAccountResponse,
+  readJsonBody,
+  resolveBridgeSecret,
+  safeResponseJson,
+} from "@anan/web-foundation/api";
+import { completeAdminSignup, validateAdminSignupInvite } from "@/server/auth/adminSignup";
 
 function readBridgeSecret() {
-  const secret = process.env.ADMIN_SIGNUP_BRIDGE_SECRET?.trim();
-  if (!secret) {
-    throw new Error("ADMIN_SIGNUP_BRIDGE_SECRET is not configured.");
-  }
-  return secret;
+  return resolveBridgeSecret(
+    [{ header: "x-anan-admin-signup-secret", value: process.env.ADMIN_SIGNUP_BRIDGE_SECRET }],
+    "ADMIN_SIGNUP_BRIDGE_SECRET is not configured.",
+  ).value;
 }
 
-function copySetCookie(source: Response, target: NextResponse) {
-  const getSetCookie = (source.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie;
-  const cookies = typeof getSetCookie === "function"
-    ? getSetCookie.call(source.headers)
-    : [source.headers.get("set-cookie")].filter((value): value is string => Boolean(value));
-  for (const cookie of cookies) {
-    target.headers.append("set-cookie", cookie);
-  }
+function getBridgeOrigin(request: NextRequest) {
+  return process.env.ANAN_WEB_URL?.trim()
+    || process.env.SITE_URL?.trim()
+    || request.headers.get("origin")
+    || request.nextUrl.origin;
 }
 
 async function callBetterAuth(request: NextRequest, path: "sign-up" | "sign-in", body: Record<string, unknown>) {
   return fetch(new URL(`/api/auth/${path}/email`, request.nextUrl.origin), {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-anan-admin-signup-secret": readBridgeSecret(),
-      cookie: request.headers.get("cookie") ?? "",
-    },
+    headers: buildAuthBridgeHeaders({
+      bridgeHeader: "x-anan-admin-signup-secret",
+      bridgeSecret: readBridgeSecret(),
+      cookie: request.headers.get("cookie"),
+      origin: getBridgeOrigin(request),
+      requestUrl: request.url,
+    }),
     body: JSON.stringify(body),
   });
-}
-
-function isExistingAccountError(status: number, body: unknown) {
-  return status === 409 || JSON.stringify(body).toLowerCase().includes("already");
 }
 
 /**
@@ -48,29 +44,29 @@ function isExistingAccountError(status: number, body: unknown) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await readJsonBody<Record<string, unknown>>(request);
     const email = String(body.email ?? "").trim().toLowerCase();
     const password = String(body.password ?? "");
     const name = typeof body.name === "string" ? body.name.trim() : undefined;
     const token = typeof body.token === "string" ? body.token.trim() : undefined;
     const bootstrapSecret = typeof body.bootstrapSecret === "string" ? body.bootstrapSecret.trim() : undefined;
 
-    const invite = await fetchMutation(adminSignupApi.validateAdminSignup as never, {
+    const invite = await validateAdminSignupInvite({
       email,
       token,
       bootstrapSecret,
-    } as never);
+    });
     const authBody = {
       email,
       password,
       name: name || (invite as { name?: string }).name || email.split("@")[0],
     };
     let authResponse = await callBetterAuth(request, "sign-up", authBody);
-    let authPayload = await authResponse.json().catch(() => ({}));
+    let authPayload = await safeResponseJson(authResponse, {});
 
-    if (!authResponse.ok && isExistingAccountError(authResponse.status, authPayload)) {
+    if (!authResponse.ok && isExistingAccountResponse(authResponse.status, authPayload)) {
       authResponse = await callBetterAuth(request, "sign-in", { email, password, rememberMe: true });
-      authPayload = await authResponse.json().catch(() => ({}));
+      authPayload = await safeResponseJson(authResponse, {});
     }
 
     if (!authResponse.ok) {
@@ -88,16 +84,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await fetchMutation(adminSignupApi.completeAdminSignup as never, {
+    await completeAdminSignup({
       email,
       name: authBody.name,
       authUserId,
       token,
       bootstrapSecret,
-    } as never);
+    });
 
     const response = NextResponse.json({ ok: true, redirectTo: "/overview" });
-    copySetCookie(authResponse, response);
+    copySetCookieHeaders(authResponse, response);
     return response;
   } catch (error) {
     return NextResponse.json(

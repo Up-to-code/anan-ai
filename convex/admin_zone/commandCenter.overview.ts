@@ -6,7 +6,7 @@ import { buildActiveUsersSummary, buildAlerts, buildTopOrganizations, countWindo
 
 /**
  * WHY:   The rebuilt admin dashboard needs one leadership-ready control-room dataset rather than many disconnected counters.
- * WHAT:  Returns top-line KPIs, activity and commercial trends, partner/queue snapshots, top organizations, and urgent alerts.
+ * WHAT:  Returns top-line KPIs, activity and commercial trends, ecosystem/queue snapshots, top organizations, and urgent alerts.
  * HOW:   Aggregates current admin-owned tables over the selected rolling window and compares them against the previous window.
  */
 export const commandCenterOverview = query({
@@ -190,7 +190,7 @@ export const commandCenterOverview = query({
         errorEvents: searchLogs.filter((item) => item.status === "failed" || Boolean(item.errorMessage)).length,
         apiKeyDenials: apiKeys.filter((item) => Boolean(item.lastDeniedAt)).length,
       },
-      partnerHealth: {
+      ecosystemHealth: {
         brokers: brokers.length,
         developers: developers.length,
         verifiedOrganizations:

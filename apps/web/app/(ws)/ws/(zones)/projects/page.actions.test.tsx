@@ -1,33 +1,26 @@
-import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, it, vi } from "vitest";
 import { DomainError } from "@/server/contracts/errors";
-import type { ProjectMutationActionResult } from "./pages/ProjectsPage/actionTypes";
 
 const {
-  listProperties,
   requestProjectPublication,
-  publishProperty,
-  deleteProperty,
-  getCapturedProps,
-  setCapturedProps,
-} = vi.hoisted(() => {
-  let capturedProps: unknown = null;
+  archiveProject,
+  markEntityAssetsPendingDelete,
+  recordProjectAnalyticsEvent,
+  refresh,
+  redirect,
+} = vi.hoisted(() => ({
+  requestProjectPublication: vi.fn(async () => ({ ok: true as const })),
+  archiveProject: vi.fn(async () => ({ ok: true as const })),
+  markEntityAssetsPendingDelete: vi.fn(async () => undefined),
+  recordProjectAnalyticsEvent: vi.fn(async () => ({ ok: true as const })),
+  refresh: vi.fn(),
+  redirect: vi.fn((href: string) => {
+    throw new Error(`NEXT_REDIRECT:${href}`);
+  }),
+}));
 
-  return {
-    listProperties: vi.fn(async () => ({
-      page: [],
-      isDone: true,
-      continueCursor: "",
-    })),
-    requestProjectPublication: vi.fn(async () => ({ ok: true as const })),
-    publishProperty: vi.fn(async () => ({ ok: true as const })),
-    deleteProperty: vi.fn(async () => undefined),
-    getCapturedProps: () => capturedProps,
-    setCapturedProps: (props: unknown) => {
-      capturedProps = props;
-    },
-  };
-});
+vi.mock("next/cache", () => ({ refresh }));
+vi.mock("next/navigation", () => ({ redirect }));
 
 vi.mock("../../_lib/workspaceData", () => ({
   requireWorkspaceData: vi.fn(async () => ({
@@ -37,39 +30,42 @@ vi.mock("../../_lib/workspaceData", () => ({
 }));
 
 vi.mock("@/server/ws/zones", () => ({
-  getWorkspacePropertyZone: vi.fn(() => ({
-    listProperties,
-    publishProperty,
-    deleteProperty,
-  })),
   getWorkspaceProjectZone: vi.fn(() => ({
     requestProjectPublication,
+    archiveProject,
+  })),
+  getWorkspacePropertyZone: vi.fn(() => ({
+    recordProjectAnalyticsEvent,
   })),
 }));
 
-vi.mock("./pages/ProjectsPage", () => ({
-  default: (props: unknown) => {
-    setCapturedProps(props);
-    return <div>ProjectsPageMock</div>;
+vi.mock("@/server/auth/session", () => ({
+  requireSessionContext: vi.fn(async () => ({
+    token: "token",
+    context: { userId: "user-1", role: "broker", isActive: true, brokerId: "broker-1" },
+    profile: null,
+  })),
+}));
+
+vi.mock("@/server/infrastructure/convex/organizations/assets", () => ({
+  convexOrganizationAssetsRepository: {
+    markEntityAssetsPendingDelete,
   },
 }));
 
-import WorkspaceProjectsRoute from "./page";
-
-type CapturedProps = {
-  onPublishProject: (projectId: string) => Promise<ProjectMutationActionResult>;
-  onDeleteProject: (projectId: string) => Promise<ProjectMutationActionResult>;
-};
+import { deleteProjectAction } from "./actions/deleteProject";
+import { publishProjectAction } from "./actions/publishProject";
+import { trackProjectEventAction } from "./actions/trackProjectEvent";
 
 beforeEach(() => {
-  listProperties.mockClear();
   requestProjectPublication.mockClear();
-  publishProperty.mockClear();
-  deleteProperty.mockClear();
+  archiveProject.mockClear();
+  markEntityAssetsPendingDelete.mockClear();
+  recordProjectAnalyticsEvent.mockClear();
+  refresh.mockClear();
+  redirect.mockClear();
   requestProjectPublication.mockResolvedValue({ ok: true });
-  publishProperty.mockResolvedValue({ ok: true });
-  deleteProperty.mockResolvedValue(undefined);
-  setCapturedProps(null);
+  archiveProject.mockResolvedValue({ ok: true });
 });
 
 it("returns a stable domain result when publishing is blocked by verification", async () => {
@@ -81,24 +77,36 @@ it("returns a stable domain result when publishing is blocked by verification", 
     }),
   );
 
-  const element = await WorkspaceProjectsRoute();
-  const markup = renderToStaticMarkup(element);
-  const props = getCapturedProps() as CapturedProps;
-  const result = await props.onPublishProject("property-1");
-
-  expect(markup).toContain("ProjectsPageMock");
-  expect(result).toEqual({
+  await expect(publishProjectAction("property-1")).resolves.toEqual({
     ok: false,
     code: "VERIFICATION_REQUIRED",
     message: "Organization verification is required before publishing",
   });
 });
 
-it("returns success envelopes for completed mutations", async () => {
-  const element = await WorkspaceProjectsRoute();
-  renderToStaticMarkup(element);
-  const props = getCapturedProps() as CapturedProps;
+it("runs concrete lifecycle actions by property id", async () => {
+  await expect(publishProjectAction("property-1")).resolves.toEqual({ ok: true });
+  expect(requestProjectPublication).toHaveBeenCalledWith({ propertyId: "property-1" });
+  expect(refresh).toHaveBeenCalled();
 
-  await expect(props.onPublishProject("property-1")).resolves.toEqual({ ok: true });
-  await expect(props.onDeleteProject("property-1")).resolves.toEqual({ ok: true });
+  await expect(deleteProjectAction("property-1")).rejects.toThrow("NEXT_REDIRECT:/ws/projects");
+  expect(markEntityAssetsPendingDelete).toHaveBeenCalledWith(
+    "token",
+    expect.objectContaining({
+      attachedEntityType: "project",
+      attachedEntityId: "property-1",
+    }),
+  );
+  expect(archiveProject).toHaveBeenCalledWith({ propertyId: "property-1" });
+
+  await expect(trackProjectEventAction({
+    propertyId: "property-1",
+    eventType: "project_detail_view",
+    source: "test",
+  })).resolves.toEqual({ ok: true });
+  expect(recordProjectAnalyticsEvent).toHaveBeenCalledWith({
+    id: "property-1",
+    eventType: "project_detail_view",
+    source: "test",
+  });
 });

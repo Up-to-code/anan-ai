@@ -1,24 +1,30 @@
+import { makeFunctionReference } from "convex/server";
 import { v } from "convex/values";
 import { action, internalMutation, mutation, query } from "../_generated/server";
 import {
   createAssistantThread,
+  saveConversationStep,
+} from "./services/assistantService/persistence";
+import { resolveAssistantOwner, resolveAssistantOwnerSafe } from "./services/assistantService/owner";
+import {
   getAccessibleThread,
   getLatestThread,
-  handleAssistantMessage,
   listRecentThreads,
   listThreadMessages,
-  resolveAssistantOwner,
-  resolveAssistantOwnerSafe,
-  saveConversationStep,
-} from "./services/assistantService";
+} from "./services/assistantService/threads";
 import { selectRegenerateSource } from "./services/assistantService/promptComposer";
-import { transcribeStoredVoiceNote } from "./services/voiceTranscriptionService";
 import { resolveAssistantEntitlementForCurrentProfile } from "../shared_logic/subscriptions/index";
 
 const ASSISTANT_KIND = "anan_workspace" as const;
 const ORCHESTRATOR_NAME = "anan_workspace_orchestrator";
 const PROMPT_PREFIX =
   "[Anan Workspace Operator]\nYou are the internal workspace operator. Prioritize projects, offers, CRM, organizations, invitations, inbox, and actionable next steps. Only propose actions the current workspace role can perform. Summaries should be operational and approval-ready.";
+const sendMessageNodeRef = makeFunctionReference<"action">(
+  "ai_zone/assistantWorkspaceNode:sendMessageNode",
+);
+const transcribeVoiceFromStorageNodeRef = makeFunctionReference<"action">(
+  "ai_zone/assistantWorkspaceNode:transcribeVoiceFromStorageNode",
+);
 
 function scoreSnippet(content: string, terms: string[]) {
   const lower = content.toLowerCase();
@@ -162,12 +168,7 @@ export const sendMessage = action({
     regenerateMessageId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    return handleAssistantMessage(ctx, {
-      ...args,
-      assistantKind: ASSISTANT_KIND,
-      orchestratorName: ORCHESTRATOR_NAME,
-      promptPrefix: PROMPT_PREFIX,
-    });
+    return ctx.runAction(sendMessageNodeRef, args);
   },
 });
 
@@ -229,7 +230,7 @@ export const transcribeVoiceFromStorage = action({
     storageId: v.id("_storage"),
   },
   handler: async (ctx, args) => {
-    return transcribeStoredVoiceNote(ctx, args.storageId);
+    return ctx.runAction(transcribeVoiceFromStorageNodeRef, args);
   },
 });
 

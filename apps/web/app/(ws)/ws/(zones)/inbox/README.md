@@ -24,7 +24,7 @@ flowchart LR
 - `page.tsx`
 - `layout.tsx`
 - `pages/InboxPage/InboxWorkspaceClient.tsx`
-- `pages/InboxPage/useRealtimeInbox.ts`
+- `pages/InboxPage/useRealtimeInbox/`
 - `pages/InboxPage/InboxThreadView.tsx`
 
 ## Outside-In Usage

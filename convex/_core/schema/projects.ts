@@ -7,6 +7,7 @@ import {
 } from "./gccCompliance";
 import { uploadedFileReferenceListValidator } from "./uploadedFiles";
 import { transitionalGlobalSecurityFields } from "./securityFields";
+import { unsafeDynamicPayloadValidator } from "./securityValidators";
 
 const projectReadinessStatusValidator = v.union(
   v.literal("draft"),
@@ -16,6 +17,11 @@ const projectReadinessStatusValidator = v.union(
   v.literal("approved"),
   v.literal("blocked"),
   v.literal("published_ready"),
+);
+
+const projectInventoryKindValidator = v.union(
+  v.literal("project"),
+  v.literal("standalone_unit"),
 );
 
 const projectBlockerSeverityValidator = v.union(
@@ -87,6 +93,7 @@ const projectsTables = {
   projectDossiers: defineTable({
     ...transitionalGlobalSecurityFields,
     propertyId: v.id("properties"),
+    inventoryKind: v.optional(projectInventoryKindValidator),
     orgId: v.optional(v.id("organizations")),
     tenantOrgId: v.optional(v.string()),
     name: v.optional(v.string()),
@@ -171,6 +178,7 @@ const projectsTables = {
     view: v.optional(v.string()),
     price: v.optional(v.number()),
     handoverAt: v.optional(v.number()),
+    location: v.optional(saudiProjectLocationValidator),
     floorPlanMedia: v.optional(uploadedFileReferenceListValidator),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -314,7 +322,7 @@ const projectsTables = {
     previousStatus: v.optional(projectReadinessStatusValidator),
     nextStatus: v.optional(projectReadinessStatusValidator),
     message: v.optional(v.string()),
-    metadata: v.optional(v.any()),
+    metadata: v.optional(unsafeDynamicPayloadValidator),
     createdAt: v.number(),
   })
     .index("dossierId", ["dossierId"])

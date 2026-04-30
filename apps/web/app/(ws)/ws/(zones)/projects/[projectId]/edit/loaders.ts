@@ -4,6 +4,7 @@ import { requireSessionContext } from "@/server/auth/session";
 import { convexProjectAccessRepository } from "@/server/infrastructure/convex/properties/access";
 import { getWorkspaceProjectZone, getWorkspacePropertyZone } from "@/server/ws/zones";
 import { mapPropertyToWorkspaceProject } from "../../shared/lib/projectViewModel";
+import { buildLocationValueFromParts } from "@anan/location-map";
 import type { ProjectFormData } from "@/app/(ws)/ws/public";
 import { parsePropertyBody } from "@/server/contracts/properties";
 
@@ -83,6 +84,13 @@ function buildInitialProjectFormData(project: WorkspaceProject, property: Worksp
       view: unit.view ?? "",
       price: unit.price !== undefined ? String(unit.price) : "",
       handoverAt: unit.handoverAt ? new Date(unit.handoverAt).toISOString().slice(0, 10) : "",
+      locationDetails: buildLocationValueFromParts({
+        label: [unit.location?.city, unit.location?.district].filter(Boolean).join("، "),
+        city: unit.location?.city,
+        district: unit.location?.district,
+        latitude: unit.location?.latitude,
+        longitude: unit.location?.longitude,
+      }),
       floorPlanMedia: unit.floorPlanMedia ?? [],
     })),
     paymentPlans: paymentPlan ? [{

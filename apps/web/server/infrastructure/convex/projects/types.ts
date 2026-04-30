@@ -15,10 +15,13 @@ import type {
 export type WorkspaceProjectRepository = {
   getProjectDossier(token: string, propertyId: string): Promise<ProjectDossierDetail | null>;
   getProjectDossierByProjectId(token: string, projectId: string): Promise<ProjectDossierDetail | null>;
+  getProjectsWorkspace(token: string): Promise<{ page: ProjectDossierDetail[] }>;
+  getProjectWorkspaceDetail(token: string, projectId: string): Promise<ProjectDossierDetail | null>;
   getProjectReadiness(token: string, propertyId: string): Promise<ProjectReadinessResult | null>;
   saveProjectDossierDraft(token: string, input: ProjectDossierInput): Promise<ProjectDraftSaveResult>;
   saveProjectUnits(token: string, propertyId: string, units: ProjectUnitInput[]): Promise<ProjectDraftSaveResult>;
   applyProjectUnitBulkActions(token: string, propertyId: string, actions: ProjectUnitBulkAction[]): Promise<ProjectDraftSaveResult>;
+  archiveProject(token: string, propertyId: string): Promise<{ ok: true; propertyId: string; dossierId: string }>;
   saveProjectPaymentPlans(token: string, propertyId: string, paymentPlans: ProjectPaymentPlanInput[]): Promise<ProjectDraftSaveResult>;
   saveProjectComplianceDocuments(token: string, propertyId: string, documents: ProjectComplianceDocumentInput[]): Promise<ProjectDraftSaveResult>;
   saveProjectAdLicense(token: string, propertyId: string, adLicense?: ProjectAdLicenseInput): Promise<ProjectDraftSaveResult>;

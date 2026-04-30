@@ -1,3 +1,4 @@
+import { createRepositoryRefs } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 export type OrganizationProfilesApiRefs = {
@@ -10,4 +11,4 @@ export type OrganizationProfilesApiRefs = {
 };
 
 export const organizationProfilesApi =
-  apiUnsafe["shared_logic/organizationProfiles"] as OrganizationProfilesApiRefs;
+  createRepositoryRefs<OrganizationProfilesApiRefs>(apiUnsafe, "shared_logic/organizationProfiles");

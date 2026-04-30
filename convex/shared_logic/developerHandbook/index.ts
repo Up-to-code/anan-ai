@@ -2,7 +2,7 @@ import { query } from "../../_generated/server";
 import { v } from "convex/values";
 import {
   requireAdminAccess,
-  requireRole,
+  requireEntitlements,
 } from "../../_core/security/accessPolicy";
 
 function normalizeSearchQuery(input: string) {
@@ -23,7 +23,7 @@ export const retrieveDeveloperHandbookSnippets = query({
     try {
       await requireAdminAccess(ctx, "admin:system");
     } catch {
-      await requireRole(ctx, ["broker", "developer"]);
+      await requireEntitlements(ctx, ["workspace:broker", "workspace:developer"]);
     }
 
     const normalized = normalizeSearchQuery(args.query);

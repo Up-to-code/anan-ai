@@ -1,4 +1,4 @@
-import { fetchQuery } from "convex/nextjs";
+import { createRepositoryRefs, queryRef } from "@anan/convex-adapters/repository";
 import { apiUnsafe } from "@/lib/convexApi";
 
 type OrganizationsApiRefs = {
@@ -9,7 +9,7 @@ type OrganizationsApiRefs = {
   getOrganizationDetail: unknown;
 };
 
-const organizationsApi = apiUnsafe["admin_zone/organizations"] as OrganizationsApiRefs;
+const organizationsApi = createRepositoryRefs<OrganizationsApiRefs>(apiUnsafe, "admin_zone/organizations");
 
 /**
  * WHY:   The organizations workspace should load through one repository boundary instead of page-level Convex calls.
@@ -18,18 +18,18 @@ const organizationsApi = apiUnsafe["admin_zone/organizations"] as OrganizationsA
  */
 export const convexAdminOrganizationsRepository = {
   async listBrokers(token: string) {
-    return fetchQuery(organizationsApi.listBrokerOrganizations as never, {} as never, { token }) as Promise<Array<Record<string, unknown>>>;
+    return queryRef<Array<Record<string, unknown>>>(token, organizationsApi.listBrokerOrganizations);
   },
   async listDevelopers(token: string) {
-    return fetchQuery(organizationsApi.listDeveloperOrganizations as never, {} as never, { token }) as Promise<Array<Record<string, unknown>>>;
+    return queryRef<Array<Record<string, unknown>>>(token, organizationsApi.listDeveloperOrganizations);
   },
   async listMemberships(token: string) {
-    return fetchQuery(organizationsApi.listOrganizationMemberships as never, {} as never, { token }) as Promise<Array<Record<string, unknown>>>;
+    return queryRef<Array<Record<string, unknown>>>(token, organizationsApi.listOrganizationMemberships);
   },
   async listInvites(token: string) {
-    return fetchQuery(organizationsApi.listOrganizationInvites as never, {} as never, { token }) as Promise<Array<Record<string, unknown>>>;
+    return queryRef<Array<Record<string, unknown>>>(token, organizationsApi.listOrganizationInvites);
   },
   async getDetail(token: string, organizationKey: string) {
-    return fetchQuery(organizationsApi.getOrganizationDetail as never, { organizationKey } as never, { token }) as Promise<Record<string, unknown> | null>;
+    return queryRef<Record<string, unknown> | null>(token, organizationsApi.getOrganizationDetail, { organizationKey });
   },
 };

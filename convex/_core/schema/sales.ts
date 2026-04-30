@@ -1,6 +1,7 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { transitionalGlobalSecurityFields } from "./securityFields";
+import { unsafeDynamicPayloadValidator } from "./securityValidators";
 
 /**
  * Sales and Orders Schema
@@ -27,13 +28,13 @@ const salesTables = {
         ),
         propertyId: v.optional(v.id("properties")),
         bankId: v.optional(v.id("banks")),
-        REDId: v.optional(v.id("RED")), // Replaces partnerId
+        REDId: v.optional(v.id("RED")), // Replaces legacy relationship id
         intent: v.optional(v.string()),
         notes: v.optional(v.string()),
         assignedTo: v.optional(v.string()),
         threadId: v.optional(v.string()),
         sourceChannel: v.optional(
-            v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web")),
+            v.union(v.literal("workspace"), v.literal("web"), v.literal("admin")),
         ),
     })
         .index("userId", ["userId"])
@@ -47,7 +48,7 @@ const salesTables = {
         name: v.string(),
         slug: v.string(),
         contactEmail: v.string(),
-        rules: v.optional(v.any()),
+        rules: v.optional(unsafeDynamicPayloadValidator),
         description: v.optional(v.string()),
         logoId: v.optional(v.id("_storage")),
         status: v.optional(
@@ -63,7 +64,7 @@ const salesTables = {
                     name: v.string(),
                     type: v.string(),
                     description: v.optional(v.string()),
-                    rules: v.optional(v.any()), // Dynamic bank rule engine rules
+                    rules: v.optional(unsafeDynamicPayloadValidator), // Dynamic bank rule engine rules
                 }),
             ),
         ),

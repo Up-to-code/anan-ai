@@ -1,4 +1,4 @@
-import { DomainError, toErrorResponse } from "@/server/contracts/errors";
+import { invalidJsonResponse } from "@anan/web-foundation/api";
 
 /**
  * WHY:   Route handlers repeatedly need the same invalid-JSON failure without duplicating the payload.
@@ -6,11 +6,5 @@ import { DomainError, toErrorResponse } from "@/server/contracts/errors";
  * HOW:   Reuses the shared domain error serializer with the stable `INVALID_REQUEST` contract.
  */
 export function toInvalidJsonResponse() {
-  return toErrorResponse(
-    new DomainError({
-      code: "INVALID_REQUEST",
-      message: "Request body must be valid JSON",
-      status: 400,
-    }),
-  );
+  return invalidJsonResponse();
 }

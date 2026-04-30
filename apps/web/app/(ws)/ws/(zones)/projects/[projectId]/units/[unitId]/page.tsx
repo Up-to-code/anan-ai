@@ -1,47 +1,39 @@
 import { notFound } from "next/navigation";
-import { requireWorkspaceData } from "../../../../../_lib/workspaceData";
-import { resolveWorkspaceProjectDetail } from "@/server/domains/workspace/properties/detail";
 import { getWorkspaceProjectZone } from "@/server/ws/zones";
-import {
-  mapPropertyToWorkspaceProjectDetail,
-  mapWorkspaceProjectUnitDetail,
-} from "../../../shared/lib/projectViewModel";
 import UnitDetailPage from "../../../pages/UnitDetailPage";
+import { normalizeDomainError } from "@/server/contracts/errors";
+import type { ProjectMutationActionResult } from "../../../pages/ProjectsPage/actionTypes";
+import { loadProjectWorkspaceUnit } from "../../../loaders/projectWorkspace";
 
 type WorkspaceUnitDetailRouteProps = {
   params: Promise<{ projectId: string; unitId: string }>;
 };
 
-/**
- * WHY:   Inventory units need their own workspace URL so teams can inspect and share unit-level context.
- * WHAT:  Loads the parent project and dossier unit records, then renders the selected unit detail page.
- * HOW:   Uses Anan workspace zones only and returns 404 for inaccessible projects or unknown units.
- */
 export default async function WorkspaceUnitDetailRoute({
   params,
 }: WorkspaceUnitDetailRouteProps) {
   const { projectId, unitId } = await params;
-  const workspace = await requireWorkspaceData(`/ws/projects/${projectId}/units/${unitId}`);
-  const projectsZone = getWorkspaceProjectZone(workspace.audience, workspace.ownerContext);
-  const canonicalDossier = await projectsZone.getProjectDossierByProjectId({ projectId }).catch(() => null);
-  const propertyId = canonicalDossier?.property?._id ?? projectId;
-  const resolved = await resolveWorkspaceProjectDetail({
-    projectId: propertyId,
-    audience: workspace.audience,
-    ownerContext: workspace.ownerContext,
-  });
+  const detail = await loadProjectWorkspaceUnit(projectId, unitId);
 
-  if (!resolved) {
+  if (!detail) {
     notFound();
   }
+  const resolvedDetail = detail;
 
-  const dossier = canonicalDossier ?? await projectsZone.getProjectDossier({ propertyId }).catch(() => null);
-  const project = mapPropertyToWorkspaceProjectDetail(resolved.property, resolved.accessMode, { dossier });
-  const unit = mapWorkspaceProjectUnitDetail(project, unitId);
+  async function deleteUnit(): Promise<ProjectMutationActionResult> {
+    "use server";
 
-  if (!unit) {
-    notFound();
+    try {
+      await getWorkspaceProjectZone(resolvedDetail.audience, resolvedDetail.ownerContext).applyProjectUnitBulkActions({
+        propertyId: resolvedDetail.propertyId,
+        actions: [{ type: "delete", unitId }],
+      });
+      return { ok: true };
+    } catch (error) {
+      const domainError = normalizeDomainError(error);
+      return { ok: false, code: domainError.code, message: domainError.message };
+    }
   }
 
-  return <UnitDetailPage unit={unit} />;
+  return <UnitDetailPage unit={resolvedDetail.unit} canEdit={resolvedDetail.project.canEdit} onDeleteUnit={deleteUnit} />;
 }

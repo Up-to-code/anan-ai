@@ -2,7 +2,7 @@ import type { ActionCtx } from "../../../_generated/server";
 import { internal } from "../../../_generated/api";
 import { stepCountIs } from "ai";
 import { getChatModel } from "../../../shared_logic/lib/providers";
-import { cachedGenerateText } from "../../../shared_logic/llmCache";
+import { cachedGenerateText } from "../../../shared_logic/integrations/llmCacheNode";
 import { getAgentLLMConfigSafe } from "../config";
 import { DEFAULT_RETRY_CONFIG, FALLBACK_MODEL, withRetry, type AgentError, type RetryConfig } from "../shared/errorHandler";
 import { extractTokenUsageFromResult } from "../shared/tokenTracker";

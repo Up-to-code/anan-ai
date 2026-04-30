@@ -7,7 +7,7 @@
  * - pnpm test:once
  * - node scripts/audit/analyze.mjs
  *
- * For broader local verification across admin/mobile/private-docs/browser tiers,
+ * For broader local verification across workspace/admin/browser tiers,
  * use the root `pnpm test:deep*` commands instead of expanding this gate.
  */
 

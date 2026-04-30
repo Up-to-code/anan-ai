@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { queryRef, voidMutationRef } from "@anan/convex-adapters/repository";
 import { notificationsApi } from "./api";
 import type { NotificationsRepository } from "./types";
 
@@ -6,27 +6,34 @@ export type { NotificationsRepository } from "./types";
 
 export const convexNotificationsRepository: NotificationsRepository = {
   async list(token, limit) {
-    return fetchQuery(notificationsApi.listWorkspaceNotifications as never, { limit } as never, { token }) as ReturnType<NotificationsRepository["list"]>;
+    return queryRef<Awaited<ReturnType<NotificationsRepository["list"]>>>(
+      token,
+      notificationsApi.listWorkspaceNotifications,
+      { limit },
+    );
   },
   async getSummary(token) {
-    return fetchQuery(notificationsApi.getWorkspaceNotificationSummary as never, {} as never, { token }) as ReturnType<NotificationsRepository["getSummary"]>;
+    return queryRef<Awaited<ReturnType<NotificationsRepository["getSummary"]>>>(
+      token,
+      notificationsApi.getWorkspaceNotificationSummary,
+    );
   },
   async markRead(token, notificationId) {
-    await fetchMutation(notificationsApi.markWorkspaceNotificationRead as never, { notificationId } as never, { token });
+    await voidMutationRef(token, notificationsApi.markWorkspaceNotificationRead, { notificationId });
   },
   async updatePreferences(token, input) {
-    await fetchMutation(notificationsApi.updateNotificationPreferences as never, input as never, { token });
+    await voidMutationRef(token, notificationsApi.updateNotificationPreferences, input);
   },
   async registerPushSubscription(token, input) {
-    await fetchMutation(notificationsApi.registerPushSubscription as never, input as never, { token });
+    await voidMutationRef(token, notificationsApi.registerPushSubscription, input);
   },
   async removePushSubscription(token, endpoint) {
-    await fetchMutation(notificationsApi.removePushSubscription as never, { endpoint } as never, { token });
+    await voidMutationRef(token, notificationsApi.removePushSubscription, { endpoint });
   },
   async getPushConfig(token) {
-    return fetchQuery(notificationsApi.getPushSubscriptionConfig as never, {} as never, { token }) as Promise<{
-      publicKey: string | null;
-      browserPushEnabled: boolean;
-    }> as ReturnType<NotificationsRepository["getPushConfig"]>;
+    return queryRef<Awaited<ReturnType<NotificationsRepository["getPushConfig"]>>>(
+      token,
+      notificationsApi.getPushSubscriptionConfig,
+    );
   },
 };

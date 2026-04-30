@@ -1,6 +1,5 @@
 import { createClient, type GenericCtx } from "@convex-dev/better-auth";
 import { convex } from "@convex-dev/better-auth/plugins";
-import { expo } from "@better-auth/expo";
 import {
   betterAuth,
   type BetterAuthOptions,
@@ -8,6 +7,7 @@ import {
 } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { emailOTP, organization } from "better-auth/plugins";
+import { createAnanOAuthProviderPlugin } from "@anan/auth/server/oauth-provider";
 import { components } from "../_generated/api";
 import type { DataModel } from "../_generated/dataModel";
 import {
@@ -79,8 +79,6 @@ function getTrustedOrigins() {
       ...readCsvEnv("BETTER_AUTH_TRUSTED_ORIGINS"),
     ].join(","),
     extraOrigins: [
-      process.env.EXPO_PUBLIC_CLIENT_WEB_URL,
-      process.env.EXPO_PUBLIC_CONVEX_SITE_URL,
       process.env.NEXT_PUBLIC_CONVEX_SITE_URL,
       process.env.BETTER_AUTH_URL,
     ],
@@ -88,13 +86,21 @@ function getTrustedOrigins() {
     vercelEnv: process.env.VERCEL_ENV,
   });
 
-  return [...allowedOrigins, "anan://", "exp://"];
+  return allowedOrigins;
 }
 
 function getAuthErrorUrl() {
   const webAppBaseUrl = getWebAppBaseUrl();
   if (!webAppBaseUrl) return undefined;
   return buildAuthErrorRedirectUrl(webAppBaseUrl, { returnTo: "/ws" });
+}
+
+function getOAuthConsentPage() {
+  return process.env.ANAN_OAUTH_CONSENT_PAGE?.trim() || "/oauth/authorize";
+}
+
+function getOAuthLoginPage() {
+  return process.env.ANAN_OAUTH_LOGIN_PAGE?.trim() || "/signin";
 }
 
 function buildSocialProviders() {
@@ -123,25 +129,36 @@ function buildSocialProviders() {
   } satisfies BetterAuthOptions["socialProviders"];
 }
 
-function isAdminPasswordSignUpEnabled() {
-  return Boolean(readOptionalEnv("ADMIN_SIGNUP_BRIDGE_SECRET") || readOptionalEnv("ANAN_ADMIN_PASSWORD_SIGNUP_ENABLED"));
+function isPasswordSignUpEnabled() {
+  return Boolean(
+    readOptionalEnv("ADMIN_SIGNUP_BRIDGE_SECRET")
+      || readOptionalEnv("ANAN_ADMIN_PASSWORD_SIGNUP_ENABLED"),
+  );
 }
 
-function adminSignupGatePlugin(): BetterAuthPlugin {
+function passwordSignupGatePlugin(): BetterAuthPlugin {
   return {
-    id: "anan-admin-signup-gate",
+    id: "anan-password-signup-gate",
     hooks: {
       before: [
         {
           matcher: (context) => context.path === "/sign-up/email",
           handler: createAuthMiddleware(async (ctx) => {
-            const expected = readOptionalEnv("ADMIN_SIGNUP_BRIDGE_SECRET");
-            const provided = ctx.headers?.get("x-anan-admin-signup-secret");
-            if (!expected || provided !== expected) {
-              throw new APIError("FORBIDDEN", {
-                message: "Admin signup requires a trusted invite flow.",
-              });
+            const adminExpected = readOptionalEnv("ADMIN_SIGNUP_BRIDGE_SECRET");
+            const adminProvided = ctx.headers?.get("x-anan-admin-signup-secret");
+            const allowPublicPasswordSignup = Boolean(readOptionalEnv("ANAN_ADMIN_PASSWORD_SIGNUP_ENABLED"));
+
+            if (allowPublicPasswordSignup && !adminExpected) {
+              return;
             }
+
+            if (adminExpected && adminProvided === adminExpected) {
+              return;
+            }
+
+            throw new APIError("FORBIDDEN", {
+              message: "Password signup requires a trusted signup flow.",
+            });
           }),
         },
       ],
@@ -170,12 +187,11 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
     socialProviders: buildSocialProviders(),
     emailAndPassword: {
       enabled: true,
-      disableSignUp: !isAdminPasswordSignUpEnabled(),
+      disableSignUp: !isPasswordSignUpEnabled(),
       minPasswordLength: 12,
       maxPasswordLength: 128,
     },
     plugins: [
-      expo(),
       organization({
         creatorRole: "owner",
         allowUserToCreateOrganization: true,
@@ -185,7 +201,13 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
           throw new Error("Email OTP delivery is not configured for this Anan deployment.");
         },
       }),
-      adminSignupGatePlugin(),
+      createAnanOAuthProviderPlugin({
+        issuer: getAuthBaseUrl(),
+        loginPage: getOAuthLoginPage(),
+        consentPage: getOAuthConsentPage(),
+        allowDynamicClientRegistration: Boolean(readOptionalEnv("ANAN_OIDC_DYNAMIC_CLIENT_REGISTRATION")),
+      }) as BetterAuthPlugin,
+      passwordSignupGatePlugin(),
       convex({ authConfig }),
     ],
   }) satisfies BetterAuthOptions;

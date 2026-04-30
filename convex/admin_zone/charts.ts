@@ -104,24 +104,24 @@ export const channelDistribution = query({
   handler: async (ctx) => {
     await requireAdminAccess(ctx);
     const logs = await ctx.db.query("searchLogs").order("desc").take(500);
-    let whatsapp = 0;
-    let app = 0;
+    let workspace = 0;
     let web = 0;
+    let admin = 0;
     for (const log of logs) {
       switch (log.channel) {
-        case "whatsapp":
-          whatsapp += 1;
-          break;
-        case "app":
-          app += 1;
+        case "workspace":
+          workspace += 1;
           break;
         case "web":
           web += 1;
+          break;
+        case "admin":
+          admin += 1;
           break;
         default:
           break;
       }
     }
-    return { whatsapp, app, web };
+    return { workspace, web, admin };
   },
 });

@@ -1,5 +1,7 @@
 "use client";
 
+import { signInWithEmailPassword } from "@anan/auth-client/forms";
+import { getEmailPasswordErrorMessage, resolveBrowserCallbackUrl } from "@anan/ui/auth";
 import { KeyRound, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -10,35 +12,6 @@ type EmailPasswordSignInFormProps = {
   redirectTo: string;
   className?: string;
 };
-
-function resolveBrowserCallbackUrl(path: string) {
-  if (typeof window === "undefined") {
-    return path;
-  }
-
-  try {
-    return new URL(path, window.location.origin).toString();
-  } catch {
-    return path;
-  }
-}
-
-function getAuthErrorMessage(error: unknown) {
-  if (!error || typeof error !== "object") {
-    return "تعذر تسجيل الدخول. تحقق من البريد وكلمة المرور.";
-  }
-
-  const message =
-    "message" in error && typeof error.message === "string"
-      ? error.message
-      : null;
-
-  if (message?.toLowerCase().includes("invalid")) {
-    return "بيانات الدخول غير صحيحة.";
-  }
-
-  return message ?? "تعذر تسجيل الدخول. تحقق من البريد وكلمة المرور.";
-}
 
 /**
  * WHY:   Admin access is password-based now, but authorization still comes from the existing admin profile role.
@@ -60,7 +33,7 @@ export default function EmailPasswordSignInForm({
     setPending(true);
     setErrorMessage(null);
 
-    const { error } = await authClient.signIn.email({
+    const { error } = await signInWithEmailPassword(authClient, {
       email: email.trim(),
       password,
       callbackURL: resolveBrowserCallbackUrl(redirectTo),
@@ -69,7 +42,11 @@ export default function EmailPasswordSignInForm({
 
     if (error) {
       setPending(false);
-      setErrorMessage(getAuthErrorMessage(error));
+      setErrorMessage(getEmailPasswordErrorMessage(
+        error,
+        "تعذر تسجيل الدخول. تحقق من البريد وكلمة المرور.",
+        "بيانات الدخول غير صحيحة.",
+      ));
       return;
     }
 

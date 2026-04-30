@@ -140,7 +140,7 @@ async function createOfferCase(
       authUserId: args.recipientAuthUserId,
       brokerId: recipient.toBrokerId,
       REDId: recipient.toREDId,
-      role: "execution_partner",
+      role: "execution_provider",
       status: "pending",
       createdAt: now,
       updatedAt: now,
@@ -360,11 +360,11 @@ export async function applyToOfferService(
     (participant) => participant.role === "inventory_owner" && participantMatchesAccess(participant, access),
   );
   assert(!isOwner, "Owners cannot engage their own open offer", "FORBIDDEN");
-  const existingExecutionPartner = participants.find(
-    (participant) => participant.role === "execution_partner" && participantMatchesAccess(participant, access),
+  const existingExecutionProvider = participants.find(
+    (participant) => participant.role === "execution_provider" && participantMatchesAccess(participant, access),
   );
-  if (existingExecutionPartner) {
-    await ctx.db.patch(existingExecutionPartner._id, {
+  if (existingExecutionProvider) {
+    await ctx.db.patch(existingExecutionProvider._id, {
       status: "accepted",
       updatedAt: Date.now(),
     });
@@ -374,7 +374,7 @@ export async function applyToOfferService(
       authUserId: access.authUserId,
       brokerId: access.brokerId,
       REDId: access.REDId,
-      role: "execution_partner",
+      role: "execution_provider",
       status: "accepted",
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -385,7 +385,7 @@ export async function applyToOfferService(
     offerCaseId: args.offerId,
     kind: "engaged",
     actorAuthUserId: access.authUserId,
-    message: args.message ?? "Execution partner engaged the open offer",
+    message: args.message ?? "Execution provider engaged the open offer",
   });
   return {
     offerId: String(args.offerId),
@@ -405,9 +405,9 @@ export async function updateOfferStatusService(
   assert(offerCase, "Offer case not found", "NOT_FOUND");
   const participants = await listParticipantsForCase(ctx, args.id);
   const executionParticipant = participants.find(
-    (participant) => participant.role === "execution_partner" && participantMatchesAccess(participant, access),
+    (participant) => participant.role === "execution_provider" && participantMatchesAccess(participant, access),
   );
-  assert(executionParticipant, "Only the targeted execution partner can respond to this case", "FORBIDDEN");
+  assert(executionParticipant, "Only the targeted execution provider can respond to this case", "FORBIDDEN");
   assert(offerCase.stage === "targeted", "Only targeted cases can be responded to");
   await ctx.db.patch(executionParticipant._id, {
     status: args.status,
@@ -419,18 +419,18 @@ export async function updateOfferStatusService(
       offerCaseId: args.id,
       kind: "accepted",
       actorAuthUserId: access.authUserId,
-      message: "Execution partner accepted the case",
+      message: "Execution provider accepted the case",
     });
     return;
   }
   await setCaseStage(ctx, args.id, "closed_lost", {
-    closeNote: "Targeted execution partner rejected the case",
+    closeNote: "Targeted execution provider rejected the case",
   });
   await insertActivity(ctx, {
     offerCaseId: args.id,
     kind: "rejected",
     actorAuthUserId: access.authUserId,
-    message: "Execution partner rejected the case",
+    message: "Execution provider rejected the case",
   });
 }
 

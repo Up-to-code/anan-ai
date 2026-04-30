@@ -2,6 +2,13 @@ import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { uploadedFileReferenceListValidator, uploadedFileReferenceValidator } from "./uploadedFiles";
 import { transitionalGlobalSecurityFields } from "./securityFields";
+import {
+    boundedMetadataValidator,
+    sha256HexValidator,
+    trustedUploadUrlValidator,
+    unsafeDynamicPayloadValidator,
+    verifiedUploadMimeValidator,
+} from "./securityValidators";
 
 /**
  * Properties Schema
@@ -59,7 +66,7 @@ const propertiesTables = {
         imageIds: v.optional(v.array(v.id("_storage"))),
         heroImage: v.optional(uploadedFileReferenceValidator),
         media: v.optional(uploadedFileReferenceListValidator),
-        body: v.optional(v.any()), // dynamic structured content block
+        body: v.optional(unsafeDynamicPayloadValidator), // dynamic structured content block
         adLicenseNumber: v.optional(v.string()),
         adLicenseStatus: v.optional(
             v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
@@ -155,7 +162,7 @@ const propertiesTables = {
         conversationId: v.optional(v.id("inboxConversations")),
         offerCaseId: v.optional(v.id("offerCases")),
         dealId: v.optional(v.id("deals")),
-        metadata: v.optional(v.any()),
+        metadata: v.optional(boundedMetadataValidator),
         createdAt: v.number(),
         tenantOrgId: v.optional(v.string()),
         ownerType: v.optional(v.union(v.literal("broker"), v.literal("RED"))),
@@ -261,10 +268,11 @@ const propertiesTables = {
         ),
         kind: v.union(v.literal("image"), v.literal("pdf")),
         key: v.string(),
-        url: v.string(),
+        url: trustedUploadUrlValidator,
         name: v.string(),
         size: v.number(),
-        mime: v.string(),
+        mime: verifiedUploadMimeValidator,
+        sha256: v.optional(sha256HexValidator),
         lifecycleState: v.union(
             v.literal("active"),
             v.literal("archived"),

@@ -43,7 +43,7 @@ async function getPublicKey() {
 }
 
 /**
- * WHY:   Partner apps need Anan-issued JWTs with a verifiable issuer and audience.
+ * WHY:   External apps need Anan-issued JWTs with a verifiable issuer and audience.
  * WHAT:  Signs an RS256 JWT payload using the configured private key.
  * HOW:   Serializes JOSE header and claims, signs the `header.payload` string, and returns compact JWT.
  */

@@ -1,33 +1,45 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import type { ReactNode } from "react";
 import { beforeEach, expect, it, vi } from "vitest";
 
-const { notFound } = vi.hoisted(() => ({
+const { notFound, redirect } = vi.hoisted(() => ({
   notFound: vi.fn(() => {
     throw new Error("NEXT_NOT_FOUND");
   }),
+  redirect: vi.fn((href: string) => {
+    throw new Error(`NEXT_REDIRECT:${href}`);
+  }),
 }));
 
-const { useRouter, useSearchParams } = vi.hoisted(() => ({
-  useRouter: vi.fn(() => ({
-    push: vi.fn(),
-    refresh: vi.fn(),
-  })),
-  useSearchParams: vi.fn(() => new URLSearchParams()),
+const { usePathname } = vi.hoisted(() => ({
+  usePathname: vi.fn(() => "/ws/projects/project-1"),
 }));
 
 const { resolveWorkspaceProjectDetail } = vi.hoisted(() => ({
   resolveWorkspaceProjectDetail: vi.fn(),
 }));
 
-const { listProjectAssetsForViewer, listPropertyViewers } = vi.hoisted(() => ({
+const {
+  getProjectWorkspaceDetail,
+  getProjectDossier,
+  listProjectAssetsForViewer,
+  listPropertyViewers,
+} = vi.hoisted(() => ({
+  getProjectWorkspaceDetail: vi.fn(),
+  getProjectDossier: vi.fn(async () => null),
   listProjectAssetsForViewer: vi.fn(async () => []),
   listPropertyViewers: vi.fn(async () => []),
 }));
 
 vi.mock("next/navigation", () => ({
   notFound,
-  useRouter,
-  useSearchParams,
+  redirect,
+  usePathname,
+}));
+
+vi.mock("convex/react", () => ({
+  useConvexAuth: () => ({ isAuthenticated: true, isLoading: false }),
+  useQuery: () => undefined,
 }));
 
 vi.mock("../../../_lib/workspaceData", () => ({
@@ -61,114 +73,170 @@ vi.mock("@/server/infrastructure/convex/properties/access", () => ({
   },
 }));
 
+vi.mock("@/server/ws/zones", () => ({
+  getWorkspaceProjectZone: vi.fn(() => ({
+    getProjectWorkspaceDetail,
+    getProjectDossier,
+  })),
+}));
+
+const baseProperty = {
+  _id: "property-1",
+  title: "برج الاختبار",
+  address: "الرياض",
+  location: "الرياض",
+  description: "وصف",
+  price: 2200000,
+  beds: 4,
+  baths: 4,
+  sqft: 380,
+  projectReadinessStatus: "data_complete",
+  publicationState: "draft",
+  media: [{ key: "file-1", url: "https://images.unsplash.com/photo-1", name: "cover.jpg" }],
+  body: {
+    presentation: {
+      descriptionShort: "واجهة سكنية هادئة",
+      amenities: ["مواقف ضيوف", "نادي"],
+      hasParking: true,
+      parkingSpaces: 2,
+    },
+  },
+};
+
+function buildDossierDetail(title = "برج الاختبار") {
+  return {
+    property: baseProperty,
+    dossier: {
+      _id: "project-1",
+      title,
+      summary: "ملف مشروع متكامل",
+      expectedUnitCountLabel: "24 وحدة",
+      unitTypeMix: ["شقق", "دوبلكس"],
+      primaryUnitType: "شقق",
+      targetAudience: "عائلات",
+      services: ["مواقف", "نادي"],
+      projectType: "ready_property",
+      salesMode: "developer_direct",
+      requestedVisibility: "private",
+    },
+    units: [
+      {
+        _id: "unit-1",
+        label: "A-101",
+        unitKind: "unit",
+        status: "available",
+        bedrooms: 3,
+        bathrooms: 2,
+        sizeSqm: 145,
+        floor: "5",
+        view: "حديقة",
+        price: 1250000,
+        floorPlanMedia: [],
+      },
+    ],
+    documents: [{ status: "approved" }],
+    paymentPlans: [],
+    adLicenses: [],
+    brokerAuthorizations: [],
+  };
+}
+
+import ProjectDetailLayout from "./layout";
 import WorkspaceProjectDetailRoute from "./page";
+import WorkspaceProjectUnitsRoute from "./units/page";
+
+async function renderWithLayout(children: ReactNode, projectId = "project-1") {
+  const element = await ProjectDetailLayout({
+    params: Promise.resolve({ projectId }),
+    children,
+  });
+  return renderToStaticMarkup(element);
+}
 
 beforeEach(() => {
-  resolveWorkspaceProjectDetail.mockReset();
-  listProjectAssetsForViewer.mockClear();
-  listPropertyViewers.mockClear();
-  notFound.mockClear();
-});
-
-it("renders the owner project detail page", async () => {
+  getProjectWorkspaceDetail.mockResolvedValue(buildDossierDetail());
+  getProjectDossier.mockResolvedValue(null);
   resolveWorkspaceProjectDetail.mockResolvedValue({
-    property: {
-      _id: "property-1",
-      title: "برج الاختبار",
-      address: "الرياض",
-      location: "الرياض",
-      description: "وصف",
-      price: 2200000,
-      beds: 4,
-      baths: 4,
-      sqft: 380,
-      body: {
-        presentation: {
-          descriptionShort: "واجهة سكنية هادئة",
-          amenities: ["مواقف ضيوف", "نادي"],
-          hasParking: true,
-          parkingSpaces: 2,
-          privatePermitSummary: "سري",
-          privatePermitFiles: [{ key: "permit-1", url: "https://files.example.com/permit.pdf", name: "permit.pdf" }],
-          privatePermitVisibility: "conversation_only",
-        },
-      },
-      publicationState: "published",
-      media: [{ key: "file-1", url: "https://images.unsplash.com/photo-1", name: "cover.jpg" }],
-    },
+    property: baseProperty,
     accessMode: "owner",
     canEdit: true,
   });
+  listProjectAssetsForViewer.mockClear();
+  listPropertyViewers.mockClear();
+  notFound.mockClear();
+  redirect.mockClear();
+  usePathname.mockReturnValue("/ws/projects/project-1");
+});
 
-  const element = await WorkspaceProjectDetailRoute({
-    params: Promise.resolve({ projectId: "property-1" }),
+it("renders the project layout chrome and overview content", async () => {
+  const page = await WorkspaceProjectDetailRoute({
+    params: Promise.resolve({ projectId: "project-1" }),
   });
-  const markup = renderToStaticMarkup(element);
+  const markup = await renderWithLayout(page);
 
   expect(markup).toContain("تحليل المشروع");
   expect(markup).toContain("تعديل المشروع");
-  expect(markup).toContain("إنشاء عرض");
-  expect(markup).toContain("لوحة المشروع");
-  expect(markup).toContain("متوسط السعر");
-  expect(markup).toContain("خيارات إضافية");
-  expect(markup).toContain("مواقف ضيوف");
-  expect(markup).toContain("حالة الجاهزية");
+  expect(markup).toContain("نشر المشروع");
+  expect(markup).toContain("حذف المشروع");
   expect(markup).toContain("نظرة عامة");
-  expect(markup).toContain("الصور");
+  expect(markup).toContain("الوحدات");
+  expect(markup).toContain("التحليلات");
+  expect(markup).toContain("/ws/projects/project-1/units");
+  expect(markup).toContain("/ws/projects/project-1/analytics");
   expect(markup).toContain("data-slot=\"project-detail-hero\"");
 });
 
-it("renders shared projects as read-only", async () => {
+it("renders shared projects as read-only in the layout", async () => {
   resolveWorkspaceProjectDetail.mockResolvedValue({
-    property: {
-      _id: "property-1",
-      title: "برج الاختبار",
-      address: "الرياض",
-      location: "الرياض",
-      description: "وصف",
-      price: 2200000,
-      beds: 4,
-      baths: 4,
-      sqft: 380,
-      body: {
-        presentation: {
-          descriptionShort: "واجهة سكنية هادئة",
-          amenities: ["مواقف ضيوف", "نادي"],
-          hasParking: true,
-          parkingSpaces: 2,
-          privatePermitSummary: "هذا التصريح خاص بهذه المحادثة",
-          privatePermitFiles: [{ key: "permit-1", url: "https://files.example.com/permit.pdf", name: "permit.pdf" }],
-          privatePermitVisibility: "conversation_only",
-        },
-      },
-      publicationState: "draft",
-      media: [{ key: "file-1", url: "https://images.unsplash.com/photo-1", name: "cover.jpg" }],
-    },
+    property: baseProperty,
     accessMode: "shared",
     canEdit: false,
   });
-
-  const element = await WorkspaceProjectDetailRoute({
-    params: Promise.resolve({ projectId: "property-1" }),
+  const page = await WorkspaceProjectDetailRoute({
+    params: Promise.resolve({ projectId: "project-1" }),
   });
-  const markup = renderToStaticMarkup(element);
+  const markup = await renderWithLayout(page);
 
   expect(markup).toContain("مشاهدة فقط");
+  expect(markup).toContain("تحليل المشروع");
   expect(markup).not.toContain("تعديل المشروع");
-  expect(markup).toContain("فتح المحادثات");
-  expect(markup).toContain("الصور");
-  expect(markup).toContain("لوحة المشروع");
-  expect(markup).toContain("data-slot=\"project-detail-main\"");
+  expect(markup).not.toContain("نشر المشروع");
+  expect(markup).not.toContain("حذف المشروع");
 });
 
-it("returns not found when the project is not accessible", async () => {
+it("renders nested units content without overview content", async () => {
+  usePathname.mockReturnValue("/ws/projects/project-1/units");
+  const page = await WorkspaceProjectUnitsRoute({
+    params: Promise.resolve({ projectId: "project-1" }),
+  });
+  const markup = await renderWithLayout(page);
+
+  expect(markup).toContain("data-slot=\"project-detail-units\"");
+  expect(markup).toContain("A-101");
+  expect(markup).not.toContain("data-slot=\"project-detail-main\"");
+});
+
+it("lets child routes render when project chrome cannot resolve", async () => {
   resolveWorkspaceProjectDetail.mockResolvedValue(null);
 
+  const markup = await renderWithLayout(<div data-slot="child-create-route">create unit</div>, "missing-project");
+
+  expect(markup).toContain("data-slot=\"child-create-route\"");
+  expect(markup).not.toContain("نظرة عامة");
+});
+
+it("normalizes query tab URLs to nested routes and returns not found for inaccessible projects", async () => {
   await expect(
     WorkspaceProjectDetailRoute({
-      params: Promise.resolve({ projectId: "property-404" }),
+      params: Promise.resolve({ projectId: "project-1" }),
+      searchParams: Promise.resolve({ tab: "units" }),
+    }),
+  ).rejects.toThrow("NEXT_REDIRECT:/ws/projects/project-1/units");
+
+  resolveWorkspaceProjectDetail.mockResolvedValue(null);
+  await expect(
+    WorkspaceProjectDetailRoute({
+      params: Promise.resolve({ projectId: "missing" }),
     }),
   ).rejects.toThrow("NEXT_NOT_FOUND");
-
-  expect(notFound).toHaveBeenCalled();
 });

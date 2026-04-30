@@ -1,8 +1,16 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { mutationRef, publicMutationRef, publicQueryRef, queryRef, voidMutationRef } from "@anan/convex-adapters/repository";
 import { offersApi } from "./api";
 import type { OffersRepository } from "./types";
 
 export type { OffersRepository } from "./types";
+
+function queryMaybeToken<TResult>(token: string | undefined, ref: unknown, args: unknown) {
+  return token ? queryRef<TResult>(token, ref, args) : publicQueryRef<TResult>(ref, args);
+}
+
+function mutationMaybeToken<TResult>(token: string | undefined, ref: unknown, args: unknown) {
+  return token ? mutationRef<TResult>(token, ref, args) : publicMutationRef<TResult>(ref, args);
+}
 
 /**
  * WHY:   Workspace offer pages should consume the new case-domain queries through one stable repository interface.
@@ -11,114 +19,94 @@ export type { OffersRepository } from "./types";
  */
 export const convexOffersRepository: OffersRepository = {
   async getQueues(token) {
-    return fetchQuery(
-      offersApi.getWorkspaceOfferQueues as never,
-      {} as never,
-      token ? { token } : undefined,
-    ) as ReturnType<OffersRepository["getQueues"]>;
-  },
-
-  async listSent(token) {
-    return fetchQuery(
-      offersApi.listSentOffers as never,
-      {} as never,
-      token ? { token } : undefined,
-    ) as ReturnType<OffersRepository["listSent"]>;
-  },
-
-  async listReceived(token) {
-    return fetchQuery(
-      offersApi.listReceivedOffers as never,
-      {} as never,
-      token ? { token } : undefined,
-    ) as ReturnType<OffersRepository["listReceived"]>;
-  },
-
-  async listMarketplace(token) {
-    return fetchQuery(
-      offersApi.listPublicOffers as never,
-      {} as never,
-      token ? { token } : undefined,
-    ) as ReturnType<OffersRepository["listMarketplace"]>;
-  },
-
-  async create(input, token) {
-    return fetchMutation(
-      offersApi.createOffer as never,
-      input as never,
-      token ? { token } : undefined,
-    ) as ReturnType<OffersRepository["create"]>;
-  },
-
-  async createDraft(input, token) {
-    return fetchMutation(
-      offersApi.createOfferDraft as never,
-      input as never,
-      token ? { token } : undefined,
-    ) as ReturnType<OffersRepository["createDraft"]>;
-  },
-
-  async publish(input, token) {
-    return fetchMutation(
-      offersApi.publishOffer as never,
-      input as never,
-      token ? { token } : undefined,
-    ) as ReturnType<OffersRepository["publish"]>;
-  },
-
-  async publishConversation(input, token) {
-    return fetchMutation(
-      offersApi.publishConversationOffer as never,
-      input as never,
-      token ? { token } : undefined,
-    ) as ReturnType<OffersRepository["publishConversation"]>;
-  },
-
-  async updateDraft(input, token) {
-    return fetchMutation(
-      offersApi.updateOfferDraft as never,
-      input as never,
-      token ? { token } : undefined,
-    ) as ReturnType<OffersRepository["updateDraft"]>;
-  },
-
-  async archive(input, token) {
-    return fetchMutation(
-      offersApi.archiveOffer as never,
-      input as never,
-      token ? { token } : undefined,
-    ) as ReturnType<OffersRepository["archive"]>;
-  },
-
-  async getOfferLiveState(input, token) {
-    return fetchQuery(
-      offersApi.getOfferLiveState as never,
-      input as never,
-      token ? { token } : undefined,
-    ) as ReturnType<OffersRepository["getOfferLiveState"]>;
-  },
-
-  async respond(input, token) {
-    await fetchMutation(
-      offersApi.updateOfferStatus as never,
-      input as never,
-      token ? { token } : undefined,
+    return queryMaybeToken<Awaited<ReturnType<OffersRepository["getQueues"]>>>(
+      token,
+      offersApi.getWorkspaceOfferQueues,
+      {},
     );
   },
 
+  async listSent(token) {
+    return queryMaybeToken<Awaited<ReturnType<OffersRepository["listSent"]>>>(token, offersApi.listSentOffers, {});
+  },
+
+  async listReceived(token) {
+    return queryMaybeToken<Awaited<ReturnType<OffersRepository["listReceived"]>>>(
+      token,
+      offersApi.listReceivedOffers,
+      {},
+    );
+  },
+
+  async listMarketplace(token) {
+    return queryMaybeToken<Awaited<ReturnType<OffersRepository["listMarketplace"]>>>(
+      token,
+      offersApi.listPublicOffers,
+      {},
+    );
+  },
+
+  async create(input, token) {
+    return mutationMaybeToken<Awaited<ReturnType<OffersRepository["create"]>>>(token, offersApi.createOffer, input);
+  },
+
+  async createDraft(input, token) {
+    return mutationMaybeToken<Awaited<ReturnType<OffersRepository["createDraft"]>>>(
+      token,
+      offersApi.createOfferDraft,
+      input,
+    );
+  },
+
+  async publish(input, token) {
+    return mutationMaybeToken<Awaited<ReturnType<OffersRepository["publish"]>>>(token, offersApi.publishOffer, input);
+  },
+
+  async publishConversation(input, token) {
+    return mutationMaybeToken<Awaited<ReturnType<OffersRepository["publishConversation"]>>>(
+      token,
+      offersApi.publishConversationOffer,
+      input,
+    );
+  },
+
+  async updateDraft(input, token) {
+    return mutationMaybeToken<Awaited<ReturnType<OffersRepository["updateDraft"]>>>(
+      token,
+      offersApi.updateOfferDraft,
+      input,
+    );
+  },
+
+  async archive(input, token) {
+    return mutationMaybeToken<Awaited<ReturnType<OffersRepository["archive"]>>>(token, offersApi.archiveOffer, input);
+  },
+
+  async getOfferLiveState(input, token) {
+    return queryMaybeToken<Awaited<ReturnType<OffersRepository["getOfferLiveState"]>>>(
+      token,
+      offersApi.getOfferLiveState,
+      input,
+    );
+  },
+
+  async respond(input, token) {
+    if (token) {
+      await voidMutationRef(token, offersApi.updateOfferStatus, input);
+      return;
+    }
+    await publicMutationRef(offersApi.updateOfferStatus, input);
+  },
+
   async apply(input, token) {
-    return fetchMutation(
-      offersApi.applyToOffer as never,
-      input as never,
-      token ? { token } : undefined,
-    ) as ReturnType<OffersRepository["apply"]>;
+    return mutationMaybeToken<Awaited<ReturnType<OffersRepository["apply"]>>>(token, offersApi.applyToOffer, input);
   },
 
   async advanceStage(input, token) {
-    return fetchMutation(
-      offersApi.advanceOfferCaseStage as never,
-      input as never,
-      token ? { token } : undefined,
-    ) as ReturnType<OffersRepository["advanceStage"]>;
+    return mutationMaybeToken<Awaited<ReturnType<OffersRepository["advanceStage"]>>>(
+      token,
+      offersApi.advanceOfferCaseStage,
+      input,
+    );
   },
 };

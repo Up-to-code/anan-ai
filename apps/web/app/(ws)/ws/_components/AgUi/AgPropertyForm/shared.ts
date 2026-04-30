@@ -195,6 +195,7 @@ const defaultUnit: ProjectUnitFormData = {
   view: "",
   price: "",
   handoverAt: "",
+  locationDetails: null,
   floorPlanMedia: [],
 };
 

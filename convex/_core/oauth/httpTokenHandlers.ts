@@ -6,8 +6,10 @@ const oauthInternal = getOauthInternal();
 
 type RefreshRotationResult =
   | { replayDetected: true }
+  | { authorizationExpired: true }
   | {
       replayDetected?: false;
+      authorizationExpired?: false;
       tenantOrgId: string;
       ownerType: "broker" | "RED";
       ownerBrokerId?: string;
@@ -24,6 +26,7 @@ export type ParsedTokenRequest = {
 };
 
 type AuthorizationCodeExchange = {
+  authorizationExpired?: false;
   tenantOrgId: string;
   ownerType: "broker" | "RED";
   ownerBrokerId?: string;
@@ -32,7 +35,8 @@ type AuthorizationCodeExchange = {
   scopes: string[];
   nonce?: string | null;
 };
-type RefreshGrantRotation = Exclude<RefreshRotationResult, { replayDetected: true }>;
+type ExpiredAuthorizationResult = { authorizationExpired: true };
+type RefreshGrantRotation = Exclude<RefreshRotationResult, { replayDetected: true } | ExpiredAuthorizationResult>;
 
 function getAuthorizationCodeInputs(params: URLSearchParams) {
   const code = formValue(params, "code");
@@ -155,6 +159,9 @@ export async function handleAuthorizationCodeGrant(
   }
 
   const { accessTokenJti, exchange, refreshToken } = await exchangeAuthorizationCode(ctx, parsed, input);
+  if ((exchange as ExpiredAuthorizationResult).authorizationExpired) {
+    return jsonResponse({ error: "authorization_expired", error_description: "Organization authorization expired" }, 400);
+  }
   const { tokens, scopes } = await issueAuthorizationCodeTokens(parsed.clientId, accessTokenJti, exchange);
   return authorizationCodeResponse({
     accessToken: tokens.accessToken,
@@ -174,8 +181,11 @@ export async function handleRefreshTokenGrant(
   }
 
   const { accessTokenJti, nextRefreshToken, rotated } = await rotateRefreshToken(ctx, parsed, refreshToken);
-  if (rotated.replayDetected) {
+  if ("replayDetected" in rotated && rotated.replayDetected) {
     return jsonResponse({ error: "invalid_grant", error_description: "Refresh token replay detected" }, 400);
+  }
+  if ("authorizationExpired" in rotated && rotated.authorizationExpired) {
+    return jsonResponse({ error: "authorization_expired", error_description: "Organization authorization expired" }, 400);
   }
   const { tokens, scopes } = await issueRefreshGrantTokens(parsed.clientId, accessTokenJti, rotated);
   return authorizationCodeResponse({

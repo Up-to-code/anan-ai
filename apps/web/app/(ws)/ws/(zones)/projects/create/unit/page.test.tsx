@@ -17,7 +17,7 @@ const {
 
   return {
     createProperty: vi.fn(async () => "unit-property"),
-    saveProjectDossierDraft: vi.fn(async () => ({ ok: true })),
+    saveProjectDossierDraft: vi.fn(async () => ({ ok: true, dossierId: "unit-dossier" })),
     saveProjectUnits: vi.fn(async () => ({ ok: true })),
     saveProjectPaymentPlans: vi.fn(async () => ({ ok: true })),
     saveProjectComplianceDocuments: vi.fn(async () => ({ ok: true })),
@@ -136,7 +136,7 @@ it("creates a property, dossier, and one unit through server-backed project serv
   };
   const result = await props.onSave(unitInput);
 
-  expect(result).toEqual({ ok: true, redirectTo: "/ws/projects/unit-property" });
+  expect(result).toEqual({ ok: true, redirectTo: "/ws/projects/unit-dossier/units" });
   expect(createProperty).toHaveBeenCalledWith(expect.objectContaining({
     title: "Unit A-101",
     address: "Riyadh, Al Malqa",
@@ -154,7 +154,10 @@ it("creates a property, dossier, and one unit through server-backed project serv
       }),
     },
   }));
-  expect(saveProjectDossierDraft).toHaveBeenCalledWith(expect.objectContaining({ propertyId: "unit-property" }));
+  expect(saveProjectDossierDraft).toHaveBeenCalledWith(expect.objectContaining({
+    propertyId: "unit-property",
+    inventoryKind: "standalone_unit",
+  }));
   expect(saveProjectUnits).toHaveBeenCalledWith({
     propertyId: "unit-property",
     units: [expect.objectContaining({

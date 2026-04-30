@@ -49,7 +49,7 @@ export const getAdminUserDetail = query({
 export const listUsers = query({
   args: {
     paginationOpts: paginationOptsValidator,
-    channel: v.optional(v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web"))),
+    channel: v.optional(v.union(v.literal("workspace"), v.literal("web"), v.literal("admin"))),
   },
   handler: async (ctx, args) => {
     await requireAdminAccess(ctx);
@@ -105,7 +105,7 @@ export const updateUser = mutation({
   args: {
     userId: v.string(),
     displayName: v.optional(v.string()),
-    channel: v.optional(v.union(v.literal("whatsapp"), v.literal("app"), v.literal("web"))),
+    channel: v.optional(v.union(v.literal("workspace"), v.literal("web"), v.literal("admin"))),
   },
   handler: async (ctx, args) => {
     await requireAdminAccess(ctx);

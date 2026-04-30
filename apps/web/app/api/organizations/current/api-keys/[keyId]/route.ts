@@ -1,4 +1,4 @@
-import { toErrorResponse } from "@/server/contracts/errors";
+import { handleRoute, okResponse } from "@anan/web-foundation/api";
 import { revokeCurrentOrganizationApiKeyForCurrentUser } from "@/server/domains/auth/organizationApiKeys/service";
 
 type CurrentOrganizationApiKeyRouteProps = {
@@ -11,11 +11,9 @@ type CurrentOrganizationApiKeyRouteProps = {
  * HOW:   Resolves the route param and delegates to the organization API key domain service.
  */
 export async function DELETE(_request: Request, { params }: CurrentOrganizationApiKeyRouteProps) {
-  try {
+  return handleRoute(async () => {
     const { keyId } = await params;
     await revokeCurrentOrganizationApiKeyForCurrentUser(keyId);
-    return Response.json({ ok: true });
-  } catch (error) {
-    return toErrorResponse(error);
-  }
+    return okResponse();
+  });
 }

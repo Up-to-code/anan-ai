@@ -1,5 +1,11 @@
 import { type ResolvedSession, requireSessionContext } from "@/server/auth/session";
 import { DomainError } from "@/server/contracts/errors";
+import {
+  authContextFromSessionContext,
+} from "@anan/auth-sdk/oidc";
+import {
+  requireEntitlement,
+} from "@anan/auth-sdk/authorization";
 import { betterAuthOrganizationsRepository } from "@/server/infrastructure/betterAuth/organizations";
 import { convexOrganizationProfilesRepository } from "@/server/infrastructure/convex/organizationProfiles";
 
@@ -81,7 +87,18 @@ function requireRoleSession(
     message: string;
   },
 ): ResolvedSession {
-  const hasRole = options.requireAdmin ? Boolean(session.context.isAdmin) : options.allowedRoles.includes(session.context.role ?? "");
+  const authContext = authContextFromSessionContext(session.context, session.token);
+  const requiredEntitlements = options.requireAdmin
+    ? ["platform:admin"]
+    : options.allowedRoles.map((role) => `workspace:${role}`);
+  const hasRole = requiredEntitlements.some((entitlement) => {
+    try {
+      requireEntitlement(authContext, entitlement);
+      return true;
+    } catch {
+      return false;
+    }
+  });
   const hasOwnerId =
     !options.requiredOwnerKey || Boolean(session.context[options.requiredOwnerKey]);
 

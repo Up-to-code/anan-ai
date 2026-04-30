@@ -1,4 +1,4 @@
-import { fetchQuery } from "convex/nextjs";
+import { queryRef } from "@anan/convex-adapters/repository";
 import { sharedProjectDetailsApi } from "./api";
 import type { SharedProjectDetailsRepository } from "./types";
 
@@ -11,8 +11,10 @@ export type { SharedProjectDetailsRepository } from "./types";
  */
 export const convexSharedProjectDetailsRepository: SharedProjectDetailsRepository = {
   async getProperty(token, id) {
-    return fetchQuery(sharedProjectDetailsApi.getPropertyForViewer as never, {
-      propertyId: id as never,
-    } as never, { token }) as ReturnType<SharedProjectDetailsRepository["getProperty"]>;
+    return queryRef<Awaited<ReturnType<SharedProjectDetailsRepository["getProperty"]>>>(
+      token,
+      sharedProjectDetailsApi.getPropertyForViewer,
+      { propertyId: id },
+    );
   },
 };

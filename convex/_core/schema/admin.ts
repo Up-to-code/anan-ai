@@ -2,6 +2,7 @@ import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { adminAccessLevelValidator, adminPermissionValidator } from "../security/adminAccess";
 import { transitionalGlobalSecurityFields } from "./securityFields";
+import { unsafeDynamicPayloadValidator } from "./securityValidators";
 
 const verificationDocumentValidator = v.object({
   key: v.string(),
@@ -75,7 +76,7 @@ const adminTables = {
     ),
     rulesetId: v.optional(v.id("complianceRulesets")),
     rulesetVersion: v.optional(v.number()),
-    submittedData: v.any(),
+    submittedData: unsafeDynamicPayloadValidator,
     attachedDocuments: v.array(verificationDocumentValidator),
     reviewerId: v.optional(v.string()),
     reviewerNotes: v.optional(v.string()),
@@ -104,7 +105,7 @@ const adminTables = {
     staleAfterMs: v.optional(v.number()),
     lastAggregatedAt: v.number(),
     staleSince: v.optional(v.number()),
-    details: v.optional(v.any()),
+    details: v.optional(unsafeDynamicPayloadValidator),
     updatedAt: v.number(),
   })
     .index("summaryType", ["summaryType"])

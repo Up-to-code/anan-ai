@@ -1,6 +1,7 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { transitionalGlobalSecurityFields } from "./securityFields";
+import { boundedMetadataValidator, unsafeDynamicPayloadValidator } from "./securityValidators";
 
 const auditCategoryValidator = v.union(
   v.literal("auth"),
@@ -42,9 +43,9 @@ const auditTables = {
     ipHash: v.optional(v.string()),
     userAgentHash: v.optional(v.string()),
     requestId: v.optional(v.string()),
-    before: v.optional(v.any()),
-    after: v.optional(v.any()),
-    metadata: v.optional(v.any()),
+    before: v.optional(unsafeDynamicPayloadValidator),
+    after: v.optional(unsafeDynamicPayloadValidator),
+    metadata: v.optional(boundedMetadataValidator),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
