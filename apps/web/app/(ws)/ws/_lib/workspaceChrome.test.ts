@@ -27,7 +27,7 @@ describe("workspaceChrome", () => {
         locale: "en",
         organizationSubtitle: "Developer workspace",
       }).headerTitle,
-    ).toBe("Anan Assistant");
+    ).toBe("Anan AI");
 
     expect(
       getWorkspaceChromeState({

@@ -26,7 +26,7 @@ import ZonePageIntro from "../../ZoneShell/ZonePageIntro";
 import { FieldLabel, FileRow, ReviewRow, SectionCard, SelectInput, TextArea, TextInput, UploadTile } from "../AgPropertyForm/controls";
 import { cn } from "@/lib/utils";
 import { useUploadThing } from "@/lib/uploadthing";
-import type { UploadedFileReference } from "@/server/contracts/files";
+import { uploadedFileReferenceSchema } from "@/server/contracts/files";
 import {
   CreationFlowActions,
   CreationFlowProgress,
@@ -212,7 +212,7 @@ export default function AgUnitCreateForm({
 
   const handleFiles = async (
     event: ChangeEvent<HTMLInputElement>,
-    startUpload: (files: File[]) => Promise<Array<{ serverData: UploadedFileReference }> | undefined>,
+    startUpload: (files: File[]) => Promise<Array<{ serverData: unknown }> | undefined>,
     field: "images" | "privatePermitFiles",
   ) => {
     const files = Array.from(event.target.files ?? []);
@@ -222,7 +222,7 @@ export default function AgUnitCreateForm({
 
     try {
       const uploaded = await startUpload(files);
-      const references = uploaded?.map((file) => file.serverData) ?? [];
+      const references = uploaded?.map((file) => uploadedFileReferenceSchema.parse(file.serverData)) ?? [];
       setFormData((current) => ({ ...current, [field]: [...current[field], ...references] }));
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : copy.uploadFailed);
